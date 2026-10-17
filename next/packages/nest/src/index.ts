@@ -171,11 +171,11 @@ export class experimental_TrpcHost implements OnApplicationShutdown {
     const app = Effect.flatMap(
       HttpServerRequest.HttpServerRequest,
       (request) => {
-        const { call, context } = this.#pending.get(
+        const entry = this.#pending.get(
           NodeHttpServerRequest.toIncomingMessage(request),
         )!;
         return toHttpEffect({
-          fetch: (web) => handler.serve(web, call, context),
+          fetch: (web) => handler.serve(web, entry.call, entry.context),
         });
       },
     );

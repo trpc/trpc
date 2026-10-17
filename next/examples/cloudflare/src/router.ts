@@ -20,16 +20,18 @@ export class Messages extends Publisher.Service<
 const t = initTrpc<{ ctx: { room: string; greeting: string } }>();
 
 export const appRouter = {
-  room: t.procedure.query(({ ctx }) => `${ctx.greeting} from ${ctx.room}`),
+  room: t.procedure.query(
+    (opts) => `${opts.ctx.greeting} from ${opts.ctx.room}`,
+  ),
   send: t.procedure
     .input(z.object({ from: z.string(), text: z.string().min(1) }))
-    .mutation(({ input }) =>
-      Effect.as(Messages.publish('message', input), input),
+    .mutation((opts) =>
+      Effect.as(Messages.publish('message', opts.input), opts.input),
     ),
   // Over a hibernating socket this is kept in the socket's attachment, not a
   // running fiber, so the object sleeps between messages.
-  onMessage: t.procedure.subscription(({ lastEventId }) =>
-    Messages.subscribe('message', { lastEventId }),
+  onMessage: t.procedure.subscription((opts) =>
+    Messages.subscribe('message', { lastEventId: opts.lastEventId }),
   ),
   // One claim per seat at a time, across every room and Worker instance: the
   // lock is a `Locks` Durable Object per seat.
@@ -37,22 +39,22 @@ export const appRouter = {
     .input(z.object({ seat: z.string(), by: z.string() }))
     .use(
       experimental_lock<{ input: { seat: string } }>({
-        key: ({ input }) => `seat:${input.seat}`,
+        key: (opts) => `seat:${opts.input.seat}`,
       }),
     )
-    .mutation(async ({ input, ctx }) => {
+    .mutation(async (opts) => {
       await sleep(100);
-      return { by: input.by, waited: ctx.lock.waited };
+      return { by: opts.input.by, waited: opts.ctx.lock.waited };
     }),
   // The streamed output is kept in the object's storage as it's sent, so a
   // client whose connection drops picks up where it stopped.
   digest: t.procedure
     .input(z.object({ topics: z.array(z.string()).min(1) }))
     .use(experimental_durable())
-    .mutation(({ input }) => ({
-      topics: input.topics.length,
+    .mutation((opts) => ({
+      topics: opts.input.topics.length,
       summaries: (async function* () {
-        for (const topic of input.topics) {
+        for (const topic of opts.input.topics) {
           await sleep(20);
           yield { topic, words: sleep(10).then(() => topic.length * 7) };
         }

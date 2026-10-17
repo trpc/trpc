@@ -182,9 +182,7 @@ export function serializeSync(
   };
   const dedupe = options.dedupe === true;
   const context = options.context;
-  const { all, plain, primitive, placeholders } = compileSerializers(
-    options.serializers,
-  );
+  const serializers = compileSerializers(options.serializers);
   const seen = new Map<unknown, [index: number, Location]>();
   /** The values being serialized around the current one; a repeat is a cycle. */
   const ancestors = new Set<unknown>();
@@ -219,7 +217,7 @@ export function serializeSync(
     const index = state.indexCounter();
     if (tracked) seen.set(thing, [index, location]);
 
-    const placeholder = placeholders.get(thing);
+    const placeholder = serializers.placeholders.get(thing);
     if (placeholder && Object.is(placeholder.value, thing)) {
       return PREFIX + placeholder.placeholder;
     }
@@ -232,10 +230,10 @@ export function serializeSync(
           ? PLAIN
           : INSTANCE;
     for (const [name, fn] of shape === INSTANCE
-      ? all
+      ? serializers.all
       : shape === PRIMITIVE
-        ? primitive
-        : plain) {
+        ? serializers.primitive
+        : serializers.plain) {
       const out = fn(thing, context);
       if (out === false) continue;
       const custom: CustomValue = { _: PREFIX, type: name };
@@ -349,9 +347,7 @@ export function deserializeSync<T = unknown>(
   const refs = obj.refs;
   const maxDepth = options.maxDepth ?? 64;
   let cache = options.cache;
-  const { deserializers, placeholders } = compileDeserializers(
-    options.deserializers,
-  );
+  const compiled = compileDeserializers(options.deserializers);
   const rootRef = placeholderOf(0);
   const remember = (ref: string, value: unknown) =>
     (cache ??= new Map()).set(ref, value);
@@ -366,7 +362,8 @@ export function deserializeSync<T = unknown>(
   function fromJson(value: JsonValue, depth: number, ref?: string): unknown {
     if (depth > maxDepth) throw new DansonError('Max depth exceeded');
     if (typeof value === 'string') {
-      if (placeholders.has(value)) return placeholders.get(value);
+      if (compiled.placeholders.has(value))
+        return compiled.placeholders.get(value);
       if (
         value === rootRef ||
         (refs !== undefined && Object.hasOwn(refs, value))
@@ -386,7 +383,7 @@ export function deserializeSync<T = unknown>(
       if (value['_'] === PREFIX && typeof value['type'] === 'string') {
         const custom = value as unknown as CustomValue;
         if (custom.type === 'string') return custom.value;
-        const d = deserializers.get(custom.type);
+        const d = compiled.deserializers.get(custom.type);
         if (!d) {
           throw new DansonError(`No deserializer for type: ${custom.type}`);
         }

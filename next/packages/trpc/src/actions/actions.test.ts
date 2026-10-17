@@ -30,9 +30,10 @@ const createPost = t.procedure
       author: z.object({ age: z.number() }),
     }),
   )
-  .mutation(({ ctx, input, errors }) => {
-    if (!ctx.user) return errors.FORBIDDEN();
-    return { ...input, by: ctx.user };
+  .mutation((opts) => {
+    const { input } = opts;
+    if (!opts.ctx.user) return opts.errors.FORBIDDEN();
+    return { ...input, by: opts.ctx.user };
   });
 const boom = t.procedure.query((): string => {
   throw new Error('db password is hunter2');
@@ -118,7 +119,7 @@ test('defined errors are typed; unexpected ones are masked unless exposed', asyn
   const anonymous = experimental_createAction({
     ctx: { user: null },
     exposeUnexpectedErrors: false,
-    onError: ({ error }) => seen.push(error.message),
+    onError: (opts) => seen.push(opts.error.message),
   });
   const res = await anonymous(createPost)({
     title: 'x',
@@ -182,7 +183,7 @@ test("Next's redirect() and notFound() pass through in-process calls unchanged",
   const onError: unknown[] = [];
   const safeAction = experimental_createAction({
     ctx: { user: null },
-    onError: ({ error }) => onError.push(error),
+    onError: (opts) => onError.push(opts.error),
   });
   await expect(safeAction(guarded)()).rejects.toBe(redirect);
   await expect(

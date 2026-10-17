@@ -429,11 +429,12 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
     signal: AbortSignal,
   ): Promise<Response> {
     const url = `${baseUrl}/${op.path}`;
-    const { json, parts } = encode(op);
-    if (parts.length > 0) {
+    const encoded = encode(op);
+    const { json } = encoded;
+    if (encoded.parts.length > 0) {
       const form = new FormData();
       form.append('input', JSON.stringify(json));
-      for (const [i, blob] of parts.entries()) {
+      for (const [i, blob] of encoded.parts.entries()) {
         form.append(String(i), blob, blob instanceof File ? blob.name : 'blob');
       }
       return fetchFn(
@@ -574,10 +575,10 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
         };
         yield* Effect.gen(function* () {
           const calls: BatchCall[] = live.map((item) => {
-            const { json } = encode(item.op);
+            const encoded = encode(item.op);
             return {
               path: item.op.path,
-              ...(json === undefined ? {} : { input: json }),
+              ...(encoded.json === undefined ? {} : { input: encoded.json }),
             };
           });
           const res = yield* Effect.tryPromise({

@@ -19,10 +19,10 @@ export const appRouter = {
     list: t.procedure.query(() => [...posts.values()]),
     create: t.procedure
       .input(z.object({ title: z.string().min(1) }))
-      .mutation(({ input }) => {
+      .mutation((opts) => {
         const post: Post = {
           id: String(posts.size + 1),
-          title: input.title,
+          title: opts.input.title,
           createdAt: new Date(),
         };
         posts.set(post.id, post);
@@ -33,9 +33,9 @@ export const appRouter = {
     /** A streamed mutation: the browser shows each word as it arrives. */
     reply: t.procedure
       .input(z.object({ text: z.string().min(1) }))
-      .mutation(async function* ({ input, signal }) {
-        for (const word of `You said: ${input.text}`.split(' ')) {
-          if (signal.aborted) return;
+      .mutation(async function* (opts) {
+        for (const word of `You said: ${opts.input.text}`.split(' ')) {
+          if (opts.signal.aborted) return;
           await sleep(30);
           yield `${word} `;
         }
@@ -52,10 +52,14 @@ export const appRouter = {
       })),
     /** A `File` output is the response body. */
     download: t.procedure.input(z.object({ name: z.string() })).query(
-      ({ input }) =>
-        new File([`hello from ${input.name}\n`], `${input.name}.txt`, {
-          type: 'text/plain',
-        }),
+      (opts) =>
+        new File(
+          [`hello from ${opts.input.name}\n`],
+          `${opts.input.name}.txt`,
+          {
+            type: 'text/plain',
+          },
+        ),
     ),
   },
 };

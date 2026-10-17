@@ -5,37 +5,37 @@ import { port, schema } from './schema.ts';
 
 const handler = new RPCHandler(
   {
-    procedure_1: os.input(schema).handler(({ input }) => ({
+    procedure_1: os.input(schema).handler((opts) => ({
       name: 'procedure_1',
       date: new Date(),
-      input,
+      input: opts.input,
     })),
-    procedure_2: os.input(schema).handler(({ input }) => ({
+    procedure_2: os.input(schema).handler((opts) => ({
       name: 'procedure_2',
       date: new Date(),
-      input,
+      input: opts.input,
     })),
     nested: {
-      procedure_1: os.input(schema).handler(({ input }) => ({
+      procedure_1: os.input(schema).handler((opts) => ({
         name: 'nested/procedure_1',
         date: new Date(),
-        input,
+        input: opts.input,
       })),
-      procedure_2: os.input(schema).handler(({ input }) => ({
+      procedure_2: os.input(schema).handler((opts) => ({
         name: 'nested/procedure_2',
         date: new Date(),
-        input,
+        input: opts.input,
       })),
       nested: {
-        procedure_1: os.input(schema).handler(({ input }) => ({
+        procedure_1: os.input(schema).handler((opts) => ({
           name: 'nested/nested/procedure_1',
           date: new Date(),
-          input,
+          input: opts.input,
         })),
-        procedure_2: os.input(schema).handler(({ input }) => ({
+        procedure_2: os.input(schema).handler((opts) => ({
           name: 'nested/nested/procedure_2',
           date: new Date(),
-          input,
+          input: opts.input,
         })),
       },
     },
@@ -44,8 +44,8 @@ const handler = new RPCHandler(
 );
 
 createServer(async (req, res) => {
-  const { matched } = await handler.handle(req, res);
-  if (!matched) {
+  const handled = await handler.handle(req, res);
+  if (!handled.matched) {
     res.statusCode = 404;
     res.end('Not Found');
   }

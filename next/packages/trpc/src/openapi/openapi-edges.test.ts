@@ -21,11 +21,11 @@ const router = {
   echo: t.procedure
     .meta({ route: { method: 'POST', path: '/echo' } })
     .input(z.unknown())
-    .mutation(({ input }) => input ?? null),
+    .mutation((opts) => opts.input ?? null),
   rename: t.procedure
     .meta({ route: { method: 'POST', path: '/things/{id}' } })
     .input(z.object({ id: z.string(), name: z.string().optional() }))
-    .mutation(({ input }) => input),
+    .mutation((opts) => opts.input),
   detailed: t.procedure
     .meta({
       route: {
@@ -43,9 +43,9 @@ const router = {
         body: z.object({ n: z.coerce.number() }).optional(),
       }),
     )
-    .mutation(({ input }) => ({
+    .mutation((opts) => ({
       status: 202,
-      body: { id: input.params.id, n: input.body?.n ?? null },
+      body: { id: opts.input.params.id, n: opts.input.body?.n ?? null },
     })),
   bare: t.procedure
     .meta({
@@ -60,8 +60,8 @@ const router = {
   file: t.procedure
     .meta({ route: { method: 'GET', path: '/file/{kind}' } })
     .input(z.object({ kind: z.enum(['named', 'blob']) }))
-    .query(({ input }) =>
-      input.kind === 'named'
+    .query((opts) =>
+      opts.input.kind === 'named'
         ? new File(['report'], 'report q1.txt', { type: 'text/plain' })
         : new Blob([new Uint8Array([1, 2, 3])]),
     ),
@@ -82,8 +82,8 @@ const router = {
         kind: z.enum(['teapot', 'busy', 'none', 'zero', 'bytes']),
       }),
     )
-    .query(({ input }) => {
-      switch (input.kind) {
+    .query((opts) => {
+      switch (opts.input.kind) {
         case 'teapot':
           return raw('short and stout', { status: 418 });
         case 'busy':
@@ -103,19 +103,20 @@ const router = {
   feed: t.procedure
     .meta({ route: { method: 'GET', path: '/feed' } })
     .input(z.object({ fail: z.coerce.boolean().optional() }).optional())
-    .subscription(async function* ({ input }) {
+    .subscription(async function* (opts) {
       yield 'plain';
       yield tracked('7', 'tracked');
-      if (input?.fail) throw error({ code: 'CONFLICT', message: 'feed broke' });
+      if (opts.input?.fail)
+        throw error({ code: 'CONFLICT', message: 'feed broke' });
     }),
   forever: t.procedure
     .meta({ route: { method: 'GET', path: '/forever' } })
     .subscription(() => Stream.never),
   slow: t.procedure
     .meta({ route: { method: 'GET', path: '/slow' } })
-    .query(({ signal }) =>
+    .query((opts) =>
       Effect.callback<string>((resume) => {
-        signal.addEventListener('abort', () => {
+        opts.signal.addEventListener('abort', () => {
           slowAborts++;
           resume(Effect.succeed('gone'));
         });
@@ -123,7 +124,7 @@ const router = {
     ),
   who: t.procedure
     .meta({ route: { method: 'GET', path: '/who' } })
-    .query(({ ctx }) => ctx.user),
+    .query((opts) => opts.ctx.user),
 };
 
 const make = (
@@ -337,7 +338,7 @@ test('serve() reports input errors with their own status', async () => {
 test('fetch(request, platform) hands the platform to createContext', async () => {
   const handler = createOpenApiHandler<typeof router, { user: string }>({
     router,
-    createContext: ({ platform }) => ({ user: platform.user }),
+    createContext: (opts) => ({ user: opts.platform.user }),
   });
   const res = await handler.fetch(new Request('http://localhost/api/who'), {
     user: 'grace',
@@ -356,7 +357,7 @@ function linked(fetch?: typeof globalThis.fetch) {
       openApiLink({
         url: 'http://localhost/',
         contract,
-        headers: ({ op }) => ({ 'x-op': op.path }),
+        headers: (opts) => ({ 'x-op': opts.op.path }),
         fetch:
           fetch ??
           ((input, init) => {
@@ -371,7 +372,8 @@ function linked(fetch?: typeof globalThis.fetch) {
 }
 
 test('openApiLink reads every kind of response body', async () => {
-  const { client, handler, requests } = linked();
+  const app = linked();
+  const { client } = app;
   expect(await client.raw.query({ kind: 'none' })).toBeUndefined();
   expect(await client.raw.query({ kind: 'zero' })).toBeUndefined();
   const bytes = (await client.raw.query({ kind: 'bytes' })) as unknown as Blob;
@@ -382,7 +384,7 @@ test('openApiLink reads every kind of response body', async () => {
     headers: expect.objectContaining({ 'content-type': 'application/json' }),
     body: 'bare',
   });
-  expect(requests.map((r) => r.headers.get('x-op'))).toEqual([
+  expect(app.requests.map((r) => r.headers.get('x-op'))).toEqual([
     'raw',
     'raw',
     'raw',
@@ -399,16 +401,17 @@ test('openApiLink reads every kind of response body', async () => {
     code: 'SERVICE_UNAVAILABLE',
     message: 'Unexpected 503 response',
   });
-  await handler.dispose();
+  await app.handler.dispose();
 });
 
 test('openApiLink sends per-call headers, files in arrays, and signals', async () => {
-  const { client, handler, requests } = linked();
+  const app = linked();
+  const { client } = app;
   await client.who.query(undefined, { headers: { 'x-call': 'yes' } });
-  expect(requests[0]!.headers.get('x-call')).toBe('yes');
+  expect(app.requests[0]!.headers.get('x-call')).toBe('yes');
 
   const echoed = await client.echo.mutate([new File(['a'], 'a.txt')]);
-  expect(requests[1]!.headers.get('content-type')).toMatch(
+  expect(app.requests[1]!.headers.get('content-type')).toMatch(
     /^multipart\/form-data/,
   );
   expect(echoed).toBeDefined();
@@ -426,26 +429,26 @@ test('openApiLink sends per-call headers, files in arrays, and signals', async (
     code: 'NOT_FOUND',
     message: '"missing" is not in the contract',
   });
-  await handler.dispose();
+  await app.handler.dispose();
 });
 
 test('openApiLink fills a Date path param as ISO, and fails a call missing one', async () => {
-  const { client, handler, requests } = linked();
+  const app = linked();
   const at = new Date(0);
   expect(
-    await client.rename.mutate({ id: at as unknown as string, name: 'x' }),
+    await app.client.rename.mutate({ id: at as unknown as string, name: 'x' }),
   ).toEqual({ id: at.toISOString(), name: 'x' });
-  expect(new URL(requests[0]!.url).pathname).toBe(
+  expect(new URL(app.requests[0]!.url).pathname).toBe(
     `/api/things/${encodeURIComponent(at.toISOString())}`,
   );
 
   const [, missing] = await safe(
-    client.rename.mutate({ name: 'x' } as unknown as { id: string }),
+    app.client.rename.mutate({ name: 'x' } as unknown as { id: string }),
   );
   expect(missing?.message).toContain(
     'Missing path param "id" for /api/things/{id}',
   );
-  await handler.dispose();
+  await app.handler.dispose();
 });
 
 test('openApiLink reads an untyped body as text', async () => {
@@ -497,11 +500,11 @@ test('openApiLink turns fetch failures into client errors', async () => {
 });
 
 test('openApiLink subscriptions yield plain and tracked events, then errors', async () => {
-  const { client, handler } = linked();
+  const app = linked();
   const events: unknown[] = [];
   let failure: unknown;
   try {
-    for await (const event of client.feed.subscribe(
+    for await (const event of app.client.feed.subscribe(
       { fail: true },
       {
         reconnect: false,
@@ -522,7 +525,7 @@ test('openApiLink subscriptions yield plain and tracked events, then errors', as
     })(),
   );
   expect(err).toMatchObject({ code: 'SERVICE_UNAVAILABLE' });
-  await Promise.all([handler.dispose(), refused.handler.dispose()]);
+  await Promise.all([app.handler.dispose(), refused.handler.dispose()]);
 });
 
 test('form bodies: none at all, malformed, and malformed past maxBodySize', async () => {

@@ -44,6 +44,7 @@ export default defineConfig({
       'trpc/acronym-case': 'error',
       'trpc/no-custom-test-timeout': 'error',
       'trpc/no-mock': 'error',
+      'trpc/no-overzealous-destructuring': 'error',
       'trpc/typed-objects': 'error',
       'typescript/ban-ts-comment': [
         'error',
@@ -89,6 +90,7 @@ export default defineConfig({
         files: ['spikes/**'],
         rules: {
           'no-console': 'off',
+          'trpc/no-overzealous-destructuring': 'off',
           'trpc/typed-objects': 'off',
         },
       },

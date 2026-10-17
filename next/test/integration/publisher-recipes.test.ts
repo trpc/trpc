@@ -241,11 +241,11 @@ test('the Redis publisher recipe delivers live events and resumes from lastEvent
   const router = {
     create: t.procedure
       .input(z.object({ id: z.string() }))
-      .mutation(({ input }) =>
-        Posts.publish('created', { id: input.id, at: new Date(0) }),
+      .mutation((opts) =>
+        Posts.publish('created', { id: opts.input.id, at: new Date(0) }),
       ),
-    onCreated: t.procedure.subscription(({ lastEventId }) =>
-      Posts.subscribe('created', { lastEventId }),
+    onCreated: t.procedure.subscription((opts) =>
+      Posts.subscribe('created', { lastEventId: opts.lastEventId }),
     ),
   };
   const layer = Layer.effect(Posts)(

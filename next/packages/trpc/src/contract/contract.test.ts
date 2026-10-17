@@ -34,9 +34,9 @@ interface Post {
 }
 const posts = new Map<string, Post>([['1', { id: '1', title: 'Hello' }]]);
 
-const authed = t.middleware(({ ctx, next }) =>
-  ctx.user
-    ? next({ ctx: { user: ctx.user } })
+const authed = t.middleware((opts) =>
+  opts.ctx.user
+    ? opts.next({ ctx: { user: opts.ctx.user } })
     : error({ code: 'UNAUTHORIZED' }),
 );
 
@@ -45,21 +45,25 @@ const impl = t.implement(appContract);
 const appRouter = impl.router({
   health: impl.health.query(() => 'ok' as const),
   post: {
-    byId: impl.post.byId.query(({ input, errors }) => {
+    byId: impl.post.byId.query((opts) => {
+      const { input } = opts;
       expectTypeOf(input).toEqualTypeOf<{ id: string }>();
       return (
-        posts.get(input.id) ?? errors.NOT_FOUND({ data: { id: input.id } })
+        posts.get(input.id) ?? opts.errors.NOT_FOUND({ data: { id: input.id } })
       );
     }),
-    create: impl.post.create.use(authed).mutation(({ input, ctx, meta }) => {
-      expectTypeOf(ctx.user).toEqualTypeOf<string>();
-      expect(meta.auth).toBe(true);
-      const post: Post = { id: String(posts.size + 1), title: input.title };
+    create: impl.post.create.use(authed).mutation((opts) => {
+      expectTypeOf(opts.ctx.user).toEqualTypeOf<string>();
+      expect(opts.meta.auth).toBe(true);
+      const post: Post = {
+        id: String(posts.size + 1),
+        title: opts.input.title,
+      };
       posts.set(post.id, post);
       return post;
     }),
-    onAdd: impl.post.onAdd.subscription(async function* ({ lastEventId }) {
-      const start = Number(lastEventId ?? 0) + 1;
+    onAdd: impl.post.onAdd.subscription(async function* (opts) {
+      const start = Number(opts.lastEventId ?? 0) + 1;
       for (let id = start; id <= 3; id++) {
         yield tracked(String(id), { id: String(id), title: `Post ${id}` });
       }
@@ -70,8 +74,8 @@ const appRouter = impl.router({
 async function setup() {
   const server = await createTestServer({
     router: appRouter,
-    createContext: ({ request }) => ({
-      user: request.headers['x-user'] ?? null,
+    createContext: (opts) => ({
+      user: opts.request.headers['x-user'] ?? null,
     }),
   });
   const client = createTrpcClient({
@@ -143,8 +147,8 @@ test('implement() leaves only offer the contract terminal, inputs and errors', (
       () => error({ code: 'CONFLICT' }),
     );
 
-    const rateLimited = t.middleware(({ next }) =>
-      Math.random() > 2 ? error({ code: 'TOO_MANY_REQUESTS' }) : next(),
+    const rateLimited = t.middleware((opts) =>
+      Math.random() > 2 ? error({ code: 'TOO_MANY_REQUESTS' }) : opts.next(),
     );
     // @ts-expect-error -- Q9.3: middleware errors must be declared too
     impl.post.create.use(rateLimited);
@@ -216,7 +220,7 @@ test('impl.router() checks completeness at the type level and at runtime', () =>
 });
 
 test('a contract cannot concat an extension with middleware, and isContractProcedure() tells contract leaves from procedures', () => {
-  const withMiddleware = initTrpc().procedure.use(({ next }) => next());
+  const withMiddleware = initTrpc().procedure.use((opts) => opts.next());
   expect(() => contract.create().concat(withMiddleware)).toThrow(
     /the extension has middleware or inputs/,
   );
@@ -244,17 +248,17 @@ test('impl.use() and impl.provide() run for every procedure of the contract', as
   const impl = t
     .implement(adminContract)
     .use(authed)
-    .provide(Audit, ({ ctx }) => ({ by: ctx.user }));
+    .provide(Audit, (opts) => ({ by: opts.ctx.user }));
   const adminRouter = impl.router({
-    stats: impl.stats.query(({ ctx }) => {
-      expectTypeOf(ctx.user).toEqualTypeOf<string>();
+    stats: impl.stats.query((opts) => {
+      expectTypeOf(opts.ctx.user).toEqualTypeOf<string>();
       return 1;
     }),
     users: {
-      ban: impl.users.ban.mutation(({ input }) =>
+      ban: impl.users.ban.mutation((opts) =>
         Effect.gen(function* () {
           const audit = yield* Audit;
-          return `${audit.by} banned ${input}`;
+          return `${audit.by} banned ${opts.input}`;
         }),
       ),
     },
@@ -262,8 +266,8 @@ test('impl.use() and impl.provide() run for every procedure of the contract', as
 
   await using server = await createTestServer({
     router: adminRouter,
-    createContext: ({ request }) => ({
-      user: request.headers['x-user'] ?? null,
+    createContext: (opts) => ({
+      user: opts.request.headers['x-user'] ?? null,
     }),
   });
   const anon = createTrpcClient({
@@ -379,20 +383,20 @@ test('toContract() emits a JSON contract that types clients (Q9.4)', async () =>
 });
 
 test('toContract() describes Effect Schemas and chained inputs', () => {
-  const { search } = toContract({
+  const procedures = toContract({
     search: t.procedure
       .input(Schema.Struct({ q: Schema.String }))
       .input(Schema.Struct({ limit: Schema.optional(Schema.NumberFromString) }))
       .output(Schema.Array(Schema.String))
       .query(() => []),
   }).procedures;
-  expect(search!.input).toMatchObject({
+  expect(procedures['search']!.input).toMatchObject({
     allOf: [
       { type: 'object', required: ['q'] },
       { type: 'object', properties: { limit: {} } },
     ],
   });
-  expect(search!.output).toMatchObject({
+  expect(procedures['search']!.output).toMatchObject({
     type: 'array',
     items: { type: 'string' },
   });

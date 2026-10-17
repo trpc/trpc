@@ -12,7 +12,7 @@ const router = {
   health: t.procedure.query(() => 'ok'),
   double: t.procedure
     .input(z.object({ n: z.number() }))
-    .mutation(({ input }) => input.n * 2),
+    .mutation((opts) => opts.input.n * 2),
 };
 
 const server = TestServer.layer({ router }).pipe(
@@ -22,19 +22,19 @@ const server = TestServer.layer({ router }).pipe(
 );
 
 const client = Effect.gen(function* () {
-  const { url } = yield* TestServer;
+  const testServer = yield* TestServer;
   return createTrpcClient({
     router: routerType<typeof router>(),
-    links: [httpLink({ url })],
+    links: [httpLink({ url: testServer.url })],
   });
 });
 
 it.layer(server)('TestServer (01 Q1.4)', (it) => {
   it.effect('serves the router on a free port', () =>
     Effect.gen(function* () {
-      const { url, wsUrl } = yield* TestServer;
-      expect(url).toMatch(/^http:\/\/127\.0\.0\.1:\d+\/trpc$/);
-      expect(wsUrl).toBe(url.replace(/^http/, 'ws'));
+      const testServer = yield* TestServer;
+      expect(testServer.url).toMatch(/^http:\/\/127\.0\.0\.1:\d+\/trpc$/);
+      expect(testServer.wsUrl).toBe(testServer.url.replace(/^http/, 'ws'));
       const trpc = yield* client;
       expect(yield* Effect.promise(() => trpc.health.query())).toBe('ok');
     }),
@@ -42,13 +42,13 @@ it.layer(server)('TestServer (01 Q1.4)', (it) => {
 
   it.effect('records the requests it receives', () =>
     Effect.gen(function* () {
-      const { requests } = yield* TestServer;
-      const before = requests.length;
+      const testServer = yield* TestServer;
+      const before = testServer.requests.length;
       const trpc = yield* client;
       expect(yield* Effect.promise(() => trpc.double.mutate({ n: 21 }))).toBe(
         42,
       );
-      expect(requests.slice(before)).toMatchObject([
+      expect(testServer.requests.slice(before)).toMatchObject([
         { method: 'POST', url: expect.stringContaining('/trpc/double') },
       ]);
     }),

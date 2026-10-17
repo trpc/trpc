@@ -50,9 +50,9 @@ const useEntry = (promise: Promise<unknown>) => {
 export function useQuery<T, E>(
   promise: QueryPromise<T, E>,
 ): QueryPromise<T, E> {
-  const { entry, subscribe } = useEntry(promise);
-  const read = () => entry.promise;
-  return useSyncExternalStore(subscribe, read, read) as QueryPromise<T, E>;
+  const slot = useEntry(promise);
+  const read = () => slot.entry.promise as QueryPromise<T, E>;
+  return useSyncExternalStore(slot.subscribe, read, read);
 }
 
 /**
@@ -77,8 +77,8 @@ export interface QueryState extends QuerySnapshot {
  * @stability experimental
  */
 export function useQueryState(promise: Promise<unknown>): QueryState {
-  const { store, entry, subscribe } = useEntry(promise);
-  const read = () => entry.snapshot;
-  const snapshot = useSyncExternalStore(subscribe, read, read);
-  return { ...snapshot, refetch: () => store.refetch(entry) };
+  const slot = useEntry(promise);
+  const read = () => slot.entry.snapshot;
+  const snapshot = useSyncExternalStore(slot.subscribe, read, read);
+  return { ...snapshot, refetch: () => slot.store.refetch(slot.entry) };
 }

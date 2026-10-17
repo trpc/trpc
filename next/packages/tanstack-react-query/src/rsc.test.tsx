@@ -51,10 +51,10 @@ test('createTrpcRsc: per-request ctx and query client, and a server HydrationBou
   expect(db.calls).toEqual(['post.byId:2']);
 
   function Title() {
-    const { data } = useQuery(
+    const query = useQuery(
       app.trpc.post.byId.queryOptions({ input: { id: '2' } }),
     );
-    return <h1>{data?.createdAt.toISOString().slice(0, 10)}</h1>;
+    return <h1>{query.data?.createdAt.toISOString().slice(0, 10)}</h1>;
   }
   const browser = new QueryClient({
     defaultOptions: hydrationOptions({ serializer }),

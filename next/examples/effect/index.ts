@@ -62,9 +62,9 @@ class CurrentUser extends Context.Service<
 
 const t = initTrpc<{ ctx: { user: string | null } }>();
 
-const authed = t.procedure.provide(CurrentUser, ({ ctx }) =>
-  ctx.user
-    ? Effect.succeed({ name: ctx.user })
+const authed = t.procedure.provide(CurrentUser, (opts) =>
+  opts.ctx.user
+    ? Effect.succeed({ name: opts.ctx.user })
     : Effect.fail(new TrpcError({ code: 'UNAUTHORIZED' })),
 );
 
@@ -72,19 +72,19 @@ const appRouter = {
   post: {
     byId: t.procedure
       .input(Schema.Struct({ id: Schema.String }))
-      .query(({ input }) =>
+      .query((opts) =>
         Effect.gen(function* () {
           const posts = yield* Posts;
-          return yield* posts.find(input.id);
+          return yield* posts.find(opts.input.id);
         }),
       ),
     create: authed
       .input(Schema.Struct({ title: Schema.NonEmptyString }))
-      .mutation(({ input }) =>
+      .mutation((opts) =>
         Effect.gen(function* () {
           const user = yield* CurrentUser;
           const posts = yield* Posts;
-          return yield* posts.create(`${input.title} (by ${user.name})`);
+          return yield* posts.create(`${opts.input.title} (by ${user.name})`);
         }),
       ),
     all: t.procedure.subscription(() =>
@@ -101,8 +101,8 @@ export type AppRouter = typeof appRouter;
 const handler = createFetchHandler({
   router: appRouter,
   layer: Posts.memory,
-  createContext: ({ request }) => ({
-    user: request.headers['authorization'] ?? null,
+  createContext: (opts) => ({
+    user: opts.request.headers['authorization'] ?? null,
   }),
 });
 

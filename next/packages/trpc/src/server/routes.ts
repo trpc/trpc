@@ -37,7 +37,7 @@ export function httpParts(opts: {
 }): HttpParts {
   const wrap = (app: App) =>
     opts.middleware.reduceRight<App>((inner, m) => m(inner), app);
-  const { webSocket, endpoint } = opts;
+  const { endpoint } = opts;
   const route = wrap(
     Effect.withFiber((fiber) => {
       const request = Context.get(
@@ -45,12 +45,12 @@ export function httpParts(opts: {
         HttpServerRequest.HttpServerRequest,
       );
       if (!isUpgrade(request)) return opts.app;
-      const { pathname } = new URL(request.url, 'http://localhost');
-      if (pathname !== endpoint && pathname !== `${endpoint}/`) {
+      const url = new URL(request.url, 'http://localhost');
+      if (url.pathname !== endpoint && url.pathname !== `${endpoint}/`) {
         return Effect.succeed(HttpServerResponse.empty({ status: 404 }));
       }
       return Effect.as(
-        upgradeTo(request, (ws) => webSocket(ws, request)),
+        upgradeTo(request, (ws) => opts.webSocket(ws, request)),
         HttpServerResponse.empty(),
       );
     }),

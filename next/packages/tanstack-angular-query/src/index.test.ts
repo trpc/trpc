@@ -35,8 +35,8 @@ import {
 } from '../../tanstack-query/src/fixtures/app.ts';
 import { click, text, waitFor } from '../../trpc/src/fixtures/dom.ts';
 
-const { provideTrpc, injectTrpc, injectTrpcClient } =
-  createTrpcContext<AppClient>();
+const context = createTrpcContext<AppClient>();
+const { injectTrpc } = context;
 
 TestBed.initTestEnvironment(BrowserTestingModule, platformBrowserTesting());
 
@@ -48,7 +48,7 @@ function render<T>(component: Type<T>, client: AppClient) {
     providers: [
       provideZonelessChangeDetection(),
       provideTanStackQuery(queryClient),
-      provideTrpc(client),
+      context.provideTrpc(client),
     ],
   });
   const fixture = TestBed.createComponent(component);
@@ -178,13 +178,18 @@ const LiveView = Component({
 test('injectSubscription and live queries follow signals', async () => {
   await using app = await createApp();
   using view = render(LiveView, app.client);
-  const { seen, added } = view.fixture.componentInstance;
-  expectTypeOf(added.data).toEqualTypeOf<Signal<Post | undefined>>();
+  expectTypeOf(view.fixture.componentInstance.added.data).toEqualTypeOf<
+    Signal<Post | undefined>
+  >();
 
-  await waitFor(() => expect(seen).toEqual([2, 1]));
+  await waitFor(() =>
+    expect(view.fixture.componentInstance.seen).toEqual([2, 1]),
+  );
   await waitFor(() => expect(text(view.el, '.status')).toBe('idle'));
   click(view.el, '.again');
-  await waitFor(() => expect(seen).toEqual([2, 1, 1]));
+  await waitFor(() =>
+    expect(view.fixture.componentInstance.seen).toEqual([2, 1, 1]),
+  );
 
   await waitFor(() => expect(db.listeners.size).toBe(1));
   app.addPost('Angular post');
@@ -222,7 +227,7 @@ const ClientView = Component({
   template: `<p class="error">{{ failing.error()?.code }}</p>`,
 })(
   class {
-    client = injectTrpcClient();
+    client = context.injectTrpcClient();
     trpc = injectTrpc();
     injector = inject(Injector);
     failing = injectSubscription(() =>

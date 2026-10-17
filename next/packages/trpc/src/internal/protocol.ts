@@ -303,9 +303,9 @@ async function* readText(
   const decoder = new TextDecoder();
   try {
     while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      const text = decoder.decode(value, { stream: true });
+      const chunk = await reader.read();
+      if (chunk.done) break;
+      const text = decoder.decode(chunk.value, { stream: true });
       if (text) yield text;
     }
     const rest = decoder.decode();

@@ -44,8 +44,8 @@ const at = new Date('2026-10-16T00:00:00.000Z');
 const impl = t.implement(appContract);
 const router = impl.router({
   post: {
-    byId: impl.post.byId.query(({ input }) => ({
-      id: input.id,
+    byId: impl.post.byId.query((opts) => ({
+      id: opts.input.id,
       title: 'Hello',
       at,
     })),
@@ -86,7 +86,7 @@ test('results that drift from the contract fail with PARSE_ERROR', async () => {
       post: {
         byId: t.procedure
           .input(z.object({ id: z.string() }))
-          .query(({ input }) => ({ id: Number(input.id), title: 'Hello', at })),
+          .query((opts) => ({ id: Number(opts.input.id), title: 'Hello', at })),
         feed: t.procedure.subscription(async function* () {
           yield tracked('1', { id: '1', title: 2, at });
         }),
@@ -153,10 +153,10 @@ test('streamed outputs, unvalidated outputs, plain events, opt-outs and paths ou
     strict: p.procedure
       .input(z.object({ n: z.number() }))
       .output(z.number())
-      .query(({ input }) => input.n),
+      .query((opts) => opts.input.n),
     perCall: p.procedure
       .input(() => z.object({ n: z.number() }))
-      .query(({ input }) => input.n),
+      .query((opts) => opts.input.n),
     nested: { leaf: p.procedure.output(z.number()).query(() => 1) },
   } satisfies AnyRouter;
   await using http = await createTestServer({

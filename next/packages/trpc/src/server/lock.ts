@@ -158,7 +158,7 @@ export function experimental_memoryLocker(
     return {
       acquire: (key, opts) =>
         Effect.gen(function* () {
-          const { ttl, timeout } = resolve(options, opts);
+          const resolved = resolve(options, opts);
           const token = {};
           yield* Effect.addFinalizer(() => release(key, token));
           const entry = entries.get(key);
@@ -169,13 +169,13 @@ export function experimental_memoryLocker(
             entry.waiters.push({ token, granted });
             const got = yield* Effect.timeoutOption(
               Deferred.await(granted),
-              timeout,
+              resolved.timeout,
             );
             if (Option.isNone(got) && entries.get(key)?.holder !== token) {
               return yield* new experimental_LockTimeout({ key });
             }
           }
-          yield* expireAfter(ttl, release(key, token));
+          yield* expireAfter(resolved.ttl, release(key, token));
           return { waited: entry !== undefined };
         }),
     };
@@ -229,12 +229,13 @@ export function experimental_redisLocker(
       return {
         acquire: (key, opts) =>
           Effect.gen(function* () {
-            const { ttl, timeout } = resolve(options, opts);
+            const resolved = resolve(options, opts);
             const stored = prefix + key;
             const token = crypto.randomUUID();
             yield* Effect.addFinalizer(() => release(stored, token));
             const deadline =
-              (yield* Clock.currentTimeMillis) + Duration.toMillis(timeout);
+              (yield* Clock.currentTimeMillis) +
+              Duration.toMillis(resolved.timeout);
             let waited = false;
             while (true) {
               const set = yield* Effect.orDie(
@@ -244,7 +245,7 @@ export function experimental_redisLocker(
                   token,
                   'NX',
                   'PX',
-                  String(Math.max(1, Duration.toMillis(ttl))),
+                  String(Math.max(1, Duration.toMillis(resolved.ttl))),
                 ),
               );
               if (set === 'OK') return { waited };

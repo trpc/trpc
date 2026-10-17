@@ -12,21 +12,21 @@ const t = initTrpc<{ ctx: { user: string } }>();
 const router = {
   greet: t.procedure
     .input(z.object({ name: z.string() }).optional())
-    .query(({ input, ctx }) => `hello ${input?.name ?? ctx.user}`),
+    .query((opts) => `hello ${opts.input?.name ?? opts.ctx.user}`),
   write: t.procedure
     .input(z.unknown())
-    .mutation(({ input }) => input ?? 'written'),
-  tagged: t.procedure.input(z.string()).query(({ input, response }) => {
-    response.headers.set('x-tag', input);
-    return input;
+    .mutation((opts) => opts.input ?? 'written'),
+  tagged: t.procedure.input(z.string()).query((opts) => {
+    opts.response.headers.set('x-tag', opts.input);
+    return opts.input;
   }),
   circular: t.procedure.query(() => {
     const loop: Record<string, unknown> = {};
     loop['self'] = loop;
     return loop;
   }),
-  raw: t.procedure.query(({ response }) => {
-    response.headers.append('set-cookie', 'session=1');
+  raw: t.procedure.query((opts) => {
+    opts.response.headers.append('set-cookie', 'session=1');
     return HttpServerResponse.text('by hand');
   }),
   ticks: t.procedure.subscription(async function* () {
@@ -55,10 +55,14 @@ const lines = async (res: Response) =>
 
 test('a raw request path with dot segments is resolved like a URL', async () => {
   await using server = await createTestServer({ router, createContext });
-  const { port } = new URL(server.url);
+  const url = new URL(server.url);
   const body = await new Promise<string>((resolve, reject) => {
     const req = httpRequest(
-      { host: '127.0.0.1', port, path: '/trpc/nowhere/../greet?ignored=1' },
+      {
+        host: '127.0.0.1',
+        port: url.port,
+        path: '/trpc/nowhere/../greet?ignored=1',
+      },
       (res) => {
         let text = '';
         res.on('data', (chunk: Buffer) => (text += chunk.toString()));

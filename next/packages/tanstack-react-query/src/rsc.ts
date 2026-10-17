@@ -141,7 +141,7 @@ export function createTrpcRsc<TRouter extends AnyRouter>(
     prefetch: (options) => {
       void getQueryClient().query(options).catch(noop);
     },
-    HydrationBoundary: ({ children }) => {
+    HydrationBoundary: (props) => {
       const client = getQueryClient();
       const state = dehydrate(client, {
         shouldRedactErrors:
@@ -149,7 +149,7 @@ export function createTrpcRsc<TRouter extends AnyRouter>(
           ((error) => !hasDigest(error)),
         ...dehydrateOptions,
       });
-      return createElement(ClientHydrationBoundary, { state }, children);
+      return createElement(ClientHydrationBoundary, { state }, props.children);
     },
   };
 }

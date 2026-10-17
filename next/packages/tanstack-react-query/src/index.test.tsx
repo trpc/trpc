@@ -72,9 +72,11 @@ function mount(ui: ReactNode, client: AppClient) {
   };
 }
 
-function PostTitle({ id }: { id: string }) {
+function PostTitle(props: { id: string }) {
   const trpc = useTrpc();
-  const post = useQuery(trpc.post.byId.queryOptions({ input: { id } }));
+  const post = useQuery(
+    trpc.post.byId.queryOptions({ input: { id: props.id } }),
+  );
   if (post.error) {
     return (
       <p className="error">
@@ -142,11 +144,11 @@ test('useSuspenseQuery suspends until the data arrives', async () => {
   await using app = await createApp();
   function Title() {
     const trpc = useTrpc();
-    const { data } = useSuspenseQuery(
+    const query = useSuspenseQuery(
       trpc.post.byId.queryOptions({ input: { id: '2' } }),
     );
-    expectTypeOf(data).toEqualTypeOf<Post>();
-    return <h1>{data.title}</h1>;
+    expectTypeOf(query.data).toEqualTypeOf<Post>();
+    return <h1>{query.data.title}</h1>;
   }
   using view = mount(
     <Suspense fallback={<p>suspended</p>}>
@@ -284,10 +286,10 @@ test('useMutationState reads pending variables through mutationFilter', async ()
 
 test('components with the same useSubscription key share one subscription', async () => {
   await using app = await createApp();
-  function Added({ name }: { name: string }) {
+  function Added(props: { name: string }) {
     const trpc = useTrpc();
     const added = useSubscription(trpc.post.onAdd.subscriptionOptions());
-    return <p className={name}>{added.data?.title}</p>;
+    return <p className={props.name}>{added.data?.title}</p>;
   }
   using view = mount(
     <>
@@ -309,10 +311,10 @@ test('server render with prefetched data, then hydrate without refetching', asyn
     const trpc = useTrpc();
     const client = useTrpcClient();
     expectTypeOf(client).toEqualTypeOf<AppClient>();
-    const { data } = useSuspenseQuery(
+    const query = useSuspenseQuery(
       trpc.post.byId.queryOptions({ input: { id: '3' } }),
     );
-    return <h1>{data.createdAt.toISOString().slice(0, 10)}</h1>;
+    return <h1>{query.data.createdAt.toISOString().slice(0, 10)}</h1>;
   }
 
   const serverQueryClient = new QueryClient({
@@ -398,8 +400,8 @@ test('createTrpcContext({ keyPrefix }) prefixes the provided helpers', () => {
 test("a context typed from a client factory takes its router, its links' context and their types", () => {
   class Offline extends TrpcError.Tagged('OFFLINE') {}
   const links = [
-    link<{ context: { priority?: 'high' }; errors: Offline }>(({ op, next }) =>
-      next(op),
+    link<{ context: { priority?: 'high' }; errors: Offline }>((opts) =>
+      opts.next(opts.op),
     ),
     httpLink({ url: 'http://localhost', serializer }),
   ] as const;

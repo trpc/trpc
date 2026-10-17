@@ -150,8 +150,8 @@ test('server render, dehydrate, then hydrateRoot in the browser without a reques
       <Title post={trpc.post.byId.query({ id: '1' })} />
     </Suspense>
   );
-  const { prelude } = await prerender(app(server));
-  const html = await new Response(prelude).text();
+  const rendered = await prerender(app(server));
+  const html = await new Response(rendered.prelude).text();
   expect(html).toContain('<h1>Hello</h1>');
   const state = JSON.parse(JSON.stringify(dehydrate(server)));
 

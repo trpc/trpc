@@ -58,8 +58,8 @@ function addPost(title: string): Post {
 const t = initTrpc<{ ctx: { locale: string | null } }>();
 
 export const appRouter = {
-  greeting: t.procedure.query(({ ctx }) => {
-    db.locales.push(ctx.locale);
+  greeting: t.procedure.query((opts) => {
+    db.locales.push(opts.ctx.locale);
     return 'hello' as const;
   }),
   post: {
@@ -79,8 +79,8 @@ export const appRouter = {
       }),
     create: t.procedure
       .input(z.object({ title: z.string().min(1) }))
-      .mutation(({ input }) => addPost(input.title)),
-    onAdd: t.procedure.subscription(async function* ({ signal }) {
+      .mutation((opts) => addPost(opts.input.title)),
+    onAdd: t.procedure.subscription(async function* (opts) {
       const queue: Post[] = [];
       let wake: (() => void) | undefined;
       const listener = (post: Post) => {
@@ -89,7 +89,7 @@ export const appRouter = {
       };
       db.listeners.add(listener);
       try {
-        while (!signal.aborted) {
+        while (!opts.signal.aborted) {
           const next = queue.shift();
           if (next) {
             yield next;
@@ -97,7 +97,9 @@ export const appRouter = {
           }
           await new Promise<void>((resolve) => {
             wake = resolve;
-            signal.addEventListener('abort', () => resolve(), { once: true });
+            opts.signal.addEventListener('abort', () => resolve(), {
+              once: true,
+            });
           });
         }
       } finally {
@@ -108,16 +110,16 @@ export const appRouter = {
   chat: {
     reply: t.procedure
       .input(z.object({ prompt: z.string() }))
-      .query(async function* ({ input }) {
-        for (const word of `you said ${input.prompt}`.split(' ')) {
+      .query(async function* (opts) {
+        for (const word of `you said ${opts.input.prompt}`.split(' ')) {
           await sleep(5);
           yield word;
         }
       }),
-    forever: t.procedure.mutation(async function* ({ signal }) {
+    forever: t.procedure.mutation(async function* (opts) {
       db.openChats++;
       try {
-        for (let n = 0; !signal.aborted; n++) {
+        for (let n = 0; !opts.signal.aborted; n++) {
           await sleep(5);
           yield n;
         }
@@ -127,8 +129,8 @@ export const appRouter = {
     }),
     send: t.procedure
       .input(z.object({ text: z.string() }))
-      .mutation(async function* ({ input }) {
-        for (const word of `ok ${input.text}`.split(' ')) {
+      .mutation(async function* (opts) {
+        for (const word of `ok ${opts.input.text}`.split(' ')) {
           await sleep(5);
           yield word;
         }
@@ -137,10 +139,10 @@ export const appRouter = {
   clock: {
     ticks: t.procedure
       .input(z.object({ from: z.number() }))
-      .subscription(async function* ({ input, signal }) {
+      .subscription(async function* (opts) {
         db.openTickers++;
         try {
-          for (let n = input.from; !signal.aborted; n++) {
+          for (let n = opts.input.from; !opts.signal.aborted; n++) {
             yield n;
             await sleep(10);
           }
@@ -150,9 +152,9 @@ export const appRouter = {
       }),
     countdown: t.procedure
       .input(z.object({ from: z.number() }))
-      .subscription(async function* ({ input }) {
-        for (let n = input.from; n > 0; n--) yield n;
-        if (input.from === 0) throw error({ code: 'CONFLICT' });
+      .subscription(async function* (opts) {
+        for (let n = opts.input.from; n > 0; n--) yield n;
+        if (opts.input.from === 0) throw error({ code: 'CONFLICT' });
       }),
   },
 };
@@ -176,8 +178,8 @@ export async function createApp(opts: { posts?: number } = {}) {
         TestServer.layer({
           router: appRouter,
           serializer,
-          createContext: ({ request }) => ({
-            locale: request.headers['x-locale'] ?? null,
+          createContext: (args) => ({
+            locale: args.request.headers['x-locale'] ?? null,
           }),
         }).pipe(
           Layer.provide(

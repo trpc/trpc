@@ -100,8 +100,9 @@ function setup(snapshot: boolean) {
 }
 
 test('tRPC and Effect spans land in Workers Traces, nested as Effect nests them', async () => {
-  const { fake, client } = setup(true);
-  expect(await client.post.query()).toBe('ok');
+  const app = setup(true);
+  const { fake } = app;
+  expect(await app.client.post.query()).toBe('ok');
   const call = fake.spans.find((s) => s.name === 'trpc.post')!;
   expect(call).toMatchObject({ status: 'ok', ended: true });
   expect(call.attributes).toMatchObject({ 'rpc.system': 'trpc' });
@@ -114,21 +115,21 @@ test('tRPC and Effect spans land in Workers Traces, nested as Effect nests them'
 });
 
 test('failures set an error status', async () => {
-  const { fake, client } = setup(true);
-  await expect(client.missing.query()).rejects.toMatchObject({
+  const app = setup(true);
+  await expect(app.client.missing.query()).rejects.toMatchObject({
     code: 'NOT_FOUND',
   });
-  expect(fake.spans.find((s) => s.name === 'trpc.missing')).toMatchObject({
+  expect(app.fake.spans.find((s) => s.name === 'trpc.missing')).toMatchObject({
     status: 'error',
     ended: true,
   });
 });
 
 test('without a snapshot, spans are recorded but not nested', async () => {
-  const { fake, client } = setup(false);
-  expect(await client.post.query()).toBe('ok');
-  expect(fake.byName('load')).toMatchObject({ ended: true });
-  expect(fake.byName('load')?.parent).toBeUndefined();
+  const app = setup(false);
+  expect(await app.client.post.query()).toBe('ok');
+  expect(app.fake.byName('load')).toMatchObject({ ended: true });
+  expect(app.fake.byName('load')?.parent).toBeUndefined();
 });
 
 test('attributes of any type are recorded; non-Error failures and untraced spans too', async () => {

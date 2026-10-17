@@ -31,9 +31,9 @@ const posts = new Map<string, Post>([['1', { id: '1', title: 'Hello v12' }]]);
 
 const t = initTrpc<{ ctx: { user: string | null } }>();
 
-const authed = t.procedure.use(({ ctx, next }) =>
-  ctx.user
-    ? next({ ctx: { user: ctx.user } })
+const authed = t.procedure.use((opts) =>
+  opts.ctx.user
+    ? opts.next({ ctx: { user: opts.ctx.user } })
     : error({ code: 'UNAUTHORIZED', message: 'Send an authorization header' }),
 );
 
@@ -42,14 +42,17 @@ const appRouter = {
     byId: t.procedure
       .input(z.object({ id: z.string() }))
       .query(
-        ({ input }) =>
-          posts.get(input.id) ??
-          error({ code: 'NOT_FOUND', data: { id: input.id } }),
+        (opts) =>
+          posts.get(opts.input.id) ??
+          error({ code: 'NOT_FOUND', data: { id: opts.input.id } }),
       ),
     create: authed
       .input(z.object({ title: z.string().min(1) }))
-      .mutation(({ input }) => {
-        const post: Post = { id: String(posts.size + 1), title: input.title };
+      .mutation((opts) => {
+        const post: Post = {
+          id: String(posts.size + 1),
+          title: opts.input.title,
+        };
         posts.set(post.id, post);
         return post;
       }),
@@ -63,8 +66,8 @@ export type AppRouter = typeof appRouter;
 const handler = createFetchHandler({
   router: appRouter,
   batch: true,
-  createContext: ({ request }) => ({
-    user: request.headers['authorization'] ?? null,
+  createContext: (opts) => ({
+    user: opts.request.headers['authorization'] ?? null,
   }),
 });
 const runtime = ManagedRuntime.make(

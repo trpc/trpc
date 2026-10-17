@@ -490,17 +490,17 @@ export function createFetchHandler<
     extra?: Record<string, string>,
     set?: Headers,
   ): HttpServerResponse.HttpServerResponse => {
-    const { headers: fromHandle, cookies } = responseOptions(set);
+    const fromSet = responseOptions(set);
     const options: HttpServerResponse.Options.WithContentType = {
       status,
       contentType,
       headers: {
-        ...fromHandle,
+        ...fromSet.headers,
         [HEADER.version]: PROTOCOL_VERSION,
         [HEADER.serializer]: serializer.name,
         ...extra,
       },
-      cookies,
+      cookies: fromSet.cookies,
     };
     if (typeof body === 'string') return HttpServerResponse.text(body, options);
     if (body instanceof Blob) {
@@ -700,11 +700,12 @@ export function createFetchHandler<
         };
       }
       try {
-        const { head, chunks } = serializer.serializeDeferred(value, {
+        const serialized = serializer.serializeDeferred(value, {
           coerceError: coerceError(request, path, type),
         });
+        const { chunks } = serialized;
         if (chunks && sink.keep) {
-          const frames = sink.keep(head, chunks);
+          const frames = sink.keep(serialized.head, chunks);
           return {
             status: response.status ?? 200,
             body: undefined,
@@ -712,7 +713,12 @@ export function createFetchHandler<
             headers,
           };
         }
-        return { status: response.status ?? 200, body: head, chunks, headers };
+        return {
+          status: response.status ?? 200,
+          body: serialized.head,
+          chunks,
+          headers,
+        };
       } catch (cause) {
         const err = unexpectedError(cause);
         report(err, request, path, type);
@@ -936,14 +942,16 @@ export function createFetchHandler<
     response: HttpServerResponse.HttpServerResponse,
     set: Headers | undefined,
   ) => {
-    const { headers, cookies } = responseOptions(set);
+    const options = responseOptions(set);
+    const { headers } = options;
     let out = HttpServerResponse.setHeaders(response, {
       ...headers,
       ...response.headers,
       [HEADER.version]: PROTOCOL_VERSION,
       [HEADER.response]: '1',
     });
-    if (cookies) out = HttpServerResponse.mergeCookies(out, cookies);
+    if (options.cookies)
+      out = HttpServerResponse.mergeCookies(out, options.cookies);
     return out;
   };
 
@@ -1181,7 +1189,8 @@ export function createFetchHandler<
       context as Context.Context<HttpServerRequest.HttpServerRequest>,
       HttpServerRequest.HttpServerRequest,
     );
-    const { pathname, search } = splitUrl(request.url);
+    const parts = splitUrl(request.url);
+    const { pathname } = parts;
     const version = request.headers[HEADER.version];
     if (version !== undefined && version !== PROTOCOL_VERSION) {
       return Effect.fail(
@@ -1199,7 +1208,7 @@ export function createFetchHandler<
     if (rest === '' && request.headers[HEADER.batch] === '1') {
       return batched(request, parent);
     }
-    return single(request, search, decodeURIComponent(rest), parent);
+    return single(request, parts.search, decodeURIComponent(rest), parent);
   }).pipe(
     Effect.catchCause((cause) =>
       Effect.flatMap(HttpServerRequest.HttpServerRequest, (request) => {

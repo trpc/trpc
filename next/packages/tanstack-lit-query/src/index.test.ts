@@ -30,9 +30,10 @@ import {
   waitFor,
 } from '../../trpc/src/fixtures/dom.ts';
 
-const { TrpcProvider, useTrpc, useTrpcClient } = createTrpcContext<AppClient>();
+const context = createTrpcContext<AppClient>();
+const { useTrpc } = context;
 customElements.define('lit-query-provider', QueryClientProvider);
-customElements.define('lit-trpc-provider', TrpcProvider);
+customElements.define('lit-trpc-provider', context.TrpcProvider);
 
 /** Renders into light DOM so tests can query it. */
 class View extends LitElement {
@@ -109,8 +110,8 @@ class FeedView extends View {
   );
   create = createMutationController(this, () =>
     this.trpc.post.create.mutationOptions({
-      onSuccess: (_data, _vars, _result, { client }) =>
-        client.invalidateQueries(this.trpc.post.pathFilter()),
+      onSuccess: (_data, _vars, _result, opts) =>
+        opts.client.invalidateQueries(this.trpc.post.pathFilter()),
     }),
   );
 
@@ -183,13 +184,13 @@ customElements.define('lit-live-view', LiveView);
 test('createSubscriptionController and live queries follow host state', async () => {
   await using app = await createApp();
   using view = mount<LiveView>('lit-live-view', app.client);
-  const { seen, added } = view.view;
-  expectTypeOf(added.current.data).toEqualTypeOf<Post | undefined>();
+  const host = view.view;
+  expectTypeOf(host.added.current.data).toEqualTypeOf<Post | undefined>();
 
-  await waitFor(() => expect(seen).toEqual([2, 1]));
+  await waitFor(() => expect(host.seen).toEqual([2, 1]));
   await waitFor(() => expect(text(view.el, '.status')).toBe('idle'));
   click(view.el, '.again');
-  await waitFor(() => expect(seen).toEqual([2, 1, 1]));
+  await waitFor(() => expect(host.seen).toEqual([2, 1, 1]));
 
   await waitFor(() => expect(db.listeners.size).toBe(1));
   app.addPost('Lit post');
@@ -225,7 +226,7 @@ test('useTrpc throws outside a provider', async () => {
 });
 
 class ClientView extends View {
-  client = useTrpcClient(this);
+  client = context.useTrpcClient(this);
 }
 customElements.define('lit-client-view', ClientView);
 
@@ -244,8 +245,8 @@ test('a provider swaps its client; a controller with fixed options reconnects, r
   const local = createTrpcClient({
     router: routerType<AppRouter>(),
     links: [
-      link(({ op }) =>
-        op.type === 'subscription'
+      link((opts) =>
+        opts.op.type === 'subscription'
           ? Stream.fromPubSub(posts).pipe(
               Stream.onStart(Effect.sync(() => open++)),
               Stream.ensuring(Effect.sync(() => open--)),

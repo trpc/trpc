@@ -9,7 +9,7 @@ export function Chat() {
   const reply = useMutation(
     trpc.chat.reply.streamedMutationOptions({ abortWhenUnobserved: true }),
   );
-  const { data: words = [] } = useQuery(trpc.chat.reply.chunksOptions());
+  const words = useQuery(trpc.chat.reply.chunksOptions());
   const [text, setText] = useState('');
   return (
     <section>
@@ -23,7 +23,7 @@ export function Chat() {
         <input value={text} onChange={(e) => setText(e.target.value)} />
         <button disabled={reply.isPending}>Send</button>
       </form>
-      <p>{words.join('')}</p>
+      <p>{(words.data ?? []).join('')}</p>
     </section>
   );
 }

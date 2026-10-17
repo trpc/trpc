@@ -281,8 +281,8 @@ test('the server keeps entries; dehydrate and hydrate carry them with the serial
 
 test('standardLinks is a links array; call options and errors stay typed', () => {
   using _db = freshDb();
-  const headerLink = link<{ context: { tenant?: string } }>(({ op, next }) =>
-    next(op),
+  const headerLink = link<{ context: { tenant?: string } }>((opts) =>
+    opts.next(opts.op),
   );
   const trpc = createReactClient({
     router: routerType<AppRouter>(),
@@ -390,12 +390,14 @@ test('an answer that lands after its entry was removed is dropped', async () => 
   using _db = freshDb();
   let open!: () => void;
   const gate = new Promise<void>((resolve) => (open = resolve));
-  const gated = link(({ op, next }) =>
-    next(op).pipe(
-      Stream.mapEffect((value) =>
-        Effect.promise(() => gate).pipe(Effect.as(value)),
+  const gated = link((opts) =>
+    opts
+      .next(opts.op)
+      .pipe(
+        Stream.mapEffect((value) =>
+          Effect.promise(() => gate).pipe(Effect.as(value)),
+        ),
       ),
-    ),
   );
   const trpc = make([cacheLink(), gated]);
   const one = trpc.post.byId.query({ id: '1' });

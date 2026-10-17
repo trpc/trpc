@@ -55,9 +55,9 @@ interface Ctx {
 }
 const t = initTrpc<{ ctx: Ctx }>();
 
-const withUser = t.procedure.provide(CurrentUser, ({ ctx }) =>
-  ctx.user
-    ? Effect.succeed({ name: ctx.user })
+const withUser = t.procedure.provide(CurrentUser, (opts) =>
+  opts.ctx.user
+    ? Effect.succeed({ name: opts.ctx.user })
     : Effect.fail(error({ code: 'UNAUTHORIZED', message: 'Sign in first' })),
 );
 
@@ -65,12 +65,15 @@ const aborted = { count: 0 };
 
 const router = {
   post: {
-    byId: t.procedure.input(z.object({ id: z.string() })).query(({ input }) =>
+    byId: t.procedure.input(z.object({ id: z.string() })).query((opts) =>
       Effect.gen(function* () {
         const repo = yield* PostRepo;
-        const post = yield* repo.find(input.id);
+        const post = yield* repo.find(opts.input.id);
         if (!post) {
-          return yield* error({ code: 'NOT_FOUND', data: { id: input.id } });
+          return yield* error({
+            code: 'NOT_FOUND',
+            data: { id: opts.input.id },
+          });
         }
         return post;
       }),
@@ -249,10 +252,10 @@ test('every call runs in a span named after its path', async () => {
         byId: t.procedure
           .input(z.object({ id: z.string() }))
           .errors({ NOT_FOUND: {} })
-          .query(({ input, errors }) =>
-            input.id === '1'
+          .query((opts) =>
+            opts.input.id === '1'
               ? Effect.succeed('Hello').pipe(Effect.withSpan('db.find'))
-              : errors.NOT_FOUND(),
+              : opts.errors.NOT_FOUND(),
           ),
       },
     },

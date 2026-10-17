@@ -54,18 +54,18 @@ const router = {
         messages: z.array(z.custom<UIMessage>()),
       }),
     )
-    .mutation(async ({ input, signal }) => {
+    .mutation(async (opts) => {
       const result = streamText({
         model,
-        messages: await convertToModelMessages(input.messages),
-        abortSignal: signal,
+        messages: await convertToModelMessages(opts.input.messages),
+        abortSignal: opts.signal,
       });
       return toUIMessageStream({ stream: result.stream });
     }),
-  weather: t.procedure.input(WeatherInput).query(({ input, ctx }) => ({
-    city: input.city,
+  weather: t.procedure.input(WeatherInput).query((opts) => ({
+    city: opts.input.city,
     celsius: 21,
-    for: ctx.user,
+    for: opts.ctx.user,
   })),
 };
 
@@ -79,8 +79,11 @@ test('a procedure streams an AI SDK UI message stream that useChat can read', as
     links: [httpLink({ url: server.url })],
   });
   const transport: ChatTransport<UIMessage> = {
-    sendMessages: ({ chatId, messages, abortSignal }) =>
-      client.chat.mutate({ chatId, messages }, { signal: abortSignal }),
+    sendMessages: (opts) =>
+      client.chat.mutate(
+        { chatId: opts.chatId, messages: opts.messages },
+        { signal: opts.abortSignal },
+      ),
     reconnectToStream: async () => null,
   };
 

@@ -62,8 +62,8 @@ let stopped = 0;
 
 const t = initTrpc();
 const router = {
-  echo: t.procedure.input(z.unknown()).mutation(({ input }) => input),
-  find: t.procedure.input(z.unknown()).query(({ input }) => input ?? 'none'),
+  echo: t.procedure.input(z.unknown()).mutation((opts) => opts.input),
+  find: t.procedure.input(z.unknown()).query((opts) => opts.input ?? 'none'),
   graph: t.procedure.query(() => {
     const root: Record<string, unknown> = { name: 'root', tags: ['$0', '$1'] };
     root['self'] = root;
@@ -160,8 +160,8 @@ function setup() {
 }
 
 test('cycles and `$`-strings survive the round trip, outputs and inputs', async () => {
-  const { client, handler } = setup();
-  const graph = (await client.graph.query()) as Record<string, any>;
+  const app = setup();
+  const graph = (await app.client.graph.query()) as Record<string, any>;
   expect(graph['name']).toBe('root');
   expect(graph['self']).toBe(graph);
   expect(graph['tags']).toEqual(['$0', '$1']);
@@ -171,15 +171,18 @@ test('cycles and `$`-strings survive the round trip, outputs and inputs', async 
 
   const cyclic: Record<string, unknown> = { label: '$label' };
   cyclic['again'] = cyclic;
-  const echoed = (await client.echo.mutate(cyclic)) as Record<string, unknown>;
+  const echoed = (await app.client.echo.mutate(cyclic)) as Record<
+    string,
+    unknown
+  >;
   expect(echoed['label']).toBe('$label');
   expect(echoed['again']).toBe(echoed);
-  await handler.dispose();
+  await app.handler.dispose();
 });
 
 test('a cycle inside a deferred value resolves; one that cannot be written rejects', async () => {
-  const { client, handler } = setup();
-  const later = (await client.later.query()) as {
+  const app = setup();
+  const later = (await app.client.later.query()) as {
     loop: Promise<Record<string, unknown>>;
     opaque: Promise<unknown>;
   };
@@ -187,34 +190,34 @@ test('a cycle inside a deferred value resolves; one that cannot be written rejec
   expect(loop['at']).toBe('deferred');
   expect(loop['next']).toBe(loop);
   await expect(later.opaque).rejects.toBeDefined();
-  await handler.dispose();
+  await app.handler.dispose();
 });
 
 test('custom types: outputs only when input: false', async () => {
-  const { client, post, handler } = setup();
-  expect(await client.money.query()).toEqual(new Money(250));
-  const [, refused] = await safe(client.echo.mutate(new Money(1) as never));
+  const app = setup();
+  expect(await app.client.money.query()).toEqual(new Money(250));
+  const [, refused] = await safe(app.client.echo.mutate(new Money(1) as never));
   expect(refused).toMatchObject({
     code: 'PARSE_ERROR',
     message: 'No deserializer for type: Money',
   });
-  const forged = await post({ json: { _: '$', type: 'Nope', value: 1 } });
+  const forged = await app.post({ json: { _: '$', type: 'Nope', value: 1 } });
   expect(await forged.json()).toMatchObject({
     json: { error: { message: 'No deserializer for type: Nope' } },
   });
-  await handler.dispose();
+  await app.handler.dispose();
 });
 
 test('inputs past maxDepth, with forbidden keys, or not JSON values are refused', async () => {
-  const { post, handler } = setup();
+  const app = setup();
   let deep: unknown = 'leaf';
   for (let i = 0; i < 10; i++) deep = [deep];
-  const tooDeep = await post({ json: deep });
+  const tooDeep = await app.post({ json: deep });
   expect(await tooDeep.json()).toMatchObject({
     json: { error: { message: 'Max depth exceeded' } },
   });
 
-  const proto = await handler.fetch(
+  const proto = await app.handler.fetch(
     new Request('http://localhost/trpc/echo', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -225,9 +228,9 @@ test('inputs past maxDepth, with forbidden keys, or not JSON values are refused'
     json: { error: { message: 'Forbidden key: __proto__' } },
   });
 
-  const ref = await post({ json: '$7', refs: { $7: { ok: true } } });
+  const ref = await app.post({ json: '$7', refs: { $7: { ok: true } } });
   expect(await ref.json()).toEqual({ json: { ok: true } });
-  await handler.dispose();
+  await app.handler.dispose();
 });
 
 test('`string` is a reserved type name', () => {
@@ -244,16 +247,19 @@ test('`string` is a reserved type name', () => {
 });
 
 test('a GET query carries refs in the URL, and reads the query string strictly or leniently', async () => {
-  const { client, handler } = setup();
+  const app = setup();
   const cyclic: Record<string, unknown> = { q: 'x' };
   cyclic['self'] = cyclic;
-  const found = (await client.find.query(cyclic)) as Record<string, unknown>;
+  const found = (await app.client.find.query(cyclic)) as Record<
+    string,
+    unknown
+  >;
   expect(found['self']).toBe(found);
   // A cycle below the root is a ref, sent as `refs=`; its repeats share it.
   const inner: Record<string, unknown> = { marker: new Marker() };
   inner['a'] = inner;
   inner['b'] = inner;
-  const nested = (await client.find.query({ inner })) as {
+  const nested = (await app.client.find.query({ inner })) as {
     inner: Record<string, unknown>;
   };
   expect(nested.inner['a']).toBe(nested.inner);
@@ -262,7 +268,9 @@ test('a GET query carries refs in the URL, and reads the query string strictly o
 
   const get = async (search: string) =>
     (await (
-      await handler.fetch(new Request(`http://localhost/trpc/find${search}`))
+      await app.handler.fetch(
+        new Request(`http://localhost/trpc/find${search}`),
+      )
     ).json()) as unknown;
   const refs = encodeURIComponent(JSON.stringify({ $1: 'from refs' }));
   expect(await get(`?input=%22%241%22&refs=${refs}`)).toEqual({
@@ -276,12 +284,12 @@ test('a GET query carries refs in the URL, and reads the query string strictly o
   expect(await get('?input')).toMatchObject({
     json: { error: { code: 'PARSE_ERROR' } },
   });
-  await handler.dispose();
+  await app.handler.dispose();
 });
 
 test('deferred values: rejections, iterators that throw or return, streams, files and blobs', async () => {
-  const { client, handler } = setup();
-  const out = (await client.mixed.query()) as Record<string, any>;
+  const app = setup();
+  const out = (await app.client.mixed.query()) as Record<string, any>;
   await expect(out['missing']).rejects.toMatchObject({
     code: 'NOT_FOUND',
     message: 'gone',
@@ -323,7 +331,7 @@ test('deferred values: rejections, iterators that throw or return, streams, file
     'x/y',
     [1, 2, 3],
   ]);
-  await handler.dispose();
+  await app.handler.dispose();
 });
 
 test('a streamed head the client cannot read fails the call instead of hanging', async () => {
@@ -355,7 +363,8 @@ test('a streamed head the client cannot read fails the call instead of hanging',
 });
 
 test('built-in types round-trip: headers, every typed array, search params, odd numbers and dates', async () => {
-  const { client, post, handler } = setup();
+  const app = setup();
+  const { client } = app;
   const typed = [
     new Int8Array([-1]),
     new Uint8Array([1]),
@@ -409,7 +418,7 @@ test('built-in types round-trip: headers, every typed array, search params, odd 
     client.echo.mutate(new DataView(new ArrayBuffer(1))),
   );
   expect(view?.message).toContain('Do not know how to serialize');
-  const forged = await post({
+  const forged = await app.post({
     json: { _: '$', type: 'TypedArray', value: ['Nope', [1]] },
   });
   expect(await forged.json()).toMatchObject({
@@ -420,12 +429,12 @@ test('built-in types round-trip: headers, every typed array, search params, odd 
       },
     },
   });
-  await handler.dispose();
+  await app.handler.dispose();
 });
 
 test("a deferred value the server can't write, or the client can't read, fails alone", async () => {
-  const { client, handler } = setup();
-  const out = (await client.partial.query()) as Record<string, any>;
+  const app = setup();
+  const out = (await app.client.partial.query()) as Record<string, any>;
   // Masked on the server, which stops the source too.
   await expect(out['unwritable']).rejects.toMatchObject({
     code: 'INTERNAL_SERVER_ERROR',
@@ -452,7 +461,7 @@ test("a deferred value the server can't write, or the client can't read, fails a
     code: 'CONFLICT',
     message: 'torn',
   });
-  await handler.dispose();
+  await app.handler.dispose();
 });
 
 test('forged streams: bad or missing file bytes, bare refs, unreadable frames and lines', async () => {

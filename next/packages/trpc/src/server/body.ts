@@ -69,8 +69,7 @@ export const readBytes = (
     if (replayed === 'consumed') return yield* Effect.fail(consumedError());
     const chunks: Uint8Array[] = [];
     let size = 0;
-    const { source } = request;
-    if (source instanceof Request && source.body === null) {
+    if (request.source instanceof Request && request.source.body === null) {
       // No body: nothing to read.
     } else if (replayed) {
       chunks.push(replayed);

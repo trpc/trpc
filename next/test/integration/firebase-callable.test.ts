@@ -27,14 +27,14 @@ const appRouter = {
   post: {
     create: t.procedure
       .input(Schema.Struct({ title: Schema.String }))
-      .mutation(({ input, ctx }) =>
-        ctx.uid === null
+      .mutation((opts) =>
+        opts.ctx.uid === null
           ? error({ code: 'UNAUTHORIZED' })
-          : input.title === 'boom'
+          : opts.input.title === 'boom'
             ? (() => {
                 throw new Error('secret detail');
               })()
-            : { title: input.title, by: ctx.uid },
+            : { title: opts.input.title, by: opts.ctx.uid },
       ),
   },
 };

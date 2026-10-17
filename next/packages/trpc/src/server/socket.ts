@@ -291,7 +291,7 @@ export function connectionReceiver(
     unpark?: (id: number) => void;
   },
 ): ConnectionReceiver {
-  const { request, transport } = opts;
+  const { request } = opts;
   const calls = new Map<number, AbortController>();
   let connectionParams = opts.connectionParams;
   let closed = false;
@@ -414,16 +414,15 @@ export function connectionReceiver(
         platform: opts.platform,
         calls: [{ path, type }],
         signal,
-        transport,
+        transport: opts.transport,
         connectionParams: callParams,
       });
-      const { hibernate } = opts;
-      const services =
-        hibernate && type === 'subscription'
-          ? Context.make(HibernationSlot, {
-              park: (sub) => (parked = hibernate({ ...sub, id, path })),
-            })
-          : undefined;
+      const hibernate = type === 'subscription' ? opts.hibernate : undefined;
+      const services = hibernate
+        ? Context.make(HibernationSlot, {
+            park: (sub) => (parked = hibernate({ ...sub, id, path })),
+          })
+        : undefined;
       const exit = await core.run({
         request,
         procedure,
@@ -466,16 +465,16 @@ export function connectionReceiver(
         if (!parked) conn.send({ id, type: 'done' });
         return;
       }
-      const { head, chunks } = core.serializer.serializeDeferred(exit.value, {
+      const serialized = core.serializer.serializeDeferred(exit.value, {
         coerceError: coerceError(path, type),
       });
-      if (!chunks) {
-        conn.send({ id, type: 'result', body: head });
+      if (!serialized.chunks) {
+        conn.send({ id, type: 'result', body: serialized.head });
         return;
       }
-      conn.send({ id, type: 'result', body: head, deferred: true });
+      conn.send({ id, type: 'result', body: serialized.head, deferred: true });
       await Effect.runPromiseExit(
-        Stream.runForEach(chunks, (chunk) =>
+        Stream.runForEach(serialized.chunks, (chunk) =>
           Effect.sync(() => {
             if (live()) conn.send({ id, type: 'chunk', chunk });
           }),

@@ -30,22 +30,25 @@ const plugin = initTrpc<{ ctx: { db: Db }; meta: { audit?: string } }>();
 
 export const audited = plugin.procedure
   .input(z.object({ orgId: z.string() }))
-  .use(({ ctx, input, meta, next }) => {
+  .use((opts) => {
+    const { input } = opts;
     if (input.orgId === 'banned') {
       return error({ code: 'FORBIDDEN', data: { orgId: input.orgId } });
     }
-    return next({
+    return opts.next({
       ctx: {
         audit: (what: string) =>
-          ctx.db.log.push(`${meta.audit ?? '?'}:${input.orgId}:${what}`),
+          opts.ctx.db.log.push(
+            `${opts.meta.audit ?? '?'}:${input.orgId}:${what}`,
+          ),
       },
     });
   });
 
 export const requireUser = middleware<{ ctx: { user: string | null } }>()(
-  ({ ctx, next }) =>
-    ctx.user
-      ? next({ ctx: { user: ctx.user } })
+  (opts) =>
+    opts.ctx.user
+      ? opts.next({ ctx: { user: opts.ctx.user } })
       : error({ code: 'UNAUTHORIZED' }),
 );
 
@@ -64,24 +67,25 @@ const projectRouter = {
     .concat(audited)
     .meta({ audit: 'rename' })
     .input(z.object({ name: z.string() }))
-    .mutation(({ ctx, input }) => {
-      ctx.audit(input.name);
-      return { orgId: input.orgId, name: input.name, by: ctx.user };
+    .mutation((opts) => {
+      const { input } = opts;
+      opts.ctx.audit(input.name);
+      return { orgId: input.orgId, name: input.name, by: opts.ctx.user };
     }),
 } satisfies AnyRouter;
 
 const searchRouter = {
   search: t.procedure
-    .input(({ ctx }) =>
+    .input((opts) =>
       z.object({
         q: z.string(),
         limit: z
           .number()
-          .max(ctx.plan === 'pro' ? 100 : 10)
+          .max(opts.ctx.plan === 'pro' ? 100 : 10)
           .default(5),
       }),
     )
-    .query(({ input }) => ({ q: input.q, limit: input.limit })),
+    .query((opts) => ({ q: opts.input.q, limit: opts.input.limit })),
 } satisfies AnyRouter;
 
 const router = mergeRouters(projectRouter, searchRouter, {
@@ -152,40 +156,37 @@ test('concat checks the ctx a plugin requires', () => {
   // @ts-expect-error -- `db` is missing from this ctx
   other.procedure.concat(audited);
 
-  const withDb = other.procedure.use(({ next }) =>
-    next({ ctx: { db: { log: [] } } }),
+  const withDb = other.procedure.use((opts) =>
+    opts.next({ ctx: { db: { log: [] } } }),
   );
   withDb.concat(audited);
 });
 
 test('concat runs the leading middleware an app and a plugin share once', async () => {
   const calls: string[] = [];
-  const session = middleware<{ ctx: { user: string | null } }>()(({
-    ctx,
-    next,
-  }) => {
+  const session = middleware<{ ctx: { user: string | null } }>()((opts) => {
     calls.push('session');
-    return next({ ctx: { session: ctx.user ?? 'anon' } });
+    return opts.next({ ctx: { session: opts.ctx.user ?? 'anon' } });
   });
   const pluginT = initTrpc<{ ctx: { user: string | null } }>();
-  const tagged = pluginT.procedure.use(session).use(({ ctx, next }) => {
+  const tagged = pluginT.procedure.use(session).use((opts) => {
     calls.push('plugin');
-    return next({ ctx: { tag: ctx.session } });
+    return opts.next({ ctx: { tag: opts.ctx.session } });
   });
   const caller = createRouterClient(
     {
       shared: t.procedure
         .use(session)
         .concat(tagged)
-        .query(({ ctx }) => ctx.tag),
+        .query((opts) => opts.ctx.tag),
       reordered: t.procedure
-        .use(({ next }) => {
+        .use((opts) => {
           calls.push('log');
-          return next();
+          return opts.next();
         })
         .use(session)
         .concat(tagged)
-        .query(({ ctx }) => ctx.tag),
+        .query((opts) => opts.ctx.tag),
     },
     {
       ctx: { db: { log: [] }, user: 'ada', plan: 'free' },
@@ -232,7 +233,7 @@ test('concat shares leading inputs and provides only when they are the same', as
       .query(tenantName),
     provideThenUse: t.procedure
       .provide(Tenant, makeTenant)
-      .concat(pluginT.procedure.use(({ next }) => next()))
+      .concat(pluginT.procedure.use((opts) => opts.next()))
       .query(tenantName),
   };
   const caller = createRouterClient(r, {
@@ -304,11 +305,11 @@ test('procedures cannot be reached through prototype keys', async () => {
   }
 });
 
-const withTenant = middleware<{ ctx: { tenant: string } }>()(({ ctx, next }) =>
-  next({ ctx: { scope: `tenant:${ctx.tenant}` } }),
+const withTenant = middleware<{ ctx: { tenant: string } }>()((opts) =>
+  opts.next({ ctx: { scope: `tenant:${opts.ctx.tenant}` } }),
 );
-const effectTenant = middleware.effect<{ ctx: { tenant: string } }>()(
-  ({ ctx, next }) => next({ ctx: { region: ctx.tenant.slice(0, 2) } }),
+const effectTenant = middleware.effect<{ ctx: { tenant: string } }>()((opts) =>
+  opts.next({ ctx: { region: opts.ctx.tenant.slice(0, 2) } }),
 );
 
 test('ctx a standalone middleware needs and the procedure lacks becomes a root ctx requirement', async () => {
@@ -317,7 +318,7 @@ test('ctx a standalone middleware needs and the procedure lacks becomes a root c
     whoami: bare.procedure
       .use(withTenant)
       .use(effectTenant)
-      .query(({ ctx }) => `${ctx.scope}/${ctx.region}`),
+      .query((opts) => `${opts.ctx.scope}/${opts.ctx.region}`),
   };
   expectTypeOf<inferRouterContext<typeof tenantRouter>>().toEqualTypeOf<{
     tenant: string;
@@ -339,7 +340,7 @@ test('ctx a standalone middleware needs and the procedure lacks becomes a root c
   expect(await client.whoami.query()).toBe('tenant:us-2/us');
 
   // The procedure has `user`, but nullable: that's a conflict, not a requirement.
-  const strict = middleware<{ ctx: { user: string } }>()(({ next }) => next());
+  const strict = middleware<{ ctx: { user: string } }>()((opts) => opts.next());
   // @ts-expect-error -- `user` is `string | null` here
   t.procedure.use(strict);
   t.procedure.use(requireUser).use(strict);

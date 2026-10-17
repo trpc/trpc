@@ -309,7 +309,6 @@ export function createV11Handler<
   TRouter extends AnyRouter,
   TPlatform = undefined,
 >(opts: V11HandlerOptions<TRouter, TPlatform>): V11Handler<TPlatform> {
-  const { router } = opts;
   const base = createHandlerCore(
     opts as typeof opts & {
       createContext?: (o: CreateContextOpts<any>) => MaybePromise<object>;
@@ -349,7 +348,7 @@ export function createV11Handler<
     return opts.errorFormatter?.({ error, shape, path, type }) ?? shape;
   };
   const core: V11Core = {
-    router,
+    router: opts.router,
     base,
     input,
     output,
@@ -362,12 +361,12 @@ export function createV11Handler<
     body: string,
     set?: Headers,
   ): HttpServerResponse.HttpServerResponse => {
-    const { headers, cookies } = responseOptions(set);
+    const options = responseOptions(set);
     return HttpServerResponse.text(body, {
       status,
       contentType: 'application/json',
-      ...(headers ? { headers } : {}),
-      ...(cookies ? { cookies } : {}),
+      ...(options.headers ? { headers: options.headers } : {}),
+      ...(options.cookies ? { cookies: options.cookies } : {}),
     });
   };
 
@@ -560,10 +559,20 @@ export function createV11Handler<
           headers: response.headers,
         } as const;
       }
-      const { status, headers } = response;
       return HttpServerResponse.isHttpServerResponse(exit.value)
-        ? { ok: true, data: undefined, status, headers, response: exit.value }
-        : { ok: true, data: exit.value, status, headers };
+        ? {
+            ok: true,
+            data: undefined,
+            status: response.status,
+            headers: response.headers,
+            response: exit.value,
+          }
+        : {
+            ok: true,
+            data: exit.value,
+            status: response.status,
+            headers: response.headers,
+          };
     });
 
   const subscription = (
@@ -642,7 +651,8 @@ export function createV11Handler<
               ),
               { haltStrategy: 'left' },
             );
-      const { headers, cookies } = responseOptions(response.headers);
+      const options = responseOptions(response.headers);
+      const { headers } = options;
       return HttpServerResponse.stream(
         Stream.encodeText(body.pipe(abortOnInterrupt(controller))),
         {
@@ -653,7 +663,7 @@ export function createV11Handler<
             'cache-control': 'no-cache, no-transform',
             'x-accel-buffering': 'no',
           },
-          ...(cookies ? { cookies } : {}),
+          ...(options.cookies ? { cookies: options.cookies } : {}),
         },
       );
     });
@@ -667,7 +677,6 @@ export function createV11Handler<
     Effect.scoped(
       Effect.gen(function* () {
         const controller = yield* callSignal;
-        const { signal } = controller;
         const prepared = yield* Effect.exit(
           Effect.gen(function* () {
             const inputs = yield* readInputs(
@@ -687,7 +696,7 @@ export function createV11Handler<
                       ? []
                       : [{ path: c.path, type: c.type }],
                   ),
-                  signal,
+                  signal: controller.signal,
                 }),
               catch: (cause) =>
                 isTrpcError(cause) ? cause : unexpectedError(cause),
@@ -706,7 +715,7 @@ export function createV11Handler<
                 calls[i]!,
                 prepared.value.ctx,
                 prepared.value.inputs[i],
-                signal,
+                controller.signal,
                 !isBatch,
               );
 
@@ -728,12 +737,14 @@ export function createV11Handler<
           }
           const result = yield* outcome(0);
           if (result.ok && result.response) {
-            const { headers, cookies } = responseOptions(result.headers);
+            const options = responseOptions(result.headers);
+            const { headers } = options;
             let out = HttpServerResponse.setHeaders(result.response, {
               ...headers,
               ...result.response.headers,
             });
-            if (cookies) out = HttpServerResponse.mergeCookies(out, cookies);
+            if (options.cookies)
+              out = HttpServerResponse.mergeCookies(out, options.cookies);
             return out;
           }
           const body = yield* callBody(request, call, result);
@@ -850,7 +861,9 @@ export function createV11Handler<
         return yield* fail('BAD_REQUEST', 'Batch call exceeds maximum size');
       }
       const procedures = yield* Effect.promise(() =>
-        Promise.all(paths.map(async (path) => resolveProcedure(router, path))),
+        Promise.all(
+          paths.map(async (path) => resolveProcedure(opts.router, path)),
+        ),
       );
       const calls: Call[] = paths.map((path, i) => ({
         path,

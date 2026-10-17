@@ -70,27 +70,27 @@ const post = (
   );
 
 test('a call id runs the mutation once; calling again returns the kept result', async () => {
-  const { router, runs } = makeRouter();
+  const app = makeRouter();
   const handler = createFetchHandler({
-    router,
+    router: app.router,
     layer: Persistence.layerBackingMemory,
   });
   const first = await (await post(handler, 'order', { sku: 'a' }, 'c1')).json();
   const again = await (await post(handler, 'order', { sku: 'a' }, 'c1')).json();
   expect(again).toEqual(first);
-  expect(runs.order).toBe(1);
+  expect(app.runs.order).toBe(1);
 
   await post(handler, 'order', { sku: 'a' }, 'c2');
   await post(handler, 'order', { sku: 'a' });
   await post(handler, 'order', { sku: 'a' });
-  expect(runs.order).toBe(4);
+  expect(app.runs.order).toBe(4);
   await handler.dispose();
 });
 
 test('the same id with another input is a CONFLICT; a bad id is a BAD_REQUEST', async () => {
-  const { router } = makeRouter();
+  const app = makeRouter();
   const handler = createFetchHandler({
-    router,
+    router: app.router,
     layer: Persistence.layerBackingMemory,
   });
   await post(handler, 'order', { sku: 'a' }, 'c1');
@@ -106,9 +106,9 @@ test('the same id with another input is a CONFLICT; a bad id is a BAD_REQUEST', 
 });
 
 test('typed errors are kept, unexpected ones run again', async () => {
-  const { router, runs } = makeRouter();
+  const app = makeRouter();
   const handler = createFetchHandler({
-    router,
+    router: app.router,
     layer: Persistence.layerBackingMemory,
   });
   for (let i = 0; i < 2; i++) {
@@ -120,18 +120,18 @@ test('typed errors are kept, unexpected ones run again', async () => {
       },
     });
   }
-  expect(runs.order).toBe(1);
+  expect(app.runs.order).toBe(1);
 
   expect((await post(handler, 'fail', undefined, 'f1')).status).toBe(500);
   expect((await post(handler, 'fail', undefined, 'f1')).status).toBe(500);
-  expect(runs.fail).toBe(2);
+  expect(app.runs.fail).toBe(2);
   await handler.dispose();
 });
 
 test('a dropped request keeps running; the retry joins it', async () => {
-  const { router, runs } = makeRouter();
+  const app = makeRouter();
   const handler = createFetchHandler({
-    router,
+    router: app.router,
     layer: Persistence.layerBackingMemory,
   });
   const controller = new AbortController();
@@ -142,12 +142,12 @@ test('a dropped request keeps running; the retry joins it', async () => {
 
   const retried = await post(handler, 'slow', undefined, 's1');
   expect(await retried.json()).toEqual({ json: 1 });
-  expect(runs.slow).toBe(1);
+  expect(app.runs.slow).toBe(1);
   await handler.dispose();
 });
 
 test('instances sharing a store wait for the one running the call', async () => {
-  const { router, runs } = makeRouter();
+  const app = makeRouter();
   const shared = await Effect.runPromise(
     Effect.service(Persistence.BackingPersistence).pipe(
       Effect.provide(Persistence.layerBackingMemory),
@@ -155,7 +155,7 @@ test('instances sharing a store wait for the one running the call', async () => 
   );
   const instance = () =>
     createFetchHandler({
-      router,
+      router: app.router,
       layer: Layer.succeed(Persistence.BackingPersistence, {
         make: (id) => shared.make(id),
       }),
@@ -166,21 +166,21 @@ test('instances sharing a store wait for the one running the call', async () => 
   const second = post(b, 'slow', undefined, 'x1');
   expect(await (await second).json()).toEqual({ json: 1 });
   expect(await (await first).json()).toEqual({ json: 1 });
-  expect(runs.slow).toBe(1);
+  expect(app.runs.slow).toBe(1);
   await a.dispose();
   await b.dispose();
 });
 
 test('experimental_durableLink retries a lost response with the same id', async () => {
-  const { router, runs } = makeRouter();
+  const app = makeRouter();
   await using http = await createTestServer({
-    router,
+    router: app.router,
     layer: Persistence.layerBackingMemory,
   });
   const sent: Array<{ callId: string | null; batch: string | null }> = [];
   let drop = true;
   const client = createTrpcClient({
-    router,
+    router: app.router,
     links: [
       experimental_durableLink({ delayMs: () => 0 }),
       httpLink({
@@ -204,7 +204,7 @@ test('experimental_durableLink retries a lost response with the same id', async 
   });
   const order = await client.order.mutate({ sku: 'a' });
   expect(order).toEqual({ id: 1, sku: 'a', at: new Date(0).toJSON() });
-  expect(runs.order).toBe(1);
+  expect(app.runs.order).toBe(1);
   expect(sent).toHaveLength(2);
   expect(sent[0]!.callId).toMatch(/^[\w-]{36}$/);
   expect(sent[1]!.callId).toBe(sent[0]!.callId);
@@ -212,16 +212,16 @@ test('experimental_durableLink retries a lost response with the same id', async 
 
   await client.order.mutate({ sku: 'b' }, { callId: 'kept' });
   await client.order.mutate({ sku: 'b' }, { callId: 'kept' });
-  expect(runs.order).toBe(2);
+  expect(app.runs.order).toBe(2);
 
   const [, err] = await safe(client.order.mutate({ sku: 'gone' }));
   expect(err).toMatchObject({ code: 'OUT_OF_STOCK' });
 });
 
 test('a call id is kept over REST too', async () => {
-  const { router, runs } = makeRouter();
+  const app = makeRouter();
   const handler = createOpenApiHandler({
-    router,
+    router: app.router,
     layer: Persistence.layerBackingMemory,
   });
   const call = () =>
@@ -234,17 +234,17 @@ test('a call id is kept over REST too', async () => {
     );
   const first = await (await call()).json();
   expect(await (await call()).json()).toEqual(first);
-  expect(runs.order).toBe(1);
+  expect(app.runs.order).toBe(1);
   await handler.dispose();
 });
 
 test('experimental_durable() requires BackingPersistence', () => {
-  const { router } = makeRouter();
+  const app = makeRouter();
   expectTypeOf<
-    Parameters<typeof createFetchHandler<typeof router>>[0]['layer']
+    Parameters<typeof createFetchHandler<typeof app.router>>[0]['layer']
   >().toEqualTypeOf<Layer.Layer<Persistence.BackingPersistence, any, never>>();
   // @ts-expect-error -- BackingPersistence is required
-  createFetchHandler({ router });
+  createFetchHandler({ router: app.router });
 });
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -315,9 +315,9 @@ const cutAfter = (res: Response, lines: number): Response => {
           buffered = buffered.slice(newline + 1);
           return;
         }
-        const { done, value } = await reader.read();
-        if (done) return controller.close();
-        buffered += decoder.decode(value, { stream: true });
+        const chunk = await reader.read();
+        if (chunk.done) return controller.close();
+        buffered += decoder.decode(chunk.value, { stream: true });
       }
     },
   });
@@ -331,9 +331,9 @@ const lines = async (res: Response) =>
     .map((line) => JSON.parse(line) as unknown);
 
 test('a streamed output is kept as frames; a retry gets them from where it says', async () => {
-  const { router, runs } = makeFeed();
+  const feed = makeFeed();
   const handler = createFetchHandler({
-    router,
+    router: feed.router,
     layer: Persistence.layerBackingMemory,
   });
   const all = await lines(await post(handler, 'feed', undefined, 'f1'));
@@ -354,12 +354,12 @@ test('a streamed output is kept as frames; a retry gets them from where it says'
   expect(await lines(await resume('0'))).toEqual(all);
   expect(await lines(await resume('2'))).toEqual(all.slice(2));
   expect((await resume('two')).status).toBe(400);
-  expect(runs.feed).toBe(1);
+  expect(feed.runs.feed).toBe(1);
   await handler.dispose();
 });
 
 test('experimental_durableLink resumes a streamed output mid-stream, on another instance', async () => {
-  const { router, runs } = makeFeed();
+  const app = makeFeed();
   const shared = await Effect.runPromise(
     Effect.service(Persistence.BackingPersistence).pipe(
       Effect.provide(Persistence.layerBackingMemory),
@@ -367,7 +367,7 @@ test('experimental_durableLink resumes a streamed output mid-stream, on another 
   );
   const instance = () =>
     createFetchHandler({
-      router,
+      router: app.router,
       layer: Layer.succeed(Persistence.BackingPersistence, {
         make: (id) => shared.make(id),
       }),
@@ -375,7 +375,7 @@ test('experimental_durableLink resumes a streamed output mid-stream, on another 
   const [a, b] = [instance(), instance()];
   const sent: Array<string | null> = [];
   const client = createTrpcClient({
-    router,
+    router: app.router,
     links: [
       experimental_durableLink({ delayMs: () => 0 }),
       httpLink({
@@ -393,20 +393,20 @@ test('experimental_durableLink resumes a streamed output mid-stream, on another 
   const feed = await client.feed.mutate();
   expect(await settle(feed)).toEqual(expectedFeed);
   expect(sent).toEqual([null, '3']);
-  expect(runs.feed).toBe(1);
+  expect(app.runs.feed).toBe(1);
   await a.dispose();
   await b.dispose();
 });
 
 test('a resume that fails, then answers without frames, fails what was still open', async () => {
-  const { router } = makeFeed();
+  const app = makeFeed();
   const handler = createFetchHandler({
-    router,
+    router: app.router,
     layer: Persistence.layerBackingMemory,
   });
   const sent: Array<string | null> = [];
   const client = createTrpcClient({
-    router,
+    router: app.router,
     links: [
       experimental_durableLink({ delayMs: () => 0 }),
       httpLink({
@@ -433,9 +433,9 @@ test('a resume that fails, then answers without frames, fails what was still ope
 });
 
 test('a streamed output keeps going into the store after the client leaves', async () => {
-  const { router, runs } = makeFeed();
+  const app = makeFeed();
   const handler = createFetchHandler({
-    router,
+    router: app.router,
     layer: Persistence.layerBackingMemory,
   });
   const controller = new AbortController();
@@ -445,7 +445,7 @@ test('a streamed output keeps going into the store after the client leaves', asy
   await sleep(100);
 
   const client = createTrpcClient({
-    router,
+    router: app.router,
     links: [
       experimental_durableLink(),
       httpLink({
@@ -456,7 +456,7 @@ test('a streamed output keeps going into the store after the client leaves', asy
   });
   const feed = await client.feed.mutate(undefined, { callId: 'g1' });
   expect(await settle(feed)).toEqual(expectedFeed);
-  expect(runs.feed).toBe(1);
+  expect(app.runs.feed).toBe(1);
   await handler.dispose();
 });
 
@@ -485,7 +485,7 @@ test('a streamed call joined without a frame log is a BAD_REQUEST, while it runs
     .input(Schema.String)
     .use(
       experimental_durable({
-        key: ({ input }) => String(input),
+        key: (opts) => String(opts.input),
         pollInterval: '5 millis',
       }),
     )
@@ -543,9 +543,12 @@ test('a call that fails while another waits on it gives the waiter the typed err
 });
 
 test('frames that expired from the store end the replay where they stop', async () => {
-  const { router } = makeFeed();
-  const { shared, layer } = await sharedMemory();
-  const handler = createFetchHandler({ router, layer });
+  const feed = makeFeed();
+  const result = await sharedMemory();
+  const handler = createFetchHandler({
+    router: feed.router,
+    layer: result.layer,
+  });
   const all = await lines(await post(handler, 'feed', undefined, 'f1'));
   const resume = async (from: string) =>
     lines(
@@ -564,7 +567,7 @@ test('frames that expired from the store end the replay where they stop', async 
   expect(await resume(String(all.length + 5))).toEqual([]);
 
   const frames = await Effect.runPromise(
-    Effect.scoped(shared.make('@trpc12/trpc/durable-frames')),
+    Effect.scoped(result.shared.make('@trpc12/trpc/durable-frames')),
   );
   await Effect.runPromise(frames.remove('feed:f1:2'));
   expect(await resume('0')).toEqual(all.slice(0, 2));
@@ -579,9 +582,9 @@ test('inputs with files are kept without a fingerprint; an error that cannot be 
     upload: t.procedure
       .input(Schema.Struct({ file: Schema.instanceOf(File) }))
       .use(experimental_durable())
-      .mutation(async ({ input }) => {
+      .mutation(async (opts) => {
         runs++;
-        return input.file.text();
+        return opts.input.file.text();
       }),
     odd: t.procedure.use(experimental_durable()).mutation(async function* () {
       yield 1;
@@ -620,10 +623,11 @@ test('inputs with files are kept without a fingerprint; an error that cannot be 
 });
 
 test('experimental_durableLink waits before retrying by default; queries and subscriptions pass through', async () => {
-  const { router: base, runs } = makeRouter();
+  const app = makeRouter();
+  const { router: base } = app;
   const router = {
     ...base,
-    count: t.procedure.query(() => runs.order),
+    count: t.procedure.query(() => app.runs.order),
     ticks: t.procedure.subscription(async function* () {
       yield 1;
     }),

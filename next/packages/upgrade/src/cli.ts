@@ -32,13 +32,13 @@ export const upgradeCommand: Command.Command<
       Flag.withDescription('Write the changes (without it, a dry run)'),
     ),
   },
-  ({ paths, write }) =>
+  (opts) =>
     Effect.gen(function* () {
-      const results = yield* upgradeFiles(paths, { write });
+      const results = yield* upgradeFiles(opts.paths, { write: opts.write });
       for (const result of results) {
         if (result.changed) {
           yield* Console.log(
-            `${write ? 'upgraded' : 'would upgrade'} ${result.path}`,
+            `${opts.write ? 'upgraded' : 'would upgrade'} ${result.path}`,
           );
         }
         for (const note of result.notes) {
@@ -50,7 +50,7 @@ export const upgradeCommand: Command.Command<
       const changed = results.filter((result) => result.changed).length;
       const notes = results.reduce((sum, r) => sum + r.notes.length, 0);
       yield* Console.log(
-        `${changed} file(s) ${write ? 'upgraded' : 'to upgrade'}, ${notes} step(s) by hand`,
+        `${changed} file(s) ${opts.write ? 'upgraded' : 'to upgrade'}, ${notes} step(s) by hand`,
       );
     }),
 ).pipe(Command.withDescription('Upgrade a tRPC v11 codebase to v12'));

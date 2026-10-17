@@ -43,7 +43,7 @@ function makeRouter(opts: {
   /** Resolves once `by`'s resolver runs, so it holds the lock. */
   const started = (by: string) => start(by).promise;
   const byInvoice = experimental_lock<{ input: { invoice: string } }>({
-    key: ({ input }) => `invoice:${input.invoice}`,
+    key: (args) => `invoice:${args.input.invoice}`,
     timeout: opts.timeout ?? '5 seconds',
     ...(opts.ttl && { ttl: opts.ttl }),
   });
@@ -53,18 +53,19 @@ function makeRouter(opts: {
       pay: t.procedure
         .input(z.object({ invoice: z.string(), by: z.string() }))
         .use(byInvoice)
-        .mutation(async ({ input, ctx }) => {
+        .mutation(async (args) => {
+          const { input } = args;
           log.push(`start ${input.by}`);
           start(input.by).resolve();
           await sleep(opts.work);
           log.push(`end ${input.by}`);
-          return { by: input.by, waited: ctx.lock.waited };
+          return { by: input.by, waited: args.ctx.lock.waited };
         }),
       twice: t.procedure
         .input(z.object({ invoice: z.string(), by: z.string() }))
         .use(byInvoice)
         .use(byInvoice)
-        .mutation(({ ctx }) => ctx.lock.waited),
+        .mutation((args) => args.ctx.lock.waited),
     },
     started,
   };
@@ -83,13 +84,15 @@ async function serve(
 }
 
 test('calls with the same key run one at a time; others run alongside', async () => {
-  const { log, router, started } = makeRouter({ work: 40 });
-  const { http, client } = await serve(router, experimental_memoryLocker());
-  await using _ = http;
+  const app = makeRouter({ work: 40 });
+  const { log } = app;
+  const server = await serve(app.router, experimental_memoryLocker());
+  const { client } = server;
+  await using _ = server.http;
   const [a, b, c] = await Promise.all([
     client.pay.mutate({ invoice: '1', by: 'a' }),
-    started('a').then(() => client.pay.mutate({ invoice: '1', by: 'b' })),
-    started('a').then(() => client.pay.mutate({ invoice: '2', by: 'c' })),
+    app.started('a').then(() => client.pay.mutate({ invoice: '1', by: 'b' })),
+    app.started('a').then(() => client.pay.mutate({ invoice: '2', by: 'c' })),
   ]);
   expect(a).toEqual({ by: 'a', waited: false });
   expect(b).toEqual({ by: 'b', waited: true });
@@ -99,12 +102,14 @@ test('calls with the same key run one at a time; others run alongside', async ()
 });
 
 test('a lock still held after timeout fails the call with a typed CONFLICT', async () => {
-  const { router, started } = makeRouter({ work: 100, timeout: '20 millis' });
-  const { http, client } = await serve(router, experimental_memoryLocker());
-  await using _ = http;
-  const first = client.pay.mutate({ invoice: '1', by: 'a' });
-  await started('a');
-  const [, err] = await safe(client.pay.mutate({ invoice: '1', by: 'b' }));
+  const app = makeRouter({ work: 100, timeout: '20 millis' });
+  const server = await serve(app.router, experimental_memoryLocker());
+  await using _ = server.http;
+  const first = server.client.pay.mutate({ invoice: '1', by: 'a' });
+  await app.started('a');
+  const [, err] = await safe(
+    server.client.pay.mutate({ invoice: '1', by: 'b' }),
+  );
   expect(err).toMatchObject({ code: 'CONFLICT', defined: true });
   if (err?.defined)
     expectTypeOf(err.code).toEqualTypeOf<'BAD_REQUEST' | 'CONFLICT'>();
@@ -113,20 +118,24 @@ test('a lock still held after timeout fails the call with a typed CONFLICT', asy
 });
 
 test('a key the call already holds is not taken again', async () => {
-  const { router } = makeRouter({ work: 0, timeout: '50 millis' });
-  const { http, client } = await serve(router, experimental_memoryLocker());
-  await using _ = http;
-  expect(await client.twice.mutate({ invoice: '1', by: 'a' })).toBe(false);
+  const app = makeRouter({ work: 0, timeout: '50 millis' });
+  const server = await serve(app.router, experimental_memoryLocker());
+  await using _ = server.http;
+  expect(await server.client.twice.mutate({ invoice: '1', by: 'a' })).toBe(
+    false,
+  );
 });
 
 test('a holder that outlives ttl loses the lock', async () => {
-  const { router, started } = makeRouter({ work: 80, ttl: '20 millis' });
-  const { http, client } = await serve(router, experimental_memoryLocker());
-  await using _ = http;
+  const app = makeRouter({ work: 80, ttl: '20 millis' });
+  const server = await serve(app.router, experimental_memoryLocker());
+  await using _ = server.http;
   const t0 = Date.now();
   await Promise.all([
-    client.pay.mutate({ invoice: '1', by: 'a' }),
-    started('a').then(() => client.pay.mutate({ invoice: '1', by: 'b' })),
+    server.client.pay.mutate({ invoice: '1', by: 'a' }),
+    app
+      .started('a')
+      .then(() => server.client.pay.mutate({ invoice: '1', by: 'b' })),
   ]);
   expect(Date.now() - t0).toBeLessThan(150);
 });
@@ -162,12 +171,12 @@ test('an aborted waiter gives up its place in line', async () => {
 });
 
 test('the handler must provide experimental_Locker', () => {
-  const { router } = makeRouter({ work: 0 });
+  const app = makeRouter({ work: 0 });
   expectTypeOf<
-    Parameters<typeof createFetchHandler<typeof router>>[0]['layer']
+    Parameters<typeof createFetchHandler<typeof app.router>>[0]['layer']
   >().toEqualTypeOf<Layer.Layer<experimental_Locker, any, never>>();
   // @ts-expect-error -- experimental_Locker is required
-  createFetchHandler({ router });
+  createFetchHandler({ router: app.router });
 });
 
 const redisUrl = process.env['REDIS_URL'];
@@ -175,42 +184,46 @@ const redisUrl = process.env['REDIS_URL'];
 test.skipIf(!redisUrl)(
   'two servers sharing Redis hold one lock between them',
   async () => {
-    const { log, router, started } = makeRouter({ work: 40 });
+    const app = makeRouter({ work: 40 });
     const layer = experimental_redisLocker({
       prefix: `test:lock:${Date.now()}:`,
       retryInterval: '5 millis',
     }).pipe(Layer.provide(NodeRedis.layer({ url: redisUrl! })));
-    const one = await serve(router, layer);
-    const two = await serve(router, layer);
+    const one = await serve(app.router, layer);
+    const two = await serve(app.router, layer);
     await using _1 = one.http;
     await using _2 = two.http;
     const [a, b] = await Promise.all([
       one.client.pay.mutate({ invoice: '1', by: 'a' }),
-      started('a').then(() => two.client.pay.mutate({ invoice: '1', by: 'b' })),
+      app
+        .started('a')
+        .then(() => two.client.pay.mutate({ invoice: '1', by: 'b' })),
     ]);
     expect(a.waited).toBe(false);
     expect(b.waited).toBe(true);
-    expect(log.indexOf('start b')).toBeGreaterThan(log.indexOf('end a'));
+    expect(app.log.indexOf('start b')).toBeGreaterThan(
+      app.log.indexOf('end a'),
+    );
   },
 );
 
 test.skipIf(!redisUrl)(
   'a Redis lock held past timeout fails the other call with CONFLICT',
   async () => {
-    const { router, started } = makeRouter({
+    const app = makeRouter({
       work: 300,
       timeout: '50 millis',
     });
     const layer = experimental_redisLocker().pipe(
       Layer.provide(NodeRedis.layer({ url: redisUrl! })),
     );
-    const one = await serve(router, layer);
-    const two = await serve(router, layer);
+    const one = await serve(app.router, layer);
+    const two = await serve(app.router, layer);
     await using _1 = one.http;
     await using _2 = two.http;
     const invoice = `timeout-${Date.now()}`;
     const first = one.client.pay.mutate({ invoice, by: 'a' });
-    await started('a');
+    await app.started('a');
     const [, err] = await safe(two.client.pay.mutate({ invoice, by: 'b' }));
     expect(err).toMatchObject({ code: 'CONFLICT' });
     expect(await first).toEqual({ by: 'a', waited: false });

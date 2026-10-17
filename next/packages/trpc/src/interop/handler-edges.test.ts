@@ -16,38 +16,38 @@ const t = initTrpc<{ ctx: { user: string } }>();
 const router = {
   greet: t.procedure
     .input(z.object({ name: z.string() }).optional())
-    .query(({ input, ctx }) => `hello ${input?.name ?? ctx.user}`),
+    .query((opts) => `hello ${opts.input?.name ?? opts.ctx.user}`),
   add: t.procedure
     .input(z.unknown())
-    .mutation(({ input }) => input ?? 'nothing'),
-  tagged: t.procedure.input(z.string()).query(({ input, response }) => {
-    response.headers.set('x-tag', input);
-    return input;
+    .mutation((opts) => opts.input ?? 'nothing'),
+  tagged: t.procedure.input(z.string()).query((opts) => {
+    opts.response.headers.set('x-tag', opts.input);
+    return opts.input;
   }),
   deferred: t.procedure
     .input(z.enum(['defined', 'unexpected']))
-    .query(({ input }) => ({
+    .query((opts) => ({
       title: 'Report',
       total:
-        input === 'defined'
+        opts.input === 'defined'
           ? Promise.reject(error({ code: 'CONFLICT', message: 'Recount' }))
           : Promise.reject(new Error('secret')),
     })),
-  raw: t.procedure.query(({ response }) => {
-    response.headers.append('set-cookie', 'session=1');
-    response.headers.set('x-from-handle', 'yes');
+  raw: t.procedure.query((opts) => {
+    opts.response.headers.append('set-cookie', 'session=1');
+    opts.response.headers.set('x-from-handle', 'yes');
     return HttpServerResponse.text('by hand', {
       headers: { 'x-from-response': 'yes' },
     });
   }),
   events: t.procedure
-    .use(({ response, next }) => {
-      response.headers.append('set-cookie', 'seen=1');
-      return next();
+    .use((opts) => {
+      opts.response.headers.append('set-cookie', 'seen=1');
+      return opts.next();
     })
     .input(z.object({ from: z.number() }).optional())
-    .subscription(async function* ({ input }) {
-      yield input?.from ?? 1;
+    .subscription(async function* (opts) {
+      yield opts.input?.from ?? 1;
     }),
   slow: t.procedure.subscription(() =>
     Stream.fromEffect(Effect.as(Effect.sleep('60 millis'), 'late')),
@@ -330,7 +330,7 @@ test('middleware wraps the app, and fetch passes the platform on', async () => {
   const seen: string[] = [];
   const handler = createV11Handler<typeof router, { user: string }>({
     router,
-    createContext: ({ platform }) => ({ user: platform.user }),
+    createContext: (opts) => ({ user: opts.platform.user }),
     middleware: [
       (app) =>
         Effect.map(app, (res) => {

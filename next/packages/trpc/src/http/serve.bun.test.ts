@@ -21,26 +21,26 @@ const t = initTrpc();
 const aborted: string[] = [];
 
 const router = {
-  post: t.procedure.input(z.object({ id: z.string() })).query(({ input }) => ({
-    id: input.id,
+  post: t.procedure.input(z.object({ id: z.string() })).query((opts) => ({
+    id: opts.input.id,
     createdAt: new Date(Date.UTC(2026, 0, 1)),
     tags: new Map([['bun', 1]]),
   })),
   upload: t.procedure
     .input(z.object({ file: z.instanceof(File) }))
     .mutation(
-      async ({ input }) => `${input.file.name}:${await input.file.text()}`,
+      async (opts) => `${opts.input.file.name}:${await opts.input.file.text()}`,
     ),
   download: t.procedure.query(
     () => new File(['bytes'], 'report.csv', { type: 'text/csv' }),
   ),
-  posts: t.procedure.subscription(async function* ({ lastEventId }) {
-    for (let id = Number(lastEventId ?? 0) + 1; id <= 3; id++) {
+  posts: t.procedure.subscription(async function* (opts) {
+    for (let id = Number(opts.lastEventId ?? 0) + 1; id <= 3; id++) {
       yield tracked(String(id), { id });
     }
   }),
-  forever: t.procedure.subscription(async function* ({ signal }) {
-    signal.addEventListener('abort', () => aborted.push('forever'));
+  forever: t.procedure.subscription(async function* (opts) {
+    opts.signal.addEventListener('abort', () => aborted.push('forever'));
     for (let n = 0; ; n++) {
       yield n;
       await Bun.sleep(5);

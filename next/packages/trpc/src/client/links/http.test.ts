@@ -22,11 +22,11 @@ let finished = 0;
 const router = {
   double: t.procedure
     .input(z.object({ n: z.number() }))
-    .query(({ input }) => input.n * 2),
+    .query((opts) => opts.input.n * 2),
   fail: t.procedure.query(() => error({ code: 'NOT_FOUND', message: 'Nope' })),
   bump: t.procedure
     .input(z.object({ by: z.number() }))
-    .mutation(({ input }) => ({ bumped: input.by })),
+    .mutation((opts) => ({ bumped: opts.input.by })),
   dashboard: t.procedure.query(() => ({
     title: 'Dashboard',
     stats: sleep(20).then(() => ({ visits: 42 })),
@@ -227,8 +227,8 @@ test('a stream that ends early rejects open values with STREAM_INTERRUPTED', asy
 // --- responses -----------------------------------------------------------------
 
 const versioned = {
-  version: t.procedure.query(({ response }) => {
-    response.headers.set('x-version', '7');
+  version: t.procedure.query((opts) => {
+    opts.response.headers.set('x-version', '7');
     return 'v7';
   }),
   fail: router.fail,
@@ -242,14 +242,14 @@ const versioned = {
  * hands it on to the caller's own `onResponse`.
  */
 const responsesLink = (seen: Array<{ path: string; status: number }>) =>
-  link<{ needs: 'response' }>(({ op, next }) =>
-    next({
-      ...op,
+  link<{ needs: 'response' }>((opts) =>
+    opts.next({
+      ...opts.op,
       context: {
-        ...op.context,
+        ...opts.op.context,
         onResponse: (meta) => {
-          seen.push({ path: op.path, status: meta.status });
-          op.context.onResponse?.(meta);
+          seen.push({ path: opts.op.path, status: meta.status });
+          opts.op.context.onResponse?.(meta);
         },
       },
     }),
@@ -265,7 +265,7 @@ test('a link before httpLink reads each response through onResponse', async () =
   });
   expect(
     await client.version.query(undefined, {
-      onResponse: ({ headers }) => (version = headers.get('x-version')),
+      onResponse: (opts) => (version = opts.headers.get('x-version')),
     }),
   ).toBe('v7');
   expect(version).toBe('7');
@@ -364,7 +364,7 @@ test('a link that needs the response must have a provider after it', () => {
   const url = 'http://localhost';
   const seen: Array<{ path: string; status: number }> = [];
   const http = httpLink({ url });
-  const silent = link(({ op, next }) => next(op));
+  const silent = link((opts) => opts.next(opts.op));
   createTrpcClient({
     router: routerType<typeof versioned>(),
     links: [responsesLink(seen), silent, http],

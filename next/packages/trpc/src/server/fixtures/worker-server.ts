@@ -15,16 +15,16 @@ const t = initTrpc<{ ctx: { token: string | undefined; transport: string } }>();
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 export const workerRouter = {
-  thread: t.procedure.query(({ ctx }) => ({
+  thread: t.procedure.query((opts) => ({
     threadId,
-    token: ctx.token,
-    transport: ctx.transport,
+    token: opts.ctx.token,
+    transport: opts.ctx.transport,
   })),
   fib: t.procedure
     .input(z.object({ n: z.number().int().max(40) }))
-    .query(({ input }) => {
+    .query((opts) => {
       const fib = (n: number): number => (n < 2 ? n : fib(n - 1) + fib(n - 2));
-      return fib(input.n);
+      return fib(opts.input.n);
     }),
   fail: t.procedure.query(() =>
     error({ code: 'FORBIDDEN', data: { why: 'no' } }),
@@ -45,9 +45,9 @@ export type WorkerRouter = typeof workerRouter;
 if (parentPort) {
   createFetchHandler({
     router: workerRouter,
-    createContext: ({ info }) => ({
-      token: info.connectionParams?.['token'] as string | undefined,
-      transport: info.transport,
+    createContext: (opts) => ({
+      token: opts.info.connectionParams?.['token'] as string | undefined,
+      transport: opts.info.transport,
     }),
   }).messagePort(parentPort);
 }

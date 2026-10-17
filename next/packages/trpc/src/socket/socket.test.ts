@@ -26,14 +26,14 @@ const state = { aborted: 0, infos: [] as CreateContextOpts['info'][] };
 const router = {
   hello: t.procedure
     .input(z.object({ name: z.string() }))
-    .query(({ input, ctx }) => `hello ${input.name} over ${ctx.transport}`),
-  whoami: t.procedure.query(({ ctx }) => ctx.user),
+    .query((opts) => `hello ${opts.input.name} over ${opts.ctx.transport}`),
+  whoami: t.procedure.query((opts) => opts.ctx.user),
   find: t.procedure
     .input(z.object({ id: z.string() }))
-    .query(({ input }) =>
-      input.id === '1'
+    .query((opts) =>
+      opts.input.id === '1'
         ? { id: '1', at: new Date(0) }
-        : error({ code: 'NOT_FOUND', data: { id: input.id } }),
+        : error({ code: 'NOT_FOUND', data: { id: opts.input.id } }),
     ),
   report: t.procedure.query(() => ({
     title: 'Report',
@@ -43,10 +43,10 @@ const router = {
     })(),
   })),
   slow: t.procedure.query(
-    ({ signal }) =>
+    (opts) =>
       new Promise<string>((resolve) => {
         const timer = setTimeout(() => resolve('late'), 5000);
-        signal.addEventListener('abort', () => {
+        opts.signal.addEventListener('abort', () => {
           clearTimeout(timer);
           state.aborted++;
           resolve('aborted');
@@ -55,8 +55,8 @@ const router = {
   ),
   ticks: t.procedure
     .input(z.object({ lastEventId: z.string().optional() }).optional())
-    .subscription(async function* ({ input }) {
-      for (let n = Number(input?.lastEventId ?? -1) + 1; n < 3; n++) {
+    .subscription(async function* (opts) {
+      for (let n = Number(opts.input?.lastEventId ?? -1) + 1; n < 3; n++) {
         yield tracked(String(n), n);
       }
     }),
@@ -213,10 +213,10 @@ test('the link skips lines from the server that are not JSON', async () => {
     });
   });
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
-  const { port } = server.address() as AddressInfo;
+  const address = server.address() as AddressInfo;
   try {
     await using link = experimental_socketLink({
-      socket: NodeSocket.makeNet({ host: '127.0.0.1', port }),
+      socket: NodeSocket.makeNet({ host: '127.0.0.1', port: address.port }),
       keepAlive: false,
     });
     const client = createTrpcClient({

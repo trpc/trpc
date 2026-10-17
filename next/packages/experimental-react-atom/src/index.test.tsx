@@ -60,15 +60,16 @@ const done = <A, E>(result: AsyncResult.AsyncResult<A, E>) =>
 
 test('the same call is the same atom, whatever the key order, with typed errors', async () => {
   using _db = freshDb();
-  const { trpc, registry } = setup();
+  const app = setup();
+  const { trpc } = app;
   const list = trpc.post.list.query({ limit: 1, order: 'asc' });
   expect(trpc.post.list.query({ order: 'asc', limit: 1 })).toBe(list);
   expect(trpc.post.list.query({ order: 'desc', limit: 1 })).not.toBe(list);
-  const posts = AsyncResult.getOrThrow(await until(registry, list, done));
+  const posts = AsyncResult.getOrThrow(await until(app.registry, list, done));
   expect(posts[0]!.at).toEqual(new Date(0));
 
   const missing = await until(
-    registry,
+    app.registry,
     trpc.post.byId.query({ id: '404' }),
     done,
   );
@@ -81,11 +82,15 @@ test('the same call is the same atom, whatever the key order, with typed errors'
 
 test('a mutation with reactivity keys refetches the queries that share them', async () => {
   using _db = freshDb();
-  const { trpc, registry } = setup();
-  const post = trpc.post.byId.query({ id: '1' }, { reactivityKeys: ['posts'] });
+  const app = setup();
+  const { registry } = app;
+  const post = app.trpc.post.byId.query(
+    { id: '1' },
+    { reactivityKeys: ['posts'] },
+  );
   const unmount = registry.mount(post);
   await until(registry, post, done);
-  const rename = trpc.post.rename.mutation();
+  const rename = app.trpc.post.rename.mutation();
   registry.set(rename, {
     input: { id: '1', title: 'Renamed' },
     reactivityKeys: ['posts'],
@@ -104,11 +109,11 @@ test('a mutation with reactivity keys refetches the queries that share them', as
 
 test('a subscription atom holds the latest event', async () => {
   using _db = freshDb();
-  const { trpc, registry } = setup();
-  const events = trpc.post.onRename.subscription(undefined);
-  const unmount = registry.mount(events);
+  const app = setup();
+  const events = app.trpc.post.onRename.subscription(undefined);
+  const unmount = app.registry.mount(events);
   await until(
-    registry,
+    app.registry,
     events,
     (r) => AsyncResult.isSuccess(r) && r.value === 'latest',
   );
@@ -118,21 +123,22 @@ test('a subscription atom holds the latest event', async () => {
 test('query atoms hydrate with the serializer: the browser renders without a request', async () => {
   using _db = freshDb();
   function Title() {
-    const { trpc } = client;
-    const post = useAtomSuspense(trpc.post.byId.query({ id: '1' })).value;
+    const post = useAtomSuspense(
+      client.trpc.post.byId.query({ id: '1' }),
+    ).value;
     return <h1>{`${post.title} ${post.at.getTime()}`}</h1>;
   }
   let client = setup();
   // A server's registry keeps idle atoms until it dehydrates.
   const server = AtomRegistry.make({ defaultIdleTTL: 60_000 });
-  const { prelude } = await prerender(
+  const rendered = await prerender(
     <RegistryContext.Provider value={server}>
       <Suspense fallback="loading">
         <Title />
       </Suspense>
     </RegistryContext.Provider>,
   );
-  expect(await new Response(prelude).text()).toContain('Hello 0');
+  expect(await new Response(rendered.prelude).text()).toContain('Hello 0');
   void server.get(client.trpc.post.byId.query({ id: '404' }));
   await new Promise((resolve) => setTimeout(resolve, 10));
   const state = JSON.parse(JSON.stringify(Hydration.dehydrate(server)));
@@ -142,7 +148,7 @@ test('query atoms hydrate with the serializer: the browser renders without a req
   client = setup();
   db.calls = [];
   const browser = AtomRegistry.make();
-  const { prelude: again } = await prerender(
+  const hydrated = await prerender(
     <RegistryContext.Provider value={browser}>
       <HydrationBoundary state={state}>
         <Suspense fallback="loading">
@@ -151,7 +157,7 @@ test('query atoms hydrate with the serializer: the browser renders without a req
       </HydrationBoundary>
     </RegistryContext.Provider>,
   );
-  expect(await new Response(again).text()).toContain('Hello 0');
+  expect(await new Response(hydrated.prelude).text()).toContain('Hello 0');
   expect(db.calls).toEqual([]);
 });
 
@@ -186,11 +192,15 @@ test('array and Date inputs key by value; options are part of the key', async ()
 
 test('a mutation without reactivity keys refetches nothing', async () => {
   using _db = freshDb();
-  const { trpc, registry } = setup();
-  const post = trpc.post.byId.query({ id: '1' }, { reactivityKeys: ['posts'] });
+  const app = setup();
+  const { registry } = app;
+  const post = app.trpc.post.byId.query(
+    { id: '1' },
+    { reactivityKeys: ['posts'] },
+  );
   const unmount = registry.mount(post);
   await until(registry, post, done);
-  const rename = trpc.post.rename.mutation();
+  const rename = app.trpc.post.rename.mutation();
   registry.set(rename, { input: { id: '1', title: 'Quiet' } });
   await until(registry, rename, done);
   expect(db.calls).toEqual(['byId:1', 'rename:1']);
@@ -199,12 +209,13 @@ test('a mutation without reactivity keys refetches nothing', async () => {
 
 test('the client exposes its runtime and Effect client; other calls are errors', async () => {
   using _db = freshDb();
-  const { trpc, registry } = setup();
+  const app = setup();
+  const { trpc } = app;
   expect(trpc.runtime).toBeDefined();
   expect(
     await Effect.runPromise(trpc.client.post.byId.query({ id: '2' })),
   ).toMatchObject({ title: 'World' });
-  expect(registry).toBeDefined();
+  expect(app.registry).toBeDefined();
   expect(() => (trpc.post.byId as unknown as () => void)()).toThrow(
     'Call .query(), .mutation() or .subscription() on a procedure, not post.byId()',
   );

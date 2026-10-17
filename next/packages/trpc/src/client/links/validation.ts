@@ -107,9 +107,10 @@ export function validationLink(
 export function validationLink(opts: ValidationLinkOptions): TrpcLink;
 export function validationLink(opts: ValidationLinkOptions): TrpcLink<any> {
   const json = opts.output === 'json';
-  return link(({ op, next }) => {
+  return link((args) => {
+    const { op } = args;
     const def = definitionAt(opts.contract, op.path);
-    if (!def) return next(op);
+    if (!def) return args.next(op);
     const checkInput =
       opts.input === false
         ? Effect.void
@@ -118,7 +119,7 @@ export function validationLink(opts: ValidationLinkOptions): TrpcLink<any> {
             (schema) => validate(schema, op.input, inputError),
             { discard: true },
           );
-    const result = Stream.unwrap(Effect.as(checkInput, next(op)));
+    const result = Stream.unwrap(Effect.as(checkInput, args.next(op)));
     const output =
       opts.output === false || def.validateOutput === false
         ? undefined

@@ -21,16 +21,14 @@ const rateLimit = (opts: { max: number }) => {
   const r = initTrpc<{ ctx: { ip: string }; meta: RateLimitMeta }>({
     defaultMeta: { rateLimit: { max: opts.max } },
   });
-  return r.procedure
-    .errors({ TOO_MANY_REQUESTS: {} })
-    .use(({ ctx, meta, next }) => {
-      const count = (seen.get(ctx.ip) ?? 0) + 1;
-      seen.set(ctx.ip, count);
-      if (count > (meta.rateLimit?.max ?? Infinity)) {
-        return error({ code: 'TOO_MANY_REQUESTS' });
-      }
-      return next({ ctx: { requestCount: count } });
-    });
+  return r.procedure.errors({ TOO_MANY_REQUESTS: {} }).use((args) => {
+    const count = (seen.get(args.ctx.ip) ?? 0) + 1;
+    seen.set(args.ctx.ip, count);
+    if (count > (args.meta.rateLimit?.max ?? Infinity)) {
+      return error({ code: 'TOO_MANY_REQUESTS' });
+    }
+    return args.next({ ctx: { requestCount: count } });
+  });
 };
 
 // --- an audit package that provides an Effect service -------------------------
@@ -57,20 +55,21 @@ const t = initTrpc<{ ctx: { ip: string; user: string | null } }>()
   .concat(rateLimit({ max: 2 }))
   .concat(audited.extension);
 
-const authed = t.middleware(({ ctx, next }) => {
+const authed = t.middleware((opts) => {
+  const { ctx } = opts;
   expectTypeOf(ctx.requestCount).toEqualTypeOf<number>();
   return ctx.user
-    ? next({ ctx: { user: ctx.user } })
+    ? opts.next({ ctx: { user: ctx.user } })
     : error({ code: 'UNAUTHORIZED' });
 });
 
 const appRouter = {
-  hello: t.procedure.query(({ ctx, meta }) => {
-    expectTypeOf(meta).toEqualTypeOf<{
+  hello: t.procedure.query((opts) => {
+    expectTypeOf(opts.meta).toEqualTypeOf<{
       rateLimit?: { max: number };
       audit?: string;
     }>();
-    return { count: ctx.requestCount, max: meta.rateLimit?.max };
+    return { count: opts.ctx.requestCount, max: opts.meta.rateLimit?.max };
   }),
   strict: t.procedure
     .meta({ rateLimit: { max: 0 } })
@@ -78,10 +77,10 @@ const appRouter = {
   write: t.procedure
     .use(authed)
     .meta({ audit: 'write' })
-    .mutation(({ ctx, meta }) =>
+    .mutation((opts) =>
       Effect.gen(function* () {
         const log = yield* AuditLog;
-        log.entries.push(`${ctx.user}:${meta.audit}`);
+        log.entries.push(`${opts.ctx.user}:${opts.meta.audit}`);
         return log.entries.length;
       }),
     ),
@@ -90,9 +89,9 @@ const appRouter = {
 test('an extension adds ctx, meta, errors and middleware to every procedure (03 Q3.6)', async () => {
   await using server = await createTestServer({
     router: appRouter,
-    createContext: ({ request }) => ({
-      ip: request.headers['x-ip'] ?? 'local',
-      user: request.headers['x-user'] ?? null,
+    createContext: (opts) => ({
+      ip: opts.request.headers['x-ip'] ?? 'local',
+      user: opts.request.headers['x-user'] ?? null,
     }),
   });
   const client = createTrpcClient({
@@ -136,7 +135,7 @@ test('implement() on an extended root runs the extension', async () => {
     .concat(rateLimit({ max: 1 }))
     .implement({ ping: c.input(z.string()).query() });
   const router = impl.router({
-    ping: impl.ping.query(({ input, ctx }) => `${input}:${ctx.requestCount}`),
+    ping: impl.ping.query((opts) => `${opts.input}:${opts.ctx.requestCount}`),
   });
   const caller = createRouterClient(router, { ctx: { ip: 'x' } });
   expect(await caller.ping.query('a')).toBe('a:1');

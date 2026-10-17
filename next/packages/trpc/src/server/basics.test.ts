@@ -24,9 +24,9 @@ interface Context {
 
 const t = initTrpc<{ ctx: Context }>();
 
-const authed = t.procedure.use(({ ctx, next }) =>
-  ctx.user
-    ? next({ ctx: { user: ctx.user } })
+const authed = t.procedure.use((opts) =>
+  opts.ctx.user
+    ? opts.next({ ctx: { user: opts.ctx.user } })
     : error({ code: 'UNAUTHORIZED', message: 'Sign in first' }),
 );
 
@@ -41,26 +41,26 @@ const router = {
   health: t.procedure.query(() => 'ok' as const),
   greet: t.procedure
     .input(z.object({ name: z.string() }))
-    .query(({ input }) => `hello ${input.name}`),
+    .query((opts) => `hello ${opts.input.name}`),
   add: t.procedure
     .input(Schema.Struct({ a: Schema.Number, b: Schema.Number }))
-    .query(({ input }) => input.a + input.b),
-  me: authed.query(({ ctx }) => ctx.user),
+    .query((opts) => opts.input.a + opts.input.b),
+  me: authed.query((opts) => opts.ctx.user),
   post: {
     create: authed
       .input(z.object({ title: z.string().min(1) }))
-      .mutation(({ ctx, input }) => {
+      .mutation((opts) => {
         const post: Post = {
           id: String(posts.size + 1),
-          title: input.title,
-          author: ctx.user.name,
+          title: opts.input.title,
+          author: opts.ctx.user.name,
         };
         posts.set(post.id, post);
         return post;
       }),
     byId: t.procedure
       .input(z.object({ id: z.string() }))
-      .query(({ input }) => posts.get(input.id) ?? null),
+      .query((opts) => posts.get(opts.input.id) ?? null),
   },
 };
 type AppRouter = typeof router;
@@ -159,13 +159,13 @@ test('a Standard Schema types input from ~standard.types, or from validate witho
     },
   } as const;
   const schemas = {
-    typed: t.procedure.input(toNumber).query(({ input }) => {
-      expectTypeOf(input).toEqualTypeOf<number>();
-      return input + 1;
+    typed: t.procedure.input(toNumber).query((opts) => {
+      expectTypeOf(opts.input).toEqualTypeOf<number>();
+      return opts.input + 1;
     }),
-    untyped: t.procedure.input(untyped).query(({ input }) => {
-      expectTypeOf(input).toEqualTypeOf<string>();
-      return input.length;
+    untyped: t.procedure.input(untyped).query((opts) => {
+      expectTypeOf(opts.input).toEqualTypeOf<string>();
+      return opts.input.length;
     }),
   };
   await using server = await createTestServer({
@@ -205,7 +205,7 @@ test('Standard Schema issues keep their paths, async validators are awaited, and
     later: t.procedure
       .input(z.string().refine(async (v) => v !== 'no', 'not no'))
       .output(z.string().refine(async (v) => v !== 'NOPE', 'not NOPE'))
-      .query(({ input }) => input.toUpperCase()),
+      .query((opts) => opts.input.toUpperCase()),
     ticks: t.procedure
       .output(z.number().refine(async (n) => n > 0))
       .subscription(async function* () {

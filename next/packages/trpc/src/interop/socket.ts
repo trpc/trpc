@@ -47,7 +47,7 @@ export function serveV11Socket(
     readonly idleTimeoutMs: number | false;
   },
 ): void {
-  const { base, input, output, errorShape, router } = core;
+  const { base, output } = core;
   const { request } = opts;
   let connectionParams: Record<string, unknown> | undefined;
   const scope = Scope.makeUnsafe();
@@ -73,7 +73,7 @@ export function serveV11Socket(
     base.report(err, request, path, type === 'unknown' ? undefined : type);
     send({
       ...envelope(id, jsonrpc),
-      error: output.serialize(errorShape(err, path, type)),
+      error: output.serialize(core.errorShape(err, path, type)),
     });
   };
 
@@ -92,7 +92,7 @@ export function serveV11Socket(
     const callParams = connectionParams;
     return Effect.gen(function* () {
       const procedure = yield* Effect.promise(async () =>
-        resolveProcedure(router, path),
+        resolveProcedure(core.router, path),
       );
       if (!procedure) {
         return yield* Effect.fail(
@@ -115,7 +115,7 @@ export function serveV11Socket(
         try: () =>
           params['input'] === undefined
             ? undefined
-            : (input.deserialize(params['input']) as unknown),
+            : (core.input.deserialize(params['input']) as unknown),
         catch: (cause) =>
           new TrpcError({
             code: 'PARSE_ERROR',

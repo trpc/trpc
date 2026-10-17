@@ -95,9 +95,9 @@ class PostController {
   @experimental_Implement(appContract.post.byId)
   byId() {
     return impl.post.byId.query(
-      ({ input, errors }) =>
-        this.#posts.find(input.id) ??
-        errors.NOT_FOUND({ data: { id: input.id } }),
+      (opts) =>
+        this.#posts.find(opts.input.id) ??
+        opts.errors.NOT_FOUND({ data: { id: opts.input.id } }),
     );
   }
 }
@@ -117,8 +117,10 @@ class RestController {
     return {
       health: impl.health.query(() => 'ok' as const),
       post: {
-        create: impl.post.create.mutation(({ input, ctx, errors }) =>
-          ctx.user ? this.#posts.add(input.title) : errors.UNAUTHORIZED(),
+        create: impl.post.create.mutation((opts) =>
+          opts.ctx.user
+            ? this.#posts.add(opts.input.title)
+            : opts.errors.UNAUTHORIZED(),
         ),
         count: impl.post.count.query(() =>
           Effect.gen(function* () {
@@ -161,7 +163,7 @@ class EdgeController {
   @Get('/files/*rest')
   @experimental_Implement(appContract.file)
   file() {
-    return impl.file.query(({ input }) => input.rest);
+    return impl.file.query((opts) => opts.input.rest);
   }
 
   @experimental_Implement({ whoami: appContract.whoami })
@@ -195,10 +197,10 @@ let count = 0;
 @Module({
   imports: [
     experimental_TrpcModule.forRoot({
-      createContext: ({ request, platform }) => {
-        const req = platform.switchToHttp().getRequest<{ path: string }>();
+      createContext: (opts) => {
+        const req = opts.platform.switchToHttp().getRequest<{ path: string }>();
         expect(req.path).toBeTypeOf('string');
-        return { user: request.headers['x-user'] ?? null };
+        return { user: opts.request.headers['x-user'] ?? null };
       },
       layer: Layer.succeed(Counter, { next: Effect.sync(() => ++count) }),
     }),
@@ -343,7 +345,7 @@ test('forRootAsync builds the options from injected providers', async () => {
     @experimental_Implement({ whoami: appContract.whoami })
     who() {
       return {
-        whoami: impl.whoami.query(({ ctx }) => ctx.user ?? 'anon'),
+        whoami: impl.whoami.query((opts) => opts.ctx.user ?? 'anon'),
       };
     }
   }

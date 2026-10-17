@@ -192,7 +192,7 @@ function validateItems(
   services: Context.Context<never>,
 ): AsyncIterable<unknown, unknown> {
   const run = Effect.runPromiseWith(services);
-  const { item, return: returns } = schema['~trpc.stream'];
+  const streamSchema = schema['~trpc.stream'];
   return {
     async *[Symbol.asyncIterator]() {
       const iterator = source[Symbol.asyncIterator]();
@@ -202,11 +202,13 @@ function validateItems(
           const next = await iterator.next();
           if (next.done) {
             done = true;
-            return returns
-              ? await run(validate(returns, next.value, outputError))
+            return streamSchema.return
+              ? await run(
+                  validate(streamSchema.return, next.value, outputError),
+                )
               : next.value;
           }
-          yield await run(validate(item, next.value, outputError));
+          yield await run(validate(streamSchema.item, next.value, outputError));
         }
       } finally {
         if (!done) await iterator.return?.();
@@ -259,7 +261,7 @@ export function callProcedure(
   opts: CallOpts,
 ): Effect.Effect<unknown, AnyTrpcError, any> {
   const def = opts.procedure['~trpc'];
-  const { path, signal } = opts;
+  const { path } = opts;
   const { meta, type } = def;
   const response = opts.response ?? createResponseHandle();
   const base: Omit<
@@ -269,7 +271,7 @@ export function callProcedure(
     meta,
     path,
     type,
-    signal,
+    signal: opts.signal,
     response,
   };
 
@@ -411,7 +413,7 @@ export function callProcedure(
         const next = async (o?: NextOpts) =>
           toResult(
             await runNext(rest(o) as Effect.Effect<unknown, AnyTrpcError>, {
-              signal,
+              signal: opts.signal,
             }),
           );
         return Effect.flatMap(

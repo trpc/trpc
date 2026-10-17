@@ -34,27 +34,27 @@ const t = initTrpc<{ ctx: Context }>();
 const signals = { aborted: 0 };
 
 const router = {
-  whoami: t.procedure.query(({ ctx }) => ctx.token ?? 'anonymous'),
+  whoami: t.procedure.query((opts) => opts.ctx.token ?? 'anonymous'),
   today: t.procedure.query(() => new Date('2026-10-10T00:00:00.000Z')),
   add: t.procedure
     .input(Schema.Struct({ a: Schema.Number, b: Schema.Number }))
-    .mutation(({ input }) => input.a + input.b),
+    .mutation((opts) => opts.input.a + opts.input.b),
   find: t.procedure
     .input(z.object({ id: z.string() }))
-    .query(({ input }) =>
-      input.id === '1'
+    .query((opts) =>
+      opts.input.id === '1'
         ? { id: '1' }
-        : error({ code: 'NOT_FOUND', data: { id: input.id } }),
+        : error({ code: 'NOT_FOUND', data: { id: opts.input.id } }),
     ),
   ticks: t.procedure.subscription(async function* () {
     yield 1;
     yield 2;
   }),
   slow: t.procedure.query(
-    ({ signal }) =>
+    (opts) =>
       new Promise<string>((resolve) => {
         const timer = setTimeout(() => resolve('late'), 5000);
-        signal.addEventListener('abort', () => {
+        opts.signal.addEventListener('abort', () => {
           clearTimeout(timer);
           signals.aborted++;
         });
@@ -67,19 +67,19 @@ const serve = () =>
   createTestServer({
     router,
     batch: true,
-    createContext: ({ request }) => ({
-      token: request.headers['authorization'] ?? null,
+    createContext: (opts) => ({
+      token: opts.request.headers['authorization'] ?? null,
     }),
   });
 
 test('a link can add headers through the operation context', async () => {
   await using server = await serve();
-  const authLink = link(({ op, next }) =>
-    next({
-      ...op,
+  const authLink = link((opts) =>
+    opts.next({
+      ...opts.op,
       context: {
-        ...op.context,
-        headers: { authorization: `Bearer ${op.path}` },
+        ...opts.op.context,
+        headers: { authorization: `Bearer ${opts.op.path}` },
       },
     }),
   );
@@ -113,12 +113,13 @@ test('httpLink headers can be computed per request', async () => {
 
 test('a link can replace a result or a subscription', async () => {
   await using server = await serve();
-  const cacheLink = link(({ op, next }) => {
+  const cacheLink = link((opts) => {
+    const { op } = opts;
     if (op.path === 'whoami') return Stream.make('cached');
     if (op.type === 'subscription') {
-      return next(op).pipe(Stream.map((n) => (n as number) * 10));
+      return opts.next(op).pipe(Stream.map((n) => (n as number) * 10));
     }
-    return next(op);
+    return opts.next(op);
   });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
@@ -133,10 +134,14 @@ test('a link can replace a result or a subscription', async () => {
 test('an Effect link wraps the result stream', async () => {
   await using server = await serve();
   const seen: unknown[] = [];
-  const tapLink = link(({ op, next }) =>
-    next(op).pipe(
-      Stream.tap((value) => Effect.sync(() => seen.push([op.path, value]))),
-    ),
+  const tapLink = link((opts) =>
+    opts
+      .next(opts.op)
+      .pipe(
+        Stream.tap((value) =>
+          Effect.sync(() => seen.push([opts.op.path, value])),
+        ),
+      ),
   );
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
@@ -350,10 +355,10 @@ test('one client for routers on two servers with different contexts (docs/client
   const blogT = initTrpc<{ ctx: { locale: string } }>();
   const shopT = initTrpc<{ ctx: { cart: string[] } }>();
   const blogRouter = {
-    hello: blogT.procedure.query(({ ctx }) => `hej (${ctx.locale})`),
+    hello: blogT.procedure.query((opts) => `hej (${opts.ctx.locale})`),
   };
   const shopRouter = {
-    cart: shopT.procedure.query(({ ctx }) => ctx.cart),
+    cart: shopT.procedure.query((opts) => opts.ctx.cart),
   };
   await using blog = await createTestServer({
     router: blogRouter,
@@ -365,8 +370,8 @@ test('one client for routers on two servers with different contexts (docs/client
   });
 
   const unprefix = (prefix: string) =>
-    link(({ op, next }) =>
-      next({ ...op, path: op.path.slice(prefix.length + 1) }),
+    link((opts) =>
+      opts.next({ ...opts.op, path: opts.op.path.slice(prefix.length + 1) }),
     );
   const client = createTrpcClient({
     router: routerType<{
@@ -398,8 +403,8 @@ test('httpLink init: a per-request default, merged with each call’s init', asy
         url: server.url,
         batch: true,
         headers: { authorization: 'link' },
-        init: ({ ops }) => {
-          opsPerInit.push(ops.map((op) => op.path));
+        init: (opts) => {
+          opsPerInit.push(opts.ops.map((op) => op.path));
           return {
             cache: 'no-store',
             headers: { 'x-base': 'base', authorization: 'base' },
@@ -519,7 +524,7 @@ test('what a link fails, dies or ends with becomes a client error', async () => 
 
   const passthrough = createTrpcClient({
     router: routerType<typeof router>(),
-    links: [link(({ op, next }) => next(op))],
+    links: [link((opts) => opts.next(opts.op))],
   });
   await expect(passthrough.whoami.query()).rejects.toMatchObject({
     code: 'CLIENT_ERROR',

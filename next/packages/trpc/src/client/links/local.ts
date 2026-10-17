@@ -127,15 +127,15 @@ export function localLink<TRouter extends AnyRouter>(
             );
           }
           if (!serializer) return Stream.make(data);
-          const { head, chunks } = serializer.serializeDeferred(data, {
+          const serialized = serializer.serializeDeferred(data, {
             coerceError: (cause) =>
               toWireError(isTrpcError(cause) ? cause : unexpectedError(cause)),
           });
           return Stream.fromEffect(
             serializer.deserializeStream(
-              chunks
-                ? Stream.concat(Stream.make(head), chunks)
-                : Stream.make(head),
+              serialized.chunks
+                ? Stream.concat(Stream.make(serialized.head), serialized.chunks)
+                : Stream.make(serialized.head),
               {
                 reviveError: (value) => fromWireError(value),
                 ...streamErrors,

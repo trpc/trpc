@@ -26,11 +26,11 @@ test('server render with prefetched data and no subscription', async () => {
       input: { id: '3' },
     }),
   );
-  const { body } = render(Root, {
+  const view = render(Root, {
     props: { queryClient, client, app: Ssr },
   });
-  expect(body).toContain('<h1>2026-01-04</h1>');
-  expect(body).toContain('<p>idle</p>');
+  expect(view.body).toContain('<h1>2026-01-04</h1>');
+  expect(view.body).toContain('<p>idle</p>');
   expect(db.listeners.size).toBe(0);
   expect(db.calls).toEqual(['post.byId:3']);
 });

@@ -62,52 +62,51 @@ const assertExists = (id: string, made: (id: string) => TrpcError) => {
 
 const cache = new Map<string, unknown>([['cached.title', 'from cache']]);
 const resolved: string[] = [];
-const cached = t.procedure.use(({ path, next }) => {
-  const hit = cache.get(path);
-  return typeof hit === 'string' ? ok(hit) : next();
+const cached = t.procedure.use((opts) => {
+  const hit = cache.get(opts.path);
+  return typeof hit === 'string' ? ok(hit) : opts.next();
 });
 
 // Middleware nests: onFinish wraps the helpers after it, so it runs last.
 const events: string[] = [];
 const lifecycle = t.procedure
-  .use(onStart(({ path }) => void events.push(`start ${path}`)))
+  .use(onStart((opts) => void events.push(`start ${opts.path}`)))
   .use(onFinish((result) => void events.push(`finish ${result.ok}`)))
   .use(onError((err) => void events.push(`error ${err.code}`)))
   .use(onSuccess((data) => void events.push(`success ${String(data)}`)));
 
-const withUser = t.middleware.effect<{ provides: CurrentUser }>()(
-  ({ ctx, next }) =>
-    ctx.user
-      ? next().pipe(Effect.provideService(CurrentUser, { name: ctx.user }))
-      : Effect.fail(error({ code: 'UNAUTHORIZED' })),
+const withUser = t.middleware.effect<{ provides: CurrentUser }>()((opts) =>
+  opts.ctx.user
+    ? opts
+        .next()
+        .pipe(Effect.provideService(CurrentUser, { name: opts.ctx.user }))
+    : Effect.fail(error({ code: 'UNAUTHORIZED' })),
 );
 
-const timed = middleware.effect<{ ctx: { user: string | null } }>()(
-  ({ next }) =>
-    Effect.gen(function* () {
-      const clock = yield* Clock;
-      const start = clock.now();
-      const result = yield* next({ ctx: { startedAt: start } });
-      return result;
-    }),
+const timed = middleware.effect<{ ctx: { user: string | null } }>()((opts) =>
+  Effect.gen(function* () {
+    const clock = yield* Clock;
+    const start = clock.now();
+    const result = yield* opts.next({ ctx: { startedAt: start } });
+    return result;
+  }),
 );
 
 const router = {
   post: {
-    byId: notFound
-      .input(z.object({ id: z.string() }))
-      .query(({ input, errors }) => {
-        if (input.id === 'gone') return errors.GONE();
-        assertExists(input.id, (id) => errors.NOT_FOUND({ data: { id } }));
-        return { id: input.id };
-      }),
-    invalidData: notFound.query(({ errors }) =>
-      errors.NOT_FOUND({ data: { id: 1 } as unknown as { id: string } }),
+    byId: notFound.input(z.object({ id: z.string() })).query((opts) => {
+      const { input } = opts;
+      if (input.id === 'gone') return opts.errors.GONE();
+      assertExists(input.id, (id) => opts.errors.NOT_FOUND({ data: { id } }));
+      return { id: input.id };
+    }),
+    invalidData: notFound.query((opts) =>
+      opts.errors.NOT_FOUND({ data: { id: 1 } as unknown as { id: string } }),
     ),
     fromEffect: t.procedure
       .input(z.object({ id: z.string() }))
-      .query(({ input }) =>
-        findPost(input.id).pipe(
+      .query((opts) =>
+        findPost(opts.input.id).pipe(
           Effect.catchTag('DbError', (e) =>
             Effect.fail(
               error({ code: 'SERVICE_UNAVAILABLE', message: e.reason }),
@@ -116,16 +115,17 @@ const router = {
         ),
       ),
   },
-  login: t.procedure
-    .input(z.object({ name: z.string() }))
-    .mutation(({ input, response }) => {
-      response.headers.append('set-cookie', `session=${input.name}; HttpOnly`);
-      response.status = 201;
-      return { ok: true };
-    }),
-  theme: t.procedure.query(({ response }) => {
-    response.headers.append('set-cookie', 'theme=dark');
-    response.headers.set('x-theme', 'dark');
+  login: t.procedure.input(z.object({ name: z.string() })).mutation((opts) => {
+    opts.response.headers.append(
+      'set-cookie',
+      `session=${opts.input.name}; HttpOnly`,
+    );
+    opts.response.status = 201;
+    return { ok: true };
+  }),
+  theme: t.procedure.query((opts) => {
+    opts.response.headers.append('set-cookie', 'theme=dark');
+    opts.response.headers.set('x-theme', 'dark');
     return 'dark';
   }),
   cached: {
@@ -147,7 +147,7 @@ const router = {
       return (yield* CurrentUser).name;
     }),
   ),
-  timed: t.procedure.use(timed).query(({ ctx }) => ctx.startedAt),
+  timed: t.procedure.use(timed).query((opts) => opts.ctx.startedAt),
   feed: t.procedure
     .output(z.object({ n: z.number().transform((n) => `#${n}`) }))
     .subscription(async function* () {
@@ -301,8 +301,8 @@ test('ok() short-circuits the chain; output validation still runs', async () => 
   expect(await ctx.client.cached.other.query()).toBe('from resolver');
   expect(resolved).toEqual(['cached.other']);
 
-  const numeric = t.procedure.use(({ next }) =>
-    Math.random() > 2 ? ok(1) : next(),
+  const numeric = t.procedure.use((opts) =>
+    Math.random() > 2 ? ok(1) : opts.next(),
   );
   // @ts-expect-error -- the middleware may short-circuit with a number
   numeric.output(z.string()).query(() => 'text');
@@ -349,7 +349,7 @@ test('Effect middleware provides services and its failures are typed', async () 
   expect(await client.me.query()).toBe('kim');
 
   // @ts-expect-error -- declares CurrentUser but never provides it
-  t.middleware.effect<{ provides: CurrentUser }>()(({ next }) => next());
+  t.middleware.effect<{ provides: CurrentUser }>()((opts) => opts.next());
 });
 
 test('a standalone Effect middleware adds ctx and requires its services', async () => {
@@ -455,7 +455,7 @@ test('procedures without async steps run synchronously', () => {
   const plusOne = initTrpc()
     .procedure.input(z.object({ n: z.number() }))
     .output(z.number())
-    .query(({ input }) => Effect.succeed(input.n + 1));
+    .query((opts) => Effect.succeed(opts.input.n + 1));
   const run = callProcedure({
     procedure: plusOne,
     path: 'plusOne',
@@ -470,17 +470,20 @@ test('next({ input }) replaces the input for later steps, typed like ctx (#6892)
   const slugs = new Map([['hello-world', { id: '1', title: 'Hello' }]]);
   const bySlug = t.procedure
     .input(z.object({ slug: z.string() }))
-    .use(({ input, ctx, next }) => {
-      const post = slugs.get(input.slug);
+    .use((opts) => {
+      const post = slugs.get(opts.input.slug);
       return post
-        ? next({ input: { post }, ctx: { viewer: ctx.user ?? 'anon' } })
+        ? opts.next({
+            input: { post },
+            ctx: { viewer: opts.ctx.user ?? 'anon' },
+          })
         : error({ code: 'NOT_FOUND' });
     })
-    .query(({ input, ctx }) => {
-      expectTypeOf(input).toEqualTypeOf<{
+    .query((opts) => {
+      expectTypeOf(opts.input).toEqualTypeOf<{
         post: { id: string; title: string };
       }>();
-      return `${input.post.title} for ${ctx.viewer}`;
+      return `${opts.input.post.title} for ${opts.ctx.viewer}`;
     });
   expect(
     await call(bySlug, { slug: 'hello-world' }, { ctx: { user: 'ada' } }),
@@ -491,23 +494,23 @@ test('next({ input }) replaces the input for later steps, typed like ctx (#6892)
 
   const trimmed = t.procedure
     .input(z.string())
-    .use(({ input, next }) => next({ input: input.trim().length }))
-    .query(({ input }) => {
-      expectTypeOf(input).toEqualTypeOf<number>();
-      return input;
+    .use((opts) => opts.next({ input: opts.input.trim().length }))
+    .query((opts) => {
+      expectTypeOf(opts.input).toEqualTypeOf<number>();
+      return opts.input;
     });
   expect(await call(trimmed, '  hi  ', { ctx: { user: null } })).toBe(2);
 
   const doubled = t.procedure
     .input(z.number())
     .use(
-      t.middleware.effect()(({ input, next }) =>
-        next({ input: String((input as number) * 2) }),
+      t.middleware.effect()((opts) =>
+        opts.next({ input: String((opts.input as number) * 2) }),
       ),
     )
-    .query(({ input }) => {
-      expectTypeOf(input).toEqualTypeOf<string>();
-      return input;
+    .query((opts) => {
+      expectTypeOf(opts.input).toEqualTypeOf<string>();
+      return opts.input;
     });
   expect(await call(doubled, 4, { ctx: { user: null } })).toBe('8');
 });
@@ -526,8 +529,8 @@ test('calls that go wrong in unusual ways fail with one clear error', async () =
     succeededWithError: u.procedure.query(() =>
       Effect.succeed(error({ code: 'CONFLICT', message: 'as a value' })),
     ),
-    stringData: declared.query(({ errors }) =>
-      errors.CONFLICT({ data: 'same string' }),
+    stringData: declared.query((opts) =>
+      opts.errors.CONFLICT({ data: 'same string' }),
     ),
     badMiddleware: u.procedure.use((() => 'nope') as never).query(() => 1),
     handBuiltFailure: u.procedure
@@ -611,12 +614,12 @@ test('chained inputs merge only plain objects; a subscription takes a stream() o
   const dates = u.procedure
     .input(z.date())
     .input(z.date())
-    .query(({ input }) => input.getTime());
+    .query((opts) => opts.input.getTime());
   expect(await call(dates, new Date(5), { ctx: {} })).toBe(5);
   const nulls = u.procedure
     .input(z.null())
     .input(z.null())
-    .query(({ input }) => input);
+    .query((opts) => opts.input);
   expect(await call(nulls, null, { ctx: {} })).toBe(null);
 
   const ticks = u.procedure
@@ -642,12 +645,12 @@ test('.provide() takes a promise; ok() deep in the chain reaches the middleware 
   const seen: unknown[] = [];
   const named = u.procedure
     .provide(CurrentUser, async () => ({ name: 'ada' }))
-    .use(async ({ next }) => {
-      const result = await next();
+    .use(async (opts) => {
+      const result = await opts.next();
       seen.push(result.ok && result.data);
       return result;
     })
-    .use(({ ctx, next }) => (ctx.short ? ok('short') : next()))
+    .use((opts) => (opts.ctx.short ? ok('short') : opts.next()))
     .query(() =>
       Effect.gen(function* () {
         return (yield* CurrentUser).name;

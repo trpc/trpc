@@ -25,11 +25,11 @@ const router = {
   post: {
     byId: t.procedure
       .input(z.object({ id: z.string() }))
-      .query(async ({ input, signal }) => {
+      .query(async (opts) => {
         state.calls++;
         await sleep(20);
-        if (signal.aborted) state.aborted++;
-        return { id: input.id, call: state.calls };
+        if (opts.signal.aborted) state.aborted++;
+        return { id: opts.input.id, call: state.calls };
       }),
     create: t.procedure
       .input(z.object({ title: z.string() }))
@@ -37,12 +37,12 @@ const router = {
     /** Answers when the server sees the request abort. */
     untilAborted: t.procedure
       .input(z.object({ id: z.string() }))
-      .query(({ input, signal }) => {
+      .query((opts) => {
         state.calls++;
         return new Promise<{ id: string }>((resolve) => {
-          signal.addEventListener('abort', () => {
+          opts.signal.addEventListener('abort', () => {
             state.aborted++;
-            resolve({ id: input.id });
+            resolve({ id: opts.input.id });
           });
         });
       }),
@@ -113,10 +113,11 @@ test('a shared query is aborted only when every caller aborts', async () => {
 test('links declare the call option fields calls may pass (17 D-C, F-B)', async () => {
   await using server = await createTestServer({ router });
   const seen: (string | undefined)[] = [];
-  const traceLink = link<{ context: { traceId?: string } }>(({ op, next }) => {
+  const traceLink = link<{ context: { traceId?: string } }>((opts) => {
+    const { op } = opts;
     expectTypeOf(op.context.traceId).toEqualTypeOf<string | undefined>();
     seen.push(op.context.traceId);
-    return next(op);
+    return opts.next(op);
   });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
@@ -193,26 +194,27 @@ test('routerType works for the Effect client too', async () => {
 });
 
 test('custom links get an Operation typed with their declared context', () => {
-  const declared = link<{ context: { tenant?: string } }>(({ op, next }) => {
+  const declared = link<{ context: { tenant?: string } }>((opts) => {
+    const { op } = opts;
     expectTypeOf(op).toExtend<Operation>();
     expectTypeOf(op.context.tenant).toEqualTypeOf<string | undefined>();
-    return next(op);
+    return opts.next(op);
   });
   expectTypeOf(declared).not.toBeAny();
 
   // @ts-expect-error -- the client reads `signal` itself
-  link<{ context: { signal?: string } }>(({ op, next }) => next(op));
+  link<{ context: { signal?: string } }>((opts) => opts.next(opts.op));
   // @ts-expect-error -- the client reads `lastEventId` itself
-  link<{ context: { lastEventId: number } }>(({ op, next }) => next(op));
+  link<{ context: { lastEventId: number } }>((opts) => opts.next(opts.op));
 });
 
 test('switchLink picks a branch, and a typed call option forces one', async () => {
   await using server = await createTestServer({ router, batch: true });
   const picked: string[] = [];
   const tag = (name: string) =>
-    link(({ op, next }) => {
+    link((opts) => {
       picked.push(name);
-      return next(op);
+      return opts.next(opts.op);
     });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
@@ -308,8 +310,10 @@ class RateLimited extends TrpcError.Tagged('RATE_LIMITED', {
 test("a link's own declared errors join every call's typed union", async () => {
   await using server = await createTestServer({ router });
   let allowed = 1;
-  const rateLimit = link<{ errors: RateLimited }>(({ op, next }) =>
-    allowed-- > 0 ? next(op) : Stream.fail(new RateLimited({ retryAfter: 5 })),
+  const rateLimit = link<{ errors: RateLimited }>((opts) =>
+    allowed-- > 0
+      ? opts.next(opts.op)
+      : Stream.fail(new RateLimited({ retryAfter: 5 })),
   );
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
@@ -348,8 +352,8 @@ const liveRouter = {
 
 test('methods a chain cannot carry are missing from the client', () => {
   const http = httpLink({ url: 'http://localhost' });
-  const queriesOnly = link<{ unsupported: 'subscription' }>(({ op, next }) =>
-    next(op),
+  const queriesOnly = link<{ unsupported: 'subscription' }>((opts) =>
+    opts.next(opts.op),
   );
   const limited = createTrpcClient({
     router: routerType<typeof liveRouter>(),

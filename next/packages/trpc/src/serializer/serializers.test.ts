@@ -25,15 +25,15 @@ const t = initTrpc();
 
 /** The router doesn't name a serializer: the handler and the links do. */
 const router = {
-  rich: t.procedure.input(z.object({ q: z.string() })).query(({ input }) => ({
-    q: input.q,
+  rich: t.procedure.input(z.object({ q: z.string() })).query((opts) => ({
+    q: opts.input.q,
     at,
     tags: new Set(['a']),
     missing: undefined as string | undefined,
   })),
   echo: t.procedure
     .input(z.object({ text: z.string() }))
-    .mutation(({ input }) => input.text.toUpperCase()),
+    .mutation((opts) => opts.input.text.toUpperCase()),
   count: t.procedure.query(async function* () {
     yield { n: 1, at };
     yield { n: 2, at };

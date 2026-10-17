@@ -88,7 +88,7 @@ const runtime = Command.make(
     duration: Flag.Int('duration').pipe(Flag.withDefault(10)),
     connections: Flag.Int('connections').pipe(Flag.withDefault(10)),
   },
-  ({ duration, connections }) =>
+  (opts) =>
     Effect.gen(function* () {
       const spawner = yield* ChildProcessSpawner.ChildProcessSpawner;
       const rows: string[][] = [];
@@ -117,8 +117,8 @@ const runtime = Command.make(
             if (!body.includes('nested/procedure_1')) {
               return yield* new BenchFailed({ step: server.name, cause: body });
             }
-            yield* cannon(url, 2, connections);
-            return yield* cannon(url, duration, connections);
+            yield* cannon(url, 2, opts.connections);
+            return yield* cannon(url, opts.duration, opts.connections);
           }),
         );
         if (result.non2xx + result.errors > 0) {
@@ -133,7 +133,7 @@ const runtime = Command.make(
         yield* Console.error(`done: ${server.name}`);
       }
       yield* Console.log(
-        `${duration}s, ${connections} connections, Node ${process.version}\n\n` +
+        `${opts.duration}s, ${opts.connections} connections, Node ${process.version}\n\n` +
           table(['server', 'req/s (avg)', 'req/s (stdev)', 'requests'], rows),
       );
     }),
@@ -332,7 +332,7 @@ const typecheck = Command.make(
     routers: Flag.Int('routers').pipe(Flag.withDefault(500)),
     runs: Flag.Int('runs').pipe(Flag.withDefault(3)),
   },
-  ({ routers, runs }) =>
+  (opts) =>
     Effect.gen(function* () {
       const fs = yield* FileSystem.FileSystem;
       if (!(yield* fs.exists(`${dist}/server/index.d.ts`))) {
@@ -344,8 +344,11 @@ const typecheck = Command.make(
       const rows: string[][] = [];
       for (const fw of ['trpc12', 'trpc11', 'orpc'] as const) {
         const dir = `${generated}/typecheck-${fw}`;
-        yield* writeFiles(dir, fixture(fw, routers));
-        const samples = yield* Effect.replicateEffect(diagnostics(dir), runs);
+        yield* writeFiles(dir, fixture(fw, opts.routers));
+        const samples = yield* Effect.replicateEffect(
+          diagnostics(dir),
+          opts.runs,
+        );
         const m = (name: string) => median(samples.map((s) => s[name] ?? NaN));
         rows.push([
           names[fw],
@@ -357,7 +360,7 @@ const typecheck = Command.make(
         yield* Console.error(`done: ${fw}`);
       }
       yield* Console.log(
-        `${routers * 6} procedures in ${routers * 3 + 1} routers, single-threaded tsc, median of ${runs}\n\n` +
+        `${opts.routers * 6} procedures in ${opts.routers * 3 + 1} routers, single-threaded tsc, median of ${opts.runs}\n\n` +
           table(['', 'check', 'total', 'memory', 'instantiations'], rows),
       );
     }),
@@ -429,8 +432,8 @@ const bundle = (input: string, platform: 'browser' | 'node') =>
       transform: { define: { 'process.env.NODE_ENV': '"production"' } },
     });
     try {
-      const { output } = await build.generate({ format: 'esm', minify: true });
-      const code = output
+      const result = await build.generate({ format: 'esm', minify: true });
+      const code = result.output
         .filter((o): o is OutputChunk => o.type === 'chunk')
         .map((c) => c.code)
         .join('');

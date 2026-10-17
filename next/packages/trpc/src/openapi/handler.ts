@@ -278,14 +278,14 @@ export function createOpenApiHandler<
     } else {
       const flat = flattenRoutes(opts.router);
       pending = flat.lazies;
-      list = flat.procedures.map(({ path, procedure, scope }) => {
-        const def = procedure['~trpc'];
+      list = flat.procedures.map((leaf) => {
+        const def = leaf.procedure['~trpc'];
         return makeEntry(
-          path,
+          leaf.path,
           def.type,
-          scopedRoute(path, routeOf(def), scope),
+          scopedRoute(leaf.path, routeOf(def), leaf.scope),
           inputJsonSchema(def),
-          () => procedure,
+          () => leaf.procedure,
         );
       });
     }

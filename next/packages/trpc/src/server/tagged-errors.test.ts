@@ -35,7 +35,7 @@ const find = (id: string) =>
 const router = {
   byId: t.procedure
     .input(z.object({ id: z.string() }))
-    .query(({ input }) => find(input.id)),
+    .query((opts) => find(opts.input.id)),
   gone: t.procedure.query(() => Effect.fail(new Gone())),
   thrown: t.procedure.query((): string => {
     throw new PostNotFound({ id: 'x' }, { message: 'No such post' });
@@ -45,8 +45,8 @@ const router = {
   ),
   recovered: t.procedure
     .input(z.object({ id: z.string() }))
-    .query(({ input }) =>
-      find(input.id).pipe(
+    .query((opts) =>
+      find(opts.input.id).pipe(
         Effect.catchTag('POST_NOT_FOUND', (e) =>
           Effect.succeed({ id: e.data.id, title: 'placeholder' }),
         ),
@@ -59,7 +59,7 @@ const router = {
   documented: t.procedure
     .errors({ POST_NOT_FOUND: PostNotFound })
     .input(z.object({ id: z.string() }))
-    .query(({ input }) => find(input.id)),
+    .query((opts) => find(opts.input.id)),
 };
 type AppRouter = typeof router;
 

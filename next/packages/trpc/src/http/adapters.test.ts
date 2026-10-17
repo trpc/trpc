@@ -25,10 +25,10 @@ const t = initTrpc();
 const router = {
   hello: t.procedure
     .input(z.object({ name: z.string() }))
-    .query(({ input }) => `hello ${input.name}`),
+    .query((opts) => `hello ${opts.input.name}`),
   save: t.procedure
     .input(z.object({ n: z.number() }))
-    .mutation(({ input }) => input.n * 2),
+    .mutation((opts) => opts.input.n * 2),
 };
 const handler = createFetchHandler({ router });
 
@@ -75,9 +75,9 @@ async function listenParsed(
     nodeHandler(req, res);
   });
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
-  const { port } = server.address() as AddressInfo;
+  const address = server.address() as AddressInfo;
   return {
-    url: `http://127.0.0.1:${port}/trpc`,
+    url: `http://127.0.0.1:${address.port}/trpc`,
     [Symbol.asyncDispose]: async () => {
       server.closeAllConnections();
       server.close();
@@ -102,9 +102,9 @@ async function listen(layer: Layer.Layer<never, never, HttpServer.HttpServer>) {
       scope,
     ),
   );
-  const { address } = Context.get(context, HttpServer.HttpServer);
+  const entry = Context.get(context, HttpServer.HttpServer);
   return {
-    url: `http://127.0.0.1:${(address as { port: number }).port}/trpc`,
+    url: `http://127.0.0.1:${(entry.address as { port: number }).port}/trpc`,
     [Symbol.asyncDispose]: () =>
       Effect.runPromise(Scope.close(scope, Exit.void)),
   };
@@ -204,7 +204,7 @@ test('createFetchHandler() reads bodies a parser already read, and bodies that a
   const errors: string[] = [];
   const own = createFetchHandler({
     router,
-    onError: ({ error }) => errors.push(error.message),
+    onError: (opts) => errors.push(opts.error.message),
   });
 
   {

@@ -45,13 +45,13 @@ const handler = createOpenApiHandler({
     echo: t.procedure
       .meta({ route: { method: 'GET', path: '/echo' } })
       .input(Input)
-      .query(({ input }) => input),
+      .query((opts) => opts.input),
     form: t.procedure
       .meta({ route: { method: 'POST', path: '/form' } })
       .input(
         z.object({ count: z.number(), done: z.boolean(), notes: z.string() }),
       )
-      .mutation(({ input }) => input),
+      .mutation((opts) => opts.input),
   },
 });
 const api = (path: string, init?: RequestInit) =>
@@ -139,7 +139,7 @@ test('openApiLink sends nulls, dates and lists of objects in bracket notation', 
           items: z.array(z.object({ id: z.number(), name: z.string() })),
         }),
       )
-      .query(({ input }) => input),
+      .query((opts) => opts.input),
   } satisfies AnyRouter;
   const h = createOpenApiHandler({ router: r });
   const urls: string[] = [];

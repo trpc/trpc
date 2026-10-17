@@ -24,9 +24,9 @@ interface Context {
 }
 const t = initTrpc<{ ctx: Context }>();
 
-const authed = t.procedure.use(({ ctx, next }) =>
-  ctx.user
-    ? next({ ctx: { user: ctx.user } })
+const authed = t.procedure.use((opts) =>
+  opts.ctx.user
+    ? opts.next({ ctx: { user: opts.ctx.user } })
     : error({ code: 'UNAUTHORIZED', message: 'Sign in first' }),
 );
 
@@ -38,13 +38,13 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 const router = {
   countdown: t.procedure
     .input(z.object({ from: z.number() }))
-    .subscription(async function* ({ input }) {
-      for (let n = input.from; n >= 0; n--) yield n;
+    .subscription(async function* (opts) {
+      for (let n = opts.input.from; n >= 0; n--) yield n;
     }),
-  ticks: t.procedure.subscription(async function* ({ signal }) {
+  ticks: t.procedure.subscription(async function* (opts) {
     try {
       let n = 0;
-      while (!signal.aborted) {
+      while (!opts.signal.aborted) {
         yield n++;
         await sleep(5);
       }
@@ -95,12 +95,12 @@ const router = {
       });
     }
   }),
-  secret: authed.subscription(async function* ({ ctx }) {
-    yield `hi ${ctx.user}`;
+  secret: authed.subscription(async function* (opts) {
+    yield `hi ${opts.ctx.user}`;
   }),
-  quiet: t.procedure.subscription(async function* ({ signal }) {
+  quiet: t.procedure.subscription(async function* (opts) {
     await new Promise((resolve) =>
-      signal.addEventListener('abort', resolve, { once: true }),
+      opts.signal.addEventListener('abort', resolve, { once: true }),
     );
     yield 'late';
   }),

@@ -38,9 +38,9 @@ export class Room extends DurableObject<Env> {
         snapshot: () => AsyncLocalStorage.snapshot(),
       }),
     ),
-    createContext: ({ request, platform }) => ({
-      room: request.headers['x-room'] ?? 'unknown',
-      greeting: platform?.env.GREETING ?? 'hello',
+    createContext: (opts) => ({
+      room: opts.request.headers['x-room'] ?? 'unknown',
+      greeting: opts.platform?.env.GREETING ?? 'hello',
     }),
   });
   // `x-room` is kept with each socket, so `createContext` still sees it

@@ -12,10 +12,10 @@ const titles: string[] = [];
 const addTitle = t.procedure
   .errors({ CONFLICT: {} })
   .input(z.object({ title: z.string().min(1) }))
-  .mutation(async ({ input, errors }) => {
+  .mutation(async (opts) => {
     await new Promise((resolve) => setTimeout(resolve, 20));
-    if (titles.includes(input.title)) return errors.CONFLICT();
-    titles.push(input.title);
+    if (titles.includes(opts.input.title)) return opts.errors.CONFLICT();
+    titles.push(opts.input.title);
     return [...titles];
   });
 

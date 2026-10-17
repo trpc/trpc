@@ -59,23 +59,26 @@ const router = {
     })),
   save: t.procedure
     .input(z.object({ when: z.date(), big: z.bigint() }))
-    .mutation(({ input }) => ({
-      year: input.when.getUTCFullYear(),
-      big: input.big * 2n,
+    .mutation((opts) => ({
+      year: opts.input.when.getUTCFullYear(),
+      big: opts.input.big * 2n,
     })),
   total: t.procedure
     .input(z.object({ items: z.array(z.instanceof(Money)) }))
-    .query(({ input }) =>
-      input.items.reduce((sum, item) => sum.add(item), new Money(0n, 'EUR')),
+    .query((opts) =>
+      opts.input.items.reduce(
+        (sum, item) => sum.add(item),
+        new Money(0n, 'EUR'),
+      ),
     ),
   len: t.procedure
     .input(z.object({ text: z.string() }))
-    .query(({ input }) => input.text.length),
-  pattern: t.procedure.input(z.unknown()).query(({ input }) => String(input)),
-  raw: t.procedure.input(z.unknown()).query(({ input }) => input),
+    .query((opts) => opts.input.text.length),
+  pattern: t.procedure.input(z.unknown()).query((opts) => String(opts.input)),
+  raw: t.procedure.input(z.unknown()).query((opts) => opts.input),
   greet: t.procedure
     .input(z.object({ name: z.string() }))
-    .query(({ input }) => `hello ${input.name}`),
+    .query((opts) => `hello ${opts.input.name}`),
   write: t.procedure.mutation(() => 'written'),
 };
 type AppRouter = typeof router;
@@ -206,11 +209,11 @@ test("a socket link whose serializer isn't the server's fails with UNSUPPORTED_P
     );
   }
 
-  const { port1, port2 } = new MessageChannel();
+  const channel = new MessageChannel();
   createFetchHandler({ router: counter, serializer: danson }).messagePort(
-    port1,
+    channel.port1,
   );
-  const port = experimental_messagePortLink({ port: port2 });
+  const port = experimental_messagePortLink({ port: channel.port2 });
   const portClient = createTrpcClient({
     router: routerType<typeof counter>(),
     links: [port],
@@ -222,8 +225,8 @@ test("a socket link whose serializer isn't the server's fails with UNSUPPORTED_P
     );
   } finally {
     await port.close();
-    port1.close();
-    port2.close();
+    channel.port1.close();
+    channel.port2.close();
   }
   expect(runs).toBe(0);
 });

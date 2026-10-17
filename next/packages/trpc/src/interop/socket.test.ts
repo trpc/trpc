@@ -12,10 +12,10 @@ import { z } from 'zod';
 const t = initTrpc<{ ctx: { user: string | null } }>();
 
 const router = {
-  whoami: t.procedure.query(({ ctx }) => ctx.user),
-  echo: t.procedure.input(z.unknown()).mutation(({ input }) => input),
-  feed: t.procedure.subscription(async function* ({ lastEventId }) {
-    yield tracked(String(Number(lastEventId ?? 0) + 1), 'next');
+  whoami: t.procedure.query((opts) => opts.ctx.user),
+  echo: t.procedure.input(z.unknown()).mutation((opts) => opts.input),
+  feed: t.procedure.subscription(async function* (opts) {
+    yield tracked(String(Number(opts.lastEventId ?? 0) + 1), 'next');
     throw error({ code: 'CONFLICT', message: 'Feed ended badly' });
   }),
   forever: t.procedure.subscription(() => Stream.never),
@@ -24,8 +24,9 @@ const router = {
 async function start(extra: Partial<V11HandlerOptions<typeof router>> = {}) {
   const handler = createV11Handler({
     router,
-    createContext: ({ info }) => ({
-      user: (info.connectionParams?.['token'] as string | undefined) ?? null,
+    createContext: (opts) => ({
+      user:
+        (opts.info.connectionParams?.['token'] as string | undefined) ?? null,
     }),
     ...extra,
   });
@@ -43,9 +44,9 @@ async function start(extra: Partial<V11HandlerOptions<typeof router>> = {}) {
       scope,
     ),
   );
-  const { port } = server.address() as AddressInfo;
+  const address = server.address() as AddressInfo;
   return {
-    url: `ws://127.0.0.1:${port}/trpc`,
+    url: `ws://127.0.0.1:${address.port}/trpc`,
     async [Symbol.asyncDispose]() {
       server.closeAllConnections();
       for (const socket of sockets) socket.destroy();
@@ -200,11 +201,11 @@ test('inputs the transformer cannot read, and createContext errors, fail the cal
         throw new Error('unreadable');
       },
     },
-    createContext: ({ info }) => {
-      if (info.connectionParams?.['token'] === 'bad') {
+    createContext: (opts) => {
+      if (opts.info.connectionParams?.['token'] === 'bad') {
         throw error({ code: 'UNAUTHORIZED', message: 'Bad token' });
       }
-      if (info.connectionParams?.['token'] === 'crash') {
+      if (opts.info.connectionParams?.['token'] === 'crash') {
         throw new Error('db down');
       }
       return { user: null };

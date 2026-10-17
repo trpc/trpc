@@ -24,7 +24,7 @@ const users = t.procedure.query(() => ['ada']);
 const ban = t.procedure
   .input(z.object({ id: z.string() }))
   .meta({ route: { method: 'POST', path: '/bans/{id}', tags: ['moderation'] } })
-  .mutation(({ input }) => `banned ${input.id}`);
+  .mutation((opts) => `banned ${opts.input.id}`);
 
 const makeRouter = () => {
   const loads = { admin: 0, reports: 0, billing: 0 };
@@ -54,7 +54,7 @@ const makeRouter = () => {
         return {
           invoice: t.procedure
             .input(z.object({ n: z.number() }))
-            .query(({ input }) => input.n * 2),
+            .query((opts) => opts.input.n * 2),
         };
       }),
     },
@@ -89,7 +89,8 @@ test('router-level route meta only changes OpenAPI routes (08 Q8.3)', async () =
 });
 
 test('lazy() loads a subtree on its first call, once (08 Q8.4)', async () => {
-  const { router, loads } = makeRouter();
+  const app = makeRouter();
+  const { router } = app;
   expect(isLazy(router.reports)).toBe(true);
   expect(getProcedure(router, 'reports.daily')).toBeUndefined();
 
@@ -107,7 +108,7 @@ test('lazy() loads a subtree on its first call, once (08 Q8.4)', async () => {
     client.billing.invoice.query({ n: 21 }),
   ]);
   expect([a, b, c]).toEqual(['daily', 'daily', 42]);
-  expect(loads).toMatchObject({ reports: 1, billing: 1 });
+  expect(app.loads).toMatchObject({ reports: 1, billing: 1 });
   expect(getProcedure(router, 'reports.daily')).toBeDefined();
 
   const caller = createRouterClient(makeRouter().router);
@@ -115,13 +116,13 @@ test('lazy() loads a subtree on its first call, once (08 Q8.4)', async () => {
 });
 
 test('tools that need the whole router ask for loadRouter()', async () => {
-  const { router } = makeRouter();
+  const app = makeRouter();
   expect(() =>
-    generateOpenApi(router, { info: { title: 'x', version: '1' } }),
+    generateOpenApi(app.router, { info: { title: 'x', version: '1' } }),
   ).toThrow(
     /"reports" is lazy and hasn't loaded: pass `await loadRouter\(router\)`/,
   );
-  const contract = toContract(await loadRouter(router));
+  const contract = toContract(await loadRouter(app.router));
   expect(contract.procedures['admin.users']!.route).toMatchObject({
     path: '/admin/users',
     tags: ['admin'],
@@ -134,24 +135,24 @@ const get = (
 ) => handler.fetch(new Request(`http://localhost/api${path}`));
 
 test('the OpenAPI handler loads a prefixed lazy subtree on a request under it', async () => {
-  const { router, loads } = makeRouter();
-  const handler = createOpenApiHandler({ router });
+  const app = makeRouter();
+  const handler = createOpenApiHandler({ router: app.router });
   expect(await (await get(handler, '/admin/users')).json()).toEqual(['ada']);
   await (await get(handler, '/billing/invoice?n=1')).json();
-  expect(loads).toMatchObject({ reports: 0, billing: 1 });
+  expect(app.loads).toMatchObject({ reports: 0, billing: 1 });
   expect(await (await get(handler, '/reports/daily')).json()).toBe('daily');
-  expect(loads.reports).toBe(1);
+  expect(app.loads.reports).toBe(1);
   expect((await get(handler, '/reports/nope')).status).toBe(404);
 });
 
 test('with a contract, the OpenAPI handler loads lazy subtrees only when called', async () => {
   const contract = toContract(await loadRouter(makeRouter().router));
-  const { router, loads } = makeRouter();
-  const handler = createOpenApiHandler({ router, contract });
+  const app = makeRouter();
+  const handler = createOpenApiHandler({ router: app.router, contract });
   expect(await (await get(handler, '/admin/users')).json()).toEqual(['ada']);
-  expect(loads).toMatchObject({ reports: 0, billing: 0 });
+  expect(app.loads).toMatchObject({ reports: 0, billing: 0 });
   expect(await (await get(handler, '/billing/invoice?n=4')).json()).toBe(8);
-  expect(loads).toMatchObject({ reports: 0, billing: 1 });
+  expect(app.loads).toMatchObject({ reports: 0, billing: 1 });
 });
 
 test('router-level meta takes only the keys an extension gives a router form', () => {

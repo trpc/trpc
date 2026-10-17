@@ -157,7 +157,7 @@ export function flattenRouter(
   router: object,
 ): Array<[path: string, procedure: AnyProcedure]> {
   const flat = assertLoaded(flattenRoutes(router));
-  return flat.procedures.map(({ path, procedure }) => [path, procedure]);
+  return flat.procedures.map((leaf) => [leaf.path, leaf.procedure]);
 }
 
 /**

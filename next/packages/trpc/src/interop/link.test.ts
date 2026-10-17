@@ -20,18 +20,18 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 let stopped = 0;
 
 const router = {
-  whoami: t.procedure.query(({ ctx }) => ctx.user),
+  whoami: t.procedure.query((opts) => opts.ctx.user),
   byId: t.procedure
     .input(z.object({ id: z.string() }))
-    .query(({ input }) =>
-      input.id === '1'
+    .query((opts) =>
+      opts.input.id === '1'
         ? { id: '1' }
-        : error({ code: 'NOT_FOUND', message: `No post ${input.id}` }),
+        : error({ code: 'NOT_FOUND', message: `No post ${opts.input.id}` }),
     ),
   ticks: t.procedure.subscription(() => Stream.make(1, 2, 3)),
-  forever: t.procedure.subscription(async function* ({ signal }) {
+  forever: t.procedure.subscription(async function* (opts) {
     try {
-      for (let n = 0; !signal.aborted; n++) {
+      for (let n = 0; !opts.signal.aborted; n++) {
         yield n;
         await sleep(5);
       }
@@ -45,29 +45,29 @@ type AppRouter = typeof router;
 const serve = () =>
   createTestServer({
     router,
-    createContext: ({ request }) => ({
-      user: request.headers['x-user'] ?? null,
+    createContext: (opts) => ({
+      user: opts.request.headers['x-user'] ?? null,
     }),
   });
 
 test('a v11 link changes the operation and taps results', async () => {
   await using server = await serve();
   const seen: unknown[] = [];
-  const authLink: TRPCLink<AnyTRPCRouter> =
-    () =>
-    ({ op, next }) =>
-      next({
-        ...op,
-        context: { ...op.context, headers: { 'x-user': 'kim' } },
-      }).pipe(tap({ next: (envelope) => seen.push(envelope.result) }), share());
+  const authLink: TRPCLink<AnyTRPCRouter> = () => (opts) =>
+    opts
+      .next({
+        ...opts.op,
+        context: { ...opts.op.context, headers: { 'x-user': 'kim' } },
+      })
+      .pipe(tap({ next: (envelope) => seen.push(envelope.result) }), share());
   const contexts: Operation['context'][] = [];
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
     links: [
       fromV11Link(authLink),
-      link(({ op, next }) => {
-        contexts.push(op.context);
-        return next(op);
+      link((opts) => {
+        contexts.push(opts.op.context);
+        return opts.next(opts.op);
       }),
       httpLink({ url: server.url }),
     ],
@@ -79,15 +79,13 @@ test('a v11 link changes the operation and taps results', async () => {
 
 test('a v11 link can answer without calling next', async () => {
   await using server = await serve();
-  const cacheLink: TRPCLink<AnyTRPCRouter> =
-    () =>
-    ({ op, next }) =>
-      op.path === 'whoami'
-        ? observable((observer) => {
-            observer.next({ result: { type: 'data', data: 'cached' } });
-            observer.complete();
-          })
-        : next(op);
+  const cacheLink: TRPCLink<AnyTRPCRouter> = () => (opts) =>
+    opts.op.path === 'whoami'
+      ? observable((observer) => {
+          observer.next({ result: { type: 'data', data: 'cached' } });
+          observer.complete();
+        })
+      : opts.next(opts.op);
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
     links: [fromV11Link(cacheLink), httpLink({ url: server.url })],
@@ -99,24 +97,22 @@ test('a v11 link can answer without calling next', async () => {
 test('errors: v12 errors reach the v11 link, v11 errors keep their code', async () => {
   await using server = await serve();
   const seen: unknown[] = [];
-  const v11Link: TRPCLink<AnyTRPCRouter> =
-    () =>
-    ({ op, next }) =>
-      op.path === 'whoami'
-        ? observable((observer) => {
-            observer.error(
-              new TRPCClientError('No token', {
-                result: {
-                  error: {
-                    code: -32001,
-                    message: 'No token',
-                    data: { code: 'UNAUTHORIZED', httpStatus: 401 },
-                  },
+  const v11Link: TRPCLink<AnyTRPCRouter> = () => (opts) =>
+    opts.op.path === 'whoami'
+      ? observable((observer) => {
+          observer.error(
+            new TRPCClientError('No token', {
+              result: {
+                error: {
+                  code: -32001,
+                  message: 'No token',
+                  data: { code: 'UNAUTHORIZED', httpStatus: 401 },
                 },
-              } as never),
-            );
-          })
-        : next(op).pipe(tap({ error: (e) => seen.push(e) }));
+              },
+            } as never),
+          );
+        })
+      : opts.next(opts.op).pipe(tap({ error: (e) => seen.push(e) }));
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
     links: [fromV11Link(v11Link), httpLink({ url: server.url })],
@@ -136,23 +132,21 @@ test('errors: v12 errors reach the v11 link, v11 errors keep their code', async 
 test('subscriptions pass through v11 operators, and stop when the loop ends', async () => {
   await using server = await serve();
   const results: unknown[] = [];
-  const timesTen: TRPCLink<AnyTRPCRouter> =
-    () =>
-    ({ op, next }) =>
-      next(op).pipe(
-        tap({ next: (envelope) => results.push(envelope.result.type) }),
-        map((envelope) =>
-          envelope.result.type === 'data'
-            ? {
-                ...envelope,
-                result: {
-                  ...envelope.result,
-                  data: (envelope.result.data as number) * 10,
-                },
-              }
-            : envelope,
-        ),
-      );
+  const timesTen: TRPCLink<AnyTRPCRouter> = () => (opts) =>
+    opts.next(opts.op).pipe(
+      tap({ next: (envelope) => results.push(envelope.result.type) }),
+      map((envelope) =>
+        envelope.result.type === 'data'
+          ? {
+              ...envelope,
+              result: {
+                ...envelope.result,
+                data: (envelope.result.data as number) * 10,
+              },
+            }
+          : envelope,
+      ),
+    );
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
     links: [fromV11Link(timesTen), httpLink({ url: server.url })],

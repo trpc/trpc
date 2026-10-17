@@ -36,11 +36,9 @@ if (!byIdResponses.includes('404'))
 
 // --- server --------------------------------------------------------------------------
 
-const createContext = ({
-  request,
-}: {
+const createContext = (opts: {
   request: { headers: Record<string, string | undefined> };
-}) => ({ user: request.headers['x-user'] ?? null });
+}) => ({ user: opts.request.headers['x-user'] ?? null });
 
 const rpc = createFetchHandler({ router: appRouter, createContext });
 const rest = createOpenApiHandler({

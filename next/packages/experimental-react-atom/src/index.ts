@@ -270,12 +270,15 @@ export function createAtomClient(opts: {
   const keys = new Map<string, Key>();
 
   const atoms = Atom.family((id: string) => {
-    const { type, path, input, options } = keys.get(id)!;
+    const key = keys.get(id)!;
+    const { options } = key;
     let atom: Atom.Atom<any> =
-      type === 'query'
-        ? runtime.atom(at(client, path).query(input) as Effect.Effect<unknown>)
+      key.type === 'query'
+        ? runtime.atom(
+            at(client, key.path).query(key.input) as Effect.Effect<unknown>,
+          )
         : runtime.atom(
-            at(client, path).subscribe(input) as Stream.Stream<unknown>,
+            at(client, key.path).subscribe(key.input) as Stream.Stream<unknown>,
           );
     if (options?.reactivityKeys) {
       atom = runtime.factory.withReactivity(options.reactivityKeys)(atom);
@@ -286,7 +289,7 @@ export function createAtomClient(opts: {
         ? Atom.setIdleTTL(atom, ttl)
         : Atom.keepAlive(atom);
     }
-    if (type === 'query') {
+    if (key.type === 'query') {
       atom = Atom.serializable(atom, {
         key: `trpc:${id}`,
         schema: resultSchema as Schema.Codec<unknown, unknown>,
@@ -302,10 +305,12 @@ export function createAtomClient(opts: {
 
   const mutations = Atom.family((path: string) =>
     runtime.fn<{ input: unknown; reactivityKeys?: ReactivityKeys }>()(
-      ({ input, reactivityKeys }) => {
-        const call = at(client, path).mutate(input) as Effect.Effect<unknown>;
-        return reactivityKeys
-          ? Reactivity.mutation(call, reactivityKeys)
+      (args) => {
+        const call = at(client, path).mutate(
+          args.input,
+        ) as Effect.Effect<unknown>;
+        return args.reactivityKeys
+          ? Reactivity.mutation(call, args.reactivityKeys)
           : call;
       },
     ),

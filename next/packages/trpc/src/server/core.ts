@@ -109,19 +109,19 @@ export function createHandlerCore(opts: CoreOptions): HandlerCore {
 
   return {
     run: async (o) => {
-      const { call, context } = prepare(o, ready ?? (await getServices()));
-      return Effect.runPromiseExitWith(context)(call, {
+      const prepared = prepare(o, ready ?? (await getServices()));
+      return Effect.runPromiseExitWith(prepared.context)(prepared.call, {
         signal: o.signal,
       });
     },
     runEffect: (o) => {
       const inline = (layer: Context.Context<any>) => {
-        const { call, context } = prepare(o, layer);
+        const prepared = prepare(o, layer);
         // The call's services replace the server fiber's, as in `run`.
         return Effect.exit(
           Effect.updateContext<unknown, AnyTrpcError, any, never>(
-            call,
-            () => context,
+            prepared.call,
+            () => prepared.context,
           ),
         );
       };

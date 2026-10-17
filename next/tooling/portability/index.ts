@@ -64,31 +64,30 @@ export const t = initTrpc<{
 
 export const publicProcedure = t.procedure;
 
-export const authed = t.procedure.use(({ ctx, next }) =>
-  ctx.user
-    ? next({ ctx: { user: ctx.user } })
+export const authed = t.procedure.use((opts) =>
+  opts.ctx.user
+    ? opts.next({ ctx: { user: opts.ctx.user } })
     : error({ code: 'UNAUTHORIZED' }),
 );
 
-export const timed = t.middleware(async ({ next }) => next());
+export const timed = t.middleware(async (opts) => opts.next());
 
-export const requireAdmin = middleware<{ ctx: { user: User } }>()(
-  ({ ctx, next }) =>
-    ctx.user.id === 'admin' ? next() : error({ code: 'FORBIDDEN' }),
+export const requireAdmin = middleware<{ ctx: { user: User } }>()((opts) =>
+  opts.ctx.user.id === 'admin' ? opts.next() : error({ code: 'FORBIDDEN' }),
 );
 
 class CurrentUser extends Context.Service<CurrentUser, User>()('CurrentUser') {}
 
 export const withCurrentUser = t.middleware.effect<{ provides: CurrentUser }>()(
-  ({ ctx, next }) =>
-    ctx.user
-      ? next().pipe(Effect.provideService(CurrentUser, ctx.user))
+  (opts) =>
+    opts.ctx.user
+      ? opts.next().pipe(Effect.provideService(CurrentUser, opts.ctx.user))
       : Effect.fail(error({ code: 'UNAUTHORIZED' })),
 );
 
 export const standaloneEffect = middleware.effect<{
   ctx: { user: User | null };
-}>()(({ next }) => next({ ctx: { at: 0 } }));
+}>()((opts) => opts.next({ ctx: { at: 0 } }));
 
 export const declared = t.procedure
   .errors({ NOT_FOUND: { data: z.object({ id: z.string() }) } })
@@ -97,25 +96,23 @@ export const declared = t.procedure
 const pluginT = initTrpc<{ ctx: { user: User } }>();
 export const orgPlugin = pluginT.procedure
   .input(z.object({ orgId: z.string() }))
-  .use(({ input, next }) => next({ ctx: { orgId: input.orgId } }));
+  .use((opts) => opts.next({ ctx: { orgId: opts.input.orgId } }));
 
 export const postRouter = {
-  byId: t.procedure
-    .input(Schema.Struct({ id: Schema.String }))
-    .query(({ input }) =>
-      Effect.gen(function* () {
-        const post = yield* (yield* PostRepo).find(input.id);
-        if (!post) {
-          return yield* error({ code: 'NOT_FOUND', data: { id: input.id } });
-        }
-        return post;
-      }),
-    ),
+  byId: t.procedure.input(Schema.Struct({ id: Schema.String })).query((opts) =>
+    Effect.gen(function* () {
+      const post = yield* (yield* PostRepo).find(opts.input.id);
+      if (!post) {
+        return yield* error({ code: 'NOT_FOUND', data: { id: opts.input.id } });
+      }
+      return post;
+    }),
+  ),
   create: authed
     .use(requireAdmin)
     .concat(orgPlugin)
     .input(z.object({ title: z.string() }))
-    .mutation(({ ctx, input }) => ({ ...input, orgId: ctx.orgId })),
+    .mutation((opts) => ({ ...opts.input, orgId: opts.ctx.orgId })),
   feed: t.procedure.query(() => ({
     first: 'a',
     rest: (async function* () {
@@ -128,7 +125,7 @@ export const postRouter = {
   ticks: t.procedure.subscription(() => Stream.make(1, 2, 3)),
   find: declared
     .input(z.object({ id: z.string() }))
-    .query(({ input, errors }) => errors.NOT_FOUND({ data: { id: input.id } })),
+    .query((opts) => opts.errors.NOT_FOUND({ data: { id: opts.input.id } })),
   me: t.procedure
     .use(withCurrentUser)
     .use(standaloneEffect)
@@ -139,9 +136,9 @@ export const postRouter = {
       }),
     ),
   cached: t.procedure
-    .use(({ next }) => (Math.random() > 2 ? ok('hit') : next()))
-    .mutation(({ response }) => {
-      response.status = 201;
+    .use((opts) => (Math.random() > 2 ? ok('hit') : opts.next()))
+    .mutation((opts) => {
+      opts.response.status = 201;
       return 'miss';
     }),
 };
@@ -161,7 +158,7 @@ export const handler = createFetchHandler({
 
 export const client = createTrpcClient({
   router: routerType<AppRouter>(),
-  links: [link(({ op, next }) => next(op)), httpLink({ url: '/trpc' })],
+  links: [link((opts) => opts.next(opts.op)), httpLink({ url: '/trpc' })],
 });
 
 export const localClient = createTrpcClient({
@@ -174,8 +171,8 @@ export const effectClient = createEffectClient({
   links: [httpLink({ url: '/trpc' })],
 });
 
-export const traceLink = link<{ context: { traceId?: string } }>(
-  ({ op, next }) => next(op),
+export const traceLink = link<{ context: { traceId?: string } }>((opts) =>
+  opts.next(opts.op),
 );
 
 export const socket = wsLink({ url: 'ws://localhost/trpc' });
@@ -216,13 +213,13 @@ export const userImpl = t.implement(userContract);
 
 export const userRouter = userImpl.router({
   me: userImpl.me
-    .use(({ ctx, next }) =>
-      ctx.user
-        ? next({ ctx: { user: ctx.user } })
+    .use((opts) =>
+      opts.ctx.user
+        ? opts.next({ ctx: { user: opts.ctx.user } })
         : error({ code: 'UNAUTHORIZED' }),
     )
-    .query(({ ctx }) => ctx.user),
-  rename: userImpl.rename.mutation(({ input }) => input),
+    .query((opts) => opts.ctx.user),
+  rename: userImpl.rename.mutation((opts) => opts.input),
   presence: userImpl.presence.subscription(async function* () {
     yield tracked('1', 'online');
   }),

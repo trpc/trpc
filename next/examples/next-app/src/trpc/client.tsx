@@ -23,7 +23,7 @@ const makeClient = () =>
 // Typed from the client, so hooks see danSON's `Date`s and files.
 export const [TrpcProvider, useTrpc] = createTrpcContext<typeof makeClient>();
 
-export function Providers({ children }: { children: ReactNode }) {
+export function Providers(props: { children: ReactNode }) {
   const [client] = useState(makeClient);
   const [queryClient] = useState(
     () =>
@@ -36,7 +36,7 @@ export function Providers({ children }: { children: ReactNode }) {
   );
   return (
     <QueryClientProvider client={queryClient}>
-      <TrpcProvider client={client}>{children}</TrpcProvider>
+      <TrpcProvider client={client}>{props.children}</TrpcProvider>
     </QueryClientProvider>
   );
 }

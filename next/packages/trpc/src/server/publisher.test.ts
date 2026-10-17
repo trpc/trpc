@@ -94,8 +94,8 @@ const router = {
         return post;
       }),
     ),
-  onCreated: t.procedure.subscription(({ lastEventId }) =>
-    Posts.subscribe('created', { lastEventId }),
+  onCreated: t.procedure.subscription((opts) =>
+    Posts.subscribe('created', { lastEventId: opts.lastEventId }),
   ),
 };
 

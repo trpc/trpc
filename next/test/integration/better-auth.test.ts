@@ -25,25 +25,25 @@ const auth = betterAuth({
 
 const t = initTrpc<{ ctx: { headers: Headers } }>();
 
-const authed = t.procedure.use(async ({ ctx, next }) => {
-  const session = await auth.api.getSession({ headers: ctx.headers });
+const authed = t.procedure.use(async (opts) => {
+  const session = await auth.api.getSession({ headers: opts.ctx.headers });
   return session
-    ? next({ ctx: { user: session.user, session: session.session } })
+    ? opts.next({ ctx: { user: session.user, session: session.session } })
     : error({ code: 'UNAUTHORIZED' });
 });
 
 const router = {
-  me: authed.query(({ ctx }) => ({
-    name: ctx.user.name,
-    email: ctx.user.email,
+  me: authed.query((opts) => ({
+    name: opts.ctx.user.name,
+    email: opts.ctx.user.email,
   })),
 };
 
 test('a Better Auth session becomes the ctx user through a middleware', async () => {
   await using server = await createTestServer({
     router,
-    createContext: ({ request }) => ({
-      headers: new Headers(request.headers as Record<string, string>),
+    createContext: (opts) => ({
+      headers: new Headers(opts.request.headers as Record<string, string>),
     }),
   });
   const signUp = await auth.api.signUpEmail({

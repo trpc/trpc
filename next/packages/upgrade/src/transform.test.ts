@@ -16,8 +16,7 @@ const messages = (source: string, filename?: string) =>
 
 describe('server', () => {
   test('initTRPC chain, TRPCError, mergeRouters, createCaller', () => {
-    const { code, changed } =
-      upgrade(`import { initTRPC, TRPCError } from '@trpc/server';
+    const result = upgrade(`import { initTRPC, TRPCError } from '@trpc/server';
 import type { Context } from './context';
 
 const t = initTRPC.context<Context>().meta<{ auth: boolean }>().create();
@@ -33,8 +32,8 @@ export const authed = t.procedure.use(({ ctx, next }) => {
 
 const caller = appRouter.createCaller({ user: null });
 `);
-    expect(changed).toBe(true);
-    expect(code).toMatchInlineSnapshot(`
+    expect(result.changed).toBe(true);
+    expect(result.code).toMatchInlineSnapshot(`
       "import { initTrpc, TrpcError, createRouterClient } from '@trpc12/trpc/server';
       import type { Context } from './context';
 

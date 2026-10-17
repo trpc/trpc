@@ -139,7 +139,6 @@ const evaluate = '~effect/Effect/evaluate';
 export function experimental_workersTracer(
   options: experimental_WorkersTracerOptions,
 ): Layer.Layer<never> {
-  const { tracing, snapshot } = options;
   const runnerOf = (span: Tracer.AnySpan | undefined) =>
     span instanceof WorkersEffectSpan ? span.run : undefined;
   const tracer = Tracer.make({
@@ -147,19 +146,19 @@ export function experimental_workersTracer(
       const parent = runnerOf(Option.getOrUndefined(opts.parent));
       let span!: WorkersEffectSpan;
       const start = () =>
-        tracing.startActiveSpan(opts.name, (workers) => {
+        options.tracing.startActiveSpan(opts.name, (workers) => {
           let ended!: () => void;
           const pending = new Promise<void>((resolve) => {
             ended = resolve;
           });
           span = new WorkersEffectSpan(opts, workers, () => ended());
-          span.run = snapshot?.();
+          span.run = options.snapshot?.();
           return pending;
         });
       void (parent ? parent(start) : start());
       return span;
     },
-    context: snapshot
+    context: options.snapshot
       ? (primitive, fiber) => {
           const run = runnerOf(
             Context.getOrUndefined(fiber.context, Tracer.ParentSpan),

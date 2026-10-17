@@ -18,16 +18,16 @@ const t = initTrpc();
 const posts = new Map([['1', { id: '1', title: 'Hello', published: true }]]);
 posts.set('2', { id: '2', title: 'Draft', published: false });
 
-const signedOut = t.procedure.use(({ next, signal }) =>
-  signal.aborted ? next() : error({ code: 'UNAUTHORIZED' }),
+const signedOut = t.procedure.use((opts) =>
+  opts.signal.aborted ? opts.next() : error({ code: 'UNAUTHORIZED' }),
 );
 class PlanRequired extends TrpcError.Tagged('PLAN_REQUIRED', {
   status: 402,
 }) {}
 
 const unpaid = t.procedure.use(
-  t.middleware.effect()(({ next, signal }) =>
-    signal.aborted ? next() : Effect.fail(new PlanRequired()),
+  t.middleware.effect()((opts) =>
+    opts.signal.aborted ? opts.next() : Effect.fail(new PlanRequired()),
   ),
 );
 
@@ -35,23 +35,25 @@ const router = {
   gated: signedOut.query(() => 'secret'),
   paid: unpaid.query(() => 'pro'),
   post: {
-    byId: t.procedure.input(z.object({ id: z.string() })).query(({ input }) => {
-      const post = posts.get(input.id);
-      if (!post) return error({ code: 'NOT_FOUND', data: { id: input.id } });
+    byId: t.procedure.input(z.object({ id: z.string() })).query((opts) => {
+      const post = posts.get(opts.input.id);
+      if (!post)
+        return error({ code: 'NOT_FOUND', data: { id: opts.input.id } });
       if (!post.published) return error({ code: 'FORBIDDEN' });
       return post;
     }),
-    byIdEffect: t.procedure
-      .input(z.object({ id: z.string() }))
-      .query(({ input }) =>
-        Effect.gen(function* () {
-          const post = posts.get(input.id);
-          if (!post) {
-            return yield* error({ code: 'NOT_FOUND', data: { id: input.id } });
-          }
-          return post;
-        }),
-      ),
+    byIdEffect: t.procedure.input(z.object({ id: z.string() })).query((opts) =>
+      Effect.gen(function* () {
+        const post = posts.get(opts.input.id);
+        if (!post) {
+          return yield* error({
+            code: 'NOT_FOUND',
+            data: { id: opts.input.id },
+          });
+        }
+        return post;
+      }),
+    ),
   },
   pay: t.procedure
     .errors({ PAYMENT_REQUIRED_CUSTOM: { status: 402 } })

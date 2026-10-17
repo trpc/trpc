@@ -60,7 +60,7 @@ const router = {
         },
       }),
     )
-    .query(({ input }) => input),
+    .query((opts) => opts.input),
   parts: t.procedure
     .meta({
       route: { method: 'GET', path: '/parts', inputStructure: 'detailed' },
@@ -89,7 +89,7 @@ const router = {
         ],
       }),
     )
-    .query(({ input }) => input),
+    .query((opts) => opts.input),
   anyBody: t.procedure
     .meta({ route: { method: 'POST', path: '/any/{id}' } })
     .input(
@@ -100,7 +100,7 @@ const router = {
         ],
       }),
     )
-    .mutation(({ input }) => input),
+    .mutation((opts) => opts.input),
   optionalBody: t.procedure
     .meta({ route: { method: 'POST', path: '/optional/{id}' } })
     .input(
@@ -109,7 +109,7 @@ const router = {
         properties: { id: { type: 'string' }, note: { type: 'string' } },
       }),
     )
-    .mutation(({ input }) => input),
+    .mutation((opts) => opts.input),
   merged: t.procedure
     .meta({ route: { method: 'GET', path: '/merged' } })
     .input(
@@ -120,7 +120,7 @@ const router = {
         ],
       }),
     )
-    .query(({ input }) => input),
+    .query((opts) => opts.input),
   errors: t.procedure
     .meta({
       route: {
@@ -136,7 +136,7 @@ const router = {
       ODD: {},
       OPAQUE: { data: opaque },
     })
-    .query(({ errors }) => errors.ODD()),
+    .query((opts) => opts.errors.ODD()),
   hidden: t.procedure
     .meta({ route: { method: 'GET', path: '/hidden' } })
     .query(() => 'shh'),
@@ -186,7 +186,7 @@ test('detailed parts are found through allOf, and missing parts pass through', a
 test('generateOpenApi documents bodies, errors and filters any JSON Schema can describe', async () => {
   const doc = generateOpenApi(router, {
     info: { title: 'JSON Schema', version: '1.0.0' },
-    filter: ({ path }) => path !== 'hidden',
+    filter: (opts) => opts.path !== 'hidden',
   });
   expect(doc.paths).not.toHaveProperty('/api/hidden');
 

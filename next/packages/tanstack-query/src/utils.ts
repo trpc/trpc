@@ -634,7 +634,8 @@ function streamFrom(
   input: unknown,
   context: unknown,
 ): (ctx: { signal: AbortSignal }) => AsyncIterable<unknown> {
-  return ({ signal }) => method(input, { ...(context as object), signal });
+  return (opts) =>
+    method(input, { ...(context as object), signal: opts.signal });
 }
 
 /**
@@ -660,10 +661,9 @@ function streamFrom(
 export function createTrpcQueryUtils<TClient extends object>(
   opts: CreateTrpcQueryUtilsOptions<TClient>,
 ): TrpcQueryUtils<TClient> {
-  const { client, keyPrefix } = opts;
-  const subscriptionCache = subscriptionCacheFor(client);
+  const subscriptionCache = subscriptionCacheFor(opts.client);
   const method = (path: readonly string[], name: string): ClientMethod => {
-    let target: any = client;
+    let target: any = opts.client;
     for (const key of path) target = target[key];
     return (input, callOpts) => target[name](input, callOpts);
   };
@@ -671,7 +671,8 @@ export function createTrpcQueryUtils<TClient extends object>(
   return createRecursiveProxy((fullPath, args) => {
     const name = fullPath.at(-1);
     const callPath = fullPath.slice(0, -1);
-    const path = keyPrefix === undefined ? callPath : [keyPrefix, ...callPath];
+    const path =
+      opts.keyPrefix === undefined ? callPath : [opts.keyPrefix, ...callPath];
     const { input, context, ...rest } = (args[0] ?? {}) as Bag;
 
     switch (name) {
@@ -704,11 +705,10 @@ export function createTrpcQueryUtils<TClient extends object>(
       }
       case 'infiniteKey':
       case 'infiniteOptions': {
-        const { initialPageParam } = rest;
         const toInput = input as ((pageParam: unknown) => unknown) | SkipToken;
         const queryKey = procedureKey(
           path,
-          toInput === skipToken ? skipToken : toInput(initialPageParam),
+          toInput === skipToken ? skipToken : toInput(rest['initialPageParam']),
           'infinite',
         );
         if (name === 'infiniteKey') return queryKey;

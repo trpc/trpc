@@ -113,11 +113,13 @@ class SharedSubscription<TEvent, TError> {
     const controller = new AbortController();
     this.#controller = controller;
     this.#set({ status: 'connecting', data: this.result.data, error: null });
-    const { signal } = controller;
-    const live = () => this.#controller === controller && !signal.aborted;
+    const live = () =>
+      this.#controller === controller && !controller.signal.aborted;
     void (async () => {
       try {
-        for await (const event of options.subscribe({ signal })) {
+        for await (const event of options.subscribe({
+          signal: controller.signal,
+        })) {
           if (!live()) return;
           this.#set({ status: 'active', data: event, error: null });
           this.#each((o) => o.onData?.(event));

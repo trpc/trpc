@@ -29,14 +29,14 @@ import {
   serializer,
 } from '../../tanstack-query/src/fixtures/app.ts';
 
-const { provideTrpc, injectTrpc } = createTrpcContext<AppClient>();
+const trpcContext = createTrpcContext<AppClient>();
 
 const Page = Component({
   selector: 'app-root',
   template: `<h1>{{ post.data()?.createdAt?.toISOString()?.slice(0, 10) }}</h1><p>{{ added.status() }}</p>`,
 })(
   class {
-    trpc = injectTrpc();
+    trpc = trpcContext.injectTrpc();
     post = injectQuery(() =>
       this.trpc.post.byId.queryOptions({ input: { id: '3' } }),
     );
@@ -69,7 +69,7 @@ test('server render with prefetched data and no subscription', async () => {
             provideServerRendering(),
             provideZonelessChangeDetection(),
             provideTanStackQuery(queryClient),
-            provideTrpc(client),
+            trpcContext.provideTrpc(client),
           ],
         },
         context,

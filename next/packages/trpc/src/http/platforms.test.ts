@@ -23,10 +23,10 @@ const t = initTrpc();
 const router = {
   hello: t.procedure
     .input(z.object({ name: z.string() }))
-    .query(({ input }) => `hello ${input.name}`),
+    .query((opts) => `hello ${opts.input.name}`),
   save: t.procedure
     .input(z.object({ n: z.number() }))
-    .mutation(({ input }) => input.n * 2),
+    .mutation((opts) => opts.input.n * 2),
 };
 const handler = createFetchHandler({ router });
 
@@ -51,8 +51,8 @@ test('a body an Express parser already read is taken from req.body', async () =>
     nodeHandler(req, res);
   });
   await new Promise<void>((resolve) => server.listen(0, resolve));
-  const { port } = server.address() as AddressInfo;
-  const url = `http://127.0.0.1:${port}/trpc`;
+  const address = server.address() as AddressInfo;
+  const url = `http://127.0.0.1:${address.port}/trpc`;
   try {
     const client = createTrpcClient({
       router: routerType<typeof router>(),
@@ -84,11 +84,11 @@ test('a (req, res) handler for Express, Fastify and node:http (docs/platforms.md
   // Effect reads req.url, which app.use('/trpc', …) strips; Express routes keep it.
   const server = createServer((req, res) => nodeHandler(req, res));
   await new Promise<void>((resolve) => server.listen(0, resolve));
-  const { port } = server.address() as AddressInfo;
+  const address = server.address() as AddressInfo;
   try {
     const client = createTrpcClient({
       router: routerType<typeof router>(),
-      links: [httpLink({ url: `http://127.0.0.1:${port}/trpc` })],
+      links: [httpLink({ url: `http://127.0.0.1:${address.port}/trpc` })],
     });
     expect(await client.hello.query({ name: 'node' })).toBe('hello node');
   } finally {
@@ -116,9 +116,9 @@ test('platform values reach createContext, typed by the handler (docs/platforms.
   }
   const wt = initTrpc<{ ctx: { greeting: string; defer: Platform['ctx'] } }>();
   const workerRouter = {
-    greet: wt.procedure.query(({ ctx }) => {
-      ctx.defer.waitUntil(Promise.resolve());
-      return ctx.greeting;
+    greet: wt.procedure.query((opts) => {
+      opts.ctx.defer.waitUntil(Promise.resolve());
+      return opts.ctx.greeting;
     }),
   };
   const worker = createFetchHandler<typeof workerRouter, Platform>({

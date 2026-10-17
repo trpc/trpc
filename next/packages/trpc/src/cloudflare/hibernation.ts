@@ -282,15 +282,15 @@ export function experimental_createHibernatingWebSockets<TPlatform>(
               });
             }
           },
-          hibernate({ id, path, key, channel }) {
+          hibernate(sub) {
             const now = current(socket) ?? attachment;
             const subs: Parked[] = [
               ...(now.subs ?? []),
-              { c: id, k: key, ch: channel, p: path },
+              { c: sub.id, k: sub.key, ch: sub.channel, p: sub.path },
             ];
             if (store(socket, { ...now, subs })) return true;
             warn(
-              `The subscription "${path}" doesn't fit the socket's 2 KB attachment, so it keeps the object awake.`,
+              `The subscription "${sub.path}" doesn't fit the socket's 2 KB attachment, so it keeps the object awake.`,
             );
             return false;
           },

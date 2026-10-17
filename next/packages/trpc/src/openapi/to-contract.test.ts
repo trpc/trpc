@@ -23,9 +23,9 @@ const router = impl.router({
         ? error({ code: 'NOT_FOUND', data: { id: input.id } })
         : { id: input.id, title: 'Hello' },
     ),
-    create: impl.post.create.mutation(({ input }) => ({
+    create: impl.post.create.mutation((opts) => ({
       id: '2',
-      title: input.title,
+      title: opts.input.title,
     })),
     onAdd: impl.post.onAdd.subscription(async function* () {
       yield tracked('1', { id: '1', title: 'One' });
@@ -43,8 +43,8 @@ test('a @trpc12/trpc document round-trips into a contract openApiLink can call',
     './fixtures/generated/app-contract.ts',
   );
 
-  const { generated } = await import('./fixtures/generated/app-contract.ts');
-  const json = toContract(generated);
+  const mod = await import('./fixtures/generated/app-contract.ts');
+  const json = toContract(mod.generated);
   expect(json.procedures['post.byId']?.route).toEqual({
     method: 'GET',
     path: '/posts/{id}',
@@ -170,12 +170,11 @@ test('an OpenAPI 3.0 document: components, nullable, query parameters, status co
   });
   await expect(source).toMatchFileSnapshot('./fixtures/generated/petstore.ts');
 
-  const { petstore: generated, Pet } =
-    await import('./fixtures/generated/petstore.ts');
+  const mod = await import('./fixtures/generated/petstore.ts');
   expect(
-    Schema.decodeUnknownSync(Pet)({ id: 1, name: 'Rex', tag: null }),
+    Schema.decodeUnknownSync(mod.Pet)({ id: 1, name: 'Rex', tag: null }),
   ).toEqual({ id: 1, name: 'Rex', tag: null });
-  const json = toContract(generated);
+  const json = toContract(mod.petstore);
   expect(
     Object.fromEntries(
       Object.entries(json.procedures).map(([path, p]) => [
@@ -309,18 +308,18 @@ test('recursive components, untyped and merged parameters, a prefix-only path an
   const source = generateContractFromOpenApi(doc, { prefix: '/api/' });
   await expect(source).toMatchFileSnapshot('./fixtures/generated/edges.ts');
 
-  const { contract, Tree } = await import('./fixtures/generated/edges.ts');
+  const mod = await import('./fixtures/generated/edges.ts');
   expect(
-    Schema.decodeUnknownSync(Tree)({
+    Schema.decodeUnknownSync(mod.Tree)({
       value: 'a',
       children: [{ value: 'b', children: [] }],
     }),
   ).toEqual({ value: 'a', children: [{ value: 'b', children: [] }] });
   expect(() =>
-    Schema.decodeUnknownSync(Tree)({ value: 'a', children: [{}] }),
+    Schema.decodeUnknownSync(mod.Tree)({ value: 'a', children: [{}] }),
   ).toThrow('Missing key');
 
-  const json = toContract(contract);
+  const json = toContract(mod.contract);
   expect(
     Object.fromEntries(
       Object.entries(json.procedures).map(([path, p]) => [path, p.route]),
@@ -332,7 +331,7 @@ test('recursive components, untyped and merged parameters, a prefix-only path an
   });
 
   const s = initTrpc<{ ctx: {} }>().concat(openapi());
-  const impl = s.implement(contract);
+  const impl = s.implement(mod.contract);
   const server = impl.router({
     root: impl.root.query(() => undefined),
     trees: {
@@ -346,8 +345,8 @@ test('recursive components, untyped and merged parameters, a prefix-only path an
       ),
     },
     notes: {
-      add: impl.notes.add.mutation(({ input }) => ({
-        ok: [input.draft ?? null, input.text ?? null],
+      add: impl.notes.add.mutation((opts) => ({
+        ok: [opts.input.draft ?? null, opts.input.text ?? null],
       })),
     },
   });

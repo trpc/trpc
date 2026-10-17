@@ -14,10 +14,10 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 let aborted = 0;
 const router = {
-  echo: t.procedure.input(z.unknown()).query(({ input }) => input ?? 'none'),
-  slow: t.procedure.query(async ({ signal }) => {
+  echo: t.procedure.input(z.unknown()).query((opts) => opts.input ?? 'none'),
+  slow: t.procedure.query(async (opts) => {
     await new Promise<void>((resolve) => {
-      signal.addEventListener('abort', () => {
+      opts.signal.addEventListener('abort', () => {
         aborted++;
         resolve();
       });

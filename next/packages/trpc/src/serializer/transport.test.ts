@@ -19,9 +19,11 @@ const send = (
     frames: Stream.Stream<Frame, unknown>,
   ) => Stream.Stream<Frame, unknown>,
 ) => {
-  const { head, chunks } = serializer.serializeDeferred(value);
+  const serialized = serializer.serializeDeferred(value);
   const frames = (
-    chunks ? Stream.concat(Stream.make(head), chunks) : Stream.make(head)
+    serialized.chunks
+      ? Stream.concat(Stream.make(serialized.head), serialized.chunks)
+      : Stream.make(serialized.head)
   ).pipe(Stream.map((f) => JSON.parse(JSON.stringify(f)) as Frame));
   return Effect.runPromise(
     serializer.deserializeStream<any, unknown>(wire(frames)),

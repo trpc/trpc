@@ -42,7 +42,7 @@ const router = {
     })),
   size: t.procedure
     .input(z.object({ file: z.instanceof(File) }))
-    .query(({ input }) => input.file.size),
+    .query((opts) => opts.input.file.size),
   hello: t.procedure.query(() => 'hello'),
   describe: t.procedure
     .input(z.object({ file: z.instanceof(File), blob: z.instanceof(Blob) }))
@@ -53,8 +53,8 @@ const router = {
       await input.blob.text(),
     ]),
   download: t.procedure.input(z.object({ name: z.string() })).query(
-    ({ input }) =>
-      new File(['report bytes'], input.name, {
+    (opts) =>
+      new File(['report bytes'], opts.input.name, {
         type: 'text/csv',
         lastModified: 1_700_000_000_000,
       }),
@@ -249,9 +249,9 @@ test('a multipart mutation needs the trpc-version header, which a cross-site for
     router: {
       post: t.procedure
         .input(z.object({ title: z.string() }))
-        .mutation(({ input }) => {
+        .mutation((opts) => {
           ran++;
-          return input.title;
+          return opts.input.title;
         }),
     },
   });
@@ -558,12 +558,12 @@ test('files yielded by an async iterable arrive in order', async () => {
 });
 
 test("a stream that ends before a file's bytes fails instead of hanging", async () => {
-  const { head, chunks } = danson.serializeDeferred({
+  const serialized = danson.serializeDeferred({
     file: new File(['bytes'], 'a.txt'),
   });
-  const frames: Frame[] = [head];
+  const frames: Frame[] = [serialized.head];
   await Effect.runPromise(
-    Stream.runForEach(chunks!, (chunk) =>
+    Stream.runForEach(serialized.chunks!, (chunk) =>
       Effect.sync(() => frames.push(chunk)),
     ),
   );

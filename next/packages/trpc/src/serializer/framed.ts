@@ -155,9 +155,9 @@ function framedSerializer(
         return idx;
       };
       const payload = (v: unknown): FramedPayload => {
-        const { value: rest, slots } = holes(v, register);
-        const out = serialize(rest);
-        return slots.length > 0 ? { ...out, d: slots } : out;
+        const holed = holes(v, register);
+        const out = serialize(holed.value);
+        return holed.slots.length > 0 ? { ...out, d: holed.slots } : out;
       };
       const head = payload(value);
       if (pending.length === 0) return { head, chunks: undefined };
@@ -172,7 +172,7 @@ function framedSerializer(
       frames: Stream.Stream<SerializeReturn | Chunk, E>,
       opts: Parameters<Serializer['deserializeStream']>[1] = {},
     ): Effect.Effect<T, E | DansonError> => {
-      const { revive, ended, interrupted } = streamErrorsOf(opts);
+      const errors = streamErrorsOf(opts);
       return Effect.gen(function* () {
         const head = yield* Deferred.make<T, E | DansonError>();
         const queues = new Map<number, ChunkQueue>();
@@ -188,7 +188,7 @@ function framedSerializer(
           Stream.fromQueue(queueFor(idx)).pipe(
             Stream.ensuring(Effect.sync(() => queues.delete(idx))),
           );
-        const builders = deferredBuilders(take, revive);
+        const builders = deferredBuilders(take, errors.revive);
         const revivePayload = (p: FramedPayload): unknown => {
           let v: unknown = deserialize(p);
           for (const [path, idx, kind] of p.d ?? []) {
@@ -221,13 +221,13 @@ function framedSerializer(
           ),
           Effect.onExit((exit) =>
             Effect.sync(() => {
-              const error = ended(exit);
+              const error = errors.ended(exit);
               // A no-op once the head is out; a head frame that failed to read leaves it open.
               Deferred.doneUnsafe(
                 head,
                 Exit.isFailure(exit)
                   ? Effect.failCause(exit.cause)
-                  : Effect.fail(interrupted() as never),
+                  : Effect.fail(errors.interrupted() as never),
               );
               for (const q of queues.values()) {
                 Queue.failCauseUnsafe(q, Cause.fail(error));

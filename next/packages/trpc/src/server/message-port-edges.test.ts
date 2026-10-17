@@ -13,7 +13,7 @@ const t = initTrpc<{ ctx: { user: string } }>();
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 const router = {
-  hello: t.procedure.query(({ ctx }) => `hello ${ctx.user}`),
+  hello: t.procedure.query((opts) => `hello ${opts.ctx.user}`),
   slow: t.procedure.query(async () => {
     await sleep(50);
     return 'slow';
@@ -23,10 +23,8 @@ const router = {
     missing: Promise.reject(error({ code: 'NOT_FOUND', message: 'gone' })),
     crash: Promise.reject(new Error('internal detail')),
   })),
-  ticks: t.procedure.input(z.number()).subscription(async function* ({
-    input,
-  }) {
-    for (let i = 0; i < input; i++) {
+  ticks: t.procedure.input(z.number()).subscription(async function* (opts) {
+    for (let i = 0; i < opts.input; i++) {
       yield i;
       await sleep(5);
     }
@@ -36,8 +34,8 @@ const router = {
 const handler = createFetchHandler({
   router,
   exposeUnexpectedErrors: false,
-  createContext: ({ info }) => {
-    const user = info.connectionParams?.['user'];
+  createContext: (opts) => {
+    const user = opts.info.connectionParams?.['user'];
     if (user === 'boom') throw new Error('createContext failed');
     return { user: typeof user === 'string' ? user : 'ada' };
   },
@@ -71,8 +69,9 @@ function webPort(port: MessagePort) {
 
 /** The raw end of a channel whose other end the handler serves. */
 function serve() {
-  const { port1, port2 } = new MessageChannel();
-  handler.messagePort(webPort(port1));
+  const channel = new MessageChannel();
+  const { port2 } = channel;
+  handler.messagePort(webPort(channel.port1));
   const replies: Array<Record<string, unknown>> = [];
   const waiters: Array<() => void> = [];
   port2.on('message', (message: Record<string, unknown>) => {
@@ -154,9 +153,9 @@ test('a failing createContext fails the call by id; a wrong version closes the p
 });
 
 test('deferred rejections over a port become wire errors, unexpected ones hidden', async () => {
-  const { port1, port2 } = new MessageChannel();
-  handler.messagePort(port1);
-  const link = experimental_messagePortLink({ port: webPort(port2) });
+  const channel = new MessageChannel();
+  handler.messagePort(channel.port1);
+  const link = experimental_messagePortLink({ port: webPort(channel.port2) });
   const client = createTrpcClient({
     router: routerType<typeof router>(),
     links: [link],
@@ -173,14 +172,14 @@ test('deferred rejections over a port become wire errors, unexpected ones hidden
     expect(String(crash)).not.toContain('internal detail');
   } finally {
     await link.close();
-    port1.close();
+    channel.port1.close();
   }
 });
 
 test('the client ignores stray messages and fails calls on connection errors', async () => {
-  const { port1, port2 } = new MessageChannel();
-  handler.messagePort(port1);
-  const port = webPort(port2);
+  const channel = new MessageChannel();
+  handler.messagePort(channel.port1);
+  const port = webPort(channel.port2);
   const link = experimental_messagePortLink({ port });
   const client = createTrpcClient({
     router: routerType<typeof router>(),
@@ -223,6 +222,6 @@ test('the client ignores stray messages and fails calls on connection errors', a
     expect(await client.hello.query()).toBe('hello ada');
   } finally {
     await link.close();
-    port1.close();
+    channel.port1.close();
   }
 });

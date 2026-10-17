@@ -121,7 +121,7 @@ function namespace() {
         });
         objects.set(name, (entry = { object, sockets }));
       }
-      const { object } = entry;
+      const object = entry.object;
       return {
         fetch: async (input, init) => {
           const native = globalThis.Response;
@@ -144,18 +144,18 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 function app(layer: Layer.Layer<experimental_Locker>, log: string[]) {
   const work = 30;
   const byKey = experimental_lock<{ input: { key: string } }>({
-    key: ({ input }) => input.key,
+    key: (opts) => opts.input.key,
     timeout: '1 second',
   });
   const router = {
     hold: t.procedure
       .input(z.object({ key: z.string(), by: z.string() }))
       .use(byKey)
-      .mutation(async ({ input, ctx }) => {
-        log.push(`start ${input.by}`);
+      .mutation(async (opts) => {
+        log.push(`start ${opts.input.by}`);
         await sleep(work);
-        log.push(`end ${input.by}`);
-        return ctx.lock.waited;
+        log.push(`end ${opts.input.by}`);
+        return opts.ctx.lock.waited;
       }),
   };
   const handler = createFetchHandler({ router, layer });
@@ -174,8 +174,8 @@ function app(layer: Layer.Layer<experimental_Locker>, log: string[]) {
 
 test('two Worker instances share one lock through the object, waiters told in turn', async () => {
   vi.stubGlobal('WebSocketPair', WebSocketPair);
-  const { ns, names, objects } = namespace();
-  const layer = experimental_durableLocker(ns, { prefix: 'locks:' });
+  const durable = namespace();
+  const layer = experimental_durableLocker(durable.ns, { prefix: 'locks:' });
   const log: string[] = [];
   const one = app(layer, log);
   const two = app(layer, log);
@@ -189,8 +189,8 @@ test('two Worker instances share one lock through the object, waiters told in tu
   for (let i = 0; i < log.length; i += 2) {
     expect(log[i + 1]).toBe(log[i]!.replace('start', 'end'));
   }
-  expect(new Set(names)).toEqual(new Set(['locks:seat-1']));
-  const sockets = objects.get('locks:seat-1')!.sockets;
+  expect(new Set(durable.names)).toEqual(new Set(['locks:seat-1']));
+  const sockets = durable.objects.get('locks:seat-1')!.sockets;
   expect(sockets.map((s) => s.readyState)).toEqual([CLOSED, CLOSED, CLOSED]);
   expect(sockets.map((s) => s.deserializeAttachment())).toEqual([
     { lock: 'released' },
@@ -202,8 +202,10 @@ test('two Worker instances share one lock through the object, waiters told in tu
 
 test('a waiter that times out leaves the line; the next one gets the lock', async () => {
   vi.stubGlobal('WebSocketPair', WebSocketPair);
-  const { ns, objects } = namespace();
-  const layer = experimental_durableLocker(ns, { timeout: '20 millis' });
+  const durable = namespace();
+  const layer = experimental_durableLocker(durable.ns, {
+    timeout: '20 millis',
+  });
   const program = Effect.gen(function* () {
     const locker = yield* experimental_Locker;
     const holder = yield* Effect.forkChild(
@@ -219,21 +221,19 @@ test('a waiter that times out leaves the line; the next one gets the lock', asyn
     yield* Fiber.join(holder);
     return { impatient, patient };
   });
-  const { impatient, patient } = await Effect.runPromise(
-    program.pipe(Effect.provide(layer)),
-  );
-  expect(Exit.isFailure(impatient)).toBe(true);
-  expect(String(impatient)).toContain('LockTimeout');
-  expect(patient).toEqual({ waited: true });
+  const result = await Effect.runPromise(program.pipe(Effect.provide(layer)));
+  expect(Exit.isFailure(result.impatient)).toBe(true);
+  expect(String(result.impatient)).toContain('LockTimeout');
+  expect(result.patient).toEqual({ waited: true });
   expect(
-    objects.get('k')!.sockets.map((s) => s.deserializeAttachment()),
+    durable.objects.get('k')!.sockets.map((s) => s.deserializeAttachment()),
   ).toEqual([{ lock: 'released' }, { lock: 'waiter' }, { lock: 'released' }]);
 });
 
 test('a holder past its ttl loses the lock to the waiter', async () => {
   vi.stubGlobal('WebSocketPair', WebSocketPair);
-  const { ns } = namespace();
-  const layer = experimental_durableLocker(ns, { ttl: '20 millis' });
+  const durable = namespace();
+  const layer = experimental_durableLocker(durable.ns, { ttl: '20 millis' });
   const program = Effect.gen(function* () {
     const locker = yield* experimental_Locker;
     const started = Date.now();
@@ -248,17 +248,15 @@ test('a holder past its ttl loses the lock to the waiter', async () => {
     yield* Fiber.join(holder);
     return { waiter, waitedMs };
   });
-  const { waiter, waitedMs } = await Effect.runPromise(
-    program.pipe(Effect.provide(layer)),
-  );
-  expect(waiter).toEqual({ waited: true });
-  expect(waitedMs).toBeLessThan(150);
+  const result = await Effect.runPromise(program.pipe(Effect.provide(layer)));
+  expect(result.waiter).toEqual({ waited: true });
+  expect(result.waitedMs).toBeLessThan(150);
 });
 
 test('a waiter whose socket the object drops dies; a closed socket closes quietly', async () => {
   vi.stubGlobal('WebSocketPair', WebSocketPair);
-  const { ns, objects } = namespace();
-  const layer = experimental_durableLocker(ns);
+  const durable = namespace();
+  const layer = experimental_durableLocker(durable.ns);
   const program = Effect.gen(function* () {
     const locker = yield* experimental_Locker;
     yield* Effect.forkChild(
@@ -271,10 +269,10 @@ test('a waiter whose socket the object drops dies; a closed socket closes quietl
       Effect.exit(Effect.scoped(locker.acquire('k'))),
     );
     yield* Effect.sleep('5 millis');
-    const { object, sockets } = objects.get('k')!;
-    const waiter = sockets[1]!;
+    const entry = durable.objects.get('k')!;
+    const waiter = entry.sockets[1]!;
     waiter.close(1011, 'evicted');
-    object.close(waiter);
+    entry.object.close(waiter);
     return yield* Fiber.join(waiting);
   });
   const exit = await Effect.runPromise(program.pipe(Effect.provide(layer)));

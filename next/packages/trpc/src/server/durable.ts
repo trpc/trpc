@@ -186,8 +186,8 @@ export function experimental_durable<TReq extends MiddlewareRequirements = {}>(
   const serializer = options.serializer ?? danson;
   const keyOf =
     options.key ??
-    (({ path, callId }) =>
-      callId === undefined ? undefined : `${path}:${callId}`);
+    ((opts) =>
+      opts.callId === undefined ? undefined : `${opts.path}:${opts.callId}`);
 
   return makeEffectMiddleware((opts: any) =>
     Effect.gen(function* () {
@@ -250,8 +250,8 @@ export function experimental_durable<TReq extends MiddlewareRequirements = {}>(
       while (true) {
         const inFlight = local.get(key);
         if (inFlight) {
-          const { result, streamed } = yield* Deferred.await(inFlight);
-          if (!streamed) return settled(result);
+          const first = yield* Deferred.await(inFlight);
+          if (!first.streamed) return settled(first.result);
           // Its first request keeps the frames; read them from the log, or
           // fail as a replay does without a frame sink.
           yield* Effect.sleep(pollInterval);
@@ -301,8 +301,8 @@ export function experimental_durable<TReq extends MiddlewareRequirements = {}>(
         ),
       );
       const fiber = yield* Effect.forkDetach(work);
-      const { result, streamed } = yield* Fiber.join(fiber);
-      if (sink && streamed) {
+      const joined = yield* Fiber.join(fiber);
+      if (sink && joined.streamed) {
         sink.keep = (head, chunks) =>
           log.keep(key, head, chunks, () =>
             store
@@ -310,7 +310,7 @@ export function experimental_durable<TReq extends MiddlewareRequirements = {}>(
               .pipe(Effect.orDie),
           );
       }
-      return result;
+      return joined.result;
     }),
   );
 }
@@ -337,7 +337,7 @@ const frameLog = (
   },
 ) =>
   Effect.map(backing.make('@trpc12/trpc/durable-frames'), (store) => {
-    const { ttl, claimTtl } = opts;
+    const { claimTtl } = opts;
     const meta = (key: string) =>
       store.get(`${key}:meta`).pipe(Effect.orDie) as Effect.Effect<
         Meta | undefined
@@ -360,7 +360,7 @@ const frameLog = (
           let count = 0;
           const setMeta = (done: boolean) =>
             store
-              .set(`${key}:meta`, { count, done }, done ? ttl : claimTtl)
+              .set(`${key}:meta`, { count, done }, done ? opts.ttl : claimTtl)
               .pipe(Effect.orDie);
           yield* setMeta(false);
           yield* started();
@@ -381,7 +381,7 @@ const frameLog = (
                   const i = count++;
                   yield* store
                     .setMany([
-                      [`${key}:${i}`, { frame }, ttl],
+                      [`${key}:${i}`, { frame }, opts.ttl],
                       [`${key}:meta`, { count, done: false }, claimTtl],
                     ])
                     .pipe(Effect.orDie);

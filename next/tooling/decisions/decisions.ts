@@ -114,7 +114,7 @@ export const readDecisions = (
   FileSystem.FileSystem | Path.Path
 > =>
   Effect.flatMap(markdownFiles(dir, /\.md$/), (files) =>
-    Effect.forEach(files, ({ file, text }) => parseDecision(file, text)),
+    Effect.forEach(files, (opts) => parseDecision(opts.file, opts.text)),
   );
 
 export interface Question {
@@ -132,11 +132,11 @@ export const readQuestions = (
   FileSystem.FileSystem | Path.Path
 > =>
   Effect.map(markdownFiles(dir, /^\d+-.*\.md$/), (files) =>
-    files.flatMap(({ file, text }) =>
-      [...text.matchAll(/^- \*\*(Q\d+\.\d+)\*\* (.*)$/gm)].map(
+    files.flatMap((opts) =>
+      [...opts.text.matchAll(/^- \*\*(Q\d+\.\d+)\*\* (.*)$/gm)].map(
         ([, question, questionText]) => ({
           question: question!,
-          proposal: file,
+          proposal: opts.file,
           text: questionText!,
         }),
       ),
@@ -158,11 +158,11 @@ export const questionIndex = (
   FileSystem.FileSystem | Path.Path
 > =>
   Effect.map(readQuestions(), (questions) =>
-    questions.map(({ question, proposal }) => ({
-      question,
-      proposal,
+    questions.map((opts) => ({
+      question: opts.question,
+      proposal: opts.proposal,
       decisions: decisions
-        .filter((d) => d.questions.includes(question))
+        .filter((d) => d.questions.includes(opts.question))
         .map((d) => `${d.file} (${d.who})`),
     })),
   );
@@ -239,16 +239,18 @@ export const decisionsCommand = Command.make(
     agentBullets: Flag.Boolean('agent-bullets').pipe(Flag.withDefault(false)),
     questions: Flag.Boolean('questions').pipe(Flag.withDefault(false)),
   },
-  ({ terms, who, open, tentative, agentBullets, questions }) =>
-    questions
+  (opts) =>
+    opts.questions
       ? listQuestions
       : listDecisions({
-          who: Option.getOrUndefined(who),
-          open,
-          tentative,
-          agentBullets,
+          who: Option.getOrUndefined(opts.who),
+          open: opts.open,
+          tentative: opts.tentative,
+          agentBullets: opts.agentBullets,
           query:
-            terms.length > 0 ? new RegExp(terms.join(' '), 'i') : undefined,
+            opts.terms.length > 0
+              ? new RegExp(opts.terms.join(' '), 'i')
+              : undefined,
         }),
 ).pipe(Command.withDescription('List and search the decision records'));
 

@@ -33,10 +33,10 @@ export const appRouter = {
     byId: t.procedure
       .meta({ route: { method: 'GET', path: '/posts/{id}' } })
       .input(z.object({ id: z.string() }))
-      .query(({ input }) =>
+      .query((opts) =>
         Effect.gen(function* () {
-          const post = posts.get(input.id);
-          if (!post) return yield* new PostMissing({ id: input.id });
+          const post = posts.get(opts.input.id);
+          if (!post) return yield* new PostMissing({ id: opts.input.id });
           return post;
         }),
       ),
@@ -48,11 +48,11 @@ export const appRouter = {
       .input((opts: { ctx: { user: string | null } }) =>
         opts.ctx.user ? z.object({ title: z.string() }) : z.never(),
       )
-      .mutation(({ input, ctx }) => {
-        if (!ctx.user) return error({ code: 'UNAUTHORIZED' });
+      .mutation((opts) => {
+        if (!opts.ctx.user) return error({ code: 'UNAUTHORIZED' });
         const post: Post = {
           id: String(posts.size + 1),
-          title: input.title,
+          title: opts.input.title,
           publishedAt: null,
           tags: [],
           status: 'draft',

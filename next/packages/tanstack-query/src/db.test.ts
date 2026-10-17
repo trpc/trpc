@@ -16,8 +16,8 @@ test('queryOptions plug into a TanStack DB query collection', async () => {
       select: (data) => data.items,
       queryClient,
       getKey: (post) => post.id,
-      onInsert: async ({ transaction }) => {
-        for (const { modified } of transaction.mutations) {
+      onInsert: async (opts) => {
+        for (const { modified } of opts.transaction.mutations) {
           await app.client.post.create.mutate({ title: modified.title });
         }
       },

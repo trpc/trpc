@@ -44,8 +44,8 @@ const appRouter = {
     .mutation(({ input }) =>
       Chat.publish('message', { ...input, at: new Date() }),
     ),
-  onMessage: t.procedure.subscription(({ lastEventId }) =>
-    Chat.subscribe('message', { lastEventId }),
+  onMessage: t.procedure.subscription((opts) =>
+    Chat.subscribe('message', { lastEventId: opts.lastEventId }),
   ),
 };
 export type AppRouter = typeof appRouter;

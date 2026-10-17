@@ -140,8 +140,8 @@ export function splitLink<
 ): TrpcLink<BranchesDecl<{ true: TTrue; false: TFalse }>, TRouter> {
   const yes = asArray(opts.true);
   const no = asArray(opts.false);
-  const split = link(({ op }) =>
-    runLinks(opts.condition(op as never) ? yes : no, op),
+  const split = link((args) =>
+    runLinks(opts.condition(args.op as never) ? yes : no, args.op),
   );
   setSwitchNames(split, [...chainSwitchNames(yes), ...chainSwitchNames(no)]);
   withSerializer(split, chainSerializer([...yes, ...no]));
@@ -202,8 +202,10 @@ export function dedupeLink(
     ((op: Operation) =>
       `${op.path}\n${op.input === undefined ? '' : JSON.stringify(danson.serialize(op.input))}`);
   const inFlight = new Map<string, InFlight>();
-  return link<{ context: DedupeContext }>(({ op, next }) => {
-    if (op.type !== 'query' || op.context.dedupe === false) return next(op);
+  return link<{ context: DedupeContext }>((args) => {
+    const { op } = args;
+    if (op.type !== 'query' || op.context.dedupe === false)
+      return args.next(op);
     const key = keyOf(op);
     return Stream.fromEffect(
       Effect.callback<unknown, AnyTrpcError>((resume) => {
@@ -214,7 +216,7 @@ export function dedupeLink(
             controller,
             refs: 0,
             promise: Effect.runPromiseExit(
-              firstValue(next({ ...op, signal: controller.signal })),
+              firstValue(args.next({ ...op, signal: controller.signal })),
               { signal: controller.signal },
             ).finally(() => {
               if (inFlight.get(key) === created) inFlight.delete(key);
@@ -282,11 +284,12 @@ export function loggerLink(
       else
         console.log(label, event.direction === 'up' ? op.input : event.result);
     });
-  return link(({ op, next }) => {
-    if (opts.enabled && !opts.enabled(op)) return next(op);
+  return link((args) => {
+    const { op } = args;
+    if (opts.enabled && !opts.enabled(op)) return args.next(op);
     const start = Date.now();
     log({ direction: 'up', op });
-    return next(op).pipe(
+    return args.next(op).pipe(
       Stream.tap((result) =>
         Effect.sync(() =>
           log({ direction: 'down', op, result, elapsedMs: Date.now() - start }),
@@ -325,11 +328,11 @@ export interface RetryLinkOptions {
   }) => boolean;
 }
 
-const defaultRetry: NonNullable<RetryLinkOptions['retry']> = ({ op, error }) =>
-  op.type === 'query' &&
-  !error.defined &&
-  error.code !== 'CLIENT_CLOSED_REQUEST' &&
-  serverFailure(error);
+const defaultRetry: NonNullable<RetryLinkOptions['retry']> = (opts) =>
+  opts.op.type === 'query' &&
+  !opts.error.defined &&
+  opts.error.code !== 'CLIENT_CLOSED_REQUEST' &&
+  serverFailure(opts.error);
 
 /**
  * Retries failed operations.
@@ -348,10 +351,10 @@ export function retryLink(opts: RetryLinkOptions = {}): TrpcLink {
   const retries = opts.retries ?? 3;
   const delayMs = opts.delayMs ?? ((attempt: number) => 2 ** attempt * 100);
   const shouldRetry = opts.retry ?? defaultRetry;
-  return link(({ op, next }) => {
+  return link((args) => {
     const attempt = (n: number): OperationStream =>
-      Stream.catch(next(op), (error) =>
-        n < retries && shouldRetry({ op, error, attempt: n + 1 })
+      Stream.catch(args.next(args.op), (error) =>
+        n < retries && shouldRetry({ op: args.op, error, attempt: n + 1 })
           ? Stream.unwrap(
               Effect.sleep(delayMs(n + 1, error)).pipe(
                 Effect.as(attempt(n + 1)),
@@ -420,9 +423,13 @@ export function experimental_durableLink(
 ): TrpcLink<{ context: DurableContext }> {
   const retries = opts.retries ?? 3;
   const delayMs = opts.delayMs ?? ((attempt: number) => 2 ** attempt * 100);
-  return link<{ context: DurableContext }>(({ op, next }) => {
-    const { durable = op.type === 'mutation' } = op.context;
-    if (op.type === 'subscription' || !durable) return next(op);
+  return link<{ context: DurableContext }>((args) => {
+    const { op } = args;
+    if (
+      op.type === 'subscription' ||
+      !(op.context.durable ?? op.type === 'mutation')
+    )
+      return args.next(op);
     const callId = op.context.callId ?? crypto.randomUUID();
     const headers = new Headers(op.context.headers);
     headers.set(HEADER.callId, callId);
@@ -432,7 +439,7 @@ export function experimental_durableLink(
       context: withResume({ ...op.context, headers, batch: false }, resume),
     };
     const attempt = (n: number): OperationStream =>
-      Stream.catch(next(sent), (error) =>
+      Stream.catch(args.next(sent), (error) =>
         n < retries && lostResponse(error)
           ? Stream.unwrap(
               Effect.sleep(delayMs(n + 1, error)).pipe(

@@ -35,19 +35,24 @@ export function emitEvents(
       const fibers: Fiber.Fiber<void>[] = [];
       yield* Stream.runForEach(events, (event) =>
         Effect.gen(function* () {
-          const { head, chunks } = yield* Effect.try({
+          const serialized = yield* Effect.try({
             try: () => serializer.serializeDeferred(event, { coerceError }),
             catch: (cause) =>
               isTrpcError(cause) ? cause : unexpectedError(cause),
           });
           const eventId = isTracked(event) ? event.id : undefined;
-          if (!chunks) {
-            emit({ kind: 'event', body: head, eventId, deferred: undefined });
+          if (!serialized.chunks) {
+            emit({
+              kind: 'event',
+              body: serialized.head,
+              eventId,
+              deferred: undefined,
+            });
             return;
           }
           const n = deferredCount++;
-          emit({ kind: 'event', body: head, eventId, deferred: n });
-          const fiber = yield* Stream.runForEach(chunks, (chunk) =>
+          emit({ kind: 'event', body: serialized.head, eventId, deferred: n });
+          const fiber = yield* Stream.runForEach(serialized.chunks, (chunk) =>
             Effect.sync(() => emit({ kind: 'chunk', event: n, chunk })),
           ).pipe(
             Effect.ignore,

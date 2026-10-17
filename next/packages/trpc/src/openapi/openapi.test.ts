@@ -60,8 +60,9 @@ const router = {
       .output(Post)
       .errors({ NOT_FOUND: { data: z.object({ id: z.string() }) } })
       .query(
-        ({ input, errors }) =>
-          posts.get(input.id) ?? errors.NOT_FOUND({ data: { id: input.id } }),
+        (opts) =>
+          posts.get(opts.input.id) ??
+          opts.errors.NOT_FOUND({ data: { id: opts.input.id } }),
       ),
     latest: t.procedure
       .meta({ route: { method: 'GET', path: '/posts/latest' } })
@@ -77,17 +78,17 @@ const router = {
           published: z.boolean().optional(),
         }),
       )
-      .query(({ input }) => input),
+      .query((opts) => opts.input),
     create: t.procedure
       .meta({ route: { method: 'POST', path: '/posts', successStatus: 201 } })
       .input(z.object({ title: z.string().min(1) }))
       .output(Post)
       .errors({ UNAUTHORIZED: {} })
-      .mutation(({ input, ctx, errors }) => {
-        if (!ctx.user) return errors.UNAUTHORIZED();
+      .mutation((opts) => {
+        if (!opts.ctx.user) return opts.errors.UNAUTHORIZED();
         const post: z.infer<typeof Post> = {
           id: String(posts.size + 1),
-          title: input.title,
+          title: opts.input.title,
         };
         posts.set(post.id, post);
         return post;
@@ -121,14 +122,12 @@ const router = {
     remove: t.procedure
       .meta({ route: { method: 'DELETE', path: '/posts/{id}' } })
       .input(z.object({ id: z.string() }))
-      .mutation(({ input, response }) => {
-        posts.delete(input.id);
-        response.status = 204;
+      .mutation((opts) => {
+        posts.delete(opts.input.id);
+        opts.response.status = 204;
       }),
-    onAdd: t.procedure.output(Post).subscription(async function* ({
-      lastEventId,
-    }) {
-      for (let id = Number(lastEventId ?? 0) + 1; id <= 3; id++) {
+    onAdd: t.procedure.output(Post).subscription(async function* (opts) {
+      for (let id = Number(opts.lastEventId ?? 0) + 1; id <= 3; id++) {
         yield tracked(String(id), { id: String(id), title: `Post ${id}` });
       }
     }),
@@ -144,10 +143,10 @@ const router = {
   stats: t.procedure
     .meta({ route: { method: 'GET', path: '/stats' } })
     .input(Schema.Struct({ days: Schema.Number }))
-    .query(({ input }) =>
+    .query((opts) =>
       Effect.gen(function* () {
         const clock = yield* Clock;
-        return { days: input.days, at: clock.now() };
+        return { days: opts.input.days, at: clock.now() };
       }),
     ),
   boom: t.procedure.query(() => {
@@ -158,12 +157,10 @@ const router = {
 const layer = Layer.succeed(Clock, { now: () => 42 });
 
 async function serve(opts: { expose?: boolean } = {}) {
-  const createContext = ({
-    request,
-  }: {
+  const createContext = (args: {
     request: { headers: Record<string, string | undefined> };
   }) => ({
-    user: request.headers['x-user'] ?? null,
+    user: args.request.headers['x-user'] ?? null,
   });
   const rpc = createFetchHandler({ router, createContext, layer });
   const openapi = createOpenApiHandler({
@@ -739,7 +736,7 @@ test('serve() runs one procedure with params the caller matched', async () => {
   const byId = t.procedure
     .meta({ route: { path: '/things/{id}', successStatus: 202 } })
     .input(z.object({ id: z.coerce.number(), q: z.string() }))
-    .query(({ input, ctx }) => ({ ...input, user: ctx.user }));
+    .query((opts) => ({ ...opts.input, user: opts.ctx.user }));
   const res = await handler.serve(
     new Request('http://localhost/anywhere?q=x'),
     { path: 'things.byId', procedure: byId, params: { id: '7' } },

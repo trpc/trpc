@@ -44,8 +44,10 @@ test('every package builds', () => {
   expect(buildExitCode).toBe(0);
 });
 
-const entries = packages.flatMap(({ name, dir, pkg }) =>
-  Object.keys(pkg.exports).map((subpath) => [name, subpath, dir, pkg] as const),
+const entries = packages.flatMap((opts) =>
+  Object.keys(opts.pkg.exports).map(
+    (subpath) => [opts.name, subpath, opts.dir, opts.pkg] as const,
+  ),
 );
 
 test.each(entries)(
@@ -65,7 +67,7 @@ test.each(entries)(
   },
 );
 
-test.each(packages.map(({ name, pkg }) => [name, pkg] as const))(
+test.each(packages.map((opts) => [opts.name, opts.pkg] as const))(
   '%s publishes publicly under @trpc12',
   (_name, pkg) => {
     expect(pkg.name).toMatch(/^@trpc12\//);

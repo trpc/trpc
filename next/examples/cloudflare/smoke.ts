@@ -147,8 +147,9 @@ async function waitForRows(
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ sql }),
     });
-    const { result } = (await res.json()) as { result: { rows: unknown[][] } };
-    if (result.rows.length > 0) return result.rows.map((row) => row[0]);
+    const body = (await res.json()) as { result: { rows: unknown[][] } };
+    if (body.result.rows.length > 0)
+      return body.result.rows.map((row) => row[0]);
     await new Promise((r) => setTimeout(r, 100));
   }
   return [];
@@ -175,9 +176,9 @@ function cutAfter(res: Response, lines: number): Response {
           buffered = buffered.slice(newline + 1);
           return;
         }
-        const { done, value } = await reader.read();
-        if (done) return controller.close();
-        buffered += decoder.decode(value, { stream: true });
+        const chunk = await reader.read();
+        if (chunk.done) return controller.close();
+        buffered += decoder.decode(chunk.value, { stream: true });
       }
     },
   });

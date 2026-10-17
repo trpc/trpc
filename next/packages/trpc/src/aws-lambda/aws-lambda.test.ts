@@ -23,20 +23,20 @@ const t = initTrpc<{
 const router = {
   hello: t.procedure
     .input(Schema.Struct({ name: Schema.String }))
-    .query(({ input, ctx }) => ({ hi: input.name, requestId: ctx.requestId })),
-  login: t.procedure.mutation(({ response, ctx }) => {
-    response.headers.append('set-cookie', 'a=1; HttpOnly');
-    response.headers.append('set-cookie', 'b=2');
-    return ctx.cookie;
+    .query((opts) => ({ hi: opts.input.name, requestId: opts.ctx.requestId })),
+  login: t.procedure.mutation((opts) => {
+    opts.response.headers.append('set-cookie', 'a=1; HttpOnly');
+    opts.response.headers.append('set-cookie', 'b=2');
+    return opts.ctx.cookie;
   }),
   download: t.procedure.query(
     () => new File([new Uint8Array([0, 255, 1])], 'x.bin'),
   ),
   slow: t.procedure.query(
-    ({ signal }) =>
+    (opts) =>
       new Promise((resolve) => {
         const timer = setTimeout(() => resolve('late'), 2000);
-        signal.addEventListener('abort', () => {
+        opts.signal.addEventListener('abort', () => {
           clearTimeout(timer);
           resolve('aborted');
         });
@@ -50,9 +50,9 @@ const router = {
 
 const handler = createFetchHandler<typeof router, LambdaPlatform>({
   router,
-  createContext: ({ request, platform }) => ({
-    requestId: platform.context.awsRequestId,
-    cookie: request.headers['cookie'] ?? '',
+  createContext: (opts) => ({
+    requestId: opts.platform.context.awsRequestId,
+    cookie: opts.request.headers['cookie'] ?? '',
   }),
 });
 const lambda = toLambdaHandler(handler);

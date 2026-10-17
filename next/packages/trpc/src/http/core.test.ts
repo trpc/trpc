@@ -13,7 +13,7 @@ import { createTestServer } from '../fixtures/server.ts';
 
 const t = initTrpc<{ ctx: { cookie: string | null; web: boolean } }>();
 const router = {
-  whoami: t.procedure.query(({ ctx }) => ctx),
+  whoami: t.procedure.query((opts) => opts.ctx),
   cached: t.procedure.query(() =>
     Effect.gen(function* () {
       yield* TrpcResponse.setHeader('cache-control', 'max-age=60');
@@ -41,13 +41,11 @@ const router = {
 };
 type Router = typeof router;
 
-const createContext = ({
-  request,
-}: {
+const createContext = (opts: {
   request: { headers: Record<string, string | undefined>; source: object };
 }) => ({
-  cookie: request.headers['cookie'] ?? null,
-  web: request.source instanceof Request,
+  cookie: opts.request.headers['cookie'] ?? null,
+  web: opts.request.source instanceof Request,
 });
 
 test('createContext gets the HttpServerRequest; on fetch runtimes its source is the Request (12 Q12.1)', async () => {

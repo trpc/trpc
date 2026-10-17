@@ -13,7 +13,7 @@ import {
   type QueryStore,
 } from './store.ts';
 
-const passThrough = (): TrpcLink => link(({ op, next }) => next(op));
+const passThrough = (): TrpcLink => link((opts) => opts.next(opts.op));
 
 /** Refetches the stale entries a mounted `useQuery` reads. */
 const refetchObserved = (store: QueryStore) => {
@@ -187,10 +187,12 @@ export function invalidateOnMutationLink(
 ): TrpcLink {
   const stores = new Set<QueryStore>();
   const invalidates = opts.invalidates ?? (() => undefined);
-  const chain = link(({ op, next }) =>
-    op.type !== 'mutation'
-      ? next(op)
-      : next(op).pipe(
+  const chain = link((args) => {
+    const { op } = args;
+    const out = args.next(op);
+    return op.type !== 'mutation'
+      ? out
+      : out.pipe(
           Stream.tap(() =>
             Effect.promise(() =>
               Promise.all(
@@ -198,8 +200,8 @@ export function invalidateOnMutationLink(
               ),
             ),
           ),
-        ),
-  );
+        );
+  });
   return withQueryFeature(chain, {
     attach(store) {
       stores.add(store);

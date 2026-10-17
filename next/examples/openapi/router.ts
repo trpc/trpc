@@ -24,24 +24,24 @@ export const appRouter = t.router(
           route: { method: 'GET', path: '/posts', summary: 'List posts' },
         })
         .input(z.object({ limit: z.number().int().min(1).default(10) }))
-        .query(({ input }) => [...posts.values()].slice(0, input.limit)),
+        .query((opts) => [...posts.values()].slice(0, opts.input.limit)),
       byId: t.procedure
         .meta({ route: { method: 'GET', path: '/posts/{id}' } })
         .input(z.object({ id: z.string() }))
         // Not declared with `.errors()`: the TypeScript generator documents it.
         .query(
-          ({ input }) =>
-            posts.get(input.id) ??
-            error({ code: 'NOT_FOUND', data: { id: input.id } }),
+          (opts) =>
+            posts.get(opts.input.id) ??
+            error({ code: 'NOT_FOUND', data: { id: opts.input.id } }),
         ),
       create: t.procedure
         .meta({ route: { method: 'POST', path: '/posts', successStatus: 201 } })
         .input(z.object({ title: z.string().min(1) }))
-        .mutation(({ input, ctx }) => {
-          if (!ctx.user) return error({ code: 'UNAUTHORIZED' });
+        .mutation((opts) => {
+          if (!opts.ctx.user) return error({ code: 'UNAUTHORIZED' });
           const post: Post = {
             id: String(posts.size + 1),
-            title: input.title,
+            title: opts.input.title,
             createdAt: new Date(),
           };
           posts.set(post.id, post);

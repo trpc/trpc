@@ -88,43 +88,44 @@ const connect = (opts: Partial<Parameters<typeof wsLink>[0]> = {}) => {
 };
 
 test('frames the link cannot read are skipped; answers for other ids are ignored', async () => {
-  const { link, client, socket } = connect();
-  const hello = client.hello.query();
-  const ws = await socket();
-  const { id } = await ws.request('hello');
+  const connection = connect();
+  const hello = connection.client.hello.query();
+  const ws = await connection.socket();
+  const response = await ws.request('hello');
   ws.receive(new Uint8Array([9, 9, 9]).buffer);
   ws.receive(new Blob(['{}']));
   ws.receive('not json');
-  ws.receive({ id: id + 1, type: 'result', body: { json: 'other' } });
-  ws.receive({ id, type: 'result', body: { json: 'hello' } });
+  ws.receive({ id: response.id + 1, type: 'result', body: { json: 'other' } });
+  ws.receive({ id: response.id, type: 'result', body: { json: 'hello' } });
   expect(await hello).toBe('hello');
-  await link.close();
+  await connection.link.close();
 });
 
 test('an error body the serializer cannot read fails the calls as a parse error', async () => {
-  const { link, client, socket } = connect();
-  const hello = safe(client.hello.query());
-  const ws = await socket();
+  const connection = connect();
+  const hello = safe(connection.client.hello.query());
+  const ws = await connection.socket();
   await ws.request('hello');
   ws.receive({ id: null, type: 'error', body: null });
   expect((await hello).error).toMatchObject({
     code: 'PARSE_ERROR',
     message: 'Invalid error message',
   });
-  await link.close();
+  await connection.link.close();
 });
 
 test('a subscription that heard nothing reconnects after the default delay; stray chunks are ignored', async () => {
-  const { link, client, socket } = connect({ reconnect: { attempts: 1 } });
+  const connection = connect({ reconnect: { attempts: 1 } });
   const events: unknown[] = [];
   const done = (async () => {
-    for await (const value of client.ticks.subscribe()) events.push(value);
+    for await (const value of connection.client.ticks.subscribe())
+      events.push(value);
   })();
-  const first = await socket(0);
+  const first = await connection.socket(0);
   await first.request('ticks');
   const started = Date.now();
   first.close();
-  const second = await socket(1);
+  const second = await connection.socket(1);
   expect(Date.now() - started).toBeGreaterThanOrEqual(900);
   const { id } = await second.request('ticks');
   second.receive({ id, type: 'chunk', chunk: [0, 0, { json: 1 }] });
@@ -132,20 +133,20 @@ test('a subscription that heard nothing reconnects after the default delay; stra
   second.receive({ id, type: 'done' });
   await done;
   expect(events).toEqual([7]);
-  await link.close();
+  await connection.link.close();
 });
 
 test('an abort after the socket started closing is not sent', async () => {
-  const { link, client, socket } = connect({ reconnect: { attempts: 0 } });
+  const connection = connect({ reconnect: { attempts: 0 } });
   const controller = new AbortController();
   const hello = safe(
-    client.hello.query(undefined, { signal: controller.signal }),
+    connection.client.hello.query(undefined, { signal: controller.signal }),
   );
-  const ws = await socket();
+  const ws = await connection.socket();
   await ws.request('hello');
   ws.readyState = 2;
   controller.abort();
   await hello;
   expect(ws.sent.map((m) => m.type)).toEqual(['init', 'request']);
-  await link.close();
+  await connection.link.close();
 });

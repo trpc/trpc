@@ -109,9 +109,9 @@ async function* byteChunks(blob: Blob): AsyncGenerator<JsonBytes> {
   const reader = blob.stream().getReader();
   try {
     while (true) {
-      const { done, value } = await reader.read();
-      if (done) return;
-      yield JsonBytes.wrap(value);
+      const chunk = await reader.read();
+      if (chunk.done) return;
+      yield JsonBytes.wrap(chunk.value);
     }
   } finally {
     reader.releaseLock();
@@ -466,7 +466,7 @@ export function deserializeStream<T, E>(
   source: Stream.Stream<Frame, E>,
   options: DeserializeStreamOptions,
 ): Effect.Effect<T, E | DansonError> {
-  const { revive, unreadable, ended, interrupted } = streamErrorsOf(options);
+  const errors = streamErrorsOf(options);
   return Effect.gen(function* () {
     const head = yield* Deferred.make<T, E | DansonError>();
     const queues = new Map<number, ChunkQueue>();
@@ -483,7 +483,7 @@ export function deserializeStream<T, E>(
         Stream.ensuring(Effect.sync(() => queues.delete(idx))),
       );
 
-    const { iterate, ...builders } = deferredBuilders(take, revive);
+    const { iterate, ...builders } = deferredBuilders(take, errors.revive);
     const opts: DeserializeOptions = {
       ...options,
       cache: new Map(),
@@ -552,7 +552,10 @@ export function deserializeStream<T, E>(
       if (target === HEAD)
         Deferred.doneUnsafe(head, Effect.fail(error as never));
       else
-        Queue.failCauseUnsafe(queueFor(target), Cause.fail(unreadable(error)));
+        Queue.failCauseUnsafe(
+          queueFor(target),
+          Cause.fail(errors.unreadable(error)),
+        );
     };
     const settle = (target: number, frame: Frame) => {
       try {
@@ -602,7 +605,7 @@ export function deserializeStream<T, E>(
       ),
       Effect.onExit((exit) =>
         Effect.gen(function* () {
-          const error = ended(exit);
+          const error = errors.ended(exit);
           // Bytes already received still drain; then waiting frames settle.
           for (const idx of bytes.keys()) {
             const q = queues.get(idx);
@@ -614,7 +617,7 @@ export function deserializeStream<T, E>(
             head,
             Exit.isFailure(exit)
               ? Effect.failCause(exit.cause)
-              : Effect.fail(interrupted() as never),
+              : Effect.fail(errors.interrupted() as never),
           );
           for (const q of queues.values()) {
             Queue.failCauseUnsafe(q, Cause.fail(error));

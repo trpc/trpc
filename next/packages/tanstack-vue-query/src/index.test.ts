@@ -41,8 +41,8 @@ import {
   waitFor,
 } from '../../trpc/src/fixtures/dom.ts';
 
-const { TrpcPlugin, provideTrpc, useTrpc, useTrpcClient } =
-  createTrpcContext<AppClient>();
+const context = createTrpcContext<AppClient>();
+const { useTrpc } = context;
 
 function mount(setup: () => () => unknown, client: AppClient) {
   const queryClient = new QueryClient({
@@ -51,7 +51,7 @@ function mount(setup: () => () => unknown, client: AppClient) {
   const el = container();
   const vueApp = createVueApp(defineComponent({ setup }))
     .use(VueQueryPlugin, { queryClient })
-    .use(TrpcPlugin, { client });
+    .use(context.TrpcPlugin, { client });
   vueApp.mount(el);
   return {
     el,
@@ -192,7 +192,7 @@ test('server render with prefetched data and no subscription, then hydrate witho
   const tree = (queryClient: QueryClient, client: AppClient) =>
     createSSRApp(Page)
       .use(VueQueryPlugin, { queryClient })
-      .use(TrpcPlugin, { client });
+      .use(context.TrpcPlugin, { client });
 
   const serverQueryClient = queryClient();
   const serverClient = createRouterClient(appRouter, { ctx: { locale: null } });
@@ -228,7 +228,7 @@ test('provideTrpc() and useTrpcClient(), a failing subscription, one in an effec
   let client: unknown;
   const Child = defineComponent({
     setup() {
-      client = useTrpcClient();
+      client = context.useTrpcClient();
       const failing = useSubscription(
         useTrpc().clock.countdown.subscriptionOptions({ input: { from: 0 } }),
       );
@@ -239,7 +239,7 @@ test('provideTrpc() and useTrpcClient(), a failing subscription, one in an effec
   const vueApp = createVueApp(
     defineComponent({
       setup() {
-        provideTrpc(app.client);
+        context.provideTrpc(app.client);
         return () => h(Child);
       },
     }),

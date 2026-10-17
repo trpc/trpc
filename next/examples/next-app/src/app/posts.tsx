@@ -10,7 +10,7 @@ import { useTrpc } from '../trpc/client.tsx';
 export function Posts() {
   const trpc = useTrpc();
   const queryClient = useQueryClient();
-  const { data: posts } = useSuspenseQuery(trpc.post.list.queryOptions());
+  const query = useSuspenseQuery(trpc.post.list.queryOptions());
   const create = useMutation(
     trpc.post.create.mutationOptions({
       onSuccess: () => queryClient.invalidateQueries(trpc.post.pathFilter()),
@@ -21,7 +21,7 @@ export function Posts() {
     <section>
       <h2>Posts</h2>
       <ul>
-        {posts.map((post) => (
+        {query.data.map((post) => (
           // `createdAt` is still a `Date` after hydration.
           <li key={post.id}>
             {post.title} <small>{post.createdAt.toISOString()}</small>

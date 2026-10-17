@@ -186,14 +186,14 @@ function makeSocketLink(
   /** A connection that answers nothing within `timeoutMs` of a ping is lost. */
   const keepAlive = (
     conn: Connection,
-    { intervalMs, timeoutMs }: { intervalMs: number; timeoutMs: number },
+    timing: { intervalMs: number; timeoutMs: number },
   ) =>
     Effect.gen(function* () {
       for (;;) {
-        yield* Effect.sleep(intervalMs);
+        yield* Effect.sleep(timing.intervalMs);
         const received = conn.received;
         conn.socket.send({ type: 'ping' });
-        yield* Effect.sleep(timeoutMs);
+        yield* Effect.sleep(timing.timeoutMs);
         if (conn.received === received) {
           lose(conn);
           conn.socket.close();

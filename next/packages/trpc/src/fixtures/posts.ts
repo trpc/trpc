@@ -39,41 +39,37 @@ export const router = {
     }),
     list: t.procedure
       .input(z.object({ limit: z.number(), order: z.enum(['asc', 'desc']) }))
-      .query(({ input }) => {
+      .query((opts) => {
         db.calls.push('list');
         const posts = [...db.posts.values()].map((post) =>
           structuredClone(post),
         );
-        if (input.order === 'desc') posts.reverse();
-        return posts.slice(0, input.limit);
+        if (opts.input.order === 'desc') posts.reverse();
+        return posts.slice(0, opts.input.limit);
       }),
     count: t.procedure.query(() => {
       db.calls.push('count');
       return db.posts.size;
     }),
-    tagSet: t.procedure
-      .input(z.object({ id: z.string() }))
-      .query(({ input }) => {
-        db.calls.push(`tagSet:${input.id}`);
-        return new Set(db.posts.get(input.id)?.tags);
-      }),
-    nested: t.procedure
-      .input(z.object({ depth: z.number() }))
-      .query(({ input }) => {
-        let value: { child?: unknown } = {};
-        for (let i = 0; i < input.depth; i++) value = { child: value };
-        return value;
-      }),
-    since: t.procedure.input(z.object({ at: z.date() })).query(({ input }) => {
-      db.calls.push(`since:${input.at.getTime()}`);
-      return [...db.posts.values()].filter((post) => post.at >= input.at)
+    tagSet: t.procedure.input(z.object({ id: z.string() })).query((opts) => {
+      db.calls.push(`tagSet:${opts.input.id}`);
+      return new Set(db.posts.get(opts.input.id)?.tags);
+    }),
+    nested: t.procedure.input(z.object({ depth: z.number() })).query((opts) => {
+      let value: { child?: unknown } = {};
+      for (let i = 0; i < opts.input.depth; i++) value = { child: value };
+      return value;
+    }),
+    since: t.procedure.input(z.object({ at: z.date() })).query((opts) => {
+      db.calls.push(`since:${opts.input.at.getTime()}`);
+      return [...db.posts.values()].filter((post) => post.at >= opts.input.at)
         .length;
     }),
     many: t.procedure
       .input(z.object({ ids: z.array(z.string()) }))
-      .query(({ input }) => {
-        db.calls.push(`many:${input.ids.join(',')}`);
-        return input.ids.map((id) => db.posts.get(id)?.title ?? null);
+      .query((opts) => {
+        db.calls.push(`many:${opts.input.ids.join(',')}`);
+        return opts.input.ids.map((id) => db.posts.get(id)?.title ?? null);
       }),
     rename: t.procedure
       .input(z.object({ id: z.string(), title: z.string() }))

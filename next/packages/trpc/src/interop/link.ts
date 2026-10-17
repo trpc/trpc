@@ -149,7 +149,7 @@ const fromV11Error = (error: unknown): AnyTrpcError => {
  */
 export function fromV11Link(v11Link: V11Link): TrpcLink {
   const operationLink = v11Link({});
-  return link(({ op, next }) =>
+  return link((opts) =>
     Stream.callback<unknown, AnyTrpcError>((queue) =>
       Effect.gen(function* () {
         const fibers = yield* FiberSet.make<void, never>();
@@ -161,8 +161,8 @@ export function fromV11Link(v11Link: V11Link): TrpcLink {
             }
             const fiber = fork(
               Stream.runForEach(
-                next({
-                  ...op,
+                opts.next({
+                  ...opts.op,
                   id: o.id,
                   type: o.type,
                   path: o.path,
@@ -188,7 +188,7 @@ export function fromV11Link(v11Link: V11Link): TrpcLink {
             return () => fiber.interruptUnsafe();
           });
         const subscription = operationLink({
-          op: toV11Operation(op),
+          op: toV11Operation(opts.op),
           next: v11Next,
         }).subscribe({
           next: (envelope: V11ResultEnvelope) => {
@@ -199,7 +199,7 @@ export function fromV11Link(v11Link: V11Link): TrpcLink {
               return;
             }
             Queue.offerUnsafe(queue, result.data);
-            if (op.type !== 'subscription') Queue.endUnsafe(queue);
+            if (opts.op.type !== 'subscription') Queue.endUnsafe(queue);
           },
           error: (error) =>
             Queue.failCauseUnsafe(queue, Cause.fail(fromV11Error(error))),

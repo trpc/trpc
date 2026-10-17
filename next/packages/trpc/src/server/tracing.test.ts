@@ -22,8 +22,10 @@ const t = initTrpc();
 const router = {
   post: t.procedure
     .input(z.object({ id: z.string() }))
-    .query(({ input }) =>
-      input.id === 'nope' ? error({ code: 'NOT_FOUND' }) : { id: input.id },
+    .query((opts) =>
+      opts.input.id === 'nope'
+        ? error({ code: 'NOT_FOUND' })
+        : { id: opts.input.id },
     ),
 };
 
@@ -202,11 +204,11 @@ test('without a tracer, calls open no spans: tracing is opt-in', async () => {
   await handler.fetch(new Request('http://localhost/trpc/inner'));
   await handler.dispose();
 
-  const spy = link(({ op, next }) =>
+  const spy = link((opts) =>
     Stream.unwrap(
       Effect.map(spanName, (name) => {
         seen.push(`link: ${name}`);
-        return next(op);
+        return opts.next(opts.op);
       }),
     ),
   );

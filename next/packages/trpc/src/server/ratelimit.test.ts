@@ -14,7 +14,7 @@ import { createTestServer } from '../fixtures/server.ts';
 
 const t = initTrpc<{ ctx: { ip: string } }>();
 const limited = rateLimit<{ ctx: { ip: string } }>({
-  key: ({ ctx, path }) => `${path}:${ctx.ip}`,
+  key: (opts) => `${opts.path}:${opts.ctx.ip}`,
   limit: 2,
   window: '1 minute',
 });
@@ -29,8 +29,8 @@ test('calls past the limit fail with RATE_LIMITED data and RateLimit headers', a
   const handler = createFetchHandler({
     router,
     layer: memory(),
-    createContext: ({ request }) => ({
-      ip: request.headers['x-ip'] ?? '?',
+    createContext: (opts) => ({
+      ip: opts.request.headers['x-ip'] ?? '?',
     }),
   });
   const get = (ip: string) =>
@@ -88,7 +88,7 @@ test('the error is typed on the client, and retryLink can wait for retryAfter', 
     links: [
       retryLink({
         retries: 1,
-        retry: ({ error }) => error.code === 'TOO_MANY_REQUESTS',
+        retry: (opts) => opts.error.code === 'TOO_MANY_REQUESTS',
         delayMs: (_, error) => {
           const after = (error.data as { retryAfter?: number }).retryAfter;
           delays.push(after ?? -1);

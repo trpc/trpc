@@ -121,15 +121,15 @@ export function createTrpcContext<TSource>(
     if (!value) throw new Error('Wrap your component in <TrpcProvider>');
     return value;
   };
-  const TrpcProvider = ({
-    client,
-    children,
-  }: TrpcProviderProps<TRouter, TContext, TLinks>) => {
+  const TrpcProvider = (
+    props: TrpcProviderProps<TRouter, TContext, TLinks>,
+  ) => {
+    const { client } = props;
     const value = useMemo(
       () => ({ client, utils: createTrpcQueryUtils({ ...opts, client }) }),
       [client],
     );
-    return h(Context.Provider, { value }, children);
+    return h(Context.Provider, { value }, props.children);
   };
   return [
     TrpcProvider,

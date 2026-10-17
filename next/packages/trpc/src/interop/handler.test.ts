@@ -40,45 +40,45 @@ let stopped = 0;
 const router = {
   greet: t.procedure
     .input(z.object({ name: z.string() }))
-    .query(({ input }) => `hello ${input.name}`),
-  whoami: t.procedure.query(({ ctx }) => ({
-    user: ctx.user,
-    transport: ctx.transport,
+    .query((opts) => `hello ${opts.input.name}`),
+  whoami: t.procedure.query((opts) => ({
+    user: opts.ctx.user,
+    transport: opts.ctx.transport,
   })),
   post: {
     add: t.procedure
       .input(z.object({ title: z.string() }))
-      .mutation(({ input }) => ({ id: 1, title: input.title })),
+      .mutation((opts) => ({ id: 1, title: opts.input.title })),
     byId: t.procedure
       .input(z.object({ id: z.string() }))
-      .query(({ input }) =>
-        input.id === '1'
+      .query((opts) =>
+        opts.input.id === '1'
           ? { id: '1', title: 'First' }
-          : error({ code: 'NOT_FOUND', message: `No post ${input.id}` }),
+          : error({ code: 'NOT_FOUND', message: `No post ${opts.input.id}` }),
       ),
   },
   created: t.procedure
     .input(z.object({ name: z.string() }))
-    .mutation(({ input, response }) => {
-      response.status = 201;
-      response.headers.append('set-cookie', `${input.name}=1`);
-      return input.name;
+    .mutation((opts) => {
+      opts.response.status = 201;
+      opts.response.headers.append('set-cookie', `${opts.input.name}=1`);
+      return opts.input.name;
     }),
   upload: t.procedure
     .input(z.object({ name: z.string(), file: z.instanceof(File) }))
-    .mutation(async ({ input }) => ({
-      name: input.name,
-      text: await input.file.text(),
+    .mutation(async (opts) => ({
+      name: opts.input.name,
+      text: await opts.input.file.text(),
     })),
   bytes: t.procedure
     .input(z.instanceof(Blob))
-    .mutation(async ({ input }) => input.size),
+    .mutation(async (opts) => opts.input.size),
   locked: t.procedure
     .errors({ POST_LOCKED: { status: 423 } })
     .query(() => error({ code: 'POST_LOCKED', message: 'Locked' })),
   dates: t.procedure
     .input(z.object({ at: z.date() }))
-    .query(({ input }) => ({ next: new Date(input.at.getTime() + 1000) })),
+    .query((opts) => ({ next: new Date(opts.input.at.getTime() + 1000) })),
   report: t.procedure.query(() => ({
     title: 'Report',
     total: (async () => {
@@ -93,14 +93,16 @@ const router = {
   }),
   events: t.procedure
     .input(z.object({ from: z.number().optional() }).optional())
-    .subscription(async function* ({ lastEventId, input }) {
-      const start = lastEventId ? Number(lastEventId) + 1 : (input?.from ?? 1);
+    .subscription(async function* (opts) {
+      const start = opts.lastEventId
+        ? Number(opts.lastEventId) + 1
+        : (opts.input?.from ?? 1);
       for (let id = start; id <= 3; id++) yield tracked(String(id), { id });
     }),
   ticks: t.procedure.subscription(() => Stream.make(1, 2, 3)),
-  forever: t.procedure.subscription(async function* ({ signal }) {
+  forever: t.procedure.subscription(async function* (opts) {
     try {
-      for (let n = 0; !signal.aborted; n++) {
+      for (let n = 0; !opts.signal.aborted; n++) {
         yield n;
         await sleep(5);
       }
@@ -127,12 +129,12 @@ async function start(
   const requests: string[] = [];
   const handler = createV11Handler({
     router,
-    createContext: ({ request, info }) => ({
+    createContext: (opts) => ({
       user:
-        (info.connectionParams?.['token'] as string | undefined) ??
-        request.headers['x-user'] ??
+        (opts.info.connectionParams?.['token'] as string | undefined) ??
+        opts.request.headers['x-user'] ??
         null,
-      transport: info.transport,
+      transport: opts.info.transport,
     }),
     ...extra,
   });
@@ -149,10 +151,10 @@ async function start(
       scope,
     ),
   );
-  const { port } = server.address() as AddressInfo;
+  const address = server.address() as AddressInfo;
   return {
-    url: `http://127.0.0.1:${port}/trpc`,
-    wsUrl: `ws://127.0.0.1:${port}/trpc`,
+    url: `http://127.0.0.1:${address.port}/trpc`,
+    wsUrl: `ws://127.0.0.1:${address.port}/trpc`,
     requests,
     async [Symbol.asyncDispose]() {
       server.closeAllConnections();
@@ -231,12 +233,12 @@ test('errors reach v11 clients as TRPCClientErrors with the JSON-RPC shape', asy
 
 test('errorFormatter reproduces the v11 router errorFormatter', async () => {
   await using app = await start({
-    errorFormatter: ({ shape, error }) => ({
-      ...shape,
+    errorFormatter: (opts) => ({
+      ...opts.shape,
       data: {
-        ...shape.data,
-        v12Code: error.code,
-        issues: error.code === 'BAD_REQUEST' ? 'see issues' : null,
+        ...opts.shape.data,
+        v12Code: opts.error.code,
+        issues: opts.error.code === 'BAD_REQUEST' ? 'see issues' : null,
       },
     }),
   });
@@ -463,11 +465,11 @@ test('old apps keep their v11 AppRouter type', async () => {
   const legacyRouter = v11.router({
     greet: v11.procedure
       .input(z.object({ name: z.string() }))
-      .query(({ input }) => `hello ${input.name}`),
+      .query((opts) => `hello ${opts.input.name}`),
     post: v11.router({
       add: v11.procedure
         .input(z.object({ title: z.string() }))
-        .mutation(({ input }) => ({ id: 1, title: input.title })),
+        .mutation((opts) => ({ id: 1, title: opts.input.title })),
     }),
   });
   type LegacyAppRouter = typeof legacyRouter;

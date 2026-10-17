@@ -39,21 +39,21 @@ let current: TestServer | undefined;
 const router = {
   hello: t.procedure
     .input(z.object({ name: z.string() }))
-    .query(({ input, ctx }) => `hello ${input.name} over ${ctx.transport}`),
-  whoami: t.procedure.query(({ ctx }) => ctx.user),
+    .query((opts) => `hello ${opts.input.name} over ${opts.ctx.transport}`),
+  whoami: t.procedure.query((opts) => opts.ctx.user),
   add: t.procedure
     .input(z.object({ a: z.number(), b: z.number() }))
-    .mutation(({ input }) => input.a + input.b),
+    .mutation((opts) => opts.input.a + opts.input.b),
   find: t.procedure
     .input(z.object({ id: z.string() }))
-    .query(({ input }) =>
-      input.id === '1'
+    .query((opts) =>
+      opts.input.id === '1'
         ? { id: '1', at: new Date(0) }
-        : error({ code: 'NOT_FOUND', data: { id: input.id } }),
+        : error({ code: 'NOT_FOUND', data: { id: opts.input.id } }),
     ),
-  slow: t.procedure.query(async ({ signal }) => {
+  slow: t.procedure.query(async (opts) => {
     await sleep(50);
-    return signal.aborted ? 'aborted' : 'done';
+    return opts.signal.aborted ? 'aborted' : 'done';
   }),
   report: t.procedure.query(() => ({
     title: 'Report',
@@ -67,10 +67,10 @@ const router = {
       yield 'b';
     })(),
   })),
-  ticks: t.procedure.subscription(async function* ({ signal }) {
+  ticks: t.procedure.subscription(async function* (opts) {
     try {
       let n = 0;
-      while (!signal.aborted) {
+      while (!opts.signal.aborted) {
         yield n++;
         await sleep(5);
       }
@@ -341,7 +341,7 @@ test('an idle connection closes and the next call reconnects', async () => {
 test('splitLink sends subscriptions over WebSockets and the rest over HTTP', async () => {
   await using server = await createTestServer({
     router,
-    createContext: ({ info }) => ({ user: null, transport: info.transport }),
+    createContext: (opts) => ({ user: null, transport: opts.info.transport }),
   });
   await using ws = wsLink({ url: server.wsUrl });
   const client = createTrpcClient({
@@ -420,7 +420,7 @@ test('a call keeps the connectionParams it arrived under, despite a later init',
 
 test('the Node upgrade handles large messages and enforces maxPayload', async () => {
   const echoRouter = {
-    length: t.procedure.input(z.string()).query(({ input }) => input.length),
+    length: t.procedure.input(z.string()).query((opts) => opts.input.length),
   };
   await using server = await createTestServer({
     router: echoRouter,
@@ -444,11 +444,11 @@ test('the upgrade checks the path, and cors() checks its origin (13 C)', async (
     createContext: () => ({ user: null, transport: 'x' }),
     middleware: [cors({ allowedOrigins: ['https://app.example.com'] })],
   });
-  const { port } = new URL(server.url);
+  const url = new URL(server.url);
   const upgrade = (path: string, origin: string) =>
     new Promise<number>((resolve) => {
       const req = httpRequest({
-        port,
+        port: url.port,
         host: '127.0.0.1',
         path,
         headers: {

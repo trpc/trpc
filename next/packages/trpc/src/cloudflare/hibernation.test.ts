@@ -26,10 +26,10 @@ const t = initTrpc<{
 
 let ticksStopped = 0;
 const router = {
-  whoami: t.procedure.query(({ ctx }) => ctx),
+  whoami: t.procedure.query((opts) => opts.ctx),
   double: t.procedure
     .input(z.object({ n: z.number() }))
-    .query(({ input }) => input.n * 2),
+    .query((opts) => opts.input.n * 2),
   ticks: t.procedure.subscription(async function* () {
     try {
       for (let n = 0; ; n++) {
@@ -44,11 +44,11 @@ const router = {
 
 const handler = createFetchHandler<typeof router, { env: Env }>({
   router,
-  createContext: ({ request, info, platform }) => ({
-    token: info.connectionParams?.['token'] as string | undefined,
-    cookie: request.headers['cookie'] ?? null,
-    other: request.headers['x-other'] ?? null,
-    region: platform?.env.region,
+  createContext: (opts) => ({
+    token: opts.info.connectionParams?.['token'] as string | undefined,
+    cookie: opts.request.headers['cookie'] ?? null,
+    other: opts.request.headers['x-other'] ?? null,
+    region: opts.platform?.env.region,
   }),
 });
 
@@ -270,13 +270,13 @@ const room = (state: ReturnType<typeof fakeState>) => {
     router: {
       create: pt.procedure
         .input(z.object({ title: z.string() }))
-        .mutation(({ input }) =>
-          Effect.as(Posts.publish('created', input), input),
+        .mutation((opts) =>
+          Effect.as(Posts.publish('created', opts.input), opts.input),
         ),
       onCreated: pt.procedure
         .output(z.object({ title: z.string().max(10) }))
-        .subscription(({ lastEventId }) =>
-          Posts.subscribe('created', { lastEventId }),
+        .subscription((opts) =>
+          Posts.subscribe('created', { lastEventId: opts.lastEventId }),
         ),
     },
     layer: hibernatingPublisher(Posts, { state, buffer: 10 }),
@@ -430,18 +430,24 @@ const notesRoom = (state: ReturnType<typeof fakeState>) =>
       router: {
         send: nt.procedure
           .input(z.object({ to: z.string(), text: z.string() }))
-          .mutation(({ input }) =>
+          .mutation((opts) =>
             Effect.as(
-              Notes.publish(`inbox:${input.to}`, { text: input.text }),
+              Notes.publish(`inbox:${opts.input.to}`, {
+                text: opts.input.text,
+              }),
               'sent',
             ),
           ),
-        inbox: nt.procedure.subscription(({ ctx, lastEventId }) =>
-          Notes.subscribe(`inbox:${ctx.user}`, { lastEventId }),
+        inbox: nt.procedure.subscription((opts) =>
+          Notes.subscribe(`inbox:${opts.ctx.user}`, {
+            lastEventId: opts.lastEventId,
+          }),
         ),
       },
-      createContext: ({ info }) =>
-        Effect.runPromise(RoomToken.verify(info.connectionParams?.['token'])),
+      createContext: (opts) =>
+        Effect.runPromise(
+          RoomToken.verify(opts.info.connectionParams?.['token']),
+        ),
       layer: hibernatingPublisher(Notes, { state, buffer: 10 }),
     }),
     { state },

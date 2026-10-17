@@ -176,8 +176,8 @@ export function toHttpEffect(
     : Effect.gen(function* () {
         const request = yield* HttpServerRequest.HttpServerRequest;
         if (!isUpgrade(request)) return yield* fetch;
-        const { pathname } = new URL(request.url, 'http://localhost');
-        if (pathname !== endpoint && pathname !== `${endpoint}/`) {
+        const url = new URL(request.url, 'http://localhost');
+        if (url.pathname !== endpoint && url.pathname !== `${endpoint}/`) {
           return HttpServerResponse.empty({ status: 404 });
         }
         yield* core
@@ -215,9 +215,12 @@ export function serve(
   handler: FetchLike | (FetchLike & WebSocketHandlerLike),
   opts: HttpOptions = {},
 ): Layer.Layer<never, never, HttpServer.HttpServer> {
-  const { routes } = handler as Partial<FetchHandler>;
-  return routes && opts.endpoint === undefined
-    ? HttpRouter.serve(routes, { disableLogger: true, disableListenLog: true })
+  const partial = handler as Partial<FetchHandler>;
+  return partial.routes && opts.endpoint === undefined
+    ? HttpRouter.serve(partial.routes, {
+        disableLogger: true,
+        disableListenLog: true,
+      })
     : HttpServer.serve(toHttpEffect(handler, opts));
 }
 

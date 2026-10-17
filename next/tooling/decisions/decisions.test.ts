@@ -32,12 +32,12 @@ test('links between decisions and notes resolve', async () => {
           ([, target]) => ({ file: d.file, target: target! }),
         ),
       );
-      const exists = yield* Effect.forEach(links, ({ target }) =>
-        fs.exists(path.resolve(decisionsDir, target)),
+      const exists = yield* Effect.forEach(links, (opts) =>
+        fs.exists(path.resolve(decisionsDir, opts.target)),
       );
       return links
         .filter((_, i) => !exists[i])
-        .map(({ file, target }) => `${file} links to ${target}`);
+        .map((opts) => `${opts.file} links to ${opts.target}`);
     }),
   );
   expect(missing).toEqual([]);
