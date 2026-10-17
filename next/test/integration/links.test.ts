@@ -493,3 +493,36 @@ test('retryLink waits 200ms before its first retry by default', async () => {
   expect(await client.whoami.query()).toBe('anonymous');
   expect(Date.now() - started).toBeGreaterThanOrEqual(190);
 });
+
+test('what a link fails, dies or ends with becomes a client error', async () => {
+  const via = (stream: Stream.Stream<never, unknown>) =>
+    createTrpcClient({
+      router: routerType<typeof router>(),
+      links: [link(() => stream as never)],
+    }).whoami.query();
+  await expect(via(Stream.fail(new Error('refused')))).rejects.toMatchObject({
+    code: 'CLIENT_ERROR',
+    message: 'refused',
+  });
+  await expect(via(Stream.fail('refused'))).rejects.toMatchObject({
+    code: 'CLIENT_ERROR',
+    message: 'refused',
+  });
+  await expect(via(Stream.die(new Error('crashed')))).rejects.toMatchObject({
+    code: 'CLIENT_ERROR',
+    message: 'crashed',
+  });
+  await expect(via(Stream.empty)).rejects.toMatchObject({
+    code: 'CLIENT_ERROR',
+    message: 'The link chain ended without a result',
+  });
+
+  const passthrough = createTrpcClient({
+    router: routerType<typeof router>(),
+    links: [link(({ op, next }) => next(op))],
+  });
+  await expect(passthrough.whoami.query()).rejects.toMatchObject({
+    code: 'CLIENT_ERROR',
+    message: 'The last link must send the request (e.g. httpLink)',
+  });
+});
