@@ -36,18 +36,18 @@ import {
   type Provider,
   type Signal,
 } from '@angular/core';
-import type { ChainTypes, RouterOf, TrpcClient } from '@trpc12/trpc/client';
 import {
   createTrpcQueryUtils,
   SubscriptionObserver,
-  type SubscriptionStatus,
-  type TrpcQueryUtilsFor,
-  type TrpcSubscriptionOptions,
   type SourceContext,
   type SourceLinks,
   type SourceRouter,
+  type SubscriptionStatus,
   type TrpcContextOptions,
+  type TrpcQueryUtilsFor,
+  type TrpcSubscriptionOptions,
 } from '@trpc12/tanstack-query';
+import type { ChainTypes, RouterOf, TrpcClient } from '@trpc12/trpc/client';
 
 export * from '@trpc12/tanstack-query';
 

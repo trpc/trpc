@@ -10,9 +10,9 @@
  * loses its connection after `n` frames asks again from `n` and feeds the
  * rest into the same deserializer.
  */
+import type { AnySerializer, Frame } from '@trpc12/trpc/serializer';
 import { Duration, Effect, Stream } from 'effect';
 import { Persistence } from 'effect/persistence';
-import type { AnySerializer, Frame } from '@trpc12/trpc/serializer';
 
 interface Meta {
   readonly count: number;

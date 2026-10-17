@@ -23,16 +23,16 @@
  * ```
  * @module
  */
-import { getContext, setContext } from 'svelte';
-import type { ChainTypes, RouterOf, TrpcClient } from '@trpc12/trpc/client';
 import {
   createTrpcQueryUtils,
-  type TrpcQueryUtilsFor,
   type SourceContext,
   type SourceLinks,
   type SourceRouter,
   type TrpcContextOptions,
+  type TrpcQueryUtilsFor,
 } from '@trpc12/tanstack-query';
+import type { ChainTypes, RouterOf, TrpcClient } from '@trpc12/trpc/client';
+import { getContext, setContext } from 'svelte';
 
 export * from '@trpc12/tanstack-query';
 

@@ -1,9 +1,9 @@
-import { Effect } from 'effect';
 import {
   experimental_durable,
   experimental_lock,
 } from '@trpc12/trpc/middleware';
 import { initTrpc, Publisher } from '@trpc12/trpc/server';
+import { Effect } from 'effect';
 import { z } from 'zod';
 
 export interface Message {

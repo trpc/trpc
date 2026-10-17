@@ -4,14 +4,14 @@
  * plus a pub/sub channel (live events), so every server sharing the Redis
  * sees every event, and `lastEventId` resumes from the stream.
  */
-import { Effect, Stream } from 'effect';
-import { Redis } from 'effect/persistence';
 import { createSerializer } from '@trpc12/trpc/serializer';
 import {
   tracked,
   type PublisherEvents,
   type PublisherShape,
 } from '@trpc12/trpc/server';
+import { Effect, Stream } from 'effect';
+import { Redis } from 'effect/persistence';
 
 // --- recipe: shared ---------------------------------------------------------
 

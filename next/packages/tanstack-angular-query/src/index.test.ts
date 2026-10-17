@@ -30,8 +30,8 @@ import { expect, expectTypeOf, test } from 'vite-plus/test';
 import {
   createApp,
   db,
-  type Post,
   type AppClient,
+  type Post,
 } from '../../tanstack-query/src/fixtures/app.ts';
 import { click, text, waitFor } from '../../trpc/src/fixtures/dom.ts';
 

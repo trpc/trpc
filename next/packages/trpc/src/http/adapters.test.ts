@@ -2,8 +2,6 @@ import { once } from 'node:events';
 import { createServer, request, type IncomingMessage } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { NodeHttpServer } from '@effect/platform-node';
-import { Context, Effect, Exit, Layer, Match, Scope } from 'effect';
-import { HttpMiddleware, HttpServer } from 'effect/http';
 import {
   createTrpcClient,
   httpLink,
@@ -18,6 +16,8 @@ import {
   type WebSocketHandlerLike,
 } from '@trpc12/trpc/http';
 import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
+import { Context, Effect, Exit, Layer, Match, Scope } from 'effect';
+import { HttpMiddleware, HttpServer } from 'effect/http';
 import { expect, test } from 'vite-plus/test';
 import { z } from 'zod';
 

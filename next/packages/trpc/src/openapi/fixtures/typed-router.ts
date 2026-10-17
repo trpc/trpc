@@ -1,7 +1,7 @@
-import { Effect, Schema } from 'effect';
-import { error, initTrpc, tracked, TrpcError } from '@trpc12/trpc/server';
-import { z } from 'zod';
 import { openapi } from '@trpc12/trpc/openapi';
+import { error, initTrpc, tracked, TrpcError } from '@trpc12/trpc/server';
+import { Effect, Schema } from 'effect';
+import { z } from 'zod';
 
 export interface Post {
   id: string;

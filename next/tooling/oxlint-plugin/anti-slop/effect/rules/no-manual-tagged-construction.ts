@@ -1,5 +1,4 @@
 import { defineRule } from '@oxlint/plugins';
-
 import {
   isMatchPatternObject,
   isStringLiteral,

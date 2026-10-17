@@ -1,6 +1,5 @@
 import { RuleTester } from 'oxlint/plugins-dev';
 import { describe, it } from 'vite-plus/test';
-
 import { preferEffectMatchRule } from './prefer-effect-match.ts';
 
 RuleTester.describe = describe;

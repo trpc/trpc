@@ -1,17 +1,17 @@
-import { Data, Effect, Predicate, Schema } from 'effect';
 import {
   createTrpcClient,
   httpLink,
   isDefinedError,
+  routerType,
   safe,
   TrpcError,
-  routerType,
 } from '@trpc12/trpc/client';
 import { generateOpenApi } from '@trpc12/trpc/openapi';
 import { initTrpc } from '@trpc12/trpc/server';
-import { createTestServer } from '../fixtures/server.ts';
+import { Data, Effect, Predicate, Schema } from 'effect';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
+import { createTestServer } from '../fixtures/server.ts';
 
 class PostNotFound extends TrpcError.Tagged('POST_NOT_FOUND', {
   status: 404,

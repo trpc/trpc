@@ -1,6 +1,6 @@
 import { contract } from '@trpc12/trpc/contract';
-import { z } from 'zod';
 import { openapi } from '@trpc12/trpc/openapi';
+import { z } from 'zod';
 
 const c = contract.create<{ meta: { auth?: boolean } }>().concat(openapi());
 

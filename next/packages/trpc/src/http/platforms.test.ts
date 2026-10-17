@@ -2,12 +2,10 @@ import { once } from 'node:events';
 import { createServer, type IncomingMessage } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { NodeHttpServer } from '@effect/platform-node';
-import { Effect, Exit, Scope } from 'effect';
-import { HttpEffect } from 'effect/http';
 import {
   createTrpcClient,
-  httpLink,
   experimental_messagePortLink,
+  httpLink,
   routerType,
 } from '@trpc12/trpc/client';
 import { toHttpEffect } from '@trpc12/trpc/http';
@@ -16,6 +14,8 @@ import {
   initTrpc,
   type WebSocketLike,
 } from '@trpc12/trpc/server';
+import { Effect, Exit, Scope } from 'effect';
+import { HttpEffect } from 'effect/http';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
 

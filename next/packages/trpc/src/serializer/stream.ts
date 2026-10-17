@@ -10,6 +10,12 @@
  */
 import { Cause, Deferred, Effect, Exit, Queue, Scope, Stream } from 'effect';
 import {
+  forEachSeq,
+  toAsyncIterable,
+  toReadableStream,
+} from '../internal/effects.ts';
+import { fromBase64, JsonBytes } from '../internal/frames.ts';
+import {
   deserializeSync,
   instancesOnly,
   objectsOnly,
@@ -19,12 +25,6 @@ import {
   type SerializeRecord,
   type SerializeReturn,
 } from './sync.ts';
-import {
-  forEachSeq,
-  toAsyncIterable,
-  toReadableStream,
-} from '../internal/effects.ts';
-import { fromBase64, JsonBytes } from '../internal/frames.ts';
 import { counter, DansonError } from './utils.ts';
 
 export const VALUE = 0;
@@ -55,9 +55,7 @@ export const isPromiseLike = (v: unknown): v is PromiseLike<unknown> =>
 /** Every deferred value becomes a stream of `[status, value]` pairs. */
 export function sourceOf(
   value:
-    | ReadableStream<unknown>
-    | AsyncIterable<unknown>
-    | PromiseLike<unknown>,
+    ReadableStream<unknown> | AsyncIterable<unknown> | PromiseLike<unknown>,
 ): Stream.Stream<[Status, unknown]> {
   if (value instanceof ReadableStream || isAsyncIterable(value)) {
     const iterable =

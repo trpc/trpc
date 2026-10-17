@@ -1,8 +1,8 @@
 import { request as httpRequest } from 'node:http';
-import { HttpServerResponse } from 'effect/http';
 import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
 import { jsonSerializer } from '@trpc12/trpc/serializer';
 import { createFetchHandler, error, initTrpc, lazy } from '@trpc12/trpc/server';
+import { HttpServerResponse } from 'effect/http';
 import { expect, test } from 'vite-plus/test';
 import { z } from 'zod';
 import { createTestServer } from '../fixtures/server.ts';

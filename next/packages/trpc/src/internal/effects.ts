@@ -44,8 +44,7 @@ export function toAsyncIterable<A, E>(
       let pull: Pull.Pull<ReadonlyArray<A>, E, void> | undefined;
       let buffer: Iterator<A> | undefined;
       let fiber:
-        | Fiber.Fiber<ReadonlyArray<A>, E | Cause.Done<void>>
-        | undefined;
+        Fiber.Fiber<ReadonlyArray<A>, E | Cause.Done<void>> | undefined;
       let closed: Promise<IteratorResult<A>> | undefined;
       const onAbort = () => void close(Exit.void);
       const close = (exit: Exit.Exit<unknown, unknown>) => {

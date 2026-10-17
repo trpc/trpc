@@ -1,12 +1,11 @@
-import { Effect } from 'effect';
-import { HttpServerRequest, HttpServerResponse } from 'effect/http';
-import { HttpEffect } from 'effect/http';
 import {
   generateOpenApi,
   openApiReference,
   type OpenApiDocument,
 } from '@trpc12/trpc/openapi';
 import { experimental_generateOpenApiFromTypes } from '@trpc12/trpc/openapi/typescript';
+import { Effect } from 'effect';
+import { HttpEffect, HttpServerRequest, HttpServerResponse } from 'effect/http';
 import { expect, test } from 'vite-plus/test';
 import { appRouter } from './fixtures/typed-router.ts';
 import { shapesRouter } from './fixtures/typed-shapes.ts';

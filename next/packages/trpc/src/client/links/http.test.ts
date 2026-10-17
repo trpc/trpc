@@ -2,17 +2,17 @@ import {
   createTrpcClient,
   httpLink,
   link,
+  routerType,
   safe,
   splitLink,
   TrpcError,
-  routerType,
   type BuiltinCallOptions,
 } from '@trpc12/trpc/client';
-import { Predicate } from 'effect';
 import { error, initTrpc } from '@trpc12/trpc/server';
-import { createTestServer } from '../../fixtures/server.ts';
+import { Predicate } from 'effect';
 import { expect, expectTypeOf, test, vi } from 'vite-plus/test';
 import { z } from 'zod';
+import { createTestServer } from '../../fixtures/server.ts';
 
 const t = initTrpc();
 

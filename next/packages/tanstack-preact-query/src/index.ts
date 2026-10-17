@@ -17,6 +17,18 @@
  * @module
  */
 import {
+  createTrpcQueryUtils,
+  SubscriptionObserver,
+  type SourceContext,
+  type SourceLinks,
+  type SourceRouter,
+  type SubscriptionResult,
+  type TrpcContextOptions,
+  type TrpcQueryUtilsFor,
+  type TrpcSubscriptionOptions,
+} from '@trpc12/tanstack-query';
+import type { ChainTypes, RouterOf, TrpcClient } from '@trpc12/trpc/client';
+import {
   createContext,
   h,
   type ComponentChildren,
@@ -24,18 +36,6 @@ import {
   type VNode,
 } from 'preact';
 import { useContext, useEffect, useMemo, useState } from 'preact/hooks';
-import type { ChainTypes, RouterOf, TrpcClient } from '@trpc12/trpc/client';
-import {
-  createTrpcQueryUtils,
-  SubscriptionObserver,
-  type SubscriptionResult,
-  type TrpcQueryUtilsFor,
-  type TrpcSubscriptionOptions,
-  type SourceContext,
-  type SourceLinks,
-  type SourceRouter,
-  type TrpcContextOptions,
-} from '@trpc12/tanstack-query';
 
 export * from '@trpc12/tanstack-query';
 

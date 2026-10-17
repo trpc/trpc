@@ -75,9 +75,8 @@ export type UndeclaredCheck<TDef extends BuilderDef, $Errors> = [
 
 type ResultConstraint<TDef extends BuilderDef> = TDef['outputIn'] extends Unset
   ? unknown
-  :
-      | MaybePromise<ResultOf<TDef['outputIn']> | AnyTrpcError>
-      | Effect.Effect<ResultOf<TDef['outputIn']> | AnyTrpcError, any, any>;
+  : | MaybePromise<ResultOf<TDef['outputIn']> | AnyTrpcError>
+    | Effect.Effect<ResultOf<TDef['outputIn']> | AnyTrpcError, any, any>;
 
 type EventsConstraint<
   TDef extends BuilderDef,
@@ -85,22 +84,12 @@ type EventsConstraint<
 > = TDef['outputIn'] extends Unset
   ? unknown
   : TTracked extends true
-    ?
-        | AsyncIterable<
-            TrackedEnvelope<EventOutput<TDef['outputIn']>>,
-            any,
-            any
-          >
-        | Stream.Stream<
-            TrackedEnvelope<EventOutput<TDef['outputIn']>>,
-            any,
-            any
-          >
-        | AnyTrpcError
-    :
-        | AsyncIterable<EventOutput<TDef['outputIn']>, any, any>
-        | Stream.Stream<EventOutput<TDef['outputIn']>, any, any>
-        | AnyTrpcError;
+    ? | AsyncIterable<TrackedEnvelope<EventOutput<TDef['outputIn']>>, any, any>
+      | Stream.Stream<TrackedEnvelope<EventOutput<TDef['outputIn']>>, any, any>
+      | AnyTrpcError
+    : | AsyncIterable<EventOutput<TDef['outputIn']>, any, any>
+      | Stream.Stream<EventOutput<TDef['outputIn']>, any, any>
+      | AnyTrpcError;
 
 /**
  * A procedure made from a contract leaf: the contract's client-facing types,

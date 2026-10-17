@@ -11,10 +11,10 @@ import {
   safeErrorFirst,
   safeObject,
   schema,
-  type InputValidationError,
-  type Issue,
   type inferProcedureErrors,
   type inferRouterErrors,
+  type InputValidationError,
+  type Issue,
   type TrpcError,
 } from './core.ts';
 

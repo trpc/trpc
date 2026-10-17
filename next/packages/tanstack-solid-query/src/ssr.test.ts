@@ -9,6 +9,8 @@ import {
   hydrationOptions,
   useSubscription,
 } from '@trpc12/tanstack-solid-query';
+import { createRouterClient } from '@trpc12/trpc/server';
+import type { JSX } from 'solid-js';
 import {
   createComponent,
   escape,
@@ -16,15 +18,13 @@ import {
   renderToString,
   ssr,
 } from 'solid-js/web';
-import type { JSX } from 'solid-js';
-import { createRouterClient } from '@trpc12/trpc/server';
 import { expect, test } from 'vite-plus/test';
 import {
   appRouter,
   createApp,
   db,
-  type AppClient,
   serializer,
+  type AppClient,
 } from '../../tanstack-query/src/fixtures/app.ts';
 
 const [TrpcProvider, useTrpc] = createTrpcContext<AppClient>();

@@ -17,8 +17,8 @@ import type {
 import type { Unlazy } from '../server/router.ts';
 import type {
   AnyLink,
-  DeclContext,
   BuiltinCallOptions,
+  DeclContext,
   TrpcLink,
 } from './link.ts';
 
@@ -65,13 +65,11 @@ export type UnexpectedError = TrpcError<
  * @stability stable
  */
 export type ClientError<E, F extends OutputForm = DansonForm> =
-  | DefinedError<E, F>
-  | UnexpectedError;
+  DefinedError<E, F> | UnexpectedError;
 
 /** A call's errors: the procedure's in the result form, the links' as made. */
 type CallError<D extends ProcedureDef, F extends OutputForm, TLinkErrors> =
-  | ClientError<D['errors'], F>
-  | DefinedError<TLinkErrors>;
+  ClientError<D['errors'], F> | DefinedError<TLinkErrors>;
 
 /**
  * A call's `Promise`, carrying its error type for `safe()`.

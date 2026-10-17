@@ -1,14 +1,14 @@
-import { Layer } from 'effect';
-import { RateLimiter } from 'effect/persistence';
 import {
   createTrpcClient,
   httpLink,
   retryLink,
-  safe,
   routerType,
+  safe,
 } from '@trpc12/trpc/client';
-import { RateLimited, rateLimit } from '@trpc12/trpc/middleware';
+import { rateLimit, RateLimited } from '@trpc12/trpc/middleware';
 import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
+import { Layer } from 'effect';
+import { RateLimiter } from 'effect/persistence';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { createTestServer } from '../fixtures/server.ts';
 

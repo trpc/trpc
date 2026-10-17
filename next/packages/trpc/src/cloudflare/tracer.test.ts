@@ -1,12 +1,12 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
-import { Effect } from 'effect';
+import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
 import {
   experimental_workersTracer,
   type WorkersSpan,
   type WorkersTracing,
 } from '@trpc12/trpc/cloudflare';
-import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
 import { createFetchHandler, error, initTrpc } from '@trpc12/trpc/server';
+import { Effect } from 'effect';
 import { expect, test } from 'vite-plus/test';
 
 interface Recorded {

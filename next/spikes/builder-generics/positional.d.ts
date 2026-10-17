@@ -12,6 +12,7 @@ import type {
   Schema,
   Unset,
 } from './shared.ts';
+
 export interface Procedure<TType, TInput, TOutput, TErrors> {
   '~trpc': {
     type: TType;

@@ -1,29 +1,26 @@
 {
-	"$schema": "./next/node_modules/vendor-src/schema/vendor-src.schema.json",
-	"dir": "next/.repos",
-	"rootAgentsMd": false,
-	"repos": {
-		"effect": {
-			"packages": [],
-			"url": "https://github.com/Effect-TS/effect.git",
-			"version": "effect@4.0.2",
-			"ref": "effect@4.0.2"
-		},
-		"orpc": {
-			"packages": [],
-			"url": "https://github.com/middleapi/orpc.git",
-			"version": "v2.0.0-beta.44",
-			"ref": "v2.0.0-beta.44"
-		},
-		"raf-query": {
-			"packages": [],
-			"url": "https://github.com/KATT/raf-query.git",
-			"version": "a9f2aa7743c64b548c6d982f5caffaf53f9a695a",
-			"ref": "a9f2aa7743c64b548c6d982f5caffaf53f9a695a",
-			"ignore": [
-				"**/.github/**",
-				"pnpm-lock.yaml"
-			]
-		}
-	}
+  "$schema": "./next/node_modules/vendor-src/schema/vendor-src.schema.json",
+  "dir": "next/.repos",
+  "rootAgentsMd": false,
+  "repos": {
+    "effect": {
+      "packages": [],
+      "url": "https://github.com/Effect-TS/effect.git",
+      "version": "effect@4.0.2",
+      "ref": "effect@4.0.2"
+    },
+    "orpc": {
+      "packages": [],
+      "url": "https://github.com/middleapi/orpc.git",
+      "version": "v2.0.0-beta.44",
+      "ref": "v2.0.0-beta.44"
+    },
+    "raf-query": {
+      "packages": [],
+      "url": "https://github.com/KATT/raf-query.git",
+      "version": "a9f2aa7743c64b548c6d982f5caffaf53f9a695a",
+      "ref": "a9f2aa7743c64b548c6d982f5caffaf53f9a695a",
+      "ignore": ["**/.github/**", "pnpm-lock.yaml"]
+    }
+  }
 }

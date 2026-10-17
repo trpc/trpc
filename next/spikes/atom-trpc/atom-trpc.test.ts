@@ -1,10 +1,10 @@
 import { RegistryProvider, useAtomSuspense } from '@effect/atom-react';
+import { localLink } from '@trpc12/trpc/client';
+import { error, initTrpc } from '@trpc12/trpc/server';
 import { Option } from 'effect';
 import { AsyncResult, AtomRegistry, type Atom } from 'effect/reactivity';
 import { createElement, Suspense } from 'react';
 import { prerender } from 'react-dom/static';
-import { localLink } from '@trpc12/trpc/client';
-import { error, initTrpc } from '@trpc12/trpc/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
 import { make } from './atom-trpc.ts';

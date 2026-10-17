@@ -1,4 +1,3 @@
-import { Schema } from 'effect';
 import {
   createTrpcClient,
   httpLink,
@@ -6,17 +5,18 @@ import {
   validationLink,
 } from '@trpc12/trpc/client';
 import {
-  type AnyContractRouter,
   contract,
   toContract,
+  type AnyContractRouter,
 } from '@trpc12/trpc/contract';
+import { createUntypedClient } from '@trpc12/trpc/extend';
 import {
   createOpenApiHandler,
   openapi,
   openApiLink,
 } from '@trpc12/trpc/openapi';
-import { createUntypedClient } from '@trpc12/trpc/extend';
-import { type AnyRouter, initTrpc, stream, tracked } from '@trpc12/trpc/server';
+import { initTrpc, stream, tracked, type AnyRouter } from '@trpc12/trpc/server';
+import { Schema } from 'effect';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
 import { createTestServer } from '../../fixtures/server.ts';

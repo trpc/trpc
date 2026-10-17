@@ -6,6 +6,7 @@
  */
 import type * as Cause from 'effect/Cause';
 import type * as Effect from 'effect/Effect';
+
 declare const errorBrand: unique symbol;
 /** Isomorphic error. Yieldable, so it is also an `Effect<never, this>`. */
 export interface TrpcError<TCode extends string = string, TData = unknown>

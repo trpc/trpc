@@ -160,8 +160,7 @@ export class SubscriptionCache {
     member: Member<TEvent, TError>,
   ): SharedSubscription<TEvent, TError> {
     let entry = this.#entries.get(hash) as
-      | SharedSubscription<TEvent, TError>
-      | undefined;
+      SharedSubscription<TEvent, TError> | undefined;
     if (!entry) {
       const created = new SharedSubscription<TEvent, TError>(() => {
         if (this.#entries.get(hash) === created) this.#entries.delete(hash);

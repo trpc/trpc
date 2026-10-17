@@ -132,8 +132,7 @@ export type Callable<
  * @internal
  */
 type Fits<TDef extends ProcedureDef, TCtx, TServices> = TDef['type'] extends
-  | 'query'
-  | 'mutation'
+  'query' | 'mutation'
   ? TCtx extends TDef['ctx']
     ? [TDef['services']] extends [never]
       ? []

@@ -73,8 +73,7 @@ type Leaf =
 /** Data without thenables or iterables, which arrives as it is sent. */
 /** What a procedure returns to send its own response: `HttpServerResponse` or a web `Response`. @internal */
 export type ProcedureResponse =
-  | { readonly '~effect/http/HttpServerResponse': unknown }
-  | globalThis.Response;
+  { readonly '~effect/http/HttpServerResponse': unknown } | globalThis.Response;
 
 type Plain =
   | Exclude<Leaf, (...args: any[]) => unknown>
@@ -229,9 +228,7 @@ export type JsonOf<T, K = never, D extends boolean = false> =
           ? T
           : D extends true
             ? T extends
-                | PromiseLike<unknown>
-                | AsyncIterable<unknown>
-                | ReadableStream
+                PromiseLike<unknown> | AsyncIterable<unknown> | ReadableStream
               ? Deferred<T, K>
               : JsonValueOf<T, K, D>
             : JsonValueOf<T, K, D>;
@@ -266,9 +263,8 @@ type Framed<T, K> = [T] extends [JsonSafe]
       ? globalThis.Response
       : T extends Blob
         ? T
-        :
-            | JsonOf<Exclude<T, void>, K, true>
-            | (undefined extends T ? undefined : never);
+        : | JsonOf<Exclude<T, void>, K, true>
+          | (undefined extends T ? undefined : never);
 
 /**
  * A procedure's output as the client receives it under a serializer's form.

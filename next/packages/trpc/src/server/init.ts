@@ -21,6 +21,11 @@ import {
   type ImplementMetaCheck,
   type ImplementResult,
 } from './implement.ts';
+import {
+  makeEffectMiddleware,
+  type EffectMiddlewareFactory,
+  type MiddlewareFunction,
+} from './middleware.ts';
 import { mergeMeta, type MetaMerge } from './procedure.ts';
 import type { Response } from './response.ts';
 import {
@@ -31,11 +36,6 @@ import {
   type RouterMeta,
   type RouterOptions,
 } from './router.ts';
-import {
-  makeEffectMiddleware,
-  type EffectMiddlewareFactory,
-  type MiddlewareFunction,
-} from './middleware.ts';
 
 /**
  * The type-level config of `initTrpc`.

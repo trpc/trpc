@@ -1,8 +1,8 @@
 // @vitest-environment happy-dom
-import { useActionState, useOptimistic } from 'react';
-import { createRoot } from 'react-dom/client';
 import { experimental_createAction } from '@trpc12/trpc/actions';
 import { initTrpc } from '@trpc12/trpc/server';
+import { useActionState, useOptimistic } from 'react';
+import { createRoot } from 'react-dom/client';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
 import { click, container, text, waitFor } from '../fixtures/dom.ts';

@@ -1,5 +1,4 @@
 import { eslintCompatPlugin } from '@oxlint/plugins';
-
 import { noManualTagComparisonRule } from './rules/no-manual-tag-comparison.ts';
 import { noManualTaggedConstructionRule } from './rules/no-manual-tagged-construction.ts';
 import { preferEffectMatchRule } from './rules/prefer-effect-match.ts';
