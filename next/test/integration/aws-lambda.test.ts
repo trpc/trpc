@@ -216,3 +216,94 @@ test('a handler without a platform type is accepted', () => {
   });
   expectTypeOf(toLambdaHandler(plain)).toBeFunction();
 });
+
+test('REST events with multi-value headers, sparse values and a base64 body', async () => {
+  const result = (await lambda(
+    {
+      httpMethod: 'post',
+      path: '/trpc/login',
+      multiValueHeaders: {
+        'content-type': ['application/json'],
+        cookie: ['from=multi'],
+        'x-none': undefined,
+      },
+      headers: { cookie: 'ignored=1', 'x-single': undefined },
+      multiValueQueryStringParameters: { unused: undefined },
+      body: Buffer.from('{}').toString('base64'),
+      isBase64Encoded: true,
+    },
+    context,
+  )) as LambdaV1Result;
+  expect(JSON.parse(result.body)).toEqual({ json: 'from=multi' });
+
+  const bare = (await lambda({
+    httpMethod: 'GET',
+    path: '/trpc/hello',
+    queryStringParameters: { input: '{"name":"q"}', skipped: undefined },
+    requestContext: { domainName: 'rest.example.com' },
+  })) as LambdaV1Result;
+  expect(JSON.parse(bare.body).json.hi).toBe('q');
+});
+
+test('HTTP API events with a query string, or a POST without a body', async () => {
+  const query = (await lambda({
+    version: '2.0',
+    rawPath: '/trpc/hello',
+    rawQueryString: `input=${encodeURIComponent('{"name":"v2"}')}`,
+    requestContext: { http: { method: 'GET' } },
+  })) as LambdaV2Result;
+  expect(JSON.parse(query.body).json.hi).toBe('v2');
+
+  const empty = (await lambda({
+    version: '2.0',
+    rawPath: '/trpc/login',
+    rawQueryString: '',
+    headers: { 'content-type': 'application/json' },
+    requestContext: { http: { method: 'POST' } },
+  })) as LambdaV2Result;
+  expect(JSON.parse(empty.body)).toEqual({ json: '' });
+});
+
+test('Lambda@Edge: a query string, and binary bodies as base64', async () => {
+  const result = (await lambda({
+    Records: [
+      {
+        cf: {
+          request: {
+            method: 'GET',
+            uri: '/trpc/download',
+            querystring: 'unrelated=1',
+            headers: { host: [{ value: 'edge.example.com' }] },
+          },
+        },
+      },
+    ],
+  })) as LambdaEdgeResult;
+  expect(result.bodyEncoding).toBe('base64');
+  expect([...Buffer.from(result.body, 'base64')]).toEqual([0, 255, 1]);
+});
+
+test('the streaming handler waits for drain when the stream is full', async () => {
+  const chunks: Uint8Array[] = [];
+  let drains = 0;
+  const stream: LambdaResponseStream = {
+    write: (chunk) => (chunks.push(chunk), false),
+    end: () => {},
+    once: (_event, listener) => {
+      drains++;
+      setImmediate(listener);
+    },
+  };
+  await toLambdaStreamingHandler(handler)(
+    {
+      version: '2.0',
+      rawPath: '/trpc/ticks',
+      rawQueryString: '',
+      headers: { accept: 'text/event-stream' },
+      requestContext: { http: { method: 'GET' } },
+    },
+    stream,
+  );
+  expect(drains).toBe(chunks.length);
+  expect(Buffer.concat(chunks).toString()).toContain('data: {"json":2}');
+});
