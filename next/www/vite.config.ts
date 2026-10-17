@@ -17,13 +17,18 @@ const twoslashCacheDir = new URL(
 ).pathname;
 const lockfile = new URL('../pnpm-lock.yaml', import.meta.url).pathname;
 const pages = await Effect.runPromise(
-  docPages({ contentDir, samplesDir }).pipe(Effect.provide(NodeServices.layer)),
+  docPages({ basePath: '/docs', contentDir, samplesDir }).pipe(
+    Effect.provide(NodeServices.layer),
+  ),
 );
 
 export default defineConfig({
   plugins: [
     docsContent({
+      agentFiles: true,
+      basePath: '/docs',
       contentDir,
+      manifestId: 'virtual:docs-manifest',
       samplesDir,
       sections,
       siteUrl: site.url,

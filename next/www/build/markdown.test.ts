@@ -3,7 +3,7 @@ import { describe, expect, it } from '@effect/vitest';
 import { Effect, FileSystem, Path } from 'effect';
 
 import { brokenLinks } from './content.ts';
-import { renderMarkdown, resolveLink } from './markdown.ts';
+import { headingsOf, renderMarkdown, resolveLink } from './markdown.ts';
 
 /** A samples dir whose `docs` app compiles inline blocks, removed when the test ends. */
 const samples = Effect.gen(function* () {
@@ -37,6 +37,7 @@ const samples = Effect.gen(function* () {
 const render = (markdown: string, slug = 'client/links') =>
   Effect.flatMap(samples, (samplesDir) =>
     renderMarkdown(markdown, {
+      basePath: '/docs',
       samplesDir,
       slug,
       sourceUrl: 'https://github.com/trpc/trpc/blob/v12/next',
@@ -148,6 +149,62 @@ describe('renderMarkdown', () => {
         { depth: 2, id: 'call-options', text: 'Call options' },
         { depth: 3, id: 'signal', text: 'signal' },
       ]);
+    }).pipe(Effect.provide(NodeServices.layer)),
+  );
+
+  it.effect('keeps a heading id written as `{#id}`', () =>
+    Effect.gen(function* () {
+      const markdown = '## Connection params {#params}\n\n## Other';
+      const rendered = yield* render(markdown);
+      expect(rendered.headings).toEqual([
+        { depth: 2, id: 'params', text: 'Connection params' },
+        { depth: 2, id: 'other', text: 'Other' },
+      ]);
+      expect(rendered.html).toContain('id="params"');
+      expect(rendered.html).not.toContain('{#params}');
+      expect(yield* headingsOf(markdown)).toEqual(rendered.headings);
+    }).pipe(Effect.provide(NodeServices.layer)),
+  );
+
+  it.effect("titles an alert with its marker line's text", () =>
+    Effect.gen(function* () {
+      const rendered = yield* render(
+        '> [!TIP] AI **agents**\n> Install the skills.\n\n> [!NOTE]\n> Plain.',
+      );
+      const text = rendered.html.replaceAll(/<[^>]+>/g, '');
+      expect(text).toContain('AI agents');
+      expect(rendered.html).toContain('<strong>agents</strong>');
+      expect(text).toContain('Install the skills.');
+      expect(text).toContain('Note');
+      expect(text).not.toContain('[!');
+    }).pipe(Effect.provide(NodeServices.layer)),
+  );
+
+  it.effect('shows the tab marked `data-active` in a group of prose tabs', () =>
+    Effect.gen(function* () {
+      const rendered = yield* render(
+        [
+          '<div class="code-tabs" data-tabs="validator">',
+          '<div data-tab="Vanilla">',
+          '',
+          'A **function**.',
+          '',
+          '</div>',
+          '<div data-tab="Zod" data-active>',
+          '',
+          'A schema.',
+          '',
+          '</div>',
+          '</div>',
+        ].join('\n'),
+      );
+      expect(rendered.html).toContain('<strong>function</strong>');
+      expect(rendered.html).toMatch(
+        /aria-selected="false"[^>]*>Vanilla<\/button>/,
+      );
+      expect(rendered.html).toMatch(/aria-selected="true"[^>]*>Zod<\/button>/);
+      expect(rendered.html).toMatch(/<div data-tab="Vanilla">/);
+      expect(rendered.html).toMatch(/<div data-tab="Zod" data-active="">/);
     }).pipe(Effect.provide(NodeServices.layer)),
   );
 });

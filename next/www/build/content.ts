@@ -22,7 +22,19 @@ export interface ContentDirs {
   readonly samplesDir: string;
 }
 
-export interface ContentOptions extends ContentDirs {
+export interface PageDirs extends ContentDirs {
+  /** Where the pages are served: `/docs` serves `client/links` at `/docs/client/links`. */
+  readonly basePath: string;
+}
+
+export interface ContentOptions extends PageDirs {
+  /**
+   * Whether the build writes `llms.txt`, `llms-full.txt` and each page's
+   * markdown, and the dev server serves them.
+   */
+  readonly agentFiles: boolean;
+  /** The module that lists the pages: `virtual:docs-manifest`. */
+  readonly manifestId: string;
   /** Sidebar sections, in order. Every page's `section` must be one of them. */
   readonly sections: ReadonlyArray<string>;
   /** Absolute site URL, for `llms.txt` and the markdown pages. */
@@ -33,6 +45,11 @@ export interface ContentOptions extends ContentDirs {
   readonly summary: string;
   /** Keeps compiled code blocks on disk, so the next build reuses them. */
   readonly twoslashCache?: TwoslashCacheOptions | undefined;
+  /**
+   * The v11 pages, for a link from each page to the v11 page on its topic:
+   * the one its `v11` frontmatter names, or else the one at its slug.
+   */
+  readonly v11Dir?: string | undefined;
 }
 
 /** The `Accept` header agents send to get markdown instead of HTML. */
@@ -40,9 +57,11 @@ const acceptsMarkdown = /\btext\/markdown\b/;
 
 const Frontmatter = Schema.Struct({
   description: Schema.String,
+  label: Schema.optional(Schema.String),
   order: Schema.Number,
   section: Schema.String,
   title: Schema.String,
+  v11: Schema.optional(Schema.String),
 });
 
 type Frontmatter = typeof Frontmatter.Type;
@@ -78,9 +97,6 @@ function withTypes(code: string, types: ReadonlyArray<string>) {
       .join('\n');
   });
 }
-
-const manifestId = 'virtual:docs-manifest';
-const resolvedManifestId = `\0${manifestId}`;
 
 /**
  * `import hero from "sample:<app>/<path>#region"` renders that region of a
@@ -167,13 +183,13 @@ const readSources = Effect.fn('readSources')(function* (dirs: ContentDirs) {
 });
 
 /** Page paths for prerendering and the sitemap. */
-export const docPages = Effect.fn('docPages')(function* (dirs: ContentDirs) {
+export const docPages = Effect.fn('docPages')(function* (dirs: PageDirs) {
   return yield* Effect.forEach(
     yield* readSources(dirs),
     (source) =>
       Effect.map(lastModified(source.file), (date) => ({
         lastModified: date,
-        path: `/docs/${source.slug}`,
+        path: `${dirs.basePath}/${source.slug}`,
       })),
     { concurrency: 'unbounded' },
   );
@@ -216,21 +232,46 @@ export function brokenLinks(
 /**
  * Compiles the docs' `.md` pages at build time. Each page imports as a module
  * of pre-highlighted HTML (its own chunk, so the browser loads only the pages
- * it visits), and `virtual:docs-manifest` lists every page for the nav,
- * search and SEO. The client build also gets `llms.txt` and each page's
- * markdown at `/docs/<slug>.md`.
+ * it visits), and the manifest module (`virtual:docs-manifest`) lists every
+ * page for the nav, search and SEO. With `agentFiles`, the client build also
+ * gets `llms.txt` and each page's markdown at `<basePath>/<slug>.md`.
  *
  * The build fails on a page without valid frontmatter, a code block that
  * doesn't compile, and a link to a page or heading that doesn't exist.
  */
 export function docsContent(options: ContentOptions): Plugin {
   const samplesDir = options.samplesDir;
+  const basePath = options.basePath;
+  const manifestId = options.manifestId;
+  const resolvedManifestId = `\0${manifestId}`;
   const twoslashCache =
     options.twoslashCache && makeTwoslashCache(options.twoslashCache);
   const rendered = new Map<string, Promise<Rendered>>();
 
+  /** The v11 page on the same topic as `source`. */
+  const v11Page = Effect.fn('v11Page')(function* (source: Source) {
+    if (options.v11Dir === undefined) {
+      return undefined;
+    }
+    const fs = yield* FileSystem.FileSystem;
+    const path = yield* Path.Path;
+    const named = source.frontmatter.v11;
+    const slug = named ?? source.slug;
+    const file = path.join(options.v11Dir, `${slug}.md`);
+    if (yield* fs.exists(file)) {
+      return slug;
+    }
+    if (named !== undefined) {
+      return yield* new ContentError({
+        message: `${source.file}: v11: ${named} isn't a page in ${options.v11Dir}`,
+      });
+    }
+    return undefined;
+  });
+
   const renderDoc = Effect.fn('renderDoc')(function* (source: Source) {
     const result = yield* renderMarkdown(source.markdown, {
+      basePath,
       samplesDir,
       slug: source.slug,
       sourceUrl: options.sourceUrl,
@@ -249,10 +290,12 @@ export function docsContent(options: ContentOptions): Plugin {
         description: source.frontmatter.description,
         headings: result.headings,
         html: result.html,
+        label: source.frontmatter.label,
         lastModified: yield* lastModified(source.file),
         section: source.frontmatter.section,
         slug: source.slug,
         title: source.frontmatter.title,
+        v11: yield* v11Page(source),
       },
       links: result.links,
       typeQueries: result.typeQueries,
@@ -267,6 +310,7 @@ export function docsContent(options: ContentOptions): Plugin {
       samplesDir,
     });
     const result = yield* renderMarkdown(expanded.markdown, {
+      basePath,
       samplesDir,
       slug: 'index',
       sourceUrl: options.sourceUrl,
@@ -325,10 +369,12 @@ export function docsContent(options: ContentOptions): Plugin {
           return {
             description: doc.description,
             headings: doc.headings,
+            label: doc.label,
             lastModified: doc.lastModified,
             section: doc.section,
             slug: doc.slug,
             title: doc.title,
+            v11: doc.v11,
           };
         }),
       title,
@@ -356,7 +402,7 @@ export function docsContent(options: ContentOptions): Plugin {
       .replaceAll(/\]\(([^)\s]+)\)/g, (link, url: string) => {
         const resolved = resolveLink(source.slug, url);
         if (resolved.kind === 'doc') {
-          return `](${options.siteUrl}/docs/${resolved.link.slug}.md${resolved.link.hash ? `#${resolved.link.hash}` : ''})`;
+          return `](${options.siteUrl}${basePath}/${resolved.link.slug}.md${resolved.link.hash ? `#${resolved.link.hash}` : ''})`;
         }
         if (resolved.kind === 'source') {
           return `](${options.sourceUrl}/${resolved.path})`;
@@ -384,7 +430,7 @@ export function docsContent(options: ContentOptions): Plugin {
       lines.push(`## ${section.title}`, '');
       for (const doc of section.docs) {
         lines.push(
-          `- [${doc.title}](${options.siteUrl}/docs/${doc.slug}.md): ${doc.description}`,
+          `- [${doc.title}](${options.siteUrl}${basePath}/${doc.slug}.md): ${doc.description}`,
         );
       }
       lines.push('');
@@ -400,7 +446,7 @@ export function docsContent(options: ContentOptions): Plugin {
 
   /**
    * Files for agents, by URL path: `llms.txt`, `llms-full.txt`, each page's
-   * markdown at `/docs/<slug>.md`, `/index.md` (the home page's markdown,
+   * markdown at `<basePath>/<slug>.md`, `/index.md` (the home page's markdown,
    * the same as `llms.txt`) and `/404.md`.
    */
   async function agentFiles() {
@@ -430,13 +476,13 @@ export function docsContent(options: ContentOptions): Plugin {
         ...intro,
         ...pages.map(
           (entry) =>
-            `---\n\nSource: ${options.siteUrl}/docs/${entry.source.slug}\n\n${pageMarkdown(entry.source, entry.page)}`,
+            `---\n\nSource: ${options.siteUrl}${basePath}/${entry.source.slug}\n\n${pageMarkdown(entry.source, entry.page)}`,
         ),
       ].join('\n'),
     );
     for (const entry of pages) {
       files.set(
-        `/docs/${entry.source.slug}.md`,
+        `${basePath}/${entry.source.slug}.md`,
         pageMarkdown(entry.source, entry.page),
       );
     }
@@ -449,11 +495,15 @@ export function docsContent(options: ContentOptions): Plugin {
    * markdown at the page's own URL for `Accept: text/markdown`.
    */
   function serveAgentFiles(server: { readonly middlewares: Connect.Server }) {
+    if (!options.agentFiles) {
+      return;
+    }
+    const pagePath = new RegExp(`^(?:${basePath}/[\\w/-]+)?$`);
     server.middlewares.use((request, response, next) => {
       const pathname = new URL(request.url ?? '/', 'http://localhost').pathname;
       const wantsMarkdown = acceptsMarkdown.test(request.headers.accept ?? '');
       const filePath =
-        wantsMarkdown && /^\/(?:docs\/[\w/-]+)?$/.test(pathname)
+        wantsMarkdown && (pathname === '/' || pagePath.test(pathname))
           ? `${pathname === '/' ? '/index' : pathname}.md`
           : pathname;
       if (!/\.(?:md|txt)$/.test(filePath) || filePath === '/robots.txt') {
@@ -486,7 +536,9 @@ export function docsContent(options: ContentOptions): Plugin {
       if (this.environment.name !== 'client') {
         return;
       }
-      for (const [urlPath, source] of await agentFiles()) {
+      for (const [urlPath, source] of options.agentFiles
+        ? await agentFiles()
+        : []) {
         this.emitFile({ fileName: urlPath.slice(1), source, type: 'asset' });
       }
       if (twoslashCache) {
@@ -538,7 +590,7 @@ export function docsContent(options: ContentOptions): Plugin {
       const sections = await manifest();
       return `export const sections = ${JSON.stringify(sections)};`;
     },
-    name: 'trpc-docs:content',
+    name: `trpc-docs:content:${manifestId}`,
     resolveId(id) {
       if (id.startsWith(samplePrefix)) {
         return `\0${id}`;

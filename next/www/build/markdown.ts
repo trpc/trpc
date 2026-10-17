@@ -12,6 +12,7 @@ import { toString } from 'hast-util-to-string';
 import type {
   Blockquote,
   Code,
+  Heading,
   Link,
   Root as MdastRoot,
   Paragraph,
@@ -62,7 +63,35 @@ function isAlertKind(value: string): value is AlertKind {
   return Object.hasOwn(alertTitles, value);
 }
 
-/** GitHub's `> [!NOTE]` alerts become `<aside class="callout">`. */
+/**
+ * Splits a paragraph's inline content at its first line break: the first
+ * line, and the rest.
+ */
+function splitFirstLine(children: Paragraph['children']) {
+  const breakAt = children.findIndex(
+    (child) => child.type === 'text' && child.value.includes('\n'),
+  );
+  const at = children[breakAt];
+  if (breakAt === -1 || at?.type !== 'text') {
+    return { first: children, rest: [] };
+  }
+  const newline = at.value.indexOf('\n');
+  return {
+    first: [
+      ...children.slice(0, breakAt),
+      { type: 'text' as const, value: at.value.slice(0, newline) },
+    ],
+    rest: [
+      { type: 'text' as const, value: at.value.slice(newline + 1) },
+      ...children.slice(breakAt + 1),
+    ],
+  };
+}
+
+/**
+ * GitHub's `> [!NOTE]` alerts become `<aside class="callout">`. Text after
+ * the marker, on its line, replaces the default title: `> [!TIP] AI agents`.
+ */
 function remarkAlerts() {
   return (tree: MdastRoot) => {
     visit(tree, 'blockquote', (node: Blockquote) => {
@@ -74,17 +103,36 @@ function remarkAlerts() {
       if (text?.type !== 'text') {
         return;
       }
-      const match = /^\[!(\w+)\]\s*/.exec(text.value);
+      const match = /^\[!(\w+)\][ \t]*/.exec(text.value);
       const kind = match?.[1]?.toUpperCase();
       if (!match || !kind || !isAlertKind(kind)) {
         return;
       }
       text.value = text.value.slice(match[0].length);
+      const lines = splitFirstLine(first.children);
+      const custom = lines.first.some(
+        (child) => child.type !== 'text' || child.value.trim() !== '',
+      );
       const title: Paragraph = {
-        children: [{ type: 'text', value: alertTitles[kind] }],
+        children: custom
+          ? lines.first
+          : [{ type: 'text', value: alertTitles[kind] }],
         data: { hProperties: { className: ['callout-title'] } },
         type: 'paragraph',
       };
+      first.children = custom
+        ? lines.rest
+        : [
+            { type: 'text', value: text.value.replace(/^\s+/, '') },
+            ...first.children.slice(1),
+          ];
+      if (
+        first.children.every(
+          (child) => child.type === 'text' && child.value.trim() === '',
+        )
+      ) {
+        node.children.shift();
+      }
       node.children.unshift(title);
       node.data = {
         hName: 'aside',
@@ -105,7 +153,7 @@ export type ResolvedLink =
 /**
  * Links are written as relative paths between the `.md` files
  * (`../client/links.md#batching`), so they work on GitHub too. A link to a
- * page is served at `/docs/<slug>`, and a link out of the docs folder (an
+ * page points at `<basePath>/<slug>`, and a link out of the docs folder (an
  * example, a design note) points at the file on GitHub.
  */
 export function resolveLink(fromSlug: string, url: string): ResolvedLink {
@@ -125,16 +173,41 @@ export function resolveLink(fromSlug: string, url: string): ResolvedLink {
   return { kind: 'source', path: `${pathname.slice(1)}${target.hash}` };
 }
 
-function remarkLinks(slug: string, sourceUrl: string, links: Array<DocLink>) {
+function remarkLinks(
+  options: Pick<RenderOptions, 'basePath' | 'slug' | 'sourceUrl'>,
+  links: Array<DocLink>,
+) {
   return () => (tree: MdastRoot) => {
     visit(tree, 'link', (node: Link) => {
-      const resolved = resolveLink(slug, node.url);
+      const resolved = resolveLink(options.slug, node.url);
       if (resolved.kind === 'doc') {
         links.push(resolved.link);
-        node.url = `/docs/${resolved.link.slug}${resolved.link.hash ? `#${resolved.link.hash}` : ''}`;
+        node.url = `${options.basePath}/${resolved.link.slug}${resolved.link.hash ? `#${resolved.link.hash}` : ''}`;
       } else if (resolved.kind === 'source') {
-        node.url = `${sourceUrl}/${resolved.path}`;
+        node.url = `${options.sourceUrl}/${resolved.path}`;
       }
+    });
+  };
+}
+
+/**
+ * `## Title {#id}` gives a heading its own id instead of one from its
+ * text, as Docusaurus does, so links to the v11 pages' headings still land.
+ */
+function remarkHeadingIds() {
+  return (tree: MdastRoot) => {
+    visit(tree, 'heading', (node: Heading) => {
+      const last = node.children.at(-1);
+      const match =
+        last?.type === 'text' ? /\s*\{#([\w-]+)\}\s*$/.exec(last.value) : null;
+      if (last?.type !== 'text' || !match?.[1]) {
+        return;
+      }
+      last.value = last.value.slice(0, match.index);
+      node.data = {
+        ...node.data,
+        hProperties: { ...node.data?.hProperties, id: match[1] },
+      };
     });
   };
 }
@@ -215,7 +288,10 @@ function rehypeHeadings(headings: Array<DocHeading>) {
         return;
       }
       const text = toString(node).trim();
-      const id = slugger.slug(text);
+      const id =
+        typeof node.properties.id === 'string'
+          ? node.properties.id
+          : slugger.slug(text);
       node.properties.id = id;
       if (node.tagName === 'h2' || node.tagName === 'h3') {
         headings.push({ depth: node.tagName === 'h2' ? 2 : 3, id, text });
@@ -317,15 +393,26 @@ function rehypeCodeTabs() {
           child.type === 'element' && child.properties['dataTab'] !== undefined,
       );
       const tabs = blocks.map((block) => String(block.properties['dataTab']));
-      // The first tab shows until `DocBody` applies the reader's choice.
-      if (blocks[0]) {
-        blocks[0].properties['dataActive'] = '';
+      // A tab marked `data-active`, or else the first, shows until `DocBody`
+      // applies the reader's choice.
+      const shown = Math.max(
+        blocks.findIndex(
+          (block) => block.properties['dataActive'] !== undefined,
+        ),
+        0,
+      );
+      for (const [index, block] of blocks.entries()) {
+        if (index === shown) {
+          block.properties['dataActive'] = '';
+        } else {
+          delete block.properties['dataActive'];
+        }
       }
       node.children.unshift({
         children: tabs.map((tab, index): Element => ({
           children: [{ type: 'text', value: tab }],
           properties: {
-            ariaSelected: String(index === 0),
+            ariaSelected: String(index === shown),
             className: ['code-tab'],
             dataTabGroup: group,
             dataTabSelect: tab,
@@ -590,6 +677,8 @@ const twoslashTransformer = Effect.fn('twoslashTransformer')(function* (
 });
 
 export interface RenderOptions {
+  /** Where the pages are served: `/docs`. Links between them point under it. */
+  readonly basePath: string;
   /** The dir of the sample apps the code blocks compile in. */
   readonly samplesDir: string;
   /** The page's slug, which its relative links resolve from. */
@@ -600,6 +689,42 @@ export interface RenderOptions {
   readonly twoslashCache?: TwoslashCache | undefined;
 }
 
+/** Markdown to hast, up to highlighting the code blocks. */
+function parsing(
+  options: Pick<RenderOptions, 'basePath' | 'slug' | 'sourceUrl'>,
+  headings: Array<DocHeading>,
+  links: Array<DocLink>,
+) {
+  return unified()
+    .use(remarkParse)
+    .use(remarkGfm)
+    .use(remarkAlerts)
+    .use(remarkHeadingIds)
+    .use(remarkLinks(options, links))
+    .use(remarkPackageInstall)
+    .use(remarkCodeMeta)
+    .use(remarkRehype, { allowDangerousHtml: true })
+    .use(rehypeRaw)
+    .use(rehypeHeadings(headings));
+}
+
+/** The `h2` and `h3` headings a page renders, which links can point at. */
+export const headingsOf = Effect.fn('headingsOf')(function* (markdown: string) {
+  const headings: Array<DocHeading> = [];
+  const processor = parsing(
+    { basePath: '/docs', slug: 'index', sourceUrl: '' },
+    headings,
+    [],
+  );
+  yield* Effect.tryPromise({
+    catch: (cause) => new ContentError({ cause, message: messageOf(cause) }),
+    try: async () => processor.run(processor.parse(markdown)),
+  });
+  return headings;
+});
+
+const twoslashFence = /^[ \t]*```\w*[^\n]*\btwoslash\b/m;
+
 export const renderMarkdown = Effect.fn('renderMarkdown')(function* (
   markdown: string,
   options: RenderOptions,
@@ -608,21 +733,16 @@ export const renderMarkdown = Effect.fn('renderMarkdown')(function* (
   const links: Array<DocLink> = [];
   const typeQueries: Array<ReadonlyArray<string>> = [];
   let collapseId = 0;
-  const blocks = yield* twoslashTransformer(
-    markdown,
-    options.samplesDir,
-    options.twoslashCache,
-  );
-  const processor = unified()
-    .use(remarkParse)
-    .use(remarkGfm)
-    .use(remarkAlerts)
-    .use(remarkLinks(options.slug, options.sourceUrl, links))
-    .use(remarkPackageInstall)
-    .use(remarkCodeMeta)
-    .use(remarkRehype, { allowDangerousHtml: true })
-    .use(rehypeRaw)
-    .use(rehypeHeadings(headings))
+  // Setting up Twoslash reads a sample app, which a page without blocks
+  // to compile doesn't need.
+  const blocks = twoslashFence.test(markdown)
+    ? yield* twoslashTransformer(
+        markdown,
+        options.samplesDir,
+        options.twoslashCache,
+      )
+    : undefined;
+  const processor = parsing(options, headings, links)
     .use(rehypeShiki, {
       defaultColor: false,
       // Loading all of Shiki's languages took seconds per process, so
@@ -633,7 +753,7 @@ export const renderMarkdown = Effect.fn('renderMarkdown')(function* (
       lazy: true,
       themes: { dark: 'github-dark', light: 'github-light' },
       transformers: [
-        blocks.transformer,
+        ...(blocks ? [blocks.transformer] : []),
         collapseRegions(() => {
           collapseId += 1;
           return `code-collapse-${collapseId}`;
@@ -659,7 +779,7 @@ export const renderMarkdown = Effect.fn('renderMarkdown')(function* (
   const tree = yield* Effect.tryPromise({
     catch: (cause) => new ContentError({ cause, message: messageOf(cause) }),
     try: async () => processor.run(processor.parse(markdown)),
-  }).pipe(Effect.ensuring(blocks.flush));
+  }).pipe(Effect.ensuring(blocks?.flush ?? Effect.void));
   const rendered: RenderedMarkdown = {
     headings,
     html: toHtml(tree),

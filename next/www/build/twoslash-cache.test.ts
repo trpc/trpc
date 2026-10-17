@@ -144,6 +144,7 @@ describe('makeTwoslashCache', () => {
 
       const compiled = makeTwoslashCache(dirs.options);
       const first = yield* renderMarkdown(markdown, {
+        basePath: '/docs',
         samplesDir: dirs.samplesDir,
         slug: 'test',
         sourceUrl: 'https://example.com',
@@ -156,6 +157,7 @@ describe('makeTwoslashCache', () => {
 
       const cached = makeTwoslashCache(dirs.options);
       const second = yield* renderMarkdown(markdown, {
+        basePath: '/docs',
         samplesDir: dirs.samplesDir,
         slug: 'test',
         sourceUrl: 'https://example.com',
