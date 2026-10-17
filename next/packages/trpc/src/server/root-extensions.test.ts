@@ -132,10 +132,9 @@ test('extensions are checked against the root', () => {
 
 test('implement() on an extended root runs the extension', async () => {
   const c = contract.create();
-  const appContract = { ping: c.input(z.string()).query() };
   const impl = initTrpc<{ ctx: { ip: string } }>()
     .concat(rateLimit({ max: 1 }))
-    .implement(appContract);
+    .implement({ ping: c.input(z.string()).query() });
   const router = impl.router({
     ping: impl.ping.query(({ input, ctx }) => `${input}:${ctx.requestCount}`),
   });

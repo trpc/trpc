@@ -7,6 +7,7 @@ import {
   routerType,
 } from '@trpc12/trpc/client';
 import {
+  type AnyContractRouter,
   contract,
   isContractProcedure,
   toContract,
@@ -27,7 +28,11 @@ interface Ctx {
   user: string | null;
 }
 const t = initTrpc<{ ctx: Ctx; meta: { auth?: boolean } }>().concat(openapi());
-const posts = new Map([['1', { id: '1', title: 'Hello' }]]);
+interface Post {
+  id: string;
+  title: string;
+}
+const posts = new Map<string, Post>([['1', { id: '1', title: 'Hello' }]]);
 
 const authed = t.middleware(({ ctx, next }) =>
   ctx.user
@@ -49,7 +54,7 @@ const appRouter = impl.router({
     create: impl.post.create.use(authed).mutation(({ input, ctx, meta }) => {
       expectTypeOf(ctx.user).toEqualTypeOf<string>();
       expect(meta.auth).toBe(true);
-      const post = { id: String(posts.size + 1), title: input.title };
+      const post: Post = { id: String(posts.size + 1), title: input.title };
       posts.set(post.id, post);
       return post;
     }),
@@ -231,7 +236,7 @@ test('impl.use() and impl.provide() run for every procedure of the contract', as
   const adminContract = {
     stats: c.output(Schema.Number).query(),
     users: { ban: c.input(Schema.String).output(Schema.String).mutation() },
-  };
+  } satisfies AnyContractRouter;
   class Audit extends Context.Service<Audit, { readonly by: string }>()(
     'Audit',
   ) {}
@@ -283,7 +288,9 @@ test('impl.use() and impl.provide() run for every procedure of the contract', as
 
 test('t.implement() checks the contract meta against the root meta', () => {
   const c = contract.create<{ meta: { auth?: boolean; scope: string } }>();
-  const scoped = { ping: c.meta({ scope: 'x' }).query() };
+  const scoped = {
+    ping: c.meta({ scope: 'x' }).query(),
+  } satisfies AnyContractRouter;
   void (() => {
     // @ts-expect-error -- scope is not in t's meta
     t.implement(scoped);
@@ -372,14 +379,13 @@ test('toContract() emits a JSON contract that types clients (Q9.4)', async () =>
 });
 
 test('toContract() describes Effect Schemas and chained inputs', () => {
-  const router = {
+  const { search } = toContract({
     search: t.procedure
       .input(Schema.Struct({ q: Schema.String }))
       .input(Schema.Struct({ limit: Schema.optional(Schema.NumberFromString) }))
       .output(Schema.Array(Schema.String))
       .query(() => []),
-  };
-  const { search } = toContract(router).procedures;
+  }).procedures;
   expect(search!.input).toMatchObject({
     allOf: [
       { type: 'object', required: ['q'] },

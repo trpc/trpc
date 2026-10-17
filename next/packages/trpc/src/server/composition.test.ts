@@ -5,6 +5,7 @@ import {
   routerType,
 } from '@trpc12/trpc/client';
 import {
+  type AnyRouter,
   createRouterClient,
   error,
   initTrpc,
@@ -67,7 +68,7 @@ const projectRouter = {
       ctx.audit(input.name);
       return { orgId: input.orgId, name: input.name, by: ctx.user };
     }),
-};
+} satisfies AnyRouter;
 
 const searchRouter = {
   search: t.procedure
@@ -81,7 +82,7 @@ const searchRouter = {
       }),
     )
     .query(({ input }) => ({ q: input.q, limit: input.limit })),
-};
+} satisfies AnyRouter;
 
 const router = mergeRouters(projectRouter, searchRouter, {
   nested: { deep: { ping: t.procedure.query(() => 'pong' as const) } },
@@ -171,23 +172,25 @@ test('concat runs the leading middleware an app and a plugin share once', async 
     calls.push('plugin');
     return next({ ctx: { tag: ctx.session } });
   });
-  const r = {
-    shared: t.procedure
-      .use(session)
-      .concat(tagged)
-      .query(({ ctx }) => ctx.tag),
-    reordered: t.procedure
-      .use(({ next }) => {
-        calls.push('log');
-        return next();
-      })
-      .use(session)
-      .concat(tagged)
-      .query(({ ctx }) => ctx.tag),
-  };
-  const caller = createRouterClient(r, {
-    ctx: { db: { log: [] }, user: 'ada', plan: 'free' },
-  });
+  const caller = createRouterClient(
+    {
+      shared: t.procedure
+        .use(session)
+        .concat(tagged)
+        .query(({ ctx }) => ctx.tag),
+      reordered: t.procedure
+        .use(({ next }) => {
+          calls.push('log');
+          return next();
+        })
+        .use(session)
+        .concat(tagged)
+        .query(({ ctx }) => ctx.tag),
+    },
+    {
+      ctx: { db: { log: [] }, user: 'ada', plan: 'free' },
+    },
+  );
 
   expect(await caller.shared.query()).toBe('ada');
   expect(calls).toEqual(['session', 'plugin']);
@@ -287,8 +290,8 @@ test('mergeRouters keeps nested routers addressable by dotted paths', async () =
 });
 
 test('mergeRouters rejects duplicate keys at the type level and at runtime', () => {
-  const a = { ping: t.procedure.query(() => 1) };
-  const b = { ping: t.procedure.query(() => 2) };
+  const a = { ping: t.procedure.query(() => 1) } satisfies AnyRouter;
+  const b = { ping: t.procedure.query(() => 2) } satisfies AnyRouter;
   // @ts-expect-error -- `ping` is in both routers
   expect(() => mergeRouters(a, b)).toThrow('duplicate key "ping"');
 });

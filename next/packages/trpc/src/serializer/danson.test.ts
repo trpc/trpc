@@ -547,9 +547,11 @@ test('forged streams: bad or missing file bytes, bare refs, unreadable frames an
   expect(await split.later.query()).toBe('été');
 
   // Lines that aren't JSON, or aren't chunks, fail what is still open.
-  const promise = { _: '$', type: 'Promise', value: 0 };
   for (const line of ['{not json', '{"json":1}']) {
-    const open = await forged({ json: { p: promise } }, line);
+    const open = await forged(
+      { json: { p: { _: '$', type: 'Promise', value: 0 } } },
+      line,
+    );
     await expect(open.p).rejects.toMatchObject({
       code: 'INTERNAL_SERVER_ERROR',
       message: 'Stream failed',

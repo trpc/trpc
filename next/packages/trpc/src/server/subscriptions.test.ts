@@ -358,18 +358,17 @@ test('quiet subscriptions send keep-alive comments', async () => {
 });
 
 test('without keep-alives a subscription sends only its events; one that interrupts itself just ends', async () => {
-  const quiet = {
-    slow: t.procedure.subscription(async function* () {
-      yield 'a';
-      await sleep(30);
-      yield 'b';
-    }),
-    stops: t.procedure.subscription(() =>
-      Stream.concat(Stream.make('a'), Stream.fromEffect(Effect.interrupt)),
-    ),
-  };
   await using server = await createTestServer({
-    router: quiet,
+    router: {
+      slow: t.procedure.subscription(async function* () {
+        yield 'a';
+        await sleep(30);
+        yield 'b';
+      }),
+      stops: t.procedure.subscription(() =>
+        Stream.concat(Stream.make('a'), Stream.fromEffect(Effect.interrupt)),
+      ),
+    },
     createContext: () => ({ user: null }),
     sse: { pingMs: false },
   });

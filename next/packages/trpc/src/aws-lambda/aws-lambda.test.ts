@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { Schema } from 'effect';
 import {
+  type LambdaContext,
   toLambdaHandler,
   toLambdaStreamingHandler,
   type LambdaPlatform,
@@ -55,7 +56,7 @@ const handler = createFetchHandler<typeof router, LambdaPlatform>({
   }),
 });
 const lambda = toLambdaHandler(handler);
-const context = {
+const context: LambdaContext = {
   awsRequestId: 'req-1',
   getRemainingTimeInMillis: () => 30_000,
 };

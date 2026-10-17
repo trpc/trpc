@@ -24,6 +24,7 @@ import {
   router,
   tick,
   type AppRouter,
+  type Post,
 } from '../../trpc/src/fixtures/posts.ts';
 
 beforeEach(() => db.reset());
@@ -320,7 +321,7 @@ test('array inputs key by value; setData writes a query never read', async () =>
   expect(trpc.post.many.query({ ids: ['1', '2'] })).not.toBe(titles);
   expect(await titles).toEqual(['World', 'Hello']);
 
-  const nine = { id: '9', title: 'Nine', tags: [], at: new Date(9) };
+  const nine: Post = { id: '9', title: 'Nine', tags: [], at: new Date(9) };
   trpc.post.byId.setData({ id: '9' }, nine);
   expect(trpc.post.byId.getData({ id: '9' })).toEqual(nine);
   expect(trpc.post.byId.query({ id: '9' }).status).toBe('fulfilled');

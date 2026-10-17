@@ -2,6 +2,7 @@ import { Context, Effect, Exit, Layer, Option, Stream, Tracer } from 'effect';
 import { httpLink, routerType, type ClientError } from '@trpc12/trpc/client';
 import { createEffectClient } from '@trpc12/trpc/effect';
 import {
+  type AnyRouter,
   createFetchHandler,
   createRouterClient,
   error,
@@ -221,7 +222,7 @@ test('calling a path instead of .query(), .mutate() or .subscribe() throws', asy
 
 test('a layer that provides no services, like a tracer, is accepted', async () => {
   const t = initTrpc();
-  const router = { ping: t.procedure.query(() => 'pong') };
+  const router = { ping: t.procedure.query(() => 'pong') } satisfies AnyRouter;
   const tracing = Layer.succeed(
     Tracer.Tracer,
     Tracer.make({ span: (o) => new Tracer.NativeSpan(o) }),
@@ -242,22 +243,24 @@ test('every call runs in a span named after its path', async () => {
     },
   });
   const t = initTrpc();
-  const traced = {
-    post: {
-      byId: t.procedure
-        .input(z.object({ id: z.string() }))
-        .errors({ NOT_FOUND: {} })
-        .query(({ input, errors }) =>
-          input.id === '1'
-            ? Effect.succeed('Hello').pipe(Effect.withSpan('db.find'))
-            : errors.NOT_FOUND(),
-        ),
+  const client = createRouterClient(
+    {
+      post: {
+        byId: t.procedure
+          .input(z.object({ id: z.string() }))
+          .errors({ NOT_FOUND: {} })
+          .query(({ input, errors }) =>
+            input.id === '1'
+              ? Effect.succeed('Hello').pipe(Effect.withSpan('db.find'))
+              : errors.NOT_FOUND(),
+          ),
+      },
     },
-  };
-  const client = createRouterClient(traced, {
-    ctx: {},
-    layer: Layer.succeed(Tracer.Tracer, tracer),
-  });
+    {
+      ctx: {},
+      layer: Layer.succeed(Tracer.Tracer, tracer),
+    },
+  );
   expect(await client.post.byId.query({ id: '1' })).toBe('Hello');
   await expect(client.post.byId.query({ id: '2' })).rejects.toMatchObject({
     code: 'NOT_FOUND',

@@ -527,11 +527,15 @@ test('openApiLink subscriptions yield plain and tracked events, then errors', as
 
 test('form bodies: none at all, malformed, and malformed past maxBodySize', async () => {
   const handler = make({ maxBodySize: 64 });
-  const form = { 'content-type': 'application/x-www-form-urlencoded' };
-  const none = await api(handler, '/echo', { method: 'POST', headers: form });
+  const none = await api(handler, '/echo', {
+    method: 'POST',
+    headers: { 'content-type': 'application/x-www-form-urlencoded' },
+  });
   expect(await none.json()).toEqual({});
 
-  const multipart = { 'content-type': 'multipart/form-data; boundary=x' };
+  const multipart: HeadersInit = {
+    'content-type': 'multipart/form-data; boundary=x',
+  };
   const malformed = await api(handler, '/echo', {
     method: 'POST',
     headers: multipart,

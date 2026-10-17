@@ -14,7 +14,11 @@ import {
 import { NestFactory } from '@nestjs/core';
 import { Context, Effect, Layer, Schema } from 'effect';
 import { createTrpcClient, safe } from '@trpc12/trpc/client';
-import { contract, toContract } from '@trpc12/trpc/contract';
+import {
+  type AnyContractRouter,
+  contract,
+  toContract,
+} from '@trpc12/trpc/contract';
 import { openapi, openApiLink } from '@trpc12/trpc/openapi';
 import { initTrpc } from '@trpc12/trpc/server';
 import { afterAll, beforeAll, expect, test } from 'vite-plus/test';
@@ -59,7 +63,7 @@ const appContract = {
     .query(),
   whoami: c.output(Schema.String).query(),
   broken: { one: c.output(Schema.String).query() },
-};
+} satisfies AnyContractRouter;
 
 class Counter extends Context.Service<
   Counter,
@@ -76,7 +80,7 @@ class Posts {
     return this.#posts.get(id);
   }
   add(title: string) {
-    const post = { id: String(this.#posts.size + 1), title };
+    const post: typeof Post.Type = { id: String(this.#posts.size + 1), title };
     this.#posts.set(post.id, post);
     return post;
   }
@@ -240,7 +244,7 @@ test('a router gets default paths from its keys; bodies Nest parsed are read', a
 
   const create = (headers: Record<string, string>, body: string) =>
     fetch(`${url}/posts`, { method: 'POST', headers, body });
-  const json = { 'content-type': 'application/json' };
+  const json: Record<string, string> = { 'content-type': 'application/json' };
   expect((await create(json, '{"title":"x"}')).status).toBe(401);
 
   const created = await create({ ...json, 'x-user': 'ada' }, '{"title":"Hi"}');

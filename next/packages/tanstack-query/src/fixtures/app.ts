@@ -45,7 +45,11 @@ export const db = {
 
 function addPost(title: string): Post {
   const id = String(db.posts.size + 1);
-  const post = { id, title, createdAt: new Date(Date.UTC(2026, 0, 1 + +id)) };
+  const post: Post = {
+    id,
+    title,
+    createdAt: new Date(Date.UTC(2026, 0, 1 + +id)),
+  };
   db.posts.set(id, post);
   for (const listener of db.listeners) listener(post);
   return post;

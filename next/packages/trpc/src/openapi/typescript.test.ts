@@ -313,18 +313,17 @@ test('types document as JSON.stringify sends them (21)', async () => {
 }, 60_000);
 
 test('a file outside a project, or without the export, is an error (21)', async () => {
-  const info = { title: 'Shapes', version: '1.0.0' };
   await expect(
     experimental_generateOpenApiFromTypes(shapesRouter, {
       file: new URL('./fixtures/typed-shapes.ts', import.meta.url),
       exportName: 'missingRouter',
-      info,
+      info: { title: 'Shapes', version: '1.0.0' },
     }),
   ).rejects.toThrow(`doesn't export "missingRouter"`);
   await expect(
     experimental_generateOpenApiFromTypes(shapesRouter, {
       file: '/nowhere/router.ts',
-      info,
+      info: { title: 'Shapes', version: '1.0.0' },
     }),
   ).rejects.toThrow('is not in a TypeScript project');
 }, 60_000);

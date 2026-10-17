@@ -108,16 +108,15 @@ test('unreadable inputs are protocol errors', async () => {
 });
 
 test('a serializer that throws a non-Error rejects the input as invalid', async () => {
-  const picky = {
-    ...jsonSerializer,
-    deserialize: () => {
-      throw 'unreadable';
-    },
-  };
   await using server = await createTestServer({
     router,
     createContext,
-    serializer: picky,
+    serializer: {
+      ...jsonSerializer,
+      deserialize: () => {
+        throw 'unreadable';
+      },
+    },
     batch: true,
   });
   const get = await fetch(

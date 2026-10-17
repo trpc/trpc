@@ -10,6 +10,7 @@ import { experimental_durable } from '@trpc12/trpc/middleware';
 import { createOpenApiHandler } from '@trpc12/trpc/openapi';
 import { createSerializer } from '@trpc12/trpc/serializer';
 import {
+  type AnyRouter,
   call,
   createFetchHandler,
   initTrpc,
@@ -26,25 +27,27 @@ class OutOfStock extends TrpcError.Tagged('OUT_OF_STOCK', {
 
 const makeRouter = () => {
   const runs = { order: 0, fail: 0, slow: 0 };
-  const router = {
-    order: t.procedure
-      .input(Schema.Struct({ sku: Schema.String }))
-      .use(experimental_durable())
-      .mutation(({ input }) => {
-        runs.order++;
-        if (input.sku === 'gone') return new OutOfStock({ sku: input.sku });
-        return { id: runs.order, sku: input.sku, at: new Date(0) };
+  return {
+    router: {
+      order: t.procedure
+        .input(Schema.Struct({ sku: Schema.String }))
+        .use(experimental_durable())
+        .mutation(({ input }) => {
+          runs.order++;
+          if (input.sku === 'gone') return new OutOfStock({ sku: input.sku });
+          return { id: runs.order, sku: input.sku, at: new Date(0) };
+        }),
+      fail: t.procedure.use(experimental_durable()).mutation(() => {
+        runs.fail++;
+        throw new Error('boom');
       }),
-    fail: t.procedure.use(experimental_durable()).mutation(() => {
-      runs.fail++;
-      throw new Error('boom');
-    }),
-    slow: t.procedure.use(experimental_durable()).mutation(async () => {
-      await new Promise((r) => setTimeout(r, 50));
-      return ++runs.slow;
-    }),
+      slow: t.procedure.use(experimental_durable()).mutation(async () => {
+        await new Promise((r) => setTimeout(r, 50));
+        return ++runs.slow;
+      }),
+    },
+    runs,
   };
-  return { router, runs };
 };
 
 const post = (
@@ -249,25 +252,27 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 /** A feed whose items stream slowly, each with a deferred author. */
 const makeFeed = () => {
   const runs = { feed: 0 };
-  const router = {
-    feed: t.procedure.use(experimental_durable()).mutation(() => {
-      runs.feed++;
-      return {
-        title: 'Feed',
-        items: (async function* () {
-          for (let id = 1; id <= 4; id++) {
-            await sleep(10);
-            yield {
-              id,
-              author: sleep(5).then(() => (id % 2 ? 'ada' : 'grace')),
-            };
-          }
-        })(),
-        total: sleep(60).then(() => 4),
-      };
-    }),
+  return {
+    router: {
+      feed: t.procedure.use(experimental_durable()).mutation(() => {
+        runs.feed++;
+        return {
+          title: 'Feed',
+          items: (async function* () {
+            for (let id = 1; id <= 4; id++) {
+              await sleep(10);
+              yield {
+                id,
+                author: sleep(5).then(() => (id % 2 ? 'ada' : 'grace')),
+              };
+            }
+          })(),
+          total: sleep(60).then(() => 4),
+        };
+      }),
+    },
+    runs,
   };
-  return { router, runs };
 };
 
 async function settle(feed: {
@@ -582,7 +587,7 @@ test('inputs with files are kept without a fingerprint; an error that cannot be 
       yield 1;
       throw new TrpcError({ code: 'CONFLICT', data: { fn: () => 1 } });
     }),
-  };
+  } satisfies AnyRouter;
   const danson = createSerializer();
   await using server = await createTestServer({
     router,
@@ -622,7 +627,7 @@ test('experimental_durableLink waits before retrying by default; queries and sub
     ticks: t.procedure.subscription(async function* () {
       yield 1;
     }),
-  };
+  } satisfies AnyRouter;
   await using http = await createTestServer({
     router,
     layer: Persistence.layerBackingMemory,

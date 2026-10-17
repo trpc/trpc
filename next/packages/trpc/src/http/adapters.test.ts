@@ -10,7 +10,13 @@ import {
   routerType,
   wsLink,
 } from '@trpc12/trpc/client';
-import { cors, serve, toHttpEffect } from '@trpc12/trpc/http';
+import {
+  cors,
+  serve,
+  toHttpEffect,
+  type FetchLike,
+  type WebSocketHandlerLike,
+} from '@trpc12/trpc/http';
 import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
 import { expect, test } from 'vite-plus/test';
 import { z } from 'zod';
@@ -27,7 +33,7 @@ const router = {
 const handler = createFetchHandler({ router });
 
 /** A fetch handler that isn't `createFetchHandler()`'s, as another library's would be. */
-const plain = {
+const plain: FetchLike & WebSocketHandlerLike = {
   fetch: (request: Request) => handler.fetch(request),
   websocket: (...args: Parameters<typeof handler.websocket>) =>
     handler.websocket(...args),
@@ -115,7 +121,7 @@ test("another library's fetch handler gets bodies a parser already read, as JSON
 
   const post = (headers: Record<string, string>, body: string) =>
     fetch(`${server.url}/save`, { method: 'POST', headers, body });
-  const json = { 'content-type': 'application/json' };
+  const json: Record<string, string> = { 'content-type': 'application/json' };
   const text = await post({ ...json, 'x-parser': 'text' }, '{"json":{"n":3}}');
   expect(await text.json()).toEqual({ json: 6 });
   const bytes = await post({ ...json, 'x-parser': 'raw' }, '{"json":{"n":4}}');
@@ -205,7 +211,7 @@ test('createFetchHandler() reads bodies a parser already read, and bodies that a
     await using server = await listenParsed(toHttpEffect(own), parse);
     const post = (headers: Record<string, string>, body: BodyInit) =>
       fetch(`${server.url}/save`, { method: 'POST', headers, body });
-    const json = { 'content-type': 'application/json' };
+    const json: Record<string, string> = { 'content-type': 'application/json' };
     expect(await (await post(json, '{"json":{"n":1}}')).json()).toEqual({
       json: 2,
     });

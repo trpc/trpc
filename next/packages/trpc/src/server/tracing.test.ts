@@ -8,7 +8,12 @@ import {
   routerType,
 } from '@trpc12/trpc/client';
 import { createEffectClient } from '@trpc12/trpc/effect';
-import { createFetchHandler, error, initTrpc } from '@trpc12/trpc/server';
+import {
+  type AnyRouter,
+  createFetchHandler,
+  error,
+  initTrpc,
+} from '@trpc12/trpc/server';
 import { expect, test } from 'vite-plus/test';
 import { z } from 'zod';
 import { createTestServer } from '../fixtures/server.ts';
@@ -147,18 +152,17 @@ test('without a tracer, or with propagation disabled, requests carry no trace he
 test('the server span is the current span, the stack frame and the parent of spans in the call', async () => {
   const server = recorder();
   const seen: { span?: string; frame?: string | undefined } = {};
-  const traced = {
-    inner: t.procedure.query(() =>
-      Effect.gen(function* () {
-        seen.span = (yield* Effect.orDie(Effect.currentSpan)).name;
-        seen.frame = (yield* References.CurrentStackFrame)?.name;
-        return yield* Effect.succeed('ok').pipe(Effect.withSpan('work'));
-      }),
-    ),
-    fails: t.procedure.query(() => error({ code: 'NOT_FOUND' })),
-  };
   const handler = createFetchHandler({
-    router: traced,
+    router: {
+      inner: t.procedure.query(() =>
+        Effect.gen(function* () {
+          seen.span = (yield* Effect.orDie(Effect.currentSpan)).name;
+          seen.frame = (yield* References.CurrentStackFrame)?.name;
+          return yield* Effect.succeed('ok').pipe(Effect.withSpan('work'));
+        }),
+      ),
+      fails: t.procedure.query(() => error({ code: 'NOT_FOUND' })),
+    },
     layer: Layer.succeed(Tracer.Tracer, server.tracer),
   });
   await handler.fetch(new Request('http://localhost/trpc/inner'));
@@ -193,7 +197,7 @@ test('without a tracer, calls open no spans: tracing is opt-in', async () => {
         return 'ok';
       }),
     ),
-  };
+  } satisfies AnyRouter;
   const handler = createFetchHandler({ router: traced });
   await handler.fetch(new Request('http://localhost/trpc/inner'));
   await handler.dispose();

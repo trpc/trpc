@@ -61,7 +61,7 @@ const redisPublisher = <TEvents extends PublisherEvents>(opts: {
   Effect.gen(function* () {
     const redis = yield* Redis.Redis;
     const key = (channel: string) => `${opts.prefix}:${channel}`;
-    const shape = {
+    return {
       publish: (channel: string, data: unknown) =>
         Effect.gen(function* () {
           const payload = encode(data);
@@ -117,8 +117,7 @@ const redisPublisher = <TEvents extends PublisherEvents>(opts: {
             });
           }),
         ),
-    };
-    return shape as PublisherShape<TEvents>;
+    } as PublisherShape<TEvents>;
   });
 
 // --- recipe: Postgres -------------------------------------------------------
@@ -134,7 +133,7 @@ const redisPublisher = <TEvents extends PublisherEvents>(opts: {
 const pgPublisher = <TEvents extends PublisherEvents>() =>
   Effect.gen(function* () {
     const sql = yield* PgClient.PgClient;
-    const shape = {
+    return {
       publish: (channel: string, data: unknown) =>
         Effect.gen(function* () {
           const payload = encode(data);
@@ -183,8 +182,7 @@ const pgPublisher = <TEvents extends PublisherEvents>() =>
             });
           }).pipe(Effect.orDie),
         ),
-    };
-    return shape as PublisherShape<TEvents>;
+    } as PublisherShape<TEvents>;
   });
 
 // --- tests ------------------------------------------------------------------

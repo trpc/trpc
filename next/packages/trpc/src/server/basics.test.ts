@@ -30,7 +30,12 @@ const authed = t.procedure.use(({ ctx, next }) =>
     : error({ code: 'UNAUTHORIZED', message: 'Sign in first' }),
 );
 
-const posts = new Map<string, { id: string; title: string; author: string }>();
+interface Post {
+  id: string;
+  title: string;
+  author: string;
+}
+const posts = new Map<string, Post>();
 
 const router = {
   health: t.procedure.query(() => 'ok' as const),
@@ -45,7 +50,7 @@ const router = {
     create: authed
       .input(z.object({ title: z.string().min(1) }))
       .mutation(({ ctx, input }) => {
-        const post = {
+        const post: Post = {
           id: String(posts.size + 1),
           title: input.title,
           author: ctx.user.name,

@@ -301,7 +301,6 @@ function Posts() {
 
 describe('promoted experimental_ names', () => {
   test('imports and re-exports of a promoted name are rewritten', () => {
-    const promoted = { experimental_durableLink: 'durableLink' };
     expect(
       upgradeSource(
         `import { experimental_durableLink, httpLink } from '@trpc12/trpc/client';
@@ -310,7 +309,7 @@ export { experimental_durableLink } from '@trpc12/trpc/client';
 const links = [experimental_durableLink(), retry(), httpLink({ url })];
 `,
         'file.ts',
-        { promoted },
+        { promoted: { experimental_durableLink: 'durableLink' } },
       ).code,
     ).toMatchInlineSnapshot(`
       "import { durableLink, httpLink } from '@trpc12/trpc/client';

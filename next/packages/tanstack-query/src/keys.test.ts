@@ -41,7 +41,7 @@ test('cacheTags go from the root to the path and input', async () => {
   expect(revalidationTag(app.trpc.pathKey())).toBe('trpc');
   expect(revalidationTag(app.trpc.post.byId.pathKey())).toBe('trpc:post.byId');
 
-  const long = { id: 'x'.repeat(300) };
+  const long: { id: string } = { id: 'x'.repeat(300) };
   expect(cacheTags(app.trpc.post.byId.queryKey({ input: long }))).toEqual([
     'trpc',
     'trpc:post',

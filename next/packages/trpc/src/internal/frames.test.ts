@@ -75,9 +75,8 @@ test('records carry lines and their bytes unencoded, however the stream is cut',
 });
 
 test('a marker-shaped value in a line without attachments stays as it is', async () => {
-  const line = { json: { '~trpc/bytes': 0 } };
-  const exit = await decode([encodeRecord(line)]);
-  expect(exit).toEqual(Exit.succeed([line]));
+  const exit = await decode([encodeRecord({ json: { '~trpc/bytes': 0 } })]);
+  expect(exit).toEqual(Exit.succeed([{ json: { '~trpc/bytes': 0 } }]));
 });
 
 test('a truncated or unknown record fails the stream', async () => {
@@ -98,12 +97,13 @@ test('accepts reads media types from an accept header', () => {
 });
 
 test('a binary WebSocket message is exactly one line', () => {
-  const message = { id: 1, type: 'chunk', chunk: [2, 0, { json: bytes(1) }] };
-  expect(carriesBytes(message.chunk)).toBe(true);
+  const chunk = [2, 0, { json: bytes(1) }];
+  expect(carriesBytes(chunk)).toBe(true);
   expect(carriesBytes([2, 0, { json: 'AQ==' }])).toBe(false);
-  const one = encodeRecord(message);
+  const one = encodeRecord({ id: 1, type: 'chunk', chunk });
   expect(decodeMessage(one)).toEqual({
-    ...message,
+    id: 1,
+    type: 'chunk',
     chunk: [2, 0, { json: new Uint8Array([1]) }],
   });
   const two = new Uint8Array([...one, ...encodeRecord({ type: 'pong' })]);

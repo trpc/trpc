@@ -17,7 +17,8 @@ import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
 import { createTestServer } from '../../packages/trpc/src/fixtures/server.ts';
 
-const usage = {
+type Usage = Awaited<ReturnType<MockLanguageModelV4['doGenerate']>>['usage'];
+const usage: Usage = {
   inputTokens: {
     total: 3,
     noCache: 3,

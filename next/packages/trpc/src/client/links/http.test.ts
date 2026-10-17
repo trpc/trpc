@@ -6,6 +6,7 @@ import {
   splitLink,
   TrpcError,
   routerType,
+  type BuiltinCallOptions,
 } from '@trpc12/trpc/client';
 import { error, initTrpc } from '@trpc12/trpc/server';
 import { createTestServer } from '../../fixtures/server.ts';
@@ -318,7 +319,7 @@ test('an onResponse that throws fails its call with CLIENT_ERROR', async () => {
     router: versioned,
     batch: true,
   });
-  const throwing = {
+  const throwing: BuiltinCallOptions = {
     onResponse: () => {
       throw new Error('no thanks');
     },

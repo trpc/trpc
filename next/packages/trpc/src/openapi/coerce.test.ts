@@ -5,7 +5,7 @@ import {
   openapi,
   openApiLink,
 } from '@trpc12/trpc/openapi';
-import { initTrpc } from '@trpc12/trpc/server';
+import { type AnyRouter, initTrpc } from '@trpc12/trpc/server';
 import { expect, test } from 'vite-plus/test';
 import { z } from 'zod';
 
@@ -40,20 +40,20 @@ const Input = z.object({
   text: z.string(),
 });
 
-const router = {
-  echo: t.procedure
-    .meta({ route: { method: 'GET', path: '/echo' } })
-    .input(Input)
-    .query(({ input }) => input),
-  form: t.procedure
-    .meta({ route: { method: 'POST', path: '/form' } })
-    .input(
-      z.object({ count: z.number(), done: z.boolean(), notes: z.string() }),
-    )
-    .mutation(({ input }) => input),
-};
-
-const handler = createOpenApiHandler({ router });
+const handler = createOpenApiHandler({
+  router: {
+    echo: t.procedure
+      .meta({ route: { method: 'GET', path: '/echo' } })
+      .input(Input)
+      .query(({ input }) => input),
+    form: t.procedure
+      .meta({ route: { method: 'POST', path: '/form' } })
+      .input(
+        z.object({ count: z.number(), done: z.boolean(), notes: z.string() }),
+      )
+      .mutation(({ input }) => input),
+  },
+});
 const api = (path: string, init?: RequestInit) =>
   handler.fetch(new Request(`http://localhost/api${path}`, init));
 
@@ -140,7 +140,7 @@ test('openApiLink sends nulls, dates and lists of objects in bracket notation', 
         }),
       )
       .query(({ input }) => input),
-  };
+  } satisfies AnyRouter;
   const h = createOpenApiHandler({ router: r });
   const urls: string[] = [];
   const client = createTrpcClient({
@@ -157,7 +157,7 @@ test('openApiLink sends nulls, dates and lists of objects in bracket notation', 
       }),
     ],
   });
-  const input = {
+  const input: Parameters<typeof client.find.query>[0] = {
     at: new Date(0) as unknown as string,
     none: null,
     items: [

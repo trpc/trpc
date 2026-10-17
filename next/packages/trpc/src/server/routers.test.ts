@@ -28,36 +28,38 @@ const ban = t.procedure
 
 const makeRouter = () => {
   const loads = { admin: 0, reports: 0, billing: 0 };
-  const router = {
-    health: t.procedure.query(() => 'ok'),
-    admin: t.router(
-      { meta: { route: { prefix: '/admin', tags: ['admin'] } } },
-      {
-        users,
-        ban,
-        audit: t.router(
-          { meta: { route: { tags: ['audit'] } } },
-          { log: users },
-        ),
-      },
-    ),
-    reports: t.lazy(
-      async () => {
-        loads.reports++;
-        return { default: { daily: t.procedure.query(() => 'daily') } };
-      },
-      { meta: { route: { prefix: '/reports' } } },
-    ),
-    billing: lazy(async () => {
-      loads.billing++;
-      return {
-        invoice: t.procedure
-          .input(z.object({ n: z.number() }))
-          .query(({ input }) => input.n * 2),
-      };
-    }),
+  return {
+    router: {
+      health: t.procedure.query(() => 'ok'),
+      admin: t.router(
+        { meta: { route: { prefix: '/admin', tags: ['admin'] } } },
+        {
+          users,
+          ban,
+          audit: t.router(
+            { meta: { route: { tags: ['audit'] } } },
+            { log: users },
+          ),
+        },
+      ),
+      reports: t.lazy(
+        async () => {
+          loads.reports++;
+          return { default: { daily: t.procedure.query(() => 'daily') } };
+        },
+        { meta: { route: { prefix: '/reports' } } },
+      ),
+      billing: lazy(async () => {
+        loads.billing++;
+        return {
+          invoice: t.procedure
+            .input(z.object({ n: z.number() }))
+            .query(({ input }) => input.n * 2),
+        };
+      }),
+    },
+    loads,
   };
-  return { router, loads };
 };
 
 test('router-level route meta only changes OpenAPI routes (08 Q8.3)', async () => {

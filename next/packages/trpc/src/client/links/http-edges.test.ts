@@ -306,15 +306,25 @@ test('forged batch lines: a call answered twice keeps its first answer; unreadab
         values.map((v) => JSON.stringify(v)).join('\n') + '\n',
       ),
     );
-  const failed = { json: { error: { code: 'CONFLICT', message: 'first' } } };
-  const again = { json: { error: { code: 'CONFLICT', message: 'second' } } };
   const twice = clientWith(
     async () =>
       lines(
         { i: 0, status: 200, body: { json: 'late' } },
-        { i: 0, status: 409, body: failed },
-        { i: 1, status: 409, body: failed },
-        { i: 1, status: 409, body: again },
+        {
+          i: 0,
+          status: 409,
+          body: { json: { error: { code: 'CONFLICT', message: 'first' } } },
+        },
+        {
+          i: 1,
+          status: 409,
+          body: { json: { error: { code: 'CONFLICT', message: 'first' } } },
+        },
+        {
+          i: 1,
+          status: 409,
+          body: { json: { error: { code: 'CONFLICT', message: 'second' } } },
+        },
       ),
     { batch: true },
   );

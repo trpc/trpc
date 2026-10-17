@@ -17,7 +17,7 @@ test('equal rich values keep their references', () => {
 
 test('only what changed gets a new reference', () => {
   const prev = make();
-  const next = { ...make(), at: new Date(5) };
+  const next: typeof prev = { ...make(), at: new Date(5) };
   next.list.push({ id: 2, at: new Date(2) });
   const shared = structuralSharing(prev, next);
   expect(shared).not.toBe(prev);
@@ -39,7 +39,11 @@ test('changed maps and sets, and class instances, are replaced', () => {
     }
   }
   const prev = { m: new Map([['x', 1]]), s: new Set([1]), money: new Money(1) };
-  const next = { m: new Map([['x', 2]]), s: new Set([2]), money: new Money(1) };
+  const next: typeof prev = {
+    m: new Map([['x', 2]]),
+    s: new Set([2]),
+    money: new Money(1),
+  };
   const shared = structuralSharing(prev, next);
   expect(shared.m).toBe(next.m);
   expect(shared.s).toBe(next.s);
@@ -60,7 +64,7 @@ test('nulls, URLs, RegExps, typed arrays, sizes and null-prototype objects', () 
     s: new Set([1]),
     bare,
   };
-  const next = {
+  const next: typeof prev = {
     gone: null,
     url: new URL('https://b.example'),
     re: /a/g,

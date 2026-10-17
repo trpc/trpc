@@ -3,7 +3,11 @@ import {
   generateOpenApi,
   openapi,
 } from '@trpc12/trpc/openapi';
-import { initTrpc } from '@trpc12/trpc/server';
+import {
+  initTrpc,
+  type AnyRouter,
+  type StandardSchemaV1,
+} from '@trpc12/trpc/server';
 import { expect, test } from 'vite-plus/test';
 
 const t = initTrpc().concat(openapi());
@@ -19,7 +23,7 @@ const described = (schema: Record<string, unknown>) => ({
   },
 });
 // A Standard Schema without a JSON Schema at all.
-const opaque = {
+const opaque: StandardSchemaV1 = {
   '~standard': {
     version: 1 as const,
     vendor: 'opaque',
@@ -136,7 +140,7 @@ const router = {
   hidden: t.procedure
     .meta({ route: { method: 'GET', path: '/hidden' } })
     .query(() => 'shh'),
-};
+} satisfies AnyRouter;
 
 const handler = createOpenApiHandler({ router });
 const api = (path: string, init?: RequestInit) =>

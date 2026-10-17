@@ -7,6 +7,7 @@ import {
   generateOpenApi,
   openApiLink,
   openapi,
+  type OpenApiSource,
 } from '@trpc12/trpc/openapi';
 import { error, initTrpc, tracked } from '@trpc12/trpc/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
@@ -79,7 +80,7 @@ test('a @trpc12/trpc document round-trips into a contract openApiLink can call',
 });
 
 test('an OpenAPI 3.0 document: components, nullable, query parameters, status codes', async () => {
-  const petstore = {
+  const petstore: OpenApiSource = {
     openapi: '3.0.3',
     paths: {
       '/pets': {
@@ -208,7 +209,7 @@ test('two operations on one procedure path are rejected', () => {
 });
 
 test('recursive components, untyped and merged parameters, a prefix-only path and undeclared errors', async () => {
-  const doc = {
+  const doc: OpenApiSource = {
     openapi: '3.1.0',
     paths: {
       '/api': { get: { operationId: 'root' } },

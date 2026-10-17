@@ -89,7 +89,7 @@ const router = {
     .input(z.object({ title: z.string() }))
     .mutation(({ input }) =>
       Effect.gen(function* () {
-        const post = { id: crypto.randomUUID(), ...input };
+        const post: Post = { id: crypto.randomUUID(), ...input };
         yield* Posts.publish('created', post);
         return post;
       }),

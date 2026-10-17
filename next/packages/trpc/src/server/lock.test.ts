@@ -47,24 +47,27 @@ function makeRouter(opts: {
     timeout: opts.timeout ?? '5 seconds',
     ...(opts.ttl && { ttl: opts.ttl }),
   });
-  const router = {
-    pay: t.procedure
-      .input(z.object({ invoice: z.string(), by: z.string() }))
-      .use(byInvoice)
-      .mutation(async ({ input, ctx }) => {
-        log.push(`start ${input.by}`);
-        start(input.by).resolve();
-        await sleep(opts.work);
-        log.push(`end ${input.by}`);
-        return { by: input.by, waited: ctx.lock.waited };
-      }),
-    twice: t.procedure
-      .input(z.object({ invoice: z.string(), by: z.string() }))
-      .use(byInvoice)
-      .use(byInvoice)
-      .mutation(({ ctx }) => ctx.lock.waited),
+  return {
+    log,
+    router: {
+      pay: t.procedure
+        .input(z.object({ invoice: z.string(), by: z.string() }))
+        .use(byInvoice)
+        .mutation(async ({ input, ctx }) => {
+          log.push(`start ${input.by}`);
+          start(input.by).resolve();
+          await sleep(opts.work);
+          log.push(`end ${input.by}`);
+          return { by: input.by, waited: ctx.lock.waited };
+        }),
+      twice: t.procedure
+        .input(z.object({ invoice: z.string(), by: z.string() }))
+        .use(byInvoice)
+        .use(byInvoice)
+        .mutation(({ ctx }) => ctx.lock.waited),
+    },
+    started,
   };
-  return { log, router, started };
 }
 
 async function serve(

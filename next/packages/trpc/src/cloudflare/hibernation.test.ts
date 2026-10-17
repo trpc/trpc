@@ -90,7 +90,7 @@ const fakeState = () => ({
 const request = new Request('https://room.example/trpc', {
   headers: { cookie: 'session=1', 'x-other': 'dropped', upgrade: 'websocket' },
 });
-const platform = { env: { region: 'weur' } };
+const platform: { env: Env } = { env: { region: 'weur' } };
 const send = (
   sockets: ReturnType<
     typeof experimental_createHibernatingWebSockets<{ env: Env }>
@@ -268,21 +268,22 @@ class Posts extends Publisher.Service<Posts, { created: { title: string } }>()(
 ) {}
 
 const pt = initTrpc();
-const postsRouter = {
-  create: pt.procedure
-    .input(z.object({ title: z.string() }))
-    .mutation(({ input }) => Effect.as(Posts.publish('created', input), input)),
-  onCreated: pt.procedure
-    .output(z.object({ title: z.string().max(10) }))
-    .subscription(({ lastEventId }) =>
-      Posts.subscribe('created', { lastEventId }),
-    ),
-};
 
 /** A Durable Object instance: what its constructor builds. */
 const room = (state: ReturnType<typeof fakeState>) => {
   const h = createFetchHandler({
-    router: postsRouter,
+    router: {
+      create: pt.procedure
+        .input(z.object({ title: z.string() }))
+        .mutation(({ input }) =>
+          Effect.as(Posts.publish('created', input), input),
+        ),
+      onCreated: pt.procedure
+        .output(z.object({ title: z.string().max(10) }))
+        .subscription(({ lastEventId }) =>
+          Posts.subscribe('created', { lastEventId }),
+        ),
+    },
     layer: hibernatingPublisher(Posts, { state, buffer: 10 }),
   });
   return experimental_createHibernatingWebSockets(h, { state });
@@ -427,24 +428,23 @@ class Notes extends Publisher.Service<
 >()('test/Notes') {}
 
 const nt = initTrpc<{ ctx: { user: string } }>();
-const notesRouter = {
-  send: nt.procedure
-    .input(z.object({ to: z.string(), text: z.string() }))
-    .mutation(({ input }) =>
-      Effect.as(
-        Notes.publish(`inbox:${input.to}`, { text: input.text }),
-        'sent',
-      ),
-    ),
-  inbox: nt.procedure.subscription(({ ctx, lastEventId }) =>
-    Notes.subscribe(`inbox:${ctx.user}`, { lastEventId }),
-  ),
-};
 
 const notesRoom = (state: ReturnType<typeof fakeState>) =>
   experimental_createHibernatingWebSockets(
     createFetchHandler({
-      router: notesRouter,
+      router: {
+        send: nt.procedure
+          .input(z.object({ to: z.string(), text: z.string() }))
+          .mutation(({ input }) =>
+            Effect.as(
+              Notes.publish(`inbox:${input.to}`, { text: input.text }),
+              'sent',
+            ),
+          ),
+        inbox: nt.procedure.subscription(({ ctx, lastEventId }) =>
+          Notes.subscribe(`inbox:${ctx.user}`, { lastEventId }),
+        ),
+      },
       createContext: ({ info }) =>
         Effect.runPromise(RoomToken.verify(info.connectionParams?.['token'])),
       layer: hibernatingPublisher(Notes, { state, buffer: 10 }),

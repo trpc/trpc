@@ -5,14 +5,18 @@ import {
   safe,
   validationLink,
 } from '@trpc12/trpc/client';
-import { contract, toContract } from '@trpc12/trpc/contract';
+import {
+  type AnyContractRouter,
+  contract,
+  toContract,
+} from '@trpc12/trpc/contract';
 import {
   createOpenApiHandler,
   openapi,
   openApiLink,
 } from '@trpc12/trpc/openapi';
 import { createUntypedClient } from '@trpc12/trpc/extend';
-import { initTrpc, stream, tracked } from '@trpc12/trpc/server';
+import { type AnyRouter, initTrpc, stream, tracked } from '@trpc12/trpc/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
 import { createTestServer } from '../../fixtures/server.ts';
@@ -33,7 +37,7 @@ const appContract = {
       .query(),
     feed: c.output(Post).subscription({ tracked: true }),
   },
-};
+} satisfies AnyContractRouter;
 
 const t = initTrpc().concat(openapi());
 const at = new Date('2026-10-16T00:00:00.000Z');
@@ -77,17 +81,18 @@ test('invalid inputs fail on the client with the server error shape, before any 
 });
 
 test('results that drift from the contract fail with PARSE_ERROR', async () => {
-  const drifted = {
-    post: {
-      byId: t.procedure
-        .input(z.object({ id: z.string() }))
-        .query(({ input }) => ({ id: Number(input.id), title: 'Hello', at })),
-      feed: t.procedure.subscription(async function* () {
-        yield tracked('1', { id: '1', title: 2, at });
-      }),
+  await using http = await createTestServer({
+    router: {
+      post: {
+        byId: t.procedure
+          .input(z.object({ id: z.string() }))
+          .query(({ input }) => ({ id: Number(input.id), title: 'Hello', at })),
+        feed: t.procedure.subscription(async function* () {
+          yield tracked('1', { id: '1', title: 2, at });
+        }),
+      },
     },
-  };
-  await using http = await createTestServer({ router: drifted });
+  });
   const client = createTrpcClient({
     router: appContract,
     links: [
@@ -153,28 +158,29 @@ test('streamed outputs, unvalidated outputs, plain events, opt-outs and paths ou
       .input(() => z.object({ n: z.number() }))
       .query(({ input }) => input.n),
     nested: { leaf: p.procedure.output(z.number()).query(() => 1) },
-  };
-  const served = {
-    perCall: p.procedure
-      .input(z.unknown())
-      .query(() => 'checked by the server'),
-    tokens: p.procedure.query(async function* () {
-      yield 'a';
-      yield 'b';
-    }),
-    numbers: p.procedure.subscription(async function* () {
-      yield 1;
-      yield 'two';
-    }),
-    plain: p.procedure.subscription(async function* () {
-      yield 1;
-      yield 'two';
-    }),
-    trusted: p.procedure.query(() => ({ n: 'not a number' })),
-    strict: p.procedure.input(z.unknown()).query(() => 'unchecked'),
-    extra: p.procedure.query(() => 'not in the contract'),
-  };
-  await using http = await createTestServer({ router: served });
+  } satisfies AnyRouter;
+  await using http = await createTestServer({
+    router: {
+      perCall: p.procedure
+        .input(z.unknown())
+        .query(() => 'checked by the server'),
+      tokens: p.procedure.query(async function* () {
+        yield 'a';
+        yield 'b';
+      }),
+      numbers: p.procedure.subscription(async function* () {
+        yield 1;
+        yield 'two';
+      }),
+      plain: p.procedure.subscription(async function* () {
+        yield 1;
+        yield 'two';
+      }),
+      trusted: p.procedure.query(() => ({ n: 'not a number' })),
+      strict: p.procedure.input(z.unknown()).query(() => 'unchecked'),
+      extra: p.procedure.query(() => 'not in the contract'),
+    },
+  });
   const client = (opts: Parameters<typeof validationLink>[0]) =>
     createUntypedClient({
       links: [validationLink(opts), httpLink({ url: http.url })],

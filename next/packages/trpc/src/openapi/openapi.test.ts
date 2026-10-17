@@ -21,6 +21,7 @@ import {
   toBracketNotation,
 } from '@trpc12/trpc/openapi';
 import {
+  type AnyRouter,
   createFetchHandler,
   initTrpc,
   tracked,
@@ -84,7 +85,10 @@ const router = {
       .errors({ UNAUTHORIZED: {} })
       .mutation(({ input, ctx, errors }) => {
         if (!ctx.user) return errors.UNAUTHORIZED();
-        const post = { id: String(posts.size + 1), title: input.title };
+        const post: z.infer<typeof Post> = {
+          id: String(posts.size + 1),
+          title: input.title,
+        };
         posts.set(post.id, post);
         return post;
       }),
@@ -644,7 +648,7 @@ test('two procedures on the same route are rejected', () => {
 });
 
 test('bracket notation round-trips', () => {
-  const value = {
+  const value: Record<string, unknown> = {
     a: { b: '1', c: ['x', 'y'] },
     items: [{ id: '1' }, { id: '2' }],
     empty: '',
@@ -659,16 +663,18 @@ test('bracket notation round-trips', () => {
 
 test('an unvalidated output is documented by its schema input side', () => {
   const t = initTrpc().concat(openapi());
-  const router = {
-    when: t.procedure
-      .meta({ route: { method: 'GET', path: '/when' } })
-      .output(
-        z.string().transform((s) => s.length),
-        { validate: false },
-      )
-      .query(() => 'now'),
-  };
-  const doc = generateOpenApi(router, { info: { title: 'x', version: '1' } });
+  const doc = generateOpenApi(
+    {
+      when: t.procedure
+        .meta({ route: { method: 'GET', path: '/when' } })
+        .output(
+          z.string().transform((s) => s.length),
+          { validate: false },
+        )
+        .query(() => 'now'),
+    },
+    { info: { title: 'x', version: '1' } },
+  );
   const ok = doc.paths['/api/when']!['get']!.responses['200'] as {
     content: Record<string, { schema: unknown }>;
   };
@@ -772,7 +778,7 @@ test('.meta({ route: { spec } }) replaces or extends the generated operation', (
       .meta({ route: { spec: (op) => ({ ...op, deprecated: true }) } })
       .meta({ route: { path: '/extended' } })
       .query(() => 'extended'),
-  };
+  } satisfies AnyRouter;
   const doc = generateOpenApi(specRouter, {
     info: { title: 'x', version: '1' },
   });

@@ -126,13 +126,13 @@ test('file bytes cross a port as bytes, not base64', async () => {
 
 test('a port peer that posts values JSON cannot hold is refused', async () => {
   const t = initTrpc();
-  const router = {
-    echo: t.procedure.input(z.unknown()).mutation(({ input }) => input),
-  };
   const { port1, port2 } = new MessageChannel();
-  createFetchHandler({ router, serializer: createSerializer() }).messagePort(
-    port1,
-  );
+  createFetchHandler({
+    router: {
+      echo: t.procedure.input(z.unknown()).mutation(({ input }) => input),
+    },
+    serializer: createSerializer(),
+  }).messagePort(port1);
   const replies: unknown[] = [];
   const replied = new Promise<void>((resolve) =>
     port2.on('message', (message: { type: string }) => {
