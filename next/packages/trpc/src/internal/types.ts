@@ -180,7 +180,7 @@ type JsonObject<T, K, D extends boolean> = Simplify<
               : never
             : never
         : never
-    ]?: JsonOf<Exclude<T[P], Dropped>, K, D>;
+    ]?: JsonOf<Exclude<T[P], Exclude<Dropped, K>>, K, D>;
   }
 >;
 
