@@ -17,10 +17,11 @@ import { createSerializer } from '@trpc12/trpc/serializer';
 import { Component, Suspense, use, type ReactNode } from 'react';
 import { createRoot, hydrateRoot } from 'react-dom/client';
 import { prerender } from 'react-dom/static';
-import { afterEach, beforeEach, expect, test, vi } from 'vite-plus/test';
+import { expect, test, vi } from 'vite-plus/test';
 import { waitFor } from '../../trpc/src/fixtures/dom.ts';
 import {
   db,
+  freshDb,
   router,
   tick,
   type AppRouter,
@@ -39,18 +40,21 @@ const make = <const L extends ReadonlyArray<AnyLink>>(
     isServer,
   });
 
-let warnings: string[] = [];
-beforeEach(() => {
-  db.reset();
-  warnings = [];
+/** One test's page: fresh posts and captured `console.error`s, emptied after. */
+const domCleanup = () => {
+  const posts = freshDb();
+  const warnings: string[] = [];
   vi.spyOn(console, 'error').mockImplementation((message: unknown) => {
     warnings.push(String(message));
   });
-});
-afterEach(() => {
-  vi.restoreAllMocks();
-  document.body.innerHTML = '';
-});
+  return {
+    warnings,
+    [Symbol.dispose]: () => {
+      posts[Symbol.dispose]();
+      document.body.innerHTML = '';
+    },
+  };
+};
 
 let renders = 0;
 function Title(props: { post: QueryPromise<Post> }) {
@@ -76,16 +80,20 @@ function mount(ui: ReactNode) {
 const h1 = (el: HTMLElement) => el.querySelector('h1')?.textContent;
 
 test('a loader starts the query; the component reads it with use() without uncached-promise warnings', async () => {
+  using dom = domCleanup();
   const trpc = make([]);
   const post = trpc.post.byId.query({ id: '1' }); // the loader
   const view = mount(<Title post={post} />);
   await waitFor(() => expect(h1(view.el)).toBe('Hello'));
   expect(db.calls).toEqual(['byId:1']);
-  expect(warnings.filter((w) => w.includes('uncached promise'))).toEqual([]);
+  expect(dom.warnings.filter((w) => w.includes('uncached promise'))).toEqual(
+    [],
+  );
   view.unmount();
 });
 
 test('setData and refetches re-render; an unchanged refetch with structural sharing does not', async () => {
+  using _dom = domCleanup();
   const trpc = make([cacheLink(), structuralSharingLink()]);
   const post = trpc.post.byId.query({ id: '1' });
   await post;
@@ -104,6 +112,7 @@ test('setData and refetches re-render; an unchanged refetch with structural shar
 });
 
 test('refetchOnWindowFocusLink refetches what is on screen when the page is visible again', async () => {
+  using _dom = domCleanup();
   const trpc = make([cacheLink(), refetchOnWindowFocusLink()]);
   const post = trpc.post.byId.query({ id: '1' });
   const view = mount(
@@ -134,6 +143,7 @@ test('refetchOnWindowFocusLink refetches what is on screen when the page is visi
 });
 
 test('server render, dehydrate, then hydrateRoot in the browser without a request', async () => {
+  using dom = domCleanup();
   const server = make(standardLinks(), true);
   const app = (trpc: typeof server) => (
     <Suspense fallback={<p>loading</p>}>
@@ -154,12 +164,13 @@ test('server render, dehydrate, then hydrateRoot in the browser without a reques
   await tick(20);
   expect(h1(el)).toBe('Hello');
   expect(db.calls).toEqual(['byId:1']);
-  expect(warnings).toEqual([]);
+  expect(dom.warnings).toEqual([]);
   root.unmount();
   browser.store.dispose();
 });
 
 test('refetchOnReconnectLink refetches what is on screen and stale when the browser is back online', async () => {
+  using _dom = domCleanup();
   const real = Date.now.bind(Date);
   const clock = vi.spyOn(Date, 'now');
   const trpc = make([
@@ -193,6 +204,7 @@ function Refetch(props: { post: QueryPromise<Post> }) {
 }
 
 test('useQueryState().refetch refetches the query', async () => {
+  using _dom = domCleanup();
   const trpc = make([cacheLink({ staleTime: 60_000 })]);
   const post = trpc.post.byId.query({ id: '1' });
   const view = mount(
@@ -224,6 +236,7 @@ class Boundary extends Component<{ children: ReactNode }, { error?: Error }> {
 }
 
 test("useQuery() only takes a React client's query promise", async () => {
+  using _dom = domCleanup();
   const foreign = Promise.resolve() as unknown as QueryPromise<Post>;
   const view = mount(
     <Boundary>

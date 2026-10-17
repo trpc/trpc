@@ -318,7 +318,7 @@ test('recursive components, untyped and merged parameters, a prefix-only path an
   ).toEqual({ value: 'a', children: [{ value: 'b', children: [] }] });
   expect(() =>
     Schema.decodeUnknownSync(Tree)({ value: 'a', children: [{}] }),
-  ).toThrow();
+  ).toThrow('Missing key');
 
   const json = toContract(contract);
   expect(

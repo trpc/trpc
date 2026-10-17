@@ -8,7 +8,7 @@ import {
 } from '@trpc12/trpc/cloudflare';
 import { createFetchHandler, initTrpc, Publisher } from '@trpc12/trpc/server';
 import { jsonSerializer } from '@trpc12/trpc/serializer';
-import { afterEach, expect, test, vi } from 'vite-plus/test';
+import { expect, test, vi } from 'vite-plus/test';
 import { z } from 'zod';
 
 interface Env {
@@ -98,11 +98,6 @@ const send = (
   socket: FakeSocket,
   message: object,
 ) => sockets.message(socket, JSON.stringify(message), platform);
-
-afterEach(() => {
-  vi.unstubAllGlobals();
-  vi.restoreAllMocks();
-});
 
 test('calls work, and still see the connection after the object wakes', async () => {
   const state = fakeState();

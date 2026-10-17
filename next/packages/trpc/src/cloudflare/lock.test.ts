@@ -13,7 +13,7 @@ import {
   experimental_Locker,
 } from '@trpc12/trpc/middleware';
 import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
-import { afterEach, expect, test, vi } from 'vite-plus/test';
+import { expect, test, vi } from 'vite-plus/test';
 import { z } from 'zod';
 
 const OPEN = 1;
@@ -171,10 +171,6 @@ function app(layer: Layer.Layer<experimental_Locker>, log: string[]) {
   });
   return { client, handler };
 }
-
-afterEach(() => {
-  vi.unstubAllGlobals();
-});
 
 test('two Worker instances share one lock through the object, waiters told in turn', async () => {
   vi.stubGlobal('WebSocketPair', WebSocketPair);

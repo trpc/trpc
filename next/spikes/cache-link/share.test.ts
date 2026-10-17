@@ -134,7 +134,7 @@ test('a refetch with an equal value keeps the promise and tells nobody', async (
   const first = trpc.post.list.query(input);
   await first;
   cache.invalidate();
-  const listener = vi.fn();
+  const listener = vi.fn<() => void>();
   cache.subscribe(listener);
   expect(trpc.post.list.query(input)).toBe(first);
   await vi.waitFor(() => expect(calls).toBe(2));

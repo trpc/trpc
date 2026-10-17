@@ -109,11 +109,11 @@ describe('QP-C round trip', () => {
 
 describe('QP-C decoding is strict', () => {
   test.each([
-    ['malformed key', 'a]=1'],
-    ['prototype segment', 'a[__proto__][x]=1'],
-    ['non-contiguous index', 'a[0]=1&a[2]=2'],
-    ['object/array conflict', 'a[]=1&a[x]=2'],
-  ])('%s', (_, search) => {
-    expect(() => fromSearch(search, de)).toThrow();
+    ['malformed key', 'a]=1', 'Malformed key: a]'],
+    ['prototype segment', 'a[__proto__][x]=1', 'Bad key segment'],
+    ['non-contiguous index', 'a[0]=1&a[2]=2', 'Non-contiguous index'],
+    ['object/array conflict', 'a[]=1&a[x]=2', 'Expected array index'],
+  ])('%s', (_, search, message) => {
+    expect(() => fromSearch(search, de)).toThrow(message);
   });
 });

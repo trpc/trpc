@@ -66,6 +66,8 @@ export default defineConfig({
     ],
   },
   test: {
+    unstubGlobals: true,
+    restoreMocks: true,
     environmentOptions: {
       // Framework tests render in happy-dom and call a test server on
       // another origin.

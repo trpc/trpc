@@ -1,7 +1,7 @@
 import { QueryClient } from '@tanstack/query-core';
 import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
 import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
-import { afterAll, expect, test } from 'vite-plus/test';
+import { expect, test } from 'vite-plus/test';
 import { z } from 'zod';
 import { HEADER, invalidation, invalidationLink } from './invalidation.ts';
 import { chain, responseHttpLink } from './response-meta.ts';
@@ -37,10 +37,8 @@ const router = {
   },
 };
 
-const handler = createFetchHandler({ router, batch: true });
-afterAll(() => handler.dispose());
-
 function setup() {
+  const handler = createFetchHandler({ router, batch: true });
   const queryClient = new QueryClient();
   const requests: Request[] = [];
   const fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
@@ -69,11 +67,18 @@ function setup() {
         queryClient.getQueryState(key)?.isInvalidated,
       ]),
     );
-  return { client, invalidated, requests };
+  return {
+    client,
+    handler,
+    invalidated,
+    requests,
+    [Symbol.asyncDispose]: () => handler.dispose(),
+  };
 }
 
 test('a mutation invalidates the queries its meta names, before it resolves', async () => {
-  const { client, invalidated, requests } = setup();
+  await using app = setup();
+  const { client, invalidated, requests } = app;
   await client.post.rename.mutate({ id: '1', title: 'Hi' });
   expect(invalidated()).toEqual({ list: true, one: true, two: false });
   expect([...requests[0]!.headers.keys()]).not.toContain(
@@ -82,7 +87,8 @@ test('a mutation invalidates the queries its meta names, before it resolves', as
 });
 
 test('the server sends the targets as a header; failures send none', async () => {
-  const res = await handler.fetch(
+  await using app = setup();
+  const res = await app.handler.fetch(
     new Request('http://localhost/trpc/post.rename', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
@@ -94,15 +100,15 @@ test('the server sends the targets as a header; failures send none', async () =>
     { path: 'post.byId', input: { id: '2' } },
   ]);
 
-  const { client, invalidated } = setup();
-  await expect(client.post.fail.mutate()).rejects.toMatchObject({
+  await expect(app.client.post.fail.mutate()).rejects.toMatchObject({
     code: 'INTERNAL_SERVER_ERROR',
   });
-  expect(invalidated()).toEqual({ list: false, one: false, two: false });
+  expect(app.invalidated()).toEqual({ list: false, one: false, two: false });
 });
 
 test('concurrent mutations each invalidate their own targets', async () => {
-  const { client, invalidated } = setup();
+  await using app = setup();
+  const { client, invalidated } = app;
   await Promise.all([
     client.post.rename.mutate({ id: '1', title: 'A' }),
     client.post.byId.query({ id: '2' }),

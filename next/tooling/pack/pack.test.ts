@@ -1,7 +1,7 @@
 import { NodeServices } from '@effect/platform-node';
 import { Effect, FileSystem, Path } from 'effect';
 import { ChildProcess, ChildProcessSpawner } from 'effect/process';
-import { beforeAll, expect, test } from 'vite-plus/test';
+import { expect, test } from 'vite-plus/test';
 import { checkExports, type PackageJson } from './pack.ts';
 
 const run = <A, E>(effect: Effect.Effect<A, E, NodeServices.NodeServices>) =>
@@ -27,21 +27,22 @@ const packages = await run(
   }),
 );
 
-beforeAll(async () => {
-  const exitCode = await run(
-    Effect.gen(function* () {
-      const spawner = yield* ChildProcessSpawner.ChildProcessSpawner;
-      return yield* spawner.exitCode(
-        ChildProcess.make(
-          'pnpm',
-          ['-r', '--filter', './packages/*', 'run', 'build'],
-          { cwd: root, stdout: 'inherit', stderr: 'inherit' },
-        ),
-      );
-    }),
-  );
-  expect(exitCode).toBe(0);
-}, 120_000);
+const buildExitCode = await run(
+  Effect.gen(function* () {
+    const spawner = yield* ChildProcessSpawner.ChildProcessSpawner;
+    return yield* spawner.exitCode(
+      ChildProcess.make(
+        'pnpm',
+        ['-r', '--filter', './packages/*', 'run', 'build'],
+        { cwd: root, stdout: 'inherit', stderr: 'inherit' },
+      ),
+    );
+  }),
+);
+
+test('every package builds', () => {
+  expect(buildExitCode).toBe(0);
+});
 
 const entries = packages.flatMap(({ name, dir, pkg }) =>
   Object.keys(pkg.exports).map((subpath) => [name, subpath, dir, pkg] as const),

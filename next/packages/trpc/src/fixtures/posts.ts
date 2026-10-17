@@ -22,6 +22,12 @@ export const db = {
   },
 };
 
+/** The posts and calls for one test, reset again after: `using _db = freshDb();`. */
+export const freshDb = (): Disposable => {
+  db.reset();
+  return { [Symbol.dispose]: () => db.reset() };
+};
+
 export const router = {
   post: {
     byId: t.procedure.input(z.object({ id: z.string() })).query(({ input }) => {

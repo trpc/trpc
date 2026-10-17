@@ -22,15 +22,11 @@ const collect = async <T>(it: AsyncIterable<T>) => {
 
 test('lines split mid-character decode whole, without TextDecoderStream', async () => {
   vi.stubGlobal('TextDecoderStream', undefined);
-  try {
-    const bytes = new TextEncoder().encode('{"a":"é"}\n{"b":1}');
-    const lines = await collect(
-      readLines(streamOf(bytes.slice(0, 7), bytes.slice(7))),
-    );
-    expect(lines).toEqual(['{"a":"é"}', '{"b":1}']);
-  } finally {
-    vi.unstubAllGlobals();
-  }
+  const bytes = new TextEncoder().encode('{"a":"é"}\n{"b":1}');
+  const lines = await collect(
+    readLines(streamOf(bytes.slice(0, 7), bytes.slice(7))),
+  );
+  expect(lines).toEqual(['{"a":"é"}', '{"b":1}']);
 });
 
 test('a CRLF split across chunks ends one line, not two', async () => {

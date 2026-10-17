@@ -9,7 +9,6 @@ import {
   UseGuards,
   UseInterceptors,
   type CanActivate,
-  type INestApplication,
 } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { Context, Effect, Layer, Schema } from 'effect';
@@ -21,7 +20,7 @@ import {
 } from '@trpc12/trpc/contract';
 import { openapi, openApiLink } from '@trpc12/trpc/openapi';
 import { initTrpc } from '@trpc12/trpc/server';
-import { afterAll, beforeAll, expect, test } from 'vite-plus/test';
+import { expect, test } from 'vite-plus/test';
 import {
   experimental_Implement,
   experimental_ImplementInterceptor,
@@ -215,22 +214,19 @@ let count = 0;
 })
 class AppModule {}
 
-let app: INestApplication;
-let url: string;
-
-beforeAll(async () => {
-  app = await NestFactory.create(AppModule, { logger: false });
+const listen = async () => {
+  const app = await NestFactory.create(AppModule, { logger: false });
   await app.listen(0, '127.0.0.1');
-  url = await app.getUrl();
-});
-afterAll(() => app.close());
+  return { url: await app.getUrl(), [Symbol.asyncDispose]: () => app.close() };
+};
 
 test('a leaf is served at its route with the controller’s services', async () => {
-  const res = await fetch(`${url}/posts/1`);
+  await using app = await listen();
+  const res = await fetch(`${app.url}/posts/1`);
   expect(res.status).toBe(200);
   expect(await res.json()).toEqual({ id: '1', title: 'Hello' });
 
-  const missing = await fetch(`${url}/posts/9`);
+  const missing = await fetch(`${app.url}/posts/9`);
   expect(missing.status).toBe(404);
   expect(await missing.json()).toMatchObject({
     code: 'NOT_FOUND',
@@ -240,10 +236,11 @@ test('a leaf is served at its route with the controller’s services', async () 
 });
 
 test('a router gets default paths from its keys; bodies Nest parsed are read', async () => {
-  expect(await (await fetch(`${url}/health`)).json()).toBe('ok');
+  await using app = await listen();
+  expect(await (await fetch(`${app.url}/health`)).json()).toBe('ok');
 
   const create = (headers: Record<string, string>, body: string) =>
-    fetch(`${url}/posts`, { method: 'POST', headers, body });
+    fetch(`${app.url}/posts`, { method: 'POST', headers, body });
   const json: Record<string, string> = { 'content-type': 'application/json' };
   expect((await create(json, '{"title":"x"}')).status).toBe(401);
 
@@ -260,17 +257,20 @@ test('a router gets default paths from its keys; bodies Nest parsed are read', a
 });
 
 test('the module layer provides Effect services', async () => {
-  expect(await (await fetch(`${url}/post/count`)).json()).toBe(1);
-  expect(await (await fetch(`${url}/post/count`)).json()).toBe(2);
+  await using app = await listen();
+  expect(await (await fetch(`${app.url}/post/count`)).json()).toBe(1);
+  expect(await (await fetch(`${app.url}/post/count`)).json()).toBe(2);
 });
 
 test('Nest guards run before the procedure', async () => {
-  const res = await fetch(`${url}/secret`);
+  await using app = await listen();
+  const res = await fetch(`${app.url}/secret`);
   expect(res.status).toBe(403);
 });
 
 test('subscriptions stream as server-sent events', async () => {
-  const res = await fetch(`${url}/ticks`);
+  await using app = await listen();
+  const res = await fetch(`${app.url}/ticks`);
   expect(res.headers.get('content-type')).toBe('text/event-stream');
   const body = await res.text();
   expect(body).toContain('event: message\ndata: 1\n\n');
@@ -279,10 +279,15 @@ test('subscriptions stream as server-sent events', async () => {
 });
 
 test('openApiLink calls the Nest app with the contract', async () => {
+  await using app = await listen();
   const client = createTrpcClient({
     router: appContract,
     links: [
-      openApiLink({ url, prefix: '', contract: toContract(appContract) }),
+      openApiLink({
+        url: app.url,
+        prefix: '',
+        contract: toContract(appContract),
+      }),
     ],
   });
   expect(await client.post.byId.query({ id: '1' })).toEqual({
@@ -306,18 +311,20 @@ test('a leaf without a route path throws', () => {
 });
 
 test('wildcard params are joined; methods that return no procedure fail; other routes pass through', async () => {
-  const file = await fetch(`${url}/files/a/b/c`);
+  await using app = await listen();
+  const file = await fetch(`${app.url}/files/a/b/c`);
   expect(await file.json()).toBe('a/b/c');
 
-  expect((await fetch(`${url}/broken/one`)).status).toBe(500);
-  expect(await (await fetch(`${url}/plain`)).text()).toBe(
+  expect((await fetch(`${app.url}/broken/one`)).status).toBe(500);
+  expect(await (await fetch(`${app.url}/plain`)).text()).toBe(
     'not a procedure route',
   );
 });
 
 test('a router method keeps its guards and parameter decorators on every route', async () => {
-  expect((await fetch(`${url}/whoami`)).status).toBe(403);
-  const res = await fetch(`${url}/headers/whoami`, {
+  await using app = await listen();
+  expect((await fetch(`${app.url}/whoami`)).status).toBe(403);
+  const res = await fetch(`${app.url}/headers/whoami`, {
     headers: { 'x-user': 'ada' },
   });
   expect(await res.json()).toBe('ada');

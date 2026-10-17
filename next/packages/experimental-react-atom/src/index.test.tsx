@@ -19,12 +19,15 @@ import {
 } from 'effect/reactivity';
 import { Suspense } from 'react';
 import { prerender } from 'react-dom/static';
-import { beforeEach, expect, expectTypeOf, test } from 'vite-plus/test';
-import { db, router, type AppRouter } from '../../trpc/src/fixtures/posts.ts';
+import { expect, expectTypeOf, test } from 'vite-plus/test';
+import {
+  db,
+  freshDb,
+  router,
+  type AppRouter,
+} from '../../trpc/src/fixtures/posts.ts';
 
 const serializer = createSerializer();
-
-beforeEach(() => db.reset());
 
 const setup = () => ({
   trpc: createAtomClient({
@@ -56,6 +59,7 @@ const done = <A, E>(result: AsyncResult.AsyncResult<A, E>) =>
   !AsyncResult.isInitial(result) && !result.waiting;
 
 test('the same call is the same atom, whatever the key order, with typed errors', async () => {
+  using _db = freshDb();
   const { trpc, registry } = setup();
   const list = trpc.post.list.query({ limit: 1, order: 'asc' });
   expect(trpc.post.list.query({ order: 'asc', limit: 1 })).toBe(list);
@@ -76,6 +80,7 @@ test('the same call is the same atom, whatever the key order, with typed errors'
 });
 
 test('a mutation with reactivity keys refetches the queries that share them', async () => {
+  using _db = freshDb();
   const { trpc, registry } = setup();
   const post = trpc.post.byId.query({ id: '1' }, { reactivityKeys: ['posts'] });
   const unmount = registry.mount(post);
@@ -98,6 +103,7 @@ test('a mutation with reactivity keys refetches the queries that share them', as
 });
 
 test('a subscription atom holds the latest event', async () => {
+  using _db = freshDb();
   const { trpc, registry } = setup();
   const events = trpc.post.onRename.subscription(undefined);
   const unmount = registry.mount(events);
@@ -110,6 +116,7 @@ test('a subscription atom holds the latest event', async () => {
 });
 
 test('query atoms hydrate with the serializer: the browser renders without a request', async () => {
+  using _db = freshDb();
   function Title() {
     const { trpc } = client;
     const post = useAtomSuspense(trpc.post.byId.query({ id: '1' })).value;
@@ -149,6 +156,7 @@ test('query atoms hydrate with the serializer: the browser renders without a req
 });
 
 test('array and Date inputs key by value; options are part of the key', async () => {
+  using _db = freshDb();
   const { trpc, registry } = setup();
   const many = trpc.post.many.query({ ids: ['2', '1'] });
   expect(trpc.post.many.query({ ids: ['2', '1'] })).toBe(many);
@@ -177,6 +185,7 @@ test('array and Date inputs key by value; options are part of the key', async ()
 });
 
 test('a mutation without reactivity keys refetches nothing', async () => {
+  using _db = freshDb();
   const { trpc, registry } = setup();
   const post = trpc.post.byId.query({ id: '1' }, { reactivityKeys: ['posts'] });
   const unmount = registry.mount(post);
@@ -189,6 +198,7 @@ test('a mutation without reactivity keys refetches nothing', async () => {
 });
 
 test('the client exposes its runtime and Effect client; other calls are errors', async () => {
+  using _db = freshDb();
   const { trpc, registry } = setup();
   expect(trpc.runtime).toBeDefined();
   expect(
@@ -206,6 +216,7 @@ test('the client exposes its runtime and Effect client; other calls are errors',
 });
 
 test('without a serializer on its links, query atoms dehydrate as JSON unless one is given', async () => {
+  using _db = freshDb();
   const encoded = async (opts: { serializer?: AnySerializer }) => {
     const trpc = createAtomClient({
       router: routerType<AppRouter>(),

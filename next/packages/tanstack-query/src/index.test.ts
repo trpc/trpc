@@ -161,15 +161,9 @@ test('pathFilter and queryFilter invalidate what they match', async () => {
   await using app = await createApp();
   const queryClient = new QueryClient();
   await Promise.all([
-    queryClient.query(
-      app.trpc.post.byId.queryOptions({ input: { id: '1' } }),
-    ),
-    queryClient.query(
-      app.trpc.post.byId.queryOptions({ input: { id: '2' } }),
-    ),
-    queryClient.query(
-      app.trpc.post.list.queryOptions({ input: { limit: 2 } }),
-    ),
+    queryClient.query(app.trpc.post.byId.queryOptions({ input: { id: '1' } })),
+    queryClient.query(app.trpc.post.byId.queryOptions({ input: { id: '2' } })),
+    queryClient.query(app.trpc.post.list.queryOptions({ input: { limit: 2 } })),
     queryClient.query(app.trpc.greeting.queryOptions()),
   ]);
   const stale = () =>
@@ -220,9 +214,7 @@ test('keyPrefix keeps two APIs apart in one QueryClient', async () => {
 
   await Promise.all([
     queryClient.query(options),
-    queryClient.query(
-      app.trpc.post.byId.queryOptions({ input: { id: '1' } }),
-    ),
+    queryClient.query(app.trpc.post.byId.queryOptions({ input: { id: '1' } })),
   ]);
   expect(
     queryClient.getQueryData(billing.post.byId.queryKey({ input: { id: '1' } }))

@@ -26,7 +26,7 @@ import {
   createTrpcContext,
   injectSubscription,
 } from '@trpc12/tanstack-angular-query';
-import { afterEach, expect, expectTypeOf, test } from 'vite-plus/test';
+import { expect, expectTypeOf, test } from 'vite-plus/test';
 import {
   createApp,
   db,
@@ -39,7 +39,6 @@ const { provideTrpc, injectTrpc, injectTrpcClient } =
   createTrpcContext<AppClient>();
 
 TestBed.initTestEnvironment(BrowserTestingModule, platformBrowserTesting());
-afterEach(() => TestBed.resetTestingModule());
 
 function render<T>(component: Type<T>, client: AppClient) {
   const queryClient = new QueryClient({
@@ -57,7 +56,10 @@ function render<T>(component: Type<T>, client: AppClient) {
   return {
     fixture,
     el: fixture.nativeElement as HTMLElement,
-    [Symbol.dispose]: () => fixture.destroy(),
+    [Symbol.dispose]: () => {
+      fixture.destroy();
+      TestBed.resetTestingModule();
+    },
   };
 }
 

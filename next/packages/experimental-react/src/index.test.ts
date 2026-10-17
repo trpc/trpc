@@ -18,16 +18,15 @@ import {
 } from '@trpc12/trpc/client';
 import { createSerializer } from '@trpc12/trpc/serializer';
 import { Effect, Stream } from 'effect';
-import { beforeEach, expect, expectTypeOf, test } from 'vite-plus/test';
+import { expect, expectTypeOf, test } from 'vite-plus/test';
 import {
   db,
+  freshDb,
   router,
   tick,
   type AppRouter,
   type Post,
 } from '../../trpc/src/fixtures/posts.ts';
-
-beforeEach(() => db.reset());
 
 const make = <const L extends ReadonlyArray<AnyLink>>(
   links: L,
@@ -40,6 +39,7 @@ const make = <const L extends ReadonlyArray<AnyLink>>(
   });
 
 test('one promise per query while it loads, settled for use() once it has', async () => {
+  using _db = freshDb();
   const trpc = make([]);
   const first = trpc.post.list.query({ limit: 2, order: 'asc' });
   expect(trpc.post.list.query({ order: 'asc', limit: 2 })).toBe(first);
@@ -52,6 +52,7 @@ test('one promise per query while it loads, settled for use() once it has', asyn
 });
 
 test('without links, an entry lives only while something holds it', async () => {
+  using _db = freshDb();
   const trpc = make([]);
   await trpc.post.byId.query({ id: '1' });
   expect(trpc.store.entries()).toHaveLength(0);
@@ -74,6 +75,7 @@ test('without links, an entry lives only while something holds it', async () => 
 });
 
 test('cacheLink serves fresh data without a request and keeps unread entries', async () => {
+  using _db = freshDb();
   const trpc = make([cacheLink({ staleTime: 60_000, gcTime: 20 })]);
   const first = trpc.post.byId.query({ id: '1' });
   await first;
@@ -84,6 +86,7 @@ test('cacheLink serves fresh data without a request and keeps unread entries', a
 });
 
 test('stale data is returned at once and refetched; changed data gets a new promise', async () => {
+  using _db = freshDb();
   const trpc = make([cacheLink({ staleTime: 0 })]);
   const first = trpc.post.byId.query({ id: '1' });
   await first;
@@ -99,6 +102,7 @@ test('stale data is returned at once and refetched; changed data gets a new prom
 });
 
 test('structuralSharingLink keeps the promise when a refetch changes nothing', async () => {
+  using _db = freshDb();
   const shared = make([cacheLink(), structuralSharingLink()]);
   const first = shared.post.list.query({ limit: 2, order: 'asc' });
   const before = await first;
@@ -151,6 +155,7 @@ test('structuralSharingLink keeps the promise when a refetch changes nothing', a
 });
 
 test("refetchOnMountLink skips the loader's own request, and refetches on a later mount", async () => {
+  using _db = freshDb();
   const trpc = make([cacheLink(), refetchOnMountLink()]);
   const post = trpc.post.byId.query({ id: '1' });
   await post;
@@ -165,6 +170,7 @@ test("refetchOnMountLink skips the loader's own request, and refetches on a late
 });
 
 test('a failed first load rejects; the next call tries again with a new promise', async () => {
+  using _db = freshDb();
   const trpc = make([cacheLink()]);
   const missing = trpc.post.byId.query({ id: '3' });
   const [, err] = await safe(missing);
@@ -177,6 +183,7 @@ test('a failed first load rejects; the next call tries again with a new promise'
 });
 
 test('invalidate refetches what is read and resolves once it has', async () => {
+  using _db = freshDb();
   const trpc = make([cacheLink({ staleTime: 60_000 })]);
   const one = trpc.post.byId.query({ id: '1' });
   const two = trpc.post.byId.query({ id: '2' });
@@ -195,6 +202,7 @@ test('invalidate refetches what is read and resolves once it has', async () => {
 });
 
 test('setData writes data readers see without suspending', async () => {
+  using _db = freshDb();
   const trpc = make([cacheLink({ staleTime: 60_000 })]);
   const post = trpc.post.byId.query({ id: '1' });
   await post;
@@ -206,6 +214,7 @@ test('setData writes data readers see without suspending', async () => {
 });
 
 test('invalidateOnMutationLink: the mutation resolves after the read queries refetch', async () => {
+  using _db = freshDb();
   const trpc = make([
     cacheLink({ staleTime: 60_000 }),
     invalidateOnMutationLink({ invalidates: (op) => op.path.split('.')[0] }),
@@ -220,6 +229,7 @@ test('invalidateOnMutationLink: the mutation resolves after the read queries ref
 });
 
 test('invalidateOnMutationLink invalidates every query by default, until the store is disposed', async () => {
+  using _db = freshDb();
   const trpc = make([
     cacheLink({ staleTime: 60_000 }),
     invalidateOnMutationLink(),
@@ -236,6 +246,7 @@ test('invalidateOnMutationLink invalidates every query by default, until the sto
 });
 
 test('standardLinks revalidates after a mutation, narrowed by invalidates', async () => {
+  using _db = freshDb();
   const trpc = make(
     standardLinks({ staleTime: 60_000, invalidates: () => 'post.byId' }),
   );
@@ -252,6 +263,7 @@ test('standardLinks revalidates after a mutation, narrowed by invalidates', asyn
 });
 
 test('the server keeps entries; dehydrate and hydrate carry them with the serializer', async () => {
+  using _db = freshDb();
   const server = make([], { isServer: true });
   await server.post.byId.query({ id: '1' });
   void server.post.byId.query({ id: '2' });
@@ -268,6 +280,7 @@ test('the server keeps entries; dehydrate and hydrate carry them with the serial
 });
 
 test('standardLinks is a links array; call options and errors stay typed', () => {
+  using _db = freshDb();
   const headerLink = link<{ context: { tenant?: string } }>(({ op, next }) =>
     next(op),
   );
@@ -292,6 +305,7 @@ test('standardLinks is a links array; call options and errors stay typed', () =>
 });
 
 test('inputless queries key on their path, and survive dehydrate and hydrate', async () => {
+  using _db = freshDb();
   const server = make([], { isServer: true });
   expect(await server.post.count.query()).toBe(2);
   const state = JSON.parse(JSON.stringify(dehydrate(server)));
@@ -315,6 +329,7 @@ test('inputless queries key on their path, and survive dehydrate and hydrate', a
 });
 
 test('array inputs key by value; setData writes a query never read', async () => {
+  using _db = freshDb();
   const trpc = make([cacheLink({ staleTime: 60_000 })]);
   const titles = trpc.post.many.query({ ids: ['2', '1'] });
   expect(trpc.post.many.query({ ids: ['2', '1'] })).toBe(titles);
@@ -329,6 +344,7 @@ test('array inputs key by value; setData writes a query never read', async () =>
 });
 
 test('removing entries: filters that match nothing, loads that settle late, stale mounts', async () => {
+  using _db = freshDb();
   const trpc = make([cacheLink({ staleTime: 60_000 })]);
   const first = trpc.post.byId.query({ id: '1' });
   await first;
@@ -352,6 +368,7 @@ test('removing entries: filters that match nothing, loads that settle late, stal
 });
 
 test('hydrating older data keeps newer data; foreign promises have no entry', async () => {
+  using _db = freshDb();
   const trpc = make([cacheLink({ staleTime: 60_000 })]);
   const post = trpc.post.byId.query({ id: '1' });
   await post;
@@ -370,6 +387,7 @@ test('hydrating older data keeps newer data; foreign promises have no entry', as
 });
 
 test('an answer that lands after its entry was removed is dropped', async () => {
+  using _db = freshDb();
   let open!: () => void;
   const gate = new Promise<void>((resolve) => (open = resolve));
   const gated = link(({ op, next }) =>
@@ -396,6 +414,7 @@ test('an answer that lands after its entry was removed is dropped', async () => 
 });
 
 test('without a serializer on the client, hydration uses JSON', async () => {
+  using _db = freshDb();
   const trpc = createReactClient({
     router: routerType<AppRouter>(),
     links: [cacheLink(), localLink({ router, serializer: false })],

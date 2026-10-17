@@ -347,7 +347,9 @@ test('serialized output is plain objects, with `__proto__` kept as an own key', 
     expect(Object.hasOwn(json.post, '__proto__')).toBe(true);
   }
   expect(({} as Record<string, unknown>)['x']).toBeUndefined();
-  expect(() => danson.deserialize(danson.serialize(value))).toThrow();
+  expect(() => danson.deserialize(danson.serialize(value))).toThrow(
+    'Forbidden key: __proto__',
+  );
 });
 
 test('malformed JSON is a PARSE_ERROR', async () => {

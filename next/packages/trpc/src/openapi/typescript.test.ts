@@ -7,7 +7,7 @@ import {
   type OpenApiDocument,
 } from '@trpc12/trpc/openapi';
 import { experimental_generateOpenApiFromTypes } from '@trpc12/trpc/openapi/typescript';
-import { beforeAll, expect, test } from 'vite-plus/test';
+import { expect, test } from 'vite-plus/test';
 import { appRouter } from './fixtures/typed-router.ts';
 import { shapesRouter } from './fixtures/typed-shapes.ts';
 
@@ -23,13 +23,10 @@ const op = (doc: OpenApiDocument, method: string, path: string) =>
 const json = (o: Op, status: string) =>
   o.responses[status]!.content!['application/json']!.schema;
 
-let doc: OpenApiDocument;
-beforeAll(async () => {
-  doc = await experimental_generateOpenApiFromTypes(appRouter, {
-    file: new URL('./fixtures/typed-router.ts', import.meta.url),
-    tsconfig: new URL('../../tsconfig.json', import.meta.url),
-    info: { title: 'Posts', version: '1.0.0' },
-  });
+const doc = await experimental_generateOpenApiFromTypes(appRouter, {
+  file: new URL('./fixtures/typed-router.ts', import.meta.url),
+  tsconfig: new URL('../../tsconfig.json', import.meta.url),
+  info: { title: 'Posts', version: '1.0.0' },
 });
 
 test('inferred errors are documented with their status (21)', () => {
