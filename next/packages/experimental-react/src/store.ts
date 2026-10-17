@@ -233,9 +233,8 @@ export function createStore(opts: StoreOptions): QueryStore {
     entry.cancelGc = undefined;
     if (opts.isServer || entry.observers > 0 || entry.fetching) return;
     if (entries.get(entry.key) !== entry) return;
-    const drop = () => {
-      if (entries.get(entry.key) === entry) entries.delete(entry.key);
-    };
+    // Removing an entry cancels its timer, so the entry is still the key's.
+    const drop = () => entries.delete(entry.key);
     if (gcTime <= 0) drop();
     else if (Number.isFinite(gcTime)) entry.cancelGc = after(gcTime, drop);
   };
@@ -339,7 +338,7 @@ export function createStore(opts: StoreOptions): QueryStore {
     entry.controller?.abort();
     entry.fetching = undefined;
     entry.controller = undefined;
-    if (entries.get(entry.key) === entry) entries.delete(entry.key);
+    entries.delete(entry.key);
   };
 
   const detach: Array<() => void> = [];
