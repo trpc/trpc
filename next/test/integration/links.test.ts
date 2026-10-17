@@ -396,3 +396,55 @@ test('httpLink init: a per-request default, merged with each call’s init', asy
   });
   expect(new Headers(seen.at(-1)!.headers).get('authorization')).toBe('header');
 });
+
+test('loggerLink logs to the console by default, and skips ops it is not enabled for', async () => {
+  await using server = await serve();
+  const log = vi.spyOn(console, 'log').mockImplementation(() => {});
+  const fail = vi.spyOn(console, 'error').mockImplementation(() => {});
+  try {
+    const client = createTrpcClient({
+      router: routerType<AppRouter>(),
+      links: [
+        loggerLink({ enabled: (op) => op.path !== 'whoami' }),
+        httpLink({ url: server.url }),
+      ],
+    });
+    await client.whoami.query();
+    expect(log).not.toHaveBeenCalled();
+    await client.find.query({ id: '1' });
+    await safe(client.find.query({ id: '2' }));
+    expect(log.mock.calls.map((c) => c[0])).toEqual([
+      expect.stringMatching(/^>> query #\d+ find$/),
+      expect.stringMatching(/^<< query #\d+ find$/),
+      expect.stringMatching(/^>> query #\d+ find$/),
+    ]);
+    expect(log.mock.calls[0]![1]).toEqual({ id: '1' });
+    expect(log.mock.calls[1]![1]).toEqual({ id: '1' });
+    expect(fail.mock.calls[0]![0]).toMatch(/^<< query #\d+ find$/);
+    expect(fail.mock.calls[0]![1]).toMatchObject({ code: 'NOT_FOUND' });
+  } finally {
+    log.mockRestore();
+    fail.mockRestore();
+  }
+});
+
+test('retryLink waits 200ms before its first retry by default', async () => {
+  await using server = await serve();
+  let failures = 1;
+  const client = createTrpcClient({
+    router: routerType<AppRouter>(),
+    links: [
+      retryLink({ retries: 1 }),
+      httpLink({
+        url: server.url,
+        fetch: (input, init) =>
+          failures-- > 0
+            ? Promise.reject(new TypeError('fetch failed'))
+            : fetch(input, init),
+      }),
+    ],
+  });
+  const started = Date.now();
+  expect(await client.whoami.query()).toBe('anonymous');
+  expect(Date.now() - started).toBeGreaterThanOrEqual(190);
+});
