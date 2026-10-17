@@ -18,7 +18,9 @@ const typedArrays = [
   Float64Array,
   BigInt64Array,
   BigUint64Array,
-] as const;
+  (globalThis as unknown as { Float16Array?: Float32ArrayConstructor })
+    .Float16Array,
+].filter((c) => c !== undefined);
 
 const placeholder = <T>(name: string, value: T): PlaceholderTransformer<T> => ({
   placeholder: name,
@@ -77,7 +79,8 @@ export const serializers: SerializeRecord = {
 
 export const deserializers: DeserializeRecord = {
   BigInt: (v: string) => BigInt(v),
-  Date: (v: string) => new Date(v),
+  // `null` is an invalid date, as `toJSON` sent it.
+  Date: (v: string | null) => new Date(v ?? NaN),
   Headers: {
     create: () => new Headers(),
     set: (h: Headers, entries: [string, string][]) => {

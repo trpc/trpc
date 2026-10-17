@@ -4,10 +4,12 @@ import type { Serializer } from './index.ts';
 import {
   deferredBuilders,
   deferredChunks,
-  ERROR,
   isAsyncIterable,
   isPromiseLike,
   sourceOf,
+  streamErrorsOf,
+  toDansonError,
+  toDeserializeError,
   type Chunk,
   type ChunkQueue,
   type PendingSource,
@@ -121,11 +123,6 @@ function setAt(
   return target;
 }
 
-const toDansonError = (cause: unknown) =>
-  cause instanceof DansonError
-    ? cause
-    : new DansonError('serialize failed', { cause });
-
 function framedSerializer(
   name: string,
   kind: 'sync' | 'none',
@@ -164,14 +161,10 @@ function framedSerializer(
       };
       const head = payload(value);
       if (pending.length === 0) return { head, chunks: undefined };
-      const chunks = deferredChunks(pending, (v, status) =>
-        Effect.try({
-          try: () =>
-            payload(
-              status === ERROR && opts?.coerceError ? opts.coerceError(v) : v,
-            ),
-          catch: toDansonError,
-        }),
+      const chunks = deferredChunks(
+        pending,
+        (v) => Effect.try({ try: () => payload(v), catch: toDansonError }),
+        opts?.coerceError,
       );
       return { head, chunks };
     },
@@ -179,12 +172,7 @@ function framedSerializer(
       frames: Stream.Stream<SerializeReturn | Chunk, E>,
       opts: Parameters<Serializer['deserializeStream']>[1] = {},
     ): Effect.Effect<T, E | DansonError> => {
-      const revive = opts.reviveError ?? ((v: unknown) => v);
-      const failed =
-        opts.streamFailed ??
-        ((cause: unknown) => new DansonError('Stream failed', { cause }));
-      const interrupted =
-        opts.streamInterrupted ?? (() => new DansonError('Stream interrupted'));
+      const { revive, ended, interrupted } = streamErrorsOf(opts);
       return Effect.gen(function* () {
         const head = yield* Deferred.make<T, E | DansonError>();
         const queues = new Map<number, ChunkQueue>();
@@ -200,7 +188,7 @@ function framedSerializer(
           Stream.fromQueue(queueFor(idx)).pipe(
             Stream.ensuring(Effect.sync(() => queues.delete(idx))),
           );
-        const builders = deferredBuilders(take, revive, interrupted);
+        const builders = deferredBuilders(take, revive);
         const revivePayload = (p: FramedPayload): unknown => {
           let v: unknown = deserialize(p);
           for (const [path, idx, kind] of p.d ?? []) {
@@ -228,22 +216,12 @@ function framedSerializer(
                   revivePayload(json as FramedPayload),
                 ]);
               },
-              catch: (cause) =>
-                cause instanceof DansonError
-                  ? cause
-                  : new DansonError('deserialize failed', { cause }),
+              catch: toDeserializeError,
             }),
           ),
           Effect.onExit((exit) =>
             Effect.sync(() => {
-              const failure = Exit.isFailure(exit)
-                ? exit.cause.reasons.find(Cause.isFailReason)
-                : undefined;
-              const error = failure
-                ? failure.error
-                : Exit.isFailure(exit)
-                  ? failed(Cause.squash(exit.cause))
-                  : interrupted();
+              const error = ended(exit);
               // A no-op once the head is out; a head frame that failed to read leaves it open.
               Deferred.doneUnsafe(
                 head,

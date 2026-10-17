@@ -195,10 +195,7 @@ const deferredSerializers: SerializeRecord = {
 };
 
 const withDeferredCache = new WeakMap<SerializeRecord, SerializeRecord>();
-const withDeferred = (
-  serializers: SerializeRecord | undefined,
-): SerializeRecord => {
-  if (!serializers) return deferredSerializers;
+const withDeferred = (serializers: SerializeRecord): SerializeRecord => {
   let merged = withDeferredCache.get(serializers);
   if (!merged) {
     merged = { ...serializers, ...deferredSerializers };
@@ -212,10 +209,15 @@ export interface SerializeStreamOptions extends SerializeOptions {
   coerceError?: (cause: unknown) => unknown;
 }
 
-const toDansonError = (cause: unknown) =>
+export const toDansonError = (cause: unknown): DansonError =>
   cause instanceof DansonError
     ? cause
     : new DansonError('serialize failed', { cause });
+
+export const toDeserializeError = (cause: unknown): DansonError =>
+  cause instanceof DansonError
+    ? cause
+    : new DansonError('deserialize failed', { cause });
 
 /**
  * A serialized value: the head, plus a stream of chunks when it holds deferred values.
@@ -235,7 +237,7 @@ export interface SerializedDeferred {
  */
 export function serializeDeferred(
   value: unknown,
-  options: SerializeStreamOptions = {},
+  options: SerializeStreamOptions,
 ): SerializedDeferred {
   const nextIndex = counter();
   const pending: PendingSource[] = [];
@@ -267,24 +269,18 @@ export function serializeDeferred(
     pending.push([idx, sourceOf(v)]);
     return idx;
   }
-  const serialize = (v: unknown, status: Status) =>
+  const serialize = (v: unknown) =>
     v instanceof JsonBytes
       ? Effect.succeed<SerializeReturn>({ json: v as never })
       : Effect.try({
-          try: () =>
-            serializeSync(
-              status === ERROR && options.coerceError
-                ? options.coerceError(v)
-                : v,
-              opts,
-            ),
+          try: () => serializeSync(v, opts),
           catch: toDansonError,
         });
 
   const head = serializeSync(value, opts);
   if (pending.length === 0) return { head, chunks: undefined };
 
-  const chunks = deferredChunks(pending, serialize);
+  const chunks = deferredChunks(pending, serialize, options.coerceError);
   return { head, chunks };
 }
 
@@ -295,14 +291,33 @@ export type PendingSource = [number, Stream.Stream<[Status, unknown]>];
  * Runs every pending source concurrently, serializing each item into a chunk.
  * Serializing an item may push more sources onto `pending` (a promise inside
  * a yielded value); they start too, and the stream ends when all have.
+ *
+ * Failures go through `coerceError`. With it, an item that can't be
+ * serialized fails its own deferred value and stops its source; without it,
+ * the whole stream fails.
  */
 export function deferredChunks(
   pending: PendingSource[],
-  serialize: (
-    value: unknown,
-    status: Status,
-  ) => Effect.Effect<SerializeReturn, DansonError>,
+  serialize: (value: unknown) => Effect.Effect<SerializeReturn, DansonError>,
+  coerceError: ((cause: unknown) => unknown) | undefined,
 ): Stream.Stream<Chunk, DansonError> {
+  const failure = (cause: unknown) =>
+    Effect.map(
+      serialize(coerceError ? coerceError(cause) : cause),
+      (json): [Status, SerializeReturn] => [ERROR, json],
+    );
+  const chunk = (
+    status: Status,
+    v: unknown,
+  ): Effect.Effect<[Status, SerializeReturn], DansonError> =>
+    status === ERROR
+      ? failure(v)
+      : serialize(v).pipe(
+          Effect.map((json): [Status, SerializeReturn] => [status, json]),
+          Effect.catch((cause) =>
+            coerceError ? failure(cause) : Effect.fail(cause),
+          ),
+        );
   return Stream.callback<Chunk, DansonError>((queue) =>
     Effect.gen(function* () {
       let active = 0;
@@ -317,14 +332,12 @@ export function deferredChunks(
           forEachSeq(pending.splice(0), ([idx, source]) => {
             active++;
             return source.pipe(
-              Stream.runForEach(([status, v]) =>
-                serialize(v, status).pipe(
-                  Effect.flatMap((json) => {
-                    Queue.offerUnsafe(queue, [idx, status, json]);
-                    return startPending;
-                  }),
-                ),
-              ),
+              Stream.mapEffect(([status, v]) => chunk(status, v)),
+              Stream.takeUntil(([status]) => status === ERROR),
+              Stream.runForEach(([status, json]) => {
+                Queue.offerUnsafe(queue, [idx, status, json]);
+                return startPending;
+              }),
               Effect.catchCause((cause) =>
                 Effect.sync(() => Queue.failCauseUnsafe(queue, cause)),
               ),
@@ -335,7 +348,6 @@ export function deferredChunks(
         );
 
       yield* startPending;
-      if (active === 0) Queue.endUnsafe(queue);
     }),
   );
 }
@@ -352,7 +364,6 @@ export function iterateWithReturn(
         else if (status === RETURN) return v;
         else throw revive(v);
       }
-      return undefined;
     },
   };
 }
@@ -372,7 +383,6 @@ export interface DeferredBuilders {
 export function deferredBuilders(
   take: (idx: number) => Stream.Stream<[Status, unknown], unknown>,
   revive: (value: unknown) => unknown,
-  interrupted: () => unknown,
 ): DeferredBuilders {
   const iterate = (idx: number) =>
     take(idx).pipe(
@@ -383,17 +393,13 @@ export function deferredBuilders(
     );
   return {
     iterate,
+    // Chunk queues fail, never end, so a promise always gets its chunk.
     Promise: (idx: number): Promise<unknown> => {
       const p = Effect.runPromise(
-        take(idx).pipe(
-          Stream.runHead,
-          Effect.flatMap((first) => {
-            if (first._tag === 'None') return Effect.fail(interrupted());
-            const [status, v] = first.value;
-            return status === VALUE
-              ? Effect.succeed(v)
-              : Effect.fail(revive(v));
-          }),
+        iterate(idx).pipe(
+          Stream.take(1),
+          Stream.runCollect,
+          Effect.map(([v]) => v),
         ),
       );
       p.catch(() => {});
@@ -406,7 +412,7 @@ export function deferredBuilders(
   };
 }
 
-export interface DeserializeStreamOptions extends DeserializeOptions {
+export interface StreamErrorOptions {
   /** Turns a deserialized ERROR chunk into the value a deferred rejects with. */
   reviveError?: (value: unknown) => unknown;
   /** What open deferred values reject with when the source dies (a defect). */
@@ -415,18 +421,51 @@ export interface DeserializeStreamOptions extends DeserializeOptions {
   streamInterrupted?: () => unknown;
 }
 
-export type ChunkQueue = Queue.Queue<[Status, unknown], unknown>;
+export interface DeserializeStreamOptions
+  extends DeserializeOptions, StreamErrorOptions {}
 
-export function deserializeStream<T, E>(
-  source: Stream.Stream<Frame, E>,
-  options: DeserializeStreamOptions = {},
-): Effect.Effect<T, E | DansonError> {
-  const revive = options.reviveError ?? ((v: unknown) => v);
+export interface StreamErrors {
+  readonly revive: (value: unknown) => unknown;
+  /** What a deferred value rejects with when a frame for it can't be read. */
+  readonly unreadable: (error: unknown) => unknown;
+  /** What open deferred values reject with when the frames end. */
+  readonly ended: (exit: Exit.Exit<unknown, unknown>) => unknown;
+  readonly interrupted: () => unknown;
+}
+
+/** The stream error options, with danSON's defaults. */
+export function streamErrorsOf(options: StreamErrorOptions): StreamErrors {
   const failed =
     options.streamFailed ??
     ((cause: unknown) => new DansonError('Stream failed', { cause }));
   const interrupted =
     options.streamInterrupted ?? (() => new DansonError('Stream interrupted'));
+  const unreadable = (error: unknown) =>
+    error instanceof DansonError ? failed(error) : error;
+  return {
+    revive: options.reviveError ?? ((v: unknown) => v),
+    unreadable,
+    // The source's own failure (a network error, an abort) reaches open
+    // deferred values as it is; unreadable frames, defects and interrupts
+    // are a failed stream.
+    ended: (exit) => {
+      if (Exit.isSuccess(exit)) return interrupted();
+      const failure = exit.cause.reasons.find(Cause.isFailReason);
+      return failure
+        ? unreadable(failure.error)
+        : failed(Cause.squash(exit.cause));
+    },
+    interrupted,
+  };
+}
+
+export type ChunkQueue = Queue.Queue<[Status, unknown], unknown>;
+
+export function deserializeStream<T, E>(
+  source: Stream.Stream<Frame, E>,
+  options: DeserializeStreamOptions,
+): Effect.Effect<T, E | DansonError> {
+  const { revive, unreadable, ended, interrupted } = streamErrorsOf(options);
   return Effect.gen(function* () {
     const head = yield* Deferred.make<T, E | DansonError>();
     const queues = new Map<number, ChunkQueue>();
@@ -443,11 +482,7 @@ export function deserializeStream<T, E>(
         Stream.ensuring(Effect.sync(() => queues.delete(idx))),
       );
 
-    const { iterate, ...builders } = deferredBuilders(
-      take,
-      revive,
-      interrupted,
-    );
+    const { iterate, ...builders } = deferredBuilders(take, revive);
     const opts: DeserializeOptions = {
       ...options,
       cache: new Map(),
@@ -492,10 +527,6 @@ export function deserializeStream<T, E>(
     const HEAD = -1;
     /** The last frame waiting for bytes, per target. */
     const tails = new Map<number, Deferred.Deferred<void, unknown>>();
-    const toDeserializeError = (cause: unknown) =>
-      cause instanceof DansonError
-        ? cause
-        : new DansonError('deserialize failed', { cause });
     const apply = (target: number, frame: Frame) => {
       if (target === HEAD) {
         Deferred.doneUnsafe(
@@ -512,10 +543,20 @@ export function deserializeStream<T, E>(
           : deserializeSync(json, opts),
       ]);
     };
+    // A frame that can't be read fails its own target: the head as it is
+    // (the link names it), a deferred value as a failed stream would.
     const fail = (target: number, error: unknown) => {
       if (target === HEAD)
         Deferred.doneUnsafe(head, Effect.fail(error as never));
-      else Queue.failCauseUnsafe(queueFor(target), Cause.fail(error));
+      else
+        Queue.failCauseUnsafe(queueFor(target), Cause.fail(unreadable(error)));
+    };
+    const settle = (target: number, frame: Frame) => {
+      try {
+        apply(target, frame);
+      } catch (cause) {
+        fail(target, toDeserializeError(cause));
+      }
     };
 
     let first = true;
@@ -535,12 +576,7 @@ export function deserializeStream<T, E>(
           });
           const waits = yield* forEachSeq(refs, collect);
           const tail = tails.get(target);
-          if (waits.length === 0 && !tail) {
-            return yield* Effect.try({
-              try: () => apply(target, frame),
-              catch: toDeserializeError,
-            });
-          }
+          if (waits.length === 0 && !tail) return settle(target, frame);
           const settled = Deferred.makeUnsafe<void, unknown>();
           tails.set(target, settled);
           const ready: ReadonlyArray<Deferred.Deferred<void, unknown>> = tail
@@ -549,13 +585,7 @@ export function deserializeStream<T, E>(
           yield* forEachSeq(ready, (d) => Deferred.await(d)).pipe(
             Effect.matchCause({
               onFailure: (cause) => fail(target, Cause.squash(cause)),
-              onSuccess: () => {
-                try {
-                  apply(target, frame);
-                } catch (cause) {
-                  fail(target, toDeserializeError(cause));
-                }
-              },
+              onSuccess: () => settle(target, frame),
             }),
             Effect.ensuring(
               Effect.sync(() => {
@@ -569,16 +599,7 @@ export function deserializeStream<T, E>(
       ),
       Effect.onExit((exit) =>
         Effect.gen(function* () {
-          // The source's own failure (a network error, an abort) reaches
-          // open deferred values as it is; defects and interrupts don't.
-          const failure = Exit.isFailure(exit)
-            ? exit.cause.reasons.find(Cause.isFailReason)
-            : undefined;
-          const error = failure
-            ? failure.error
-            : Exit.isFailure(exit)
-              ? failed(Cause.squash(exit.cause))
-              : interrupted();
+          const error = ended(exit);
           // Bytes already received still drain; then waiting frames settle.
           for (const idx of bytes.keys()) {
             const q = queues.get(idx);

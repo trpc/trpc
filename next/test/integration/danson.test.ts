@@ -20,6 +20,13 @@ class Money {
   }
 }
 
+/** A type with no value: the marker is all there is. */
+class Marker {}
+/** A type the server can't write. */
+class Unwritable {}
+/** A type the client can't read. */
+class Unreadable {}
+
 const danson = createSerializer({
   types: {
     Money: {
@@ -28,9 +35,30 @@ const danson = createSerializer({
       deserialize: (cents: number) => new Money(cents),
       input: false,
     },
+    Marker: {
+      is: (v): v is Marker => v instanceof Marker,
+      serialize: () => undefined,
+      deserialize: () => new Marker(),
+    },
+    Unwritable: {
+      is: (v): v is Unwritable => v instanceof Unwritable,
+      serialize: () => {
+        throw new Error('cannot write');
+      },
+      deserialize: () => new Unwritable(),
+    },
+    Unreadable: {
+      is: (v): v is Unreadable => v instanceof Unreadable,
+      serialize: () => 1,
+      deserialize: () => {
+        throw new Error('cannot read');
+      },
+    },
   },
   maxDepth: 8,
 });
+
+let stopped = 0;
 
 const t = initTrpc();
 const router = {
@@ -48,6 +76,29 @@ const router = {
     return root;
   }),
   money: t.procedure.query(() => new Money(250)),
+  pattern: t.procedure.query(() => /a+b/gi),
+  partial: t.procedure.query(() => ({
+    unwritable: Promise.resolve(new Unwritable()),
+    unreadable: Promise.resolve(new Unreadable()),
+    fine: Promise.resolve('fine'),
+    items: (async function* () {
+      try {
+        yield 1;
+        yield new Unwritable();
+        yield 3;
+      } finally {
+        stopped++;
+      }
+    })(),
+    broken: new ReadableStream({
+      start(controller) {
+        controller.enqueue('first');
+      },
+      pull(controller) {
+        controller.error(error({ code: 'CONFLICT', message: 'torn' }));
+      },
+    }),
+  })),
   mixed: t.procedure.query(() => {
     const file = new File(['file bytes'], 'a.txt', { type: 'text/plain' });
     return {
@@ -198,6 +249,16 @@ test('a GET query carries refs in the URL, and reads the query string strictly o
   cyclic['self'] = cyclic;
   const found = (await client.find.query(cyclic)) as Record<string, unknown>;
   expect(found['self']).toBe(found);
+  // A cycle below the root is a ref, sent as `refs=`; its repeats share it.
+  const inner: Record<string, unknown> = { marker: new Marker() };
+  inner['a'] = inner;
+  inner['b'] = inner;
+  const nested = (await client.find.query({ inner })) as {
+    inner: Record<string, unknown>;
+  };
+  expect(nested.inner['a']).toBe(nested.inner);
+  expect(nested.inner['b']).toBe(nested.inner);
+  expect(nested.inner['marker']).toBeInstanceOf(Marker);
 
   const get = async (search: string) =>
     (await (
@@ -291,4 +352,207 @@ test('a streamed head the client cannot read fails the call instead of hanging',
   expect((result as Awaited<ReturnType<typeof safe>>)[1]).toMatchObject({
     message: expect.stringContaining('No deserializer for type: Nope'),
   });
+});
+
+test('built-in types round-trip: headers, every typed array, search params, odd numbers and dates', async () => {
+  const { client, post, handler } = setup();
+  const typed = [
+    new Int8Array([-1]),
+    new Uint8Array([1]),
+    new Uint8ClampedArray([2]),
+    new Int16Array([-3]),
+    new Uint16Array([4]),
+    new Int32Array([-5]),
+    new Uint32Array([6]),
+    new Float32Array([0.5]),
+    new Float64Array([0.25]),
+    new BigInt64Array([-7n]),
+    new BigUint64Array([8n]),
+    new Float16Array([1.5]),
+  ];
+  // A Date with its own toJSON is sent as that toJSON says.
+  const shifted = Object.assign(new Date(0), {
+    toJSON: () => '2026-10-17T00:00:00.000Z',
+  });
+  const sent = {
+    headers: new Headers([
+      ['x-a', '1'],
+      ['x-b', '2'],
+    ]),
+    typed,
+    search: new URLSearchParams('a=1&a=2&b=x y'),
+    numbers: [NaN, Infinity, -Infinity, -0],
+    invalid: new Date(NaN),
+    shifted,
+  };
+  const back = (await client.echo.mutate(sent)) as typeof sent;
+  expect([...back.headers]).toEqual([
+    ['x-a', '1'],
+    ['x-b', '2'],
+  ]);
+  expect(back.typed).toEqual(typed);
+  expect(back.typed.map((a) => a.constructor.name)).toEqual(
+    typed.map((a) => a.constructor.name),
+  );
+  expect(back.search.getAll('a')).toEqual(['1', '2']);
+  expect(back.search.get('b')).toBe('x y');
+  expect(back.numbers).toEqual([NaN, Infinity, -Infinity, -0]);
+  expect(Object.is(back.numbers[3], -0)).toBe(true);
+  expect(back.invalid.getTime()).toBeNaN();
+  expect(back.shifted).toEqual(new Date('2026-10-17T00:00:00.000Z'));
+
+  // RegExps are outputs only.
+  expect(await client.pattern.query()).toEqual(/a+b/gi);
+
+  // A view that isn't a typed array has no built-in form.
+  const [, view] = await safe(
+    client.echo.mutate(new DataView(new ArrayBuffer(1))),
+  );
+  expect(view?.message).toContain('Do not know how to serialize');
+  const forged = await post({
+    json: { _: '$', type: 'TypedArray', value: ['Nope', [1]] },
+  });
+  expect(await forged.json()).toMatchObject({
+    json: {
+      error: {
+        code: 'PARSE_ERROR',
+        message: 'Unknown typed array: Nope',
+      },
+    },
+  });
+  await handler.dispose();
+});
+
+test("a deferred value the server can't write, or the client can't read, fails alone", async () => {
+  const { client, handler } = setup();
+  const out = (await client.partial.query()) as Record<string, any>;
+  // Masked on the server, which stops the source too.
+  await expect(out['unwritable']).rejects.toMatchObject({
+    code: 'INTERNAL_SERVER_ERROR',
+  });
+  await expect(out['unreadable']).rejects.toMatchObject({
+    code: 'INTERNAL_SERVER_ERROR',
+    message: 'Stream failed',
+    cause: { message: 'deserialize failed', cause: { message: 'cannot read' } },
+  });
+  await expect(out['fine']).resolves.toBe('fine');
+  const items: unknown[] = [];
+  await expect(
+    (async () => {
+      for await (const item of out['items'] as AsyncIterable<unknown>) {
+        items.push(item);
+      }
+    })(),
+  ).rejects.toMatchObject({ code: 'INTERNAL_SERVER_ERROR' });
+  expect(items).toEqual([1]);
+  expect(stopped).toBe(1);
+  const reader = (out['broken'] as ReadableStream<unknown>).getReader();
+  expect(await reader.read()).toEqual({ value: 'first', done: false });
+  await expect(reader.read()).rejects.toMatchObject({
+    code: 'CONFLICT',
+    message: 'torn',
+  });
+  await handler.dispose();
+});
+
+test('forged streams: bad or missing file bytes, bare refs, unreadable frames and lines', async () => {
+  const forged = (...lines: unknown[]) =>
+    createTrpcClient({
+      router: routerType<typeof router>(),
+      links: [
+        httpLink({
+          url: 'http://localhost/trpc',
+          serializer: danson,
+          fetch: async () =>
+            new Response(
+              lines
+                .map((l) => (typeof l === 'string' ? l : JSON.stringify(l)))
+                .join('\n') + '\n',
+              {
+                headers: {
+                  'content-type': 'application/jsonl',
+                  'trpc-serializer': danson.name,
+                  'trpc-version': '12',
+                },
+              },
+            ),
+        }),
+      ],
+    }).later.query() as Promise<any>;
+  const file = (value: object) => ({ _: '$', type: 'File', value });
+  const hi = (idx: number) => [
+    [idx, 0, { json: 'aGk=' }],
+    [idx, 2, {}],
+  ];
+
+  await expect(
+    forged({ json: file({ stream: 0 }) }, [0, 0, { json: '@@@@' }], [0, 2, {}]),
+  ).rejects.toMatchObject({
+    code: 'NETWORK_ERROR',
+    message: 'Malformed file bytes',
+  });
+  await expect(forged({ json: file({}) })).rejects.toMatchObject({
+    message: 'Missing file bytes',
+  });
+  await expect(
+    forged({ json: [file({ stream: 0 }), { _: '$', type: 'Nope' }] }, ...hi(0)),
+  ).rejects.toMatchObject({ message: 'No deserializer for type: Nope' });
+
+  // A ref without a name or type is a nameless, untyped file.
+  const bare = await forged(
+    {
+      json: {
+        file: file({ stream: 0 }),
+        blob: { _: '$', type: 'Blob', value: { stream: 1 } },
+      },
+    },
+    ...hi(0),
+    ...hi(1),
+  );
+  expect([bare.file.name, bare.file.type, bare.blob.type]).toEqual([
+    'blob',
+    '',
+    '',
+  ]);
+  expect(await bare.file.text()).toBe('hi');
+
+  // Lines split anywhere, even inside a character, and blank lines.
+  const bytes = new TextEncoder().encode('\n{"json":"été"}\n\n');
+  const split = createTrpcClient({
+    router: routerType<typeof router>(),
+    links: [
+      httpLink({
+        url: 'http://localhost/trpc',
+        serializer: danson,
+        fetch: async () =>
+          new Response(
+            new ReadableStream({
+              start(controller) {
+                for (const byte of bytes)
+                  controller.enqueue(new Uint8Array([byte]));
+                controller.close();
+              },
+            }),
+            {
+              headers: {
+                'content-type': 'application/jsonl',
+                'trpc-serializer': danson.name,
+                'trpc-version': '12',
+              },
+            },
+          ),
+      }),
+    ],
+  });
+  expect(await split.later.query()).toBe('été');
+
+  // Lines that aren't JSON, or aren't chunks, fail what is still open.
+  const promise = { _: '$', type: 'Promise', value: 0 };
+  for (const line of ['{not json', '{"json":1}']) {
+    const open = await forged({ json: { p: promise } }, line);
+    await expect(open.p).rejects.toMatchObject({
+      code: 'INTERNAL_SERVER_ERROR',
+      message: 'Stream failed',
+    });
+  }
 });
