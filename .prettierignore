@@ -22,3 +22,5 @@ examples/openapi-codegen/openapi.json
 packages/openapi/test/routers/*/
 packages/openapi/test/routers/*.json
 **/.repos/
+next/
+vendor-src.json
