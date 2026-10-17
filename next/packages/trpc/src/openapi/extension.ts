@@ -23,6 +23,6 @@ import { mergeRoute, type OpenApiMeta } from './routes.ts';
  */
 export function openapi(): ProcedureBuilder<RootDef<{}, OpenApiMeta>> {
   return initTrpc<{ meta: OpenApiMeta }>({
-    mergeMeta: { route: (before, next) => mergeRoute(before, next)! },
+    mergeMeta: { route: mergeRoute },
   }).procedure;
 }

@@ -429,6 +429,25 @@ test('openApiLink sends per-call headers, files in arrays, and signals', async (
   await handler.dispose();
 });
 
+test('openApiLink fills a Date path param as ISO, and fails a call missing one', async () => {
+  const { client, handler, requests } = linked();
+  const at = new Date(0);
+  expect(
+    await client.rename.mutate({ id: at as unknown as string, name: 'x' }),
+  ).toEqual({ id: at.toISOString(), name: 'x' });
+  expect(new URL(requests[0]!.url).pathname).toBe(
+    `/api/things/${encodeURIComponent(at.toISOString())}`,
+  );
+
+  const [, missing] = await safe(
+    client.rename.mutate({ name: 'x' } as unknown as { id: string }),
+  );
+  expect(missing?.message).toContain(
+    'Missing path param "id" for /api/things/{id}',
+  );
+  await handler.dispose();
+});
+
 test('openApiLink reads an untyped body as text', async () => {
   const untyped = (body: string) =>
     linked(

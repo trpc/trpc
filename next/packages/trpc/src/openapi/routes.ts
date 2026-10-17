@@ -79,12 +79,7 @@ export interface OperationSpec {
  * key's merge.
  * @internal
  */
-export function mergeRoute(
-  route: Route | undefined,
-  next: Route | undefined,
-): Route | undefined {
-  if (!next) return route;
-  if (!route) return next;
+export function mergeRoute(route: Route, next: Route): Route {
   const before = route.spec;
   const after = next.spec;
   return {

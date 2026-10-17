@@ -767,6 +767,11 @@ test('.meta({ route: { spec } }) replaces or extends the generated operation', (
         },
       })
       .mutation(() => undefined),
+    extended: t.procedure
+      .meta({ route: { spec: { summary: 'Base' } } })
+      .meta({ route: { spec: (op) => ({ ...op, deprecated: true }) } })
+      .meta({ route: { path: '/extended' } })
+      .query(() => 'extended'),
   };
   const doc = generateOpenApi(specRouter, {
     info: { title: 'x', version: '1' },
@@ -780,6 +785,10 @@ test('.meta({ route: { spec } }) replaces or extends the generated operation', (
   expect(doc.paths['/api/raw']!['post']).toEqual({
     operationId: 'upload',
     responses: { 204: { description: 'Done' } },
+  });
+  expect(doc.paths['/api/extended']!['get']).toEqual({
+    summary: 'Base',
+    deprecated: true,
   });
   expect(toContract(specRouter).procedures.me.route).toEqual({ path: '/me' });
 
