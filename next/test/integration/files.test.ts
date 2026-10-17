@@ -1,3 +1,7 @@
+import { openAsBlob } from 'node:fs';
+import { mkdtemp, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import {
   createTrpcClient,
   httpLink,
@@ -6,7 +10,7 @@ import {
   wsLink,
   routerType,
 } from '@trpc12/trpc/client';
-import { initTrpc } from '@trpc12/trpc/server';
+import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
 import { createSerializer, type Frame } from '@trpc12/trpc/serializer';
 import { Effect, Stream } from 'effect';
 import { createTestServer } from './fixtures/server.ts';
@@ -329,6 +333,23 @@ test('a root File output of an unbatched call is the response body, with any ser
     // @ts-expect-error -- plain JSON can't batch a file, so the call leaves the batch
     void batching.rawBlob.query();
   });
+});
+
+test('a file that changes on disk while it downloads fails the response body', async () => {
+  const path = join(await mkdtemp(join(tmpdir(), 'trpc-')), 'report.csv');
+  await writeFile(path, 'first version');
+  const changing = {
+    report: t.procedure.query(async () => {
+      const blob = await openAsBlob(path);
+      await writeFile(path, 'a longer second version');
+      return blob;
+    }),
+  };
+  const handler = createFetchHandler({ router: changing });
+  const res = await handler.fetch(new Request('http://localhost/trpc/report'));
+  expect(res.status).toBe(200);
+  await expect(res.text()).rejects.toThrow('The blob could not be read');
+  await handler.dispose();
 });
 
 test('a root File output in a batch streams like a nested one', async () => {

@@ -262,6 +262,22 @@ test('createFetchHandler() reads bodies a parser already read, and bodies that a
     } as RequestInit),
   );
   expect(broken.status).toBe(400);
+
+  // An upload the client abandons is dropped without an error report.
+  const reported = errors.length;
+  const abandoned = request({
+    host: '127.0.0.1',
+    port: new URL(server.url).port,
+    path: '/trpc/save',
+    method: 'POST',
+    headers: { 'content-type': 'application/json', 'content-length': '100' },
+  });
+  abandoned.on('error', () => {});
+  abandoned.write('{"json":');
+  await new Promise((r) => setTimeout(r, 20));
+  abandoned.destroy();
+  await new Promise((r) => setTimeout(r, 50));
+  expect(errors).toHaveLength(reported);
   expect(await broken.json()).toMatchObject({
     json: { error: { message: 'Could not read the request body' } },
   });

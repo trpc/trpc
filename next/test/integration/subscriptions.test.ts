@@ -1,4 +1,4 @@
-import { Schedule, Stream } from 'effect';
+import { Effect, Schedule, Stream } from 'effect';
 import { EventSource } from 'undici';
 import {
   createTrpcClient,
@@ -354,4 +354,29 @@ test('quiet subscriptions send keep-alive comments', async () => {
     links: [httpLink({ url: server.url })],
   });
   expect(await collect(client.slow.subscribe())).toEqual(['a', 'b']);
+});
+
+test('without keep-alives a subscription sends only its events; one that interrupts itself just ends', async () => {
+  const quiet = {
+    slow: t.procedure.subscription(async function* () {
+      yield 'a';
+      await sleep(30);
+      yield 'b';
+    }),
+    stops: t.procedure.subscription(() =>
+      Stream.concat(Stream.make('a'), Stream.fromEffect(Effect.interrupt)),
+    ),
+  };
+  await using server = await createTestServer({
+    router: quiet,
+    createContext: () => ({ user: null }),
+    sse: { pingMs: false },
+  });
+  const text = await (await fetch(`${server.url}/slow`)).text();
+  expect(text).not.toContain(': ping');
+  expect(text).toContain('event: done');
+
+  const stopped = await (await fetch(`${server.url}/stops`)).text();
+  expect(stopped).toContain('data: {"json":"a"}');
+  expect(stopped).not.toMatch(/event: (done|error)/);
 });
