@@ -1,5 +1,5 @@
 import { once } from 'node:events';
-import { createServer, type IncomingMessage } from 'node:http';
+import { createServer, request, type IncomingMessage } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { NodeHttpServer } from '@effect/platform-node';
 import { Context, Effect, Exit, Layer, Scope } from 'effect';
@@ -12,7 +12,7 @@ import {
 } from '@trpc12/trpc/client';
 import { cors, serve, toHttpEffect } from '@trpc12/trpc/http';
 import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
-import { expect, test } from 'vite-plus/test';
+import { expect, test, vi } from 'vite-plus/test';
 import { z } from 'zod';
 
 const t = initTrpc();
@@ -35,16 +35,18 @@ const plain = {
 
 /**
  * Reads the body the way `express.json()`, `express.text()` or
- * `express.raw()` do, picked by an `x-parser` header; other types are read
- * and dropped, as a parser that doesn't set `req.body` leaves them.
+ * `express.raw()` do, picked by an `x-parser` header, whatever the
+ * content type; without one, JSON only. Other types are read and dropped,
+ * as a parser that doesn't set `req.body` leaves them.
  */
 async function parse(req: IncomingMessage & { body?: unknown }) {
   const chunks: Buffer[] = [];
   req.on('data', (chunk: Buffer) => chunks.push(chunk));
   await once(req, 'end');
   const raw = Buffer.concat(chunks);
-  if (!req.headers['content-type']?.startsWith('application/json')) return;
-  const parser = req.headers['x-parser'] ?? 'json';
+  const parser = req.headers['x-parser'];
+  if (!parser && !req.headers['content-type']?.startsWith('application/json'))
+    return;
   req.body =
     parser === 'text'
       ? String(raw)
@@ -190,4 +192,77 @@ test('cors() without options allows every origin', async () => {
   });
   expect(await res.json()).toEqual({ json: 'hello a' });
   expect(res.headers.get('access-control-allow-origin')).toBe('*');
+});
+
+test('createFetchHandler() reads bodies a parser already read, and bodies that arrive in pieces', async () => {
+  const errors: string[] = [];
+  const own = createFetchHandler({
+    router,
+    onError: ({ error }) => errors.push(error.message),
+  });
+
+  {
+    await using server = await listenParsed(toHttpEffect(own), parse);
+    const post = (headers: Record<string, string>, body: BodyInit) =>
+      fetch(`${server.url}/save`, { method: 'POST', headers, body });
+    const json = { 'content-type': 'application/json' };
+    expect(await (await post(json, '{"json":{"n":1}}')).json()).toEqual({
+      json: 2,
+    });
+    const text = await post(
+      { ...json, 'x-parser': 'text' },
+      '{"json":{"n":3}}',
+    );
+    expect(await text.json()).toEqual({ json: 6 });
+    const bytes = await post(
+      { ...json, 'x-parser': 'raw' },
+      '{"json":{"n":4}}',
+    );
+    expect(await bytes.json()).toEqual({ json: 8 });
+    const untyped = await post(
+      { 'x-parser': 'json' },
+      new TextEncoder().encode('{"json":{"n":5}}'),
+    );
+    expect(untyped.status).toBe(500);
+    expect(await untyped.json()).toMatchObject({
+      json: { error: { message: expect.stringMatching(/already read/) } },
+    });
+    const form = new FormData();
+    form.set('input', '{"json":{"n":1}}');
+    const multipart = await post({ 'trpc-version': '12' }, form);
+    expect(multipart.status).toBe(500);
+    expect(errors.at(-1)).toMatch(/already read/);
+  }
+
+  await using server = await listen(HttpServer.serve(toHttpEffect(own)));
+  const pieces = ['{"json":', '{"n":21}}'];
+  const streamed = await fetch(`${server.url}/save`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: new ReadableStream({
+      async pull(controller) {
+        const piece = pieces.shift();
+        if (piece === undefined) return controller.close();
+        await new Promise((r) => setTimeout(r, 5));
+        controller.enqueue(new TextEncoder().encode(piece));
+      },
+    }),
+    duplex: 'half',
+  } as RequestInit);
+  expect(await streamed.json()).toEqual({ json: 42 });
+
+  const broken = await own.fetch(
+    new Request(`${server.url}/save`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: new ReadableStream({
+        pull: (controller) => controller.error(new Error('connection reset')),
+      }),
+      duplex: 'half',
+    } as RequestInit),
+  );
+  expect(broken.status).toBe(400);
+  expect(await broken.json()).toMatchObject({
+    json: { error: { message: 'Could not read the request body' } },
+  });
 });
