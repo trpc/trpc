@@ -28,6 +28,7 @@ import {
 } from '@trpc12/trpc/serializer';
 import {
   createRouterClient,
+  initTrpc,
   type InputValidationErrorData,
   type TrpcError,
 } from '@trpc12/trpc/server';
@@ -155,6 +156,40 @@ test('input: skipToken disables the query', async () => {
   });
   expect(db.calls).toEqual([]);
   unsubscribe();
+});
+
+test("queryFn forwards TanStack's signal: a query nothing observes aborts its call and reverts", async () => {
+  const t = initTrpc();
+  let aborts = 0;
+  const router = {
+    slow: t.procedure.query(
+      (opts) =>
+        new Promise<string>((resolve) => {
+          opts.signal.addEventListener('abort', () => {
+            aborts++;
+            resolve('aborted');
+          });
+        }),
+    ),
+  };
+  const trpc = createTrpcQueryUtils({
+    client: createTrpcClient({
+      router: routerType<typeof router>(),
+      links: [localLink({ router })],
+    }),
+  });
+  const queryClient = new QueryClient();
+  const observer = new QueryObserver(queryClient, trpc.slow.queryOptions());
+  const unsubscribe = observer.subscribe(() => {});
+  await sleep(10);
+  unsubscribe();
+  await sleep(10);
+  expect(aborts).toBe(1);
+  expect(queryClient.getQueryState(trpc.slow.queryKey())).toMatchObject({
+    status: 'pending',
+    fetchStatus: 'idle',
+    data: undefined,
+  });
 });
 
 test('pathFilter and queryFilter invalidate what they match', async () => {

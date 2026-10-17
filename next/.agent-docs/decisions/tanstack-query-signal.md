@@ -1,0 +1,7 @@
+# TanStack queries always pass on TanStack's signal (agent)
+
+- (agent) `queryOptions()` and `infiniteOptions()` call the procedure with TanStack's `signal`. TanStack treats a consumed signal as "cancellable", so a query that loses its last observer (unmount, input change) or meets `queryClient.cancelQueries()` aborts the call, the server's `signal` aborts, and the query reverts instead of caching the late result. That is v11's `abortOnUnmount: true`, which issue #4448 says was misnamed for exactly this reason; v12 has no option.
+- Why: interruption is how Effect and the server stop work (a resolver's `signal`, a fiber's interrupt), and v11's default kept running queries the user had left, on both ends. TanStack's own guide recommends consuming the signal. One behaviour, no flag to name.
+- Lost: v11's default, where an unmounted query finished and its result was cached for a remount. A slow query that the user navigates away from and back to now starts again.
+- Open (human): add an opt-out per query, for example `queryOptions({ input, signal: false })`, for calls that should finish even when unobserved? Not built; a `context` link option can't do it, since TanStack decides by whether `signal` was read.
+- Lives in: `packages/tanstack-query/src/utils.ts` (`createTrpcQueryUtils`, `queryOptions` and `infiniteOptions` cases), `packages/tanstack-query/src/index.test.ts` ("queryFn forwards TanStack's signal"), `docs/tanstack-query.md`, `docs/migrating-from-v11.md`.

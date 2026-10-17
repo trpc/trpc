@@ -30,6 +30,8 @@ A refetch that returns equal data keeps the old reference, `Date`s, `Map`s and `
 
 Pass what links read in `context`, kept apart from TanStack's own options: `trpc.post.byId.queryOptions({ input, context: { dedupe: false } })`.
 
+Queries and infinite queries pass TanStack's `signal` to the call, so TanStack [cancels](https://tanstack.com/query/latest/docs/framework/react/guides/query-cancellation) a fetch that nothing observes any more (the component unmounted, or the input changed) and the server's `signal` aborts too. `queryClient.cancelQueries()` does the same. A cancelled query goes back to its previous state rather than caching a late result. This was v11's `abortOnUnmount: true`.
+
 With React, a client made per request or per test goes through context. `createTrpcContext` takes one type argument: the type of the function that makes the client (or of the client itself), so the helpers get what its links declare (call-option context, errors, the serializer's form). A router type works too, `createTrpcContext<AppRouter>()`. React and Preact return `[TrpcProvider, useTrpc, useTrpcClient, context]`, to name as you like:
 
 ```tsx
