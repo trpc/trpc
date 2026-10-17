@@ -118,7 +118,7 @@ Some recommendations depend on measurements. These are run as throwaway spikes, 
 
 ## 5. Workflow
 
-- **Branch:** `v12` on [trpc/trpc](https://github.com/trpc/trpc). `origin` → that repo; `playground` → [KATT/trpc-playground](https://github.com/KATT/trpc-playground) (frozen). **Never push to `main`; never push to `playground`.** No force-pushes and no merge commits on `v12` (linear history). Catch up with `git pull --rebase origin v12`.
+- **Branch:** `v12` on [trpc/trpc](https://github.com/trpc/trpc). `origin` → that repo. **Never push to `main`.** No force-pushes and no merge commits on `v12` (linear history). Catch up with `git pull --rebase origin v12`.
 - **Code root:** all new implementation under `next/` (see `next/README.md`). `next/.agent-docs/` is design docs only.
 - **Commits:** YOLO semantic commits straight to `v12` (`feat(server): …`, `docs(agent-docs): …`). No PRs for now.
 - **Precommit hook** formats, lints and runs related tests on staged files (22).
