@@ -29,11 +29,13 @@ import {
 import {
   createRouterClient,
   initTrpc,
+  type inferInputIssue,
   type InputValidationErrorData,
   type TrpcError,
 } from '@trpc12/trpc/server';
 import { expect, expectTypeOf, test, vi } from 'vite-plus/test';
 import { appRouter, createApp, db, sleep, type Post } from './fixtures/app.ts';
+import type { z } from 'zod';
 
 type Observable<T> = { subscribe(listener: (result: T) => void): () => void };
 
@@ -99,7 +101,12 @@ test('errors are the typed client errors', async () => {
   const result = await until(observer, (r) => r.status === 'error');
 
   type Expected = ClientError<
-    | TrpcError<'BAD_REQUEST', InputValidationErrorData<{ id: string }>>
+    | TrpcError<
+        'BAD_REQUEST',
+        InputValidationErrorData<
+          inferInputIssue<z.ZodObject<{ id: z.ZodString }>>
+        >
+      >
     | TrpcError<'NOT_FOUND', { id: string }>
   >;
   expectTypeOf(result.error).toEqualTypeOf<Expected>();

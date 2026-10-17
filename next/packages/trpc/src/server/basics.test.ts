@@ -4,10 +4,12 @@ import {
   httpLink,
   safe,
   routerType,
+  type ErrorData,
 } from '@trpc12/trpc/client';
 import {
   error,
   initTrpc,
+  type inferInputIssue,
   type InputValidationErrorData,
 } from '@trpc12/trpc/server';
 import { createTestServer } from '../fixtures/server.ts';
@@ -118,10 +120,14 @@ test('input validation errors are typed BAD_REQUEST with issues', async () => {
   });
   if (err?.defined && err.code === 'BAD_REQUEST') {
     expectTypeOf(err.data).toEqualTypeOf<
-      InputValidationErrorData<{ title: string }>
+      ErrorData<
+        InputValidationErrorData<
+          inferInputIssue<z.ZodObject<{ title: z.ZodString }>>
+        >
+      >
     >();
     expectTypeOf(err.data.issues[0]!.path).toEqualTypeOf<
-      readonly [] | readonly ['title'] | undefined
+      readonly [] | readonly ['title']
     >();
     expect(err.data.issues[0]!.path).toEqual(['title']);
   }
@@ -192,10 +198,9 @@ test('input issue paths are typed from each schema, and match what the schema re
       | readonly ['kind']
       | readonly ['kind', 'type']
       | readonly ['kind', 'a']
-      | undefined
     >();
     // @ts-expect-error -- not a key of the input
-    expect(path?.[0] === 'titel').toBe(false);
+    expect(path[0] === 'titel').toBe(false);
   }
   expect(nested).toMatchObject({
     code: 'BAD_REQUEST',
@@ -213,7 +218,7 @@ test('input issue paths are typed from each schema, and match what the schema re
   );
   if (effect?.defined && effect.code === 'BAD_REQUEST') {
     expectTypeOf(effect.data.issues[0]!.path).toEqualTypeOf<
-      readonly [] | readonly ['ids'] | readonly ['ids', number] | undefined
+      readonly [] | readonly ['ids'] | readonly ['ids', number]
     >();
   }
   expect(effect).toMatchObject({
@@ -224,7 +229,7 @@ test('input issue paths are typed from each schema, and match what the schema re
     client.chained.query({ id: 1 as never, limit: 10 }),
   );
   if (chained?.defined && chained.code === 'BAD_REQUEST') {
-    const firsts = chained.data.issues.map((issue) => issue.path?.[0]);
+    const firsts = chained.data.issues.map((issue) => issue.path[0]);
     expectTypeOf(firsts).toEqualTypeOf<Array<'id' | 'limit' | undefined>>();
     expect(firsts).toEqual(['id']);
   }
@@ -238,16 +243,14 @@ test('input issue paths are typed from each schema, and match what the schema re
   if (tree?.defined && tree.code === 'BAD_REQUEST') {
     const path = tree.data.issues[0]!.path;
     expectTypeOf<readonly ['children', number, 'name']>().toExtend<
-      NonNullable<typeof path>
+      typeof path
     >();
     expect(path).toEqual(['children', 0, 'children', 0, 'name']);
   }
 
   const [, whole] = await safe(client.whole.query(1 as never));
   if (whole?.defined && whole.code === 'BAD_REQUEST') {
-    expectTypeOf(whole.data.issues[0]!.path).toEqualTypeOf<
-      readonly [] | undefined
-    >();
+    expectTypeOf(whole.data.issues[0]!.path).toEqualTypeOf<readonly []>();
   }
   expect(whole).toMatchObject({ data: { issues: [{ path: [] }] } });
 });

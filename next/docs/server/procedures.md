@@ -41,7 +41,11 @@ const byId = t.procedure
 
 The resolver returns the output schema's input type and the client gets its output type, so transforms run on the server. An invalid input fails with a `BAD_REQUEST` error whose `data.issues` lists the problems. It is a typed (`defined`) error, so the client sees the issues in production too ([Errors](./errors.md)).
 
-Each issue's `path` is typed from the schema's input type: `[]` for the whole input, then a key or an array index per level. A form can match issues to its fields without casts:
+## Input issues
+
+Each issue has the shape of the library that reported it, and a `path` typed from the schema's input type: `[]` for the whole input, then a key or an array index per level.
+
+Zod issues keep zod's fields (`code`, `minimum`, `format`, `keys`, …), so checking `code` narrows the rest. Effect only stops at its first issue unless asked otherwise; inputs are decoded with every issue reported, as zod does. A form can match issues to its fields without casts:
 
 ```ts twoslash
 // ---cut-start---
@@ -54,11 +58,35 @@ if (err?.defined && err.code === 'BAD_REQUEST') {
   for (const issue of err.data.issues) {
     issue.path;
     //    ^?
+    if (issue.code === 'too_small') issue.minimum;
+    //                                    ^?
   }
 }
 ```
 
-The path is what the input type allows. A refinement that reports its own path (Zod's `refine(…, { path })`) should name a key of the input. With several `.input()` calls, each schema adds its own `BAD_REQUEST`, whose paths name its own keys.
+Effect Schema issues are the leaves of Effect's issue tree: a `_tag` (`InvalidType`, `InvalidValue`, `MissingKey`, `UnexpectedKey`, `Forbidden`, `OneOf` or `AnyOf`), Effect's message, the path, and `check` when a check failed. A built-in check has its id and settings (`'effect/schema/isMinLength'`, `{ minLength: 3 }`):
+
+```ts twoslash
+import { Schema } from 'effect';
+import type { inferInputIssue } from '@trpc12/trpc/server';
+
+const Signup = Schema.Struct({
+  name: Schema.String.check(Schema.isMinLength(3)),
+});
+declare const issue: inferInputIssue<typeof Signup>;
+
+issue._tag;
+//    ^?
+issue.path;
+//    ^?
+issue.check?.id;
+```
+
+Other Standard Schema libraries (Valibot, ArkType, …) report Standard Schema's `message` and `path`. `inferInputIssue<typeof schema>` names a schema's issue type.
+
+Issues are JSON under every serializer: zod's `input` is dropped (it echoes what the caller sent), `bigint`s and symbols become strings, and `undefined` in a list becomes `null`.
+
+The path is what the input type allows. A refinement that reports its own path (zod's `refine(…, { path })`, an Effect filter returning `{ path, issue }`) should name a key of the input, and a strict object reports unknown keys outside it. With several `.input()` calls, each schema adds its own `BAD_REQUEST`, whose issues name its own keys.
 
 ## Typing without validating
 

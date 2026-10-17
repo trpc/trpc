@@ -288,8 +288,11 @@ function inferErrors(checker: Checker, errors: Type): InferredTypes['errors'] {
     if (codes.length === 0) continue;
     const status = propertyType(checker, member, '~status');
     const data = propertyType(checker, member, 'data');
+    // Input validation data: the document describes `issues` for every input.
     const schema =
-      data && !has(data, TypeFlags.Never)
+      data &&
+      !has(data, TypeFlags.Never) &&
+      !checker.getPropertyOfType(data, '~issues')
         ? new TypeToSchema(checker).root(data)
         : undefined;
     for (const c of codes) {

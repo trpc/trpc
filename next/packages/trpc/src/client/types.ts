@@ -24,7 +24,8 @@ import type {
 
 /**
  * An error's `data` as it arrives under a serializer's form, like outputs:
- * its JSON form unless the serializer keeps the types.
+ * its JSON form unless the serializer keeps the types. Input validation
+ * issues are JSON already, so they keep theirs.
  * @since 0.1.0
  * @stability stable
  */
@@ -35,7 +36,9 @@ export type ErrorData<
   ? D
   : unknown extends D
     ? D
-    : JsonOf<Exclude<D, undefined>, F['keeps']> | Extract<D, undefined>;
+    : '~issues' extends keyof D
+      ? D
+      : JsonOf<Exclude<D, undefined>, F['keeps']> | Extract<D, undefined>;
 
 /**
  * A typed (`defined`) error from a procedure's union, its `data` in the

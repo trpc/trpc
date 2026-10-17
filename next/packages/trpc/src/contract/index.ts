@@ -62,6 +62,7 @@ import type { BuilderDef, ProcedureBuilder } from '../server/builder.ts';
 import type {
   AnySchema,
   InOf,
+  inferInputIssue,
   InputValidationError,
   OutOf,
   SchemaServices,
@@ -238,7 +239,7 @@ export interface ContractBuilder<TDef extends ContractDef> {
       {
         inputIn: Merge<TDef['inputIn'], InOf<$S>>;
         inputOut: Merge<TDef['inputOut'], OutOf<$S>>;
-        errors: TDef['errors'] | InputValidationError<InOf<$S>>;
+        errors: TDef['errors'] | InputValidationError<inferInputIssue<$S>>;
         requires: TDef['requires'] | SchemaServices<$S>;
       }
     >

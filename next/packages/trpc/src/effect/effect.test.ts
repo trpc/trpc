@@ -162,9 +162,11 @@ test('typed errors land in the Effect error channel', async () => {
         | TrpcError<'NOT_FOUND', { id: string }>
         | TrpcError<
             'BAD_REQUEST',
-            import('@trpc12/trpc/server').InputValidationErrorData<{
-              id: string;
-            }>
+            import('@trpc12/trpc/server').InputValidationErrorData<
+              import('@trpc12/trpc/server').inferInputIssue<
+                z.ZodObject<{ id: z.ZodString }>
+              >
+            >
           >
       >
     >

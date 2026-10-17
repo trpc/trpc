@@ -15,6 +15,7 @@ import {
   stream,
   tracked,
   TrpcError,
+  type inferInputIssue,
   type InputValidationErrorData,
   type TrackedEnvelope,
 } from '@trpc12/trpc/server';
@@ -206,7 +207,9 @@ test('input validation issues reach the client with unexpected errors masked (05
   });
   if (res.error?.defined && res.error.code === 'BAD_REQUEST') {
     expectTypeOf(res.error.data).toEqualTypeOf<
-      InputValidationErrorData<{ id: string }>
+      InputValidationErrorData<
+        inferInputIssue<z.ZodObject<{ id: z.ZodString }>>
+      >
     >();
   }
 });

@@ -31,6 +31,7 @@ import {
 import type {
   AnySchema,
   InOf,
+  inferInputIssue,
   InputValidationError,
   OutOf,
   SchemaServices,
@@ -836,7 +837,7 @@ export type InputDef<TDef extends BuilderDef, $S extends AnySchema> = {
   inputOut: Merge<TDef['inputOut'], OutOf<$S>>;
   outputIn: TDef['outputIn'];
   outputOut: TDef['outputOut'];
-  errors: TDef['errors'] | InputValidationError<InOf<$S>>;
+  errors: TDef['errors'] | InputValidationError<inferInputIssue<$S>>;
   declared: TDef['declared'];
   shorts: TDef['shorts'];
   provided: TDef['provided'];

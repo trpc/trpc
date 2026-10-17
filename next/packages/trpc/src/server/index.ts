@@ -111,12 +111,16 @@ export {
 } from './router.ts';
 export type {
   AnySchema,
+  EffectInputIssue,
+  inferInputIssue,
   InputIssue,
   InputValidationError,
   InputValidationErrorData,
   IssuePath,
   StandardIssue,
   StandardSchemaV1,
+  ZodInputIssue,
+  ZodInputIssues,
 } from './schema.ts';
 export {
   stream,

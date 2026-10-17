@@ -49,6 +49,12 @@ test('inferred errors are documented with their status (21)', () => {
       },
     },
   });
+  expect(json(op(doc, 'get', '/api/posts/{id}'), '400')).toMatchObject({
+    properties: {
+      code: { const: 'BAD_REQUEST' },
+      data: { properties: { issues: { type: 'array' } } },
+    },
+  });
   expect(json(op(doc, 'post', '/api/posts'), '401')).toMatchObject({
     properties: { code: { const: 'UNAUTHORIZED' } },
   });
