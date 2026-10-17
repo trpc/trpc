@@ -458,6 +458,8 @@ export function createFetchHandler<
   const { publicError, report } = base;
   const serializer: AnySerializer = opts.serializer ?? jsonSerializer;
   const endpoint = `/${(opts.endpoint ?? '/trpc').replace(/^\/+|\/+$/g, '')}`;
+  /** Procedure paths follow this. */
+  const under = endpoint === '/' ? '/' : `${endpoint}/`;
   const maxBodySize = opts.maxBodySize ?? 1_048_576;
   const ssePingMs = opts.sse?.pingMs ?? 15_000;
   const batch =
@@ -1189,10 +1191,10 @@ export function createFetchHandler<
         ),
       );
     }
-    if (pathname !== endpoint && !pathname.startsWith(`${endpoint}/`)) {
+    if (pathname !== endpoint && !pathname.startsWith(under)) {
       return Effect.fail(protocolError('NOT_FOUND', `Not found: ${pathname}`));
     }
-    const rest = pathname.slice(endpoint.length + 1);
+    const rest = pathname.slice(under.length);
     const parent = parentSpanIn(request, context);
     if (rest === '' && request.headers[HEADER.batch] === '1') {
       return batched(request, parent);

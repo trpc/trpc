@@ -282,3 +282,26 @@ test('createFetchHandler() reads bodies a parser already read, and bodies that a
     json: { error: { message: 'Could not read the request body' } },
   });
 });
+
+test("serve() of a handler at the root serves every path, and upgrades only the root's", async () => {
+  const root = createFetchHandler({ router, endpoint: '/' });
+  await using server = await listen(serve(root));
+  const base = server.url.replace('/trpc', '');
+  const input = encodeURIComponent('{"name":"root"}');
+  expect(await (await fetch(`${base}/hello?input=${input}`)).json()).toEqual({
+    json: 'hello root',
+  });
+  await using link = wsLink({
+    url: base.replace('http', 'ws'),
+    keepAlive: false,
+  });
+  const client = createTrpcClient({
+    router: routerType<typeof router>(),
+    links: [link],
+  });
+  expect(await client.hello.query({ name: 'ws' })).toBe('hello ws');
+
+  const elsewhere = new WebSocket(`${base.replace('http', 'ws')}/other`);
+  await Promise.race([once(elsewhere, 'error'), once(elsewhere, 'close')]);
+  expect(elsewhere.readyState).toBe(WebSocket.CLOSED);
+});
