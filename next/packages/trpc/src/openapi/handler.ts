@@ -241,12 +241,8 @@ export function createOpenApiHandler<
     Request,
     HttpServerRequest.HttpServerRequest
   >();
-  const httpOf = (request: Request) => {
-    let http = httpRequests.get(request);
-    if (!http)
-      httpRequests.set(request, (http = HttpServerRequest.fromWeb(request)));
-    return http;
-  };
+  /** Set by `app` before it serves the request. */
+  const httpOf = (request: Request) => httpRequests.get(request)!;
   const prefix = normalizePrefix(opts.prefix);
   const maxBodySize = opts.maxBodySize ?? 1_048_576;
   const ssePingMs = opts.sse?.pingMs ?? 15_000;
@@ -675,10 +671,8 @@ export function createOpenApiHandler<
   const app = Effect.gen(function* () {
     const http = yield* HttpServerRequest.HttpServerRequest;
     const platform = yield* CurrentPlatform;
-    const request =
-      http.source instanceof Request
-        ? http.source
-        : yield* HttpServerRequest.toWeb(http);
+    // `webHandler` is the only way in, so the source is a web Request.
+    const request = http.source as Request;
     httpRequests.set(request, http);
     if (platform !== undefined) platforms.set(request, platform);
     const call = yield* SelectedCall;
