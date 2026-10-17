@@ -18,7 +18,7 @@ import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { createApp, db, type Post, type AppClient } from './fixtures/app.ts';
 import { click, container, text, waitFor } from './fixtures/dom.ts';
 
-const [TrpcProvider, useTrpc] = createTrpcContext<AppClient>();
+const [TrpcProvider, useTrpc, useTrpcClient] = createTrpcContext<AppClient>();
 
 function mount(ui: ComponentChildren, client: AppClient) {
   const queryClient = new QueryClient({
@@ -145,4 +145,25 @@ test('useSubscription and live queries update the UI', async () => {
   click(view.el, 'button');
   await waitFor(() => expect(text(view.el, '.status')).toBe('idle'));
   await waitFor(() => expect(db.listeners.size).toBe(0));
+});
+
+test('useTrpcClient(), a failing subscription, and no provider', async () => {
+  await using app = await createApp();
+  let client: unknown;
+  function Failing() {
+    client = useTrpcClient();
+    const failing = useSubscription(
+      useTrpc().clock.countdown.subscriptionOptions({ input: { from: 0 } }),
+    );
+    return <p>{failing.error?.code}</p>;
+  }
+  using view = mount(<Failing />, app.client);
+  expect(client).toBe(app.client);
+  await waitFor(() => expect(text(view.el, 'p')).toBe('CONFLICT'));
+
+  const el = container();
+  expect(() => render(<Failing />, el)).toThrow(
+    'Wrap your component in <TrpcProvider>',
+  );
+  el.remove();
 });

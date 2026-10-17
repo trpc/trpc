@@ -18,7 +18,7 @@ import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { createApp, db, type Post, type AppClient } from './fixtures/app.ts';
 import { click, container, text, waitFor } from './fixtures/dom.ts';
 
-const [TrpcProvider, useTrpc] = createTrpcContext<AppClient>();
+const [TrpcProvider, useTrpc, useTrpcClient] = createTrpcContext<AppClient>();
 
 function mount(App: () => JSX.Element, client: AppClient) {
   const queryClient = new QueryClient({
@@ -143,4 +143,19 @@ test('useSubscription and live queries follow signals', async () => {
   await waitFor(() =>
     expect(Number(text(view.el, '.tick'))).toBeGreaterThan(40),
   );
+});
+
+test('useTrpcClient(), a failing subscription, and no provider', async () => {
+  await using app = await createApp();
+  let client: unknown;
+  using view = mount(() => {
+    client = useTrpcClient();
+    const failing = useSubscription(() =>
+      useTrpc().clock.countdown.subscriptionOptions({ input: { from: 0 } }),
+    );
+    return h('p', () => failing.error?.code ?? '') as unknown as JSX.Element;
+  }, app.client);
+  expect(client).toBe(app.client);
+  await waitFor(() => expect(text(view.el, 'p')).toBe('CONFLICT'));
+  expect(() => useTrpc()).toThrow('Wrap your component in <TrpcProvider>');
 });

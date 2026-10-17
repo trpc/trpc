@@ -4,6 +4,7 @@ import {
   Component,
   computed,
   inject,
+  Injector,
   provideZonelessChangeDetection,
   signal,
   type Signal,
@@ -29,7 +30,8 @@ import { afterEach, expect, expectTypeOf, test } from 'vite-plus/test';
 import { createApp, db, type Post, type AppClient } from './fixtures/app.ts';
 import { click, text, waitFor } from './fixtures/dom.ts';
 
-const { provideTrpc, injectTrpc } = createTrpcContext<AppClient>();
+const { provideTrpc, injectTrpc, injectTrpcClient } =
+  createTrpcContext<AppClient>();
 
 TestBed.initTestEnvironment(BrowserTestingModule, platformBrowserTesting());
 afterEach(() => TestBed.resetTestingModule());
@@ -206,4 +208,37 @@ test('injectSubscription needs an injection context or an injector', () => {
       subscribe: async function* () {},
     })),
   ).toThrow(/injection context/);
+});
+
+const ClientView = Component({
+  selector: 'client-view',
+  template: `<p class="error">{{ failing.error()?.code }}</p>`,
+})(
+  class {
+    client = injectTrpcClient();
+    trpc = injectTrpc();
+    injector = inject(Injector);
+    failing = injectSubscription(() =>
+      this.trpc.clock.countdown.subscriptionOptions({ input: { from: 0 } }),
+    );
+  },
+);
+
+test('injectTrpcClient(), a failing subscription, and injectSubscription with an injector', async () => {
+  await using app = await createApp();
+  using view = render(ClientView, app.client);
+  const component = view.fixture.componentInstance;
+  expect(component.client).toBe(app.client);
+  await waitFor(() => expect(text(view.el, '.error')).toBe('CONFLICT'));
+
+  const added = injectSubscription(
+    () => component.trpc.post.onAdd.subscriptionOptions(),
+    { injector: component.injector },
+  );
+  await waitFor(() => {
+    TestBed.tick();
+    expect(db.listeners.size).toBe(1);
+  });
+  app.addPost('Injected');
+  await waitFor(() => expect(added.data()?.title).toBe('Injected'));
 });

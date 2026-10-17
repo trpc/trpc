@@ -8,6 +8,7 @@ import { flushSync, mount, unmount, type Component } from 'svelte';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { createApp, db, type AppClient } from './fixtures/app.ts';
 import { click, container, text, waitFor } from './fixtures/dom.ts';
+import Failing from './svelte/Failing.svelte';
 import Feed from './svelte/Feed.svelte';
 import Live from './svelte/Live.svelte';
 import Post from './svelte/Post.svelte';
@@ -108,4 +109,20 @@ test('types: createSubscription infers events and errors', () => {
       trpc.clock.countdown.subscriptionOptions({ input: {} }),
     );
   });
+});
+
+test('useTrpcClient(), a failing subscription, and no parent context', async () => {
+  await using app = await createApp();
+  let client: unknown;
+  await using view = render(Failing, app.client, {
+    onClient: (c: unknown) => (client = c),
+  });
+  expect(client).toBe(app.client);
+  await waitFor(() => expect(text(view.el, '.error')).toBe('CONFLICT'));
+
+  const el = container();
+  expect(() =>
+    mount(Failing, { target: el, props: { onClient: () => {} } }),
+  ).toThrow('Call setTrpcContext() in a parent first');
+  el.remove();
 });

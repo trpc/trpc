@@ -16,11 +16,12 @@ import {
   useSubscription,
 } from '@trpc12/tanstack-vue-query';
 import { createRouterClient } from '@trpc12/trpc/server';
-import { expect, expectTypeOf, test } from 'vite-plus/test';
+import { expect, expectTypeOf, test, vi } from 'vite-plus/test';
 import {
   createApp as createVueApp,
   createSSRApp,
   defineComponent,
+  effectScope,
   h,
   ref,
 } from 'vue';
@@ -35,7 +36,8 @@ import {
 } from './fixtures/app.ts';
 import { click, container, text, waitFor } from './fixtures/dom.ts';
 
-const { TrpcPlugin, useTrpc } = createTrpcContext<AppClient>();
+const { TrpcPlugin, provideTrpc, useTrpc, useTrpcClient } =
+  createTrpcContext<AppClient>();
 
 function mount(setup: () => () => unknown, client: AppClient) {
   const queryClient = new QueryClient({
@@ -214,4 +216,52 @@ test('server render with prefetched data and no subscription, then hydrate witho
   expect(text(el, 'h1')).toBe('2026-01-04');
   await waitFor(() => expect(db.listeners.size).toBe(1));
   expect(db.calls).toEqual(['post.byId:3']);
+});
+
+test('provideTrpc() and useTrpcClient(), a failing subscription, one in an effect scope, and no provider', async () => {
+  await using app = await createApp();
+  let client: unknown;
+  const Child = defineComponent({
+    setup() {
+      client = useTrpcClient();
+      const failing = useSubscription(
+        useTrpc().clock.countdown.subscriptionOptions({ input: { from: 0 } }),
+      );
+      return () => h('p', { class: 'error' }, failing.error.value?.code ?? '');
+    },
+  });
+  const el = container();
+  const vueApp = createVueApp(
+    defineComponent({
+      setup() {
+        provideTrpc(app.client);
+        return () => h(Child);
+      },
+    }),
+  ).use(VueQueryPlugin, { queryClient: new QueryClient() });
+  vueApp.mount(el);
+  using _ = {
+    [Symbol.dispose]: () => {
+      vueApp.unmount();
+      el.remove();
+    },
+  };
+  expect(client).toBe(app.client);
+  await waitFor(() => expect(text(el, '.error')).toBe('CONFLICT'));
+
+  const scope = effectScope();
+  const added = scope.run(() =>
+    useSubscription(app.trpc.post.onAdd.subscriptionOptions()),
+  )!;
+  await waitFor(() => expect(db.listeners.size).toBe(1));
+  app.addPost('In a scope');
+  await waitFor(() => expect(added.data.value?.title).toBe('In a scope'));
+  scope.stop();
+  await waitFor(() => expect(db.listeners.size).toBe(0));
+
+  const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+  expect(() => useTrpc()).toThrow(
+    'Install TrpcPlugin or call provideTrpc() first',
+  );
+  warn.mockRestore();
 });
