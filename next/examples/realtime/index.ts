@@ -6,6 +6,8 @@
  */
 import { createServer } from 'node:http';
 import { NodeHttpServer, NodeRedis } from '@effect/platform-node';
+import { Effect, Layer, ManagedRuntime } from 'effect';
+import { HttpServer } from 'effect/http';
 import {
   createTrpcClient,
   httpLink,
@@ -21,8 +23,6 @@ import {
   Publisher,
   type TrackedEnvelope,
 } from '@trpc12/trpc/server';
-import { Effect, Layer, ManagedRuntime } from 'effect';
-import { HttpServer } from 'effect/http';
 import { z } from 'zod';
 import { redisPublisher } from './publisher.ts';
 

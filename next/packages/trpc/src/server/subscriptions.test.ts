@@ -1,8 +1,10 @@
+import { Effect, Schedule, Stream } from 'effect';
+import { EventSource } from 'undici';
 import {
   createTrpcClient,
   httpLink,
-  routerType,
   type TrpcClient,
+  routerType,
 } from '@trpc12/trpc/client';
 import {
   error,
@@ -10,14 +12,12 @@ import {
   tracked,
   type TrackedEnvelope,
 } from '@trpc12/trpc/server';
-import { Effect, Schedule, Stream } from 'effect';
-import { EventSource } from 'undici';
-import { expect, expectTypeOf, test, vi } from 'vite-plus/test';
-import { z } from 'zod';
 import {
   createTestServer,
   type NodeTestServer as TestServer,
 } from '../fixtures/server.ts';
+import { expect, expectTypeOf, test, vi } from 'vite-plus/test';
+import { z } from 'zod';
 
 interface Context {
   user: string | null;

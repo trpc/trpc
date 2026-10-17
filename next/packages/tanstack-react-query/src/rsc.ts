@@ -24,8 +24,8 @@
  * @module
  */
 import {
-  HydrationBoundary as ClientHydrationBoundary,
   dehydrate,
+  HydrationBoundary as ClientHydrationBoundary,
   noop,
   QueryClient,
   type QueryExecuteOptions,
@@ -35,6 +35,7 @@ import {
   hydrationOptions,
   type TrpcQueryUtils,
 } from '@trpc12/tanstack-query';
+import { cache as reactCache, createElement, type ReactNode } from 'react';
 import type { TrpcClient } from '@trpc12/trpc/client';
 import type { AnySerializer, DansonForm } from '@trpc12/trpc/serializer';
 import {
@@ -43,7 +44,6 @@ import {
   type RouterClientOptions,
   type SerializerOption,
 } from '@trpc12/trpc/server';
-import { createElement, cache as reactCache, type ReactNode } from 'react';
 
 /** Next's `redirect()`, `notFound()` and dynamic-API errors carry a `digest`. */
 const hasDigest = (error: unknown) =>

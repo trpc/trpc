@@ -1,6 +1,6 @@
-import { openapi } from '@trpc12/trpc/openapi';
-import { error, initTrpc, lazy } from '@trpc12/trpc/server';
 import { Effect } from 'effect';
+import { error, initTrpc, lazy } from '@trpc12/trpc/server';
+import { openapi } from '@trpc12/trpc/openapi';
 
 const t = initTrpc().concat(openapi());
 const get = (path: `/${string}`) => ({

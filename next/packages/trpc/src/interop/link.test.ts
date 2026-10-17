@@ -1,6 +1,7 @@
 import { TRPCClientError, type TRPCLink } from '@trpc/client';
 import type { AnyTRPCRouter } from '@trpc/server';
 import { map, observable, share, tap } from '@trpc/server/observable';
+import { Stream } from 'effect';
 import {
   createTrpcClient,
   httpLink,
@@ -10,7 +11,6 @@ import {
 } from '@trpc12/trpc/client';
 import { fromV11Link } from '@trpc12/trpc/interop';
 import { error, initTrpc } from '@trpc12/trpc/server';
-import { Stream } from 'effect';
 import { expect, test } from 'vite-plus/test';
 import { z } from 'zod';
 import { createTestServer } from '../fixtures/server.ts';

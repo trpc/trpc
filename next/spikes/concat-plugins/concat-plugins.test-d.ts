@@ -1,6 +1,6 @@
 import { describe, expectTypeOf, test } from 'vite-plus/test';
-import { auditPlugin, tracedPlugin, type AuditDb } from './audit-plugin.ts';
-import { initTrpc, schema, type inferInput } from './core.ts';
+import { auditPlugin, type AuditDb, tracedPlugin } from './audit-plugin.ts';
+import { initTrpc, type inferInput, schema } from './core.ts';
 
 interface User {
   id: string;

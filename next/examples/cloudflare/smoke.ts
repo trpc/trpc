@@ -8,9 +8,9 @@ import {
   createTrpcClient,
   experimental_durableLink,
   httpLink,
-  routerType,
   splitLink,
   wsLink,
+  routerType,
 } from '@trpc12/trpc/client';
 import { unstable_startWorker } from 'wrangler';
 import type { AppRouter } from './src/router.ts';

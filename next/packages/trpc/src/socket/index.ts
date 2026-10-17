@@ -22,8 +22,8 @@
 import { Effect, Layer, Queue, Stream } from 'effect';
 import { HttpServerRequest } from 'effect/http';
 import { Socket, SocketServer } from 'effect/socket';
-import { decodeLines, encodeLine } from '../internal/lines.ts';
 import type { ServerMessage } from '../internal/protocol.ts';
+import { decodeLines, encodeLine } from '../internal/lines.ts';
 import {
   parseSocketMessage,
   serveConnection,

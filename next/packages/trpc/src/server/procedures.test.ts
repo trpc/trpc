@@ -1,17 +1,11 @@
+import { Context, Data, Effect, Layer } from 'effect';
 import {
   createTrpcClient,
   httpLink,
-  routerType,
   safe,
   type ClientError,
+  routerType,
 } from '@trpc12/trpc/client';
-import { callProcedure } from '@trpc12/trpc/extend';
-import { onError, onFinish, onStart, onSuccess } from '@trpc12/trpc/middleware';
-import {
-  openapi,
-  type OpenApiMeta,
-  type OperationSpec,
-} from '@trpc12/trpc/openapi';
 import {
   call,
   error,
@@ -24,10 +18,16 @@ import {
   type InputValidationErrorData,
   type TrackedEnvelope,
 } from '@trpc12/trpc/server';
-import { Context, Data, Effect, Layer } from 'effect';
+import { callProcedure } from '@trpc12/trpc/extend';
+import { onError, onFinish, onStart, onSuccess } from '@trpc12/trpc/middleware';
+import { createTestServer } from '../fixtures/server.ts';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
-import { createTestServer } from '../fixtures/server.ts';
+import {
+  openapi,
+  type OpenApiMeta,
+  type OperationSpec,
+} from '@trpc12/trpc/openapi';
 
 interface Ctx {
   user: string | null;

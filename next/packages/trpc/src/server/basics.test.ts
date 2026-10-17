@@ -1,18 +1,18 @@
+import { Schema } from 'effect';
 import {
   createTrpcClient,
   httpLink,
-  routerType,
   safe,
+  routerType,
 } from '@trpc12/trpc/client';
 import {
   error,
   initTrpc,
   type InputValidationErrorData,
 } from '@trpc12/trpc/server';
-import { Schema } from 'effect';
+import { createTestServer } from '../fixtures/server.ts';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
-import { createTestServer } from '../fixtures/server.ts';
 
 interface User {
   id: string;
@@ -255,7 +255,12 @@ test('Standard Schema issues keep their paths, async validators are awaited, and
 });
 
 type JsonValue =
-  string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
+  | string
+  | number
+  | boolean
+  | null
+  | JsonValue[]
+  | { [key: string]: JsonValue };
 type Pair = [string, number] & { readonly __brand: 'pair' };
 
 test('recursive and branded outputs keep their types', async () => {

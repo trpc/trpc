@@ -103,7 +103,8 @@ export function coerceBySchema(
     value = coerceBySchema(value, part, r);
   }
   const branches = (current['anyOf'] ?? current['oneOf']) as
-    JsonSchema[] | undefined;
+    | JsonSchema[]
+    | undefined;
   if (branches) {
     for (const branch of branches) {
       const b = asSchema(branch);

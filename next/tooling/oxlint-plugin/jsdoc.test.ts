@@ -1,6 +1,8 @@
 import { fileURLToPath } from 'node:url';
+
 import { RuleTester } from 'oxlint/plugins-dev';
 import { describe, it } from 'vite-plus/test';
+
 import plugin from './index.ts';
 
 RuleTester.describe = describe;

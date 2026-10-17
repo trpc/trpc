@@ -2,10 +2,10 @@ import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import type { Duplex } from 'node:stream';
 import { NodeHttpServer } from '@effect/platform-node';
+import { Effect, Exit, Layer, Scope, Stream } from 'effect';
 import { serve } from '@trpc12/trpc/http';
 import { createV11Handler, type V11HandlerOptions } from '@trpc12/trpc/interop';
 import { error, initTrpc, tracked } from '@trpc12/trpc/server';
-import { Effect, Exit, Layer, Scope, Stream } from 'effect';
 import { expect, test } from 'vite-plus/test';
 import { z } from 'zod';
 

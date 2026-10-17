@@ -26,7 +26,11 @@ import {
  * @stability stable
  */
 export type ReservedSwitchName =
-  'signal' | 'lastEventId' | 'init' | 'headers' | 'reconnect';
+  | 'signal'
+  | 'lastEventId'
+  | 'init'
+  | 'headers'
+  | 'reconnect';
 
 const reserved: ReadonlySet<string> = new Set<ReservedSwitchName>([
   'signal',

@@ -19,7 +19,8 @@ import { Context, Effect, Schema, SchemaIssue } from 'effect';
 export interface StandardIssue {
   readonly message: string;
   readonly path?:
-    ReadonlyArray<PropertyKey | { readonly key: PropertyKey }> | undefined;
+    | ReadonlyArray<PropertyKey | { readonly key: PropertyKey }>
+    | undefined;
 }
 type StandardResult<O> =
   | { readonly value: O; readonly issues?: undefined }

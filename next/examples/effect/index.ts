@@ -5,12 +5,12 @@
  */
 import { createServer } from 'node:http';
 import { NodeHttpServer } from '@effect/platform-node';
+import { Context, Effect, Layer, Schema, Stream } from 'effect';
+import { HttpServer } from 'effect/http';
 import { httpLink, routerType } from '@trpc12/trpc/client';
 import { createEffectClient } from '@trpc12/trpc/effect';
 import { serve } from '@trpc12/trpc/http';
 import { createFetchHandler, initTrpc, TrpcError } from '@trpc12/trpc/server';
-import { Context, Effect, Layer, Schema, Stream } from 'effect';
-import { HttpServer } from 'effect/http';
 
 // --- services ------------------------------------------------------------------------
 

@@ -1,3 +1,5 @@
+import { Effect, Layer, Schema } from 'effect';
+import { Persistence } from 'effect/persistence';
 import {
   createTrpcClient,
   experimental_durableLink,
@@ -8,14 +10,12 @@ import { experimental_durable } from '@trpc12/trpc/middleware';
 import { createOpenApiHandler } from '@trpc12/trpc/openapi';
 import { createSerializer } from '@trpc12/trpc/serializer';
 import {
+  type AnyRouter,
   call,
   createFetchHandler,
   initTrpc,
   TrpcError,
-  type AnyRouter,
 } from '@trpc12/trpc/server';
-import { Effect, Layer, Schema } from 'effect';
-import { Persistence } from 'effect/persistence';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { createTestServer } from '../fixtures/server.ts';
 

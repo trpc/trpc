@@ -1,7 +1,7 @@
 import {
+  experimental_streamedQuery as streamedQuery,
   matchQuery,
   skipToken,
-  experimental_streamedQuery as streamedQuery,
   type DataTag,
   type InfiniteData,
   type InfiniteQueryObserverOptions,
@@ -14,6 +14,7 @@ import {
   type QueryObserverOptions,
   type SkipToken,
 } from '@tanstack/query-core';
+import { structuralSharing } from './sharing.ts';
 import type {
   ChainTypes,
   ClientTypes,
@@ -27,7 +28,6 @@ import {
   type TrpcMutationKey,
   type TrpcQueryKey,
 } from './keys.ts';
-import { structuralSharing } from './sharing.ts';
 import {
   SubscriptionCache,
   type SubscriptionCallbacks,
@@ -233,7 +233,9 @@ export interface StreamedMutationOptions<TChunk, TInput = unknown> {
    * function is called for each `mutate`, so each call can get its own.
    */
   signal?:
-    AbortSignal | ((variables: TInput) => AbortSignal | undefined) | undefined;
+    | AbortSignal
+    | ((variables: TInput) => AbortSignal | undefined)
+    | undefined;
 }
 
 /**

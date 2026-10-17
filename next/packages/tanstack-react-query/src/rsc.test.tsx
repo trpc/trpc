@@ -5,15 +5,15 @@ import {
 } from '@tanstack/react-query';
 import { hydrationOptions } from '@trpc12/tanstack-query';
 import { createTrpcRsc } from '@trpc12/tanstack-react-query/rsc';
-import { initTrpc } from '@trpc12/trpc/server';
 import { renderToString } from 'react-dom/server';
+import { initTrpc } from '@trpc12/trpc/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import {
   appRouter,
   createApp,
   db,
-  serializer,
   type Post,
+  serializer,
 } from '../../tanstack-query/src/fixtures/app.ts';
 
 /** One request's worth of React `cache()`. */

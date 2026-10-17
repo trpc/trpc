@@ -1,4 +1,5 @@
 import { defineRule, type ESTree } from '@oxlint/plugins';
+
 import { packageName, publicNames } from './public-exports.ts';
 
 const REQUIRED = ['@since', '@stability'] as const;

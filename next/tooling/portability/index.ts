@@ -5,6 +5,7 @@
  *
  * @see ../../.agent-docs/proposals/01-packages-and-type-portability.md
  */
+import { Context, Effect, Layer, Schema, Stream } from 'effect';
 import {
   createTrpcClient,
   dedupeLink,
@@ -21,7 +22,6 @@ import {
   type inferContract,
 } from '@trpc12/trpc/contract';
 import { createEffectClient } from '@trpc12/trpc/effect';
-import { onFinish } from '@trpc12/trpc/middleware';
 import {
   createOpenApiHandler,
   generateOpenApi,
@@ -29,7 +29,6 @@ import {
   openApiLink,
   openApiReference,
 } from '@trpc12/trpc/openapi';
-import { createSerializer } from '@trpc12/trpc/serializer';
 import {
   createFetchHandler,
   createRouterClient,
@@ -40,7 +39,8 @@ import {
   ok,
   tracked,
 } from '@trpc12/trpc/server';
-import { Context, Effect, Layer, Schema, Stream } from 'effect';
+import { onFinish } from '@trpc12/trpc/middleware';
+import { createSerializer } from '@trpc12/trpc/serializer';
 import { z } from 'zod';
 
 export interface User {

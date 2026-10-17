@@ -1,12 +1,11 @@
 'use client';
-
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import {
   createTrpcContext,
   hydrationOptions,
 } from '@trpc12/tanstack-react-query';
-import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState, type ReactNode } from 'react';
+import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
 import type { AppRouter } from '../server/router.ts';
 import { serializer } from './serializer.ts';
 

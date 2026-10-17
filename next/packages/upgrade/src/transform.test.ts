@@ -1,9 +1,9 @@
-import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
 import { NodeServices } from '@effect/platform-node';
 import { Effect } from 'effect';
 import { Command } from 'effect/cli';
+import { mkdtemp, readFile, writeFile, mkdir } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { describe, expect, test } from 'vite-plus/test';
 import { upgradeCommand, upgradeFiles, upgradeSource } from './index.ts';
 

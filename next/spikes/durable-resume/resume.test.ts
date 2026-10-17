@@ -1,11 +1,11 @@
+import { Effect, Ref, Stream } from 'effect';
+import { Persistence } from 'effect/persistence';
 import {
   createSerializer,
   jsonSerializer,
   type AnySerializer,
   type Frame,
 } from '@trpc12/trpc/serializer';
-import { Effect, Ref, Stream } from 'effect';
-import { Persistence } from 'effect/persistence';
 import { expect, test } from 'vite-plus/test';
 import { makeStreamLog } from './resume.ts';
 

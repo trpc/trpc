@@ -1,3 +1,4 @@
+import { Effect, Fiber, Layer, Stream } from 'effect';
 import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
 import {
   initTrpc,
@@ -5,10 +6,9 @@ import {
   type inferRouterServices,
   type TrackedEnvelope,
 } from '@trpc12/trpc/server';
-import { Effect, Fiber, Layer, Stream } from 'effect';
+import { createTestServer } from '../fixtures/server.ts';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
-import { createTestServer } from '../fixtures/server.ts';
 
 interface Post {
   id: string;

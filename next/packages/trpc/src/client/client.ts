@@ -9,9 +9,9 @@ import {
   clientErrorFromCause,
   firstValue,
   runLinks,
+  type Operation,
   type AnyLink,
   type BuiltinCallOptions,
-  type Operation,
   type TrpcLink,
 } from './link.ts';
 import type {

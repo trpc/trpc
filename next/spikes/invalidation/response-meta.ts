@@ -8,6 +8,7 @@
  *
  * Nothing here is decided API.
  */
+import { Deferred, Effect, Stream } from 'effect';
 import {
   httpLink,
   link,
@@ -16,7 +17,6 @@ import {
   type OperationStream,
   type TrpcLink,
 } from '@trpc12/trpc/client';
-import { Deferred, Effect, Stream } from 'effect';
 
 /** What a response-providing link reports for a call. */
 export interface ResponseMeta {

@@ -151,7 +151,8 @@ export interface BatchCall {
  * @stability stable
  */
 export type BatchLine =
-  { i: number; status: number; body: unknown } | { i: number; chunk: unknown };
+  | { i: number; status: number; body: unknown }
+  | { i: number; chunk: unknown };
 
 /**
  * SSE event names. A subscription event with deferred values (`Promise`s,

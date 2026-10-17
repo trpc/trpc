@@ -36,7 +36,7 @@ import {
   isJsonContentType,
   PROTOCOL_VERSION,
 } from '../internal/protocol.ts';
-import { httpApps, type FetchHandler } from '../server/fetch.ts';
+import { type FetchHandler, httpApps } from '../server/fetch.ts';
 import { socketCores, type WebSocketLike } from '../server/socket.ts';
 import { isUpgrade, upgradeTo } from '../server/upgrade.ts';
 

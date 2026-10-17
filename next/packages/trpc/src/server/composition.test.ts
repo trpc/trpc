@@ -1,24 +1,24 @@
 import {
   createTrpcClient,
   httpLink,
-  routerType,
   safe,
+  routerType,
 } from '@trpc12/trpc/client';
 import {
+  type AnyRouter,
   createRouterClient,
   error,
   initTrpc,
   mergeRouters,
   middleware,
-  type AnyRouter,
   type inferRouterContext,
   type inferRouterInputs,
   type inferRouterOutputs,
 } from '@trpc12/trpc/server';
 import { Context, Effect } from 'effect';
+import { createTestServer } from '../fixtures/server.ts';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
-import { createTestServer } from '../fixtures/server.ts';
 
 // --- a plugin package: its own `t`, whose ctx is what it requires --------------------
 

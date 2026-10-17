@@ -15,11 +15,12 @@ import {
   SubscriptionObserver,
   type SubscriptionResult,
 } from '@trpc12/tanstack-query';
+import superjson from 'superjson';
 import {
   createTrpcClient,
   localLink,
-  routerType,
   type ClientError,
+  routerType,
 } from '@trpc12/trpc/client';
 import {
   createSerializer,
@@ -30,7 +31,6 @@ import {
   type InputValidationErrorData,
   type TrpcError,
 } from '@trpc12/trpc/server';
-import superjson from 'superjson';
 import { expect, expectTypeOf, test, vi } from 'vite-plus/test';
 import { appRouter, createApp, db, sleep, type Post } from './fixtures/app.ts';
 

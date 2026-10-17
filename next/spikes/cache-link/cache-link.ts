@@ -11,6 +11,7 @@
  * suspending once settled, sorts input keys before hashing them, and shares
  * the parts of a refetched value that didn't change (`./share.ts`).
  */
+import { Effect, Option, Stream } from 'effect';
 import {
   link,
   type AnyTrpcError,
@@ -18,7 +19,6 @@ import {
   type TrpcLink,
 } from '@trpc12/trpc/client';
 import { createSerializer } from '@trpc12/trpc/serializer';
-import { Effect, Option, Stream } from 'effect';
 import {
   fulfilled,
   replaceEqualDeep,

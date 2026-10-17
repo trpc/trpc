@@ -1,5 +1,3 @@
-import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
-import { call, initTrpc } from '@trpc12/trpc/server';
 import {
   convertToModelMessages,
   generateText,
@@ -13,6 +11,8 @@ import {
   type UIMessage,
 } from 'ai';
 import { MockLanguageModelV4 } from 'ai/test';
+import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import { call, initTrpc } from '@trpc12/trpc/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
 import { createTestServer } from '../../packages/trpc/src/fixtures/server.ts';

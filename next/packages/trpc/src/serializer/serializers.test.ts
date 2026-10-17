@@ -1,3 +1,5 @@
+import * as devalue from 'devalue';
+import superjson from 'superjson';
 import {
   createTrpcClient,
   getClientSerializer,
@@ -7,14 +9,12 @@ import {
   wsLink,
   type Deserialized,
 } from '@trpc12/trpc/client';
+import { createRouterClient, initTrpc, TrpcError } from '@trpc12/trpc/server';
 import {
   createSerializer,
   createSyncSerializer,
   type JsonOf,
 } from '@trpc12/trpc/serializer';
-import { createRouterClient, initTrpc, TrpcError } from '@trpc12/trpc/server';
-import * as devalue from 'devalue';
-import superjson from 'superjson';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
 import { createTestServer } from '../fixtures/server.ts';

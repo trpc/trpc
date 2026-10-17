@@ -1,4 +1,5 @@
 import { defineRule } from '@oxlint/plugins';
+
 import {
   isInsideBroadEffectHandler,
   isTagMember,

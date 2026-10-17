@@ -4,11 +4,13 @@
  */
 import { createServer } from 'node:http';
 import { NodeHttpServer } from '@effect/platform-node';
+import { Effect, Layer, ManagedRuntime } from 'effect';
+import { HttpServer } from 'effect/http';
 import {
   createTrpcClient,
   httpLink,
-  routerType,
   safe,
+  routerType,
 } from '@trpc12/trpc/client';
 import { serve } from '@trpc12/trpc/http';
 import {
@@ -17,8 +19,6 @@ import {
   initTrpc,
   tracked,
 } from '@trpc12/trpc/server';
-import { Effect, Layer, ManagedRuntime } from 'effect';
-import { HttpServer } from 'effect/http';
 import { z } from 'zod';
 
 // --- server --------------------------------------------------------------------------

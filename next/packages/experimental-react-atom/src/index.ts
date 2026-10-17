@@ -19,6 +19,16 @@
  * @module
  */
 import {
+  Duration,
+  Layer,
+  Schema,
+  SchemaTransformation,
+  type Cause,
+  type Effect,
+  type Stream,
+} from 'effect';
+import { AsyncResult, Atom, Reactivity } from 'effect/reactivity';
+import {
   createTrpcClient,
   getClientSerializer,
   type LinksContext,
@@ -34,16 +44,6 @@ import {
   type AnySerializer,
   type SerializeReturn,
 } from '@trpc12/trpc/serializer';
-import {
-  Duration,
-  Layer,
-  Schema,
-  SchemaTransformation,
-  type Cause,
-  type Effect,
-  type Stream,
-} from 'effect';
-import { AsyncResult, Atom, Reactivity } from 'effect/reactivity';
 
 /** Keys use danSON, so inputs with `Date`s and `Map`s key apart. */
 const keySerializer = createSerializer();
@@ -54,7 +54,8 @@ const keySerializer = createSerializer();
  * @stability experimental
  */
 export type ReactivityKeys =
-  ReadonlyArray<unknown> | Readonly<Record<string, ReadonlyArray<unknown>>>;
+  | ReadonlyArray<unknown>
+  | Readonly<Record<string, ReadonlyArray<unknown>>>;
 
 /**
  * Options for a query atom. They are part of its identity: the same input
@@ -121,7 +122,9 @@ export type DecorateAtomProcedure<P> = P extends {
  */
 export type AtomProcedures<C> = {
   [K in keyof C]: C[K] extends
-    { query: unknown } | { mutate: unknown } | { subscribe: unknown }
+    | { query: unknown }
+    | { mutate: unknown }
+    | { subscribe: unknown }
     ? DecorateAtomProcedure<C[K]>
     : AtomProcedures<C[K]>;
 };

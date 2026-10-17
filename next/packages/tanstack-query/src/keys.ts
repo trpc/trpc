@@ -8,7 +8,11 @@ import { hashKey, skipToken } from '@tanstack/query-core';
  * @stability stable
  */
 export type TrpcQueryKeyType =
-  'query' | 'infinite' | 'streamed' | 'live' | 'mutation';
+  | 'query'
+  | 'infinite'
+  | 'streamed'
+  | 'live'
+  | 'mutation';
 
 /**
  * A tRPC query key: `[['post', 'byId'], { input, type }]`. The path is an

@@ -23,7 +23,6 @@ import {
   TrpcError,
   type AnyTrpcError,
 } from '../internal/error.ts';
-import { accepts, encodeRecord } from '../internal/frames.ts';
 import {
   blobHeaders,
   CONTENT_TYPE,
@@ -38,6 +37,7 @@ import {
 } from '../internal/protocol.ts';
 import type { MaybePromise, ProcedureType } from '../internal/types.ts';
 import { jsonSerializer, type AnySerializer } from '../serializer/index.ts';
+import { accepts, encodeRecord } from '../internal/frames.ts';
 import type { Chunk, Frame } from '../serializer/stream.ts';
 import {
   consumedError,
@@ -46,12 +46,12 @@ import {
   responseOptions,
 } from './body.ts';
 import { createHandlerCore } from './core.ts';
-import { emitEvents } from './events.ts';
 import {
   createResponseHandle,
   normalizeCause,
   unexpectedError,
 } from './execute.ts';
+import { emitEvents } from './events.ts';
 import { frameSinks, type FrameSink } from './frame-sink.ts';
 import type { AnyProcedure } from './procedure.ts';
 import {

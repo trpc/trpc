@@ -1,15 +1,15 @@
+import { Schema } from 'effect';
 import { createTrpcClient, safe } from '@trpc12/trpc/client';
 import { toContract } from '@trpc12/trpc/contract';
 import {
   createOpenApiHandler,
   generateContractFromOpenApi,
   generateOpenApi,
-  openapi,
   openApiLink,
+  openapi,
   type OpenApiSource,
 } from '@trpc12/trpc/openapi';
 import { error, initTrpc, tracked } from '@trpc12/trpc/server';
-import { Schema } from 'effect';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { appContract } from '../fixtures/contract.ts';
 

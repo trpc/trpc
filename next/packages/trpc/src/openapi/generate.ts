@@ -131,7 +131,8 @@ const withoutProperties = (
 ): JsonSchema | undefined => {
   if (!schema || typeof schema !== 'object' || keys.length === 0) return schema;
   const properties = schema['properties'] as
-    Record<string, JsonSchema> | undefined;
+    | Record<string, JsonSchema>
+    | undefined;
   if (!properties) return schema;
   const rest = Object.fromEntries(
     Object.entries(properties).filter(([k]) => !keys.includes(k)),
@@ -153,7 +154,8 @@ const objectProperties = (
   const parts = [schema, ...((schema['allOf'] as Schema[] | undefined) ?? [])];
   return parts.flatMap((part) => {
     const properties = part['properties'] as
-      Record<string, JsonSchema> | undefined;
+      | Record<string, JsonSchema>
+      | undefined;
     const required = (part['required'] as string[] | undefined) ?? [];
     return Object.entries(properties ?? {}).map(
       ([name, s]): [string, JsonSchema, boolean] => [

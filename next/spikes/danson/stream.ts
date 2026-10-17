@@ -34,7 +34,9 @@ const isPromiseLike = (v: unknown): v is PromiseLike<unknown> =>
 /** Every deferred value becomes a stream of `[status, value]` pairs. */
 function sourceOf(
   value:
-    ReadableStream<unknown> | AsyncIterable<unknown> | PromiseLike<unknown>,
+    | ReadableStream<unknown>
+    | AsyncIterable<unknown>
+    | PromiseLike<unknown>,
 ): Stream.Stream<[Status, unknown]> {
   if (value instanceof ReadableStream || isAsyncIterable(value)) {
     const iterable =

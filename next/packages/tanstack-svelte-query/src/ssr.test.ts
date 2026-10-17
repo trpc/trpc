@@ -3,8 +3,8 @@ import {
   createTrpcQueryUtils,
   hydrationOptions,
 } from '@trpc12/tanstack-svelte-query';
-import { createRouterClient } from '@trpc12/trpc/server';
 import { render } from 'svelte/server';
+import { createRouterClient } from '@trpc12/trpc/server';
 import { expect, test } from 'vite-plus/test';
 import {
   appRouter,

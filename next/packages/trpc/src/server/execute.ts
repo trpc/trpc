@@ -20,8 +20,8 @@ import {
 import { errorConstructors, isDeclaredError } from './declared.ts';
 import { frameSinks } from './frame-sink.ts';
 import type { MiddlewareOpts, ResponseHandle } from './middleware.ts';
-import type { AnyProcedure, ProcedureInternals } from './procedure.ts';
 import { Response as ResponseKey } from './response.ts';
+import type { AnyProcedure, ProcedureInternals } from './procedure.ts';
 import {
   inputError,
   isSchema,

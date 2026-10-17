@@ -1,5 +1,5 @@
-import { call, error, initTrpc, isTrpcError } from '@trpc12/trpc/server';
 import { Schema } from 'effect';
+import { call, error, initTrpc, isTrpcError } from '@trpc12/trpc/server';
 import { expect, test } from 'vite-plus/test';
 
 // Stand-ins with the shapes of `firebase-functions/v2/https`, so the recipe in docs/platforms.md runs as written.

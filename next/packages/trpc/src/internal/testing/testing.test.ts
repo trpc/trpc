@@ -1,10 +1,10 @@
 import { createServer } from 'node:http';
 import { NodeHttpServer } from '@effect/platform-node';
 import { expect, it } from '@effect/vitest';
+import { Effect, Layer } from 'effect';
 import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
 import { TestServer } from '@trpc12/trpc/internal/testing';
 import { initTrpc } from '@trpc12/trpc/server';
-import { Effect, Layer } from 'effect';
 import { z } from 'zod';
 
 const t = initTrpc();

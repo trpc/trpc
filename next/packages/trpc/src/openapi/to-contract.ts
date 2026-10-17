@@ -156,7 +156,8 @@ function declaredErrors(
     const raw = response.content?.['application/json']?.schema;
     const schema = raw ? resolve(raw) : undefined;
     const properties = schema?.['properties'] as
-      Record<string, JsonSchema.JsonSchema> | undefined;
+      | Record<string, JsonSchema.JsonSchema>
+      | undefined;
     const code = properties?.['code']?.['const'];
     if (typeof code !== 'string' || code === 'BAD_REQUEST') return [];
     return [{ code, status: Number(status), data: properties?.['data'] }];

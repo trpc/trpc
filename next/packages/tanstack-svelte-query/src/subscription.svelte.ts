@@ -1,9 +1,9 @@
+import { untrack } from 'svelte';
 import {
   SubscriptionObserver,
   type SubscriptionStatus,
   type TrpcSubscriptionOptions,
 } from '@trpc12/tanstack-query';
-import { untrack } from 'svelte';
 
 /**
  * What {@link createSubscription} returns. The fields are reactive getters,

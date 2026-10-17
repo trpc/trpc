@@ -1,3 +1,5 @@
+import { Effect, Stream } from 'effect';
+import { HttpServerResponse } from 'effect/http';
 import { createTrpcClient, routerType, safe } from '@trpc12/trpc/client';
 import { toContract } from '@trpc12/trpc/contract';
 import {
@@ -6,8 +8,6 @@ import {
   openApiLink,
 } from '@trpc12/trpc/openapi';
 import { error, initTrpc, lazy, tracked } from '@trpc12/trpc/server';
-import { Effect, Stream } from 'effect';
-import { HttpServerResponse } from 'effect/http';
 import { expect, test, vi } from 'vite-plus/test';
 import { z } from 'zod';
 

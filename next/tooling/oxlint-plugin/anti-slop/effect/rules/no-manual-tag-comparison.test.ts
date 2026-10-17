@@ -1,5 +1,6 @@
 import { RuleTester } from 'oxlint/plugins-dev';
 import { describe, it } from 'vite-plus/test';
+
 import { noManualTagComparisonRule } from './no-manual-tag-comparison.ts';
 
 RuleTester.describe = describe;

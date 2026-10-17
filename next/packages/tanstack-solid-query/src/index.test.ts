@@ -18,8 +18,8 @@ import { expect, expectTypeOf, test } from 'vite-plus/test';
 import {
   createApp,
   db,
-  type AppClient,
   type Post,
+  type AppClient,
 } from '../../tanstack-query/src/fixtures/app.ts';
 import {
   click,

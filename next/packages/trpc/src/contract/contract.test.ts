@@ -1,15 +1,16 @@
+import { Context, Effect, Schema } from 'effect';
 import {
   createTrpcClient,
   httpLink,
-  routerType,
   safe,
   type TrpcClient,
+  routerType,
 } from '@trpc12/trpc/client';
 import {
+  type AnyContractRouter,
   contract,
   isContractProcedure,
   toContract,
-  type AnyContractRouter,
   type inferContract,
 } from '@trpc12/trpc/contract';
 import { openapi } from '@trpc12/trpc/openapi';
@@ -19,10 +20,9 @@ import {
   tracked,
   type TrackedEnvelope,
 } from '@trpc12/trpc/server';
-import { Context, Effect, Schema } from 'effect';
+import { createTestServer } from '../fixtures/server.ts';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { appContract, type AppContract } from '../fixtures/contract.ts';
-import { createTestServer } from '../fixtures/server.ts';
 
 interface Ctx {
   user: string | null;

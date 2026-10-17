@@ -18,18 +18,6 @@
  * @module
  */
 import {
-  createTrpcQueryUtils,
-  SubscriptionObserver,
-  type SourceContext,
-  type SourceLinks,
-  type SourceRouter,
-  type SubscriptionStatus,
-  type TrpcContextOptions,
-  type TrpcQueryUtilsFor,
-  type TrpcSubscriptionOptions,
-} from '@trpc12/tanstack-query';
-import type { ChainTypes, RouterOf, TrpcClient } from '@trpc12/trpc/client';
-import {
   computed,
   getCurrentInstance,
   inject,
@@ -44,6 +32,18 @@ import {
   type MaybeRefOrGetter,
   type Plugin,
 } from 'vue';
+import type { ChainTypes, RouterOf, TrpcClient } from '@trpc12/trpc/client';
+import {
+  createTrpcQueryUtils,
+  SubscriptionObserver,
+  type SubscriptionStatus,
+  type TrpcQueryUtilsFor,
+  type TrpcSubscriptionOptions,
+  type SourceContext,
+  type SourceLinks,
+  type SourceRouter,
+  type TrpcContextOptions,
+} from '@trpc12/tanstack-query';
 
 export * from '@trpc12/tanstack-query';
 

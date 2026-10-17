@@ -1,6 +1,6 @@
 import { createCollection } from '@tanstack/db';
-import { QueryClient } from '@tanstack/query-core';
 import { queryCollectionOptions } from '@tanstack/query-db-collection';
+import { QueryClient } from '@tanstack/query-core';
 import { expect, expectTypeOf, test, vi } from 'vite-plus/test';
 import { createApp, db, type Post } from './fixtures/app.ts';
 

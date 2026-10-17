@@ -1,6 +1,7 @@
 import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { NodeHttpServer } from '@effect/platform-node';
+import { Context, Effect, Exit, Layer, Schema, Scope } from 'effect';
 import {
   createTrpcClient,
   httpLink,
@@ -13,20 +14,19 @@ import {
   createOpenApiHandler,
   generateOpenApi,
   openapi,
+  type OpenApiErrorBody,
   openApiLink,
   openApiReference,
   parseBracketNotation,
   toBracketNotation,
-  type OpenApiErrorBody,
 } from '@trpc12/trpc/openapi';
 import {
+  type AnyRouter,
   createFetchHandler,
   initTrpc,
   tracked,
-  type AnyRouter,
   type TrackedEnvelope,
 } from '@trpc12/trpc/server';
-import { Context, Effect, Exit, Layer, Schema, Scope } from 'effect';
 import { expect, expectTypeOf, test, vi } from 'vite-plus/test';
 import { z } from 'zod';
 import { appContract } from '../fixtures/contract.ts';

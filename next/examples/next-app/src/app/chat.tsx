@@ -1,5 +1,4 @@
 'use client';
-
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useTrpc } from '../trpc/client.tsx';

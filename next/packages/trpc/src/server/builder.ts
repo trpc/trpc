@@ -249,24 +249,26 @@ export type SplitStream<R> =
 
 type OutputConstraint<TDef extends BuilderDef> = TDef['outputIn'] extends Unset
   ? unknown
-  : | MaybePromise<ResultOf<TDef['outputIn']> | AnyTrpcError>
-    | Effect.Effect<ResultOf<TDef['outputIn']> | AnyTrpcError, any, any>;
+  :
+      | MaybePromise<ResultOf<TDef['outputIn']> | AnyTrpcError>
+      | Effect.Effect<ResultOf<TDef['outputIn']> | AnyTrpcError, any, any>;
 
 type EventConstraint<TDef extends BuilderDef> = TDef['outputIn'] extends Unset
   ? unknown
-  : | AsyncIterable<
-        | EventOutput<TDef['outputIn']>
-        | TrackedEnvelope<EventOutput<TDef['outputIn']>>,
-        any,
-        any
-      >
-    | Stream.Stream<
-        | EventOutput<TDef['outputIn']>
-        | TrackedEnvelope<EventOutput<TDef['outputIn']>>,
-        any,
-        any
-      >
-    | AnyTrpcError;
+  :
+      | AsyncIterable<
+          | EventOutput<TDef['outputIn']>
+          | TrackedEnvelope<EventOutput<TDef['outputIn']>>,
+          any,
+          any
+        >
+      | Stream.Stream<
+          | EventOutput<TDef['outputIn']>
+          | TrackedEnvelope<EventOutput<TDef['outputIn']>>,
+          any,
+          any
+        >
+      | AnyTrpcError;
 
 /**
  * A query or mutation that streams needs `.output(stream(Item))`: a plain
@@ -566,7 +568,8 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
         outputIn: OutputIn<$S>;
         outputOut: OutputOut<$S>;
         requires:
-          TDef['requires'] | Exclude<OutputServices<$S>, TDef['provided']>;
+          | TDef['requires']
+          | Exclude<OutputServices<$S>, TDef['provided']>;
       }
     >
   >;
@@ -757,7 +760,8 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
         shorts: TDef['shorts'] | $Plugin['shorts'];
         provided: TDef['provided'] | $Plugin['provided'];
         requires:
-          TDef['requires'] | Exclude<$Plugin['requires'], TDef['provided']>;
+          | TDef['requires']
+          | Exclude<$Plugin['requires'], TDef['provided']>;
       }
     >
   >;

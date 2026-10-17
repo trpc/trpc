@@ -1,3 +1,4 @@
+import { Effect, Schema, Stream } from 'effect';
 import {
   createTrpcClient,
   dedupeLink,
@@ -12,10 +13,9 @@ import {
 } from '@trpc12/trpc/client';
 import { createEffectClient } from '@trpc12/trpc/effect';
 import { initTrpc } from '@trpc12/trpc/server';
-import { Effect, Schema, Stream } from 'effect';
+import { createTestServer } from '../../fixtures/server.ts';
 import { expect, expectTypeOf, test, vi } from 'vite-plus/test';
 import { z } from 'zod';
-import { createTestServer } from '../../fixtures/server.ts';
 
 const t = initTrpc();
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));

@@ -28,13 +28,13 @@
  * @module
  */
 import type { RouterType } from '../client/types.ts';
+import type { AnyTrpcError } from '../internal/error.ts';
 import {
   assertLoaded,
   flattenRoutes,
   procedureJson,
   scopedRoute,
 } from '../internal/describe.ts';
-import type { AnyTrpcError } from '../internal/error.ts';
 import type { JsonSchema } from '../internal/json-schema.ts';
 import type {
   Merge,
@@ -45,13 +45,7 @@ import type {
   Unset,
   Value,
 } from '../internal/types.ts';
-import { routeOf, type Route } from '../openapi/routes.ts';
-import type {
-  BuilderDef,
-  DeclaredErrors,
-  ErrorMapInput,
-  ProcedureBuilder,
-} from '../server/builder.ts';
+import type { DeclaredErrors, ErrorMapInput } from '../server/builder.ts';
 import {
   isProcedure,
   mergeMeta,
@@ -63,7 +57,8 @@ import {
   type ProcedureDefOf,
   type Step,
 } from '../server/procedure.ts';
-import type { Unlazy } from '../server/router.ts';
+import { routeOf, type Route } from '../openapi/routes.ts';
+import type { BuilderDef, ProcedureBuilder } from '../server/builder.ts';
 import type {
   AnySchema,
   InOf,
@@ -80,6 +75,7 @@ import type {
   StreamedOutput,
 } from '../server/stream-schema.ts';
 import type { TrackedEnvelope } from '../server/tracked.ts';
+import type { Unlazy } from '../server/router.ts';
 
 export type { JsonSchema } from '../internal/json-schema.ts';
 

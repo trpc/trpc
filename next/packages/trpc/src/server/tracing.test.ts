@@ -1,19 +1,19 @@
+import { Effect, Layer, Option, References, Stream, Tracer } from 'effect';
 import {
   createTrpcClient,
   httpLink,
   link,
   localLink,
-  routerType,
   wsLink,
+  routerType,
 } from '@trpc12/trpc/client';
 import { createEffectClient } from '@trpc12/trpc/effect';
 import {
+  type AnyRouter,
   createFetchHandler,
   error,
   initTrpc,
-  type AnyRouter,
 } from '@trpc12/trpc/server';
-import { Effect, Layer, Option, References, Stream, Tracer } from 'effect';
 import { expect, test } from 'vite-plus/test';
 import { z } from 'zod';
 import { createTestServer } from '../fixtures/server.ts';

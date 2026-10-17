@@ -1,17 +1,17 @@
+import { Context, Effect, Exit, Layer, Option, Stream, Tracer } from 'effect';
 import { httpLink, routerType, type ClientError } from '@trpc12/trpc/client';
 import { createEffectClient } from '@trpc12/trpc/effect';
 import {
+  type AnyRouter,
   createFetchHandler,
   createRouterClient,
   error,
   initTrpc,
-  type AnyRouter,
   type TrpcError,
 } from '@trpc12/trpc/server';
-import { Context, Effect, Exit, Layer, Option, Stream, Tracer } from 'effect';
+import { createTestServer } from '../fixtures/server.ts';
 import { expect, expectTypeOf, test, vi } from 'vite-plus/test';
 import { z } from 'zod';
-import { createTestServer } from '../fixtures/server.ts';
 
 interface Post {
   id: string;

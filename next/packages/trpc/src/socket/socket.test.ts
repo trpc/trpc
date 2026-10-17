@@ -1,10 +1,12 @@
 import { connect, createServer, type AddressInfo } from 'node:net';
 import { NodeSocket, NodeSocketServer } from '@effect/platform-node';
+import { Context, Effect, Exit, Layer, Scope } from 'effect';
+import { SocketServer } from 'effect/socket';
 import {
   createTrpcClient,
+  safe,
   experimental_socketLink,
   routerType,
-  safe,
 } from '@trpc12/trpc/client';
 import {
   createFetchHandler,
@@ -14,8 +16,6 @@ import {
   type CreateContextOpts,
 } from '@trpc12/trpc/server';
 import { serveSocket } from '@trpc12/trpc/socket';
-import { Context, Effect, Exit, Layer, Scope } from 'effect';
-import { SocketServer } from 'effect/socket';
 import { expect, test, vi } from 'vite-plus/test';
 import { z } from 'zod';
 

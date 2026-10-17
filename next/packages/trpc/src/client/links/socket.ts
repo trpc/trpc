@@ -1,3 +1,4 @@
+import { decodeMessage } from '../../internal/frames.ts';
 import {
   Data,
   Deferred,
@@ -17,21 +18,20 @@ import {
   TrpcError,
   type AnyTrpcError,
 } from '../../internal/error.ts';
-import { decodeMessage } from '../../internal/frames.ts';
-import { decodeLines, encodeLine } from '../../internal/lines.ts';
 import {
   PROTOCOL_VERSION,
   type ClientMessage,
   type ServerMessage,
 } from '../../internal/protocol.ts';
+import { decodeLines, encodeLine } from '../../internal/lines.ts';
 import type { FormOfOptions, MaybePromise } from '../../internal/types.ts';
 import { jsonSerializer, type AnySerializer } from '../../serializer/index.ts';
 import type { MessagePortLike } from '../../server/socket.ts';
 import {
   withSerializer,
-  type LinkDecl,
   type Operation,
   type OperationStream,
+  type LinkDecl,
   type TrpcLink,
 } from '../link.ts';
 import { makeDeferredDecoder, parseError, serializeInput } from './events.ts';
@@ -123,7 +123,8 @@ interface SocketTransport {
   name: string;
   connect(): Promise<SocketConnection>;
   reconnect:
-    { attempts: number; delayMs: (attempt: number) => number } | undefined;
+    | { attempts: number; delayMs: (attempt: number) => number }
+    | undefined;
   idleMs: number | undefined;
   keepAlive: { intervalMs: number; timeoutMs: number } | undefined;
   /** Ask the server for binary messages. */

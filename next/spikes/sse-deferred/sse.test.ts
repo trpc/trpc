@@ -1,13 +1,13 @@
 import { createServer, type ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
+import { parseAsync, stringifyAsync } from 'devalue-async';
+import { EventSource } from 'undici';
+import { Effect, Queue, Stream } from 'effect';
 import {
   createSerializer,
   jsonSerializer,
   type AnySerializer,
 } from '@trpc12/trpc/serializer';
-import { parseAsync, stringifyAsync } from 'devalue-async';
-import { Effect, Queue, Stream } from 'effect';
-import { EventSource } from 'undici';
 import { expect, test } from 'vite-plus/test';
 import {
   createReplay,

@@ -5,7 +5,7 @@ import {
   openapi,
   openApiLink,
 } from '@trpc12/trpc/openapi';
-import { initTrpc, type AnyRouter } from '@trpc12/trpc/server';
+import { type AnyRouter, initTrpc } from '@trpc12/trpc/server';
 import { expect, test } from 'vite-plus/test';
 import { z } from 'zod';
 

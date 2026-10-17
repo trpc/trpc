@@ -17,6 +17,9 @@ import {
   createTrpcContext,
   useSubscription,
 } from '@trpc12/tanstack-react-query';
+import { Suspense, useContext, useState, type ReactNode } from 'react';
+import { createRoot, hydrateRoot } from 'react-dom/client';
+import { renderToString } from 'react-dom/server';
 import {
   createTrpcClient,
   httpLink,
@@ -28,18 +31,15 @@ import {
   type TrpcClient,
 } from '@trpc12/trpc/client';
 import { createRouterClient } from '@trpc12/trpc/server';
-import { Suspense, useContext, useState, type ReactNode } from 'react';
-import { createRoot, hydrateRoot } from 'react-dom/client';
-import { renderToString } from 'react-dom/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import {
   appRouter,
   createApp,
   db,
-  serializer,
-  type AppClient,
   type AppRouter,
   type Post,
+  type AppClient,
+  serializer,
 } from '../../tanstack-query/src/fixtures/app.ts';
 import {
   click,
