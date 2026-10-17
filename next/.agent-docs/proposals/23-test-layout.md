@@ -239,11 +239,11 @@ import { createApp } from '../../tanstack-query/src/fixtures/app.ts';
 > Human: tick an answer per question (or write your own), add notes, and set **Status** to `accepted`.
 > The agent then records it in `../decisions/` and links back here.
 
-- **Q23.1:** [ ] A · [ ] B
+- **Q23.1:** [x] A · [ ] B → [test-layout](../decisions/test-layout.md)
 - **Q23.2:** [ ] A · [ ] B
-- **Q23.3:** [ ] A · [ ] B · [ ] C
-- **Q23.4:** [ ] A · [ ] B
-- **Q23.5:** [ ] A · [ ] B
+- **Q23.3:** [x] A · [ ] B · [ ] C → [test-layout](../decisions/test-layout.md)
+- **Q23.4:** [x] A · [ ] B → [test-layout](../decisions/test-layout.md)
+- **Q23.5:** `recipes stay in test/integration for now; the rest move to their packages` → [test-layout](../decisions/test-layout.md)
 - **Q23.6:** [ ] A · [ ] B
-- **Q23.7:** [ ] A · [ ] B
+- **Q23.7:** [ ] A · [x] B → [test-layout](../decisions/test-layout.md)
 - **Notes:**

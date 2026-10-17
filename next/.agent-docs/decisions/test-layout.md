@@ -1,15 +1,16 @@
-# Tests live beside the code they show (agent)
+# Tests live beside the code they show (human)
 
 - Human, 2026-10-17: "tests should be contextual and sit in places close to the code their testing", "i don't think /next/test should exist at all", "i like reading tests as a sort of documentation on how to use stuff" and "you shouldn't copy what "old" trpc does in terms of testing but suggest a structure and rules".
-- (agent, tentative) The proposal's starred picks, until the human answers [proposal 23](../proposals/23-test-layout.md):
-  - Q23.1: tests sit beside the module, `src/<area>/<module>.test.ts`.
-  - Q23.2: `<module>.test.ts` reads as a guide; edge cases go in `<module>-edges.test.ts`.
-  - Q23.3: a fixture shared across packages lives in the package the others build on (`tanstack-query/src/fixtures/`), imported by relative path.
-  - Q23.4: the Bun smoke is `packages/trpc/src/http/serve.bun.test.ts`, run by `bun test` and skipped by Vitest.
-  - Q23.5: the portability check moves to `tooling/portability`; the recipes move to `examples/integrations/`.
-  - Q23.6: two tsconfigs per package, `tsconfig.json` for the library and `tsconfig.test.json` for tests and fixtures.
-  - Q23.7: docs sections link to the test that proves them.
+- Human, 2026-10-17, answering [proposal 23](../proposals/23-test-layout.md):
+  - Q23.1: "1a". Tests sit beside the module, `src/<area>/<module>.test.ts`.
+  - Q23.3: "3b". A fixture shared across packages stays unpublished in the package the others build on (`packages/tanstack-query/src/fixtures/`), imported by relative path. Shared test servers stay in `@trpc12/trpc/internal/testing` ([`testing-helpers-internal.md`](./testing-helpers-internal.md)).
+  - Q23.4: "4a". The Bun smoke becomes `packages/trpc/src/http/serve.bun.test.ts`, run by `bun test` and skipped by Vitest.
+  - Q23.5: "for now things like can just live in integration in tests as they do now, but a lot of them should move to respective packages". Recipes and feature showcases not tied to one package stay in `test/integration/`; the rest move to their packages. Example apps with Vitest tests may take some later, since coverage counts `packages/*/src/**` whatever imports it.
+  - Q23.7: "7b - i don't care about docs at all right now. tests and code are docs". Docs don't link to tests.
+  - Order: "start with tanstack ones".
+- (agent) Q23.2, left to the agent ("feel free"): `<module>.test.ts` reads as a guide, simplest use first; edge cases and regressions go in `<module>-edges.test.ts`.
+- (agent) Q23.6, left to the agent ("pick something"): two tsconfigs per package. `tsconfig.json` covers all of `src/`, tests and fixtures included, with Node's types, so editors type test files; `tsconfig.lib.json` checks the published files alone, without Node's types and with `isolatedDeclarations`, and is the one the build reads. `typecheck` runs both.
 - Why: a reader who opens a package sees how to use it; a test moves, and is deleted, with its module.
 - Lost: one `test/` tree to run on its own; test-only dependencies kept out of library packages.
-- Open: awaiting the human's answers to proposal 23; no test has moved yet.
-- Lives in: `proposals/23-test-layout.md`.
+- Open: the portability check (`test/portability`) stays put until it's moved with the rest.
+- Lives in: `packages/*/src/**/*.test.ts`, `packages/*/src/**/fixtures/`, `packages/*/tsconfig.lib.json`, `vite.config.ts` (projects, coverage), `test/integration/`.
