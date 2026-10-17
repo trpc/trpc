@@ -229,6 +229,22 @@ test('invalidateOnMutationLink invalidates every query by default, until the sto
   expect(db.calls).toEqual(['byId:1', 'rename:1', 'byId:1', 'rename:1']);
 });
 
+test('standardLinks revalidates after a mutation, narrowed by invalidates', async () => {
+  const trpc = make(
+    standardLinks({ staleTime: 60_000, invalidates: () => 'post.byId' }),
+  );
+  const post = trpc.post.byId.query({ id: '1' });
+  const list = trpc.post.list.query({ limit: 2, order: 'asc' });
+  await Promise.all([post, list]);
+  const unmount = [post, list].map((p) =>
+    trpc.store.mount(trpc.store.entryOf(p)!),
+  );
+  await trpc.post.rename.mutate({ id: '1', title: 'Renamed' });
+  expect(trpc.post.byId.getData({ id: '1' })?.title).toBe('Renamed');
+  expect(db.calls).toEqual(['byId:1', 'list', 'rename:1', 'byId:1']);
+  for (const u of unmount) u();
+});
+
 test('the server keeps entries; dehydrate and hydrate carry them with the serializer', async () => {
   const server = make([], { isServer: true });
   await server.post.byId.query({ id: '1' });

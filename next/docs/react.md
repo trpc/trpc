@@ -66,9 +66,9 @@ Without links, the cache does the least: an entry lives while a request is in fl
 | `refetchOnWindowFocusLink()`       | Refetches stale, mounted queries when the page is visible again                           | yes                  |
 | `refetchOnReconnectLink()`         | The same when the browser comes back online                                               | yes                  |
 | `retryLink()` (core)               | Retries failed queries 3 times                                                            | yes                  |
-| `invalidateOnMutationLink()`       | After a mutation, invalidates queries and resolves once the mounted ones have refetched   | no                   |
+| `invalidateOnMutationLink()`       | After a mutation, invalidates queries and resolves once the mounted ones have refetched   | yes                  |
 
-`standardLinks()` matches TanStack Query's defaults. Stale data is returned at once and refetched in the background.
+`standardLinks()` matches TanStack Query's defaults, plus one: like a router after an action, every mutation invalidates queries (all of them, unless `invalidates` narrows it). Stale data is returned at once and refetched in the background.
 
 Query links are tRPC links: they sit in the same `links` array, before the link that sends. Write your own with `withQueryFeature(link, feature)`.
 

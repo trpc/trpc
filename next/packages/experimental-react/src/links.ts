@@ -213,7 +213,8 @@ export function invalidateOnMutationLink(
  * @since 0.1.0
  * @stability experimental
  */
-export interface StandardLinksOptions extends CacheLinkOptions {
+export interface StandardLinksOptions
+  extends CacheLinkOptions, InvalidateOnMutationLinkOptions {
   /** `retryLink`'s options. @default 3 retries of failed queries */
   retry?: RetryLinkOptions;
 }
@@ -229,15 +230,17 @@ export type StandardLinks = readonly [
   refetchOnMount: TrpcLink,
   refetchOnWindowFocus: TrpcLink,
   refetchOnReconnect: TrpcLink,
+  invalidateOnMutation: TrpcLink,
   retry: TrpcLink,
 ];
 
 /**
  * The links that make the client behave like TanStack Query's defaults:
  * a cache kept 5 minutes, structural sharing, refetching stale data on
- * mount, window focus and reconnect, and 3 retries of failed queries.
- * Spread it before the link that sends; pick single links instead for
- * less.
+ * mount, window focus and reconnect, and 3 retries of failed queries. Like
+ * a router after an action, it also invalidates queries after each
+ * mutation (every query, unless `invalidates` narrows it). Spread it before
+ * the link that sends; pick single links instead for less.
  *
  * @example
  * ```ts
@@ -256,6 +259,7 @@ export function standardLinks(opts: StandardLinksOptions = {}): StandardLinks {
     refetchOnMountLink(),
     refetchOnWindowFocusLink(),
     refetchOnReconnectLink(),
+    invalidateOnMutationLink(opts),
     retryLink(opts.retry),
   ];
 }

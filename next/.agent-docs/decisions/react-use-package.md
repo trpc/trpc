@@ -11,9 +11,10 @@
   - (agent) Dedupe is part of stable promises: one promise per key in flight is one request per key, so there is no dedupe link. The core `dedupeLink()` still dedupes the plain client.
   - (agent) Without links, an entry lives only while a request is in flight or a mounted `useQuery` reads it. A mounted entry returns stale data at once and refetches in the background.
   - The links are real tRPC links, in the same `links` array before the transport: `cacheLink({ staleTime, gcTime })`, `structuralSharingLink()`, `refetchOnMountLink()`, `refetchOnWindowFocusLink()`, `refetchOnReconnectLink()`, and `invalidateOnMutationLink()`. Each registers what it adds to the cache through `withQueryFeature` (a WeakMap, like `withSerializer`); in a plain client they only pass operations through.
-  - `standardLinks()` is the standard array, matching TanStack Query's defaults: cache (5 minutes, stale at once), structural sharing, refetch on mount, focus and reconnect, and the core `retryLink()` (3 retries).
+  - `standardLinks()` is the standard array, matching TanStack Query's defaults: cache (5 minutes, stale at once), structural sharing, refetch on mount, focus and reconnect, and the core `retryLink()` (3 retries). It also holds `invalidateOnMutationLink()`, below.
   - (agent, tentative) `refetchOnMountLink()` skips the first mount after a `.query()` call that started a request. Otherwise every loader's request is sent twice under `staleTime: 0`, TanStack's well-known double fetch.
-  - (agent, tentative) `invalidateOnMutationLink()` is opt-in, not in `standardLinks()`, because TanStack doesn't invalidate after mutations by default. It waits for the mounted queries to refetch before the mutation resolves, as raf-query's `invalidate` does, so an action stays pending until fresh data shows.
+  - Human, 2026-10-17 (decision round, whether `invalidateOnMutationLink()` belongs in `standardLinks()`): "A", then "Actually do B instead on last one". So it's in `standardLinks()`: every mutation invalidates every query, unless `standardLinks({ invalidates })` narrows it, as a router revalidates its loaders after an action. This reverses the agent's opt-in call, which followed TanStack's default.
+  - (agent) It waits for the mounted queries to refetch before the mutation resolves, as raf-query's `invalidate` does, so an action stays pending until fresh data shows.
   - Cache methods on the client: `invalidate(input?)`, `setData`, `getData` on queries, and `trpc.invalidate(prefix | predicate)`. Mutations and subscriptions are the plain client's.
   - `dehydrate(trpc)` and `hydrate(trpc, state)` carry settled queries with the links' serializer. A server's store (`isServer`, by default when there is no `window`) never drops entries, so a per-request client keeps what it rendered.
 - `@trpc12/experimental-react-atom`, built 2026-10-16 from spike D:
@@ -26,7 +27,6 @@
 - Lost:
   - A single React package: two caches to keep in step with each other and with TanStack's behavior.
   - Shipping the spikes' core hook (`request()` returning a link's promise). The React client owns its promises, so the core is untouched.
-- Open (human): whether `invalidateOnMutationLink()` belongs in `standardLinks()`. React Router-style apps revalidate after every action; TanStack doesn't.
 - Open: infinite queries, polling (`refetchInterval`), `select`, placeholder data, a devtools panel, streaming pending queries in `dehydrate`, a `useMutation` hook, and staleness timers that re-render `useQueryState` when data goes stale on its own. raf-query has most of these.
 - Open: atom-package mutations and subscriptions aren't serializable. `Hydration.dehydrate` needs a registry that keeps idle atoms (`defaultIdleTTL`) until it runs.
 - Lives in: `next/packages/experimental-react/`, `next/packages/experimental-react-atom/`, `next/test/react/`, `next/docs/react.md`, `next/tooling/oxlint-plugin/jsdoc.ts`, `next/.repos/raf-query/`; the spikes in `next/spikes/cache-link/` and `next/spikes/atom-trpc/`, and `next/.agent-docs/notes/react-use-spikes.md`.
