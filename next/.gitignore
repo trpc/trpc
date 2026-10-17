@@ -7,3 +7,4 @@ coverage
 next-env.d.ts
 .wrangler
 .generated
+*.rdb
