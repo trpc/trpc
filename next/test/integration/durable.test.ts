@@ -8,7 +8,12 @@ import {
 } from '@trpc12/trpc/client';
 import { experimental_durable } from '@trpc12/trpc/middleware';
 import { createOpenApiHandler } from '@trpc12/trpc/openapi';
-import { createFetchHandler, initTrpc, TrpcError } from '@trpc12/trpc/server';
+import {
+  call,
+  createFetchHandler,
+  initTrpc,
+  TrpcError,
+} from '@trpc12/trpc/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { createTestServer } from './fixtures/server.ts';
 
@@ -446,5 +451,68 @@ test('a streamed output keeps going into the store after the client leaves', asy
   const feed = await client.feed.mutate(undefined, { callId: 'g1' });
   expect(await settle(feed)).toEqual(expectedFeed);
   expect(runs.feed).toBe(1);
+  await handler.dispose();
+});
+
+const sharedMemory = async () => {
+  const shared = await Effect.runPromise(
+    Effect.service(Persistence.BackingPersistence).pipe(
+      Effect.provide(Persistence.layerBackingMemory),
+    ),
+  );
+  const layer = Layer.succeed(Persistence.BackingPersistence, {
+    make: (id) => shared.make(id),
+  });
+  return { shared, layer };
+};
+
+async function collect<T>(iterable: AsyncIterable<T>): Promise<T[]> {
+  const items: T[] = [];
+  for await (const item of iterable) items.push(item);
+  return items;
+}
+
+test('a streamed call joined without a frame log is a BAD_REQUEST, while it runs and once kept', async () => {
+  const { layer } = await sharedMemory();
+  let runs = 0;
+  const ticks = t.procedure
+    .input(Schema.String)
+    .use(
+      experimental_durable({
+        key: ({ input }) => String(input),
+        pollInterval: '5 millis',
+      }),
+    )
+    .mutation(async () => {
+      runs++;
+      await sleep(30);
+      return (async function* () {
+        yield 1;
+        await sleep(20);
+        yield 2;
+      })();
+    });
+  const handler = createFetchHandler({ router: { ticks }, layer });
+
+  // Without HTTP there's no frame log, so the stream isn't kept.
+  expect(await collect(await call(ticks, 'k1', { ctx: {}, layer }))).toEqual([
+    1, 2,
+  ]);
+
+  const first = post(handler, 'ticks', 'k2');
+  await sleep(10);
+  const [, joined] = await safe(call(ticks, 'k2', { ctx: {}, layer }));
+  expect(joined).toMatchObject({ code: 'BAD_REQUEST' });
+  const frames = await lines(await first);
+  expect(frames.length).toBeGreaterThan(1);
+  const [, kept] = await safe(call(ticks, 'k2', { ctx: {}, layer }));
+  expect(kept).toMatchObject({ code: 'BAD_REQUEST' });
+
+  // A second unbatched request joins it and reads the frames from the log.
+  const a = post(handler, 'ticks', 'k3');
+  await sleep(10);
+  const b = post(handler, 'ticks', 'k3');
+  expect(await lines(await b)).toEqual(await lines(await a));
+  expect(runs).toBe(3);
   await handler.dispose();
 });

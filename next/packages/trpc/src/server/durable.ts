@@ -251,8 +251,9 @@ export function experimental_durable<TReq extends MiddlewareRequirements = {}>(
         const inFlight = local.get(key);
         if (inFlight) {
           const { result, streamed } = yield* Deferred.await(inFlight);
-          if (!streamed || !sink) return settled(result);
-          // Its first request keeps the frames; read them from the log.
+          if (!streamed) return settled(result);
+          // Its first request keeps the frames; read them from the log, or
+          // fail as a replay does without a frame sink.
           yield* Effect.sleep(pollInterval);
           continue;
         }
