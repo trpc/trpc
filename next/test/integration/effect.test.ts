@@ -209,6 +209,16 @@ test('defects are masked unexpected errors', async () => {
   });
 });
 
+test('calling a path instead of .query(), .mutate() or .subscribe() throws', async () => {
+  await using ctx = await setup();
+  const untyped = ctx.client as unknown as Record<string, any> &
+    (() => unknown);
+  expect(() => untyped['post'].byId()).toThrow(
+    'Call .query(), .mutate() or .subscribe() on a procedure, not post.byId()',
+  );
+  expect(() => untyped()).toThrow(TypeError);
+});
+
 test('a layer that provides no services, like a tracer, is accepted', async () => {
   const t = initTrpc();
   const router = { ping: t.procedure.query(() => 'pong') };
