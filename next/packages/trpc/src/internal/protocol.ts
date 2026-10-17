@@ -27,7 +27,6 @@ export function toInputSearch(value: {
   json?: unknown;
   refs?: unknown;
 }): string {
-  if (value.json === undefined && value.refs === undefined) return '';
   const params = new URLSearchParams();
   if (value.json !== undefined) {
     params.set('input', JSON.stringify(canonical(value.json)));
@@ -46,7 +45,7 @@ const readSearch = (
 ): { input: string | null; refs: string | null } | undefined => {
   let input: string | null = null;
   let refs: string | null = null;
-  let start = search.charCodeAt(0) === 63 /* ? */ ? 1 : 0;
+  let start = 1;
   while (start < search.length) {
     let end = search.indexOf('&', start);
     if (end === -1) end = search.length;
@@ -80,7 +79,11 @@ const readParams = (search: string) => {
   return { input: params.get('input'), refs: params.get('refs') };
 };
 
-/** Reads what {@link toInputSearch} wrote; `undefined` without an input. @internal */
+/**
+ * Reads what {@link toInputSearch} wrote from a URL's search, `?` included;
+ * `undefined` without an input.
+ * @internal
+ */
 export function fromInputSearch(
   search: string,
 ): { json?: never; refs?: never } | undefined {
@@ -254,19 +257,17 @@ export const isMultipartContentType = (value: string | null): boolean =>
   value !== null && /^multipart\/form-data\b/i.test(value);
 
 /**
- * Reads a form body, failing with `tooLarge()` once it passes `maxBytes`,
- * whether or not the request declares its length. Bytes past the limit are
- * drained and dropped: cancelling the body makes some servers (Node) drop
- * the connection before the 413 is sent.
+ * Reads a form body of `contentType`, failing with `tooLarge()` once it
+ * passes `maxBytes`, as a declared length can't be trusted. Bytes past the
+ * limit are drained and dropped: cancelling the body makes some servers
+ * (Node) drop the connection before the 413 is sent.
  */
 export async function readFormData(
   request: Request,
+  contentType: string,
   maxBytes: number,
   tooLarge: () => Error,
 ): Promise<FormData> {
-  if (Number(request.headers.get('content-length') ?? 0) > maxBytes) {
-    throw tooLarge();
-  }
   if (!request.body) return new FormData();
   let size = 0;
   const body = request.body.pipeThrough(
@@ -277,7 +278,7 @@ export async function readFormData(
       },
     }),
   );
-  const headers = { 'content-type': request.headers.get('content-type') ?? '' };
+  const headers = { 'content-type': contentType };
   const form = await new Response(body, { headers })
     .formData()
     .catch((cause: unknown) => {

@@ -75,7 +75,7 @@ export interface SerializeState {
 }
 
 export interface SerializeOptions {
-  serializers?: SerializeRecord;
+  serializers: SerializeRecord;
   dedupe?: boolean;
   state?: SerializeState;
   /** Passed to every serializer as its second argument. */
@@ -122,19 +122,10 @@ interface CompiledSerializers {
   readonly placeholders: ReadonlyMap<unknown, PlaceholderTransformer>;
 }
 
-const noSerializers: CompiledSerializers = {
-  all: [],
-  plain: [],
-  primitive: [],
-  placeholders: new Map(),
-};
 const compiledSerializers = new WeakMap<SerializeRecord, CompiledSerializers>();
 
 /** A record's serializers, sorted once; records are not changed after use. */
-function compileSerializers(
-  record: SerializeRecord | undefined,
-): CompiledSerializers {
-  if (!record) return noSerializers;
+function compileSerializers(record: SerializeRecord): CompiledSerializers {
   const cached = compiledSerializers.get(record);
   if (cached) return cached;
   const all: [string, SerializeFn][] = [];
@@ -181,7 +172,7 @@ function setOwn(
 
 export function serializeSync(
   value: unknown,
-  options: SerializeOptions = {},
+  options: SerializeOptions,
 ): SerializeReturn {
   if (value === undefined) return {};
 
@@ -228,11 +219,9 @@ export function serializeSync(
     const index = state.indexCounter();
     if (tracked) seen.set(thing, [index, location]);
 
-    if (placeholders.size !== 0) {
-      const placeholder = placeholders.get(thing);
-      if (placeholder && Object.is(placeholder.value, thing)) {
-        return PREFIX + placeholder.placeholder;
-      }
+    const placeholder = placeholders.get(thing);
+    if (placeholder && Object.is(placeholder.value, thing)) {
+      return PREFIX + placeholder.placeholder;
     }
 
     const shape = !isObject
@@ -314,7 +303,7 @@ export function serializeSync(
 }
 
 export interface DeserializeOptions {
-  deserializers?: DeserializeRecord;
+  deserializers: DeserializeRecord;
   /** Max nesting depth of the JSON tree. @default 64 */
   maxDepth?: number;
   /** Shared across chunks of one async deserialization. */
@@ -331,19 +320,14 @@ interface CompiledDeserializers {
   readonly placeholders: ReadonlyMap<string, unknown>;
 }
 
-const noDeserializers: CompiledDeserializers = {
-  deserializers: new Map(),
-  placeholders: new Map(),
-};
 const compiledDeserializers = new WeakMap<
   DeserializeRecord,
   CompiledDeserializers
 >();
 
 function compileDeserializers(
-  record: DeserializeRecord | undefined,
+  record: DeserializeRecord,
 ): CompiledDeserializers {
-  if (!record) return noDeserializers;
   const cached = compiledDeserializers.get(record);
   if (cached) return cached;
   const deserializers = new Map<string, DeserializeFn | DeserializeRecursive>();
@@ -359,7 +343,7 @@ function compileDeserializers(
 
 export function deserializeSync<T = unknown>(
   obj: SerializeReturn,
-  options: DeserializeOptions = {},
+  options: DeserializeOptions,
 ): T {
   if (obj.json === undefined) return undefined as T;
   const refs = obj.refs;
@@ -382,9 +366,7 @@ export function deserializeSync<T = unknown>(
   function fromJson(value: JsonValue, depth: number, ref?: string): unknown {
     if (depth > maxDepth) throw new DansonError('Max depth exceeded');
     if (typeof value === 'string') {
-      if (placeholders.size !== 0 && placeholders.has(value)) {
-        return placeholders.get(value);
-      }
+      if (placeholders.has(value)) return placeholders.get(value);
       if (
         value === rootRef ||
         (refs !== undefined && Object.hasOwn(refs, value))

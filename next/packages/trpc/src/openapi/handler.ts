@@ -192,7 +192,7 @@ const isPlainObject = (v: unknown): v is Record<string, unknown> =>
   v !== null &&
   Object.getPrototypeOf(v) === Object.prototype;
 
-const isForm = (type: string | null) =>
+const isForm = (type: string | null): type is string =>
   type !== null &&
   /^(application\/x-www-form-urlencoded|multipart\/form-data)\b/i.test(type);
 
@@ -381,6 +381,7 @@ export function createOpenApiHandler<
     if (isForm(type)) {
       const form = await readFormData(
         request,
+        type,
         maxBodySize,
         () =>
           new TrpcError({

@@ -38,10 +38,6 @@ export function isPlainObject(o: unknown): o is Record<string, unknown> {
   );
 }
 
-export function createObject<T>(): Record<string, T> {
-  return Object.create(null) as Record<string, T>;
-}
-
 export function counter(): () => number {
   let i = 0;
   return () => ++i;
