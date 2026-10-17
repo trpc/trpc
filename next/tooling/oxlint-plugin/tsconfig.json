@@ -1,4 +1,4 @@
 {
   "extends": "@tooling/tsconfig/node.json",
-  "include": ["*.ts"]
+  "include": ["*.ts", "anti-slop/**/*.ts"]
 }
