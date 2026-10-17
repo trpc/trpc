@@ -1,5 +1,11 @@
 import { expect, test, vi } from 'vite-plus/test';
-import { parseSse, readLines } from './protocol.ts';
+import {
+  hasMediaType,
+  isJsonContentType,
+  isMultipartContentType,
+  parseSse,
+  readLines,
+} from './protocol.ts';
 
 const streamOf = (...chunks: (string | Uint8Array)[]) =>
   new ReadableStream<Uint8Array>({
@@ -34,4 +40,16 @@ test('a CRLF split across chunks ends one line, not two', async () => {
     parseSse(streamOf('event: x\r', '\ndata: 1\r\n\r\n')),
   );
   expect(events).toEqual([{ event: 'x', data: '1', id: undefined }]);
+});
+
+test('content types match by media type, ignoring case and parameters', () => {
+  expect(isJsonContentType('application/json')).toBe(true);
+  expect(isJsonContentType('Application/JSON; charset=utf-8')).toBe(true);
+  expect(isJsonContentType('application/json ;charset=utf-8')).toBe(true);
+  expect(isJsonContentType('application/json-seq')).toBe(false);
+  expect(isJsonContentType('application/jsonl')).toBe(false);
+  expect(isJsonContentType(null)).toBe(false);
+  expect(isMultipartContentType('multipart/form-data; boundary=x')).toBe(true);
+  expect(isMultipartContentType('multipart/form-data-x')).toBe(false);
+  expect(hasMediaType('TEXT/plain', 'text/csv', 'text/plain')).toBe(true);
 });

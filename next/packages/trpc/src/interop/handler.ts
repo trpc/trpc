@@ -12,6 +12,7 @@ import {
   type AnyTrpcError,
 } from '../internal/error.ts';
 import {
+  hasMediaType,
   isJsonContentType,
   isMultipartContentType,
 } from '../internal/protocol.ts';
@@ -424,7 +425,8 @@ export function createV11Handler<
       }
       const type = request.headers['content-type'] ?? null;
       const multipart = isMultipartContentType(type);
-      const octet = type !== null && /^application\/octet-stream\b/i.test(type);
+      const octet =
+        type !== null && hasMediaType(type, 'application/octet-stream');
       if ((multipart || octet) && isBatch) {
         return yield* fail('BAD_REQUEST', `${type} requests cannot be batched`);
       }

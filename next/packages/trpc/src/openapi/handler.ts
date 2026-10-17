@@ -21,6 +21,7 @@ import {
 import type { JsonSchema } from '../internal/json-schema.ts';
 import {
   contentDisposition,
+  hasMediaType,
   isJsonContentType,
   readFormData,
 } from '../internal/protocol.ts';
@@ -193,8 +194,11 @@ const isPlainObject = (v: unknown): v is Record<string, unknown> =>
   Object.getPrototypeOf(v) === Object.prototype;
 
 const isForm = (type: string | null): type is string =>
-  type !== null &&
-  /^(application\/x-www-form-urlencoded|multipart\/form-data)\b/i.test(type);
+  hasMediaType(
+    type,
+    'application/x-www-form-urlencoded',
+    'multipart/form-data',
+  );
 
 /** Static segments before params, so `/posts/latest` wins over `/posts/{id}`. */
 const specificity = (route: ResolvedRoute) =>

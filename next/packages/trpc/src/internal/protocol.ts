@@ -252,11 +252,19 @@ export async function readBlob(res: Response, header: string): Promise<Blob> {
       });
 }
 
+/** Whether a `content-type` names one of `types`, ignoring case and parameters. */
+export const hasMediaType = (
+  value: string | null,
+  ...types: ReadonlyArray<string>
+): boolean =>
+  value !== null &&
+  types.includes(value.split(';', 1)[0]!.trim().toLowerCase());
+
 export const isJsonContentType = (value: string | null): boolean =>
-  value !== null && /^application\/json\b/i.test(value);
+  hasMediaType(value, 'application/json');
 
 export const isMultipartContentType = (value: string | null): boolean =>
-  value !== null && /^multipart\/form-data\b/i.test(value);
+  hasMediaType(value, 'multipart/form-data');
 
 /**
  * Reads a form body of `contentType`, failing with `tooLarge()` once it
