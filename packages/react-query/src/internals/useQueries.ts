@@ -186,20 +186,47 @@ export type SuspenseQueriesOptions<
 /**
  * @internal
  */
-export type TRPCUseQueries<TRouter extends AnyRouter> = <
-  TQueryOptions extends UseQueryOptionsForUseQueries<any, any, any, any>[],
-  TCombinedResult = QueriesResults<TQueryOptions>,
->(
-  queriesCallback: (
-    t: UseQueriesProcedureRecord<
-      TRouter['_def']['_config']['$types'],
-      TRouter['_def']['record']
-    >,
-  ) => readonly [...QueriesOptions<TQueryOptions>],
-  options?: {
-    combine?: (results: QueriesResults<TQueryOptions>) => TCombinedResult;
-  },
-) => TCombinedResult;
+export type TRPCUseQueries<TRouter extends AnyRouter> = {
+  <
+    TQueryOptions extends UseQueryOptionsForUseQueries<any, any, any, any>[],
+    TCombinedResult = QueriesResults<TQueryOptions>,
+  >(
+    queriesCallback: (
+      t: UseQueriesProcedureRecord<
+        TRouter['_def']['_config']['$types'],
+        TRouter['_def']['record']
+      >,
+    ) => readonly [...QueriesOptions<TQueryOptions>],
+    options?: {
+      combine?: (results: QueriesResults<TQueryOptions>) => TCombinedResult;
+    },
+  ): TCombinedResult;
+  /**
+   * `TQueryOptions` cannot be inferred from the tuple spread above when the
+   * callback returns a union of tuples - e.g. conditionally returning `[]` -
+   * so those callbacks are matched by this overload instead, which infers the
+   * options array directly.
+   */
+  <
+    TQueries extends readonly UseQueryOptionsForUseQueries<
+      any,
+      any,
+      any,
+      any
+    >[],
+    TCombinedResult = QueriesResults<[...TQueries]>,
+  >(
+    queriesCallback: (
+      t: UseQueriesProcedureRecord<
+        TRouter['_def']['_config']['$types'],
+        TRouter['_def']['record']
+      >,
+    ) => TQueries,
+    options?: {
+      combine?: (results: QueriesResults<[...TQueries]>) => TCombinedResult;
+    },
+  ): TCombinedResult;
+};
 
 /**
  * @internal

@@ -181,6 +181,103 @@ test('combine function', async () => {
   });
 });
 
+// regression https://github.com/trpc/trpc/issues/6188
+test('regression #6188: conditionally returning an empty array', async () => {
+  const { client, App } = ctx;
+  const text = 'Bob';
+
+  function MyComponent() {
+    const results = client.useQueries((t) => {
+      if (text) {
+        return [t.foo()] as const;
+      }
+      return [] as const;
+    });
+
+    expectTypeOf(results[0]!.data).toEqualTypeOf<'foo' | undefined>();
+
+    return <pre>{JSON.stringify(results[0]?.data ?? 'n/a', null, 4)}</pre>;
+  }
+
+  const utils = render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
+  await vi.waitFor(() => {
+    expect(utils.container).toHaveTextContent('foo');
+  });
+});
+
+// regression https://github.com/trpc/trpc/issues/6188
+test('regression #6188: empty array first, and varying tuple lengths', async () => {
+  const { client, App } = ctx;
+  const text = 'Bob';
+
+  function MyComponent() {
+    const emptyFirst = client.useQueries((t) => {
+      if (!text) {
+        return [];
+      }
+      return [t.foo()];
+    });
+    expectTypeOf(emptyFirst[0]!.data).toEqualTypeOf<'foo' | undefined>();
+
+    const varying = client.useQueries((t) => {
+      if (text) {
+        return [t.foo(), t.bar()];
+      }
+      return [t.foo()];
+    });
+    expectTypeOf(varying[0]!.data).toEqualTypeOf<'foo' | undefined>();
+    expectTypeOf(varying[1]!.data).toEqualTypeOf<'bar' | undefined>();
+
+    return <pre>{JSON.stringify([emptyFirst, varying])}</pre>;
+  }
+
+  const utils = render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
+  await vi.waitFor(() => {
+    expect(utils.container).toHaveTextContent('foo');
+  });
+});
+
+// the readonly-array overload must keep accepting readonly query options
+test('regression #6188: readonly query options are still accepted', async () => {
+  const { client, App } = ctx;
+  const text = 'Bob';
+
+  function MyComponent() {
+    const results = client.useQueries((t) => {
+      const one = t.foo();
+      const roTuple = [one] as const;
+      const roArray: readonly (typeof one)[] = [one];
+
+      const fromTuple = client.useQueries(() => roTuple);
+      const fromArray = client.useQueries(() => roArray);
+
+      expectTypeOf(fromTuple[0]!.data).toEqualTypeOf<'foo' | undefined>();
+      expectTypeOf(fromArray[0]!.data).toEqualTypeOf<'foo' | undefined>();
+
+      return roTuple;
+    });
+
+    return <pre>{JSON.stringify(results[0]?.data ?? 'n/a', null, 4)}</pre>;
+  }
+
+  const utils = render(
+    <App>
+      <MyComponent />
+    </App>,
+  );
+  await vi.waitFor(() => {
+    expect(utils.container).toHaveTextContent('foo');
+  });
+});
+
 // regression https://github.com/trpc/trpc/issues/4802
 test('regression #4802: passes context to links', async () => {
   const { client, App } = ctx;
