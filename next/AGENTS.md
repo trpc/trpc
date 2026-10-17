@@ -42,6 +42,7 @@ pnpm example
 User docs are Markdown in `docs/`, one short page per topic in a folder per sidebar section; `www/` renders them as the site ([`decisions/docs-website.md`](./.agent-docs/decisions/docs-website.md)). Update the page a change affects, in the same commit.
 
 - Every page needs `title`, `description`, `section` (one of `sections` in `www/src/site.ts`) and `order` in its frontmatter. List a new page in `docs/README.md`.
+- Where a page's v11 topic is at another slug, name the v11 page in its frontmatter (`v11: server/data-transformers`); the version banner and switcher link the two. The v11 docs are a generated copy in `www/v11/`: don't edit it, rerun `pnpm --filter @trpc12/www v11:copy` ([`decisions/v11-docs-copy.md`](./.agent-docs/decisions/v11-docs-copy.md)).
 - Link pages with relative `.md` links (`../client/links.md#query-urls`); the build fails on a missing page or heading.
 - Prefer `ts twoslash` blocks: they compile in `www/samples/docs` (import its `./server.ts` and `./client.ts`, hiding the setup between `// ---cut-start---` and `// ---cut-end---`), and `// ^?` shows a type. An undeclared type error fails the build.
 - `pnpm docs:dev` serves the site; `pnpm docs:build` is the check. Compiled blocks are cached in `www/node_modules/.cache/twoslash`.
