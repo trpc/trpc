@@ -1,0 +1,11 @@
+# The site's components come from a vanilla shadcn package, `shared/ui`, branded like trpc.io (human asked)
+
+- Human, 2026-10-17: "Make sure website is nice", "And follows the trpc branding", "And that we have a shadcn lib like raf with only branding".
+- (agent) It's raf-query's `examples/.shared/ui`. `next/shared/ui` is the private `@shared/ui` package: every shadcn component in the `base-nova` style (Base UI), installed by the shadcn CLI and never edited. To change one, reinstall it (`pnpm dlx shadcn@4.21.4 add <name> --overwrite` in `shared/ui`). Anything shadcn doesn't ship is built in the site from these parts, not added to the package. Its `src/` is excluded from lint, since the CLI's output doesn't follow the repo's rules, but it's still formatted.
+- (agent) The branding is all in `shared/ui/src/styles/globals.css`, as shadcn's theme variables. The values are trpc.io's (the v11 site's `custom.css`): `#398CCB` is `primary` with white text, the ring and the selection; links are its darker shade (`#2E77AF`) on light and lighter shade (`#589ED3`) on dark, since `#398CCB` on white is too light to read as body text; grays are zinc, and the dark page is `#111111`. `brand`, `brand-dark`, `brand-light` and `link` are extra Tailwind colors for the site.
+- (agent) The home hero is trpc.io's tagline, word for word and in its casing: "Move Fast and Break Nothing." over "End-to-end typesafe APIs made easy." (`site.tagline`, also the home page's title). Headings are bold and the hero code block has trpc.io's blue glow.
+- (agent) Site-only styles stay in `www/src/styles.css` (prose, code blocks, twoslash popups) and import the package's `globals.css` first.
+- Why: one place for the brand, and components that a CLI reinstall keeps current, so they're never hand-maintained forks. The same split as raf-query's, so it reads the same.
+- Lost: editing a component in place (wrap it in the site instead); the package installs every component's dependencies, used or not, though only what the site imports is bundled.
+- Open: dark-mode logo and social card artwork from trpc.io; whether the examples use `@shared/ui` too.
+- Lives in: `next/shared/ui/` (`src/styles/globals.css`, `components.json`), `next/www/src/styles.css`, `next/www/src/site.ts`, `next/vite.config.ts` (lint ignore).

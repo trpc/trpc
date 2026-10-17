@@ -20,6 +20,7 @@ next/
   packages/*/src/**/*.test.ts  tests beside the code they show; shared fixtures in `src/**/fixtures/`
   test/integration/     recipes with third-party libraries (AI SDK, Better Auth, Firebase callable, publisher backends)
   spikes/               throwaway experiments; results in .agent-docs/notes/
+  shared/ui/            `@shared/ui`: vanilla shadcn components for the docs site; the tRPC brand is in its globals.css
   tooling/portability/  TS2742/TS2883 check: a consumer package that emits declarations
   tooling/tsconfig/     `@tooling/tsconfig`: the shared, strictest tsconfigs every package, suite and tool extends (examples stay standalone)
   tooling/vercel-ignore/  Vercel's ignored build step for the docs site: skips a deployment when nothing it renders changed

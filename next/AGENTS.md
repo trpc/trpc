@@ -45,6 +45,7 @@ User docs are Markdown in `docs/`, one short page per topic in a folder per side
 - Link pages with relative `.md` links (`../client/links.md#query-urls`); the build fails on a missing page or heading.
 - Prefer `ts twoslash` blocks: they compile in `www/samples/docs` (import its `./server.ts` and `./client.ts`, hiding the setup between `// ---cut-start---` and `// ---cut-end---`), and `// ^?` shows a type. An undeclared type error fails the build.
 - `pnpm docs:dev` serves the site; `pnpm docs:build` is the check. Compiled blocks are cached in `www/node_modules/.cache/twoslash`.
+- The site's components are vanilla shadcn in `shared/ui` (`@shared/ui`), installed by its CLI: don't edit them, reinstall (`pnpm dlx shadcn@4.21.4 add <name> --overwrite` in `shared/ui`). Brand colors live only in its `src/styles/globals.css` ([`decisions/shadcn-lib-and-branding.md`](./.agent-docs/decisions/shadcn-lib-and-branding.md)).
 - The site is set up for Vercel, deployed from `v12` and never from `main` ([`decisions/docs-website-on-vercel.md`](./.agent-docs/decisions/docs-website-on-vercel.md)). It renders `docs/` and its workspace dependencies: if it starts reading another path, add that path to `inputs` in `tooling/vercel-ignore/src/bin/ignore.ts`, or deployments skip changes to it.
 
 ## Tests
