@@ -422,6 +422,7 @@ export interface ProcedureBuilder<
         input: DefaultValue<TInputIn, void>,
       ) => Promise<DefaultValue<TOutputOut, $Output>>
     : QueryProcedure<{
+        ctx: TContext;
         input: DefaultValue<TInputIn, void>;
         output: DefaultValue<TOutputOut, $Output>;
         meta: TMeta;
@@ -446,6 +447,7 @@ export interface ProcedureBuilder<
         input: DefaultValue<TInputIn, void>,
       ) => Promise<DefaultValue<TOutputOut, $Output>>
     : MutationProcedure<{
+        ctx: TContext;
         input: DefaultValue<TInputIn, void>;
         output: DefaultValue<TOutputOut, $Output>;
         meta: TMeta;
@@ -468,6 +470,7 @@ export interface ProcedureBuilder<
   ): TCaller extends true
     ? TypeError<'Not implemented'>
     : SubscriptionProcedure<{
+        ctx: TContext;
         input: DefaultValue<TInputIn, void>;
         output: inferSubscriptionOutput<DefaultValue<TOutputOut, $Output>>;
         meta: TMeta;
@@ -490,6 +493,7 @@ export interface ProcedureBuilder<
   ): TCaller extends true
     ? TypeError<'Not implemented'>
     : LegacyObservableSubscriptionProcedure<{
+        ctx: TContext;
         input: DefaultValue<TInputIn, void>;
         output: inferObservableValue<DefaultValue<TOutputOut, $Output>>;
         meta: TMeta;

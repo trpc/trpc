@@ -10,11 +10,18 @@ export const procedureTypes = ['query', 'mutation', 'subscription'] as const;
 export type ProcedureType = (typeof procedureTypes)[number];
 
 interface BuiltProcedureDef {
+  ctx?: unknown;
   meta: unknown;
   input: unknown;
   output: unknown;
   errorShape?: unknown;
 }
+
+type inferBuiltProcedureContext<TDef extends BuiltProcedureDef> = TDef extends {
+  ctx: infer TContext;
+}
+  ? TContext
+  : unknown;
 
 /**
  *
@@ -30,6 +37,7 @@ export interface Procedure<
      * @internal
      */
     $types: {
+      ctx: inferBuiltProcedureContext<TDef>;
       input: TDef['input'];
       output: TDef['output'];
       errorShape: TDef['errorShape'];
