@@ -64,8 +64,6 @@ Source for this project's key dependencies is vendored under `.repos/`, pinned t
 
 Managed by [vendor-src](https://www.npmjs.com/package/vendor-src), a devDependency of this workspace. Its config has to live at the repo root (`../vendor-src.json`, `"dir": "next/.repos"`), because vendor-src looks for the nearest directory with both `.git` and `package.json`. `rootAgentsMd` is off, so keep the list above in sync by hand when adding or bumping a vendored repo.
 
-Every repo has `"packages": []`, so it is tied to no installed package: `vendor-src check` (run by `pnpm install`) and `pnpm vendor:sync` skip it, and nothing moves a ref when a dependency is bumped. `vendor-src add` needs a clean working tree and creates `git subtree` merge commits. To bump a ref by hand:
+Every repo is git-only (`"packages": []`): vendor-src resolves installed packages from the repo root, where v11's dependencies live, so it can't tie a checkout to this workspace's lockfile. `vendor-src check` (run by `pnpm install`) skips git-only repos. `pnpm vendor:sync [name…]` moves each to its newest upstream ref: a tag to the highest tag with the same prefix (`effect@4.0.2` follows `effect@*`; prereleases only from a prerelease), a SHA (`raf-query`) to the default branch's `HEAD`.
 
-1. Replace the tree with the upstream at the new ref: `rm -rf .repos/<name> && mkdir .repos/<name> && git -C <upstream clone> archive <ref> | tar -x -C .repos/<name>`.
-2. Delete the paths matching the repo's `ignore` globs in `vendor-src.json`.
-3. Update the ref in three places: `version` and `ref` in `../vendor-src.json`, the list in `.repos/AGENTS.md`, and the list above.
+So sync `effect` and `orpc` only when bumping their installed versions to the same release, and sync other repos by name (`pnpm vendor:sync raf-query`). `vendor-src add` needs a clean working tree and creates `git subtree` merge commits. Sync needs only the checkouts it touches to be clean, and commits the new tree and the pruned `ignore` paths itself. Then commit `../vendor-src.json` (`.repos/AGENTS.md` is rewritten for you) and update the list above by hand.
