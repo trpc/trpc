@@ -790,6 +790,55 @@ describe('transformers / different serialize-deserialize', async () => {
   });
 });
 
+describe('mixed tracked and untracked yields', async () => {
+  const t = initTRPC.create();
+
+  const ctx = konn()
+    .beforeEach(() => {
+      const appRouter = t.router({
+        mixed: t.procedure.subscription(async function* () {
+          yield tracked('1', 'first');
+          yield 'second';
+        }),
+      });
+
+      return testServerAndClientResource(appRouter, {});
+    })
+    .afterEach((ctx) => {
+      return ctx.close?.();
+    })
+    .done();
+
+  type AppRouter = typeof ctx.router;
+  test('an untracked yield after a tracked one is not given the previous id', async () => {
+    const client = createTRPCClient<AppRouter>({
+      links: [
+        httpSubscriptionLink({
+          url: ctx.httpUrl,
+        }),
+      ],
+    });
+
+    const onData = vi.fn();
+    const onComplete = vi.fn();
+    const subscription = client.mixed.subscribe(undefined, {
+      onData,
+      onComplete,
+    });
+
+    await vi.waitFor(() => {
+      expect(onComplete).toHaveBeenCalledTimes(1);
+    });
+
+    subscription.unsubscribe();
+
+    expect(onData.mock.calls.map((call) => call[0])).toEqual([
+      { id: '1', data: 'first' },
+      'second',
+    ]);
+  });
+});
+
 describe('timeouts', async () => {
   interface CtxOpts {
     sse?: RootConfig<any>['sse'];
