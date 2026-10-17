@@ -19,7 +19,7 @@ interface Recorded {
 }
 
 /** Workers Traces nests spans by async context, as this fake does. */
-function fakeTracing() {
+function fakeTracing(isTraced = true) {
   const active = new AsyncLocalStorage<Recorded>();
   const spans: Recorded[] = [];
   const tracing: WorkersTracing = {
@@ -32,7 +32,7 @@ function fakeTracing() {
       };
       spans.push(record);
       const span: WorkersSpan = {
-        isTraced: true,
+        isTraced,
         spanContext: () => ({
           traceId: 'a'.repeat(32),
           spanId: String(spans.length).padStart(16, '0'),
@@ -129,4 +129,51 @@ test('without a snapshot, spans are recorded but not nested', async () => {
   expect(await client.post.query()).toBe('ok');
   expect(fake.byName('load')).toMatchObject({ ended: true });
   expect(fake.byName('load')?.parent).toBeUndefined();
+});
+
+test('attributes of any type are recorded; non-Error failures and untraced spans too', async () => {
+  const fake = fakeTracing(false);
+  const circular: Record<string, unknown> = {};
+  circular['self'] = circular;
+  const router = {
+    odd: t.procedure.query(() =>
+      Effect.fail('plain').pipe(
+        Effect.withSpan('odd', {
+          attributes: {
+            flag: true,
+            big: 10n,
+            list: [1, 2],
+            nothing: undefined,
+            circular,
+          },
+        }),
+        Effect.orElseSucceed(() => 'recovered'),
+      ),
+    ),
+  };
+  const handler = createFetchHandler({
+    router,
+    layer: experimental_workersTracer({ tracing: fake.tracing }),
+  });
+  const client = createTrpcClient({
+    router: routerType<typeof router>(),
+    links: [
+      httpLink({
+        url: 'http://localhost/trpc',
+        fetch: (input, init) => handler.fetch(new Request(input, init)),
+      }),
+    ],
+  });
+  expect(await client.odd.query()).toBe('recovered');
+  expect(fake.byName('odd')).toMatchObject({
+    status: 'error',
+    exception: 'plain',
+    attributes: {
+      flag: true,
+      big: '10',
+      list: '[1,2]',
+      nothing: 'undefined',
+      circular: '[object Object]',
+    },
+  });
 });
