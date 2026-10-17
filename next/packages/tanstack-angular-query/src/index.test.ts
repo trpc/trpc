@@ -32,8 +32,8 @@ import {
   db,
   type Post,
   type AppClient,
-} from '../../packages/tanstack-query/src/fixtures/app.ts';
-import { click, text, waitFor } from '../../packages/trpc/src/fixtures/dom.ts';
+} from '../../tanstack-query/src/fixtures/app.ts';
+import { click, text, waitFor } from '../../trpc/src/fixtures/dom.ts';
 
 const { provideTrpc, injectTrpc, injectTrpcClient } =
   createTrpcContext<AppClient>();
