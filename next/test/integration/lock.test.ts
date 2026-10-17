@@ -190,3 +190,26 @@ test.skipIf(!redisUrl)(
     expect(log.indexOf('start b')).toBeGreaterThan(log.indexOf('end a'));
   },
 );
+
+test.skipIf(!redisUrl)(
+  'a Redis lock held past timeout fails the other call with CONFLICT',
+  async () => {
+    const { router, started } = makeRouter({
+      work: 300,
+      timeout: '50 millis',
+    });
+    const layer = experimental_redisLocker().pipe(
+      Layer.provide(NodeRedis.layer({ url: redisUrl! })),
+    );
+    const one = await serve(router, layer);
+    const two = await serve(router, layer);
+    await using _1 = one.http;
+    await using _2 = two.http;
+    const invoice = `timeout-${Date.now()}`;
+    const first = one.client.pay.mutate({ invoice, by: 'a' });
+    await started('a');
+    const [, err] = await safe(two.client.pay.mutate({ invoice, by: 'b' }));
+    expect(err).toMatchObject({ code: 'CONFLICT' });
+    expect(await first).toEqual({ by: 'a', waited: false });
+  },
+);
