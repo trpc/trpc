@@ -37,6 +37,15 @@ pnpm example
 
 `pnpm typecheck` and `pnpm check` are the other local gates (`pnpm fix` autofixes). Commands are listed in `README.md`; run every gate listed there before pushing, then watch the `next.yml` run with `gh run watch <id> --exit-status`. If `node -v` is not 24.x, run `nvm use` before install or test.
 
+## Docs
+
+User docs are Markdown in `docs/`, one short page per topic in a folder per sidebar section; `www/` renders them as the site ([`decisions/docs-website.md`](./.agent-docs/decisions/docs-website.md)). Update the page a change affects, in the same commit.
+
+- Every page needs `title`, `description`, `section` (one of `sections` in `www/src/site.ts`) and `order` in its frontmatter. List a new page in `docs/README.md`.
+- Link pages with relative `.md` links (`../client/links.md#query-urls`); the build fails on a missing page or heading.
+- Prefer `ts twoslash` blocks: they compile in `www/samples/docs` (import its `./server.ts` and `./client.ts`, hiding the setup between `// ---cut-start---` and `// ---cut-end---`), and `// ^?` shows a type. An undeclared type error fails the build.
+- `pnpm docs:dev` serves the site; `pnpm docs:build` is the check. Compiled blocks are cached in `www/node_modules/.cache/twoslash`.
+
 ## Tests
 
 - No `beforeEach`/`afterEach` (`vitest/no-hooks`). Clean up with `using`/`await using`: a helper returns a `Disposable` that undoes its setup, for example `using _db = freshDb();` from `packages/trpc/src/fixtures/posts.ts`.
