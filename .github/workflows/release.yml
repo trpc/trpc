@@ -43,8 +43,20 @@ jobs:
     if: github.event_name == 'workflow_dispatch' && inputs.dist_tag == 'latest'
     timeout-minutes: 10
     runs-on: ubuntu-latest
+    environment: npm-publish # npm trusted publishing is bound to this environment
 
     steps:
+      - name: Require a repo admin
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ACTOR: ${{ github.triggering_actor }}
+        run: |
+          permission=$(gh api "repos/${GITHUB_REPOSITORY}/collaborators/${ACTOR}/permission" --jq .permission)
+          if [ "$permission" != "admin" ]; then
+            echo "::error::Only repo admins can publish stable releases (${ACTOR} has '${permission}')"
+            exit 1
+          fi
+
       - name: Checkout repo
         uses: actions/checkout@v7
         with:
@@ -66,6 +78,7 @@ jobs:
     if: github.event_name == 'push' || inputs.dist_tag == 'canary'
     timeout-minutes: 10
     runs-on: ubuntu-latest
+    environment: npm-publish # npm trusted publishing is bound to this environment
 
     steps:
       - name: Checkout repo
