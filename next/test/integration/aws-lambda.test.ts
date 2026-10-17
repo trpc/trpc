@@ -1,3 +1,7 @@
+import { openAsBlob } from 'node:fs';
+import { mkdtemp, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { Schema } from 'effect';
 import {
   toLambdaHandler,
@@ -306,4 +310,75 @@ test('the streaming handler waits for drain when the stream is full', async () =
   );
   expect(drains).toBe(chunks.length);
   expect(Buffer.concat(chunks).toString()).toContain('data: {"json":2}');
+});
+
+const streamed = async (
+  event: Parameters<ReturnType<typeof toLambdaStreamingHandler>>[0],
+  target: Parameters<typeof toLambdaStreamingHandler>[0] = handler,
+) => {
+  const chunks: Uint8Array[] = [];
+  let ended = false;
+  await toLambdaStreamingHandler(target)(
+    event,
+    { write: (chunk) => (chunks.push(chunk), true), end: () => (ended = true) },
+    context,
+  );
+  const all = Buffer.concat(chunks);
+  const split = all.indexOf(Buffer.alloc(8));
+  return {
+    ended,
+    prelude: JSON.parse(all.subarray(0, split).toString()),
+    body: all.subarray(split + 8).toString(),
+  };
+};
+
+test('the streaming handler sends cookies in the prelude, and HEAD responses without a body', async () => {
+  const login = await streamed({
+    version: '2.0',
+    rawPath: '/trpc/login',
+    rawQueryString: '',
+    headers: { 'content-type': 'application/json', 'x-none': undefined },
+    cookies: ['s=1'],
+    body: '{}',
+    requestContext: { http: { method: 'POST' } },
+  });
+  expect(login.prelude.cookies).toEqual(['a=1; HttpOnly', 'b=2']);
+  expect(login.prelude.headers['set-cookie']).toBeUndefined();
+  expect(login.body).toBe('{"json":"s=1"}');
+
+  const head = await streamed({
+    version: '2.0',
+    rawPath: '/trpc/hello',
+    rawQueryString: '',
+    requestContext: { http: { method: 'HEAD' } },
+  });
+  expect(head.prelude.statusCode).toBe(405);
+  expect(head.body).toBe('');
+  expect(head.ended).toBe(true);
+});
+
+test('the streaming handler ends the stream when the body fails mid-way', async () => {
+  const path = join(await mkdtemp(join(tmpdir(), 'trpc-')), 'report.csv');
+  await writeFile(path, 'first version');
+  const changing = createFetchHandler({
+    router: {
+      report: initTrpc().procedure.query(async () => {
+        const blob = await openAsBlob(path);
+        await writeFile(path, 'a longer second version');
+        return blob;
+      }),
+    },
+  });
+  const result = await streamed(
+    {
+      version: '2.0',
+      rawPath: '/trpc/report',
+      rawQueryString: '',
+      requestContext: { http: { method: 'GET' } },
+    },
+    changing,
+  );
+  expect(result.prelude.statusCode).toBe(200);
+  expect(result.ended).toBe(true);
+  await changing.dispose();
 });
