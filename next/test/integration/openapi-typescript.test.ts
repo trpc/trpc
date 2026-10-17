@@ -220,6 +220,31 @@ test('types document as JSON.stringify sends them (21)', async () => {
       when: { type: 'string' },
       upper: { type: 'string' },
       sparse: { type: 'object', properties: {}, additionalProperties: {} },
+      // A computed enum member is a number.
+      level: { type: 'number' },
+      // A recursive type without a name is named after its id.
+      chain: {
+        type: 'object',
+        properties: {
+          next: {
+            anyOf: [
+              { type: 'null' },
+              {
+                $ref: expect.stringMatching(
+                  /^#\/components\/schemas\/shapes\.output\.Type\d+$/,
+                ),
+              },
+            ],
+          },
+        },
+        required: ['next'],
+      },
+      // A `toJSON` that isn't a method is just a property.
+      labelled: {
+        type: 'object',
+        properties: { toJSON: { type: 'string' }, text: { type: 'string' } },
+        required: ['toJSON', 'text'],
+      },
     },
     // Functions, methods, symbol keys, `undefined` and `bigint` aren't sent.
     required: [
@@ -241,7 +266,17 @@ test('types document as JSON.stringify sends them (21)', async () => {
       'when',
       'upper',
       'sparse',
+      'level',
+      'chain',
+      'labelled',
     ],
+  });
+  const [anonymous] = Object.entries(shapes.components.schemas).filter(([k]) =>
+    /^shapes\.output\.Type\d+$/.test(k),
+  );
+  expect(anonymous![1]).toMatchObject({
+    properties: { depth: { type: 'number' } },
+    required: ['next', 'depth'],
   });
   const coded = op(shapes, 'get', '/api/coded');
   expect(
@@ -255,6 +290,11 @@ test('types document as JSON.stringify sends them (21)', async () => {
     ['403', 'FORBIDDEN'],
     ['409', 'CONFLICT'],
     ['default', undefined],
+  ]);
+  // A code only known as `string` has no response of its own.
+  expect(Object.keys(op(shapes, 'get', '/api/vague').responses)).toEqual([
+    '200',
+    'default',
   ]);
   expect(json(op(shapes, 'get', '/api/empty'), '200')).toEqual({});
   expect(json(op(shapes, 'get', '/api/callable'), '200')).toEqual({});

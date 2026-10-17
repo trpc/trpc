@@ -60,8 +60,10 @@ type Schema = Record<string, unknown>;
 const absolute = (path: string | URL): string => {
   if (path instanceof URL) return decodeURIComponent(path.pathname);
   if (path.startsWith('/') || /^[A-Za-z]:[\\/]/.test(path)) return path;
-  const cwd = (globalThis as { process?: { cwd(): string } }).process?.cwd();
-  return cwd ? `${cwd}/${path.replace(/^\.\//, '')}` : path;
+  const cwd = (
+    globalThis as unknown as { process: { cwd(): string } }
+  ).process.cwd();
+  return `${cwd}/${path.replace(/^\.\//, '')}`;
 };
 
 const dirname = (path: string) => path.slice(0, path.search(/[\\/][^\\/]*$/));
@@ -73,7 +75,7 @@ const PRIMITIVES: ReadonlyArray<[number, Schema]> = [
     TypeFlags.String | TypeFlags.TemplateLiteral | TypeFlags.StringMapping,
     { type: 'string' },
   ],
-  [TypeFlags.Number, { type: 'number' }],
+  [TypeFlags.Number | TypeFlags.Enum, { type: 'number' }],
   [TypeFlags.Boolean, { type: 'boolean' }],
   [TypeFlags.Null, { type: 'null' }],
 ];
@@ -131,7 +133,7 @@ class TypeToSchema {
     )
       return undefined;
     if (has(type, TypeFlags.Boolean)) return { type: 'boolean' };
-    if (type.isUnionType()) return this.union(type.getTypes() ?? []);
+    if (type.isUnionType()) return this.union(type.getTypes());
     if (
       has(
         type,
@@ -143,20 +145,13 @@ class TypeToSchema {
       return { const: (type as Type & { value: unknown }).value };
     for (const [flag, schema] of PRIMITIVES) if (has(type, flag)) return schema;
     if (type.isIntersectionType()) {
-      const primitive = (type.getTypes() ?? []).find(
-        (t) => !has(t, TypeFlags.Object | TypeFlags.NonPrimitive),
-      );
+      const primitive = type
+        .getTypes()
+        .find((t) => !has(t, TypeFlags.Object | TypeFlags.NonPrimitive));
       // Branded types (`string & { __brand }`) are their primitive.
       if (primitive) return this.convert(primitive);
     }
-    if (
-      has(
-        type,
-        TypeFlags.Object | TypeFlags.Intersection | TypeFlags.NonPrimitive,
-      )
-    )
-      return this.object(type);
-    return {};
+    return this.object(type);
   }
 
   private union(types: ReadonlyArray<Type>): Schema | undefined {
@@ -246,8 +241,7 @@ class TypeToSchema {
     for (const prop of properties) {
       if (prop.flags & SymbolFlags.Method || prop.name.startsWith('__@'))
         continue;
-      const propType = checker.getTypeOfSymbol(prop);
-      if (!propType) continue;
+      const propType = checker.getTypeOfSymbol(prop)!;
       const schema = this.convert(propType);
       if (schema === undefined) continue;
       const doc = prop.getDocumentationComment(checker);
@@ -255,9 +249,9 @@ class TypeToSchema {
       const optional =
         prop.flags & SymbolFlags.Optional ||
         (propType.isUnionType() &&
-          (propType.getTypes() ?? []).some((t) =>
-            has(t, TypeFlags.Undefined | TypeFlags.Void),
-          ));
+          propType
+            .getTypes()
+            .some((t) => has(t, TypeFlags.Undefined | TypeFlags.Void)));
       if (!optional) required.push(prop.name);
     }
     const schema: Schema = { type: 'object', properties: props };
@@ -282,15 +276,15 @@ function propertyType(
 }
 
 function inferErrors(checker: Checker, errors: Type): InferredTypes['errors'] {
-  const members = errors.isUnionType() ? (errors.getTypes() ?? []) : [errors];
+  const members = errors.isUnionType() ? errors.getTypes() : [errors];
   const found: Array<InferredTypes['errors'][number]> = [];
   for (const member of members) {
     if (has(member, TypeFlags.Never)) continue;
-    const code = propertyType(checker, member, 'code');
+    const code = propertyType(checker, member, 'code')!;
     // `error({ code })` with a union of codes: one response per code.
-    const codes = (
-      code?.isUnionType() ? (code.getTypes() ?? []) : code ? [code] : []
-    ).filter((c) => c.isStringLiteralType());
+    const codes = (code.isUnionType() ? code.getTypes() : [code]).filter((c) =>
+      c.isStringLiteralType(),
+    );
     if (codes.length === 0) continue;
     const status = propertyType(checker, member, '~status');
     const data = propertyType(checker, member, 'data');
@@ -316,14 +310,13 @@ function inferProcedure(checker: Checker, procedure: Type): InferredTypes {
     checker,
     propertyType(checker, procedure, '~trpc')!,
     '~types',
-  );
-  if (!def) return { errors: [] };
+  )!;
   const input = propertyType(checker, def, 'input');
   let output = propertyType(checker, def, 'output');
   if (output?.getSymbol()?.name === 'TrackedEnvelope') {
     output = propertyType(checker, output, 'data');
   }
-  const errors = propertyType(checker, def, 'errors');
+  const errors = propertyType(checker, def, 'errors')!;
   return {
     input:
       input && !has(input, TypeFlags.Unknown | TypeFlags.Never)
@@ -333,7 +326,7 @@ function inferProcedure(checker: Checker, procedure: Type): InferredTypes {
       output && !has(output, TypeFlags.Never)
         ? new TypeToSchema(checker).root(output)
         : undefined,
-    errors: errors ? inferErrors(checker, errors) : [],
+    errors: inferErrors(checker, errors),
   };
 }
 
@@ -344,14 +337,12 @@ function walk(
   out: Map<string, InferredTypes>,
 ): void {
   for (const prop of checker.getPropertiesOfType(type)) {
-    const child = checker.getTypeOfSymbol(prop);
-    if (!child) continue;
+    const child = checker.getTypeOfSymbol(prop)!;
     const path = prefix ? `${prefix}.${prop.name}` : prop.name;
     if (checker.getPropertyOfType(child, '~trpc')) {
       out.set(path, inferProcedure(checker, child));
     } else if (checker.getPropertyOfType(child, '~lazy')) {
-      const inner = propertyType(checker, child, '~types');
-      if (inner) walk(checker, inner, path, out);
+      walk(checker, propertyType(checker, child, '~types')!, path, out);
     } else if (has(child, TypeFlags.Object)) {
       walk(checker, child, path, out);
     }

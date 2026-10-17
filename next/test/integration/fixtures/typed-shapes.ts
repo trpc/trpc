@@ -17,6 +17,15 @@ class Money {
   }
 }
 
+// Members of an ambient enum without initializers are computed.
+declare enum Level {
+  Low,
+}
+
+interface Chain {
+  next: (Chain & { depth: number }) | null;
+}
+
 export interface Shapes {
   flag: boolean;
   either: true | false | null;
@@ -44,11 +53,15 @@ export interface Shapes {
   upper: Uppercase<string>;
   neither: undefined | void;
   sparse: Record<string, undefined>;
+  level: Level;
+  chain: Chain;
+  labelled: { toJSON: string; text: string };
 }
 
 const shapes = {} as Shapes;
 
 export const shapesRouter = {
+  version: 1,
   shapes: t.procedure.meta(get('/shapes')).query((): Shapes => shapes),
   empty: t.procedure.meta(get('/empty')).query((): undefined => undefined),
   callable: t.procedure
@@ -66,6 +79,12 @@ export const shapesRouter = {
       const code = shapes.flag ? ('CONFLICT' as const) : ('FORBIDDEN' as const);
       if (shapes.anything) return yield* error({ code });
       if (shapes.loose) return yield* error({ code: 'SOMETHING_ODD' });
+      return 1;
+    }),
+  ),
+  vague: t.procedure.meta(get('/vague')).query(() =>
+    Effect.gen(function* () {
+      if (shapes.flag) return yield* error({ code: String(shapes.when) });
       return 1;
     }),
   ),
