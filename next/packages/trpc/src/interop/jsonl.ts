@@ -1,4 +1,5 @@
 import { Cause, Effect, FiberSet, Queue, Stream } from 'effect';
+import { backpressure } from '../internal/effects.ts';
 import { isAsyncIterable, isPromiseLike } from '../serializer/stream.ts';
 import { isPlainObject } from '../serializer/utils.ts';
 
@@ -38,106 +39,111 @@ export const jsonlLines = (
   data: Record<string, unknown>,
   opts: JsonlOptions,
 ): Stream.Stream<string> =>
-  Stream.callback<string>((queue) =>
-    Effect.gen(function* () {
-      const fibers = yield* FiberSet.make<void, never>();
-      const fork = yield* FiberSet.runtime(fibers)<never>();
-      let counter = 0;
-      const emit = (line: unknown) =>
-        Queue.offerUnsafe(queue, `${JSON.stringify(opts.serialize(line))}\n`);
+  Stream.callback<string>(
+    (queue) =>
+      Effect.gen(function* () {
+        const fibers = yield* FiberSet.make<void, never>();
+        const fork = yield* FiberSet.runtime(fibers)<never>();
+        let counter = 0;
+        const emit = (line: unknown) =>
+          Effect.asVoid(
+            Queue.offer(queue, `${JSON.stringify(opts.serialize(line))}\n`),
+          );
 
-      /** Emits `line(encoded)`, then starts the deferred values it holds. */
-      const send = (
-        value: unknown,
-        path: Path,
-        line: (encoded: Encoded) => unknown,
-      ) => {
-        const started: Array<() => void> = [];
-        emit(line(encode(value, path, started)));
-        for (const start of started) start();
-      };
+        /** Emits `line(encoded)`, then starts the deferred values it holds. */
+        const send = (
+          value: unknown,
+          path: Path,
+          line: (encoded: Encoded) => unknown,
+        ) =>
+          Effect.suspend(() => {
+            const started: Array<() => void> = [];
+            return Effect.andThen(
+              emit(line(encode(value, path, started))),
+              Effect.sync(() => {
+                for (const start of started) start();
+              }),
+            );
+          });
 
-      const register = (
-        value: unknown,
-        path: Path,
-        started: Array<() => void>,
-      ): [number, number] => {
-        const id = counter++;
-        const failed = (status: number) => (cause: Cause.Cause<unknown>) =>
-          Effect.sync(() => emit([id, status, opts.formatError(cause, path)]));
-        if (isAsyncIterable(value) || Stream.isStream(value)) {
-          const stream = Stream.isStream(value)
-            ? (value as Stream.Stream<unknown, unknown>)
-            : Stream.fromAsyncIterable(value, (cause) => cause);
+        const register = (
+          value: unknown,
+          path: Path,
+          started: Array<() => void>,
+        ): [number, number] => {
+          const id = counter++;
+          const failed = (status: number) => (cause: Cause.Cause<unknown>) =>
+            emit([id, status, opts.formatError(cause, path)]);
+          if (isAsyncIterable(value) || Stream.isStream(value)) {
+            const stream = Stream.isStream(value)
+              ? (value as Stream.Stream<unknown, unknown>)
+              : Stream.fromAsyncIterable(value, (cause) => cause);
+            started.push(() =>
+              fork(
+                Stream.runForEach(stream, (item) =>
+                  send(item, path, (encoded) => [id, YIELD, encoded]),
+                ).pipe(
+                  Effect.matchCauseEffect({
+                    onSuccess: () => emit([id, RETURN, [[]]]),
+                    onFailure: failed(ERROR),
+                  }),
+                ),
+              ),
+            );
+            return [ITERABLE, id];
+          }
+          const settle = Effect.isEffect(value)
+            ? (value as Effect.Effect<unknown, unknown>)
+            : Effect.tryPromise({
+                try: () => Promise.resolve(value),
+                catch: (cause) => cause,
+              });
           started.push(() =>
             fork(
-              Stream.runForEach(stream, (item) =>
-                Effect.sync(() =>
-                  send(item, path, (encoded) => [id, YIELD, encoded]),
-                ),
-              ).pipe(
+              settle.pipe(
                 Effect.matchCauseEffect({
-                  onSuccess: () => Effect.sync(() => emit([id, RETURN, [[]]])),
-                  onFailure: failed(ERROR),
+                  onSuccess: (resolved) =>
+                    send(resolved, path, (encoded) => [id, FULFILLED, encoded]),
+                  onFailure: failed(REJECTED),
                 }),
               ),
             ),
           );
-          return [ITERABLE, id];
-        }
-        const settle = Effect.isEffect(value)
-          ? (value as Effect.Effect<unknown, unknown>)
-          : Effect.tryPromise({
-              try: () => Promise.resolve(value),
-              catch: (cause) => cause,
-            });
-        started.push(() =>
-          fork(
-            settle.pipe(
-              Effect.matchCauseEffect({
-                onSuccess: (resolved) =>
-                  Effect.sync(() =>
-                    send(resolved, path, (encoded) => [id, FULFILLED, encoded]),
-                  ),
-                onFailure: failed(REJECTED),
-              }),
-            ),
-          ),
-        );
-        return [PROMISE, id];
-      };
+          return [PROMISE, id];
+        };
 
-      const encode = (
-        value: unknown,
-        path: Path,
-        started: Array<() => void>,
-      ): Encoded => {
-        if (value === undefined) return [[]];
-        if (isDeferred(value)) {
-          return [[0], [null, ...register(value, path, started)]];
-        }
-        if (!isPlainObject(value)) return [[value]];
-        const shallow: Record<string, unknown> = {};
-        const defs: Array<[string, number, number]> = [];
-        for (const [key, item] of Object.entries(value)) {
-          if (!isDeferred(item)) {
-            shallow[key] = item;
-            continue;
+        const encode = (
+          value: unknown,
+          path: Path,
+          started: Array<() => void>,
+        ): Encoded => {
+          if (value === undefined) return [[]];
+          if (isDeferred(value)) {
+            return [[0], [null, ...register(value, path, started)]];
           }
-          shallow[key] = 0;
-          defs.push([key, ...register(item, [...path, key], started)]);
-        }
-        return [[shallow], ...defs];
-      };
+          if (!isPlainObject(value)) return [[value]];
+          const shallow: Record<string, unknown> = {};
+          const defs: Array<[string, number, number]> = [];
+          for (const [key, item] of Object.entries(value)) {
+            if (!isDeferred(item)) {
+              shallow[key] = item;
+              continue;
+            }
+            shallow[key] = 0;
+            defs.push([key, ...register(item, [...path, key], started)]);
+          }
+          return [[shallow], ...defs];
+        };
 
-      const started: Array<() => void> = [];
-      const head: Record<string, Encoded> = {};
-      for (const [key, value] of Object.entries(data)) {
-        head[key] = encode(value, [key], started);
-      }
-      emit(head);
-      for (const start of started) start();
-      yield* FiberSet.awaitEmpty(fibers);
-      yield* Queue.end(queue);
-    }),
+        const started: Array<() => void> = [];
+        const head: Record<string, Encoded> = {};
+        for (const [key, value] of Object.entries(data)) {
+          head[key] = encode(value, [key], started);
+        }
+        yield* emit(head);
+        for (const start of started) start();
+        yield* FiberSet.awaitEmpty(fibers);
+        yield* Queue.end(queue);
+      }),
+    backpressure,
   );

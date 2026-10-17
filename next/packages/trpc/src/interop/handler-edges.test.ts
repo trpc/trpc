@@ -347,3 +347,29 @@ test('middleware wraps the app, and fetch passes the platform on', async () => {
   expect(seen).toEqual(['200']);
   await handler.dispose();
 });
+
+test('a streamed batch nobody reads waits instead of buffering its rows', async () => {
+  let yielded = 0;
+  let closed = false;
+  const handler = createV11Handler({
+    router: {
+      firehose: t.procedure.query(async function* () {
+        try {
+          while (yielded < 10_000) yield ++yielded;
+        } finally {
+          closed = true;
+        }
+      }),
+    },
+    createContext: () => ({ user: 'ada' }),
+  });
+  const res = await call(handler, '/trpc/firehose?batch=1&input={}', {
+    headers: { 'trpc-accept': 'application/jsonl' },
+  });
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  expect(yielded).toBeLessThan(100);
+  await res.body!.cancel();
+  await expect.poll(() => closed).toBe(true);
+  expect(yielded).toBeLessThan(100);
+  await handler.dispose();
+});
