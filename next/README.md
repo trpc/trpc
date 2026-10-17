@@ -17,8 +17,8 @@ next/
   packages/upgrade/     `@trpc12/upgrade`: the v11 → v12 codemod (`trpc12-upgrade` bin)
   packages/nest/        `@trpc12/nest`: contracts implemented in NestJS controllers (`@experimental_Implement`, `experimental_TrpcModule`)
   examples/             workspace-linked examples
-  test/integration/     integration tests: real clients against real HTTP servers
-  test/tanstack-query/  TanStack Query tests: real components per adapter (happy-dom) against real servers
+  packages/*/src/**/*.test.ts  tests beside the code they show; shared fixtures in `src/**/fixtures/`
+  test/integration/     integration tests and recipes not tied to one package: real clients against real HTTP servers
   test/react/           tests of the two experimental React packages
   test/portability/     TS2742/TS2883 fixture (emits declarations)
   spikes/               throwaway experiments; results in .agent-docs/notes/

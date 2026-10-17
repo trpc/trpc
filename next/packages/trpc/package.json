@@ -158,8 +158,14 @@
     "effect": "^4.0.0"
   },
   "devDependencies": {
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "happy-dom": "20.14.6",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
     "typescript": "^7.0.2",
-    "vite-plus": "1.1.0"
+    "vite-plus": "1.1.0",
+    "zod": "4.6.5"
   },
   "peerDependencies": {
     "typescript": "^7.0.2"

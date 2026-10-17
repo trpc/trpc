@@ -5,4 +5,4 @@
 - (agent) The previous state is ignored: with two arguments, the second is the input. An action bound with `.bind(null, x)` therefore reads the form, not `x`; procedures take one input, so bound arguments have no slot anyway.
 - Compared: oRPC's `useServerAction(action)` returns `{ execute, data, error, status }` and is a separate React package; v11 had `experimental_serverActionProcedure` with a `useAction` hook in `@trpc/next`.
 - Lost: an `execute()` with status flags outside a form or transition (`startTransition(() => submit(input))` does it).
-- Lives in: `packages/trpc/src/actions/index.ts` (`Action`), `test/integration/actions.test.ts`, `test/tanstack-query/actions.test.tsx`, `docs/actions-and-rsc.md#form-state-and-optimistic-updates`.
+- Lives in: `packages/trpc/src/actions/index.ts` (`Action`), `test/integration/actions.test.ts`, `packages/trpc/src/actions/react.test.tsx`, `docs/actions-and-rsc.md#form-state-and-optimistic-updates`.

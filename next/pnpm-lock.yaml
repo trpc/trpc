@@ -695,12 +695,30 @@ importers:
         specifier: ^4.0.0
         version: 4.0.2
     devDependencies:
+      '@types/react':
+        specifier: 19.3.0
+        version: 19.3.0
+      '@types/react-dom':
+        specifier: 19.3.0
+        version: 19.3.0(@types/react@19.3.0)
+      happy-dom:
+        specifier: 20.14.6
+        version: 20.14.6
+      react:
+        specifier: 19.3.0
+        version: 19.3.0
+      react-dom:
+        specifier: 19.3.0
+        version: 19.3.0(react@19.3.0)
       typescript:
         specifier: ^7.0.2
         version: 7.0.2
       vite-plus:
         specifier: 1.1.0
         version: 1.1.0(@types/node@24.19.1)(@vitest/coverage-v8@5.0.3)(@vitest/ui@5.0.3)(esbuild@0.28.2)(happy-dom@20.14.6)(svelte@5.57.2)(typescript@7.0.2)
+      zod:
+        specifier: 4.6.5
+        version: 4.6.5
 
   packages/upgrade:
     dependencies:
@@ -992,139 +1010,6 @@ importers:
       vite-plus:
         specifier: 1.1.0
         version: 1.1.0(@types/node@24.19.1)(@vitest/coverage-v8@5.0.3)(@vitest/ui@5.0.3)(esbuild@0.28.2)(happy-dom@20.14.6)(svelte@5.57.2)(typescript@7.0.2)
-      zod:
-        specifier: 4.6.5
-        version: 4.6.5
-
-  test/tanstack-query:
-    dependencies:
-      '@trpc12/tanstack-angular-query':
-        specifier: workspace:*
-        version: link:../../packages/tanstack-angular-query
-      '@trpc12/tanstack-lit-query':
-        specifier: workspace:*
-        version: link:../../packages/tanstack-lit-query
-      '@trpc12/tanstack-preact-query':
-        specifier: workspace:*
-        version: link:../../packages/tanstack-preact-query
-      '@trpc12/tanstack-query':
-        specifier: workspace:*
-        version: link:../../packages/tanstack-query
-      '@trpc12/tanstack-react-query':
-        specifier: workspace:*
-        version: link:../../packages/tanstack-react-query
-      '@trpc12/tanstack-solid-query':
-        specifier: workspace:*
-        version: link:../../packages/tanstack-solid-query
-      '@trpc12/tanstack-svelte-query':
-        specifier: workspace:*
-        version: link:../../packages/tanstack-svelte-query
-      '@trpc12/tanstack-vue-query':
-        specifier: workspace:*
-        version: link:../../packages/tanstack-vue-query
-      '@trpc12/trpc':
-        specifier: workspace:*
-        version: link:../../packages/trpc
-    devDependencies:
-      '@angular/common':
-        specifier: 22.2.2
-        version: 22.2.2(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2))(rxjs@7.8.2)
-      '@angular/compiler':
-        specifier: 22.2.2
-        version: 22.2.2
-      '@angular/core':
-        specifier: 22.2.2
-        version: 22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2)
-      '@angular/platform-browser':
-        specifier: 22.2.2
-        version: 22.2.2(@angular/common@22.2.2(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2))
-      '@angular/platform-server':
-        specifier: 22.2.2
-        version: 22.2.2(@angular/common@22.2.2(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/compiler@22.2.2)(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2))(@angular/platform-browser@22.2.2(@angular/common@22.2.2(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2)))(rxjs@7.8.2)
-      '@effect/platform-node':
-        specifier: 4.0.2
-        version: 4.0.2(effect@4.0.2)(redis@6.3.0)
-      '@lit/context':
-        specifier: 1.1.6
-        version: 1.1.6
-      '@tanstack/angular-query-experimental':
-        specifier: 5.104.1
-        version: 5.104.1(@angular/common@22.2.2(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2))(csstype@3.2.3)
-      '@tanstack/db':
-        specifier: 0.15.0
-        version: 0.15.0(typescript@7.0.2)
-      '@tanstack/lit-query':
-        specifier: 0.2.26
-        version: 0.2.26(@tanstack/query-core@5.104.1)(lit@3.3.3)
-      '@tanstack/preact-query':
-        specifier: 5.104.1
-        version: 5.104.1(preact@10.29.8)
-      '@tanstack/query-core':
-        specifier: 5.104.1
-        version: 5.104.1
-      '@tanstack/query-db-collection':
-        specifier: 1.4.5
-        version: 1.4.5(@tanstack/query-core@5.104.1)(typescript@7.0.2)
-      '@tanstack/react-query':
-        specifier: 5.104.1
-        version: 5.104.1(react@19.3.0)
-      '@tanstack/solid-query':
-        specifier: 5.104.1
-        version: 5.104.1(solid-js@1.9.17)
-      '@tanstack/svelte-query':
-        specifier: 6.3.1
-        version: 6.3.1(svelte@5.57.2)
-      '@tanstack/vue-query':
-        specifier: 5.104.1
-        version: 5.104.1(vue@3.5.43(typescript@7.0.2))
-      '@types/node':
-        specifier: ^24.0.0
-        version: 24.19.1
-      '@types/react':
-        specifier: 19.3.0
-        version: 19.3.0
-      '@types/react-dom':
-        specifier: 19.3.0
-        version: 19.3.0(@types/react@19.3.0)
-      effect:
-        specifier: 4.0.2
-        version: 4.0.2
-      happy-dom:
-        specifier: 20.14.6
-        version: 20.14.6
-      lit:
-        specifier: 3.3.3
-        version: 3.3.3
-      preact:
-        specifier: 10.29.8
-        version: 10.29.8
-      react:
-        specifier: 19.3.0
-        version: 19.3.0
-      react-dom:
-        specifier: 19.3.0
-        version: 19.3.0(react@19.3.0)
-      rxjs:
-        specifier: 7.8.2
-        version: 7.8.2
-      solid-js:
-        specifier: 1.9.17
-        version: 1.9.17
-      superjson:
-        specifier: 2.2.6
-        version: 2.2.6
-      svelte:
-        specifier: 5.57.2
-        version: 5.57.2
-      typescript:
-        specifier: ^7.0.2
-        version: 7.0.2
-      vite-plus:
-        specifier: 1.1.0
-        version: 1.1.0(@types/node@24.19.1)(@vitest/coverage-v8@5.0.3)(@vitest/ui@5.0.3)(esbuild@0.28.2)(happy-dom@20.14.6)(svelte@5.57.2)(typescript@7.0.2)
-      vue:
-        specifier: 3.5.43
-        version: 3.5.43(typescript@7.0.2)
       zod:
         specifier: 4.6.5
         version: 4.6.5
