@@ -1,7 +1,9 @@
 import {
   createTrpcClient,
   httpLink,
+  link,
   safe,
+  splitLink,
   TrpcError,
   routerType,
 } from '@trpc12/trpc/client';
@@ -218,5 +220,172 @@ test('a stream that ends early rejects open values with STREAM_INTERRUPTED', asy
   expect(err).toMatchObject({
     code: 'STREAM_INTERRUPTED',
     _tag: 'STREAM_INTERRUPTED',
+  });
+});
+
+// --- responses -----------------------------------------------------------------
+
+const versioned = {
+  version: t.procedure.query(({ response }) => {
+    response.headers.set('x-version', '7');
+    return 'v7';
+  }),
+  fail: router.fail,
+  ticks: t.procedure.subscription(async function* () {
+    yield 1;
+  }),
+};
+
+/**
+ * Needs `'response'`: records each call's response before its value, then
+ * hands it on to the caller's own `onResponse`.
+ */
+const responsesLink = (seen: Array<{ path: string; status: number }>) =>
+  link<{ needs: 'response' }>(({ op, next }) =>
+    next({
+      ...op,
+      context: {
+        ...op.context,
+        onResponse: (meta) => {
+          seen.push({ path: op.path, status: meta.status });
+          op.context.onResponse?.(meta);
+        },
+      },
+    }),
+  );
+
+test('a link before httpLink reads each response through onResponse', async () => {
+  await using server = await createTestServer({ router: versioned });
+  const seen: Array<{ path: string; status: number }> = [];
+  let version: string | null = null;
+  const client = createTrpcClient({
+    router: routerType<typeof versioned>(),
+    links: [responsesLink(seen), httpLink({ url: server.url })],
+  });
+  expect(
+    await client.version.query(undefined, {
+      onResponse: ({ headers }) => (version = headers.get('x-version')),
+    }),
+  ).toBe('v7');
+  expect(version).toBe('7');
+  for await (const tick of client.ticks.subscribe()) expect(tick).toBe(1);
+  expect(seen).toEqual([
+    { path: 'version', status: 200 },
+    { path: 'ticks', status: 200 },
+  ]);
+});
+
+test('each call in a batch gets its own line status with the batch headers', async () => {
+  await using server = await createTestServer({
+    router: versioned,
+    batch: true,
+  });
+  const seen: Array<{ path: string; status: number }> = [];
+  const client = createTrpcClient({
+    router: routerType<typeof versioned>(),
+    links: [responsesLink(seen), httpLink({ url: server.url, batch: true })],
+  });
+  const headers: Headers[] = [];
+  const onResponse = (meta: { headers: Headers }) => headers.push(meta.headers);
+  await Promise.all([
+    safe(client.version.query(undefined, { onResponse })),
+    safe(client.fail.query(undefined, { onResponse })),
+  ]);
+  expect(headers).toHaveLength(2);
+  expect(headers[0]).toBe(headers[1]);
+  expect(seen).toEqual([
+    { path: 'version', status: 200 },
+    { path: 'fail', status: 404 },
+  ]);
+  expect(server.requests).toHaveLength(1);
+
+  await using unbatched = await createTestServer({
+    router: versioned,
+    batch: false,
+  });
+  seen.length = 0;
+  const rejected = createTrpcClient({
+    router: routerType<typeof versioned>(),
+    links: [responsesLink(seen), httpLink({ url: unbatched.url, batch: true })],
+  });
+  const [, err] = await safe(rejected.version.query());
+  expect(err).toMatchObject({ code: 'BAD_REQUEST' });
+  expect(seen).toEqual([{ path: 'version', status: 400 }]);
+});
+
+test('an onResponse that throws fails its call with CLIENT_ERROR', async () => {
+  await using server = await createTestServer({
+    router: versioned,
+    batch: true,
+  });
+  const throwing = {
+    onResponse: () => {
+      throw new Error('no thanks');
+    },
+  };
+  const failure = { code: 'CLIENT_ERROR', message: 'no thanks' };
+  for (const batch of [false, true]) {
+    const client = createTrpcClient({
+      router: routerType<typeof versioned>(),
+      links: [httpLink({ url: server.url, batch })],
+    });
+    const [ok, thrown] = await Promise.all([
+      safe(client.version.query()),
+      safe(client.version.query(undefined, throwing)),
+    ]);
+    expect(ok.data).toBe('v7');
+    expect(thrown.error).toMatchObject(failure);
+  }
+  const client = createTrpcClient({
+    router: routerType<typeof versioned>(),
+    links: [httpLink({ url: server.url, batch: true })],
+  });
+  await using unbatched = await createTestServer({
+    router: versioned,
+    batch: false,
+  });
+  const rejected = createTrpcClient({
+    router: routerType<typeof versioned>(),
+    links: [httpLink({ url: unbatched.url, batch: true })],
+  });
+  const [, rejectedErr] = await safe(
+    rejected.version.query(undefined, throwing),
+  );
+  expect(rejectedErr).toMatchObject(failure);
+  await expect(
+    (async () => {
+      for await (const _ of client.ticks.subscribe(undefined, throwing));
+    })(),
+  ).rejects.toMatchObject(failure);
+});
+
+test('a link that needs the response must have a provider after it', () => {
+  const url = 'http://localhost';
+  const seen: Array<{ path: string; status: number }> = [];
+  const http = httpLink({ url });
+  const silent = link(({ op, next }) => next(op));
+  createTrpcClient({
+    router: routerType<typeof versioned>(),
+    links: [responsesLink(seen), silent, http],
+  });
+  createTrpcClient({
+    router: routerType<typeof versioned>(),
+    // @ts-expect-error -- httpLink comes first, so it can't report to it
+    links: [http, responsesLink(seen)],
+  });
+  createTrpcClient({
+    router: routerType<typeof versioned>(),
+    links: [
+      responsesLink(seen),
+      splitLink({ condition: () => true, true: http, false: [silent, http] }),
+    ],
+  });
+  createTrpcClient({
+    router: routerType<typeof versioned>(),
+    // @ts-expect-error -- only one branch reports responses
+    links: [
+      responsesLink(seen),
+      splitLink({ condition: () => true, true: http, false: silent }),
+    ],
   });
 });

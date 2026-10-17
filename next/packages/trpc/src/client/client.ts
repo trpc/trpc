@@ -22,6 +22,7 @@ import type {
   SubscribeOptions,
   TrpcClient,
   TrpcPromise,
+  UnmetNeedCheck,
 } from './types.ts';
 
 /**
@@ -206,7 +207,9 @@ export function createTrpcClient<
   TSource,
   const TLinks extends ReadonlyArray<TrpcLink<any, RouterOf<TSource>>>,
 >(
-  opts: TypedClientOptions<TSource, TLinks> & DuplicateSwitchCheck<TLinks>,
+  opts: TypedClientOptions<TSource, TLinks> &
+    DuplicateSwitchCheck<TLinks> &
+    UnmetNeedCheck<TLinks>,
 ): TrpcClient<
   RouterOf<TSource>,
   LinksContext<TLinks>,

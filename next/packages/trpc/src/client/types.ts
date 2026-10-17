@@ -452,6 +452,42 @@ export type DuplicateSwitchCheck<TLinks> = [DuplicateSwitch<TLinks>] extends [
       links: `Two switchLinks on one chain are named "${DuplicateSwitch<TLinks>}"`;
     };
 
+type ProvidesOf<TLink> =
+  DeclOf<TLink> extends infer D
+    ? D extends { provides: infer P extends string }
+      ? P
+      : never
+    : never;
+
+type NeedsOf<TLink> =
+  DeclOf<TLink> extends infer D
+    ? D extends { needs: infer N extends string }
+      ? N
+      : never
+    : never;
+
+/** The first need, from the end, that no link after its link provides. */
+type UnmetNeed<
+  TLinks,
+  TBelow extends string = never,
+> = TLinks extends readonly [...infer Rest, infer Last]
+  ? [Exclude<NeedsOf<Last>, TBelow>] extends [never]
+    ? UnmetNeed<Rest, TBelow | ProvidesOf<Last>>
+    : Exclude<NeedsOf<Last>, TBelow>
+  : never;
+
+/**
+ * A type error on `links` when a link needs something (`needs`) that no
+ * link after it provides. A link reads what's below it, so a provider
+ * before it doesn't count.
+ * @internal
+ */
+export type UnmetNeedCheck<TLinks> = [UnmetNeed<TLinks>] extends [never]
+  ? unknown
+  : {
+      links: `A link needs '${UnmetNeed<TLinks>}' from a link after it`;
+    };
+
 /**
  * Every procedure path of a router, `'post.byId'`.
  * @since 0.1.0

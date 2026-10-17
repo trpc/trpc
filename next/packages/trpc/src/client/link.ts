@@ -32,7 +32,26 @@ export type BuiltinCallOptions = {
    * drops, instead of subscribing again. Read by `httpLink` and `wsLink`.
    */
   reconnect?: false;
+  /**
+   * Called with each response this call gets, before its value goes up the
+   * chain. A batched call gets its own line's status and the batch's
+   * headers; a resumed stream or a reconnected subscription gets one per
+   * response. An error it throws fails the call. A link that sets it calls
+   * the one already in `op.context` too, so the caller's still runs. Read
+   * by `httpLink`, which declares `provides: 'response'`.
+   */
+  onResponse?: ((meta: ResponseMeta) => void) | undefined;
 };
+
+/**
+ * A response as `onResponse` sees it.
+ * @since 0.1.0
+ * @stability experimental
+ */
+export interface ResponseMeta {
+  readonly status: number;
+  readonly headers: Headers;
+}
 
 /**
  * `fetch` options `httpLink` lets calls set: `RequestInit` without what the
@@ -132,6 +151,16 @@ export interface LinkDecl {
    * array that declares one wins, so a link in front can restore types.
    */
   form?: OutputForm;
+  /**
+   * What the link offers the links before it, such as `'response'` for
+   * `httpLink`'s `onResponse` reports.
+   */
+  provides?: string;
+  /**
+   * What the link needs a link after it to provide. `createTrpcClient`
+   * rejects a `links` array where none does.
+   */
+  needs?: string;
 }
 
 /**

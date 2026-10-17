@@ -36,6 +36,7 @@ export {
   type Operation,
   type OperationStream,
   type BuiltinCallOptions,
+  type ResponseMeta,
   type TrpcRequestInit,
   type TrpcLink,
 } from './link.ts';

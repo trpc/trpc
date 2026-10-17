@@ -35,7 +35,7 @@ const traceLink = link<{ context: { traceId?: string } }>(({ op, next }) => {
 // client.post.byId.query(input, { traceId: 'abc' })
 ```
 
-Links receive the fields in `op.context`. `signal` and `lastEventId` are reserved: a link declaring either is a type error. The built-in fields (`headers`, `init`, `batch`, `reconnect`) are always there; anything else comes from what your links declare.
+Links receive the fields in `op.context`. `signal` and `lastEventId` are reserved: a link declaring either is a type error. The built-in fields (`headers`, `init`, `batch`, `reconnect`, `onResponse`) are always there; anything else comes from what your links declare.
 
 A link can also declare the errors it fails calls with, and the operation types it can't carry. Declared errors join every call's typed union (`defined: true`). Procedures of an unsupported type lose their method:
 
@@ -55,7 +55,32 @@ if (err?.defined && err.code === 'RATE_LIMITED') retryIn(err.data.retryAfter);
 client.onPost.subscribe; // type error: no link carries subscriptions
 ```
 
-`splitLink` and `switchLink` lack an operation type only when every branch does. Built-in links carry every type, and their failures (`NETWORK_ERROR`, `CLIENT_CLOSED_REQUEST`) stay in the untyped part of the union. TanStack context helpers read them from the client factory's or the client's type, `createTrpcContext<typeof makeClient>()` (`ClientTypes<T>` gives a client type's router, link context and link types).
+`httpLink` hands each call's response to an `onResponse` call option (`{ status, headers }`), before the value goes up the chain. A batched call gets its own line's status and the batch's headers. A link that reads it declares `needs: 'response'`, and the client rejects a `links` array with no link after it that `provides: 'response'`:
+
+```ts
+const versionLink = link<{ needs: 'response' }>(({ op, next }) =>
+  next({
+    ...op,
+    context: {
+      ...op.context,
+      onResponse: (res) => {
+        checkVersion(res.headers.get('x-version'));
+        op.context.onResponse?.(res);
+      },
+    },
+  }),
+);
+createTrpcClient({
+  router: routerType<AppRouter>(),
+  links: [versionLink, httpLink({ url })],
+});
+createTrpcClient({
+  router: routerType<AppRouter>(),
+  links: [httpLink({ url }), versionLink],
+}); // type error
+```
+
+`splitLink` and `switchLink` lack an operation type only when every branch does, and provide only what every branch provides. Built-in links carry every type, and their failures (`NETWORK_ERROR`, `CLIENT_CLOSED_REQUEST`) stay in the untyped part of the union. TanStack context helpers read them from the client factory's or the client's type, `createTrpcContext<typeof makeClient>()` (`ClientTypes<T>` gives a client type's router, link context and link types).
 
 ## Links
 

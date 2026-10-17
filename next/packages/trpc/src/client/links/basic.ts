@@ -46,7 +46,16 @@ type ChainUnsupported<T> =
       : never
     : never;
 
-type OmitUnsupported<D> = D extends unknown ? Omit<D, 'unsupported'> : never;
+type ChainProvides<T> =
+  ChainDecl<T> extends infer D
+    ? D extends { provides: infer P extends string }
+      ? P
+      : never
+    : never;
+
+type OmitBranchOnly<D> = D extends unknown
+  ? Omit<D, 'unsupported' | 'provides' | 'needs'>
+  : never;
 
 type Intersect<U> = (U extends unknown ? (x: U) => void : never) extends (
   x: infer I,
@@ -63,16 +72,29 @@ type CommonUnsupported<TBranches extends Record<string, Chain>> =
     ? U
     : never;
 
+type CommonProvides<TBranches extends Record<string, Chain>> =
+  Intersect<
+    {
+      [K in keyof TBranches]: { p: ChainProvides<TBranches[K]> };
+    }[keyof TBranches]
+  > extends { p: infer P extends string }
+    ? P
+    : never;
+
 /**
  * What a link that routes to one of several chains declares: what its
- * chains declare, except that it can't carry only what none of them can.
+ * chains declare, except that it can't carry only what none of them can,
+ * and provides only what all of them do.
  * @internal
  */
 export type BranchesDecl<TBranches extends Record<string, Chain>> =
-  | OmitUnsupported<ChainDecl<TBranches[keyof TBranches]>>
+  | OmitBranchOnly<ChainDecl<TBranches[keyof TBranches]>>
   | ([CommonUnsupported<TBranches>] extends [never]
       ? never
-      : { unsupported: CommonUnsupported<TBranches> });
+      : { unsupported: CommonUnsupported<TBranches> })
+  | ([CommonProvides<TBranches>] extends [never]
+      ? never
+      : { provides: CommonProvides<TBranches> });
 
 /**
  * Options for {@link splitLink}.

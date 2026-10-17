@@ -29,6 +29,7 @@ import {
   type AnySerializer,
 } from '../../serializer/index.ts';
 import {
+  toClientError,
   withSerializer,
   type Operation,
   type OperationStream,
@@ -124,13 +125,14 @@ export interface HttpLinkOptions<
 }
 
 /**
- * What `httpLink` declares: its serializer's form, batching when on, and no
- * subscriptions when they're off.
+ * What `httpLink` declares: its serializer's form, the responses it reports
+ * to `onResponse`, batching when on, and no subscriptions when they're off.
  * @since 0.1.0
  * @stability stable
  */
 export type HttpLinkDecl<TOpts> = {
   form: FormOfOptions<TOpts>;
+  provides: 'response';
 } & (TOpts extends { batch: true | { maxItems?: number } }
   ? { batches: true }
   : {}) &
@@ -227,6 +229,14 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
     opts.reconnect?.delayMs ??
     ((attempt: number) => Math.min(1000 * 2 ** (attempt - 1), 30_000));
   const reviveError = (value: unknown) => fromWireError(value);
+  /** Hands `op` its response; an `onResponse` that throws fails the call. */
+  const report = (op: Operation, status: number, headers: Headers) => {
+    try {
+      op.context.onResponse?.({ status, headers });
+    } catch (cause) {
+      throw toClientError(cause);
+    }
+  };
 
   /**
    * The request options for `ops`, which share one `init` (see `initKey`).
@@ -376,6 +386,7 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
                       { [HEADER.resumeFrom]: String(count) },
                       linked(signal, op),
                     );
+                    report(op, res.status, res.headers);
                     if (!res.ok) throw await readError(res);
                     const type = res.headers.get('content-type') ?? '';
                     if (!streamed(type) || !res.body) {
@@ -472,16 +483,16 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
   const single = (op: Operation): OperationStream =>
     Stream.fromEffect(
       Effect.tryPromise({
-        try: async (signal) =>
-          readResult(
-            await send(
-              op,
-              `${CONTENT_TYPE.json}, ${streamType}`,
-              {},
-              linked(signal, op),
-            ),
+        try: async (signal) => {
+          const res = await send(
             op,
-          ),
+            `${CONTENT_TYPE.json}, ${streamType}`,
+            {},
+            linked(signal, op),
+          );
+          report(op, res.status, res.headers);
+          return readResult(res, op);
+        },
         catch: toHttpError,
       }),
     );
@@ -519,7 +530,7 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
         const frames = yield* forEachSeq(live, () =>
           Queue.unbounded<Frame, AnyTrpcError | Cause.Done>(),
         );
-        const onLine = (line: BatchLine) => {
+        const onLine = (line: BatchLine, headers: Headers) => {
           const item = live[line.i];
           const queue = frames[line.i];
           if (!item || !queue) return Effect.void;
@@ -528,6 +539,13 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
             return Effect.void;
           }
           received.add(line.i);
+          try {
+            report(item.op, line.status, headers);
+          } catch (error) {
+            item.reject(error as AnyTrpcError);
+            Queue.endUnsafe(queue);
+            return Effect.void;
+          }
           if (line.status >= 400) {
             let error: AnyTrpcError;
             try {
@@ -584,13 +602,23 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
           });
           if (!res.ok || !res.body) {
             const err = yield* Effect.promise(() => readError(res));
-            for (const item of live) item.reject(err);
+            for (const item of live) {
+              let failure = err;
+              try {
+                report(item.op, res.status, res.headers);
+              } catch (error) {
+                failure = error as AnyTrpcError;
+              }
+              item.reject(failure);
+            }
             return;
           }
           yield* readStream(
             res.headers.get('content-type') ?? '',
             res.body,
-          ).pipe(Stream.runForEach((line) => onLine(line as BatchLine)));
+          ).pipe(
+            Stream.runForEach((line) => onLine(line as BatchLine, res.headers)),
+          );
           rejectRest(
             new TrpcError({
               code: 'PARSE_ERROR',
@@ -744,6 +772,10 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
             ),
           );
           if (!res) return false;
+          yield* Effect.try({
+            try: () => report(op, res.status, res.headers),
+            catch: toClientError,
+          });
           if (!res.ok || !res.body) {
             return yield* Effect.fail(
               yield* Effect.promise(() => readError(res)),
