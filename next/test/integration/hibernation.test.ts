@@ -567,3 +567,140 @@ test('connection tokens fail with UNAUTHORIZED when missing, tampered with or ex
     ]),
   );
 });
+
+test('a handler not from createFetchHandler, and upgrade() outside Workers, are refused', () => {
+  expect(() =>
+    experimental_createHibernatingWebSockets({ fetch: () => {} } as never, {
+      state: fakeState(),
+    }),
+  ).toThrow('needs a handler from createFetchHandler');
+  const sockets = experimental_createHibernatingWebSockets(handler, {
+    state: fakeState(),
+  });
+  expect(() => sockets.upgrade(request, platform)).toThrow(
+    'upgrade() needs WebSocketPair',
+  );
+});
+
+test('a request URL or connection params past the 2 KB limit are dropped with a warning', async () => {
+  const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+  const long = new FakeSocket();
+  const sockets = experimental_createHibernatingWebSockets(handler, {
+    state: fakeState(),
+  });
+  sockets.accept(
+    long,
+    new Request(`https://room.example/trpc?${'q'.repeat(2100)}`),
+    platform,
+  );
+  expect(warn).toHaveBeenCalledWith(
+    expect.stringContaining('request URL passes'),
+  );
+
+  const socket = new FakeSocket();
+  sockets.accept(socket, request, platform);
+  send(sockets, socket, {
+    type: 'init',
+    version: '12',
+    connectionParams: { token: 'x'.repeat(2100) },
+  });
+  expect(warn).toHaveBeenCalledWith(
+    expect.stringContaining("connection params pass Cloudflare's 2 KB"),
+  );
+  expect(socket.deserializeAttachment()).toMatchObject({
+    headers: [],
+    connectionParams: undefined,
+  });
+  send(sockets, socket, {
+    id: 1,
+    type: 'request',
+    method: 'query',
+    path: 'whoami',
+  });
+  await vi.waitFor(() =>
+    expect(socket.sent).toContainEqual(
+      expect.objectContaining({ id: 1, type: 'result' }),
+    ),
+  );
+});
+
+test('closing reports 1006 as 1000, and tolerates a socket already closed', () => {
+  const socket = new FakeSocket();
+  const sockets = experimental_createHibernatingWebSockets(handler, {
+    state: fakeState(),
+  });
+  sockets.accept(socket, request, platform);
+  sockets.close(socket, 1006, 'gone');
+  expect(socket.closed).toEqual([1000, 'gone']);
+  socket.close = () => {
+    throw new Error('already closed');
+  };
+  expect(() => sockets.close(socket, 4000, 'again')).not.toThrow();
+});
+
+test('many hibernated subscriptions: the ones past the limit stay awake; aborts remove only theirs', async () => {
+  const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+  const state = fakeState();
+  const sockets = room(state);
+  const sub = new FakeSocket();
+  sockets.accept(sub, request);
+  for (let id = 1; id <= 40; id++) {
+    say(sockets, sub, {
+      id,
+      type: 'request',
+      method: 'subscription',
+      path: 'onCreated',
+    });
+  }
+  await vi.waitFor(() =>
+    expect(warn).toHaveBeenCalledWith(
+      expect.stringContaining("doesn't fit the socket's 2 KB attachment"),
+    ),
+  );
+  const parked = () =>
+    (sub.deserializeAttachment() as { subs: Array<{ c: number }> }).subs.map(
+      (s) => s.c,
+    );
+  const before = parked();
+  expect(before.length).toBeGreaterThan(1);
+  expect(before.length).toBeLessThan(40);
+
+  say(sockets, sub, { type: 'abort', id: before[0]! });
+  say(sockets, sub, { type: 'abort', id: 40 });
+  expect(parked()).toEqual(before.slice(1));
+
+  const pub = new FakeSocket();
+  sockets.accept(pub, request);
+  create(sockets, pub, 1, 'hi');
+  await vi.waitFor(() => expect(events(sub, before[1]!)).toHaveLength(1));
+  await vi.waitFor(() => expect(events(sub, 39)).toHaveLength(1));
+  sockets.close(sub, 1000, '');
+});
+
+test('events skip parked paths the router lacks, and states without getWebSockets', async () => {
+  const state = fakeState();
+  const sockets = room(state);
+  const stale = new FakeSocket();
+  sockets.accept(stale, request);
+  stale.serializeAttachment({
+    ...(stale.deserializeAttachment() as object),
+    subs: [{ c: 7, k: 'test/HibernatingPosts', ch: 'created', p: 'removed' }],
+  });
+  const pub = new FakeSocket();
+  sockets.accept(pub, request);
+  create(sockets, pub, 1, 'hi');
+  await vi.waitFor(() => expect(pub.sent).toHaveLength(1));
+  await new Promise((resolve) => setTimeout(resolve, 10));
+  expect(stale.sent).toEqual([]);
+
+  const bare = Object.assign(fakeState(), { getWebSockets: undefined });
+  const alone = room(bare as never);
+  const socket = new FakeSocket();
+  alone.accept(socket, request);
+  create(alone, socket, 1, 'solo');
+  await vi.waitFor(() =>
+    expect(socket.sent).toContainEqual(
+      expect.objectContaining({ id: 1, type: 'result' }),
+    ),
+  );
+});
