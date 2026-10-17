@@ -45,7 +45,9 @@ export interface DecorateQuery<TArgs extends readonly unknown[], T, E> {
   /** Writes the query's data. Readers re-render without suspending. */
   setData(input: TArgs[0], updater: T | ((prev: T | undefined) => T)): void;
   /** The cached data, or `undefined`. */
-  getData(input: TArgs[0]): T | undefined;
+  getData(
+    ...input: undefined extends TArgs[0] ? [input?: TArgs[0]] : [TArgs[0]]
+  ): T | undefined;
 }
 
 /**
