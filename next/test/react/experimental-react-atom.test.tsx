@@ -5,8 +5,12 @@ import {
 } from '@effect/atom-react';
 import { createAtomClient } from '@trpc12/experimental-react-atom';
 import { localLink, routerType } from '@trpc12/trpc/client';
-import { createSerializer } from '@trpc12/trpc/serializer';
-import { Option } from 'effect';
+import {
+  createSerializer,
+  jsonSerializer,
+  type AnySerializer,
+} from '@trpc12/trpc/serializer';
+import { Effect, Option } from 'effect';
 import {
   AsyncResult,
   AtomRegistry,
@@ -142,4 +146,81 @@ test('query atoms hydrate with the serializer: the browser renders without a req
   );
   expect(await new Response(again).text()).toContain('Hello 0');
   expect(db.calls).toEqual([]);
+});
+
+test('array and Date inputs key by value; options are part of the key', async () => {
+  const { trpc, registry } = setup();
+  const many = trpc.post.many.query({ ids: ['2', '1'] });
+  expect(trpc.post.many.query({ ids: ['2', '1'] })).toBe(many);
+  expect(trpc.post.many.query({ ids: ['1', '2'] })).not.toBe(many);
+  expect(AsyncResult.getOrThrow(await until(registry, many, done))).toEqual([
+    'World',
+    'Hello',
+  ]);
+  const since = trpc.post.since.query({ at: new Date(1) });
+  expect(trpc.post.since.query({ at: new Date(1) })).toBe(since);
+  expect(AsyncResult.getOrThrow(await until(registry, since, done))).toBe(1);
+
+  // A query kept alive keeps its result with nothing mounted; one with an
+  // idle time to live is its own atom.
+  const kept = trpc.post.byId.query({ id: '1' }, { timeToLive: Infinity });
+  expect(
+    trpc.post.byId.query({ id: '1' }, { timeToLive: '1 minute' }),
+  ).not.toBe(kept);
+  await until(registry, kept, done);
+  await new Promise((resolve) => setTimeout(resolve, 10));
+  expect(AsyncResult.isSuccess(registry.get(kept))).toBe(true);
+  expect(db.calls.filter((call) => call === 'byId:1')).toHaveLength(1);
+  const idle = trpc.post.byId.query({ id: '1' }, { timeToLive: '1 minute' });
+  await until(registry, idle, done);
+  expect(db.calls.filter((call) => call === 'byId:1')).toHaveLength(2);
+});
+
+test('a mutation without reactivity keys refetches nothing', async () => {
+  const { trpc, registry } = setup();
+  const post = trpc.post.byId.query({ id: '1' }, { reactivityKeys: ['posts'] });
+  const unmount = registry.mount(post);
+  await until(registry, post, done);
+  const rename = trpc.post.rename.mutation();
+  registry.set(rename, { input: { id: '1', title: 'Quiet' } });
+  await until(registry, rename, done);
+  expect(db.calls).toEqual(['byId:1', 'rename:1']);
+  unmount();
+});
+
+test('the client exposes its runtime and Effect client; other calls are errors', async () => {
+  const { trpc, registry } = setup();
+  expect(trpc.runtime).toBeDefined();
+  expect(
+    await Effect.runPromise(trpc.client.post.byId.query({ id: '2' })),
+  ).toMatchObject({ title: 'World' });
+  expect(registry).toBeDefined();
+  expect(() => (trpc.post.byId as unknown as () => void)()).toThrow(
+    'Call .query(), .mutation() or .subscription() on a procedure, not post.byId()',
+  );
+  // Not a thenable, so it can be awaited, and symbols aren't paths.
+  expect(await Promise.resolve(trpc.post)).toBeTypeOf('function');
+  expect(
+    (trpc.post as unknown as Record<symbol, unknown>)[Symbol.iterator],
+  ).toBe(undefined);
+});
+
+test('without a serializer on its links, query atoms dehydrate as JSON unless one is given', async () => {
+  const encoded = async (opts: { serializer?: AnySerializer }) => {
+    const trpc = createAtomClient({
+      router: routerType<AppRouter>(),
+      links: [localLink({ router, serializer: false })],
+      ...opts,
+    });
+    const registry = AtomRegistry.make({ defaultIdleTTL: 60_000 });
+    await until(registry, trpc.post.byId.query({ id: '1' }), done);
+    const [entry] = JSON.parse(JSON.stringify(Hydration.dehydrate(registry)));
+    registry.dispose();
+    return JSON.stringify(entry.value);
+  };
+  expect(await encoded({})).toContain('"at":"1970-01-01T00:00:00.000Z"');
+  expect(await encoded({ serializer: jsonSerializer })).toContain(
+    '"at":"1970-01-01T00:00:00.000Z"',
+  );
+  expect(await encoded({ serializer })).toContain('"type":"Date"');
 });

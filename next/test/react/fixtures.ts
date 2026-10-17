@@ -58,6 +58,11 @@ export const router = {
         for (let i = 0; i < input.depth; i++) value = { child: value };
         return value;
       }),
+    since: t.procedure.input(z.object({ at: z.date() })).query(({ input }) => {
+      db.calls.push(`since:${input.at.getTime()}`);
+      return [...db.posts.values()].filter((post) => post.at >= input.at)
+        .length;
+    }),
     many: t.procedure
       .input(z.object({ ids: z.array(z.string()) }))
       .query(({ input }) => {
