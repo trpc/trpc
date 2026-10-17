@@ -41,6 +41,7 @@ export default defineConfig({
     jsPlugins: ['./tooling/oxlint-plugin/index.ts'],
     rules: {
       'trpc/acronym-case': 'error',
+      'trpc/typed-objects': 'error',
     },
     overrides: [
       {
@@ -59,6 +60,7 @@ export default defineConfig({
         files: ['spikes/**'],
         rules: {
           'no-console': 'off',
+          'trpc/typed-objects': 'off',
         },
       },
     ],
