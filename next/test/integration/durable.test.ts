@@ -387,6 +387,40 @@ test('experimental_durableLink resumes a streamed output mid-stream, on another 
   await b.dispose();
 });
 
+test('a resume that fails, then answers without frames, fails what was still open', async () => {
+  const { router } = makeFeed();
+  const handler = createFetchHandler({
+    router,
+    layer: Persistence.layerBackingMemory,
+  });
+  const sent: Array<string | null> = [];
+  const client = createTrpcClient({
+    router,
+    links: [
+      experimental_durableLink({ delayMs: () => 0 }),
+      httpLink({
+        url: 'http://localhost/trpc',
+        fetch: async (url, init) => {
+          const request = new Request(url, init);
+          sent.push(request.headers.get('trpc-resume-from'));
+          if (sent.length === 1)
+            return cutAfter(await handler.fetch(request), 3);
+          if (sent.length === 2) return new Response('down', { status: 503 });
+          return new Response(null);
+        },
+      }),
+    ],
+  });
+  const feed = await client.feed.mutate();
+  const [, error] = await safe(settle(feed));
+  expect(error).toMatchObject({
+    code: 'PARSE_ERROR',
+    message: 'A resumed call answered without frames',
+  });
+  expect(sent).toEqual([null, '3', '3']);
+  await handler.dispose();
+});
+
 test('a streamed output keeps going into the store after the client leaves', async () => {
   const { router, runs } = makeFeed();
   const handler = createFetchHandler({
