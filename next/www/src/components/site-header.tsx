@@ -22,12 +22,15 @@ const links = [
 
 export function SiteHeader() {
   return (
-    <header className="sticky top-0 z-40 border-b bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70">
+    <header
+      className="sticky top-0 z-40 border-b bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70"
+      data-site-header
+    >
       <div className="mx-auto flex h-14 max-w-7xl items-center gap-2 px-4 sm:px-6">
         <MobileNav />
         <Link
           aria-label={`${site.name} home`}
-          className="mr-4 flex items-center gap-2 font-bold tracking-tight"
+          className="mr-2 flex items-center gap-2 font-bold tracking-tight sm:mr-4"
           to="/"
         >
           <Logo />
@@ -60,6 +63,7 @@ export function SiteHeader() {
             aria-label="tRPC on GitHub"
             className={cn(
               buttonVariants({ size: 'icon-sm', variant: 'ghost' }),
+              'hidden sm:inline-flex',
             )}
             href={site.github}
             title="tRPC on GitHub"

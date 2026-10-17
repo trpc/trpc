@@ -3,7 +3,10 @@ import { ArrowLeft, ArrowRight, Pencil } from 'lucide-react';
 
 import { DocBody } from '~/components/doc-body.tsx';
 import { PageActions } from '~/components/page-actions.tsx';
-import { TableOfContents } from '~/components/toc.tsx';
+import {
+  CollapsedTableOfContents,
+  TableOfContents,
+} from '~/components/toc.tsx';
 import { findDoc, loadDoc, neighbours } from '~/content/docs.ts';
 import { absoluteUrl, pageHead } from '~/seo.ts';
 import { site } from '~/site.ts';
@@ -80,6 +83,11 @@ function DocPage() {
           </p>
           <PageActions key={doc.slug} slug={doc.slug} />
         </header>
+        <CollapsedTableOfContents
+          className="mb-8 xl:hidden"
+          headings={doc.headings}
+          key={doc.slug}
+        />
         <DocBody html={doc.html} />
         <footer className="mt-12 grid gap-6 border-t pt-6">
           <a
@@ -101,7 +109,7 @@ function DocPage() {
                 <span className="font-medium">{around.previous.title}</span>
               </Link>
             ) : (
-              <span />
+              <span className="hidden sm:block" />
             )}
             {around.next ? (
               <Link

@@ -205,9 +205,16 @@ html {
   display: block;
 }
 
+/* Without hover, Copy always shows. A block with a title bar has it there;
+   one without makes room for it above its first line, except one-line
+   commands under tabs, which are short enough to sit beside it. */
 @media (hover: none) {
   .code-copy {
     opacity: 1;
+  }
+
+  :not(.code-tabs) > .code-block:not(:has(> .code-title)) > pre {
+    padding-top: 2.25rem;
   }
 }
 
@@ -229,12 +236,15 @@ html {
 }
 
 /* `DocBody` places hover popups on screen, so the code block's scrolling
-   doesn't clip them */
+   doesn't clip them, and caps their height to the room it puts them in. A
+   long type scrolls inside its popup. */
 .twoslash
   .twoslash-hover:not(.twoslash-query-persisted)
   .twoslash-popup-container {
   position: fixed;
   max-width: min(40rem, calc(100vw - 1rem));
+  overflow: auto;
+  overscroll-behavior: contain;
   transform: none;
 }
 

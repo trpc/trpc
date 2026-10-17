@@ -1,4 +1,5 @@
 import { cn } from '@shared/ui/lib/utils';
+import { ChevronDown } from 'lucide-react';
 import { useState } from 'react';
 
 import type { DocHeading } from '~/content/types.ts';
@@ -66,5 +67,50 @@ export function TableOfContents(props: {
         ))}
       </ul>
     </nav>
+  );
+}
+
+/**
+ * "On this page" for screens without room for the side column: a disclosure
+ * above the page, closed again once a section is picked.
+ */
+export function CollapsedTableOfContents(props: {
+  readonly className?: string;
+  readonly headings: ReadonlyArray<DocHeading>;
+}) {
+  if (props.headings.length === 0) {
+    return null;
+  }
+  return (
+    <details
+      className={cn('group rounded-lg border text-sm', props.className)}
+      onClick={(event) => {
+        if (event.target instanceof Element && event.target.closest('a')) {
+          event.currentTarget.open = false;
+        }
+      }}
+    >
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-2.5 font-medium select-none [&::-webkit-details-marker]:hidden">
+        On this page
+        <ChevronDown className="size-4 text-muted-foreground transition-transform group-open:rotate-180" />
+      </summary>
+      <nav aria-label="On this page" className="border-t px-2 py-2">
+        <ul className="grid">
+          {props.headings.map((heading) => (
+            <li key={heading.id}>
+              <a
+                className={cn(
+                  'block rounded-md px-2 py-1.5 text-muted-foreground hover:bg-accent/60 hover:text-foreground',
+                  heading.depth === 3 && 'pl-6 text-[13px]',
+                )}
+                href={`#${heading.id}`}
+              >
+                {heading.text}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    </details>
   );
 }

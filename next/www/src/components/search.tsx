@@ -96,7 +96,8 @@ export function SearchButton() {
         </kbd>
       </Button>
       <Dialog onOpenChange={setOpen} open={open}>
-        <DialogContent className="top-[15%] translate-y-0 gap-0 p-0 sm:max-w-xl">
+        {/* On a phone the keyboard covers the bottom half of the screen. */}
+        <DialogContent className="top-3 translate-y-0 gap-0 p-0 sm:top-[15%] sm:max-w-xl">
           <DialogTitle className="sr-only">Search the docs</DialogTitle>
           <DialogDescription className="sr-only">
             Type to find a page or a section
@@ -167,7 +168,7 @@ function SearchPanel(props: { readonly onClose: () => void }) {
         />
       </label>
       <ul
-        className="max-h-[60vh] overflow-y-auto p-2"
+        className="max-h-[45vh] overflow-y-auto p-2 sm:max-h-[60vh]"
         id="search-results"
         role="listbox"
       >
