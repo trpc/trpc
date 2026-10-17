@@ -66,7 +66,7 @@ oRPC's table compares oRPC v2 with v11 (and Hono). `pnpm bench` measures the sam
 | Node server bundle (minified / gzip)      | 41.3 kB / 13.2 kB | 53.1 kB / 17.3 kB | 345.0 kB / 110.7 kB |
 
 - v12 beats v11 on throughput and check time, and trails oRPC on every row.
-- The floors are Effect's: its `HttpServer` alone does about 69k req/s; its declarations take about 65 MB of the type-check memory; the Effect APIs the client runs on are about 20 kB gzipped, and a one-element `Stream`, which every link returns, is 10.7 kB on its own. CI holds the client to gzip ceilings on the way to the human's targets (10 kB minimal JSON, 25 kB full; [`../notes/benchmarks.md`](../notes/benchmarks.md#budgets)).
+- The floors are Effect's: its `HttpServer` alone does about 69k req/s; its declarations take about 65 MB of the type-check memory; the Effect APIs the client runs on are about 20 kB gzipped, and a one-element `Stream`, which every link returns, is 10.7 kB on its own. CI holds the client to gzip ceilings on the way to the human's targets (18 kB minimal JSON, 25 kB full; [`../notes/benchmarks.md`](../notes/benchmarks.md#budgets)).
 
 Not measured yet: RPC over WebSocket, OpenAPI over HTTP, Clinic profiles.
 

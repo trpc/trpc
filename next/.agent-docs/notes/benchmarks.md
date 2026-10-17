@@ -63,7 +63,7 @@ Bundle size, minified / gzip (`pnpm bench bundle`):
 
 | client                                      |    gzip | ceiling (CI) | target |
 | ------------------------------------------- | ------: | -----------: | -----: |
-| minimal JSON (`httpLink`)                   | 25.7 kB |      25.8 kB |  10 kB |
+| minimal JSON (`httpLink`)                   | 25.7 kB |      25.8 kB |  18 kB |
 | full (`retryLink`, `httpLink`, danSON, SSE) | 29.1 kB |      29.2 kB |  25 kB |
 
 - **Cut so far:** the Promise client runs its links with `runLinks`. `runOperation`'s tracer check and client span never ran there (Promise clients run on Effect's native tracer), but they were bundled: `Tracer`, `Scope` spans and `encoding/Hex`, 1.7 kB gzipped on each client.
@@ -71,6 +71,6 @@ Bundle size, minified / gzip (`pnpm bench bundle`):
   - `Effect.runPromise(Effect.tryPromise(fetch))`: 8.5 kB.
   - The same through a one-element `Stream` (`Stream.fromEffect`, `Stream.runHead`), which is what every link returns: 10.7 kB.
   - Plus a `Queue`: 11.7 kB. Plus the client span: 14.1 kB. `Stream.callback` and `Stream.toAsyncIterable`: 16.4 kB.
-  - So the 10 kB target leaves no room for tRPC code while links return `Stream`s; meeting it needs a Promise-native core path or a higher target (Open, human).
+  - So the first 10 kB target left no room for tRPC code while links return `Stream`s. The human kept links on Effect and raised it to 18 kB ("B").
 - **What's over the floor** in the minimal client, by rendered size before minifying: `Channel` (31 kB vs 4 kB in the floor), `Queue` (24 kB, from `Stream.callback` and batching), `Stream` operators (20 kB vs 3 kB), `Duration` (14 kB, kept by Effect's internals: swapping `Effect.sleep` for a `setTimeout` didn't drop it), then tRPC's `httpLink` (15 kB), streaming deserializers (`serializer/stream.ts` and `framed.ts`, 10 kB) and errors (5 kB).
 - **Not cuts:** `Queue` stays while `Stream.callback` does; binary frames and SSE sit behind runtime options of `httpLink`, so they'd need their own imports (an API change) to shake out.
