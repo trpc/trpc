@@ -245,9 +245,9 @@ export class experimental_ImplementInterceptor implements NestInterceptor {
         }
         const req = context
           .switchToHttp()
-          .getRequest<{ params?: Record<string, string | string[]> }>();
+          .getRequest<{ params: Record<string, string | string[]> }>();
         const params: Record<string, string> = {};
-        for (const [key, value] of Object.entries(req.params ?? {})) {
+        for (const [key, value] of Object.entries(req.params)) {
           params[key] = Array.isArray(value) ? value.join('/') : value;
         }
         await this.#host.serve(context, {

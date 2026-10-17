@@ -1,10 +1,13 @@
 import 'reflect-metadata';
 import {
   Controller,
+  Get,
+  Headers,
   Inject,
   Injectable,
   Module,
   UseGuards,
+  UseInterceptors,
   type CanActivate,
   type INestApplication,
 } from '@nestjs/common';
@@ -15,7 +18,11 @@ import { contract, toContract } from '@trpc12/trpc/contract';
 import { openapi, openApiLink } from '@trpc12/trpc/openapi';
 import { initTrpc } from '@trpc12/trpc/server';
 import { afterAll, beforeAll, expect, test } from 'vite-plus/test';
-import { experimental_Implement, experimental_TrpcModule } from './index.ts';
+import {
+  experimental_Implement,
+  experimental_ImplementInterceptor,
+  experimental_TrpcModule,
+} from './index.ts';
 
 const c = contract.create().concat(openapi());
 const Post = Schema.Struct({ id: Schema.String, title: Schema.String });
@@ -45,6 +52,13 @@ const appContract = {
     .meta({ route: { path: '/ticks' } })
     .output(Schema.Number)
     .subscription(),
+  file: c
+    .meta({ route: { path: '/files/{rest}' } })
+    .input(Schema.Struct({ rest: Schema.String }))
+    .output(Schema.String)
+    .query(),
+  whoami: c.output(Schema.String).query(),
+  broken: { one: c.output(Schema.String).query() },
 };
 
 class Counter extends Context.Service<
@@ -138,6 +152,41 @@ class GuardedController {
   }
 }
 
+@Controller()
+class EdgeController {
+  // Above @experimental_Implement, so Nest routes it by this wildcard path.
+  @Get('/files/*rest')
+  @experimental_Implement(appContract.file)
+  file() {
+    return impl.file.query(({ input }) => input.rest);
+  }
+
+  @experimental_Implement({ whoami: appContract.whoami })
+  @UseGuards(Deny)
+  denied() {
+    return { whoami: impl.whoami.query(() => 'never') };
+  }
+
+  @experimental_Implement({ broken: appContract.broken })
+  notAProcedure() {
+    return {};
+  }
+
+  @Get('/plain')
+  @UseInterceptors(experimental_ImplementInterceptor)
+  plain() {
+    return 'not a procedure route';
+  }
+}
+
+@Controller('headers')
+class HeaderController {
+  @experimental_Implement({ whoami: appContract.whoami })
+  whoami(@Headers('x-user') user: string | undefined) {
+    return { whoami: impl.whoami.query(() => user ?? 'anon') };
+  }
+}
+
 let count = 0;
 
 @Module({
@@ -151,7 +200,13 @@ let count = 0;
       layer: Layer.succeed(Counter, { next: Effect.sync(() => ++count) }),
     }),
   ],
-  controllers: [PostController, RestController, GuardedController],
+  controllers: [
+    PostController,
+    RestController,
+    GuardedController,
+    EdgeController,
+    HeaderController,
+  ],
   providers: [Posts],
 })
 class AppModule {}
@@ -244,4 +299,77 @@ test('a leaf without a route path throws', () => {
     }
     return Bad;
   }).toThrow(/needs a route path/);
+});
+
+test('wildcard params are joined; methods that return no procedure fail; other routes pass through', async () => {
+  const file = await fetch(`${url}/files/a/b/c`);
+  expect(await file.json()).toBe('a/b/c');
+
+  expect((await fetch(`${url}/broken/one`)).status).toBe(500);
+  expect(await (await fetch(`${url}/plain`)).text()).toBe(
+    'not a procedure route',
+  );
+});
+
+test('a router method keeps its guards and parameter decorators on every route', async () => {
+  expect((await fetch(`${url}/whoami`)).status).toBe(403);
+  const res = await fetch(`${url}/headers/whoami`, {
+    headers: { 'x-user': 'ada' },
+  });
+  expect(await res.json()).toBe('ada');
+});
+
+test('forRootAsync builds the options from injected providers', async () => {
+  const Prefix = Symbol('Prefix');
+  @Module({
+    providers: [{ provide: Prefix, useValue: 'from-config' }],
+    exports: [Prefix],
+  })
+  class ConfigModule {}
+
+  @Controller()
+  class WhoController {
+    @experimental_Implement({ whoami: appContract.whoami })
+    who() {
+      return {
+        whoami: impl.whoami.query(({ ctx }) => ctx.user ?? 'anon'),
+      };
+    }
+  }
+
+  const serve = async (module: object) => {
+    const nest = await NestFactory.create(module as never, { logger: false });
+    await nest.listen(0, '127.0.0.1');
+    try {
+      return await (await fetch(`${await nest.getUrl()}/whoami`)).json();
+    } finally {
+      await nest.close();
+    }
+  };
+
+  @Module({
+    imports: [
+      experimental_TrpcModule.forRootAsync({
+        imports: [ConfigModule],
+        inject: [Prefix],
+        useFactory: (prefix: string) => ({
+          createContext: () => ({ user: prefix }),
+        }),
+      }),
+    ],
+    controllers: [WhoController],
+  })
+  class InjectedModule {}
+  expect(await serve(InjectedModule)).toBe('from-config');
+
+  @Module({
+    imports: [
+      experimental_TrpcModule.forRootAsync({
+        useFactory: async () => ({ createContext: () => ({ user: null }) }),
+      }),
+    ],
+    controllers: [WhoController],
+  })
+  class PlainModule {}
+  expect(await serve(PlainModule)).toBe('anon');
 });
