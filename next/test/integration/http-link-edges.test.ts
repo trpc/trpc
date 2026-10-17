@@ -211,6 +211,19 @@ test('a subscription retries a failed connect, then reads the stream', async () 
     message: 'The subscription connection was lost',
   });
 
+  // The default delay before the first retry is a second.
+  let tries = 0;
+  const started = Date.now();
+  const slow = clientWith(
+    (input, init) =>
+      ++tries < 2
+        ? Promise.reject(new TypeError('refused'))
+        : real(input, init),
+    { reconnect: { attempts: 1 } },
+  );
+  expect(await collect(slow.ticks.subscribe())).toEqual([1, 2]);
+  expect(Date.now() - started).toBeGreaterThanOrEqual(900);
+
   const down = clientWith(() => Promise.reject(new TypeError('refused')), {
     reconnect: { attempts: 1, delayMs: () => 1 },
   });
@@ -263,4 +276,98 @@ test('a streamed result whose deferred slot has no place, or whose chunk is unre
   );
   const out = (await unreadable.echo.query('x')) as { a: Promise<unknown> };
   await expect(out.a).rejects.toBeDefined();
+});
+
+test('forged batch lines: a call answered twice keeps its first answer; unreadable bodies fail their calls', async () => {
+  const lines = (...values: unknown[]) =>
+    new Response(
+      new TextEncoder().encode(
+        values.map((v) => JSON.stringify(v)).join('\n') + '\n',
+      ),
+    );
+  const failed = { json: { error: { code: 'CONFLICT', message: 'first' } } };
+  const again = { json: { error: { code: 'CONFLICT', message: 'second' } } };
+  const twice = clientWith(
+    async () =>
+      lines(
+        { i: 0, status: 200, body: { json: 'late' } },
+        { i: 0, status: 409, body: failed },
+        { i: 1, status: 409, body: failed },
+        { i: 1, status: 409, body: again },
+      ),
+    { batch: true },
+  );
+  const [[, zero], [, one]] = await Promise.all([
+    safe(twice.echo.query('a')),
+    safe(twice.echo.query('b')),
+  ]);
+  expect(zero).toMatchObject({ code: 'CONFLICT', message: 'first' });
+  expect(one).toMatchObject({ code: 'CONFLICT', message: 'first' });
+});
+
+test('forged batch lines with unreadable bodies fail their calls alone; broken streams fail the rest', async () => {
+  const lines = (...values: unknown[]) =>
+    new Response(
+      new TextEncoder().encode(
+        values.map((v) => JSON.stringify(v)).join('\n') + '\n',
+      ),
+    );
+  const unreadable = clientWith(
+    async () =>
+      lines(
+        { i: 0, status: 200, body: null },
+        { i: 1, status: 500, body: null },
+      ),
+    { batch: true },
+  );
+  const [[, result], [, error]] = await Promise.all([
+    safe(unreadable.echo.query('a')),
+    safe(unreadable.echo.query('b')),
+  ]);
+  expect(result?.code).toBe('NETWORK_ERROR');
+  expect(error).toMatchObject({
+    code: 'PARSE_ERROR',
+    message: 'Invalid error message',
+  });
+
+  // A line that isn't a batch line, or isn't JSON, or a request that
+  // fails, fails every call not answered yet.
+  const cases: Array<[typeof fetch, string]> = [
+    [
+      async () => lines({ i: 0, status: 200, body: { json: 'ok' } }, null),
+      'ok',
+    ],
+    [
+      async () =>
+        new Response('{"i":0,"status":200,"body":{"json":"ok"}}\n{no\n'),
+      'ok',
+    ],
+    [() => Promise.reject(new TypeError('offline')), 'NETWORK_ERROR'],
+  ];
+  for (const [fetch, first] of cases) {
+    const broken = clientWith(fetch, { batch: true });
+    const [a, [, b]] = await Promise.all([
+      safe(broken.echo.query('a')),
+      safe(broken.echo.query('b')),
+    ]);
+    expect(a.error?.code ?? a.data).toBe(first);
+    expect(b?.code).toBe('NETWORK_ERROR');
+  }
+});
+
+test('a batch whose calls were all aborted before it was sent sends nothing', async () => {
+  let requests = 0;
+  const client = clientWith(
+    (input, init) => {
+      requests++;
+      return real(input, init);
+    },
+    { batch: true },
+  );
+  const controller = new AbortController();
+  const call = safe(client.echo.query('a', { signal: controller.signal }));
+  controller.abort();
+  expect((await call).error).toMatchObject({ code: 'CLIENT_CLOSED_REQUEST' });
+  await sleep(10);
+  expect(requests).toBe(0);
 });

@@ -529,9 +529,13 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
           }
           received.add(line.i);
           if (line.status >= 400) {
-            item.reject(
-              fromWireError(serializer.deserialize(line.body as never)),
-            );
+            let error: AnyTrpcError;
+            try {
+              error = fromWireError(serializer.deserialize(line.body as never));
+            } catch (cause) {
+              error = parseError('Invalid error message')(cause);
+            }
+            item.reject(error);
             Queue.endUnsafe(queue);
             return Effect.void;
           }
@@ -586,13 +590,7 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
           yield* readStream(
             res.headers.get('content-type') ?? '',
             res.body,
-          ).pipe(
-            Stream.runForEach((line) =>
-              Effect.suspend(() => onLine(line as BatchLine)).pipe(
-                Effect.catchDefect((cause) => Effect.fail(toHttpError(cause))),
-              ),
-            ),
-          );
+          ).pipe(Stream.runForEach((line) => onLine(line as BatchLine)));
           rejectRest(
             new TrpcError({
               code: 'PARSE_ERROR',
@@ -617,7 +615,8 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
     for (const type of ['query', 'mutation'] as const) {
       const groups = new Map<string, Pending[]>();
       for (const item of queues[type].splice(0)) {
-        const key = initKey(item.op) ?? '';
+        // Calls without a key are unbatchable, so they never get here.
+        const key = initKey(item.op)!;
         let group = groups.get(key);
         if (!group) groups.set(key, (group = []));
         group.push(item);
