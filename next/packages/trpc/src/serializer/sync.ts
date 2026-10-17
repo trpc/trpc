@@ -76,7 +76,7 @@ export interface SerializeState {
 
 export interface SerializeOptions {
   serializers: SerializeRecord;
-  dedupe?: boolean;
+  dedupe?: boolean | undefined;
   state?: SerializeState;
   /** Passed to every serializer as its second argument. */
   context?: unknown;
@@ -305,7 +305,7 @@ export function serializeSync(
 export interface DeserializeOptions {
   deserializers: DeserializeRecord;
   /** Max nesting depth of the JSON tree. @default 64 */
-  maxDepth?: number;
+  maxDepth?: number | undefined;
   /** Shared across chunks of one async deserialization. */
   cache?: Map<string, unknown>;
 }

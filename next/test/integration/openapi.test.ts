@@ -790,7 +790,9 @@ test('.meta({ route: { spec } }) replaces or extends the generated operation', (
     summary: 'Base',
     deprecated: true,
   });
-  expect(toContract(specRouter).procedures.me.route).toEqual({ path: '/me' });
+  expect(toContract(specRouter).procedures['me']?.route).toEqual({
+    path: '/me',
+  });
 
   const rpc = generateOpenApi(specRouter, {
     info: { title: 'x', version: '1' },

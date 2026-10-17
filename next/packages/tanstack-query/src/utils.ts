@@ -832,10 +832,10 @@ export function createTrpcQueryUtils<TClient extends object>(
               ? skipToken
               : streamedQuery<unknown, unknown[]>(
                   maxChunks === undefined
-                    ? { streamFn, refetchMode }
+                    ? { streamFn, ...(refetchMode && { refetchMode }) }
                     : {
                         streamFn,
-                        refetchMode,
+                        ...(refetchMode && { refetchMode }),
                         initialValue: [],
                         reducer: (events, event) =>
                           [...events, event].slice(-maxChunks),

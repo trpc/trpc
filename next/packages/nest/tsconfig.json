@@ -1,11 +1,6 @@
 {
-  "extends": "../../tsconfig.json",
+  "extends": "@tooling/tsconfig/src.json",
   "compilerOptions": {
-    "rootDir": "src",
-    "declaration": true,
-    "isolatedDeclarations": true,
-    "experimentalDecorators": true,
-    "types": ["node"]
-  },
-  "include": ["src"]
+    "experimentalDecorators": true
+  }
 }

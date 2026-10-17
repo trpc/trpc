@@ -28,7 +28,7 @@ declare const trpc: {
   post: {
     byId: QueryProcedureUtils<{ id: string }, Post, ClientError>;
     list: QueryProcedureUtils<
-      { limit: number; cursor?: string },
+      { limit: number; cursor?: string | undefined },
       Page,
       ClientError
     >;
@@ -46,7 +46,7 @@ declare const v11: {
   post: {
     byId: PositionalQueryProcedureUtils<{ id: string }, Post, ClientError>;
     list: PositionalQueryProcedureUtils<
-      { limit: number; cursor?: string },
+      { limit: number; cursor?: string | undefined },
       Page,
       ClientError
     >;

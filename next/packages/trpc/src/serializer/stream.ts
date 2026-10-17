@@ -206,7 +206,7 @@ const withDeferred = (serializers: SerializeRecord): SerializeRecord => {
 
 export interface SerializeStreamOptions extends SerializeOptions {
   /** Turn a failure (rejected promise, thrown iterator) into something serializable. */
-  coerceError?: (cause: unknown) => unknown;
+  coerceError?: ((cause: unknown) => unknown) | undefined;
 }
 
 export const toDansonError = (cause: unknown): DansonError =>
@@ -364,6 +364,7 @@ export function iterateWithReturn(
         else if (status === RETURN) return v;
         else throw revive(v);
       }
+      return undefined;
     },
   };
 }
@@ -503,7 +504,9 @@ export function deserializeStream<T, E>(
       File: (ref: BlobRef) =>
         new File(blobParts(ref), String(ref.name ?? 'blob'), {
           type: String(ref.type ?? ''),
-          lastModified: ref.lastModified,
+          ...(ref.lastModified === undefined
+            ? {}
+            : { lastModified: ref.lastModified }),
         }),
       Blob: (ref: BlobRef) =>
         new Blob(blobParts(ref), { type: String(ref.type ?? '') }),

@@ -113,9 +113,9 @@ export interface DeserializeOpts {
    * Deserializing untrusted input. Types that are unsafe to accept from a
    * client (`RegExp`, ReDoS) are rejected.
    */
-  input?: boolean;
+  input?: boolean | undefined;
   /** The multipart parts that `File` and `Blob` markers refer to. */
-  parts?: ReadonlyArray<Blob>;
+  parts?: ReadonlyArray<Blob> | undefined;
 }
 
 /**
@@ -127,7 +127,7 @@ export interface SerializeOpts {
    * Collects `File` and `Blob` values, which are replaced by references to
    * their index. Without it, they throw.
    */
-  parts?: Blob[];
+  parts?: Blob[] | undefined;
 }
 
 /**
@@ -289,7 +289,9 @@ function partDeserializers(parts: ReadonlyArray<Blob>): DeserializeRecord {
     File: (ref: PartRef) =>
       new File([get(ref)], String(ref.name ?? 'blob'), {
         type: String(ref.type ?? ''),
-        lastModified: ref.lastModified,
+        ...(ref.lastModified === undefined
+          ? {}
+          : { lastModified: ref.lastModified }),
       }),
     Blob: (ref: PartRef) => {
       const blob = get(ref);

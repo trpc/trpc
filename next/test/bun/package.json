@@ -11,6 +11,7 @@
   },
   "devDependencies": {
     "@effect/platform-bun": "4.0.2",
+    "@tooling/tsconfig": "workspace:*",
     "@types/bun": "1.4.3",
     "effect": "4.0.2",
     "typescript": "^7.0.2",

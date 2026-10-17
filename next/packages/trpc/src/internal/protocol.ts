@@ -246,7 +246,9 @@ export async function readBlob(res: Response, header: string): Promise<Blob> {
     ? body.slice(0, body.size, meta.type)
     : new File([body], meta.name, {
         type: meta.type,
-        lastModified: meta.lastModified,
+        ...(meta.lastModified === undefined
+          ? {}
+          : { lastModified: meta.lastModified }),
       });
 }
 

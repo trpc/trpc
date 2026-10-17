@@ -14,7 +14,7 @@ interface Recorded {
   parent: string | undefined;
   attributes: Record<string, unknown>;
   status?: string;
-  exception?: string;
+  exception?: string | undefined;
   ended: boolean;
 }
 

@@ -1,0 +1,7 @@
+{
+  "extends": "@tooling/tsconfig/lib.json",
+  "compilerOptions": {
+    "experimentalDecorators": true,
+    "types": ["node"]
+  }
+}

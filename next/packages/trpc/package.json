@@ -158,6 +158,8 @@
     "effect": "^4.0.0"
   },
   "devDependencies": {
+    "@tooling/tsconfig": "workspace:*",
+    "@types/node": "^24.0.0",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "happy-dom": "20.14.6",

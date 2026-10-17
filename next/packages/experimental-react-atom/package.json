@@ -22,11 +22,13 @@
     "access": "public"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.lib.json && tsc --noEmit -p tsconfig.json",
     "build": "node ../../tooling/pack/pack.ts"
   },
   "devDependencies": {
+    "@tooling/tsconfig": "workspace:*",
     "@trpc12/trpc": "workspace:*",
+    "@types/node": "^24.0.0",
     "effect": "4.0.2",
     "typescript": "^7.0.2"
   },

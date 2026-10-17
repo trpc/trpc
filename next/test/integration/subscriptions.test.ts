@@ -244,6 +244,7 @@ test('a Stream failure is a typed error', async () => {
     } catch (cause) {
       return cause;
     }
+    return undefined;
   })();
   expect(seen).toEqual([1, 2]);
   expect(err).toMatchObject({

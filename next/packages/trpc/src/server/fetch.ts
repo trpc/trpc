@@ -179,7 +179,7 @@ export interface SerializerOption {
    * follow the link's serializer.
    * @default jsonSerializer
    */
-  serializer?: AnySerializer;
+  serializer?: AnySerializer | undefined;
 }
 
 /**

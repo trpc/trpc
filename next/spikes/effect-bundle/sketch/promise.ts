@@ -35,13 +35,13 @@ export function httpTerminal(url: string, codec: Codec = jsonCodec): Next {
         op.type === 'query'
           ? await fetch(
               `${target}?input=${encodeURIComponent(codec.stringify(op.input))}`,
-              { signal: op.signal },
+              { signal: op.signal ?? null },
             )
           : await fetch(target, {
               method: 'POST',
               body: codec.stringify(op.input),
               headers: { 'content-type': 'application/json' },
-              signal: op.signal,
+              signal: op.signal ?? null,
             });
     } catch (cause) {
       throw new TrpcClientError('NETWORK', 'fetch failed', cause);

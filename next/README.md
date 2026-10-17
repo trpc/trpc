@@ -22,6 +22,7 @@ next/
   test/react/           tests of the two experimental React packages
   test/portability/     TS2742/TS2883 fixture (emits declarations)
   spikes/               throwaway experiments; results in .agent-docs/notes/
+  tooling/tsconfig/     `@tooling/tsconfig`: the shared, strictest tsconfigs every package, suite and tool extends (examples stay standalone)
   docs/                 Markdown user docs (later)
 ```
 

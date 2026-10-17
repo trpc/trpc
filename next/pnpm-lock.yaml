@@ -342,9 +342,15 @@ importers:
 
   packages/experimental-react:
     devDependencies:
+      '@tooling/tsconfig':
+        specifier: workspace:*
+        version: link:../../tooling/tsconfig
       '@trpc12/trpc':
         specifier: workspace:*
         version: link:../trpc
+      '@types/node':
+        specifier: ^24.0.0
+        version: 24.19.1
       '@types/react':
         specifier: 19.3.0
         version: 19.3.0
@@ -360,9 +366,15 @@ importers:
 
   packages/experimental-react-atom:
     devDependencies:
+      '@tooling/tsconfig':
+        specifier: workspace:*
+        version: link:../../tooling/tsconfig
       '@trpc12/trpc':
         specifier: workspace:*
         version: link:../trpc
+      '@types/node':
+        specifier: ^24.0.0
+        version: 24.19.1
       effect:
         specifier: 4.0.2
         version: 4.0.2
@@ -384,11 +396,14 @@ importers:
       '@nestjs/platform-express':
         specifier: 12.1.3
         version: 12.1.3(@nestjs/common@12.1.3(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@10.2.2))(@nestjs/core@12.1.3)(supports-color@10.2.2)
+      '@tooling/tsconfig':
+        specifier: workspace:*
+        version: link:../../tooling/tsconfig
       '@trpc12/trpc':
         specifier: workspace:*
         version: link:../trpc
       '@types/node':
-        specifier: ^24.19.1
+        specifier: ^24.0.0
         version: 24.19.1
       effect:
         specifier: ^4.0.2
@@ -433,6 +448,9 @@ importers:
       '@tanstack/query-core':
         specifier: 5.104.1
         version: 5.104.1
+      '@tooling/tsconfig':
+        specifier: workspace:*
+        version: link:../../tooling/tsconfig
       '@trpc12/trpc':
         specifier: workspace:*
         version: link:../trpc
@@ -467,6 +485,9 @@ importers:
       '@tanstack/query-core':
         specifier: 5.104.1
         version: 5.104.1
+      '@tooling/tsconfig':
+        specifier: workspace:*
+        version: link:../../tooling/tsconfig
       '@trpc12/trpc':
         specifier: workspace:*
         version: link:../trpc
@@ -501,6 +522,9 @@ importers:
       '@tanstack/query-core':
         specifier: 5.104.1
         version: 5.104.1
+      '@tooling/tsconfig':
+        specifier: workspace:*
+        version: link:../../tooling/tsconfig
       '@trpc12/trpc':
         specifier: workspace:*
         version: link:../trpc
@@ -534,6 +558,9 @@ importers:
       '@tanstack/query-db-collection':
         specifier: 1.4.5
         version: 1.4.5(@tanstack/query-core@5.104.1)(typescript@7.0.2)
+      '@tooling/tsconfig':
+        specifier: workspace:*
+        version: link:../../tooling/tsconfig
       '@trpc12/trpc':
         specifier: workspace:*
         version: link:../trpc
@@ -568,6 +595,9 @@ importers:
       '@tanstack/react-query':
         specifier: 5.104.1
         version: 5.104.1(react@19.3.0)
+      '@tooling/tsconfig':
+        specifier: workspace:*
+        version: link:../../tooling/tsconfig
       '@trpc12/trpc':
         specifier: workspace:*
         version: link:../trpc
@@ -608,6 +638,9 @@ importers:
       '@tanstack/solid-query':
         specifier: 5.104.1
         version: 5.104.1(solid-js@1.9.17)
+      '@tooling/tsconfig':
+        specifier: workspace:*
+        version: link:../../tooling/tsconfig
       '@trpc12/trpc':
         specifier: workspace:*
         version: link:../trpc
@@ -639,6 +672,9 @@ importers:
       '@tanstack/svelte-query':
         specifier: 6.3.1
         version: 6.3.1(svelte@5.57.2)
+      '@tooling/tsconfig':
+        specifier: workspace:*
+        version: link:../../tooling/tsconfig
       '@trpc12/trpc':
         specifier: workspace:*
         version: link:../trpc
@@ -670,6 +706,9 @@ importers:
       '@tanstack/vue-query':
         specifier: 5.104.1
         version: 5.104.1(vue@3.5.43(typescript@7.0.2))
+      '@tooling/tsconfig':
+        specifier: workspace:*
+        version: link:../../tooling/tsconfig
       '@trpc12/trpc':
         specifier: workspace:*
         version: link:../trpc
@@ -695,6 +734,12 @@ importers:
         specifier: ^4.0.0
         version: 4.0.2
     devDependencies:
+      '@tooling/tsconfig':
+        specifier: workspace:*
+        version: link:../../tooling/tsconfig
+      '@types/node':
+        specifier: ^24.0.0
+        version: 24.19.1
       '@types/react':
         specifier: 19.3.0
         version: 19.3.0
@@ -735,8 +780,11 @@ importers:
         specifier: ^0.154.0
         version: 0.154.0
     devDependencies:
+      '@tooling/tsconfig':
+        specifier: workspace:*
+        version: link:../../tooling/tsconfig
       '@types/node':
-        specifier: ^24.19.1
+        specifier: ^24.0.0
         version: 24.19.1
       typescript:
         specifier: ^7.0.2
@@ -760,6 +808,9 @@ importers:
       '@tanstack/query-core':
         specifier: 5.90.20
         version: 5.90.20
+      '@tooling/tsconfig':
+        specifier: workspace:*
+        version: link:../tooling/tsconfig
       '@trpc/client':
         specifier: 11.19.0
         version: 11.19.0(@trpc/server@11.19.0(typescript@7.0.2))(typescript@7.0.2)
@@ -827,6 +878,9 @@ importers:
       '@effect/platform-bun':
         specifier: 4.0.2
         version: 4.0.2(effect@4.0.2)
+      '@tooling/tsconfig':
+        specifier: workspace:*
+        version: link:../../tooling/tsconfig
       '@types/bun':
         specifier: 1.4.3
         version: 1.4.3
@@ -855,6 +909,9 @@ importers:
       '@effect/vitest':
         specifier: 4.0.2
         version: 4.0.2(effect@4.0.2)(vitest@5.0.3)
+      '@tooling/tsconfig':
+        specifier: workspace:*
+        version: link:../../tooling/tsconfig
       '@trpc/client':
         specifier: 11.19.0
         version: 11.19.0(@trpc/server@11.19.0(typescript@7.0.2))(typescript@7.0.2)
@@ -958,6 +1015,9 @@ importers:
         specifier: 4.6.5
         version: 4.6.5
     devDependencies:
+      '@tooling/tsconfig':
+        specifier: workspace:*
+        version: link:../../tooling/tsconfig
       '@types/node':
         specifier: ^24.0.0
         version: 24.19.1
@@ -983,6 +1043,9 @@ importers:
       '@effect/atom-react':
         specifier: 4.0.2
         version: 4.0.2(effect@4.0.2)(react@19.3.0)(scheduler@0.27.0)
+      '@tooling/tsconfig':
+        specifier: workspace:*
+        version: link:../../tooling/tsconfig
       '@types/node':
         specifier: ^24.0.0
         version: 24.19.1
@@ -1035,6 +1098,9 @@ importers:
       '@standard-schema/spec':
         specifier: 1.1.0
         version: 1.1.0
+      '@tooling/tsconfig':
+        specifier: workspace:*
+        version: link:../tsconfig
       '@trpc/client':
         specifier: 11.19.0
         version: 11.19.0(@trpc/server@11.19.0(typescript@7.0.2))(typescript@7.0.2)
@@ -1069,6 +1135,9 @@ importers:
         specifier: ^4.0.0
         version: 4.0.2
     devDependencies:
+      '@tooling/tsconfig':
+        specifier: workspace:*
+        version: link:../tsconfig
       '@types/node':
         specifier: ^24.0.0
         version: 24.19.1
@@ -1084,6 +1153,9 @@ importers:
       '@oxlint/plugins':
         specifier: 1.87.0
         version: 1.87.0
+      '@tooling/tsconfig':
+        specifier: workspace:*
+        version: link:../tsconfig
       '@types/node':
         specifier: ^24.0.0
         version: 24.19.1
@@ -1103,6 +1175,9 @@ importers:
         specifier: ^4.0.0
         version: 4.0.2
     devDependencies:
+      '@tooling/tsconfig':
+        specifier: workspace:*
+        version: link:../tsconfig
       '@types/node':
         specifier: ^24.0.0
         version: 24.19.1
@@ -1112,6 +1187,8 @@ importers:
       vite-plus:
         specifier: 1.1.0
         version: 1.1.0(@types/node@24.19.1)(@vitest/coverage-v8@5.0.3)(@vitest/ui@5.0.3)(esbuild@0.28.2)(happy-dom@20.14.6)(svelte@5.57.2)(typescript@7.0.2)
+
+  tooling/tsconfig: {}
 
 packages:
 

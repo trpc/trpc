@@ -7,4 +7,4 @@
 - (agent) Tests, examples and test fixtures are exempt; only published source.
 - Why: per-file `.d.ts` emit for `vp pack` (tsdown/oxc); every public type is named and exported, which backs the portability rules (no TS2742 for users); public type changes show in review.
 - Lost: brevity; exported helpers need explicit annotations.
-- Lives in: `packages/*/tsconfig.json`; the `pnpm typecheck` gate enforces it.
+- Lives in: `tooling/tsconfig/lib.json`, extended by `packages/*/tsconfig.lib.json`; the `pnpm typecheck` gate enforces it.

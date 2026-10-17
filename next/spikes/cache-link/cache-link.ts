@@ -39,7 +39,7 @@ interface Entry {
   readonly thenable: Thenable<unknown>;
   readonly expiresAt: number;
   stale: boolean;
-  refetching?: Promise<void>;
+  refetching?: Promise<void> | undefined;
 }
 
 export interface QueryCache {

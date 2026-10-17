@@ -517,7 +517,7 @@ export interface ConnectionLinkOptions {
    * reconnects.
    * @default undefined, stay open until `close()`
    */
-  idleMs?: number;
+  idleMs?: number | undefined;
   /**
    * Ping after `intervalMs` of each check. A connection that answers nothing within
    * `timeoutMs` is treated as lost, so it reconnects instead of waiting for

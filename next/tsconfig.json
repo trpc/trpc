@@ -1,16 +1,4 @@
 {
-  "compilerOptions": {
-    "target": "ES2022",
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
-    "lib": ["ES2022", "ESNext.Disposable", "DOM"],
-    "strict": true,
-    "skipLibCheck": true,
-    "noEmit": true,
-    "verbatimModuleSyntax": true,
-    "isolatedModules": true,
-    "erasableSyntaxOnly": true,
-    "types": [],
-    "allowImportingTsExtensions": true
-  }
+  "extends": "./tooling/tsconfig/base.json",
+  "include": ["*.ts"]
 }

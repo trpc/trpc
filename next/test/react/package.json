@@ -12,6 +12,7 @@
   },
   "devDependencies": {
     "@effect/atom-react": "4.0.2",
+    "@tooling/tsconfig": "workspace:*",
     "@types/node": "^24.0.0",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",

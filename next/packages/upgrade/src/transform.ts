@@ -40,6 +40,9 @@ interface Node {
   readonly type: string;
   readonly start: number;
   readonly end: number;
+  readonly name?: any;
+  readonly key?: any;
+  readonly computed?: any;
   readonly [key: string]: any;
 }
 

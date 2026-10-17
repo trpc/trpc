@@ -86,7 +86,10 @@ export interface FlatRoutes {
 const within = (
   scope: RouteScope,
   path: string,
-  group: { prefix?: string | undefined; tags?: ReadonlyArray<string> },
+  group: {
+    prefix?: string | undefined;
+    tags?: ReadonlyArray<string> | undefined;
+  },
 ): RouteScope => ({
   prefix: scope.prefix + (group.prefix ?? ''),
   tags: [...scope.tags, ...(group.tags ?? [])],

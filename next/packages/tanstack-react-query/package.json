@@ -39,6 +39,7 @@
   "devDependencies": {
     "@tanstack/query-core": "5.104.1",
     "@tanstack/react-query": "5.104.1",
+    "@tooling/tsconfig": "workspace:*",
     "@trpc12/trpc": "workspace:*",
     "@types/node": "^24.0.0",
     "@types/react": "19.3.0",

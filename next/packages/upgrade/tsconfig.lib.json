@@ -1,0 +1,3 @@
+{
+  "extends": "@tooling/tsconfig/lib.json"
+}

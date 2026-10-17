@@ -453,7 +453,7 @@ export function createV11Handler<
         const form = yield* Effect.tryPromise({
           try: () =>
             new Response(bytes as BodyInit, {
-              headers: { 'content-type': type },
+              headers: { 'content-type': type ?? '' },
             }).formData(),
           catch: (cause) =>
             new TrpcError({

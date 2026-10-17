@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json.schemastore.org/tsconfig",
+  "extends": "./base.json",
+  "compilerOptions": {
+    "rootDir": "${configDir}/src",
+    "declaration": true,
+    "isolatedDeclarations": true
+  },
+  "include": ["${configDir}/src"],
+  "exclude": [
+    "${configDir}/src/**/*.test.ts",
+    "${configDir}/src/**/*.test.tsx",
+    "${configDir}/src/**/*.test-d.ts",
+    "${configDir}/src/**/fixtures"
+  ]
+}

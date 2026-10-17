@@ -273,9 +273,9 @@ const isText = (type: string | null): boolean =>
 const bodyOf = (
   data: string | null | undefined,
   base64: boolean | undefined,
-): BodyInit | undefined =>
+): BodyInit | null =>
   data === undefined || data === null || data === ''
-    ? undefined
+    ? null
     : base64
       ? (decodeBase64(data) as BodyInit)
       : data;
@@ -313,7 +313,7 @@ const v1Request = (event: LambdaV1Event, signal: AbortSignal): Request => {
     headers,
     body:
       method === 'GET' || method === 'HEAD'
-        ? undefined
+        ? null
         : bodyOf(event.body, event.isBase64Encoded),
     signal,
   });
@@ -336,7 +336,7 @@ const v2Request = (event: LambdaV2Event, signal: AbortSignal): Request => {
     headers,
     body:
       method === 'GET' || method === 'HEAD'
-        ? undefined
+        ? null
         : bodyOf(event.body, event.isBase64Encoded),
     signal,
   });
@@ -356,7 +356,7 @@ const edgeRequest = (event: LambdaEdgeEvent, signal: AbortSignal): Request => {
     headers,
     body:
       method === 'GET' || method === 'HEAD' || !cf.body
-        ? undefined
+        ? null
         : bodyOf(cf.body.data, cf.body.encoding === 'base64'),
     signal,
   });

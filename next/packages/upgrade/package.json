@@ -25,7 +25,7 @@
     "access": "public"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.lib.json && tsc --noEmit -p tsconfig.json",
     "build": "node ../../tooling/pack/pack.ts src/bin.ts"
   },
   "dependencies": {
@@ -35,7 +35,8 @@
     "oxc-parser": "^0.154.0"
   },
   "devDependencies": {
-    "@types/node": "^24.19.1",
+    "@tooling/tsconfig": "workspace:*",
+    "@types/node": "^24.0.0",
     "typescript": "^7.0.2",
     "vite-plus": "1.1.0"
   }

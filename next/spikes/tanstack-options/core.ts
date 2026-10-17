@@ -98,7 +98,9 @@ export interface PositionalQueryProcedureUtils<TInput, TOutput, TError> {
     > & { initialCursor?: CursorOf<TInput> },
   ): InfiniteResult<TOutput, TError, TData, CursorOf<TInput>>;
 }
-type CursorOf<TInput> = TInput extends { cursor?: infer C } ? C | null : never;
+type CursorOf<TInput> = TInput extends { cursor?: infer C }
+  ? Exclude<C, undefined> | null
+  : never;
 
 /** `async function*` outputs: data is the accumulated chunks. */
 export interface StreamProcedureUtils<TInput, TChunk, TError> {

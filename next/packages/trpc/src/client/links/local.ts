@@ -34,7 +34,7 @@ export interface LocalLinkOptions<TRouter extends AnyRouter> {
   /** Runs once per call. */
   createContext?: () => MaybePromise<inferRouterContext<TRouter>>;
   /** Provides the Effect services the router needs. */
-  layer?: Layer.Layer<never, any, never>;
+  layer?: Layer.Layer<never, any, never> | undefined;
   /**
    * Round-trip inputs and outputs through a serializer, as over the wire.
    * `false` passes values by reference, with native types.

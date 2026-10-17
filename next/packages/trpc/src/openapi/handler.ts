@@ -160,7 +160,7 @@ export interface OpenApiCall {
   readonly path: string;
   readonly procedure: AnyProcedure;
   /** Replaces the procedure's own `route` meta, as a router's `route` meta does. */
-  readonly route?: Route;
+  readonly route?: Route | undefined;
   /** The path params the framework matched. */
   readonly params?: Readonly<Record<string, string>>;
 }

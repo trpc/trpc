@@ -1,11 +1,10 @@
 {
-  "extends": "../../tsconfig.json",
+  "extends": "@tooling/tsconfig/node.json",
   "compilerOptions": {
     "declaration": true,
     "emitDeclarationOnly": true,
     "noEmit": false,
-    "outDir": "dist",
-    "types": ["node"]
+    "outDir": "dist"
   },
   "include": ["index.ts", "tanstack-query.ts"]
 }

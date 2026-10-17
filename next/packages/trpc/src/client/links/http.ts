@@ -58,7 +58,7 @@ export interface HttpLinkOptions<
    * fails with `UNSUPPORTED_PROTOCOL`. Client types follow it.
    * @default jsonSerializer
    */
-  serializer?: TSerializer;
+  serializer?: TSerializer | undefined;
   /** Extra headers, merged with each call's `context.headers`. */
   headers?:
     | HeadersInit

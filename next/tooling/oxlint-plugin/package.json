@@ -10,6 +10,7 @@
   },
   "devDependencies": {
     "@oxlint/plugins": "1.87.0",
+    "@tooling/tsconfig": "workspace:*",
     "@types/node": "^24.0.0",
     "typescript": "^7.0.2",
     "vite-plus": "1.1.0"

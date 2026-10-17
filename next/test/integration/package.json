@@ -12,6 +12,7 @@
     "@effect/platform-node": "4.0.2",
     "@effect/sql-pg": "4.0.2",
     "@effect/vitest": "4.0.2",
+    "@tooling/tsconfig": "workspace:*",
     "@trpc/client": "11.19.0",
     "@trpc/server": "11.19.0",
     "@types/node": "^24.0.0",

@@ -29,6 +29,7 @@
     "zod": "4.6.5"
   },
   "devDependencies": {
+    "@tooling/tsconfig": "workspace:*",
     "@types/node": "^24.0.0",
     "@types/react": "19.3.0",
     "typescript": "^7.0.2"

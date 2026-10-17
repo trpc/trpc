@@ -51,7 +51,7 @@ const handler = createFetchHandler<typeof router, LambdaPlatform>({
   router,
   createContext: ({ request, platform }) => ({
     requestId: platform.context.awsRequestId,
-    cookie: request.headers.cookie ?? '',
+    cookie: request.headers['cookie'] ?? '',
   }),
 });
 const lambda = toLambdaHandler(handler);

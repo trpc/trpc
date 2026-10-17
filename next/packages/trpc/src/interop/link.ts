@@ -194,7 +194,10 @@ export function fromV11Link(v11Link: V11Link): TrpcLink {
           next: (envelope: V11ResultEnvelope) => {
             const { result } = envelope;
             if (result.type === 'started' || result.type === 'state') return;
-            if (result.type === 'stopped') return Queue.endUnsafe(queue);
+            if (result.type === 'stopped') {
+              Queue.endUnsafe(queue);
+              return;
+            }
             Queue.offerUnsafe(queue, result.data);
             if (op.type !== 'subscription') Queue.endUnsafe(queue);
           },

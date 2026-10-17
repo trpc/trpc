@@ -15,6 +15,7 @@
     "@orpc/client": "2.0.0-beta.44",
     "@orpc/server": "2.0.0-beta.44",
     "@standard-schema/spec": "1.1.0",
+    "@tooling/tsconfig": "workspace:*",
     "@trpc/client": "11.19.0",
     "@trpc/server": "11.19.0",
     "@types/autocannon": "7.12.7",

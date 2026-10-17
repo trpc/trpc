@@ -62,7 +62,7 @@ const post = (
         ...(callId ? { 'trpc-call-id': callId } : {}),
       },
       body: JSON.stringify({ json: input }),
-      signal,
+      signal: signal ?? null,
     }),
   );
 
