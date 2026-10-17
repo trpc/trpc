@@ -312,15 +312,8 @@ export function createAtomClient(opts: {
   );
 
   const proxy = (path: string[]): any =>
-    new Proxy(() => {}, {
-      get: (_, key) => {
-        if (path.length === 0 && key === 'runtime') return runtime;
-        if (path.length === 0 && key === 'client') return client;
-        return typeof key === 'string' && key !== 'then'
-          ? proxy([...path, key])
-          : undefined;
-      },
-      apply: (_, __, args: unknown[]) => {
+    new Proxy(
+      (...args: unknown[]) => {
         const method = path.at(-1);
         const procedure = path.slice(0, -1).join('.');
         if (method === 'query' || method === 'subscription') {
@@ -336,6 +329,15 @@ export function createAtomClient(opts: {
           `Call .query(), .mutation() or .subscription() on a procedure, not ${path.join('.')}()`,
         );
       },
-    });
+      {
+        get: (_, key) => {
+          if (path.length === 0 && key === 'runtime') return runtime;
+          if (path.length === 0 && key === 'client') return client;
+          return typeof key === 'string' && key !== 'then'
+            ? proxy([...path, key])
+            : undefined;
+        },
+      },
+    );
   return proxy([]);
 }

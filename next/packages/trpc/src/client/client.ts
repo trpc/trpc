@@ -32,13 +32,10 @@ export function createRecursiveProxy(
   callback: (path: readonly string[], args: unknown[]) => unknown,
   path: readonly string[] = [],
 ): any {
-  return new Proxy(() => {}, {
+  return new Proxy((...args: unknown[]) => callback(path, args), {
     get(_target, key) {
       if (typeof key !== 'string' || key === 'then') return undefined;
       return createRecursiveProxy(callback, [...path, key]);
-    },
-    apply(_target, _this, args: unknown[]) {
-      return callback(path, args);
     },
   });
 }

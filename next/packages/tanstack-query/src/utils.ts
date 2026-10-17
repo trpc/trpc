@@ -21,6 +21,7 @@ import type {
   RouterOf,
   TrpcClient,
 } from '@trpc12/trpc/client';
+import { createRecursiveProxy } from '@trpc12/trpc/extend';
 import {
   pathKey,
   procedureKey,
@@ -620,21 +621,6 @@ function isAsyncIterable(value: unknown): value is AsyncIterable<unknown> {
   );
 }
 
-function createProxy(
-  callback: (path: readonly string[], args: unknown[]) => unknown,
-  path: readonly string[] = [],
-): any {
-  return new Proxy(() => {}, {
-    get(_target, key) {
-      if (typeof key !== 'string' || key === 'then') return undefined;
-      return createProxy(callback, [...path, key]);
-    },
-    apply(_target, _this, args: unknown[]) {
-      return callback(path, args);
-    },
-  });
-}
-
 type Bag = {
   input?: unknown;
   context?: unknown;
@@ -682,7 +668,7 @@ export function createTrpcQueryUtils<TClient extends object>(
     return (input, callOpts) => target[name](input, callOpts);
   };
 
-  return createProxy((fullPath, args) => {
+  return createRecursiveProxy((fullPath, args) => {
     const name = fullPath.at(-1);
     const callPath = fullPath.slice(0, -1);
     const path = keyPrefix === undefined ? callPath : [keyPrefix, ...callPath];

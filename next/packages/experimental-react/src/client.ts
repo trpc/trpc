@@ -185,14 +185,13 @@ export function createReactClient(opts: {
     }
   };
   const proxy = (path: readonly string[]): any =>
-    new Proxy(() => {}, {
+    new Proxy((...args: unknown[]) => method(path, args), {
       get(_target, key) {
         if (typeof key !== 'string' || key === 'then') return undefined;
         if (path.length === 0 && key === 'client') return client;
         if (path.length === 0 && key === 'store') return store;
         return proxy([...path, key]);
       },
-      apply: (_target, _this, args: unknown[]) => method(path, args),
     });
   return proxy([]);
 }
