@@ -238,3 +238,29 @@ test('a stream that ends inside a UTF-8 character, after an event, is lost', asy
   ).rejects.toMatchObject({ message: 'The subscription connection was lost' });
   expect(seen).toEqual([1]);
 });
+
+test('a streamed result whose deferred slot has no place, or whose chunk is unreadable, fails', async () => {
+  const jsonl = (...lines: string[]) =>
+    new Response(lines.join('\n') + '\n', {
+      headers: {
+        'content-type': 'application/jsonl',
+        'trpc-serializer': 'json',
+        'trpc-version': '12',
+      },
+    });
+  const nowhere = clientWith(async () =>
+    jsonl('{"json":{"a":1},"d":[[["x","y"],0,"Promise"]]}', '[0,0,{"json":1}]'),
+  );
+  const [, err] = await safe(
+    Promise.race([nowhere.echo.query('x'), sleep(1000).then(() => 'hung')]),
+  );
+  expect(err).toMatchObject({
+    message: expect.stringContaining('no place in the result'),
+  });
+
+  const unreadable = clientWith(async () =>
+    jsonl('{"json":{"a":null},"d":[[["a"],0,"Promise"]]}', '[0,0,{"json":1},'),
+  );
+  const out = (await unreadable.echo.query('x')) as { a: Promise<unknown> };
+  await expect(out.a).rejects.toBeDefined();
+});

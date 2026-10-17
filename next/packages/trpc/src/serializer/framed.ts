@@ -244,14 +244,13 @@ function framedSerializer(
                 : Exit.isFailure(exit)
                   ? failed(Cause.squash(exit.cause))
                   : interrupted();
-              if (first) {
-                Deferred.doneUnsafe(
-                  head,
-                  Exit.isFailure(exit)
-                    ? Effect.failCause(exit.cause)
-                    : Effect.fail(interrupted() as never),
-                );
-              }
+              // A no-op once the head is out; a head frame that failed to read leaves it open.
+              Deferred.doneUnsafe(
+                head,
+                Exit.isFailure(exit)
+                  ? Effect.failCause(exit.cause)
+                  : Effect.fail(interrupted() as never),
+              );
               for (const q of queues.values()) {
                 Queue.failCauseUnsafe(q, Cause.fail(error));
               }

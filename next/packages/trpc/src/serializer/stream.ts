@@ -579,20 +579,19 @@ export function deserializeStream<T, E>(
             : Exit.isFailure(exit)
               ? failed(Cause.squash(exit.cause))
               : interrupted();
-          if (first) {
-            Deferred.doneUnsafe(
-              head,
-              Exit.isFailure(exit)
-                ? Effect.failCause(exit.cause)
-                : Effect.fail(interrupted() as never),
-            );
-          }
           // Bytes already received still drain; then waiting frames settle.
           for (const idx of bytes.keys()) {
             const q = queues.get(idx);
             if (q) Queue.failCauseUnsafe(q, Cause.fail(error));
           }
           yield* forEachSeq([...tails.values()], Deferred.await);
+          // A no-op once the head is out; a head frame that failed to read leaves it open.
+          Deferred.doneUnsafe(
+            head,
+            Exit.isFailure(exit)
+              ? Effect.failCause(exit.cause)
+              : Effect.fail(interrupted() as never),
+          );
           for (const q of queues.values()) {
             Queue.failCauseUnsafe(q, Cause.fail(error));
           }

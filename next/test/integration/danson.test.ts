@@ -264,3 +264,31 @@ test('deferred values: rejections, iterators that throw or return, streams, file
   ]);
   await handler.dispose();
 });
+
+test('a streamed head the client cannot read fails the call instead of hanging', async () => {
+  const client = createTrpcClient({
+    router: routerType<typeof router>(),
+    links: [
+      httpLink({
+        url: 'http://localhost/trpc',
+        serializer: danson,
+        fetch: async () =>
+          new Response('{"json":{"_":"$","type":"Nope"}}\n[0,0,{"json":1}]\n', {
+            headers: {
+              'content-type': 'application/jsonl',
+              'trpc-serializer': danson.name,
+              'trpc-version': '12',
+            },
+          }),
+      }),
+    ],
+  });
+  const result = await Promise.race([
+    safe(client.later.query()),
+    new Promise((resolve) => setTimeout(() => resolve('hung'), 1000)),
+  ]);
+  expect(result).not.toBe('hung');
+  expect((result as Awaited<ReturnType<typeof safe>>)[1]).toMatchObject({
+    message: expect.stringContaining('No deserializer for type: Nope'),
+  });
+});
