@@ -1,0 +1,670 @@
+import rehypeShiki from '@shikijs/rehype';
+import {
+  createTransformerFactory,
+  rendererRich,
+  type TwoslashShikiFunction,
+} from '@shikijs/twoslash/core';
+import { Effect, FileSystem, Path } from 'effect';
+import GithubSlugger from 'github-slugger';
+import type { Element, ElementContent, Root as HastRoot } from 'hast';
+import { toHtml } from 'hast-util-to-html';
+import { toString } from 'hast-util-to-string';
+import type {
+  Blockquote,
+  Code,
+  Link,
+  Root as MdastRoot,
+  Paragraph,
+} from 'mdast';
+import rehypeRaw from 'rehype-raw';
+import remarkGfm from 'remark-gfm';
+import remarkParse from 'remark-parse';
+import remarkRehype from 'remark-rehype';
+import type { ShikiTransformer } from 'shiki';
+import { createTwoslasher } from 'twoslash/core';
+// Twoslash runs the compiler through its JavaScript API, which TypeScript 7
+// doesn't have.
+import ts from 'typescript6';
+import { unified } from 'unified';
+import { visit } from 'unist-util-visit';
+
+import type { DocHeading } from '../src/content/types.ts';
+import { collapseRegions } from './collapse.ts';
+import { ContentError, messageOf } from './content-error.ts';
+import { appOf, sampleApps } from './sample-apps.ts';
+import type { TwoslashCache } from './twoslash-cache.ts';
+
+/** A link from one page to another, checked once every page has rendered. */
+export interface DocLink {
+  readonly hash: string | undefined;
+  readonly slug: string;
+}
+
+interface RenderedMarkdown {
+  readonly headings: ReadonlyArray<DocHeading>;
+  readonly html: string;
+  readonly links: ReadonlyArray<DocLink>;
+  /** Each `twoslash` block's `// ^?` types, in order. */
+  readonly typeQueries: ReadonlyArray<ReadonlyArray<string>>;
+}
+
+const alertTitles = {
+  CAUTION: 'Caution',
+  IMPORTANT: 'Important',
+  NOTE: 'Note',
+  TIP: 'Tip',
+  WARNING: 'Warning',
+} as const;
+
+type AlertKind = keyof typeof alertTitles;
+
+function isAlertKind(value: string): value is AlertKind {
+  return Object.hasOwn(alertTitles, value);
+}
+
+/** GitHub's `> [!NOTE]` alerts become `<aside class="callout">`. */
+function remarkAlerts() {
+  return (tree: MdastRoot) => {
+    visit(tree, 'blockquote', (node: Blockquote) => {
+      const first = node.children[0];
+      if (first?.type !== 'paragraph') {
+        return;
+      }
+      const text = first.children[0];
+      if (text?.type !== 'text') {
+        return;
+      }
+      const match = /^\[!(\w+)\]\s*/.exec(text.value);
+      const kind = match?.[1]?.toUpperCase();
+      if (!match || !kind || !isAlertKind(kind)) {
+        return;
+      }
+      text.value = text.value.slice(match[0].length);
+      const title: Paragraph = {
+        children: [{ type: 'text', value: alertTitles[kind] }],
+        data: { hProperties: { className: ['callout-title'] } },
+        type: 'paragraph',
+      };
+      node.children.unshift(title);
+      node.data = {
+        hName: 'aside',
+        hProperties: {
+          className: ['callout', `callout-${kind.toLowerCase()}`],
+        },
+      };
+    });
+  };
+}
+
+/** Where a link written in a page's markdown points. */
+export type ResolvedLink =
+  | { readonly kind: 'doc'; readonly link: DocLink }
+  | { readonly kind: 'source'; readonly path: string }
+  | { readonly kind: 'other' };
+
+/**
+ * Links are written as relative paths between the `.md` files
+ * (`../client/links.md#batching`), so they work on GitHub too. A link to a
+ * page is served at `/docs/<slug>`, and a link out of the docs folder (an
+ * example, a design note) points at the file on GitHub.
+ */
+export function resolveLink(fromSlug: string, url: string): ResolvedLink {
+  if (/^[a-z][a-z\d+.-]*:/i.test(url) || url.startsWith('#')) {
+    return { kind: 'other' };
+  }
+  const base = new URL(`file:///docs/${fromSlug}.md`);
+  const target = new URL(url, base);
+  const hash = target.hash
+    ? decodeURIComponent(target.hash.slice(1))
+    : undefined;
+  const pathname = decodeURIComponent(target.pathname);
+  const page = /^\/docs\/(.+)\.md$/.exec(pathname);
+  if (page?.[1]) {
+    return { kind: 'doc', link: { hash, slug: page[1] } };
+  }
+  return { kind: 'source', path: `${pathname.slice(1)}${target.hash}` };
+}
+
+function remarkLinks(slug: string, sourceUrl: string, links: Array<DocLink>) {
+  return () => (tree: MdastRoot) => {
+    visit(tree, 'link', (node: Link) => {
+      const resolved = resolveLink(slug, node.url);
+      if (resolved.kind === 'doc') {
+        links.push(resolved.link);
+        node.url = `/docs/${resolved.link.slug}${resolved.link.hash ? `#${resolved.link.hash}` : ''}`;
+      } else if (resolved.kind === 'source') {
+        node.url = `${sourceUrl}/${resolved.path}`;
+      }
+    });
+  };
+}
+
+const packageManagers = ['pnpm', 'npm', 'yarn', 'bun'] as const;
+
+function installCommand(
+  manager: (typeof packageManagers)[number],
+  packages: string,
+  dev: boolean,
+) {
+  const flag = dev ? (manager === 'bun' ? ' -d' : ' -D') : '';
+  const verb = manager === 'npm' ? 'install' : 'add';
+  return `${manager} ${verb}${flag} ${packages}`;
+}
+
+/**
+ * A `package-install` fence lists packages (`-D` first for dev
+ * dependencies) and shows the install command for each package manager, as
+ * tabs. The reader's choice applies to every block (`DocBody`).
+ */
+function remarkPackageInstall() {
+  return (tree: MdastRoot) => {
+    visit(tree, 'code', (node: Code, index, parent) => {
+      if (node.lang !== 'package-install' || !parent || index === undefined) {
+        return;
+      }
+      const words = node.value.trim().split(/\s+/);
+      const dev = words[0] === '-D';
+      const packages = (dev ? words.slice(1) : words).join(' ');
+      const tabs: Paragraph = {
+        // SAFETY: remark-rehype turns this into a `div` of `pre`s; mdast only
+        // types a paragraph's children as phrasing content.
+        children: packageManagers.map((manager) => ({
+          lang: 'sh',
+          meta: `tab="${manager}"`,
+          type: 'code',
+          value: installCommand(manager, packages, dev),
+        })) as unknown as Paragraph['children'],
+        data: {
+          hName: 'div',
+          hProperties: {
+            className: ['code-tabs'],
+            dataTabs: 'package-manager',
+          },
+        },
+        type: 'paragraph',
+      };
+      parent.children[index] = tabs;
+    });
+  };
+}
+
+/**
+ * A fence's meta (`twoslash title="server.ts"`) is `data` on the hast
+ * `<code>`, which `rehype-raw` drops. Shiki also reads it from the
+ * `metastring` property, which survives.
+ */
+function remarkCodeMeta() {
+  return (tree: MdastRoot) => {
+    visit(tree, 'code', (node: Code) => {
+      if (node.meta) {
+        node.data = {
+          ...node.data,
+          hProperties: { ...node.data?.hProperties, metastring: node.meta },
+        };
+      }
+    });
+  };
+}
+
+/** Ids and anchor links for `h2` / `h3`, collected for the table of contents. */
+function rehypeHeadings(headings: Array<DocHeading>) {
+  return () => (tree: HastRoot) => {
+    const slugger = new GithubSlugger();
+    visit(tree, 'element', (node: Element) => {
+      if (!/^h[2-6]$/.test(node.tagName)) {
+        return;
+      }
+      const text = toString(node).trim();
+      const id = slugger.slug(text);
+      node.properties.id = id;
+      if (node.tagName === 'h2' || node.tagName === 'h3') {
+        headings.push({ depth: node.tagName === 'h2' ? 2 : 3, id, text });
+      }
+      node.children = [
+        {
+          children: node.children,
+          properties: { className: ['heading-anchor'], href: `#${id}` },
+          tagName: 'a',
+          type: 'element',
+        },
+      ];
+    });
+  };
+}
+
+/** Keeps a fence's `title="…"`, its tab and its language on the `<pre>`. */
+const codeMeta: ShikiTransformer = {
+  name: 'trpc-docs:code-meta',
+  pre(node) {
+    const raw = this.options.meta?.['__raw'] ?? '';
+    const title = /title="([^"]+)"/.exec(raw)?.[1];
+    if (title) {
+      node.properties['data-title'] = title;
+    }
+    const tab = /tab="([^"]+)"/.exec(raw)?.[1];
+    if (tab) {
+      node.properties['data-tab'] = tab;
+    }
+    node.properties['data-language'] = this.options.lang;
+    node.properties['tabindex'] = '0';
+  },
+};
+
+/** Wraps each highlighted block with its title and a copy button. */
+function rehypeCodeBlocks() {
+  return (tree: HastRoot) => {
+    visit(tree, 'element', (node: Element, index, parent) => {
+      if (node.tagName !== 'pre' || !parent || index === undefined) {
+        return;
+      }
+      const title = node.properties['data-title'];
+      const tab = node.properties['data-tab'];
+      const header: Array<ElementContent> = [];
+      if (title) {
+        header.push({
+          children: [{ type: 'text', value: String(title) }],
+          properties: { className: ['code-title'] },
+          tagName: 'div',
+          type: 'element',
+        });
+      }
+      parent.children[index] = {
+        children: [
+          ...header,
+          node,
+          {
+            children: [{ type: 'text', value: 'Copy' }],
+            properties: {
+              ariaLabel: 'Copy code',
+              className: ['code-copy'],
+              dataCopy: '',
+              type: 'button',
+            },
+            tagName: 'button',
+            type: 'element',
+          },
+        ],
+        properties: {
+          className: ['code-block'],
+          ...(tab ? { dataTab: String(tab) } : {}),
+        },
+        tagName: 'div',
+        type: 'element',
+      };
+      return 'skip';
+    });
+  };
+}
+
+/** Puts a button per tab above a `code-tabs` group's blocks. */
+function rehypeCodeTabs() {
+  return (tree: HastRoot) => {
+    visit(tree, 'element', (node: Element) => {
+      if (node.properties['dataTabs'] === undefined) {
+        return;
+      }
+      const group = String(node.properties['dataTabs']);
+      // Shiki leaves each highlighted block in a root of its own.
+      // SAFETY: a root's children are element content once it sits in an
+      // element.
+      node.children = node.children.flatMap((child) =>
+        (child as ElementContent | HastRoot).type === 'root'
+          ? ((child as unknown as HastRoot).children as Array<ElementContent>)
+          : [child],
+      );
+      const blocks = node.children.filter(
+        (child): child is Element =>
+          child.type === 'element' && child.properties['dataTab'] !== undefined,
+      );
+      const tabs = blocks.map((block) => String(block.properties['dataTab']));
+      // The first tab shows until `DocBody` applies the reader's choice.
+      if (blocks[0]) {
+        blocks[0].properties['dataActive'] = '';
+      }
+      node.children.unshift({
+        children: tabs.map((tab, index): Element => ({
+          children: [{ type: 'text', value: tab }],
+          properties: {
+            ariaSelected: String(index === 0),
+            className: ['code-tab'],
+            dataTabGroup: group,
+            dataTabSelect: tab,
+            role: 'tab',
+            type: 'button',
+          },
+          tagName: 'button',
+          type: 'element',
+        })),
+        properties: { className: ['code-tabs-list'], role: 'tablist' },
+        tagName: 'div',
+        type: 'element',
+      });
+    });
+  };
+}
+
+interface Project {
+  readonly compilerOptions: ts.CompilerOptions;
+  /**
+   * Every file of a sample app, by path from its root, so a block's
+   * program has what `tsc` has.
+   */
+  readonly extraFiles: Record<string, string>;
+}
+
+function flatten(diagnostic: ts.Diagnostic) {
+  return ts.flattenDiagnosticMessageText(diagnostic.messageText, '\n');
+}
+
+/**
+ * A sample app's `tsconfig.json` and the files it includes, read for each
+ * render, so a block sees edits to the rest of its app.
+ */
+const loadProject = Effect.fn('loadProject')(function* (app: string) {
+  const fs = yield* FileSystem.FileSystem;
+  const path = yield* Path.Path;
+  const file = path.join(app, 'tsconfig.json');
+  // TypeScript resolves `extends` and `include` itself, through `ts.sys`.
+  const parsed = yield* Effect.try({
+    catch: (cause) =>
+      new ContentError({ cause, message: `${file}: ${messageOf(cause)}` }),
+    try: () =>
+      ts.getParsedCommandLineOfConfigFile(file, undefined, {
+        ...ts.sys,
+        onUnRecoverableConfigFileDiagnostic: (diagnostic) => {
+          throw new Error(flatten(diagnostic));
+        },
+      }),
+  });
+  if (!parsed || parsed.errors.length > 0) {
+    return yield* new ContentError({
+      message: `${file}: ${parsed?.errors.map(flatten).join('\n') ?? 'invalid tsconfig'}`,
+    });
+  }
+  const extraFiles = yield* Effect.forEach(
+    parsed.fileNames,
+    (name) =>
+      Effect.map(
+        fs.readFileString(name),
+        (contents) =>
+          [
+            path.relative(app, name).split(path.sep).join('/'),
+            contents,
+          ] as const,
+      ),
+    { concurrency: 'unbounded' },
+  );
+  const project: Project = {
+    compilerOptions: parsed.options,
+    extraFiles: Object.fromEntries(extraFiles),
+  };
+  return project;
+});
+
+/** The parts of a `@typescript/vfs` environment read here. */
+interface Environment {
+  createFile(fileName: string, content: string): void;
+  readonly languageService: ts.LanguageService;
+}
+
+/**
+ * Compiles a block, and returns the program it compiled in, for the cache to
+ * know which files it read. `program` is missing if it wasn't seen.
+ */
+type Twoslasher = (...args: Parameters<TwoslashShikiFunction>) => {
+  readonly program: ts.Program | undefined;
+  readonly result: ReturnType<TwoslashShikiFunction>;
+};
+
+/** The program a block compiled in, once twoslash is done with it. */
+interface SeenProgram {
+  program?: ts.Program | undefined;
+}
+
+/** A twoslasher per project root; each keeps a TypeScript environment per set of compiler options. */
+const twoslashers = new Map<string, Twoslasher>();
+
+function twoslasherFor(root: string, tsLibDirectory: string) {
+  const existing = twoslashers.get(root);
+  if (existing) {
+    return existing;
+  }
+  let onClear: ((program: ts.Program | undefined) => void) | undefined;
+  // Twoslash empties a block's files once it's done with them; until then
+  // the environment's program is the one the block compiled in.
+  const environments = new (class extends Map<string, Environment> {
+    override set(key: string, environment: Environment) {
+      const createFile = environment.createFile.bind(environment);
+      environment.createFile = (fileName, content) => {
+        if (content === '' && onClear) {
+          onClear(environment.languageService.getProgram());
+          onClear = undefined;
+        }
+        createFile(fileName, content);
+      };
+      return super.set(key, environment);
+    }
+  })();
+  const twoslasher = createTwoslasher({
+    // @ts-expect-error -- typed as `@typescript/vfs`'s environment, from a package www doesn't depend on
+    cache: environments,
+    tsLibDirectory,
+    // @ts-expect-error -- twoslash types `tsModule` as the `typescript` package, which here is TypeScript 7's, with no JavaScript API
+    tsModule: ts,
+    vfsRoot: root,
+  });
+  const run: Twoslasher = (code, lang, options) => {
+    const seen: SeenProgram = {};
+    onClear = (program) => {
+      seen.program = program;
+    };
+    try {
+      const result = twoslasher(code, lang, options);
+      return { program: seen.program, result };
+    } finally {
+      onClear = undefined;
+    }
+  };
+  twoslashers.set(root, run);
+  return run;
+}
+
+const blockFilename = /^\/\/ @filename: (.+)$/gm;
+
+/** The app that inline blocks compile in, beside its `src/` files. */
+const inlineApp = 'docs';
+
+/**
+ * Fences with `twoslash` in their meta are compiled, so hovering a name shows
+ * its type, `// ^?` pins a type under the line, and `// @errors: 2345` shows
+ * an expected error. A compile error the block doesn't expect fails the
+ * build.
+ *
+ * A block written inline is a file in the `docs` sample app's `src/`, so
+ * it can import the app's files (`./server.ts`) behind a `// ---cut---`.
+ * Its `// @filename: client.ts` lines name more files there.
+ *
+ * A `sample` fence's block (`expandSnippets`) is a file of a sample app
+ * (`samples/<app>/`), named by its `// @filename`, a path from the samples
+ * dir, and compiles in that app's project.
+ *
+ * Both kinds compile with every file of their app, so they see what `tsc`
+ * sees.
+ */
+const twoslashTransformer = Effect.fn('twoslashTransformer')(function* (
+  markdown: string,
+  samplesDir: string,
+  cache: TwoslashCache | undefined,
+) {
+  const path = yield* Path.Path;
+  const apps = yield* sampleApps(samplesDir);
+  const appOfFile = (filename: string) =>
+    appOf(path, path.join(samplesDir, filename), apps);
+  const inline = path.join(samplesDir, inlineApp);
+  const used = new Set([
+    inline,
+    ...Array.from(markdown.matchAll(blockFilename), (match) =>
+      appOfFile(match[1] ?? ''),
+    ).filter((app) => app !== undefined),
+  ]);
+  const projects = new Map(
+    yield* Effect.forEach(
+      used,
+      (app) =>
+        Effect.map(loadProject(app), (project) => [app, project] as const),
+      { concurrency: 'unbounded' },
+    ),
+  );
+  const tsLibDirectory = path.dirname(
+    yield* path.fromFileUrl(new URL(import.meta.resolve('typescript6'))),
+  );
+  const session = cache ? yield* cache.open : undefined;
+  const compile = (
+    root: string,
+    ...[code, lang, options]: Parameters<TwoslashShikiFunction>
+  ) => {
+    const key = session?.key({ code, lang, options, root });
+    const cached = key === undefined ? undefined : session?.get(key);
+    if (cached) {
+      return cached;
+    }
+    const compiled = twoslasherFor(root, tsLibDirectory)(code, lang, options);
+    const program = compiled.program;
+    if (key !== undefined && program) {
+      // The files under the root outside `node_modules` are the app's,
+      // which the key covers, or a block's, which twoslash writes and
+      // then empties. TypeScript's own libs come with the lockfile.
+      const appFile = (fileName: string) =>
+        fileName.startsWith(`${root}/`) &&
+        !fileName.slice(root.length).includes('/node_modules/');
+      session?.set(
+        key,
+        compiled.result,
+        program
+          .getSourceFiles()
+          .filter(
+            (file) =>
+              !appFile(file.fileName) &&
+              !program.isSourceFileDefaultLibrary(file),
+          ),
+      );
+    }
+    return compiled.result;
+  };
+  const twoslasher: TwoslashShikiFunction = (code, lang, twoslashOptions) => {
+    const filename = new RegExp(blockFilename.source, 'm').exec(code)?.[1];
+    const app = filename === undefined ? undefined : appOfFile(filename);
+    if (app === undefined) {
+      const project = projects.get(inline);
+      const extension = lang === 'tsx' ? 'tsx' : 'ts';
+      const inSrc =
+        filename === undefined
+          ? `// ---cut-start---\n// @filename: src/block.twoslash.${extension}\n// ---cut-end---\n${code}`
+          : code.replaceAll(
+              blockFilename,
+              (_line, name: string) => `// @filename: src/${name}`,
+            );
+      return compile(inline, inSrc, lang, { ...twoslashOptions, ...project });
+    }
+    const project = projects.get(app);
+    if (!project) {
+      throw new Error(`"// @filename: ${filename}" isn't in a sample app`);
+    }
+    const inApp = code.replaceAll(
+      blockFilename,
+      (_line, name: string) =>
+        `// @filename: ${path
+          .relative(app, path.join(samplesDir, name))
+          .split(path.sep)
+          .join('/')}`,
+    );
+    return compile(app, inApp, lang, { ...twoslashOptions, ...project });
+  };
+  return {
+    flush: session?.flush ?? Effect.void,
+    transformer: createTransformerFactory(
+      twoslasher,
+      rendererRich({ jsdoc: false, queryRendering: 'line' }),
+    )({ explicitTrigger: true }),
+  };
+});
+
+export interface RenderOptions {
+  /** The dir of the sample apps the code blocks compile in. */
+  readonly samplesDir: string;
+  /** The page's slug, which its relative links resolve from. */
+  readonly slug: string;
+  /** Where the files around the docs folder are browsable, for links to them. */
+  readonly sourceUrl: string;
+  /** Where compiled blocks are kept between renders and builds. */
+  readonly twoslashCache?: TwoslashCache | undefined;
+}
+
+export const renderMarkdown = Effect.fn('renderMarkdown')(function* (
+  markdown: string,
+  options: RenderOptions,
+) {
+  const headings: Array<DocHeading> = [];
+  const links: Array<DocLink> = [];
+  const typeQueries: Array<ReadonlyArray<string>> = [];
+  let collapseId = 0;
+  const blocks = yield* twoslashTransformer(
+    markdown,
+    options.samplesDir,
+    options.twoslashCache,
+  );
+  const processor = unified()
+    .use(remarkParse)
+    .use(remarkGfm)
+    .use(remarkAlerts)
+    .use(remarkLinks(options.slug, options.sourceUrl, links))
+    .use(remarkPackageInstall)
+    .use(remarkCodeMeta)
+    .use(remarkRehype, { allowDangerousHtml: true })
+    .use(rehypeRaw)
+    .use(rehypeHeadings(headings))
+    .use(rehypeShiki, {
+      defaultColor: false,
+      // Loading all of Shiki's languages took seconds per process, so
+      // others load on first use, and an unknown one fails the render. A
+      // block in a language loaded on first use highlights after the rest,
+      // so `ts` and `tsx` load up front: `typeQueries` is in page order.
+      langs: ['ts', 'tsx'],
+      lazy: true,
+      themes: { dark: 'github-dark', light: 'github-light' },
+      transformers: [
+        blocks.transformer,
+        collapseRegions(() => {
+          collapseId += 1;
+          return `code-collapse-${collapseId}`;
+        }),
+        codeMeta,
+        {
+          name: 'trpc-docs:type-queries',
+          pre() {
+            const twoslash = this.meta.twoslash;
+            if (twoslash) {
+              typeQueries.push(
+                twoslash.nodes.flatMap((node) =>
+                  node.type === 'query' ? [node.text] : [],
+                ),
+              );
+            }
+          },
+        },
+      ],
+    })
+    .use(rehypeCodeBlocks)
+    .use(rehypeCodeTabs);
+  const tree = yield* Effect.tryPromise({
+    catch: (cause) => new ContentError({ cause, message: messageOf(cause) }),
+    try: async () => processor.run(processor.parse(markdown)),
+  }).pipe(Effect.ensuring(blocks.flush));
+  const rendered: RenderedMarkdown = {
+    headings,
+    html: toHtml(tree),
+    links,
+    typeQueries,
+  };
+  return rendered;
+});

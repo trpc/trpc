@@ -1,0 +1,25 @@
+{
+  "name": "@samples/docs",
+  "private": true,
+  "description": "The app the docs' code blocks compile in: their imports resolve here, and `sample` fences show regions of its files",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc"
+  },
+  "dependencies": {
+    "@effect/platform-node": "4.0.2",
+    "@tanstack/react-query": "5.104.1",
+    "@trpc12/experimental-react": "workspace:*",
+    "@trpc12/tanstack-query": "workspace:*",
+    "@trpc12/tanstack-react-query": "workspace:*",
+    "@trpc12/trpc": "workspace:*",
+    "effect": "4.0.2",
+    "react": "19.3.0",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.4",
+    "@types/react": "19.3.0",
+    "typescript": "^7.0.2"
+  }
+}

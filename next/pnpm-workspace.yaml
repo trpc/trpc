@@ -4,6 +4,8 @@ packages:
   - 'test/*'
   - 'spikes'
   - 'tooling/*'
+  - 'www'
+  - 'www/samples/*'
 
 minimumReleaseAgeExclude:
   - vendor-src@0.16.0

@@ -1,0 +1,18 @@
+{
+  "name": "@samples/home",
+  "private": true,
+  "description": "The home page's code: each step shows a region of these files",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc"
+  },
+  "dependencies": {
+    "@trpc12/trpc": "workspace:*",
+    "effect": "4.0.2",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.4",
+    "typescript": "^7.0.2"
+  }
+}

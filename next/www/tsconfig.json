@@ -1,0 +1,14 @@
+{
+  "extends": "@tooling/tsconfig/base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "lib": ["ES2024", "DOM", "DOM.Iterable", "ESNext.Disposable"],
+    "target": "ES2024",
+    "module": "Preserve",
+    "paths": {
+      "~/*": ["./src/*"]
+    },
+    "types": ["node", "vite/client"]
+  },
+  "include": ["src", "build", "vite.config.ts"]
+}

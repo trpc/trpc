@@ -16,6 +16,8 @@
     "example": "pnpm -r --workspace-concurrency=1 --filter './examples/*' run smoke",
     "decisions": "node tooling/decisions/decisions.ts",
     "build": "pnpm -r run build",
+    "docs:dev": "pnpm --filter @trpc12/www dev",
+    "docs:build": "pnpm --filter @trpc12/www build",
     "bench": "pnpm --filter @tooling/bench run bench",
     "postinstall": "vendor-src check",
     "vendor:sync": "vendor-src sync"

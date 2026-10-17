@@ -25,6 +25,7 @@ export default defineConfig({
       '**/dist/**',
       'spikes/**/generated/**',
       'packages/*/src/**/fixtures/generated/**',
+      'www/src/routeTree.gen.ts',
     ],
   },
   lint: {
@@ -33,6 +34,7 @@ export default defineConfig({
       '**/dist/**',
       'spikes/**/generated/**',
       'packages/*/src/**/fixtures/generated/**',
+      'www/src/routeTree.gen.ts',
     ],
     options: {
       typeAware: true,
@@ -147,6 +149,7 @@ export default defineConfig({
             'test/**/*.test.tsx',
             'spikes/**/*.test.ts',
             'tooling/**/*.test.ts',
+            'www/build/**/*.test.ts',
           ],
           exclude: [
             '**/node_modules/**',

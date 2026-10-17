@@ -61,6 +61,32 @@ jobs:
       # Client bundles, failing above their gzip ceilings.
       - run: pnpm bench budget
 
+  www:
+    # The docs site: compiles every twoslash block in docs/ and fails on
+    # broken links between pages.
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+        with:
+          package_json_file: next/package.json
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: next/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+        env:
+          VP_GIT_HOOKS: '0'
+      # Compiled blocks, keyed by the lockfile inside; a stale entry recompiles.
+      - uses: actions/cache@v4
+        with:
+          path: next/www/node_modules/.cache/twoslash
+          key: twoslash-${{ hashFiles('next/pnpm-lock.yaml') }}-${{ github.sha }}
+          restore-keys: twoslash-${{ hashFiles('next/pnpm-lock.yaml') }}-
+      - run: pnpm --filter @trpc12/www build
+
   effect-latest:
     # `@trpc12/trpc` depends on `effect@^4`; users get the latest 4.x, the lockfile pins one.
     runs-on: ubuntu-latest
