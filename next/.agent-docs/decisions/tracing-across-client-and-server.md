@@ -8,6 +8,7 @@
 - (agent) WebSocket calls aren't parented: one connection carries many calls and there is no per-message header. Later: a `trace` field on WS messages if someone needs it.
 - (agent) That `trace` field is built ([`socket-trace-field.md`](./socket-trace-field.md)).
 - (human) Observability is opt-in: "I just care that good observability is opt in and possible. If it has cost for requests, don't do it by default but make it opt in." So client and server open their `trpc.<path>` spans only when a tracer other than Effect's native one is installed; installing it is the opt-in. The server span was the largest single per-request cost (about 1.2 µs, [`../notes/benchmarks.md`](../notes/benchmarks.md)). With a tracer, middlewares and the resolver run inside it.
+  - (agent) So the Promise client runs its links with `runLinks`, without `runOperation`'s tracer check and span, which shakes out of its bundle (1.7 kB gzipped); the Effect client keeps `runOperation`.
 - Lost: `Effect.currentSpan` in a resolver is the request's span, not `trpc.<path>`, under the native tracer.
 - Why: one trace from browser to resolver with Effect's own APIs; the only @trpc12/trpc code is span naming and header plumbing.
 - Lost: always-on propagation like Effect's `HttpClient` default, and tracing on the Promise client without Effect.
