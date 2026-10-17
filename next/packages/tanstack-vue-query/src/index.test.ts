@@ -18,8 +18,8 @@ import {
 import { createRouterClient } from '@trpc12/trpc/server';
 import { expect, expectTypeOf, test, vi } from 'vite-plus/test';
 import {
-  createApp as createVueApp,
   createSSRApp,
+  createApp as createVueApp,
   defineComponent,
   effectScope,
   h,
@@ -30,9 +30,9 @@ import {
   appRouter,
   createApp,
   db,
-  type Post,
-  type AppClient,
   serializer,
+  type AppClient,
+  type Post,
 } from '../../tanstack-query/src/fixtures/app.ts';
 import {
   click,

@@ -25,8 +25,8 @@ import {
   appRouter,
   createApp,
   db,
-  type AppClient,
   serializer,
+  type AppClient,
 } from '../../tanstack-query/src/fixtures/app.ts';
 
 const trpcContext = createTrpcContext<AppClient>();

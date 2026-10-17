@@ -1,21 +1,21 @@
 import { MessageChannel } from 'node:worker_threads';
 import {
   createTrpcClient,
-  httpLink,
   experimental_messagePortLink,
-  safe,
+  httpLink,
   routerType,
+  safe,
   wsLink,
 } from '@trpc12/trpc/client';
-import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
 import {
   createSerializer,
   jsonSerializer,
   type CustomType,
 } from '@trpc12/trpc/serializer';
-import { createTestServer } from '../fixtures/server.ts';
+import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
+import { createTestServer } from '../fixtures/server.ts';
 
 class Money {
   readonly cents: bigint;

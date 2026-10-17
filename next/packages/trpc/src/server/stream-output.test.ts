@@ -1,15 +1,15 @@
-import { Schema, Stream } from 'effect';
 import {
   createTrpcClient,
   httpLink,
-  TrpcError,
   routerType,
+  TrpcError,
 } from '@trpc12/trpc/client';
-import { type AnyContractRouter, contract } from '@trpc12/trpc/contract';
+import { contract, type AnyContractRouter } from '@trpc12/trpc/contract';
 import { initTrpc, stream, tracked } from '@trpc12/trpc/server';
-import { createTestServer } from '../fixtures/server.ts';
+import { Schema, Stream } from 'effect';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
+import { createTestServer } from '../fixtures/server.ts';
 
 const t = initTrpc();
 

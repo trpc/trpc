@@ -1,5 +1,4 @@
 import { NodeRedis } from '@effect/platform-node';
-import { Duration, Effect, Fiber, Layer } from 'effect';
 import {
   createTrpcClient,
   httpLink,
@@ -14,6 +13,7 @@ import {
   experimental_redisLocker,
 } from '@trpc12/trpc/middleware';
 import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
+import { Duration, Effect, Fiber, Layer } from 'effect';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
 import { createTestServer } from '../fixtures/server.ts';

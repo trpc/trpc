@@ -1,4 +1,3 @@
-import { Effect, Schema, Stream } from 'effect';
 import {
   createTrpcClient,
   httpLink,
@@ -6,13 +5,14 @@ import {
   localLink,
   loggerLink,
   retryLink,
+  routerType,
   safe,
   splitLink,
   type LoggerEvent,
-  routerType,
 } from '@trpc12/trpc/client';
 import { createUntypedClient } from '@trpc12/trpc/extend';
 import { createV11Handler } from '@trpc12/trpc/interop';
+import { createSerializer } from '@trpc12/trpc/serializer';
 import {
   call,
   createFetchHandler,
@@ -21,10 +21,10 @@ import {
   initTrpc,
   TrpcError,
 } from '@trpc12/trpc/server';
-import { createSerializer } from '@trpc12/trpc/serializer';
-import { createTestServer } from '../../fixtures/server.ts';
+import { Effect, Schema, Stream } from 'effect';
 import { expect, expectTypeOf, test, vi } from 'vite-plus/test';
 import { z } from 'zod';
+import { createTestServer } from '../../fixtures/server.ts';
 
 interface Context {
   token: string | null;

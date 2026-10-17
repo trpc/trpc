@@ -153,8 +153,7 @@ export class TrpcError<
       static readonly message = spec.message;
       constructor(...args: unknown[]) {
         const opts = (hasData ? args[1] : args[0]) as
-          | TaggedErrorOptions
-          | undefined;
+          TaggedErrorOptions | undefined;
         super({
           code,
           data: hasData ? args[0] : undefined,

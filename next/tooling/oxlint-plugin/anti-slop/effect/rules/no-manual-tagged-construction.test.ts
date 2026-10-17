@@ -1,6 +1,5 @@
 import { RuleTester } from 'oxlint/plugins-dev';
 import { describe, it } from 'vite-plus/test';
-
 import { noManualTaggedConstructionRule } from './no-manual-tagged-construction.ts';
 
 RuleTester.describe = describe;

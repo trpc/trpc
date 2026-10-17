@@ -75,8 +75,7 @@ export const publicNames = (file: string): ReadonlySet<string> => {
   if (!byFile) {
     byFile = new Map();
     const exports = JSON.parse(read(join(root, 'package.json'))).exports as
-      | Record<string, string | { default?: string }>
-      | undefined;
+      Record<string, string | { default?: string }> | undefined;
     const seen = new Set<string>();
     for (const [subpath, target] of Object.entries(exports ?? {})) {
       if (UNVERSIONED.has(subpath)) continue;

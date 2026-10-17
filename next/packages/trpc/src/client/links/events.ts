@@ -5,10 +5,10 @@ import {
   TrpcError,
 } from '../../internal/error.ts';
 import type {
+  AnySerializer,
   Frame,
   SerializeOpts,
   SerializeReturn,
-  AnySerializer,
 } from '../../serializer/index.ts';
 
 /**

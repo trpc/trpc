@@ -12,15 +12,14 @@
  * sees no parsed input: targets are computed from the output.
  */
 import type { QueryClient } from '@tanstack/query-core';
-import { Effect } from 'effect';
 import { link, type TrpcLink } from '@trpc12/trpc/client';
 import { initTrpc } from '@trpc12/trpc/server';
-import { type Capabilities, withResponse } from './response-meta.ts';
+import { Effect } from 'effect';
+import { withResponse, type Capabilities } from './response-meta.ts';
 
 /** A path (`'post.list'`), or a path and the input of the one query. */
 export type Target =
-  | string
-  | { readonly path: string; readonly input?: unknown };
+  string | { readonly path: string; readonly input?: unknown };
 
 export interface InvalidationMeta {
   /**

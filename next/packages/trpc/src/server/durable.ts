@@ -258,8 +258,7 @@ export function experimental_durable<TReq extends MiddlewareRequirements = {}>(
           continue;
         }
         const entry = (yield* store.get(key).pipe(Effect.orDie)) as
-          | Entry
-          | undefined;
+          Entry | undefined;
         if (entry) {
           const replayed = replay(entry);
           if (replayed !== undefined) return replayed;

@@ -5,18 +5,17 @@
  * holding the latest event. Built on the Effect client, so atoms carry the
  * procedures' typed errors.
  */
-import { Duration, Layer, type Cause, type Effect, type Stream } from 'effect';
-import { AsyncResult, Atom, Reactivity } from 'effect/reactivity';
 import type { AnyLink, RouterOf } from '@trpc12/trpc/client';
 import { createEffectClient, type EffectClient } from '@trpc12/trpc/effect';
 import { createSerializer } from '@trpc12/trpc/serializer';
+import { Duration, Layer, type Cause, type Effect, type Stream } from 'effect';
+import { AsyncResult, Atom, Reactivity } from 'effect/reactivity';
 
 /** Keys use danSON, so inputs with `Date`s and `Map`s key apart. */
 const keySerializer = createSerializer();
 
 type ReactivityKeys =
-  | ReadonlyArray<unknown>
-  | Readonly<Record<string, ReadonlyArray<unknown>>>;
+  ReadonlyArray<unknown> | Readonly<Record<string, ReadonlyArray<unknown>>>;
 
 export interface QueryAtomOptions {
   /** Refetch when a mutation invalidates one of these keys. */
@@ -57,9 +56,7 @@ export type AtomProcedure<P> = P extends {
 
 export type AtomClient<C> = {
   [K in keyof C]: C[K] extends
-    | { query: unknown }
-    | { mutate: unknown }
-    | { subscribe: unknown }
+    { query: unknown } | { mutate: unknown } | { subscribe: unknown }
     ? AtomProcedure<C[K]>
     : AtomClient<C[K]>;
 };

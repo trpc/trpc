@@ -1,5 +1,4 @@
 import { eslintCompatPlugin } from '@oxlint/plugins';
-
 import { acronymCase } from './acronym-case.ts';
 import { inferCallbackParams } from './infer-callback-params.ts';
 import { jsdoc } from './jsdoc.ts';

@@ -1,4 +1,3 @@
-import { Effect, Stream } from 'effect';
 import {
   link,
   retryLink,
@@ -6,6 +5,7 @@ import {
   type RetryLinkOptions,
   type TrpcLink,
 } from '@trpc12/trpc/client';
+import { Effect, Stream } from 'effect';
 import { replaceEqualDeep } from './share.ts';
 import {
   withQueryFeature,

@@ -2,18 +2,18 @@ import { openAsBlob } from 'node:fs';
 import { mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { Schema } from 'effect';
 import {
-  type LambdaContext,
   toLambdaHandler,
   toLambdaStreamingHandler,
+  type LambdaContext,
+  type LambdaEdgeResult,
   type LambdaPlatform,
   type LambdaResponseStream,
   type LambdaV1Result,
   type LambdaV2Result,
-  type LambdaEdgeResult,
 } from '@trpc12/trpc/aws-lambda';
 import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
+import { Schema } from 'effect';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 
 const t = initTrpc<{

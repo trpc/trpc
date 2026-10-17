@@ -19,6 +19,18 @@
  * @module
  */
 import {
+  createTrpcQueryUtils,
+  SubscriptionObserver,
+  type SourceContext,
+  type SourceLinks,
+  type SourceRouter,
+  type SubscriptionStatus,
+  type TrpcContextOptions,
+  type TrpcQueryUtilsFor,
+  type TrpcSubscriptionOptions,
+} from '@trpc12/tanstack-query';
+import type { ChainTypes, RouterOf, TrpcClient } from '@trpc12/trpc/client';
+import {
   createComponent,
   createContext,
   createEffect,
@@ -30,18 +42,6 @@ import {
   type Accessor,
   type JSX,
 } from 'solid-js';
-import type { ChainTypes, RouterOf, TrpcClient } from '@trpc12/trpc/client';
-import {
-  createTrpcQueryUtils,
-  SubscriptionObserver,
-  type SubscriptionStatus,
-  type TrpcQueryUtilsFor,
-  type TrpcSubscriptionOptions,
-  type SourceContext,
-  type SourceLinks,
-  type SourceRouter,
-  type TrpcContextOptions,
-} from '@trpc12/tanstack-query';
 
 export * from '@trpc12/tanstack-query';
 

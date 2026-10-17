@@ -6,8 +6,6 @@
  */
 import { createServer } from 'node:http';
 import { NodeHttpServer } from '@effect/platform-node';
-import { Effect, Layer, ManagedRuntime } from 'effect';
-import { HttpServer, HttpServerRequest } from 'effect/http';
 import { createTrpcClient, safe } from '@trpc12/trpc/client';
 import { toContract } from '@trpc12/trpc/contract';
 import { toHttpEffect } from '@trpc12/trpc/http';
@@ -18,6 +16,8 @@ import {
 } from '@trpc12/trpc/openapi';
 import { experimental_generateOpenApiFromTypes } from '@trpc12/trpc/openapi/typescript';
 import { createFetchHandler } from '@trpc12/trpc/server';
+import { Effect, Layer, ManagedRuntime } from 'effect';
+import { HttpServer, HttpServerRequest } from 'effect/http';
 import { appRouter } from './router.ts';
 
 // --- the document, usually a build step ----------------------------------------------

@@ -4,17 +4,17 @@ import { HEADER } from '../../internal/protocol.ts';
 import type { IsAny, ProcedureType } from '../../internal/types.ts';
 import { danson } from '../../serializer/danson.ts';
 import {
+  chainSerializer,
+  chainSwitchNames,
   firstValue,
   link,
   runLinks,
+  setSwitchNames,
+  withSerializer,
   type AnyLink,
   type Operation,
   type OperationStream,
   type TrpcLink,
-  chainSerializer,
-  chainSwitchNames,
-  setSwitchNames,
-  withSerializer,
 } from '../link.ts';
 import type { RouterPaths } from '../types.ts';
 import { withResume, type Resume } from './resume.ts';

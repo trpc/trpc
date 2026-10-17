@@ -1,4 +1,5 @@
 import { Cause, Effect, Option, Queue, Stream } from 'effect';
+import { forEachSeq } from '../../internal/effects.ts';
 import {
   codeOfStatus,
   fromWireError,
@@ -7,26 +8,25 @@ import {
   TrpcError,
   type AnyTrpcError,
 } from '../../internal/error.ts';
+import { decodeRecords } from '../../internal/frames.ts';
 import {
   CONTENT_TYPE,
   HEADER,
   parseSse,
-  toInputSearch,
   PROTOCOL_VERSION,
   readBlob,
   readLines,
   SSE_EVENT,
+  toInputSearch,
   type BatchCall,
   type BatchLine,
 } from '../../internal/protocol.ts';
-import { forEachSeq } from '../../internal/effects.ts';
-import { decodeRecords } from '../../internal/frames.ts';
 import type { FormOfOptions, MaybePromise } from '../../internal/types.ts';
 import {
   jsonSerializer,
+  type AnySerializer,
   type Frame,
   type SerializeReturn,
-  type AnySerializer,
 } from '../../serializer/index.ts';
 import {
   toClientError,

@@ -1,17 +1,17 @@
-import { Effect } from 'effect';
 import {
   createSafeClient,
   createTrpcClient,
   httpLink,
   isDefinedError,
+  routerType,
   safe,
   TrpcError,
-  routerType,
 } from '@trpc12/trpc/client';
 import { error, initTrpc, type OnErrorOpts } from '@trpc12/trpc/server';
-import { createTestServer } from '../fixtures/server.ts';
+import { Effect } from 'effect';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
+import { createTestServer } from '../fixtures/server.ts';
 
 const t = initTrpc();
 

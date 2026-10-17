@@ -7,7 +7,6 @@
  * Workers Traces.
  */
 import { AsyncLocalStorage } from 'node:async_hooks';
-import { DurableObject, tracing } from 'cloudflare:workers';
 import {
   experimental_createHibernatingWebSockets,
   experimental_durableLocker,
@@ -15,8 +14,9 @@ import {
   experimental_workersTracer,
   hibernatingPublisher,
 } from '@trpc12/trpc/cloudflare';
-import { Layer } from 'effect';
 import { createFetchHandler } from '@trpc12/trpc/server';
+import { DurableObject, tracing } from 'cloudflare:workers';
+import { Layer } from 'effect';
 import { appRouter, Messages } from './router.ts';
 import { durableObjectPersistence } from './storage.ts';
 

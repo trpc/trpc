@@ -1,6 +1,6 @@
-import { Effect, Fiber } from 'effect';
 import type { AnyLink } from '@trpc12/trpc/client';
 import { createSerializer } from '@trpc12/trpc/serializer';
+import { Effect, Fiber } from 'effect';
 import { sortKeys } from './share.ts';
 import { fulfilled, pending, type Pending, type Thenable } from './thenable.ts';
 
