@@ -57,5 +57,7 @@ Code: `next/spikes/invalidation/response-meta.ts`.
 
 ### Shape of the core change, if it ships
 
+Shipped 2026-10-17 as below, with `provides` and `needs` on `LinkDecl` rather than in `'~types'` (see [`declared-invalidation-later.md`](../decisions/declared-invalidation-later.md)); the spike's `responseHttpLink` and `chain` predate it.
+
 - `BuiltinCallOptions.onResponse?: (meta: { status, headers }) => void`, called by `httpLink` per response (per batch line for batches, with the batch's headers), and `TrpcLink`'s `'~types'` gaining `provides` and `needs`, checked by `createTrpcClient({ links })` the way `switchLink` names are.
 - Batch lines would need their own headers for per-call metadata in a batch.
