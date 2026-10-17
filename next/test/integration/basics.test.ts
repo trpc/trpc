@@ -181,6 +181,74 @@ test('a Standard Schema types input from ~standard.types, or from validate witho
   expect(await client.untyped.query('abc')).toBe(3);
 });
 
+test('Standard Schema issues keep their paths, async validators are awaited, and a throwing one fails as unexpected', async () => {
+  const standard = (validate: (value: unknown) => unknown) =>
+    ({
+      '~standard': { version: 1, vendor: 'test', validate },
+    }) as unknown as z.ZodString;
+  const schemas = {
+    paths: t.procedure
+      .input(
+        standard(() => ({
+          issues: [
+            { message: 'nested', path: [{ key: 'a' }, 0, Symbol('s')] },
+            { message: 'whole' },
+          ],
+        })),
+      )
+      .query(() => 'never'),
+    later: t.procedure
+      .input(z.string().refine(async (v) => v !== 'no', 'not no'))
+      .output(z.string().refine(async (v) => v !== 'NOPE', 'not NOPE'))
+      .query(({ input }) => input.toUpperCase()),
+    ticks: t.procedure
+      .output(z.number().refine(async (n) => n > 0))
+      .subscription(async function* () {
+        yield 1;
+        yield 2;
+      }),
+    throws: t.procedure
+      .input(
+        standard(() => {
+          throw new Error('validator broke');
+        }),
+      )
+      .query(() => 'never'),
+  };
+  await using server = await createTestServer({
+    router: schemas,
+    createContext: () => ({ user: null }),
+    exposeUnexpectedErrors: false,
+  });
+  const client = createTrpcClient({
+    router: routerType<typeof schemas>(),
+    links: [httpLink({ url: server.url })],
+  });
+  const [, issues] = await safe(client.paths.query('x'));
+  expect(issues).toMatchObject({
+    code: 'BAD_REQUEST',
+    data: {
+      issues: [
+        { message: 'nested', path: ['a', 0, 'Symbol(s)'] },
+        { message: 'whole' },
+      ],
+    },
+  });
+  expect(await client.later.query('yes')).toBe('YES');
+  const [, rejected] = await safe(client.later.query('no'));
+  expect(rejected).toMatchObject({
+    code: 'BAD_REQUEST',
+    data: { issues: [{ message: 'not no' }] },
+  });
+  const [, invalidOutput] = await safe(client.later.query('nope'));
+  expect(invalidOutput).toMatchObject({ code: 'INTERNAL_SERVER_ERROR' });
+  const ticks: number[] = [];
+  for await (const tick of client.ticks.subscribe()) ticks.push(tick);
+  expect(ticks).toEqual([1, 2]);
+  const [, broke] = await safe(client.throws.query('x'));
+  expect(broke).toMatchObject({ code: 'INTERNAL_SERVER_ERROR' });
+});
+
 type JsonValue =
   | string
   | number
