@@ -22,6 +22,7 @@ next/
   spikes/               throwaway experiments; results in .agent-docs/notes/
   tooling/portability/  TS2742/TS2883 check: a consumer package that emits declarations
   tooling/tsconfig/     `@tooling/tsconfig`: the shared, strictest tsconfigs every package, suite and tool extends (examples stay standalone)
+  tooling/vercel-ignore/  Vercel's ignored build step for the docs site: skips a deployment when nothing it renders changed
   docs/                 Markdown user docs, a folder per sidebar section (index: docs/README.md)
   www/                  `@trpc12/www`: the docs site, rendered from docs/ with compiled twoslash examples
   www/samples/          the apps the docs' and home page's code blocks compile in
@@ -54,7 +55,7 @@ pnpm example
 | `pnpm example`      | Runs every example's `smoke` script (`examples/*`; `realtime` needs Redis at `REDIS_URL`)                                                                |
 | `pnpm build`        | `vp pack` per package (`tooling/pack/`): unbundled ESM and declarations in `dist/`, published through `publishConfig.exports`; also builds the docs site |
 | `pnpm docs:dev`     | The docs site at http://localhost:3012, reloading as `docs/` changes                                                                                     |
-| `pnpm docs:build`   | Prerenders the site to `www/dist/client`; fails on a type error in a twoslash block or a broken link between pages                                       |
+| `pnpm docs:build`   | Prerenders the site to `www/dist/client`, and its Vercel output to `www/.vercel/output`; fails on a type error in a twoslash block or a broken link      |
 | `pnpm bench budget` | Gzip size of the client bundles; fails above a ceiling in `budgets` (`tooling/bench/bench.ts`)                                                           |
 
 Run all of them before pushing: `pnpm fix`, `pnpm check`, `pnpm typecheck`, `pnpm coverage` (which runs `pnpm test`), `pnpm test:bun`, `pnpm example`, `pnpm build` (which builds the docs site too) and `pnpm bench budget`. When a change shrinks a client bundle, lower its `ceiling` to the new size; never raise one without saying so in the PR.

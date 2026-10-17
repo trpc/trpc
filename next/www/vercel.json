@@ -1,0 +1,12 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "pnpm build",
+  "framework": "tanstack-start",
+  "git": {
+    "deploymentEnabled": {
+      "main": false
+    }
+  },
+  "ignoreCommand": "sh ../tooling/vercel-ignore/ignore.sh",
+  "installCommand": "pnpm install --frozen-lockfile"
+}
