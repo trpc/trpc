@@ -22,7 +22,7 @@
     "access": "public"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.lib.json && tsc --noEmit -p tsconfig.json",
     "build": "node ../../tooling/pack/pack.ts"
   },
   "dependencies": {
@@ -32,7 +32,10 @@
     "@tanstack/query-core": "5.104.1",
     "@tanstack/vue-query": "5.104.1",
     "@trpc12/trpc": "workspace:*",
+    "@types/node": "^24.0.0",
+    "happy-dom": "20.14.6",
     "typescript": "^7.0.2",
+    "vite-plus": "1.1.0",
     "vue": "3.5.43"
   },
   "peerDependencies": {

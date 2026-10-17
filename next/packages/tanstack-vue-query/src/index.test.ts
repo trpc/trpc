@@ -33,13 +33,13 @@ import {
   type Post,
   type AppClient,
   serializer,
-} from '../../packages/tanstack-query/src/fixtures/app.ts';
+} from '../../tanstack-query/src/fixtures/app.ts';
 import {
   click,
   container,
   text,
   waitFor,
-} from '../../packages/trpc/src/fixtures/dom.ts';
+} from '../../trpc/src/fixtures/dom.ts';
 
 const { TrpcPlugin, provideTrpc, useTrpc, useTrpcClient } =
   createTrpcContext<AppClient>();
