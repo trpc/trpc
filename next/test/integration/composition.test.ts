@@ -14,6 +14,7 @@ import {
   type inferRouterInputs,
   type inferRouterOutputs,
 } from '@trpc12/trpc/server';
+import { Context, Effect } from 'effect';
 import { createTestServer } from './fixtures/server.ts';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
@@ -194,6 +195,71 @@ test('concat runs the leading middleware an app and a plugin share once', async 
   calls.length = 0;
   expect(await caller.reordered.query()).toBe('ada');
   expect(calls).toEqual(['log', 'session', 'session', 'plugin']);
+});
+
+test('concat shares leading inputs and provides only when they are the same', async () => {
+  class Tenant extends Context.Service<Tenant, { name: string }>()('Tenant') {}
+  const calls: string[] = [];
+  const Org = z
+    .object({ orgId: z.string() })
+    .transform((v) => (calls.push('input'), v));
+  const makeTenant = () => (calls.push('tenant'), { name: 'acme' });
+  const pluginT = initTrpc<{ ctx: { user: string | null } }>();
+  const tenantName = () =>
+    Effect.map(Effect.service(Tenant), (tenant) => tenant.name);
+
+  const plugin = pluginT.procedure.input(Org).provide(Tenant, makeTenant);
+  const r = {
+    shared: t.procedure
+      .input(Org)
+      .provide(Tenant, makeTenant)
+      .concat(plugin)
+      .query(tenantName),
+    otherInput: t.procedure
+      .input(z.object({ orgId: z.string() }))
+      .concat(plugin)
+      .query(tenantName),
+    otherKind: t.procedure
+      .input(Org)
+      .concat(pluginT.procedure.provide(Tenant, makeTenant))
+      .query(tenantName),
+    otherMake: t.procedure
+      .provide(Tenant, () => ({ name: 'other' }))
+      .concat(plugin)
+      .query(tenantName),
+    provideThenUse: t.procedure
+      .provide(Tenant, makeTenant)
+      .concat(pluginT.procedure.use(({ next }) => next()))
+      .query(tenantName),
+  };
+  const caller = createRouterClient(r, {
+    ctx: { db: { log: [] }, user: 'ada', plan: 'free' },
+  });
+  const run = async (name: keyof typeof r) => {
+    calls.length = 0;
+    const result = await caller[name].query({ orgId: 'o' } as never);
+    return { result, calls: [...calls] };
+  };
+  expect(await run('shared')).toEqual({
+    result: 'acme',
+    calls: ['input', 'tenant'],
+  });
+  expect(await run('otherInput')).toEqual({
+    result: 'acme',
+    calls: ['input', 'tenant'],
+  });
+  expect(await run('otherKind')).toEqual({
+    result: 'acme',
+    calls: ['input', 'tenant'],
+  });
+  expect(await run('otherMake')).toEqual({
+    result: 'acme',
+    calls: ['input', 'tenant'],
+  });
+  expect(await run('provideThenUse')).toEqual({
+    result: 'acme',
+    calls: ['tenant'],
+  });
 });
 
 test('a context-aware input validates against the caller', async () => {
