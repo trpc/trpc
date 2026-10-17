@@ -49,7 +49,7 @@ const appRouter = {
     create: authed
       .input(z.object({ title: z.string().min(1) }))
       .mutation(({ input }) => {
-        const post = { id: String(posts.size + 1), title: input.title };
+        const post: Post = { id: String(posts.size + 1), title: input.title };
         posts.set(post.id, post);
         return post;
       }),

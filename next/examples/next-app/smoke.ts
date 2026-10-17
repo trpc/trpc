@@ -10,7 +10,7 @@ import { serializer } from './src/trpc/serializer.ts';
 
 const next = new URL('node_modules/.bin/next', import.meta.url).pathname;
 const cwd = new URL('.', import.meta.url).pathname;
-const env = { ...process.env, NEXT_TELEMETRY_DISABLED: '1' };
+const env: NodeJS.ProcessEnv = { ...process.env, NEXT_TELEMETRY_DISABLED: '1' };
 
 const build = spawnSync(next, ['build'], { cwd, env, stdio: 'inherit' });
 if (build.status !== 0) process.exit(build.status ?? 1);

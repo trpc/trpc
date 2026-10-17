@@ -73,10 +73,9 @@ test.each(packages.map(({ name, pkg }) => [name, pkg] as const))(
 );
 
 test('publishConfig.exports must mirror exports', () => {
-  const entry = { types: './src/a.ts', default: './src/a.ts' };
   const ok: PackageJson = {
     name: 'p',
-    exports: { '.': entry },
+    exports: { '.': { types: './src/a.ts', default: './src/a.ts' } },
     publishConfig: {
       exports: { '.': { types: './dist/a.d.ts', default: './dist/a.js' } },
     },

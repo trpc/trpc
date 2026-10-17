@@ -39,7 +39,7 @@ export const appRouter = t.router(
         .input(z.object({ title: z.string().min(1) }))
         .mutation(({ input, ctx }) => {
           if (!ctx.user) return error({ code: 'UNAUTHORIZED' });
-          const post = {
+          const post: Post = {
             id: String(posts.size + 1),
             title: input.title,
             createdAt: new Date(),

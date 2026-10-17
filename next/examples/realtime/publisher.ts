@@ -57,7 +57,7 @@ export const redisPublisher = <TEvents extends PublisherEvents>(opts: {
   Effect.gen(function* () {
     const redis = yield* Redis.Redis;
     const key = (channel: string) => `${opts.prefix}:${channel}`;
-    const shape = {
+    return {
       publish: (channel: string, data: unknown) =>
         Effect.gen(function* () {
           const payload = encode(data);
@@ -113,6 +113,5 @@ export const redisPublisher = <TEvents extends PublisherEvents>(opts: {
             });
           }),
         ),
-    };
-    return shape as PublisherShape<TEvents>;
+    } as PublisherShape<TEvents>;
   });

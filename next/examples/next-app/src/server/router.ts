@@ -20,7 +20,7 @@ export const appRouter = {
     create: t.procedure
       .input(z.object({ title: z.string().min(1) }))
       .mutation(({ input }) => {
-        const post = {
+        const post: Post = {
           id: String(posts.size + 1),
           title: input.title,
           createdAt: new Date(),

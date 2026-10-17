@@ -44,7 +44,7 @@ class Posts extends Context.Service<
         }),
       create: (title) =>
         Effect.sync(() => {
-          const post = { id: String(posts.size + 1), title };
+          const post: Post = { id: String(posts.size + 1), title };
           posts.set(post.id, post);
           return post;
         }),

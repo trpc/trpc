@@ -7,42 +7,43 @@ import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
 import { port, schema } from './schema.ts';
 
 const t = initTrpc();
-const router = {
-  procedure_1: t.procedure
-    .input(schema)
-    .query(({ input }) => ({ name: 'procedure_1', date: new Date(), input })),
-  procedure_2: t.procedure.input(schema).mutation(({ input }) => ({
-    name: 'procedure_2',
-    date: new Date(),
-    input,
-  })),
-  nested: {
-    procedure_1: t.procedure.input(schema).query(({ input }) => ({
-      name: 'nested/procedure_1',
-      date: new Date(),
-      input,
-    })),
+const handler = createFetchHandler({
+  router: {
+    procedure_1: t.procedure
+      .input(schema)
+      .query(({ input }) => ({ name: 'procedure_1', date: new Date(), input })),
     procedure_2: t.procedure.input(schema).mutation(({ input }) => ({
-      name: 'nested/procedure_2',
+      name: 'procedure_2',
       date: new Date(),
       input,
     })),
     nested: {
       procedure_1: t.procedure.input(schema).query(({ input }) => ({
-        name: 'nested/nested/procedure_1',
+        name: 'nested/procedure_1',
         date: new Date(),
         input,
       })),
       procedure_2: t.procedure.input(schema).mutation(({ input }) => ({
-        name: 'nested/nested/procedure_2',
+        name: 'nested/procedure_2',
         date: new Date(),
         input,
       })),
+      nested: {
+        procedure_1: t.procedure.input(schema).query(({ input }) => ({
+          name: 'nested/nested/procedure_1',
+          date: new Date(),
+          input,
+        })),
+        procedure_2: t.procedure.input(schema).mutation(({ input }) => ({
+          name: 'nested/nested/procedure_2',
+          date: new Date(),
+          input,
+        })),
+      },
     },
   },
-};
-
-const handler = createFetchHandler({ router, serializer: createSerializer() });
+  serializer: createSerializer(),
+});
 
 serve(handler).pipe(
   Layer.provide(
