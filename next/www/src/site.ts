@@ -13,6 +13,18 @@ export const site = {
   url: 'https://v12.trpc.io',
 } as const;
 
+/** The v11 docs, copied from trpc.io as they were (`build/v11-copy.ts`). */
+export const v11 = {
+  /** Where the copy serves them. */
+  basePath: '/v11/docs',
+  /** The page trpc.io serves at `/docs`, the first in its sidebar. */
+  firstDoc: 'introduction',
+  /** Where the copy serves the images they show. */
+  imagePath: '/v11/img',
+  /** Where they're maintained. */
+  url: 'https://trpc.io',
+} as const;
+
 /** Sidebar sections, in order. */
 export const sections = [
   'Getting started',

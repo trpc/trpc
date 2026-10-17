@@ -1,0 +1,199 @@
+---
+title: "HTTP Batch Link"
+description: ""
+section: "Links"
+order: 33
+---
+
+`httpBatchLink` is a [**terminating link**](../links.md#the-terminating-link) that batches an array of individual tRPC operations into a single HTTP request that's sent to a single tRPC procedure.
+
+## Usage
+
+You can import and add the `httpBatchLink` to the `links` array as such:
+
+```ts title="client/index.ts"
+import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import type { AppRouter } from './server';
+
+const client = createTRPCClient<AppRouter>({
+  links: [
+    httpBatchLink({
+      url: 'http://localhost:3000',
+      // transformer,
+    }),
+  ],
+});
+```
+
+After that, you can make use of batching by setting all your procedures in a `Promise.all`. The code below will produce exactly **one** HTTP request and on the server exactly **one** database query:
+
+```ts
+const somePosts = await Promise.all([
+  trpc.post.byId.query(1),
+  trpc.post.byId.query(2),
+  trpc.post.byId.query(3),
+]);
+```
+
+## `httpBatchLink` Options {#options}
+
+The `httpBatchLink` function takes an options object that has the `HTTPBatchLinkOptions` shape.
+
+```ts
+export interface HTTPBatchLinkOptions extends HTTPLinkOptions {
+  /**
+   * Maximum length of HTTP URL allowed before operations are split into multiple requests
+   * @default Infinity
+   */
+  maxURLLength?: number;
+  /**
+   * Maximum number of operations allowed in a single batch request
+   * @default Infinity
+   */
+  maxItems?: number;
+}
+
+export interface HTTPLinkOptions {
+  url: string | URL;
+  /**
+   * Add ponyfill for fetch
+   */
+  fetch?: typeof fetch;
+  /**
+   * Data transformer
+   * @see https://trpc.io/docs/server/data-transformers
+   **/
+  transformer?: DataTransformerOptions;
+  /**
+   * Headers to be set on outgoing requests or a callback that of said headers
+   * @see https://trpc.io/docs/client/headers
+   */
+  headers?:
+    | HTTPHeaders
+    | ((opts: { opList: NonEmptyArray<Operation> }) => HTTPHeaders | Promise<HTTPHeaders>);
+}
+```
+
+## Setting a maximum URL length
+
+When sending batch requests, sometimes the URL can become too large causing HTTP errors like [`413 Payload Too Large`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/413), [`414 URI Too Long`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/414), and [`404 Not Found`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/404). The `maxURLLength` option will limit the number of requests that can be sent together in a batch.
+
+```ts title="client/index.ts"
+import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import type { AppRouter } from './server';
+
+const client = createTRPCClient<AppRouter>({
+  links: [
+    httpBatchLink({
+      url: 'http://localhost:3000',
+      maxURLLength: 2083, // a suitable size
+      // alternatively, you can make all RPC-calls to be called with POST
+      // methodOverride: 'POST',
+    }),
+  ],
+});
+```
+
+## Limiting batch size
+
+### 1. Set a maximum batch size on your server:
+
+`maxBatchSize` limits how many operations may be sent in a single batch request. Requests exceeding this limit will be rejected with a `400 Bad Request` error. This can be passed to any tRPC adapter.
+
+```ts title="server.ts"
+import { createHTTPServer } from '@trpc/server/adapters/standalone';
+
+createHTTPServer({
+  maxBatchSize: 10,
+});
+```
+
+or for example if using Next.js:
+
+```ts title="pages/api/trpc/[trpc].ts"
+export default trpcNext.createNextApiHandler({
+  maxBatchSize: 10,
+});
+```
+
+### 2. Set a matching limit on the client:
+
+Use the `maxItems` option on your batch link to ensure the client doesn't exceed the server's limit. This splits large batches into multiple HTTP requests automatically
+
+```ts title="client/index.ts"
+import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import type { AppRouter } from '../server';
+
+const client = createTRPCClient<AppRouter>({
+  links: [
+    httpBatchLink({
+      url: 'http://localhost:3000',
+      // 👇 should be the same or lower than the server's maxBatchSize
+      maxItems: 10,
+    }),
+  ],
+});
+```
+
+## Disabling request batching
+
+### 1. Disable `batching` on your server:
+
+```ts title="server.ts"
+import { createHTTPServer } from '@trpc/server/adapters/standalone';
+import { appRouter } from './router';
+
+createHTTPServer({
+  router: appRouter,
+  // 👇 disable batching
+  allowBatching: false,
+});
+```
+
+or, if you're using Next.js:
+
+```ts title="pages/api/trpc/[trpc].ts"
+import { createNextApiHandler } from '@trpc/server/adapters/next';
+import { appRouter } from '../../../router';
+
+export default createNextApiHandler({
+  router: appRouter,
+  // 👇 disable batching
+  allowBatching: false,
+});
+```
+
+### 2. Replace `httpBatchLink` with [`httpLink`](./httpLink.md) in your tRPC Client
+
+```ts title="client/index.ts"
+import { createTRPCClient, httpLink } from '@trpc/client';
+import type { AppRouter } from './server';
+
+const client = createTRPCClient<AppRouter>({
+  links: [
+    httpLink({
+      url: 'http://localhost:3000',
+    }),
+  ],
+});
+```
+
+or, if you're using Next.js:
+
+```tsx title="utils/trpc.ts"
+import type { AppRouter } from '../server';
+import { httpLink } from '@trpc/client';
+import { createTRPCNext } from '@trpc/next';
+
+export const trpc = createTRPCNext<AppRouter>({
+  config() {
+    return {
+      links: [
+        httpLink({
+          url: '/api/trpc',
+        }),
+      ],
+    };
+  },
+});
+```

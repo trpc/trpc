@@ -8,7 +8,8 @@
     "build": "vp build && node build/vercel-output.ts",
     "dev": "vp dev --port 3012",
     "start": "vp preview --port 3012",
-    "typecheck": "tsc"
+    "typecheck": "tsc",
+    "v11:copy": "node build/v11-copy.ts"
   },
   "dependencies": {
     "@shared/ui": "workspace:*",
