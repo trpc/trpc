@@ -58,6 +58,8 @@ jobs:
       - run: pnpm example
         env:
           REDIS_URL: redis://127.0.0.1:6379
+      # Client bundles, failing above their gzip ceilings.
+      - run: pnpm bench budget
 
   effect-latest:
     # `@trpc12/trpc` depends on `effect@^4`; users get the latest 4.x, the lockfile pins one.

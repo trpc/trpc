@@ -1,5 +1,5 @@
 /**
- * `pnpm --filter @tooling/bench bench [runtime|typecheck|bundle]`: tRPC v12
+ * `pnpm --filter @tooling/bench bench [runtime|typecheck|bundle|budget]`: tRPC v12
  * against tRPC v11 and oRPC v2, the way oRPC's comparison measures them
  * (github.com/middleapi/orpc-benchmarks). Prints Markdown tables.
  *
@@ -10,6 +10,7 @@
  *   each called through the typed client; `tsc --extendedDiagnostics`.
  * - bundle: a minimal client, Node server and fetch handler, bundled with
  *   rolldown (tree-shaken, minified) and gzipped.
+ * - budget: the client bundles CI holds to a size (see `budgets`).
  */
 import { gzipSync } from 'node:zlib';
 import { NodeRuntime, NodeServices } from '@effect/platform-node';
@@ -469,8 +470,65 @@ const bundleSizes = Command.make('bundle', {}, () =>
   }),
 );
 
+// --- budget ---------------------------------------------------------------
+
+/**
+ * Client bundles held to a gzip budget (decision orpc-v2-parity). `target`
+ * is the human's budget; `ceiling` is today's size, which CI enforces so the
+ * gap only shrinks. Lower a ceiling with each cut, down to the target.
+ */
+const budgets = [
+  {
+    name: 'minimal JSON client',
+    target: 10_000,
+    ceiling: 25_800,
+    code: `import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+export const client = createTrpcClient({ router: routerType<any>(), links: [httpLink({ url: '/trpc' })] });`,
+  },
+  {
+    name: 'full client (retry, SSE, danSON)',
+    target: 25_000,
+    ceiling: 29_200,
+    code: `import { createTrpcClient, httpLink, retryLink, routerType } from '@trpc12/trpc/client';
+import { createSerializer } from '@trpc12/trpc/serializer';
+export const client = createTrpcClient({ router: routerType<any>(), links: [retryLink(), httpLink({ url: '/trpc', serializer: createSerializer() })] });`,
+  },
+] as const;
+
+const budget = Command.make('budget', {}, () =>
+  Effect.gen(function* () {
+    const rows: string[][] = [];
+    const over: string[] = [];
+    for (const [i, entry] of budgets.entries()) {
+      const dir = `${generated}/budget-${i}`;
+      yield* writeFiles(dir, [['client.ts', `${entry.code}\n`]]);
+      const size = yield* bundle(`${dir}/client.ts`, 'browser');
+      if (size.gzip > entry.ceiling) over.push(entry.name);
+      rows.push([
+        entry.name,
+        kb(size.gzip),
+        kb(entry.ceiling),
+        kb(entry.target),
+        size.gzip <= entry.target
+          ? 'met'
+          : `${kb(size.gzip - entry.target)} over`,
+      ]);
+    }
+    yield* Console.log(
+      'gzip -9, rolldown tree-shaken and minified; CI fails above the ceiling\n\n' +
+        table(['', 'gzip', 'ceiling', 'target', 'to target'], rows),
+    );
+    if (over.length > 0) {
+      return yield* new BenchFailed({
+        step: 'budget',
+        cause: `above the ceiling: ${over.join(', ')}`,
+      });
+    }
+  }),
+);
+
 const bench = Command.make('bench').pipe(
-  Command.withSubcommands([runtime, typecheck, bundleSizes]),
+  Command.withSubcommands([runtime, typecheck, bundleSizes, budget]),
 );
 
 Command.run(bench, { version: '0.0.0' }).pipe(
