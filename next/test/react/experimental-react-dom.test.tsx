@@ -4,6 +4,7 @@ import {
   createReactClient,
   dehydrate,
   hydrate,
+  refetchOnReconnectLink,
   refetchOnWindowFocusLink,
   standardLinks,
   structuralSharingLink,
@@ -13,7 +14,7 @@ import {
 } from '@trpc12/experimental-react';
 import { localLink, routerType, type AnyLink } from '@trpc12/trpc/client';
 import { createSerializer } from '@trpc12/trpc/serializer';
-import { Suspense, use, type ReactNode } from 'react';
+import { Component, Suspense, use, type ReactNode } from 'react';
 import { createRoot, hydrateRoot } from 'react-dom/client';
 import { prerender } from 'react-dom/static';
 import { afterEach, beforeEach, expect, test, vi } from 'vite-plus/test';
@@ -116,6 +117,14 @@ test('refetchOnWindowFocusLink refetches what is on screen when the page is visi
     expect([...trpc.store.entries()][0]?.observers).toBeGreaterThan(0),
   );
   db.posts.get('1')!.title = 'Refocused';
+  Object.defineProperty(document, 'visibilityState', {
+    configurable: true,
+    get: () => 'hidden',
+  });
+  document.dispatchEvent(new Event('visibilitychange'));
+  await tick(5);
+  expect(db.calls).toEqual(['byId:1']);
+  delete (document as { visibilityState?: unknown }).visibilityState;
   document.dispatchEvent(new Event('visibilitychange'));
   await waitFor(() => expect(h1(view.el)).toBe('Refocused'));
   expect(view.el.querySelector('p')?.textContent).toBe('idle');
@@ -148,4 +157,83 @@ test('server render, dehydrate, then hydrateRoot in the browser without a reques
   expect(warnings).toEqual([]);
   root.unmount();
   browser.store.dispose();
+});
+
+test('refetchOnReconnectLink refetches what is on screen and stale when the browser is back online', async () => {
+  const real = Date.now.bind(Date);
+  const clock = vi.spyOn(Date, 'now');
+  const trpc = make([
+    cacheLink({ staleTime: 60_000 }),
+    refetchOnReconnectLink(),
+  ]);
+  const post = trpc.post.byId.query({ id: '1' });
+  const view = mount(<Title post={post} />);
+  await waitFor(() => expect(h1(view.el)).toBe('Hello'));
+  await waitFor(() =>
+    expect([...trpc.store.entries()][0]?.observers).toBeGreaterThan(0),
+  );
+  db.posts.get('1')!.title = 'Online';
+  window.dispatchEvent(new Event('online'));
+  await tick(5);
+  expect(db.calls).toEqual(['byId:1']);
+  clock.mockImplementation(() => real() + 60_000);
+  window.dispatchEvent(new Event('online'));
+  await waitFor(() => expect(h1(view.el)).toBe('Online'));
+  view.unmount();
+  trpc.store.dispose();
+});
+
+function Refetch(props: { post: QueryPromise<Post> }) {
+  const state = useQueryState(props.post);
+  return (
+    <button type="button" onClick={() => void state.refetch()}>
+      {state.isFetching ? 'fetching' : 'idle'}
+    </button>
+  );
+}
+
+test('useQueryState().refetch refetches the query', async () => {
+  const trpc = make([cacheLink({ staleTime: 60_000 })]);
+  const post = trpc.post.byId.query({ id: '1' });
+  const view = mount(
+    <>
+      <Title post={post} />
+      <Refetch post={post} />
+    </>,
+  );
+  await waitFor(() => expect(h1(view.el)).toBe('Hello'));
+  db.posts.get('1')!.title = 'Again';
+  view.el.querySelector('button')!.click();
+  await waitFor(() => expect(h1(view.el)).toBe('Again'));
+  expect(db.calls).toEqual(['byId:1', 'byId:1']);
+  view.unmount();
+});
+
+class Boundary extends Component<{ children: ReactNode }, { error?: Error }> {
+  override state: { error?: Error } = {};
+  static getDerivedStateFromError(error: Error): { error: Error } {
+    return { error };
+  }
+  override render(): ReactNode {
+    return this.state.error ? (
+      <p>{this.state.error.message}</p>
+    ) : (
+      this.props.children
+    );
+  }
+}
+
+test("useQuery() only takes a React client's query promise", async () => {
+  const foreign = Promise.resolve() as unknown as QueryPromise<Post>;
+  const view = mount(
+    <Boundary>
+      <Title post={foreign} />
+    </Boundary>,
+  );
+  await waitFor(() =>
+    expect(view.el.textContent).toBe(
+      "useQuery() takes a promise from a React client's .query()",
+    ),
+  );
+  view.unmount();
 });

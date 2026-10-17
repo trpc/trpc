@@ -41,6 +41,29 @@ export const router = {
         if (input.order === 'desc') posts.reverse();
         return posts.slice(0, input.limit);
       }),
+    count: t.procedure.query(() => {
+      db.calls.push('count');
+      return db.posts.size;
+    }),
+    tagSet: t.procedure
+      .input(z.object({ id: z.string() }))
+      .query(({ input }) => {
+        db.calls.push(`tagSet:${input.id}`);
+        return new Set(db.posts.get(input.id)?.tags);
+      }),
+    nested: t.procedure
+      .input(z.object({ depth: z.number() }))
+      .query(({ input }) => {
+        let value: { child?: unknown } = {};
+        for (let i = 0; i < input.depth; i++) value = { child: value };
+        return value;
+      }),
+    many: t.procedure
+      .input(z.object({ ids: z.array(z.string()) }))
+      .query(({ input }) => {
+        db.calls.push(`many:${input.ids.join(',')}`);
+        return input.ids.map((id) => db.posts.get(id)?.title ?? null);
+      }),
     rename: t.procedure
       .input(z.object({ id: z.string(), title: z.string() }))
       .mutation(({ input }) => {

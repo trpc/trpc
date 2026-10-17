@@ -17,6 +17,7 @@ import {
   type AnyLink,
 } from '@trpc12/trpc/client';
 import { createSerializer } from '@trpc12/trpc/serializer';
+import { Effect, Stream } from 'effect';
 import { beforeEach, expect, expectTypeOf, test } from 'vite-plus/test';
 import { db, router, tick, type AppRouter } from './fixtures.ts';
 
@@ -107,6 +108,34 @@ test('structuralSharingLink keeps the promise when a refetch changes nothing', a
   expect(after[1]!.tags).toBe(before[1]!.tags);
   expect(after[1]!.at).toBe(before[1]!.at);
 
+  // Dates share by time; Sets, like class instances, by identity.
+  db.posts.get('1')!.at = new Date(5);
+  await shared.store.refetch(entry);
+  const moved = (await entry.promise) as typeof before;
+  expect(moved[0]!.at).toEqual(new Date(5));
+  expect(moved[1]).toBe(after[1]);
+  const tags = shared.post.tagSet.query({ id: '1' });
+  const set = await tags;
+  await shared.store.refetch(shared.store.entryOf(tags)!);
+  expect(await shared.post.tagSet.query({ id: '1' })).not.toBe(set);
+
+  // Past 500 levels the rest is new data, not compared.
+  const raw = createReactClient({
+    router: routerType<AppRouter>(),
+    links: [
+      cacheLink(),
+      structuralSharingLink(),
+      localLink({ router, serializer: false }),
+    ],
+  });
+  for (const depth of [400, 600]) {
+    const deep = raw.post.nested.query({ depth });
+    await deep;
+    await raw.store.refetch(raw.store.entryOf(deep)!);
+    const again = raw.post.nested.query({ depth });
+    expect(again === deep).toBe(depth === 400);
+  }
+
   // Without it, every refetch is new data.
   const plain = make([cacheLink()]);
   const p = plain.post.list.query({ limit: 2, order: 'asc' });
@@ -184,6 +213,22 @@ test('invalidateOnMutationLink: the mutation resolves after the read queries ref
   unmount();
 });
 
+test('invalidateOnMutationLink invalidates every query by default, until the store is disposed', async () => {
+  const trpc = make([
+    cacheLink({ staleTime: 60_000 }),
+    invalidateOnMutationLink(),
+  ]);
+  const post = trpc.post.byId.query({ id: '1' });
+  await post;
+  const unmount = trpc.store.mount(trpc.store.entryOf(post)!);
+  await trpc.post.rename.mutate({ id: '1', title: 'Renamed' });
+  expect(db.calls).toEqual(['byId:1', 'rename:1', 'byId:1']);
+  unmount();
+  trpc.store.dispose();
+  await trpc.post.rename.mutate({ id: '1', title: 'Again' });
+  expect(db.calls).toEqual(['byId:1', 'rename:1', 'byId:1', 'rename:1']);
+});
+
 test('the server keeps entries; dehydrate and hydrate carry them with the serializer', async () => {
   const server = make([], { isServer: true });
   await server.post.byId.query({ id: '1' });
@@ -212,6 +257,9 @@ test('standardLinks is a links array; call options and errors stay typed', () =>
   expectTypeOf(post).toExtend<QueryPromise<{ id: string; title: string }>>();
   type Rename = typeof trpc.post.rename.mutate;
   expectTypeOf<ReturnType<Rename>>().toExtend<Promise<string>>();
+  expectTypeOf(trpc.post.count.getData()).toEqualTypeOf<number | undefined>();
+  // @ts-expect-error byId takes an input
+  trpc.post.byId.getData();
   expectTypeOf(trpc.post.byId.getData({ id: '1' })).toExtend<
     { title: string } | undefined
   >();
@@ -219,4 +267,120 @@ test('standardLinks is a links array; call options and errors stay typed', () =>
   void trpc.post.byId.query({ id: 1 });
   // @ts-expect-error: no link reads this option
   void trpc.post.byId.query({ id: '1' }, { nope: true });
+});
+
+test('inputless queries key on their path, and survive dehydrate and hydrate', async () => {
+  const server = make([], { isServer: true });
+  expect(await server.post.count.query()).toBe(2);
+  const state = JSON.parse(JSON.stringify(dehydrate(server)));
+  expect(state.queries[0]).toMatchObject({ path: 'post.count', input: null });
+
+  const browser = make([cacheLink({ staleTime: 60_000, gcTime: Infinity })]);
+  hydrate(browser, state);
+  expect(browser.post.count.getData()).toBe(2);
+  db.posts.delete('2');
+  const count = browser.post.count.query();
+  const unmount = browser.store.mount(browser.store.entryOf(count)!);
+  await browser.post.count.invalidate();
+  expect(browser.post.count.getData()).toBe(1);
+  unmount();
+  // A second call of the same unmount does nothing.
+  unmount();
+  expect(browser.store.entryOf(count)!.observers).toBe(0);
+  // gcTime: Infinity keeps idle entries.
+  await tick(5);
+  expect(browser.store.entries()).toHaveLength(1);
+});
+
+test('array inputs key by value; setData writes a query never read', async () => {
+  const trpc = make([cacheLink({ staleTime: 60_000 })]);
+  const titles = trpc.post.many.query({ ids: ['2', '1'] });
+  expect(trpc.post.many.query({ ids: ['2', '1'] })).toBe(titles);
+  expect(trpc.post.many.query({ ids: ['1', '2'] })).not.toBe(titles);
+  expect(await titles).toEqual(['World', 'Hello']);
+
+  const nine = { id: '9', title: 'Nine', tags: [], at: new Date(9) };
+  trpc.post.byId.setData({ id: '9' }, nine);
+  expect(trpc.post.byId.getData({ id: '9' })).toEqual(nine);
+  expect(trpc.post.byId.query({ id: '9' }).status).toBe('fulfilled');
+  expect(db.calls).toEqual(['many:2,1', 'many:1,2']);
+});
+
+test('removing entries: filters that match nothing, loads that settle late, stale mounts', async () => {
+  const trpc = make([cacheLink({ staleTime: 60_000 })]);
+  const first = trpc.post.byId.query({ id: '1' });
+  await first;
+  trpc.store.remove('user');
+  expect(trpc.store.entries()).toHaveLength(1);
+
+  // A removed entry's late answer, data or error, is dropped.
+  void trpc.post.byId.query({ id: '2' });
+  void trpc.post.byId.query({ id: 'missing' });
+  const old = trpc.store.entryOf(first)!;
+  trpc.store.remove();
+  await tick(5);
+  expect(trpc.store.entries()).toHaveLength(0);
+
+  // Mounting an entry replaced since leaves the new one alone.
+  const second = trpc.post.byId.query({ id: '1' });
+  await second;
+  trpc.store.mount(old)();
+  expect(trpc.store.entryOf(second)).not.toBe(old);
+  expect(trpc.store.entries()).toHaveLength(1);
+});
+
+test('hydrating older data keeps newer data; foreign promises have no entry', async () => {
+  const trpc = make([cacheLink({ staleTime: 60_000 })]);
+  const post = trpc.post.byId.query({ id: '1' });
+  await post;
+  const state = JSON.parse(JSON.stringify(dehydrate(trpc)));
+  await tick(2);
+  db.posts.get('1')!.title = 'Newer';
+  await trpc.store.refetch(trpc.store.entryOf(post)!);
+  hydrate(trpc, state);
+  expect(trpc.post.byId.getData({ id: '1' })?.title).toBe('Newer');
+
+  expect(trpc.store.entryOf(Promise.resolve())).toBeUndefined();
+  expect(make([]).store.entryOf(post)).toBeUndefined();
+  // The client and its paths aren't thenables, so they can be awaited.
+  const posts = await Promise.resolve(trpc.post);
+  expect((await posts.byId.query({ id: '1' })).title).toBe('Newer');
+});
+
+test('an answer that lands after its entry was removed is dropped', async () => {
+  let open!: () => void;
+  const gate = new Promise<void>((resolve) => (open = resolve));
+  const gated = link(({ op, next }) =>
+    next(op).pipe(
+      Stream.mapEffect((value) =>
+        Effect.promise(() => gate).pipe(Effect.as(value)),
+      ),
+    ),
+  );
+  const trpc = make([cacheLink(), gated]);
+  const one = trpc.post.byId.query({ id: '1' });
+  const two = trpc.post.byId.query({ id: '2' });
+  const removed = trpc.store.entryOf(two)!;
+  await tick(5);
+  trpc.store.subscribe(trpc.store.entryOf(one)!, () =>
+    trpc.store.remove((entry) => entry === removed),
+  );
+  open();
+  await one;
+  await tick(5);
+  expect(removed.hasData).toBe(false);
+  expect(trpc.post.byId.getData({ id: '2' })).toBeUndefined();
+  expect(trpc.store.entries()).toHaveLength(1);
+});
+
+test('without a serializer on the client, hydration uses JSON', async () => {
+  const trpc = createReactClient({
+    router: routerType<AppRouter>(),
+    links: [cacheLink(), localLink({ router, serializer: false })],
+  });
+  await trpc.post.byId.query({ id: '1' });
+  const state = dehydrate(trpc);
+  expect(state.queries[0]!.data).toEqual({
+    json: { id: '1', title: 'Hello', tags: ['a'], at: new Date(0).toJSON() },
+  });
 });
