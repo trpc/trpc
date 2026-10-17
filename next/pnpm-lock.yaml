@@ -949,85 +949,6 @@ importers:
         specifier: 4.6.5
         version: 4.6.5
 
-  test/portability:
-    dependencies:
-      '@angular/core':
-        specifier: 22.2.2
-        version: 22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2)
-      '@lit/context':
-        specifier: 1.1.6
-        version: 1.1.6
-      '@tanstack/query-core':
-        specifier: 5.104.1
-        version: 5.104.1
-      '@trpc12/tanstack-angular-query':
-        specifier: workspace:*
-        version: link:../../packages/tanstack-angular-query
-      '@trpc12/tanstack-lit-query':
-        specifier: workspace:*
-        version: link:../../packages/tanstack-lit-query
-      '@trpc12/tanstack-preact-query':
-        specifier: workspace:*
-        version: link:../../packages/tanstack-preact-query
-      '@trpc12/tanstack-query':
-        specifier: workspace:*
-        version: link:../../packages/tanstack-query
-      '@trpc12/tanstack-react-query':
-        specifier: workspace:*
-        version: link:../../packages/tanstack-react-query
-      '@trpc12/tanstack-solid-query':
-        specifier: workspace:*
-        version: link:../../packages/tanstack-solid-query
-      '@trpc12/tanstack-svelte-query':
-        specifier: workspace:*
-        version: link:../../packages/tanstack-svelte-query
-      '@trpc12/tanstack-vue-query':
-        specifier: workspace:*
-        version: link:../../packages/tanstack-vue-query
-      '@trpc12/trpc':
-        specifier: workspace:*
-        version: link:../../packages/trpc
-      effect:
-        specifier: 4.0.2
-        version: 4.0.2
-      lit:
-        specifier: 3.3.3
-        version: 3.3.3
-      preact:
-        specifier: 10.29.8
-        version: 10.29.8
-      react:
-        specifier: 19.3.0
-        version: 19.3.0
-      rxjs:
-        specifier: 7.8.2
-        version: 7.8.2
-      solid-js:
-        specifier: 1.9.17
-        version: 1.9.17
-      svelte:
-        specifier: 5.57.2
-        version: 5.57.2
-      vue:
-        specifier: 3.5.43
-        version: 3.5.43(typescript@7.0.2)
-      zod:
-        specifier: 4.6.5
-        version: 4.6.5
-    devDependencies:
-      '@tooling/tsconfig':
-        specifier: workspace:*
-        version: link:../../tooling/tsconfig
-      '@types/node':
-        specifier: ^24.0.0
-        version: 24.19.1
-      '@types/react':
-        specifier: 19.3.0
-        version: 19.3.0
-      typescript:
-        specifier: ^7.0.2
-        version: 7.0.2
-
   test/react:
     dependencies:
       '@trpc12/experimental-react':
@@ -1187,6 +1108,85 @@ importers:
       vite-plus:
         specifier: 1.1.0
         version: 1.1.0(@types/node@24.19.1)(@vitest/coverage-v8@5.0.3)(@vitest/ui@5.0.3)(esbuild@0.28.2)(happy-dom@20.14.6)(svelte@5.57.2)(typescript@7.0.2)
+
+  tooling/portability:
+    dependencies:
+      '@angular/core':
+        specifier: 22.2.2
+        version: 22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2)
+      '@lit/context':
+        specifier: 1.1.6
+        version: 1.1.6
+      '@tanstack/query-core':
+        specifier: 5.104.1
+        version: 5.104.1
+      '@trpc12/tanstack-angular-query':
+        specifier: workspace:*
+        version: link:../../packages/tanstack-angular-query
+      '@trpc12/tanstack-lit-query':
+        specifier: workspace:*
+        version: link:../../packages/tanstack-lit-query
+      '@trpc12/tanstack-preact-query':
+        specifier: workspace:*
+        version: link:../../packages/tanstack-preact-query
+      '@trpc12/tanstack-query':
+        specifier: workspace:*
+        version: link:../../packages/tanstack-query
+      '@trpc12/tanstack-react-query':
+        specifier: workspace:*
+        version: link:../../packages/tanstack-react-query
+      '@trpc12/tanstack-solid-query':
+        specifier: workspace:*
+        version: link:../../packages/tanstack-solid-query
+      '@trpc12/tanstack-svelte-query':
+        specifier: workspace:*
+        version: link:../../packages/tanstack-svelte-query
+      '@trpc12/tanstack-vue-query':
+        specifier: workspace:*
+        version: link:../../packages/tanstack-vue-query
+      '@trpc12/trpc':
+        specifier: workspace:*
+        version: link:../../packages/trpc
+      effect:
+        specifier: 4.0.2
+        version: 4.0.2
+      lit:
+        specifier: 3.3.3
+        version: 3.3.3
+      preact:
+        specifier: 10.29.8
+        version: 10.29.8
+      react:
+        specifier: 19.3.0
+        version: 19.3.0
+      rxjs:
+        specifier: 7.8.2
+        version: 7.8.2
+      solid-js:
+        specifier: 1.9.17
+        version: 1.9.17
+      svelte:
+        specifier: 5.57.2
+        version: 5.57.2
+      vue:
+        specifier: 3.5.43
+        version: 3.5.43(typescript@7.0.2)
+      zod:
+        specifier: 4.6.5
+        version: 4.6.5
+    devDependencies:
+      '@tooling/tsconfig':
+        specifier: workspace:*
+        version: link:../tsconfig
+      '@types/node':
+        specifier: ^24.0.0
+        version: 24.19.1
+      '@types/react':
+        specifier: 19.3.0
+        version: 19.3.0
+      typescript:
+        specifier: ^7.0.2
+        version: 7.0.2
 
   tooling/tsconfig: {}
 

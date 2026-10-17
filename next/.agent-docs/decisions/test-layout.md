@@ -8,6 +8,8 @@
   - Q23.5: "for now things like can just live in integration in tests as they do now, but a lot of them should move to respective packages". Recipes and feature showcases not tied to one package stay in `test/integration/`; the rest move to their packages. Example apps with Vitest tests may take some later, since coverage counts `packages/*/src/**` whatever imports it.
   - Q23.7: "7b - i don't care about docs at all right now. tests and code are docs". Docs don't link to tests.
   - Order: "start with tanstack ones".
+- Human, 2026-10-17 (decision round, where the type-portability check lives): "A". It's `tooling/portability` (`@tooling/portability`), a repo-wide check rather than one package's test.
+- Human, 2026-10-17 (decision round, which tests stay in `test/integration`): "A". Only the recipes stay (`ai-sdk`, `better-auth`, `firebase-callable`, `publisher-recipes`); every other suite moves beside its module in `packages/trpc/src/`.
 - (agent) Q23.2, left to the agent ("feel free"): `<module>.test.ts` reads as a guide, simplest use first; edge cases and regressions go in `<module>-edges.test.ts`.
 - (agent) Q23.6, left to the agent ("pick something"): two tsconfigs per package. `tsconfig.json` covers all of `src/`, tests and fixtures included, so editors type test files; `tsconfig.lib.json` checks the published files alone, with `isolatedDeclarations`, and is the one the build reads. `typecheck` runs both.
 - Human, 2026-10-17 (decision round, reviewing Q23.6): "We should probably have some shared tsconfigs in a tooling package so they're the same everywhere (except example apps that should be isolated) if should be the strictest possible", then "Don't depend on node that should come from effect layers, unless needed for tests".
@@ -17,5 +19,4 @@
   - (agent) Optional properties of public options that callers pass through take `| undefined` (`httpLink`'s `serializer`, `wsLink`'s `idleMs`, `localLink`'s `layer`, handlers' `serializer`, OpenAPI calls' `route`), so `exactOptionalPropertyTypes` users can forward a maybe-undefined value.
 - Why: a reader who opens a package sees how to use it; a test moves, and is deleted, with its module.
 - Lost: one `test/` tree to run on its own; test-only dependencies kept out of library packages.
-- Open: the portability check (`test/portability`) stays put until it's moved with the rest.
 - Lives in: `packages/*/src/**/*.test.ts`, `packages/*/src/**/fixtures/`, `tooling/tsconfig/`, `packages/*/tsconfig.lib.json`, `vite.config.ts` (projects, coverage), `test/integration/`.

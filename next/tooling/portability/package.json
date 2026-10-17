@@ -1,5 +1,5 @@
 {
-  "name": "@test/portability",
+  "name": "@tooling/portability",
   "private": true,
   "type": "module",
   "scripts": {

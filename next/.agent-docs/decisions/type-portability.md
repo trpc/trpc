@@ -5,5 +5,5 @@
 - (agent) TypeScript only names a type through an entry point already in the program, so `@trpc12/trpc/server` and `@trpc12/trpc/client` load it with `import type {} from '@trpc12/trpc/internal'`. Emitted declarations then read `import("@trpc12/trpc/internal").With<…>`.
 - (agent) They are not tagged `@internal`, so a future `stripInternal` build can't bring back TS2883 ("inferred type cannot be named").
 - (agent) `ContractWith` stays in `@trpc12/trpc/contract`, because it is declared in the entry file itself.
-- `test/portability` emits declarations to catch regressions: routers, contracts, `t.implement()`, `routerType` clients, OpenAPI and every TanStack adapter.
-- Lives in: `packages/trpc/src/internal/index.ts`, `src/server/index.ts`, `src/client/index.ts`, `test/portability/`.
+- `tooling/portability` emits declarations to catch regressions: routers, contracts, `t.implement()`, `routerType` clients, OpenAPI and every TanStack adapter.
+- Lives in: `packages/trpc/src/internal/index.ts`, `src/server/index.ts`, `src/client/index.ts`, `tooling/portability/`.
