@@ -2,14 +2,14 @@
   "name": "examples-bun",
   "private": true,
   "scripts": {
-    "build": "bun build src/index.ts --outdir ./dist && bun build src/client.ts --outdir ./dist",
+    "build": "bun build --tsconfig-override ./tsconfig.json src/index.ts --outdir ./dist && bun build --tsconfig-override ./tsconfig.json src/client.ts --outdir ./dist",
     "dev:server": "bun run src/index.ts --watch",
     "dev:client": "wait-port 3000 && bun run src/client.ts --watch",
     "start:server": "bun run dist/index.js",
     "start:client": "wait-port 3000 && bun run dist/client.js",
     "lint": "eslint src",
-    "test-dev": "start-server-and-test 'bun run src/index.ts' 3000 'bun run src/client.ts'",
-    "test-start": "start-server-and-test 'bun run dist/index.js' 3000 'bun run dist/client.js'",
+    "test-dev": "start-server-and-test 'bun run --tsconfig-override ./tsconfig.json src/index.ts' 3000 'bun run --tsconfig-override ./tsconfig.json src/client.ts'",
+    "test-start": "start-server-and-test 'bun run --tsconfig-override ./tsconfig.json dist/index.js' 3000 'bun run --tsconfig-override ./tsconfig.json dist/client.js'",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
