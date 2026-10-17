@@ -36,7 +36,6 @@ import {
 import {
   html,
   LitElement,
-  type PropertyValues,
   type ReactiveController,
   type ReactiveControllerHost,
   type ReactiveElement,
@@ -171,8 +170,8 @@ export function createTrpcContext<TSource>(
       this.#provide();
     }
 
-    protected override willUpdate(changed: PropertyValues): void {
-      if (changed.has('client')) this.#provide();
+    protected override willUpdate(): void {
+      this.#provide();
     }
 
     protected override render(): TemplateResult {

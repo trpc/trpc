@@ -9,8 +9,11 @@ import {
 import {
   createSubscriptionController,
   createTrpcContext,
+  createTrpcQueryUtils,
   type TrpcProviderElement,
 } from '@trpc12/tanstack-lit-query';
+import { createTrpcClient, link, routerType } from '@trpc12/trpc/client';
+import { Effect, PubSub, Stream } from 'effect';
 import { html, LitElement } from 'lit';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import {
@@ -22,7 +25,7 @@ import {
 } from './fixtures/app.ts';
 import { click, container, text, waitFor } from './fixtures/dom.ts';
 
-const { TrpcProvider, useTrpc } = createTrpcContext<AppClient>();
+const { TrpcProvider, useTrpc, useTrpcClient } = createTrpcContext<AppClient>();
 customElements.define('lit-query-provider', QueryClientProvider);
 customElements.define('lit-trpc-provider', TrpcProvider);
 
@@ -214,4 +217,76 @@ test('useTrpc throws outside a provider', async () => {
   el.append(orphan);
   expect(() => orphan.trpc.post.pathKey()).toThrow(/TrpcProvider/);
   el.remove();
+});
+
+class ClientView extends View {
+  client = useTrpcClient(this);
+}
+customElements.define('lit-client-view', ClientView);
+
+test('a provider swaps its client; a controller with fixed options reconnects, resets and is destroyed', async () => {
+  await using app = await createApp();
+  using view = mount<ClientView>('lit-client-view', app.client);
+  const provider = view.el.querySelector(
+    'lit-trpc-provider',
+  ) as TrpcProviderElement<AppRouter>;
+  expect(await view.view.client.post.byId.query({ id: '1' })).toMatchObject({
+    title: 'Post 1',
+  });
+
+  const posts = Effect.runSync(PubSub.unbounded<Post>());
+  let open = 0;
+  const local = createTrpcClient({
+    router: routerType<AppRouter>(),
+    links: [
+      link(({ op }) =>
+        op.type === 'subscription'
+          ? Stream.fromPubSub(posts).pipe(
+              Stream.onStart(Effect.sync(() => open++)),
+              Stream.ensuring(Effect.sync(() => open--)),
+            )
+          : Stream.make({ id: '1', title: 'Swapped' }),
+      ),
+    ],
+  }) as unknown as AppClient;
+  provider.client = local;
+  await provider.updateComplete;
+  expect(await view.view.client.post.byId.query({ id: '1' })).toMatchObject({
+    title: 'Swapped',
+  });
+
+  const host = view.view;
+  const parent = host.parentElement!;
+  const added = createSubscriptionController(
+    host,
+    createTrpcQueryUtils({ client: local }).post.onAdd.subscriptionOptions(),
+  );
+  host.remove();
+  await Promise.resolve();
+  expect(added.current.status).toBe('idle');
+
+  parent.append(host);
+  await waitFor(() => expect(open).toBe(1));
+  host.remove();
+  parent.append(host);
+  await waitFor(() => expect(open).toBe(1));
+  const publish = (title: string) =>
+    Effect.runSync(
+      PubSub.publish(posts, { id: title, title, createdAt: new Date(0) }),
+    );
+  await waitFor(() => {
+    publish('After reconnecting');
+    expect(added.current.data?.title).toBe('After reconnecting');
+  });
+
+  added.reset();
+  expect(added.current.data).toBeUndefined();
+  await waitFor(() => {
+    publish('After reset');
+    expect(added.current.data?.title).toBe('After reset');
+  });
+  added.destroy();
+  await waitFor(() => expect(open).toBe(0));
+  added.reset();
+  expect(added()).toMatchObject({ status: 'idle', data: undefined });
 });
