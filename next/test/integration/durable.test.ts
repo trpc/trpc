@@ -613,3 +613,46 @@ test('inputs with files are kept without a fingerprint; an error that cannot be 
   expect(items).toEqual([1]);
   expect(err).toMatchObject({ code: 'STREAM_INTERRUPTED' });
 });
+
+test('experimental_durableLink waits before retrying by default; queries and subscriptions pass through', async () => {
+  const { router: base, runs } = makeRouter();
+  const router = {
+    ...base,
+    count: t.procedure.query(() => runs.order),
+    ticks: t.procedure.subscription(async function* () {
+      yield 1;
+    }),
+  };
+  await using http = await createTestServer({
+    router,
+    layer: Persistence.layerBackingMemory,
+  });
+  const sent: Array<string | null> = [];
+  let drop = true;
+  const client = createTrpcClient({
+    router,
+    links: [
+      experimental_durableLink(),
+      httpLink({
+        url: http.url,
+        fetch: async (url, init) => {
+          sent.push(new Headers(init?.headers).get('trpc-call-id'));
+          const res = await fetch(url, init);
+          if (drop) {
+            drop = false;
+            throw new TypeError('fetch failed');
+          }
+          return res;
+        },
+      }),
+    ],
+  });
+  const started = Date.now();
+  expect(await client.order.mutate({ sku: 'a' })).toMatchObject({ id: 1 });
+  expect(Date.now() - started).toBeGreaterThanOrEqual(190);
+  expect(await client.count.query()).toBe(1);
+  const ticks: number[] = [];
+  for await (const tick of client.ticks.subscribe()) ticks.push(tick);
+  expect(ticks).toEqual([1]);
+  expect(sent.slice(2)).toEqual([null, null]);
+});
