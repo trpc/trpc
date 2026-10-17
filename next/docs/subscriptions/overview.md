@@ -1,0 +1,78 @@
+---
+title: Subscriptions
+description: Streams of events over SSE or WebSockets, with tracked() ids so reconnects resume.
+section: Subscriptions
+order: 1
+---
+
+A subscription returns an async generator, an `AsyncIterable` or an Effect `Stream`. Clients iterate it with `for await`. Breaking out of the loop, or aborting `signal`, closes the connection.
+
+```ts twoslash
+// ---cut-start---
+// @filename: server.ts
+import { initTrpc } from '@trpc12/trpc/server';
+const t = initTrpc<{ ctx: {} }>();
+declare const posts: {
+  watch(opts: {
+    signal: AbortSignal;
+  }): AsyncIterable<{ id: string; title: string }>;
+};
+// ---cut-end---
+const onPost = t.procedure.subscription(async function* (opts) {
+  for await (const post of posts.watch({ signal: opts.signal })) {
+    yield post;
+  }
+});
+// ---cut-start---
+export const router = { onPost };
+// @filename: client.ts
+import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import type { router } from './server.ts';
+const client = createTrpcClient({
+  router: routerType<typeof router>(),
+  links: [httpLink({ url: '/trpc' })],
+});
+// ---cut-end---
+
+for await (const post of client.onPost.subscribe()) {
+  console.log(post.title);
+  //               ^?
+}
+```
+
+`.output(Event)` validates each event (the `data` of `tracked()` events); `.output(stream(Event))` does the same, matching [streamed queries](../server/streaming.md).
+
+## Resuming
+
+Yield `tracked(id, data)` to give events ids. SSE sends them as `id:`, and on reconnect the resolver gets `lastEventId` in its options (not in its input). An id can't be empty or hold a line break or NUL, which would end the SSE field:
+
+```ts
+const onPost = t.procedure.subscription(async function* ({ lastEventId }) {
+  for await (const post of posts.since(lastEventId))
+    yield tracked(post.id, post);
+});
+
+client.onPost.subscribe(undefined, { lastEventId: '42' }); // resume from a known id
+```
+
+`httpLink` reconnects a dropped subscription with backoff (`reconnect: { attempts, delayMs }`). `wsLink` resends `lastEventId` after reconnecting. A subscription whose resolver has side effects that must not rerun can opt out with `subscribe(input, { reconnect: false })`; a dropped connection then ends it with `NETWORK_ERROR`.
+
+While a subscription is quiet, the handler sends a `: ping` comment every 15 seconds so proxies don't close it as idle. Set `createFetchHandler({ sse: { pingMs } })`, or `false` to turn it off.
+
+## Reading with EventSource
+
+The stream is standard SSE, so a browser `EventSource` (or `curl`) can read a subscription without the client. Input goes in the query string as `httpLink` sends it (`/trpc/onPost?input={"channel":"news"}`, URL-encoded). Each `message` event's `data` is a serialized value. An `EventSource` reconnects with `Last-Event-ID` by itself, so close it on the `done` event, or it reconnects when the stream ends. Failures arrive as `error` events with `data`:
+
+```ts
+const source = new EventSource('/trpc/onPost');
+source.onmessage = (event) => render(JSON.parse(event.data));
+source.addEventListener('done', () => source.close());
+```
+
+## Over WebSockets
+
+`wsLink` runs subscriptions (and everything else) over one WebSocket; `switchLink` can send subscriptions there and the rest over HTTP ([Links](../client/links.md)). On Cloudflare, Durable Objects can [hibernate](../adapters/durable-objects.md#subscriptions-that-hibernate) between events.
+
+## Publishing events
+
+To publish from mutations to subscribers, across processes and with resumable ids, use a [`Publisher`](./publisher.md).

@@ -6,4 +6,4 @@
 - Why: Workers are a first-class platform, and idle WebSocket connections on Durable Objects are billed unless they hibernate.
 - Lost: oRPC's "durable iterator" (subscriptions that survive hibernation), which would need the publisher to replay into a rebuilt generator.
 - (agent) The Open here (resuming subscriptions after the object wakes) is done: publisher subscriptions are kept on the socket and replay from `lastEventId` ([`hibernation-state-and-subscriptions.md`](./hibernation-state-and-subscriptions.md)).
-- Lives in: `packages/trpc/src/cloudflare/hibernation.ts` (`@trpc12/trpc/cloudflare`), `docs/platforms.md`.
+- Lives in: `packages/trpc/src/cloudflare/hibernation.ts` (`@trpc12/trpc/cloudflare`), `docs/adapters/durable-objects.md`.

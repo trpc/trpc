@@ -8,4 +8,4 @@
 - (agent) A mismatch fails with `PARSE_ERROR` (`defined: false`, like other client-side decoding failures), message "Response validation failed: …" and the issues in `data`. Subscription events are checked one by one; `tracked()` envelopes check their `data`. `stream()` outputs are not checked on the client.
 - (agent) The link reads schemas from a contract or a router (any tree of `'~trpc'` definitions). Paths it doesn't have pass through.
 - Lost: validation without shipping schemas; checking `stream()` items and context-aware inputs on the client.
-- Lives in: `packages/trpc/src/client/links/validation.ts`, `src/client/index.ts`, `packages/trpc/src/client/links/validation.test.ts`, `docs/client.md` ("Validating on the client").
+- Lives in: `packages/trpc/src/client/links/validation.ts`, `src/client/index.ts`, `packages/trpc/src/client/links/validation.test.ts`, `docs/client/validation.md`.

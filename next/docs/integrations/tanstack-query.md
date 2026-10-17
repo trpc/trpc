@@ -1,6 +1,15 @@
-# TanStack Query
+---
+title: TanStack Query
+description: Query and mutation options for every TanStack Query framework, with streamed mutations, subscriptions and hydration.
+section: Integrations
+order: 1
+---
 
 `@trpc12/tanstack-query` makes plain TanStack options objects, so it works with every adapter. Each adapter package (`@trpc12/tanstack-react-query`, `-preact-`, `-vue-`, `-solid-`, `-svelte-`, `-angular-`, `-lit-query`) re-exports it and adds context helpers and `useSubscription`.
+
+```package-install
+@trpc12/trpc @trpc12/tanstack-react-query @tanstack/react-query
+```
 
 ```ts
 import { createTrpcQueryUtils } from '@trpc12/tanstack-query';
@@ -28,7 +37,11 @@ useMutationState({
 
 A refetch that returns equal data keeps the old reference, `Date`s, `Map`s and `Set`s included, so it doesn't re-render. `queryOptions()` sets `structuralSharing` for that; it's exported for other queries.
 
-Pass what links read in `context`, kept apart from TanStack's own options: `trpc.post.byId.queryOptions({ input, context: { dedupe: false } })`.
+Pass what links read in `context`, kept apart from TanStack's own options: `trpc.post.byId.queryOptions({ input, context: { dedupe: false } })` ([Call options](../client/overview.md#call-options)).
+
+Queries and infinite queries pass TanStack's `signal` to the call, so TanStack [cancels](https://tanstack.com/query/latest/docs/framework/react/guides/query-cancellation) a fetch that nothing observes any more (the component unmounted, or the input changed) and the server's `signal` aborts too. `queryClient.cancelQueries()` does the same. A cancelled query goes back to its previous state rather than caching a late result. This was v11's `abortOnUnmount: true`.
+
+## With React context
 
 Queries and infinite queries pass TanStack's `signal` to the call, so TanStack [cancels](https://tanstack.com/query/latest/docs/framework/react/guides/query-cancellation) a fetch that nothing observes any more (the component unmounted, or the input changed) and the server's `signal` aborts too. `queryClient.cancelQueries()` does the same. A cancelled query goes back to its previous state rather than caching a late result. This was v11's `abortOnUnmount: true`.
 
@@ -118,7 +131,7 @@ const progress = useSubscription(
 );
 ```
 
-Unsubscribing stops watching, not the job. Keep jobs in a [Publisher](./subscriptions.md#publisher) so any instance can stream them.
+Unsubscribing stops watching, not the job. Keep jobs in a [Publisher](../subscriptions/publisher.md) so any instance can stream them.
 
 ## Subscriptions
 
@@ -166,10 +179,10 @@ const posts = createCollection(
 
 ## Hydration
 
-`hydrationOptions({ client })` returns `{ dehydrate, hydrate }` options that serialize data with the client's [serializer](./serializers.md), so the types it keeps (with danSON: `Date`, `Map`, `Set`, `bigint`, custom types) survive the trip, and that dehydrate pending queries. Their data is serialized once it settles. Without `client` it uses plain JSON; `serializer` overrides both.
+`hydrationOptions({ client })` returns `{ dehydrate, hydrate }` options that serialize data with the client's [serializer](../server/serializers.md), so the types it keeps (with danSON: `Date`, `Map`, `Set`, `bigint`, custom types) survive the trip, and that dehydrate pending queries. Their data is serialized once it settles. Without `client` it uses plain JSON; `serializer` overrides both.
 
 ```ts
 new QueryClient({ defaultOptions: hydrationOptions({ client }) });
 ```
 
-For React Server Components, see [Server Actions and RSC](./actions-and-rsc.md).
+For React Server Components, see [React Server Components](./rsc.md).

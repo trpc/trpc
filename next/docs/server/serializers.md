@@ -1,4 +1,9 @@
-# Serializers
+---
+title: Serializers
+description: Plain JSON by default; danSON or superjson-style serializers keep Dates, Maps and files, and client types follow.
+section: Server
+order: 11
+---
 
 The serializer turns inputs and outputs into JSON on the wire. The default is plain JSON. To keep more types, pass the same serializer to the handler and to every link:
 
@@ -41,20 +46,34 @@ If the two ends disagree, calls fail with `UNSUPPORTED_PROTOCOL`, with a message
 
 The first link in the chain that has a serializer types the results. A type the serializer doesn't keep arrives in its JSON form, and the client's types say so:
 
-```ts
-const getPost = t.procedure.query(() => ({
-  at: new Date(),
-  tags: new Set(['a']),
-  draft: undefined,
-  comments: loadComments(), // Promise<Comment[]>
-}));
+```ts twoslash
+// ---cut-start---
+import { t } from './server.ts';
+// ---cut-end---
+import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import { createSerializer } from '@trpc12/trpc/serializer';
 
-// httpLink({ url })
-const post = await client.getPost.query();
-//    ^? { at: string; tags: Record<string, never>; comments: Promise<JsonOf<Comment>[]> }
+const router = {
+  getPost: t.procedure.query(() => ({
+    at: new Date(),
+    tags: new Set(['a']),
+    draft: undefined,
+  })),
+};
 
-// httpLink({ url, serializer: createSerializer() })
-//    ^? { at: Date; tags: Set<string>; draft: undefined; comments: Promise<Comment[]> }
+const json = createTrpcClient({
+  router: routerType<typeof router>(),
+  links: [httpLink({ url: '/trpc' })],
+});
+const plain = await json.getPost.query();
+//    ^?
+
+const danson = createTrpcClient({
+  router: routerType<typeof router>(),
+  links: [httpLink({ url: '/trpc', serializer: createSerializer() })],
+});
+const rich = await danson.getPost.query();
+//    ^?
 ```
 
 `Date` (and anything with `toJSON`) becomes what `toJSON` returns, `Map`, `Set` and other objects without own keys become `{}`, `undefined` keys are dropped and `undefined` array items become `null`. Types that are already JSON are kept as written, so recursive and branded JSON types survive. `JsonOf<T, Keeps>` is that transform, for your own types.
@@ -63,7 +82,7 @@ A typed error's `data` goes through the same serializer: `new TrpcError({ code: 
 
 In-process callers (`createRouterClient`, `createTrpcRsc`, `localLink({ serializer: false })`) pass values by reference, so they keep native types whatever the serializer.
 
-To keep plain JSON on the wire and still get `Date`s from a contract's Effect Schemas, put `validationLink({ contract, output: 'json' })` before `httpLink`: it decodes results with the schemas' JSON codecs and types them as the schemas' types.
+To keep plain JSON on the wire and still get `Date`s from a contract's Effect Schemas, put `validationLink({ contract, output: 'json' })` before `httpLink`: it decodes results with the schemas' JSON codecs and types them as the schemas' types ([Validating on the client](../client/validation.md)).
 
 ## Files
 
@@ -71,7 +90,7 @@ A root `File` or `Blob` output of an unbatched HTTP call is the response body, w
 
 ## Query URLs
 
-Query inputs go in the URL as `?input=<JSON>`, with object keys sorted (array order is kept), so equal inputs make the same URL and hit the same HTTP cache entry. A serializer that makes refs (danSON's `$n` markers) adds `&refs=`. Long inputs fall back to `POST` (see [Client](./client.md)).
+Query inputs go in the URL as `?input=<JSON>`, with object keys sorted (array order is kept), so equal inputs make the same URL and hit the same HTTP cache entry. A serializer that makes refs (danSON's `$n` markers) adds `&refs=`. Long inputs fall back to `POST` ([Links](../client/links.md#query-urls)).
 
 ## Custom types with danSON
 
@@ -99,4 +118,4 @@ export const [TrpcProvider, useTrpc] = createTrpcContext<typeof makeClient>();
 
 A router type alone (`createTrpcContext<AppRouter>()`) has no links, so it types the default JSON form.
 
-See [TanStack Query](./tanstack-query.md#hydration).
+See [TanStack Query](../integrations/tanstack-query.md#hydration).

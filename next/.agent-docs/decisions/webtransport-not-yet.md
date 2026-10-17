@@ -4,4 +4,4 @@
 - (agent) When a runtime ships it, it is one more transport on the socket core, like [`raw-socket-transport.md`](./raw-socket-transport.md): a bidirectional stream per session carrying the same JSON-lines protocol, and a link that reuses `makeSocketLink`.
 - Why: the Effect-native path is a platform `Socket` for WebTransport streams, which Effect doesn't have yet; building our own would bypass the platform layers.
 - Lost: WebTransport's unreliable datagrams and per-call streams for now. WebSockets and SSE cover the same calls.
-- Lives in: `docs/platforms.md` (Raw sockets, last paragraph), `.agent-docs/notes/open-issues-review.md`.
+- Lives in: `docs/adapters/sockets.md` (last paragraph), `.agent-docs/notes/open-issues-review.md`.

@@ -8,4 +8,4 @@
 - (agent) Its own subpath, not `@trpc12/trpc/http`: it serves a different Effect service (`effect/socket`), and HTTP-only apps don't load it ([`flat-entry-points.md`](./flat-entry-points.md): one subpath per concern).
 - Why: Effect already abstracts sockets per platform; the only @trpc12/trpc code is framing and a connection adapter.
 - Lost: a dedicated binary framing (msgpack, length-prefixed). JSON lines keep one protocol across transports.
-- Lives in: `packages/trpc/src/socket/index.ts` (`@trpc12/trpc/socket`), `src/client/links/socket.ts` (`socketLink`, `ConnectionLinkOptions`), `src/internal/lines.ts`, `src/server/socket.ts` (`Transport`), `packages/trpc/src/socket/socket.test.ts`, `docs/platforms.md` (Raw sockets), `docs/client.md`.
+- Lives in: `packages/trpc/src/socket/index.ts` (`@trpc12/trpc/socket`), `src/client/links/socket.ts` (`socketLink`, `ConnectionLinkOptions`), `src/internal/lines.ts`, `src/server/socket.ts` (`Transport`), `packages/trpc/src/socket/socket.test.ts`, `docs/adapters/sockets.md`, `docs/client/links.md`.

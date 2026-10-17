@@ -1,5 +1,5 @@
 /**
- * A Redis-backed publisher: the recipe from docs/subscriptions.md
+ * A Redis-backed publisher: the recipe from docs/subscriptions/backends.md
  * ("Publisher backends"). Each channel is a Redis stream (history and ids)
  * plus a pub/sub channel (live events), so every server sharing the Redis
  * sees every event, and `lastEventId` resumes from the stream.

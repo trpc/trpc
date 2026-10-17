@@ -130,8 +130,8 @@ import { something } from '@trpc/unknown';
     ).toMatchInlineSnapshot(`
       [
         "1:1 observable() subscriptions: return an async generator or an Effect Stream",
-        "2:1 adapters: serve createFetchHandler() with serve() from @trpc12/trpc/http (docs/platforms.md)",
-        "3:1 @trpc/unknown: no v12 module, see docs/migrating-from-v11.md",
+        "2:1 adapters: serve createFetchHandler() with serve() from @trpc12/trpc/http (docs/adapters/overview.md)",
+        "3:1 @trpc/unknown: no v12 module, see docs/migrations/from-v11.md",
       ]
     `);
   });
@@ -379,7 +379,7 @@ const t = init.create();
     `);
     expect(messages(source)).toMatchInlineSnapshot(`
       [
-        "1:1 default or namespace import of @trpc/server: see docs/migrating-from-v11.md",
+        "1:1 default or namespace import of @trpc/server: see docs/migrations/from-v11.md",
       ]
     `);
   });

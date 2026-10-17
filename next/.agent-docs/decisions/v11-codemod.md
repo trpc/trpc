@@ -7,4 +7,4 @@
 - (agent) Everything else is a note, not a guess: root `transformer`/`errorFormatter`/`isDev`, observables, adapters (standalone, express, ws, next, lambda), `@trpc/react-query`/`@trpc/next`, `createWSClient`, `createCallerFactory`, `createTRPCOptionsProxy`'s `queryClient`. A note names the v12 way and the guide section.
 - (agent) A file is only parsed when it mentions `@trpc/` or one of the `createTRPCContext` names; `node_modules`, `dist`, `.git`, `.next` and `.output` are skipped.
 - Lost: no type-aware rewrites (a `TRPCClientError<AppRouter>` type argument, `observable()` bodies), no `throw` → `return error()` (both work in v12).
-- Lives in: `packages/upgrade/src/` (`transform.ts`, `files.ts`, `cli.ts`, `bin.ts`, `transform.test.ts`), `docs/migrating-from-v11.md`.
+- Lives in: `packages/upgrade/src/` (`transform.ts`, `files.ts`, `cli.ts`, `bin.ts`, `transform.test.ts`), `docs/migrations/from-v11.md`.

@@ -81,7 +81,7 @@ packages/trpc/src/openapi/
 ```ts
 /**
  * `@trpc12/tanstack-react-query`: a provider, then queryOptions and
- * mutationOptions with TanStack's own hooks. See docs/tanstack-query.md.
+ * mutationOptions with TanStack's own hooks. See docs/integrations/tanstack-query.md.
  */
 test('useQuery takes queryOptions from useTrpc()', async () => { … });
 test('a mutation invalidates the queries under a path', async () => { … });
@@ -134,7 +134,7 @@ import { createApp } from '../../tanstack-query/src/fixtures/app.ts';
 - **Type portability** (consumer `.d.ts` emit across every package): it needs its own consumer package under pnpm isolation.
   - **A — `tooling/portability`** ⭐: repo-wide checks already live in `tooling/`.
   - **B — `examples/portability`**: it isn't an example.
-- **Recipes** for libraries that need no adapter (`ai-sdk`, `better-auth`, `firebase-callable`, `publisher-recipes`), which back `docs/integrations.md`, `docs/platforms.md` and `docs/subscriptions.md`:
+- **Recipes** for libraries that need no adapter (`ai-sdk`, `better-auth`, `firebase-callable`, `publisher-recipes`), which back `docs/integrations/`, `docs/adapters/firebase.md` and `docs/subscriptions/backends.md`:
   - **A — `examples/integrations/`**, one test per recipe ⭐
     - ✅ It's a showcase.
     - ✅ `ai`, `better-auth` and `@effect/sql-pg` stay out of the core package.

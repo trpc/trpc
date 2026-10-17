@@ -76,7 +76,7 @@ test('a body an Express parser already read is taken from req.body', async () =>
   }
 });
 
-test('a (req, res) handler for Express, Fastify and node:http (docs/platforms.md)', async () => {
+test('a (req, res) handler for Express, Fastify and node:http (docs/adapters/node.md)', async () => {
   const scope = Scope.makeUnsafe();
   const nodeHandler = await Effect.runPromise(
     NodeHttpServer.makeHandler(toHttpEffect(handler), { scope }),
@@ -97,7 +97,7 @@ test('a (req, res) handler for Express, Fastify and node:http (docs/platforms.md
   }
 });
 
-test('a web handler from the Effect app, for fetch runtimes (docs/platforms.md)', async () => {
+test('a web handler from the Effect app, for fetch runtimes (docs/adapters/fetch.md)', async () => {
   const web = HttpEffect.toWebHandler(toHttpEffect(handler));
   const input = encodeURIComponent('{"name":"web"}');
   const res = await web(
@@ -106,7 +106,7 @@ test('a web handler from the Effect app, for fetch runtimes (docs/platforms.md)'
   expect(await res.json()).toEqual({ json: 'hello web' });
 });
 
-test('platform values reach createContext, typed by the handler (docs/platforms.md)', async () => {
+test('platform values reach createContext, typed by the handler (docs/adapters/fetch.md)', async () => {
   interface Env {
     GREETING: string;
   }

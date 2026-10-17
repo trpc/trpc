@@ -23,4 +23,4 @@
 - (agent) `useQueries` takes `queryOptions()` as they are (tested with React's `combine` and `QueriesObserver`). `mutationFilter({ ...filters })` gives `useMutationState`, `useIsMutating` and `isMutating()` the procedure's mutation key, with `predicate` typed by the procedure; it returns TanStack's plain `MutationFilters`, which is what those APIs accept.
 - Open: `svelte-check` once it supports TypeScript 7.
 - (agent) Checked 2026-10-16: `svelte-check` 4.7.6 still peers `typescript` `^5 || ^6`, so the Open waits on upstream.
-- Lives in: `packages/tanstack-*/src/`, `packages/tanstack-query/src/utils.ts` (`mutationFilter`), `packages/tanstack-*-query/src/ssr.test.ts`, `packages/tanstack-svelte-query/src/fixtures/Ssr.svelte`, `vite.config.ts` (`svelte-ssr` project), `docs/tanstack-query.md`.
+- Lives in: `packages/tanstack-*/src/`, `packages/tanstack-query/src/utils.ts` (`mutationFilter`), `packages/tanstack-*-query/src/ssr.test.ts`, `packages/tanstack-svelte-query/src/fixtures/Ssr.svelte`, `vite.config.ts` (`svelte-ssr` project), `docs/integrations/tanstack-query.md`.

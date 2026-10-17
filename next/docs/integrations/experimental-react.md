@@ -1,15 +1,18 @@
-# React without TanStack Query
+---
+title: React without TanStack Query
+description: Render-as-you-fetch with use() and Suspense in @trpc12/experimental-react, where cache features are links.
+section: Integrations
+order: 4
+---
 
 Two experimental packages read tRPC in React with `use()` and Suspense, without TanStack Query. Both are experimental as a whole: the package name says so, every export is `@stability experimental`, and the API may change in any release. For a stable React integration, use [TanStack Query](./tanstack-query.md).
 
-| Package                           | Model                                                                                           |
-| --------------------------------- | ----------------------------------------------------------------------------------------------- |
-| `@trpc12/experimental-react`      | Promises: loaders start queries, components read them with `use()`. Features are links, opt-in. |
-| `@trpc12/experimental-react-atom` | [Effect Atoms](https://effect.website): query and mutation atoms read with `useAtomSuspense`.   |
+| Package                           | Model                                                                                                             |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `@trpc12/experimental-react`      | Promises: loaders start queries, components read them with `use()`. Features are links, opt-in.                   |
+| `@trpc12/experimental-react-atom` | Effect Atoms: query and mutation atoms read with `useAtomSuspense` ([React atoms](./experimental-react-atom.md)). |
 
-## `@trpc12/experimental-react`
-
-Render-as-you-fetch, after [raf-query](https://github.com/KATT/raf-query): a route loader (or an event handler) calls `.query()`, which starts the request and returns a promise. The component reads that promise with `useQuery()` and `use()`. Components don't start requests.
+This page is `@trpc12/experimental-react`: render-as-you-fetch, after [raf-query](https://github.com/KATT/raf-query). A route loader (or an event handler) calls `.query()`, which starts the request and returns a promise. The component reads that promise with `useQuery()` and `use()`. Components don't start requests.
 
 ```tsx
 import {
@@ -44,7 +47,7 @@ function Post(props: { post: QueryPromise<{ title: string }> }) {
 
 `useQuery` finds the cache through the promise, so there is no provider.
 
-### Stable promises
+## Stable promises
 
 Built in, not a link. `use()` needs the same promise across renders, and these are:
 
@@ -54,7 +57,7 @@ Built in, not a link. `use()` needs the same promise across renders, and these a
 
 `useQuery(promise)` returns the query's current promise and re-renders when it changes. `useQueryState(promise)` gives `isFetching`, `isStale`, `error`, `updatedAt` and `refetch()`, for spinners and retry buttons.
 
-### Links
+## Query links
 
 Without links, the cache does the least: an entry lives while a request is in flight or a mounted `useQuery` reads it. Everything else is a link, opt-in one by one:
 
@@ -70,9 +73,9 @@ Without links, the cache does the least: an entry lives while a request is in fl
 
 `standardLinks()` matches TanStack Query's defaults, plus one: like a router after an action, every mutation invalidates queries (all of them, unless `invalidates` narrows it). Stale data is returned at once and refetched in the background.
 
-Query links are tRPC links: they sit in the same `links` array, before the link that sends. Write your own with `withQueryFeature(link, feature)`.
+Query links are tRPC [links](../client/links.md): they sit in the same `links` array, before the link that sends. Write your own with `withQueryFeature(link, feature)`.
 
-### Cache methods
+## Cache methods
 
 ```ts
 await trpc.post.byId.invalidate({ id }); // refetches it if it's on screen
@@ -82,7 +85,7 @@ trpc.post.byId.getData({ id });
 await trpc.post.rename.mutate({ id, title }); // mutations and subscriptions are the plain client's
 ```
 
-### Server rendering
+## Server rendering
 
 On the server, create one client per request (`isServer` defaults to `typeof window === 'undefined'`; a server's cache never drops entries). After the render, `dehydrate(trpc)` encodes the settled queries with the links' serializer, so `Date`s survive with danSON; `hydrate(trpc, state)` writes them into the browser's client before it renders.
 
@@ -90,43 +93,3 @@ On the server, create one client per request (`isServer` defaults to `typeof win
 const state = dehydrate(serverTrpc); // send it with the HTML
 hydrate(trpc, state); // in the browser, before hydrateRoot
 ```
-
-## `@trpc12/experimental-react-atom`
-
-Modeled on Effect's `AtomRpc`. Each query is an atom of its `AsyncResult`, typed with the procedure's errors; the same call returns the same atom.
-
-```tsx
-import { useAtomSuspense, useAtomSet } from '@effect/atom-react';
-import { createAtomClient } from '@trpc12/experimental-react-atom';
-
-export const trpc = createAtomClient({
-  router: routerType<AppRouter>(),
-  links: [httpLink({ url: '/trpc', serializer: createSerializer() })],
-});
-
-function Post(props: { id: string }) {
-  const post = useAtomSuspense(
-    trpc.post.byId.query({ id: props.id }, { reactivityKeys: ['posts'] }),
-  ).value;
-  const rename = useAtomSet(trpc.post.rename.mutation());
-  return (
-    <button
-      onClick={() =>
-        rename({
-          input: { id: props.id, title: 'New' },
-          reactivityKeys: ['posts'],
-        })
-      }
-    >
-      {post.title}
-    </button>
-  );
-}
-```
-
-- `query(input, { reactivityKeys, timeToLive })`: a mutation with the same reactivity keys refetches it. `timeToLive` keeps the result after the last reader; `Infinity` keeps it alive.
-- `mutation()`: a function atom, set with `{ input, reactivityKeys }`.
-- `subscription(input)`: an atom of the latest event.
-- `trpc.client` is the Effect client the atoms call; `trpc.runtime` is their runtime.
-
-Query atoms are serializable. On the server, render with a registry that keeps idle atoms (`AtomRegistry.make({ defaultIdleTTL })`) and call `Hydration.dehydrate(registry)` afterwards; in the browser, wrap the tree in `HydrationBoundary` from `@effect/atom-react`. Results encode with the links' serializer (`serializerSchema(serializer)` is that `Schema`, for your own atoms). Failed results aren't carried; the browser runs those queries again.

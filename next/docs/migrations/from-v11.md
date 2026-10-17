@@ -1,4 +1,9 @@
-# Migrating from v11
+---
+title: Migrating from v11
+description: Serve v11 clients from the new router with createV11Handler, run the codemod, then move the clients.
+section: Migrations
+order: 1
+---
 
 Move the server first. `createV11Handler` serves the new router to `@trpc/client` 11 apps on the endpoint they already call, so you can deploy before every client (a mobile app in the stores, a tab left open) updates. Then move the clients to `@trpc12/trpc/client` and drop the old endpoint.
 
@@ -123,7 +128,7 @@ const authLink = link(({ op, next }) =>
 | `create({ transformer: superjson })` and each link's `transformer` | `serializer` on the handler and every link; plain JSON by default, danSON with `createSerializer()` (Dates, Maps, BigInts, files) |
 | `fetchRequestHandler({ endpoint, req, router, createContext })`    | `createFetchHandler({ endpoint, router, createContext }).fetch(req)`                                                              |
 | `createContext({ req, resHeaders })`                               | `createContext({ request, info })`; headers go on the procedure's `response` handle                                               |
-| adapters (standalone, express, next, aws-lambda, ws)               | one handler: see [Platforms](./platforms.md)                                                                                      |
+| adapters (standalone, express, next, aws-lambda, ws)               | one handler: see [Adapters](../adapters/overview.md)                                                                              |
 | `createTRPCClient<AppRouter>({ links })`                           | `createTrpcClient({ router: routerType<AppRouter>(), links })`                                                                    |
 | `httpBatchLink`, `httpBatchStreamLink`, `httpSubscriptionLink`     | `httpLink({ url, batch: true })` streams and subscribes too                                                                       |
 | `createWSClient` + `wsLink({ client })`                            | `wsLink({ url })`                                                                                                                 |

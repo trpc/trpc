@@ -4,4 +4,4 @@
 - (agent) Mutations stay explicit in the collection's `onInsert`/`onUpdate`/`onDelete`: the app calls the procedure it wants. A helper that maps handlers to procedures would have to guess input shapes.
 - Why: issue #6891 asks whether tRPC works with TanStack DB; it does with the existing API, so a docs example is enough, and one less API to keep in step with a pre-1.0 library.
 - Lost: a one-call `trpc.post.list.collectionOptions({ getKey })`. Easy to add later if apps repeat the same wiring.
-- Lives in: `packages/tanstack-query/src/db.test.ts`, `packages/tanstack-query/package.json` (`@tanstack/db`, `@tanstack/query-db-collection`), `docs/tanstack-query.md` (TanStack DB).
+- Lives in: `packages/tanstack-query/src/db.test.ts`, `packages/tanstack-query/package.json` (`@tanstack/db`, `@tanstack/query-db-collection`), `docs/integrations/tanstack-query.md` (TanStack DB).

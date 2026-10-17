@@ -1,97 +1,9 @@
-# Subscriptions
-
-A subscription returns an async generator, an `AsyncIterable` or an Effect `Stream`. Clients iterate it with `for await`. Breaking out of the loop, or aborting `signal`, closes the connection.
-
-```ts
-const onPost = t.procedure.subscription(async function* ({ signal }) {
-  for await (const post of posts.watch({ signal })) yield post;
-});
-
-for await (const post of client.onPost.subscribe()) render(post);
-```
-
-`.output(Event)` validates each event (the `data` of `tracked()` events); `.output(stream(Event))` does the same, matching streamed queries.
-
-## Resuming
-
-Yield `tracked(id, data)` to give events ids. SSE sends them as `id:`, and on reconnect the resolver gets `lastEventId` in its options (not in its input). An id can't be empty or hold a line break or NUL, which would end the SSE field:
-
-```ts
-const onPost = t.procedure.subscription(async function* ({ lastEventId }) {
-  for await (const post of posts.since(lastEventId))
-    yield tracked(post.id, post);
-});
-
-client.onPost.subscribe(undefined, { lastEventId: '42' }); // resume from a known id
-```
-
-`httpLink` reconnects a dropped subscription with backoff (`reconnect: { attempts, delayMs }`). `wsLink` resends `lastEventId` after reconnecting. A subscription whose resolver has side effects that must not rerun can opt out with `subscribe(input, { reconnect: false })`; a dropped connection then ends it with `NETWORK_ERROR`.
-
-While a subscription is quiet, the handler sends a `: ping` comment every 15 seconds so proxies don't close it as idle. Set `createFetchHandler({ sse: { pingMs } })`, or `false` to turn it off.
-
-The stream is standard SSE, so a browser `EventSource` (or `curl`) can read a subscription without the client. Input goes in the query string as `httpLink` sends it (`/trpc/onPost?input={"channel":"news"}`, URL-encoded). Each `message` event's `data` is a serialized value. An `EventSource` reconnects with `Last-Event-ID` by itself, so close it on the `done` event, or it reconnects when the stream ends. Failures arrive as `error` events with `data`:
-
-```ts
-const source = new EventSource('/trpc/onPost');
-source.onmessage = (event) => render(JSON.parse(event.data));
-source.addEventListener('done', () => source.close());
-```
-
-## Publisher
-
-`Publisher` is typed publish/subscribe as an Effect service. Declare a key with its channels, then provide a layer:
-
-```ts
-import { Publisher } from '@trpc12/trpc/server';
-
-class Posts extends Publisher.Service<
-  Posts,
-  { created: Post; deleted: { id: string } }
->()('Posts') {}
-
-const router = {
-  create: t.procedure.input(PostInput).mutation(({ input }) =>
-    Effect.gen(function* () {
-      const post = yield* savePost(input);
-      yield* Posts.publish('created', post);
-      return post;
-    }),
-  ),
-  onCreated: t.procedure.subscription(({ lastEventId }) =>
-    Posts.subscribe('created', { lastEventId }),
-  ),
-};
-
-createFetchHandler({ router, layer: Posts.memory({ buffer: 100 }) });
-```
-
-`subscribe()` yields `tracked()` events with the publisher's ids, so reconnects resume. `Posts.memory({ buffer })` serves one process on a `PubSub` and keeps `buffer` events per channel for resumes. For several processes, provide another layer with the same shape (`publish`, `subscribe`), built on the clients Effect already ships.
-
-### A channel per audience
-
-To reach some subscribers only (a room, a user's inbox), give each audience its own channel. A template literal key types every one of them; take the subscriber's channel from `ctx` on the server, never from client input:
-
-```ts
-class Notes extends Publisher.Service<
-  Notes,
-  { [inbox: `inbox:${string}`]: { text: string } }
->()('Notes') {}
-
-const router = {
-  notify: t.procedure
-    .input(Schema.Struct({ to: Schema.String, text: Schema.String }))
-    .mutation(({ input }) =>
-      Notes.publish(`inbox:${input.to}`, { text: input.text }),
-    ),
-  inbox: t.procedure.subscription(({ ctx, lastEventId }) =>
-    Notes.subscribe(`inbox:${ctx.user.id}`, { lastEventId }),
-  ),
-};
-```
-
-The backend filters by channel, so a process only receives its subscribers' channels (Redis subscribes per channel). To reach several audiences, publish to each channel.
-
-## Publisher backends
+---
+title: Publisher backends
+description: Recipes for a Publisher on Redis streams, Postgres LISTEN/NOTIFY and Durable Objects.
+section: Subscriptions
+order: 3
+---
 
 No backend packages ship; these recipes are yours to copy and adapt. Both serialize events with danSON (so `Date`s survive) and share one helper that replays kept events after `lastEventId`, then follows live ones:
 
@@ -129,7 +41,7 @@ const resume = <TId>(opts: {
   );
 ```
 
-### Redis
+## Redis
 
 Effect's `Redis` service (`effect/persistence`) with `NodeRedis.layer` from `@effect/platform-node`. Each channel is a Redis stream, which keeps history and assigns ids, plus a pub/sub channel for live delivery. Subscribing before reading history means no event falls in between.
 
@@ -214,7 +126,7 @@ const layer = Layer.effect(Posts)(
 ).pipe(Layer.provide(NodeRedis.layer({ url: process.env.REDIS_URL })));
 ```
 
-### Postgres
+## Postgres
 
 `@effect/sql-pg`'s `PgClient` has `listen` and `notify`. Events go into a table for history; `NOTIFY` carries new ones. `NOTIFY` payloads are capped at 8000 bytes, so for bigger events send only the id and read the row.
 
@@ -284,7 +196,7 @@ const layer = Layer.effect(Posts)(pgPublisher<PostEvents>()).pipe(
 );
 ```
 
-### Cloudflare Durable Objects
+## Cloudflare Durable Objects
 
 A Durable Object is one process that every request for its name reaches, so `Posts.memory()` is enough inside it. Route the endpoint to the object and serve the router there:
 
@@ -307,4 +219,4 @@ export default {
 } satisfies ExportedHandler<Env>;
 ```
 
-Open SSE streams keep the object in memory; kept events are lost when it's evicted. To let it sleep between events, serve WebSockets with the [hibernation adapter](./platforms.md#cloudflare-durable-objects) and provide `hibernatingPublisher(Posts, { state: this.ctx })` from `@trpc12/trpc/cloudflare` instead of `Posts.memory()` ([subscriptions that hibernate](./platforms.md#subscriptions-that-hibernate)).
+Open SSE streams keep the object in memory; kept events are lost when it's evicted. To let it sleep between events, serve WebSockets with the [hibernation adapter](../adapters/durable-objects.md) and provide `hibernatingPublisher(Posts, { state: this.ctx })` from `@trpc12/trpc/cloudflare` instead of `Posts.memory()` ([subscriptions that hibernate](../adapters/durable-objects.md#subscriptions-that-hibernate)).
