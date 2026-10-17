@@ -66,14 +66,12 @@ interface Connection {
 
 interface Call {
   readonly op: Operation;
-  /** Subscriptions are sent again after a reconnect. */
-  readonly resumable: boolean;
   readonly request: () => ClientMessage;
   /** `true` once the call is complete. */
   readonly onMessage: (
     message: CallMessage,
   ) => Effect.Effect<boolean, AnyTrpcError>;
-  /** The connection dropped and the call will be sent again. */
+  /** Subscriptions only: they are sent again after a reconnect, and this runs first. */
   readonly onReconnect?: Effect.Effect<void>;
 }
 
@@ -332,14 +330,14 @@ function makeSocketLink(
         if (outcome === 'complete') return;
         if (outcome === 'heard') attempt = 0;
         if (
-          !call.resumable ||
+          !call.onReconnect ||
           !reconnect ||
           call.op.context.reconnect === false ||
           ++attempt > reconnect.attempts
         ) {
           return yield* Effect.fail(lostError());
         }
-        if (call.onReconnect) yield* call.onReconnect;
+        yield* call.onReconnect;
         // `close()` can fail the call while it waits.
         const signal = yield* Queue.take(inbox).pipe(
           Effect.timeoutOption(reconnect.delayMs(attempt)),
@@ -373,7 +371,6 @@ function makeSocketLink(
         const decoder = makeDeferredDecoder(serializer);
         const call: Call = {
           op,
-          resumable: false,
           request: () => request(op),
           onMessage: (message) => {
             switch (message.type) {
@@ -422,7 +419,6 @@ function makeSocketLink(
         let decoder = makeDeferredDecoder(serializer);
         const call: Call = {
           op,
-          resumable: true,
           request: () => request(op, lastEventId),
           onMessage: (message) => {
             switch (message.type) {
@@ -766,13 +762,12 @@ export function experimental_socketLink(
     const outbox = yield* Queue.unbounded<string | Socket.CloseEvent>();
     const listeners: Array<(message: unknown) => void> = [];
     const closers: Array<() => void> = [];
-    yield* Effect.gen(function* () {
-      for (;;) {
-        const chunk = yield* Queue.take(outbox);
-        yield* writer.write(chunk);
-        if (Socket.isCloseEvent(chunk)) return;
-      }
-    }).pipe(Effect.ignore, Effect.forkIn(scope));
+    yield* Queue.take(outbox).pipe(
+      Effect.flatMap(writer.write),
+      Effect.forever,
+      Effect.ignore,
+      Effect.forkIn(scope),
+    );
     yield* decodeLines(Socket.toStream(socket)).pipe(
       Stream.runForEach((line) =>
         Effect.sync(() => {
