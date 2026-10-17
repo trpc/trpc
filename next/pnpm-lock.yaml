@@ -180,8 +180,8 @@ importers:
         specifier: ^7.0.2
         version: 7.0.2
       vendor-src:
-        specifier: 0.15.4
-        version: 0.15.4(redis@6.3.0)
+        specifier: 0.16.0
+        version: 0.16.0(redis@6.3.0)
       vite-plus:
         specifier: 1.1.0
         version: 1.1.0(@types/node@24.19.1)(@vitest/coverage-v8@5.0.3)(@vitest/ui@5.0.3)(esbuild@0.28.2)(happy-dom@20.14.6)(svelte@5.57.2)(typescript@7.0.2)
@@ -4428,8 +4428,8 @@ packages:
     resolution: {integrity: sha512-BNGbWLfd0eUPabhkXUVm0j8uuvREyTh5ovRa/dyow/BqAbZJyC+5fU+IzQOzmAKzYqYRAISoRhdQr3eIZ/PXqg==}
     engines: {node: '>= 0.8'}
 
-  vendor-src@0.15.4:
-    resolution: {integrity: sha512-vQsjnMi6c872gS4SNYIlFMdh5oojFfGCNLxuumHsiuPNO+kBxIeKobvQ9vg5BsNez7QTd7UXKpAkH/2kmGBevA==}
+  vendor-src@0.16.0:
+    resolution: {integrity: sha512-vvkg2S1DZsn1Ma8/7IIijKkaZq+GfvGaTS8oXc/UAR5uOUNTnW5QMsogNqoOwfkb0UwGBPRCMN8GyQHhr5veIg==}
     engines: {node: '>=24'}
     hasBin: true
 
@@ -7333,7 +7333,7 @@ snapshots:
 
   vary@1.1.2: {}
 
-  vendor-src@0.15.4(redis@6.3.0):
+  vendor-src@0.16.0(redis@6.3.0):
     dependencies:
       '@effect/platform-node': 4.0.1(effect@4.0.1)(redis@6.3.0)
       effect: 4.0.1

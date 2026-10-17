@@ -28,7 +28,7 @@ Before the first question, say in one line how many items there are and where th
 
 Send each item as its own short message, then stop and wait for the reply. Write it as markdown, not inside a code block, so the title renders as a heading on a phone:
 
-````md
+```md
 ### 🗳️ 3/12: Should the platform core be our own web core or effect/http?
 
 `Q12.1` · [platforms-through-effect-layers.md] · 2 answered · 0 skipped
@@ -44,7 +44,7 @@ Send each item as its own short message, then stop and wait for the reply. Write
 - **C)** Something else, in your words
 
 Reply with a letter or your own words, `skip`, or `done`.
-````
+```
 
 - The title is the question itself, in plain words, readable without the rest of the message. Never title an item with an internal label ("Spike C", "option D"): name the thing ("a plain React `use()` hook package").
 - Spell out every name in the options the first time it appears in the item, even if an earlier item explained it.
@@ -61,13 +61,13 @@ Reply with a letter or your own words, `skip`, or `done`.
 
 ### Replies
 
-| Reply                 | Do                                                                                                                                                                                                       |
-| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| A letter or free text | Record the answer verbatim as the human's, then go to the next item. "Do recommended" is the recommended option, chosen by the human.                                                                                                                                     |
-| A hesitant answer     | "I don't get this", "might change", "not sure": record it as the human's, but tentative (step 3), and say so in one line.                                                                                |
+| Reply                 | Do                                                                                                                                                                                                      |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A letter or free text | Record the answer verbatim as the human's, then go to the next item. "Do recommended" is the recommended option, chosen by the human.                                                                   |
+| A hesitant answer     | "I don't get this", "might change", "not sure": record it as the human's, but tentative (step 3), and say so in one line.                                                                               |
 | `skip`                | Defer to the agent: pick the best option (Effect-native first, v11 second), say the pick in one line ("Skipped: going with A"), then go to the next item. It is recorded as `(agent)`, not the human's. |
-| `done`                | Stop asking and go to step 3. Unasked items stay open.                                                                                                                                                   |
-| `back`                | Re-ask the previous item; the new answer replaces the old one.                                                                                                                                           |
+| `done`                | Stop asking and go to step 3. Unasked items stay open.                                                                                                                                                  |
+| `back`                | Re-ask the previous item; the new answer replaces the old one.                                                                                                                                          |
 
 When the queue is empty, go to step 3 as if the human had said `done`.
 

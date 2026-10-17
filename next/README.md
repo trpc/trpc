@@ -40,15 +40,20 @@ pnpm test
 pnpm example
 ```
 
-| Command          | What it does                                                                                                                  |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `pnpm install`   | Installs deps; `prepare` installs the git hook dispatcher                                                                     |
-| `pnpm typecheck` | `tsc` (TypeScript 7) in every workspace package                                                                               |
-| `pnpm check`     | `vp check`: format check, lint and type-aware lint/type check                                                                 |
-| `pnpm fix`       | `vp check --fix`: format and autofix                                                                                          |
-| `pnpm test`      | `vp test run`: Vitest, including `*.test-d.ts` type tests                                                                     |
-| `pnpm example`   | Runs every example's `smoke` script (`examples/*`; `realtime` needs Redis at `REDIS_URL`)                                     |
-| `pnpm build`     | `vp pack` per package (`tooling/pack/`): unbundled ESM and declarations in `dist/`, published through `publishConfig.exports` |
+| Command             | What it does                                                                                                                  |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm install`      | Installs deps; `prepare` installs the git hook dispatcher                                                                     |
+| `pnpm typecheck`    | `tsc` (TypeScript 7) in every workspace package                                                                               |
+| `pnpm check`        | `vp check`: format check, lint and type-aware lint/type check                                                                 |
+| `pnpm fix`          | `vp check --fix`: format and autofix                                                                                          |
+| `pnpm test`         | `vp test run`: Vitest, including `*.test-d.ts` type tests                                                                     |
+| `pnpm coverage`     | `pnpm test` with v8 coverage over `packages/*/src`; fails below 98% statements, branches, functions or lines                  |
+| `pnpm test:bun`     | `@trpc12/trpc`'s Bun tests (`*.bun.test.ts`); needs `bun` on `PATH`                                                           |
+| `pnpm example`      | Runs every example's `smoke` script (`examples/*`; `realtime` needs Redis at `REDIS_URL`)                                     |
+| `pnpm build`        | `vp pack` per package (`tooling/pack/`): unbundled ESM and declarations in `dist/`, published through `publishConfig.exports` |
+| `pnpm bench budget` | Gzip size of the client bundles; fails above a ceiling in `budgets` (`tooling/bench/bench.ts`)                                |
+
+Run all of them before pushing: `pnpm fix`, `pnpm check`, `pnpm typecheck`, `pnpm coverage` (which runs `pnpm test`), `pnpm test:bun`, `pnpm example`, `pnpm build` and `pnpm bench budget`. When a change shrinks a client bundle, lower its `ceiling` to the new size; never raise one without saying so in the PR.
 
 `@trpc12/trpc` entry points: `/server` (builder, routers, `t.implement`, the fetch handler with `.websocket()` and `.messagePort()`, callers), `/client` (typed client and links, including `wsLink`, `experimental_messagePortLink` and `dedupeLink`), `/contract` (`contract.create`, `toContract`), `/openapi` (REST handler, `generateOpenApi`, reference UI, `openApiLink`), `/effect` (Effect client), `/serializer` (danSON), `/http` (`serve`/`toHttpEffect`: the handler and WebSocket upgrades on Effect's `HttpServer`), `/middleware` (`onStart`, `onSuccess`, `onError`, `onFinish`), `/actions` (`experimental_createAction`, `experimental_createCallable`: procedures as plain functions for React Server Actions, taking `FormData` too), `/testing` (`createTestServer({ http })`), `/extend` (building blocks for integrations: `createUntypedClient`, `runLinks`, `callProcedure`, the wire format) and `/internal` (types declaration emit refers to; no semver). `@trpc12/trpc` imports no `node:*`: Node comes from `NodeHttpServer.layer` in `@effect/platform-node` ([decision](./.agent-docs/decisions/platforms-through-effect-layers.md)). Run one test file with `pnpm vp test run packages/trpc/src/<area>/<name>`.
 
@@ -58,4 +63,4 @@ React without TanStack, both experimental as whole packages ([docs](./docs/react
 
 **Pre-commit:** `.vite-hooks/pre-commit` runs `vp staged` (see `staged` in `vite.config.ts`): `vp check --fix` on staged files under `next/`, plus `vp test related` for staged `.ts` files. `pnpm install` enables it via `vp config` unless `core.hooksPath` is already set to something else. Skip once with `VP_GIT_HOOKS=0 git commit …`.
 
-**CI:** `../.github/workflows/next.yml` runs `typecheck`, `check`, `test` and `example` for changes under `next/`. Root v11 workflows are untouched.
+**CI:** `../.github/workflows/next.yml` runs for changes under `next/`: `typecheck`, `check`, `coverage`, `example` (with Redis) and `bench budget`; `typecheck` and `test` against the latest `effect@4.x`; and `test:bun`. `fix` and `build` aren't in CI, so run them locally. After pushing, find the run with `gh run list --workflow next.yml --branch <branch>` and watch it with `gh run watch <id> --exit-status`. Root v11 workflows are untouched.
