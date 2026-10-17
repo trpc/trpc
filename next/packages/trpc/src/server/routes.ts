@@ -27,45 +27,37 @@ export interface HttpParts {
 export function httpParts(opts: {
   readonly app: App;
   readonly middleware: ReadonlyArray<(app: App) => App>;
-  /** Routes serve this path and those under it; without one, every path. */
-  readonly endpoint: string | undefined;
+  /** Routes serve this path and those under it; `/` is every path. */
+  readonly endpoint: string;
   /** Serves WebSocket upgrades to the endpoint. */
-  readonly webSocket?:
-    | ((
-        ws: WebSocketLike,
-        request: HttpServerRequest.HttpServerRequest,
-      ) => void)
-    | undefined;
+  readonly webSocket: (
+    ws: WebSocketLike,
+    request: HttpServerRequest.HttpServerRequest,
+  ) => void;
 }): HttpParts {
   const wrap = (app: App) =>
     opts.middleware.reduceRight<App>((inner, m) => m(inner), app);
   const { webSocket, endpoint } = opts;
   const route = wrap(
-    webSocket
-      ? Effect.withFiber((fiber) => {
-          const request = Context.get(
-            fiber.context as Context.Context<HttpServerRequest.HttpServerRequest>,
-            HttpServerRequest.HttpServerRequest,
-          );
-          if (!isUpgrade(request)) return opts.app;
-          const { pathname } = new URL(request.url, 'http://localhost');
-          if (
-            endpoint !== undefined &&
-            pathname !== endpoint &&
-            pathname !== `${endpoint}/`
-          ) {
-            return Effect.succeed(HttpServerResponse.empty({ status: 404 }));
-          }
-          return Effect.as(
-            upgradeTo(request, (ws) => webSocket(ws, request)),
-            HttpServerResponse.empty(),
-          );
-        })
-      : opts.app,
+    Effect.withFiber((fiber) => {
+      const request = Context.get(
+        fiber.context as Context.Context<HttpServerRequest.HttpServerRequest>,
+        HttpServerRequest.HttpServerRequest,
+      );
+      if (!isUpgrade(request)) return opts.app;
+      const { pathname } = new URL(request.url, 'http://localhost');
+      if (pathname !== endpoint && pathname !== `${endpoint}/`) {
+        return Effect.succeed(HttpServerResponse.empty({ status: 404 }));
+      }
+      return Effect.as(
+        upgradeTo(request, (ws) => webSocket(ws, request)),
+        HttpServerResponse.empty(),
+      );
+    }),
   );
   // `/trpc/*` also matches `/trpc`.
   const routes =
-    endpoint === undefined || endpoint === '/'
+    endpoint === '/'
       ? HttpRouter.add('*', '*', route)
       : HttpRouter.add('*', `${endpoint as `/${string}`}/*`, route);
   // Fetch runtimes upgrade WebSockets themselves, through `handler.websocket`.
