@@ -86,21 +86,5 @@ export const router = {
 
 export type AppRouter = typeof router;
 
-/** Retries `assertion` until it passes or `timeout` ms pass. */
-export async function waitFor<T>(
-  assertion: () => T,
-  { timeout = 2000 } = {},
-): Promise<T> {
-  const start = Date.now();
-  for (;;) {
-    try {
-      return assertion();
-    } catch (cause) {
-      if (Date.now() - start > timeout) throw cause;
-      await new Promise((resolve) => setTimeout(resolve, 5));
-    }
-  }
-}
-
 export const tick = (ms = 0): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, ms));

@@ -30,9 +30,13 @@
     "@trpc12/trpc": "workspace:*",
     "@types/node": "^24.0.0",
     "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
     "effect": "4.0.2",
+    "happy-dom": "20.14.6",
     "react": "19.3.0",
-    "typescript": "^7.0.2"
+    "react-dom": "19.3.0",
+    "typescript": "^7.0.2",
+    "vite-plus": "1.1.0"
   },
   "peerDependencies": {
     "@trpc12/trpc": "workspace:*",

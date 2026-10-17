@@ -18,14 +18,14 @@ import { Component, Suspense, use, type ReactNode } from 'react';
 import { createRoot, hydrateRoot } from 'react-dom/client';
 import { prerender } from 'react-dom/static';
 import { afterEach, beforeEach, expect, test, vi } from 'vite-plus/test';
+import { waitFor } from '../../trpc/src/fixtures/dom.ts';
 import {
   db,
   router,
   tick,
-  waitFor,
   type AppRouter,
   type Post,
-} from './fixtures.ts';
+} from '../../trpc/src/fixtures/posts.ts';
 
 const serializer = createSerializer();
 

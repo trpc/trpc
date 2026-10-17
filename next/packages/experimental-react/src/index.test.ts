@@ -19,7 +19,12 @@ import {
 import { createSerializer } from '@trpc12/trpc/serializer';
 import { Effect, Stream } from 'effect';
 import { beforeEach, expect, expectTypeOf, test } from 'vite-plus/test';
-import { db, router, tick, type AppRouter } from './fixtures.ts';
+import {
+  db,
+  router,
+  tick,
+  type AppRouter,
+} from '../../trpc/src/fixtures/posts.ts';
 
 beforeEach(() => db.reset());
 

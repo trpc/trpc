@@ -1,3 +1,6 @@
 {
-  "extends": "@tooling/tsconfig/src.json"
+  "extends": "@tooling/tsconfig/src.json",
+  "compilerOptions": {
+    "jsx": "react-jsx"
+  }
 }

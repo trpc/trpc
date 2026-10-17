@@ -20,7 +20,7 @@ import {
 import { Suspense } from 'react';
 import { prerender } from 'react-dom/static';
 import { beforeEach, expect, expectTypeOf, test } from 'vite-plus/test';
-import { db, router, type AppRouter } from './fixtures.ts';
+import { db, router, type AppRouter } from '../../trpc/src/fixtures/posts.ts';
 
 const serializer = createSerializer();
 

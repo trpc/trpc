@@ -19,7 +19,6 @@ next/
   examples/             workspace-linked examples
   packages/*/src/**/*.test.ts  tests beside the code they show; shared fixtures in `src/**/fixtures/`
   test/integration/     integration tests and recipes not tied to one package: real clients against real HTTP servers
-  test/react/           tests of the two experimental React packages
   spikes/               throwaway experiments; results in .agent-docs/notes/
   tooling/portability/  TS2742/TS2883 check: a consumer package that emits declarations
   tooling/tsconfig/     `@tooling/tsconfig`: the shared, strictest tsconfigs every package, suite and tool extends (examples stay standalone)
