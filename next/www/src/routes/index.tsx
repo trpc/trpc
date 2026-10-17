@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import call from 'sample:home/src/client.ts#call';
+import hero from 'sample:home/src/client.ts#hero';
 import procedure from 'sample:home/src/server.ts#procedure';
 import serve from 'sample:home/src/server.ts#serve';
 
@@ -245,7 +246,7 @@ function HomePage() {
             </p>
           </div>
           <div className="grid min-w-0 gap-3">
-            <DocBody className="[&_.code-block]:my-0!" html={call.html} />
+            <DocBody className="[&_.code-block]:my-0!" html={hero.html} />
             <p className="text-sm text-muted-foreground">
               The client of the router{' '}
               <a className={docLink} href="#define">

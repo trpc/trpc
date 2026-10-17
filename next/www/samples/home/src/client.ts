@@ -1,10 +1,9 @@
 // #region call
-import {
-  createTrpcClient,
-  httpLink,
-  routerType,
-  safe,
-} from '@trpc12/trpc/client';
+// #region hero
+import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+// #endregion hero
+import { safe } from '@trpc12/trpc/client';
+// #region hero
 
 import type { AppRouter } from './server.ts';
 
@@ -15,6 +14,7 @@ const client = createTrpcClient({
 
 const post = await client.post.byId.query({ id: '1' });
 //    ^?
+// #endregion hero
 console.log(post.title);
 
 const [created, err] = await safe(client.post.create.mutate({ title: '' }));
