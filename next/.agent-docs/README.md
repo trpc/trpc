@@ -64,7 +64,7 @@ These are treated as given:
 - `@trpc/react-query` is dead.
 - Markdown docs only.
 - The `@trpc12` npm scope, with no releases yet.
-- `v12` branch on KATT/trpc-playground, with semantic commits and no PRs.
+- `v12` branch on trpc/trpc, with semantic commits and no PRs.
 
 ## Proposals
 
