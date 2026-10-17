@@ -5,4 +5,6 @@
 - Lost: reading a streamed query with `EventSource`.
 - (agent) Skipped in the decision round, 2026-10-16; chose JSONL because it is built, one decoder reads batches and streams, and SSE gains nothing for non-subscriptions. The human's words: "Skip... I think nested promises etc might be a problem for sse but Spike it. Maybe danson or my devalue-async package did something here". So a spike of nested deferred values over SSE, checking danSON and `devalue-async`.
 - (agent) Spiked, 2026-10-16 ([`../notes/sse-nested-deferred.md`](../notes/sse-nested-deferred.md)): nested deferred values are no problem for SSE. danSON, plain JSON and `devalue-async` all flatten them into indexed frames in one pass, one frame per event. SSE costs about 1.24x the bytes of JSONL, and `Last-Event-ID` resume needs the server to keep the call's frames. Still JSONL.
+- Human, 2026-10-17 (decision round, whether the spike changes the answer): "Later". Still JSONL.
+- Open (human): JSONL or SSE for streamed queries and mutations, now that the spike is in.
 - Lives in: `packages/trpc/src/server/fetch.ts` (`CONTENT_TYPE.jsonl`), `src/client/links/http.ts`; tests in `test/integration/batching-and-streaming.test.ts`.
