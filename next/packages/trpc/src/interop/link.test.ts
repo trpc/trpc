@@ -13,7 +13,7 @@ import { fromV11Link } from '@trpc12/trpc/interop';
 import { error, initTrpc } from '@trpc12/trpc/server';
 import { expect, test } from 'vite-plus/test';
 import { z } from 'zod';
-import { createTestServer } from './fixtures/server.ts';
+import { createTestServer } from '../fixtures/server.ts';
 
 const t = initTrpc<{ ctx: { user: string | null } }>();
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));

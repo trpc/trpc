@@ -12,7 +12,7 @@
 ## What @trpc12/trpc gives us
 
 - `client.x.mutate(input, { signal })` over `httpLink`: aborting the signal mid-stream ends the response, the server's generator `finally` runs (checked: 3 values yielded, then `finally`), and the client's iterator rejects with `CLIENT_CLOSED_REQUEST`.
-- Before this spike the rejection was inconsistent (sometimes a quiet end, sometimes a `DansonError('Stream failed')` wrapping the abort). `serializer/stream.ts` now passes the source's typed failure through as is. Locked by `test/integration/batching-and-streaming.test.ts` ("aborting a streamed output ...").
+- Before this spike the rejection was inconsistent (sometimes a quiet end, sometimes a `DansonError('Stream failed')` wrapping the abort). `serializer/stream.ts` now passes the source's typed failure through as is. Locked by `packages/trpc/src/client/links/http.test.ts` ("aborting a streamed output ...").
 
 ## Option 1: abort when nobody reads the chunks
 

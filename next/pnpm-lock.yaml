@@ -770,9 +770,21 @@ importers:
       '@effect/platform-bun':
         specifier: 4.0.2
         version: 4.0.2(effect@4.0.2)
+      '@effect/platform-node':
+        specifier: 4.0.2
+        version: 4.0.2(effect@4.0.2)(redis@6.3.0)
+      '@effect/vitest':
+        specifier: 4.0.2
+        version: 4.0.2(effect@4.0.2)(vitest@5.0.3)
       '@tooling/tsconfig':
         specifier: workspace:*
         version: link:../../tooling/tsconfig
+      '@trpc/client':
+        specifier: 11.19.0
+        version: 11.19.0(@trpc/server@11.19.0(typescript@7.0.2))(typescript@7.0.2)
+      '@trpc/server':
+        specifier: 11.19.0
+        version: 11.19.0(typescript@7.0.2)
       '@types/bun':
         specifier: 1.4.3
         version: 1.4.3
@@ -785,6 +797,9 @@ importers:
       '@types/react-dom':
         specifier: 19.3.0
         version: 19.3.0(@types/react@19.3.0)
+      devalue:
+        specifier: 5.9.4
+        version: 5.9.4
       happy-dom:
         specifier: 20.14.6
         version: 20.14.6
@@ -794,9 +809,15 @@ importers:
       react-dom:
         specifier: 19.3.0
         version: 19.3.0(react@19.3.0)
+      superjson:
+        specifier: 2.2.6
+        version: 2.2.6
       typescript:
         specifier: ^7.0.2
         version: 7.0.2
+      undici:
+        specifier: 8.11.2
+        version: 8.11.2
       vite-plus:
         specifier: 1.1.0
         version: 1.1.0(@types/node@24.19.1)(@vitest/coverage-v8@5.0.3)(@vitest/ui@5.0.3)(esbuild@0.28.2)(happy-dom@20.14.6)(svelte@5.57.2)(typescript@7.0.2)
@@ -920,18 +941,9 @@ importers:
       '@effect/sql-pg':
         specifier: 4.0.2
         version: 4.0.2(effect@4.0.2)
-      '@effect/vitest':
-        specifier: 4.0.2
-        version: 4.0.2(effect@4.0.2)(vitest@5.0.3)
       '@tooling/tsconfig':
         specifier: workspace:*
         version: link:../../tooling/tsconfig
-      '@trpc/client':
-        specifier: 11.19.0
-        version: 11.19.0(@trpc/server@11.19.0(typescript@7.0.2))(typescript@7.0.2)
-      '@trpc/server':
-        specifier: 11.19.0
-        version: 11.19.0(typescript@7.0.2)
       '@types/node':
         specifier: ^24.0.0
         version: 24.19.1
@@ -941,21 +953,12 @@ importers:
       better-auth:
         specifier: 1.7.7
         version: 1.7.7(next@16.4.1(@types/node@24.19.1)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(solid-js@1.9.17)(svelte@5.57.2)(vitest@5.0.3)(vue@3.5.43(typescript@7.0.2))
-      devalue:
-        specifier: 5.9.4
-        version: 5.9.4
       effect:
         specifier: 4.0.2
         version: 4.0.2
-      superjson:
-        specifier: 2.2.6
-        version: 2.2.6
       typescript:
         specifier: ^7.0.2
         version: 7.0.2
-      undici:
-        specifier: 8.11.2
-        version: 8.11.2
       vite-plus:
         specifier: 1.1.0
         version: 1.1.0(@types/node@24.19.1)(@vitest/coverage-v8@5.0.3)(@vitest/ui@5.0.3)(esbuild@0.28.2)(happy-dom@20.14.6)(svelte@5.57.2)(typescript@7.0.2)

@@ -28,7 +28,7 @@ import {
 } from '@trpc12/trpc/server';
 import { expect, expectTypeOf, test, vi } from 'vite-plus/test';
 import { z } from 'zod';
-import { appContract } from './fixtures/contract.ts';
+import { appContract } from '../fixtures/contract.ts';
 
 interface Ctx {
   user: string | null;

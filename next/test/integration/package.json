@@ -11,18 +11,12 @@
   "devDependencies": {
     "@effect/platform-node": "4.0.2",
     "@effect/sql-pg": "4.0.2",
-    "@effect/vitest": "4.0.2",
     "@tooling/tsconfig": "workspace:*",
-    "@trpc/client": "11.19.0",
-    "@trpc/server": "11.19.0",
     "@types/node": "^24.0.0",
     "ai": "7.0.138",
     "better-auth": "1.7.7",
-    "devalue": "5.9.4",
     "effect": "4.0.2",
-    "superjson": "2.2.6",
     "typescript": "^7.0.2",
-    "undici": "8.11.2",
     "vite-plus": "1.1.0",
     "zod": "4.6.5"
   }

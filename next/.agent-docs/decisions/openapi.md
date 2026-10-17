@@ -19,4 +19,4 @@
 - (agent) Response validation for `openApiLink` is `validationLink({ contract, output: 'json' })` in front of it, which decodes plain JSON with Effect Schema's JSON codec ([`client-validation-link.md`](./client-validation-link.md)).
 - (agent) Round 3 ([`openapi-type-generator-v1.md`](./openapi-type-generator-v1.md)): `plugins` became `middleware` and `openApiReference` is Effect HTTP middleware; inferred errors and schema-less procedures are documented by `@trpc12/trpc/openapi/typescript`.
 - (agent) `openApiLink`'s client types are the JSON form (`createdAt: string`); `validationLink({ output: 'json' })` restores the schemas' types ([`links-declare-result-form.md`](./links-declare-result-form.md)).
-- Lives in: `packages/trpc/src/openapi/`, `test/integration/openapi.test.ts`, `test/integration/openapi-typescript.test.ts`.
+- Lives in: `packages/trpc/src/openapi/`, `packages/trpc/src/openapi/openapi.test.ts`, `packages/trpc/src/openapi/typescript.test.ts`.

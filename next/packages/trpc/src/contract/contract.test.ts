@@ -19,9 +19,9 @@ import {
   tracked,
   type TrackedEnvelope,
 } from '@trpc12/trpc/server';
-import { createTestServer } from './fixtures/server.ts';
+import { createTestServer } from '../fixtures/server.ts';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
-import { appContract, type AppContract } from './fixtures/contract.ts';
+import { appContract, type AppContract } from '../fixtures/contract.ts';
 
 interface Ctx {
   user: string | null;

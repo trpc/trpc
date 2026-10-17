@@ -16,7 +16,7 @@ import {
   TrpcError,
 } from '@trpc12/trpc/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
-import { createTestServer } from './fixtures/server.ts';
+import { createTestServer } from '../fixtures/server.ts';
 
 const t = initTrpc();
 class OutOfStock extends TrpcError.Tagged('OUT_OF_STOCK', {

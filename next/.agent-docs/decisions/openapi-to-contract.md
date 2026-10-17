@@ -7,4 +7,4 @@
 - (agent) Error responses with @trpc12/trpc's error shape (`code` const, `data`) become `.errors({ CODE: { status, data } })`; `BAD_REQUEST` is skipped, as every input gets it. Other APIs' errors stay `UnexpectedError`.
 - (agent) `pattern`s default to `'ignore'`: Effect rejects them by default, and applying an untrusted regex is a ReDoS risk.
 - Lost: a CLI (it's a function, like `generateOpenApiFromTypes`); `tracked()` subscriptions (OpenAPI can't say); multipart file types (bodies are typed from their JSON Schema); non-JSON responses.
-- Lives in: `packages/trpc/src/openapi/to-contract.ts`, `src/openapi/index.ts`, `test/integration/openapi-to-contract.test.ts`, `test/integration/fixtures/generated/` (file snapshots, typechecked), `docs/openapi.md` ("A contract from an OpenAPI document").
+- Lives in: `packages/trpc/src/openapi/to-contract.ts`, `src/openapi/index.ts`, `packages/trpc/src/openapi/to-contract.test.ts`, `packages/trpc/src/openapi/fixtures/generated/` (file snapshots, typechecked), `docs/openapi.md` ("A contract from an OpenAPI document").

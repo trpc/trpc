@@ -15,7 +15,7 @@ import { createUntypedClient } from '@trpc12/trpc/extend';
 import { initTrpc, stream, tracked } from '@trpc12/trpc/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
-import { createTestServer } from './fixtures/server.ts';
+import { createTestServer } from '../../fixtures/server.ts';
 
 const Post = Schema.Struct({
   id: Schema.String,

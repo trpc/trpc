@@ -7,4 +7,4 @@
 - (agent, tentative) Effect span events are dropped (Workers spans have none), and an incoming `traceparent` doesn't parent the call: Workers can't start a span under a remote parent.
 - Why: Effect already creates the spans and their nesting; the tracer only maps them, the same way for the Promise and Effect clients and the server.
 - Lost: oRPC's `withActiveSpan` equivalent (Workers can't activate an existing span either); per-step context switching costs something on every fiber step when `snapshot` is set, not measured.
-- Lives in: `packages/trpc/src/cloudflare/tracer.ts`, `test/integration/workers-tracer.test.ts` (a fake `tracing` on `AsyncLocalStorage`), `examples/cloudflare/src/index.ts`, `examples/cloudflare/smoke.ts`, `docs/platforms.md` (Workers Traces).
+- Lives in: `packages/trpc/src/cloudflare/tracer.ts`, `packages/trpc/src/cloudflare/tracer.test.ts` (a fake `tracing` on `AsyncLocalStorage`), `examples/cloudflare/src/index.ts`, `examples/cloudflare/smoke.ts`, `docs/platforms.md` (Workers Traces).

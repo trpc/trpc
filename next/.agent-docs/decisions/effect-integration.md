@@ -8,4 +8,4 @@
 - Lost: S2 (a declared service set on `t`); d.i alone (failures silently masked).
 - Human, 2026-10-16 (Q2.1, Q2.2, Q2.3, decision round): "A. I don't really get this right now, might be changed later".
 - Tentative (human): "I don't really get this right now, might be changed later". Challenge it when it gets in the way.
-- Lives in: `packages/trpc/src/server/execute.ts`, `builder.ts`, `src/effect/index.ts`, `test/integration/effect.test.ts`.
+- Lives in: `packages/trpc/src/server/execute.ts`, `builder.ts`, `src/effect/index.ts`, `packages/trpc/src/effect/effect.test.ts`.

@@ -27,7 +27,7 @@ let doc: OpenApiDocument;
 beforeAll(async () => {
   doc = await experimental_generateOpenApiFromTypes(appRouter, {
     file: new URL('./fixtures/typed-router.ts', import.meta.url),
-    tsconfig: new URL('./tsconfig.json', import.meta.url),
+    tsconfig: new URL('../../tsconfig.json', import.meta.url),
     info: { title: 'Posts', version: '1.0.0' },
   });
 }, 60_000);
@@ -174,7 +174,7 @@ test('openApiReference serves a document generated at build time (21)', async ()
 
 test('types document as JSON.stringify sends them (21)', async () => {
   const shapes = await experimental_generateOpenApiFromTypes(shapesRouter, {
-    file: 'test/integration/fixtures/typed-shapes.ts',
+    file: 'packages/trpc/src/openapi/fixtures/typed-shapes.ts',
     exportName: 'shapesRouter',
     info: { title: 'Shapes', version: '1.0.0' },
   });

@@ -15,7 +15,7 @@ import {
   type inferRouterOutputs,
 } from '@trpc12/trpc/server';
 import { Context, Effect } from 'effect';
-import { createTestServer } from './fixtures/server.ts';
+import { createTestServer } from '../fixtures/server.ts';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
 

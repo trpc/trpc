@@ -22,7 +22,7 @@ import {
   TrpcError,
 } from '@trpc12/trpc/server';
 import { createSerializer } from '@trpc12/trpc/serializer';
-import { createTestServer } from './fixtures/server.ts';
+import { createTestServer } from '../../fixtures/server.ts';
 import { expect, expectTypeOf, test, vi } from 'vite-plus/test';
 import { z } from 'zod';
 

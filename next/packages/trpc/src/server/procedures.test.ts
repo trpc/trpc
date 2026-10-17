@@ -20,7 +20,7 @@ import {
 } from '@trpc12/trpc/server';
 import { callProcedure } from '@trpc12/trpc/extend';
 import { onError, onFinish, onStart, onSuccess } from '@trpc12/trpc/middleware';
-import { createTestServer } from './fixtures/server.ts';
+import { createTestServer } from '../fixtures/server.ts';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
 import {

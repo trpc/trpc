@@ -11,4 +11,4 @@
 - Lost: `Effect.currentSpan` in a resolver is the request's span, not `trpc.<path>`, under the native tracer.
 - Why: one trace from browser to resolver with Effect's own APIs; the only @trpc12/trpc code is span naming and header plumbing.
 - Lost: always-on propagation like Effect's `HttpClient` default, and tracing on the Promise client without Effect.
-- Lives in: `packages/trpc/src/client/link.ts` (`runOperation`), `src/client/links/http.ts`, `src/server/core.ts`, `src/server/fetch.ts` (`parentSpan`), `src/server/socket.ts` (`traceParent`), `src/client/links/socket.ts`, `test/integration/tracing.test.ts`, `docs/procedures.md` (Tracing), `docs/client.md` (Tracing).
+- Lives in: `packages/trpc/src/client/link.ts` (`runOperation`), `src/client/links/http.ts`, `src/server/core.ts`, `src/server/fetch.ts` (`parentSpan`), `src/server/socket.ts` (`traceParent`), `src/client/links/socket.ts`, `packages/trpc/src/server/tracing.test.ts`, `docs/procedures.md` (Tracing), `docs/client.md` (Tracing).

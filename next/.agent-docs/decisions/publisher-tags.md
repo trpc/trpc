@@ -12,4 +12,4 @@
   - (agent) Removed: `PublishOptions`, `SubscribeOptions.tags`, the `'~trpc/tags'` envelope and `isFor`, and the parked subscription's `t` field in hibernated attachments. The accessors pass straight through to the service.
   - Why: Effect's `PubSub`-per-topic model, the backend filters (Redis subscribes per channel instead of every process dropping others' events), and no envelope in the service's data.
   - Lost: one publish reaching several audiences (publish to each channel); a subscriber listening to several audiences needs one subscription per channel, or a merged stream.
-- Lives in: `packages/trpc/src/server/publisher.ts` (`PublisherEvents`, `SubscribeOptions`), `src/cloudflare/hibernation.ts` (`Parked`), `test/integration/publisher.test.ts`, `test/integration/hibernation.test.ts`, `docs/subscriptions.md` (A channel per audience), `docs/platforms.md`.
+- Lives in: `packages/trpc/src/server/publisher.ts` (`PublisherEvents`, `SubscribeOptions`), `src/cloudflare/hibernation.ts` (`Parked`), `packages/trpc/src/server/publisher.test.ts`, `packages/trpc/src/cloudflare/hibernation.test.ts`, `docs/subscriptions.md` (A channel per audience), `docs/platforms.md`.

@@ -24,7 +24,7 @@ export default defineConfig({
       '.repos/**',
       '**/dist/**',
       'spikes/**/generated/**',
-      'test/**/generated/**',
+      'packages/*/src/**/fixtures/generated/**',
     ],
   },
   lint: {
@@ -32,7 +32,7 @@ export default defineConfig({
       '.repos/**',
       '**/dist/**',
       'spikes/**/generated/**',
-      'test/**/generated/**',
+      'packages/*/src/**/fixtures/generated/**',
     ],
     options: {
       typeAware: true,

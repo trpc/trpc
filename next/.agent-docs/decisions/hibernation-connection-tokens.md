@@ -7,4 +7,4 @@
 - Compared: oRPC's Durable Iterator signs a token per iterator (`chn`, `tags`, `att`) and refreshes it from the client. Here the token is only the auth handoff; channels and tags are ordinary `ctx` and `Publisher` options.
 - Why: Durable Objects can't share the Worker's session store cheaply; a signed token is the usual handoff, and Effect `Schema` plus WebCrypto keeps it typed and dependency-free.
 - Lost: token refresh on a live connection (reconnect with a new token instead) and per-method RPC grants.
-- Lives in: `packages/trpc/src/cloudflare/token.ts`, `src/cloudflare/index.ts`, `test/integration/hibernation.test.ts`, `docs/platforms.md` (Signed connection tokens).
+- Lives in: `packages/trpc/src/cloudflare/token.ts`, `src/cloudflare/index.ts`, `packages/trpc/src/cloudflare/hibernation.test.ts`, `docs/platforms.md` (Signed connection tokens).

@@ -13,7 +13,7 @@ import {
   type PublisherEvents,
   type PublisherShape,
 } from '@trpc12/trpc/server';
-import { createTestServer } from './fixtures/server.ts';
+import { createTestServer } from '../../packages/trpc/src/fixtures/server.ts';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
 

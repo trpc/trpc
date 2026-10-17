@@ -9,7 +9,7 @@ import { contract } from '@trpc12/trpc/contract';
 import { createRouterClient, error, initTrpc } from '@trpc12/trpc/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
-import { createTestServer } from './fixtures/server.ts';
+import { createTestServer } from '../fixtures/server.ts';
 
 // --- a rate-limit package ------------------------------------------------------
 

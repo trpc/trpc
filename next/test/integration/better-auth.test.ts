@@ -8,7 +8,7 @@ import {
 } from '@trpc12/trpc/client';
 import { error, initTrpc } from '@trpc12/trpc/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
-import { createTestServer } from './fixtures/server.ts';
+import { createTestServer } from '../../packages/trpc/src/fixtures/server.ts';
 
 const auth = betterAuth({
   baseURL: 'http://localhost:3000',

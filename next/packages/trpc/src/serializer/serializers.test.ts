@@ -17,7 +17,7 @@ import {
 } from '@trpc12/trpc/serializer';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
-import { createTestServer } from './fixtures/server.ts';
+import { createTestServer } from '../fixtures/server.ts';
 
 const at = new Date('2026-10-15T00:00:00.000Z');
 const danson = createSerializer();

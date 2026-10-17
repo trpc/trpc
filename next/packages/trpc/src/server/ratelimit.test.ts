@@ -10,7 +10,7 @@ import {
 import { RateLimited, rateLimit } from '@trpc12/trpc/middleware';
 import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
-import { createTestServer } from './fixtures/server.ts';
+import { createTestServer } from '../fixtures/server.ts';
 
 const t = initTrpc<{ ctx: { ip: string } }>();
 const limited = rateLimit<{ ctx: { ip: string } }>({
