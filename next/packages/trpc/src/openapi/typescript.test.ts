@@ -30,7 +30,7 @@ beforeAll(async () => {
     tsconfig: new URL('../../tsconfig.json', import.meta.url),
     info: { title: 'Posts', version: '1.0.0' },
   });
-}, 60_000);
+});
 
 test('inferred errors are documented with their status (21)', () => {
   const runtime = generateOpenApi(appRouter, {
@@ -310,7 +310,7 @@ test('types document as JSON.stringify sends them (21)', async () => {
   expect(json(op(shapes, 'get', '/api/later'), '200')).toEqual({
     type: 'number',
   });
-}, 60_000);
+});
 
 test('a file outside a project, or without the export, is an error (21)', async () => {
   await expect(
@@ -326,4 +326,4 @@ test('a file outside a project, or without the export, is an error (21)', async 
       info: { title: 'Shapes', version: '1.0.0' },
     }),
   ).rejects.toThrow('is not in a TypeScript project');
-}, 60_000);
+});

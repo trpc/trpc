@@ -60,7 +60,7 @@ const router = {
       if (id === 2 && !lastEventId) {
         await sleep(10);
         current!.server.closeAllConnections();
-        await sleep(1000);
+        await sleep(50);
       }
     }
   }),
@@ -277,7 +277,9 @@ test('the wire format is plain SSE', async () => {
 test('a real EventSource reads events, reconnects with Last-Event-ID and sees done', async () => {
   await using ctx = await setup();
   state.lastEventIds.length = 0;
-  const source = new EventSource(`${ctx.server.url}/posts`);
+  const source = new EventSource(`${ctx.server.url}/posts`, {
+    node: { reconnectionTime: 10 },
+  });
   const ids: string[] = [];
   const titles: string[] = [];
   let opened = 0;
@@ -296,7 +298,7 @@ test('a real EventSource reads events, reconnects with Last-Event-ID and sees do
   expect(titles.every((t, i) => t.includes(`Post ${i + 1}`))).toBe(true);
   expect(opened).toBe(2);
   expect(state.lastEventIds).toEqual([undefined, '2']);
-}, 10_000);
+});
 
 test('a real EventSource gets error events as MessageEvents with data', async () => {
   await using ctx = await setup();
