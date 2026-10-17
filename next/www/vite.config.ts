@@ -80,10 +80,19 @@ export default defineConfig({
         crawlLinks: true,
         enabled: true,
         failOnError: true,
-        filter: (page) =>
-          page.path !== '/docs' &&
-          page.path !== v11.basePath &&
-          !/[?#]/.test(page.path),
+        filter: (page) => {
+          const prerendered =
+            page.path !== '/docs' &&
+            page.path !== v11.basePath &&
+            !/[?#]/.test(page.path);
+          // Crawling (which checks that every link resolves) and route
+          // discovery add more than the pages listed above: anchors,
+          // markdown and redirects, which would otherwise join the sitemap.
+          if (page.fromCrawl || !prerendered) {
+            page.sitemap = { ...page.sitemap, exclude: true };
+          }
+          return prerendered;
+        },
       },
       sitemap: { enabled: true, host: site.url },
     }),
