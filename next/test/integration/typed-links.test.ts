@@ -34,6 +34,18 @@ const router = {
     create: t.procedure
       .input(z.object({ title: z.string() }))
       .mutation(({ input }) => ({ id: '9', ...input })),
+    /** Answers when the server sees the request abort. */
+    untilAborted: t.procedure
+      .input(z.object({ id: z.string() }))
+      .query(({ input, signal }) => {
+        state.calls++;
+        return new Promise<{ id: string }>((resolve) => {
+          signal.addEventListener('abort', () => {
+            state.aborted++;
+            resolve({ id: input.id });
+          });
+        });
+      }),
   },
 };
 type AppRouter = typeof router;
@@ -86,11 +98,12 @@ test('a shared query is aborted only when every caller aborts', async () => {
 
   const c = new AbortController();
   const d = new AbortController();
+  const calls = state.calls;
   const both = [
-    ctx.client.post.byId.query({ id: '4' }, { signal: c.signal }),
-    ctx.client.post.byId.query({ id: '4' }, { signal: d.signal }),
+    ctx.client.post.untilAborted.query({ id: '4' }, { signal: c.signal }),
+    ctx.client.post.untilAborted.query({ id: '4' }, { signal: d.signal }),
   ];
-  await sleep(5);
+  await vi.waitFor(() => expect(state.calls).toBe(calls + 1));
   c.abort();
   d.abort();
   await Promise.allSettled(both);
@@ -130,7 +143,9 @@ test('splitLink sees typed paths, and merges both branches', async () => {
     links: [
       splitLink({
         condition: (op) => {
-          expectTypeOf(op.path).toEqualTypeOf<'post.byId' | 'post.create'>();
+          expectTypeOf(op.path).toEqualTypeOf<
+            'post.byId' | 'post.create' | 'post.untilAborted'
+          >();
           conditions.push(op.path);
           return op.path === 'post.byId';
         },
@@ -209,7 +224,9 @@ test('switchLink picks a branch, and a typed call option forces one', async () =
           single: [tag('single'), dedupeLink(), httpLink({ url: server.url })],
         },
         pick: (op) => {
-          expectTypeOf(op.path).toEqualTypeOf<'post.byId' | 'post.create'>();
+          expectTypeOf(op.path).toEqualTypeOf<
+            'post.byId' | 'post.create' | 'post.untilAborted'
+          >();
           return op.type === 'mutation' ? 'single' : 'batched';
         },
       }),
