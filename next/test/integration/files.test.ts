@@ -40,6 +40,14 @@ const router = {
     .input(z.object({ file: z.instanceof(File) }))
     .query(({ input }) => input.file.size),
   hello: t.procedure.query(() => 'hello'),
+  describe: t.procedure
+    .input(z.object({ file: z.instanceof(File), blob: z.instanceof(Blob) }))
+    .mutation(async ({ input }) => [
+      input.file.name,
+      input.file.type,
+      input.blob.type,
+      await input.blob.text(),
+    ]),
   download: t.procedure.input(z.object({ name: z.string() })).query(
     ({ input }) =>
       new File(['report bytes'], input.name, {
@@ -204,6 +212,31 @@ test('parts that are missing or not referenced correctly are a PARSE_ERROR', asy
   expect(await res.json()).toMatchObject({
     json: { error: { code: 'PARSE_ERROR' } },
   });
+
+  const post = (json: unknown) => {
+    const body = new FormData();
+    body.append('input', JSON.stringify({ json }));
+    body.append('0', new Blob(['bytes'], { type: 'x/y' }));
+    return fetch(`${server.url}/describe`, {
+      method: 'POST',
+      headers: { 'trpc-version': '12' },
+      body,
+    });
+  };
+  // Refs without a name or type: a nameless file, an untyped blob.
+  const bare = await post({
+    file: { _: '$', type: 'File', value: { part: 0 } },
+    blob: { _: '$', type: 'Blob', value: { part: 0 } },
+  });
+  expect(await bare.json()).toEqual({ json: ['blob', '', '', 'bytes'] });
+  for (const value of [null, { part: '0' }]) {
+    const res = await post({ file: { _: '$', type: 'File', value } });
+    expect(await res.json()).toMatchObject({
+      json: {
+        error: { code: 'PARSE_ERROR', message: 'Missing multipart part' },
+      },
+    });
+  }
 });
 
 test('a multipart mutation needs the trpc-version header, which a cross-site form cannot send', async () => {

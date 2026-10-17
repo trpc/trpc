@@ -8,6 +8,7 @@ import {
 import { createSerializer } from '@trpc12/trpc/serializer';
 import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
+import { z } from 'zod';
 import type { WorkerRouter } from './fixtures/worker-server.ts';
 
 async function startWorker() {
@@ -118,6 +119,51 @@ test('file bytes cross a port as bytes, not base64', async () => {
     expect(wire).not.toContain('AP8B');
   } finally {
     await link.close();
+    port1.close();
+    port2.close();
+  }
+});
+
+test('a port peer that posts values JSON cannot hold is refused', async () => {
+  const t = initTrpc();
+  const router = {
+    echo: t.procedure.input(z.unknown()).mutation(({ input }) => input),
+  };
+  const { port1, port2 } = new MessageChannel();
+  createFetchHandler({ router, serializer: createSerializer() }).messagePort(
+    port1,
+  );
+  const replies: unknown[] = [];
+  const replied = new Promise<void>((resolve) =>
+    port2.on('message', (message: { type: string }) => {
+      replies.push(message);
+      if (message.type === 'error') resolve();
+    }),
+  );
+  try {
+    port2.postMessage({ type: 'init', version: '12', serializer: 'danson' });
+    // Structured clone keeps the Date; danSON only reads JSON.
+    port2.postMessage({
+      id: 1,
+      type: 'request',
+      method: 'mutation',
+      path: 'echo',
+      input: { json: { when: new Date(0) } },
+    });
+    await replied;
+    expect(replies.at(-1)).toMatchObject({
+      id: 1,
+      type: 'error',
+      body: {
+        json: {
+          error: {
+            code: 'PARSE_ERROR',
+            message: 'Deserializing unknown value',
+          },
+        },
+      },
+    });
+  } finally {
     port1.close();
     port2.close();
   }
