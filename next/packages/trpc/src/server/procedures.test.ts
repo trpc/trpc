@@ -205,7 +205,9 @@ test('input validation issues reach the client with unexpected errors masked (05
     data: { issues: [{ path: ['id'] }] },
   });
   if (res.error?.defined && res.error.code === 'BAD_REQUEST') {
-    expectTypeOf(res.error.data).toEqualTypeOf<InputValidationErrorData>();
+    expectTypeOf(res.error.data).toEqualTypeOf<
+      InputValidationErrorData<{ id: string }>
+    >();
   }
 });
 

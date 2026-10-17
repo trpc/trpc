@@ -238,7 +238,7 @@ export interface ContractBuilder<TDef extends ContractDef> {
       {
         inputIn: Merge<TDef['inputIn'], InOf<$S>>;
         inputOut: Merge<TDef['inputOut'], OutOf<$S>>;
-        errors: TDef['errors'] | InputValidationError;
+        errors: TDef['errors'] | InputValidationError<InOf<$S>>;
         requires: TDef['requires'] | SchemaServices<$S>;
       }
     >

@@ -41,6 +41,25 @@ const byId = t.procedure
 
 The resolver returns the output schema's input type and the client gets its output type, so transforms run on the server. An invalid input fails with a `BAD_REQUEST` error whose `data.issues` lists the problems. It is a typed (`defined`) error, so the client sees the issues in production too ([Errors](./errors.md)).
 
+Each issue's `path` is typed from the schema's input type: `[]` for the whole input, then a key or an array index per level. A form can match issues to its fields without casts:
+
+```ts twoslash
+// ---cut-start---
+import { client } from './client.ts';
+// ---cut-end---
+import { safe } from '@trpc12/trpc/client';
+
+const [, err] = await safe(client.post.create.mutate({ title: '' }));
+if (err?.defined && err.code === 'BAD_REQUEST') {
+  for (const issue of err.data.issues) {
+    issue.path;
+    //    ^?
+  }
+}
+```
+
+The path is what the input type allows. A refinement that reports its own path (Zod's `refine(…, { path })`) should name a key of the input. With several `.input()` calls, each schema adds its own `BAD_REQUEST`, whose paths name its own keys.
+
 ## Typing without validating
 
 To type and document a result without running the schema, pass `{ validate: false }`. Since no transform runs, the resolver and the client both get the schema's input type, and [OpenAPI](../openapi/routes.md) describes that side:

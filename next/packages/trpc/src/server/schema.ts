@@ -71,27 +71,78 @@ export type SchemaServices<S> = S extends Schema.Top
   ? S['DecodingServices']
   : never;
 
+type IssueKey = string | number;
+type AnyIssuePath = ReadonlyArray<IssueKey>;
+/** Values a schema checks as a whole, so issues stop at them. */
+type IssueLeaf =
+  | Date
+  | RegExp
+  | ArrayBufferLike
+  | ArrayBufferView
+  | ((...args: never) => unknown)
+  | { readonly arrayBuffer: () => unknown; readonly stream: () => unknown };
+
+/**
+ * The paths an issue about a `TInput` can have: `[]` for the whole input,
+ * then a key or index per level (`['tags', 0]`). Object keys arrive as
+ * strings. `unknown` inputs, `Map`s, `Set`s and levels past the sixth are
+ * any path.
+ * @since 0.1.0
+ * @stability stable
+ */
+export type IssuePath<TInput> = unknown extends TInput
+  ? AnyIssuePath
+  : PathOf<TInput, []>;
+type PathOf<T, D extends ReadonlyArray<0>> = T extends IssueLeaf
+  ? readonly []
+  : D['length'] extends 6
+    ? AnyIssuePath
+    : T extends ReadonlyArray<infer E>
+      ? readonly [] | readonly [number, ...PathOf<E, [...D, 0]>]
+      : T extends ReadonlyMap<any, any> | ReadonlySet<any>
+        ? AnyIssuePath
+        : T extends object
+          ?
+              | readonly []
+              | {
+                  [K in keyof T & IssueKey]-?: readonly [
+                    K extends number ? `${K}` : K,
+                    ...PathOf<T[K], [...D, 0]>,
+                  ];
+                }[keyof T & IssueKey]
+          : readonly [];
+
+/**
+ * One problem with an input. `path` is typed from the schema's input type.
+ * @since 0.1.0
+ * @stability stable
+ */
+// A type literal, not an interface: clients keep JSON-safe literals as
+// written, where an interface's `data` would be rebuilt by `JsonOf`.
+export type InputIssue<TInput = unknown> = {
+  readonly message: string;
+  /** Symbol keys arrive as their `String()`, so the data is plain JSON. */
+  readonly path?: IssuePath<TInput> | undefined;
+};
+
 /**
  * The `data` of an input validation error.
  * @since 0.1.0
  * @stability stable
  */
-export interface InputValidationErrorData {
-  readonly issues: ReadonlyArray<{
-    readonly message: string;
-    /** Symbol keys arrive as their `String()`, so the data is plain JSON. */
-    readonly path?: ReadonlyArray<string | number> | undefined;
-  }>;
+export interface InputValidationErrorData<TInput = unknown> {
+  readonly issues: ReadonlyArray<InputIssue<TInput>>;
 }
 
 /**
- * Added to the error union of every procedure with an input.
+ * Added to the error union of every procedure with an input, one per
+ * `.input()` schema, with `TInput` that schema's input type.
  * @since 0.1.0
  * @stability stable
  */
-export type InputValidationError = TrpcError<
+export type InputValidationError<TInput = unknown> = TrpcError<
   'BAD_REQUEST',
-  InputValidationErrorData
+  InputValidationErrorData<TInput>
 >;
 
 /** Effect Schema classes and ArkType types are functions too. @internal */

@@ -836,7 +836,7 @@ export type InputDef<TDef extends BuilderDef, $S extends AnySchema> = {
   inputOut: Merge<TDef['inputOut'], OutOf<$S>>;
   outputIn: TDef['outputIn'];
   outputOut: TDef['outputOut'];
-  errors: TDef['errors'] | InputValidationError;
+  errors: TDef['errors'] | InputValidationError<InOf<$S>>;
   declared: TDef['declared'];
   shorts: TDef['shorts'];
   provided: TDef['provided'];

@@ -117,9 +117,139 @@ test('input validation errors are typed BAD_REQUEST with issues', async () => {
     defined: true,
   });
   if (err?.defined && err.code === 'BAD_REQUEST') {
-    expectTypeOf(err.data).toEqualTypeOf<InputValidationErrorData>();
+    expectTypeOf(err.data).toEqualTypeOf<
+      InputValidationErrorData<{ title: string }>
+    >();
+    expectTypeOf(err.data.issues[0]!.path).toEqualTypeOf<
+      readonly [] | readonly ['title'] | undefined
+    >();
     expect(err.data.issues[0]!.path).toEqual(['title']);
   }
+});
+
+test('input issue paths are typed from each schema, and match what the schema reports', async () => {
+  interface Category {
+    name: string;
+    children: Category[];
+  }
+  const Category: z.ZodType<Category> = z.object({
+    name: z.string(),
+    get children() {
+      return z.array(Category);
+    },
+  });
+  const issues = {
+    nested: t.procedure
+      .input(
+        z.object({
+          title: z.string(),
+          tags: z.array(z.string()).optional(),
+          author: z.object({ name: z.string(), at: z.date() }),
+          kind: z.discriminatedUnion('type', [
+            z.object({ type: z.literal('a'), a: z.number() }),
+            z.object({ type: z.literal('b') }),
+          ]),
+        }),
+      )
+      .mutation(() => 'ok'),
+    effect: t.procedure
+      .input(Schema.Struct({ ids: Schema.Array(Schema.NumberFromString) }))
+      .query(() => 'ok'),
+    chained: t.procedure
+      .input(z.object({ id: z.string() }))
+      .input(z.object({ limit: z.number() }))
+      .query(() => 'ok'),
+    tree: t.procedure.input(Category).query(() => 'ok'),
+    whole: t.procedure.input(z.string()).query(() => 'ok'),
+  };
+  await using server = await createTestServer({
+    router: issues,
+    createContext: () => ({ user: null }),
+  });
+  const client = createTrpcClient({
+    router: routerType<typeof issues>(),
+    links: [httpLink({ url: server.url })],
+  });
+
+  const [, nested] = await safe(
+    client.nested.mutate({
+      title: 'x',
+      tags: ['a', 1 as never],
+      author: { name: 'Ada', at: new Date() },
+      kind: { type: 'a', a: 'one' as never },
+    }),
+  );
+  if (nested?.defined && nested.code === 'BAD_REQUEST') {
+    const path = nested.data.issues[0]!.path;
+    expectTypeOf(path).toEqualTypeOf<
+      | readonly []
+      | readonly ['title']
+      | readonly ['tags']
+      | readonly ['tags', number]
+      | readonly ['author']
+      | readonly ['author', 'name']
+      | readonly ['author', 'at']
+      | readonly ['kind']
+      | readonly ['kind', 'type']
+      | readonly ['kind', 'a']
+      | undefined
+    >();
+    // @ts-expect-error -- not a key of the input
+    expect(path?.[0] === 'titel').toBe(false);
+  }
+  expect(nested).toMatchObject({
+    code: 'BAD_REQUEST',
+    data: {
+      issues: [
+        { path: ['tags', 1] },
+        { path: ['author', 'at'] },
+        { path: ['kind', 'a'] },
+      ],
+    },
+  });
+
+  const [, effect] = await safe(
+    client.effect.query({ ids: ['1', 2 as never] }),
+  );
+  if (effect?.defined && effect.code === 'BAD_REQUEST') {
+    expectTypeOf(effect.data.issues[0]!.path).toEqualTypeOf<
+      readonly [] | readonly ['ids'] | readonly ['ids', number] | undefined
+    >();
+  }
+  expect(effect).toMatchObject({
+    data: { issues: [{ path: ['ids', 1] }] },
+  });
+
+  const [, chained] = await safe(
+    client.chained.query({ id: 1 as never, limit: 10 }),
+  );
+  if (chained?.defined && chained.code === 'BAD_REQUEST') {
+    const firsts = chained.data.issues.map((issue) => issue.path?.[0]);
+    expectTypeOf(firsts).toEqualTypeOf<Array<'id' | 'limit' | undefined>>();
+    expect(firsts).toEqual(['id']);
+  }
+
+  const [, tree] = await safe(
+    client.tree.query({
+      name: 'a',
+      children: [{ name: 'b', children: [{ name: 1 as never, children: [] }] }],
+    }),
+  );
+  if (tree?.defined && tree.code === 'BAD_REQUEST') {
+    const path = tree.data.issues[0]!.path;
+    expectTypeOf<readonly ['children', number, 'name']>().toExtend<
+      NonNullable<typeof path>
+    >();
+    expect(path).toEqual(['children', 0, 'children', 0, 'name']);
+  }
+
+  const [, whole] = await safe(client.whole.query(1 as never));
+  if (whole?.defined && whole.code === 'BAD_REQUEST') {
+    expectTypeOf(whole.data.issues[0]!.path).toEqualTypeOf<
+      readonly [] | undefined
+    >();
+  }
+  expect(whole).toMatchObject({ data: { issues: [{ path: [] }] } });
 });
 
 test('middleware short-circuits with a returned error', async () => {

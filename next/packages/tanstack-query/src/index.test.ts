@@ -99,7 +99,7 @@ test('errors are the typed client errors', async () => {
   const result = await until(observer, (r) => r.status === 'error');
 
   type Expected = ClientError<
-    | TrpcError<'BAD_REQUEST', InputValidationErrorData>
+    | TrpcError<'BAD_REQUEST', InputValidationErrorData<{ id: string }>>
     | TrpcError<'NOT_FOUND', { id: string }>
   >;
   expectTypeOf(result.error).toEqualTypeOf<Expected>();

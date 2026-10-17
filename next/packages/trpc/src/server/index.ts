@@ -111,8 +111,10 @@ export {
 } from './router.ts';
 export type {
   AnySchema,
+  InputIssue,
   InputValidationError,
   InputValidationErrorData,
+  IssuePath,
   StandardIssue,
   StandardSchemaV1,
 } from './schema.ts';
