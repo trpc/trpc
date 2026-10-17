@@ -130,35 +130,75 @@ function observableToReadableStream<TValue>(
   signal: AbortSignal,
 ): ReadableStream<Result<TValue>> {
   let unsub: Unsubscribable | null = null;
+  let active = true;
+  let controllerRef: ReadableStreamDefaultController<Result<TValue>> | null =
+    null;
 
   const onAbort = () => {
+    signal.removeEventListener('abort', onAbort);
+    if (active) {
+      active = false;
+      // close before teardown so synchronous teardown emissions are ignored
+      // and a pending reader cannot be left hanging
+      controllerRef?.close();
+    }
     unsub?.unsubscribe();
     unsub = null;
+  };
+
+  /** Detach the abort listener once the stream has settled */
+  const onSettled = () => {
+    active = false;
     signal.removeEventListener('abort', onAbort);
   };
 
   return new ReadableStream<Result<TValue>>({
     start(controller) {
+      controllerRef = controller;
+
+      if (signal.aborted) {
+        // no point in subscribing if the signal is already aborted
+        onAbort();
+        return;
+      }
+
       unsub = observable.subscribe({
         next(data) {
+          if (!active) {
+            return;
+          }
           controller.enqueue({ ok: true, value: data });
         },
         error(error) {
+          if (!active) {
+            // the source emitted after the stream was settled - this can
+            // happen during teardown, in which case we drop it
+            return;
+          }
+          onSettled();
           controller.enqueue({ ok: false, error });
           controller.close();
         },
         complete() {
+          if (!active) {
+            // see comment in `error` above
+            return;
+          }
+          onSettled();
           controller.close();
         },
       });
 
       if (signal.aborted) {
         onAbort();
-      } else {
+      } else if (active) {
         signal.addEventListener('abort', onAbort, { once: true });
       }
     },
     cancel() {
+      // set `active` first so `onAbort` doesn't close an already-cancelled
+      // stream; `onAbort` also detaches the abort listener
+      active = false;
       onAbort();
     },
   });
