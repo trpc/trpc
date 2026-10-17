@@ -149,8 +149,15 @@ test('streamed outputs, unvalidated outputs, plain events, opt-outs and paths ou
       .input(z.object({ n: z.number() }))
       .output(z.number())
       .query(({ input }) => input.n),
+    perCall: p.procedure
+      .input(() => z.object({ n: z.number() }))
+      .query(({ input }) => input.n),
+    nested: { leaf: p.procedure.output(z.number()).query(() => 1) },
   };
   const served = {
+    perCall: p.procedure
+      .input(z.unknown())
+      .query(() => 'checked by the server'),
     tokens: p.procedure.query(async function* () {
       yield 'a';
       yield 'b';
@@ -205,6 +212,10 @@ test('streamed outputs, unvalidated outputs, plain events, opt-outs and paths ou
     checked.request({ type: 'query', path: 'strict.deeper', input: undefined }),
   );
   expect(through).toMatchObject({ code: 'NOT_FOUND' });
+  const [, router] = await safe(
+    checked.request({ type: 'query', path: 'nested', input: undefined }),
+  );
+  expect(router).toMatchObject({ code: 'NOT_FOUND' });
 
   const before = http.requests.length;
   const [, early] = await safe(
@@ -212,10 +223,17 @@ test('streamed outputs, unvalidated outputs, plain events, opt-outs and paths ou
   );
   expect(early).toMatchObject({ code: 'BAD_REQUEST' });
   expect(http.requests).toHaveLength(before);
+  expect(
+    await checked.request({
+      type: 'query',
+      path: 'perCall',
+      input: { n: 'x' },
+    }),
+  ).toBe('checked by the server');
 
   const lax = client({ contract: contractOf, input: false, output: false });
   expect(
     await lax.request({ type: 'query', path: 'strict', input: { n: 'x' } }),
   ).toBe('unchecked');
-  expect(http.requests).toHaveLength(before + 1);
+  expect(http.requests).toHaveLength(before + 2);
 });

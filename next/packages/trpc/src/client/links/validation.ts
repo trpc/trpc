@@ -57,7 +57,7 @@ const definitionAt = (
     node = (node as Record<string, unknown>)[segment];
   }
   return typeof node === 'object' && node !== null && '~trpc' in node
-    ? ((node as { '~trpc': ProcedureInternals })['~trpc'] ?? undefined)
+    ? (node as { '~trpc': ProcedureInternals })['~trpc']
     : undefined;
 };
 
