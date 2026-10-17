@@ -8,6 +8,7 @@ import {
 } from '@trpc12/trpc/client';
 import {
   contract,
+  isContractProcedure,
   toContract,
   type inferContract,
 } from '@trpc12/trpc/contract';
@@ -192,9 +193,35 @@ test('impl.router() checks completeness at the type level and at runtime', () =>
     }),
   ).toThrow(/"post\.byId" must be a query, not a mutation/);
 
+  const untyped = impl.router as (routes: unknown) => unknown;
+  expect(() => untyped({ health })).toThrow(/"post" is missing/);
+  expect(() => untyped({ health, post: byId })).toThrow(
+    /"post" must be a router/,
+  );
+  expect(() => untyped({ health, post: 'byId' })).toThrow(
+    /"post" must be a router/,
+  );
+  expect(() =>
+    untyped({ health, post: { byId: appContract.post.byId, create, onAdd } }),
+  ).toThrow(/"post\.byId" has no resolver/);
+
   expect(() => t.implement({ router: appContract.health })).toThrow(
     /shadow impl\.router/,
   );
+});
+
+test('a contract cannot concat an extension with middleware, and isContractProcedure() tells contract leaves from procedures', () => {
+  const withMiddleware = initTrpc().procedure.use(({ next }) => next());
+  expect(() => contract.create().concat(withMiddleware)).toThrow(
+    /the extension has middleware or inputs/,
+  );
+
+  expect(isContractProcedure(appContract.health)).toBe(true);
+  expect(isContractProcedure(impl.health.query(() => 'ok' as const))).toBe(
+    false,
+  );
+  expect(isContractProcedure(appContract.post)).toBe(false);
+  expect(isContractProcedure(null)).toBe(false);
 });
 
 test('impl.use() and impl.provide() run for every procedure of the contract', async () => {
