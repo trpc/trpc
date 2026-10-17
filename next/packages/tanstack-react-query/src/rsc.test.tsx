@@ -14,7 +14,7 @@ import {
   db,
   type Post,
   serializer,
-} from '../../packages/tanstack-query/src/fixtures/app.ts';
+} from '../../tanstack-query/src/fixtures/app.ts';
 
 /** One request's worth of React `cache()`. */
 const requestCache = () => {
