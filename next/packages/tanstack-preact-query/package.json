@@ -22,7 +22,7 @@
     "access": "public"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.lib.json && tsc --noEmit -p tsconfig.json",
     "build": "node ../../tooling/pack/pack.ts"
   },
   "dependencies": {
@@ -32,8 +32,11 @@
     "@tanstack/preact-query": "5.104.1",
     "@tanstack/query-core": "5.104.1",
     "@trpc12/trpc": "workspace:*",
+    "@types/node": "^24.0.0",
+    "happy-dom": "20.14.6",
     "preact": "10.29.8",
-    "typescript": "^7.0.2"
+    "typescript": "^7.0.2",
+    "vite-plus": "1.1.0"
   },
   "peerDependencies": {
     "@tanstack/preact-query": "^5.104.0",

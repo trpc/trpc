@@ -1,9 +1,9 @@
 {
   "extends": "../../tsconfig.json",
   "compilerOptions": {
-    "rootDir": "src",
-    "declaration": true,
-    "isolatedDeclarations": true
+    "types": ["node"],
+    "jsx": "react-jsx",
+    "jsxImportSource": "preact"
   },
   "include": ["src"]
 }
