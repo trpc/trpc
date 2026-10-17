@@ -728,6 +728,30 @@ test('a cancelled subscription sends no keep-alives while it winds down', async 
   await handler.dispose();
 });
 
+test('a subscription nobody reads waits instead of buffering its events', async () => {
+  let yielded = 0;
+  let closed = false;
+  const handler = createOpenApiHandler({
+    router: {
+      firehose: t.procedure.subscription(async function* () {
+        try {
+          while (yielded < 10_000) yield ++yielded;
+        } finally {
+          closed = true;
+        }
+      }),
+    },
+    createContext: () => ({ user: null }),
+  });
+  const res = await handler.fetch(new Request('http://localhost/api/firehose'));
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  expect(yielded).toBeLessThan(100);
+  await res.body!.cancel();
+  await vi.waitFor(() => expect(closed).toBe(true));
+  expect(yielded).toBeLessThan(100);
+  await handler.dispose();
+});
+
 test('serve() runs one procedure with params the caller matched', async () => {
   const handler = createOpenApiHandler({
     router: {},

@@ -1,4 +1,4 @@
-import { Context, Effect, Exit, Stream, type Layer } from 'effect';
+import { Cause, Context, Effect, Exit, Stream, type Layer } from 'effect';
 import {
   HttpEffect,
   HttpServerRequest,
@@ -18,6 +18,7 @@ import {
   TrpcError,
   type AnyTrpcError,
 } from '../internal/error.ts';
+import { toAsyncIterable } from '../internal/effects.ts';
 import type { JsonSchema } from '../internal/json-schema.ts';
 import {
   contentDisposition,
@@ -510,39 +511,46 @@ export function createOpenApiHandler<
     controller: AbortController,
     headers: Headers,
   ): Response {
-    const body = new ReadableStream<Uint8Array>({
-      async start(sink) {
-        const write = (text: string) => {
-          if (!controller.signal.aborted) sink.enqueue(encoder.encode(text));
-        };
-        // Flushes headers on servers that hold them until the first chunk.
-        write(': open\n\n');
-        const ping =
-          ssePingMs === false
-            ? undefined
-            : setInterval(() => write(': ping\n\n'), ssePingMs);
-        const exit = await Effect.runPromiseExit(
-          Stream.runForEach(stream, (event) =>
-            Effect.sync(() => {
-              const [id, data] = isTracked(event)
-                ? [`id: ${event.id}\n`, event.data]
-                : ['', event];
-              write(`${id}event: message\ndata: ${JSON.stringify(data)}\n\n`);
-            }),
+    const messages = stream.pipe(
+      Stream.map((event) => {
+        const [id, data] = isTracked(event)
+          ? [`id: ${event.id}\n`, event.data]
+          : ['', event];
+        return `${id}event: message\ndata: ${JSON.stringify(data)}\n\n`;
+      }),
+      Stream.concat(Stream.make('event: done\ndata: \n\n')),
+      Stream.catchCause((cause) => {
+        if (Cause.hasInterruptsOnly(cause)) return Stream.empty;
+        const err = normalizeCause(cause);
+        base.report(err, httpOf(request), entry.path, 'subscription');
+        return Stream.make(
+          `event: error\ndata: ${JSON.stringify(toOpenApiError(base.publicError(err)))}\n\n`,
+        );
+      }),
+    );
+    // `: open` flushes headers on servers that hold them until the first chunk.
+    const lines = Stream.concat(
+      Stream.make(': open\n\n'),
+      ssePingMs === false
+        ? messages
+        : Stream.merge(
+            messages,
+            Stream.fromEffectRepeat(
+              Effect.delay(Effect.succeed(': ping\n\n'), ssePingMs),
+            ),
+            { haltStrategy: 'left' },
           ),
-          { signal: controller.signal },
-        ).finally(() => clearInterval(ping));
-        if (controller.signal.aborted) return;
-        if (Exit.isFailure(exit)) {
-          const err = normalizeCause(exit.cause);
-          base.report(err, httpOf(request), entry.path, 'subscription');
-          write(
-            `event: error\ndata: ${JSON.stringify(toOpenApiError(base.publicError(err)))}\n\n`,
-          );
-        } else {
-          write('event: done\ndata: \n\n');
-        }
-        sink.close();
+    );
+    // Pulled, so a slow client holds the subscription back instead of
+    // its events piling up here.
+    const iterator = toAsyncIterable(lines, controller.signal)[
+      Symbol.asyncIterator
+    ]();
+    const body = new ReadableStream<Uint8Array>({
+      async pull(sink) {
+        const next = await iterator.next();
+        if (next.done) sink.close();
+        else sink.enqueue(encoder.encode(next.value));
       },
       cancel: () => controller.abort(),
     });
