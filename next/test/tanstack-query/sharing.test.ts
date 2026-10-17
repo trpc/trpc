@@ -45,3 +45,47 @@ test('changed maps and sets, and class instances, are replaced', () => {
   expect(shared.s).toBe(next.s);
   expect(shared.money).toBe(next.money);
 });
+
+test('nulls, URLs, RegExps, typed arrays, sizes and null-prototype objects', () => {
+  const bare = Object.assign(Object.create(null) as object, { a: 1 });
+  const prev = {
+    gone: { a: 1 } as { a: number } | null,
+    url: new URL('https://a.example'),
+    re: /a/g,
+    flags: /a/g,
+    bytes: new Uint8Array([1, 2]),
+    longer: new Uint8Array([1]),
+    kind: new Uint8Array([1]) as ArrayBufferView,
+    m: new Map([['x', 1]]),
+    s: new Set([1]),
+    bare,
+  };
+  const next = {
+    gone: null,
+    url: new URL('https://b.example'),
+    re: /a/g,
+    flags: /a/i,
+    bytes: new Uint8Array([1, 3]),
+    longer: new Uint8Array([1, 2]),
+    kind: new Int8Array([1]) as ArrayBufferView,
+    m: new Map([
+      ['x', 1],
+      ['y', 2],
+    ]),
+    s: new Set([1, 2]),
+    bare: Object.assign(Object.create(null) as object, { a: 1 }),
+  };
+  const shared = structuralSharing(prev, next);
+  expect(shared.gone).toBeNull();
+  expect(shared.url).toBe(next.url);
+  expect(shared.re).toBe(prev.re);
+  expect(shared.flags).toBe(next.flags);
+  expect(shared.bytes).toBe(next.bytes);
+  expect(shared.longer).toBe(next.longer);
+  expect(shared.kind).toBe(next.kind);
+  expect(shared.m).toBe(next.m);
+  expect(shared.s).toBe(next.s);
+  expect(shared.bare).toBe(prev.bare);
+  expect(structuralSharing(null, { a: 1 })).toEqual({ a: 1 });
+  expect(structuralSharing({ a: 1 }, 'text')).toBe('text');
+});

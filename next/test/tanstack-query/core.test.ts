@@ -737,3 +737,49 @@ test('a refetch with equal Dates keeps the data reference', async () => {
   await queryClient.refetchQueries({ queryKey: options.queryKey });
   expect(queryClient.getQueryData(options.queryKey)).toBe(first);
 });
+
+test('helper edges: skipToken streams and pages, keys, unknown helpers, non-streams and early aborts', async () => {
+  await using app = await createApp();
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  const ticks = app.trpc.clock.ticks;
+  expect(ticks.streamedKey({ input: { from: 1 } })).toEqual(
+    ticks.streamedOptions({ input: { from: 1 } }).queryKey,
+  );
+  expect(ticks.streamedOptions({ input: skipToken }).queryFn).toBe(skipToken);
+  expect(ticks.liveOptions({ input: skipToken }).queryFn).toBe(skipToken);
+  const pages = app.trpc.post.list.infiniteOptions({
+    input: skipToken,
+    initialPageParam: 0,
+    getNextPageParam: () => undefined,
+  });
+  expect(pages.queryFn).toBe(skipToken);
+  expect(pages.queryKey).toEqual(
+    app.trpc.post.list.infiniteKey({ input: skipToken, initialPageParam: 0 }),
+  );
+
+  const untyped = app.trpc as any;
+  expect(untyped.then).toBeUndefined();
+  expect(untyped[Symbol.iterator]).toBeUndefined();
+  expect(() => untyped.post.byId.fetchEverything()).toThrow(
+    'post.byId.fetchEverything() is not a TanStack Query helper',
+  );
+
+  const plain = new MutationObserver<unknown, Error, { title: string }>(
+    queryClient,
+    untyped.post.create.streamedMutationOptions(),
+  );
+  await expect(plain.mutate({ title: 'x' })).rejects.toThrow(
+    'post.create did not return an AsyncIterable',
+  );
+
+  const aborted = new MutationObserver(
+    queryClient,
+    app.trpc.chat.forever.streamedMutationOptions({
+      signal: AbortSignal.abort(),
+    }),
+  );
+  expect(await aborted.mutate()).toEqual([]);
+  await vi.waitFor(() => expect(db.openChats).toBe(0));
+});
