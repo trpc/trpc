@@ -35,6 +35,7 @@
   - "We should aim for feature parity with https://orpc.dev/docs/comparison. Highlight anything and prompt user when we make API decisions that may stop us from getting there."
   - "Rather than have a `@trpc/server` and a `@trpc/client` package, everything that doesn't have an external dependency (except Effect), eg. React etc, should be in a package just called `trpcdev` and exports can be in `/server` and `/client` folders etc"
   - "We should probably have a library like https://github.com/KATT/danson as part of tRPC that we can use for serializing and deserializing data... I do like how oRPC does sort of semantic query params etc though, so maybe htat's something to consider for the sync serialization that it could be part of query params in a legible way"
+  - "Tautological are considered harmful"
 - Human, dev dependencies: "The only dev deps I can think of that should be:"
   - "Vite family stuff (vitest, oxlint, oxfmt, their monorepo tooling) - generally anything from the Vite team is fine"
   - "TypeScript (latest version)"
