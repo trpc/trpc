@@ -9,7 +9,7 @@ function NavigationSpinner() {
 	return navigation.state === "loading" ? <Spinner /> : null;
 }
 
-<NavLink prefetch="intent" to="/posts/hello">
+<NavLink to="/posts/hello">
 	{({ isPending }) => (isPending ? "Hello (loading…)" : "Hello")}
 </NavLink>;
 // #endregion pending-ui

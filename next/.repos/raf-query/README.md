@@ -78,10 +78,10 @@ See [installation](https://raf-query.katt.dev/docs/installation) for requirement
 
 ## Packages
 
-| Package                              | Contents                                                                                                   |
-| ------------------------------------ | ---------------------------------------------------------------------------------------------------------- |
-| [`@raf-query/react`](packages/react) | `QueryClient`, hooks, and the TanStack Router, RSC and devtools integrations. Re-exports `@raf-query/core` |
-| [`@raf-query/core`](packages/core)   | The framework-agnostic, Effect-native cache, for Effect programs and bindings                              |
+| Package                              | Contents                                                                                    |
+| ------------------------------------ | ------------------------------------------------------------------------------------------- |
+| [`@raf-query/react`](packages/react) | Hooks, and the TanStack Router, RSC and devtools integrations. Re-exports `@raf-query/core` |
+| [`@raf-query/core`](packages/core)   | The framework-agnostic `QueryClient` and the Effect-native cache behind it                  |
 
 ## Examples
 

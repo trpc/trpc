@@ -124,11 +124,11 @@ function PostPage() {
 
 ## Entry points
 
-| Import                             | Use                                                                                                                                      |
-| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
-| `@raf-query/react`                 | `QueryClient`, `QueryClientProvider`, `QueryProvider`, `useQuery`, `useWaterfall`, `useIsFetching`, `HydrationBoundary`, and all of core |
-| `@raf-query/react/tanstack-router` | [TanStack Start and Router](https://raf-query.katt.dev/docs/tanstack-start) SSR streaming                                                |
-| `@raf-query/react/devtools`        | The [devtools](https://raf-query.katt.dev/docs/devtools) panel; omit the element to tree-shake it                                        |
+| Import                             | Use                                                                                                                                               |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@raf-query/react`                 | `QueryClientProvider`, `QueryProvider`, `useQuery`, `useWaterfall`, `useIsFetching`, `HydrationBoundary`, and all of core, `QueryClient` included |
+| `@raf-query/react/tanstack-router` | [TanStack Start and Router](https://raf-query.katt.dev/docs/tanstack-start) SSR streaming                                                         |
+| `@raf-query/react/devtools`        | The [devtools](https://raf-query.katt.dev/docs/devtools) panel; omit the element to tree-shake it                                                 |
 
 ## License
 

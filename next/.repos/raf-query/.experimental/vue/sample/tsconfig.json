@@ -1,0 +1,14 @@
+{
+	"compilerOptions": {
+		"allowImportingTsExtensions": true,
+		"lib": ["ES2024", "DOM", "DOM.Iterable"],
+		"module": "preserve",
+		"moduleResolution": "bundler",
+		"noEmit": true,
+		"skipLibCheck": true,
+		"strict": true,
+		"target": "ES2024",
+		"types": ["vite/client"]
+	},
+	"include": ["src"]
+}

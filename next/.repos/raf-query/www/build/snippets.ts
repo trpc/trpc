@@ -16,7 +16,10 @@ interface ExpandedSnippets {
  */
 const sampleFence =
 	/^```sample([^\n]*)\n([^\n#]+?)(?:#([\w-]+))?[ \t]*\n```$/gm;
-const regionMarker = /^[ \t]*\/\/ ?#(region|endregion)\b[ \t]*([\w-]*)[ \t]*$/;
+const regionMarker =
+	/^[ \t]*(?:\/\/ ?#(region|endregion)\b[ \t]*([\w-]*)|<!-- ?#(region|endregion)\b[ \t]*([\w-]*)[ \t]*-->)[ \t]*$/;
+/** Component files: highlighted as they are, since Twoslash compiles TypeScript only. */
+const componentLangs = new Set(["svelte", "vue"]);
 const queryMarker = /^[ \t]*\/\/\s*\^\?[ \t]*$/;
 /** `// @ts-expect-error -- 2345: why`, which a block shows as the error. */
 const expectedError = /^[ \t]*\/\/ @ts-expect-error -- (\d+)\b.*$/;
@@ -58,7 +61,8 @@ const markRegion = Effect.fn("markRegion")(function* (
 			}
 			continue;
 		}
-		const [, kind, name = ""] = marker;
+		const kind = marker[1] ?? marker[3];
+		const name = marker[2] ?? marker[4] ?? "";
 		if (kind === "region") {
 			open.push(name);
 			found ||= name === region;
@@ -139,6 +143,10 @@ function twoslashCode(lines: ReadonlyArray<Line>, filename: string) {
  * that app's project. Its title is the file's path inside the app, unless
  * the file is in `src/docs/` or `app/docs/` (a page's own samples, not a
  * file of the app) or the fence sets `title="…"` (`title=""` for none).
+ *
+ * A `.vue` or `.svelte` file becomes a plain block of its region, marked with
+ * `// #region name` in its script or `<!-- #region name -->` in its markup.
+ * The sample app's own checker (`vue-tsc`, `svelte-check`) compiles it.
  */
 export const expandSnippets = Effect.fn("expandSnippets")(function* (
 	markdown: string,
@@ -160,9 +168,9 @@ export const expandSnippets = Effect.fn("expandSnippets")(function* (
 		const [fence, meta = "", relative = "", region] = match;
 		const file = path.join(options.samplesDir, relative.trim());
 		const lang = path.extname(file).slice(1);
-		if (lang !== "ts" && lang !== "tsx") {
+		if (lang !== "ts" && lang !== "tsx" && !componentLangs.has(lang)) {
 			return yield* new ContentError({
-				message: `${options.file}: a sample is a .ts or .tsx file, not ${relative}`,
+				message: `${options.file}: a sample is a .ts, .tsx, .vue or .svelte file, not ${relative}`,
 			});
 		}
 		const app = appOf(path, file, apps);
@@ -181,6 +189,18 @@ export const expandSnippets = Effect.fn("expandSnippets")(function* (
 		const title =
 			/\btitle="([^"]*)"/.exec(meta)?.[1] ??
 			(/^(?:src|app)\/docs\//.test(inApp) ? "" : inApp);
+		const titleMeta = title ? ` title="${title}"` : "";
+		if (componentLangs.has(lang)) {
+			const shown = dedent(
+				lines.filter((line) => line.shown).map((line) => line.text),
+			);
+			parts.push(
+				markdown.slice(end, match.index),
+				`\`\`\`${lang}${titleMeta}\n${shown.join("\n")}\n\`\`\``,
+			);
+			end = match.index + fence.length;
+			continue;
+		}
 		// Twoslash empties a block's files once it's done, so the block gets a
 		// name of its own next to the file: other blocks importing the file
 		// still read it from disk.
@@ -192,7 +212,7 @@ export const expandSnippets = Effect.fn("expandSnippets")(function* (
 		);
 		parts.push(
 			markdown.slice(end, match.index),
-			`\`\`\`${lang} twoslash${title ? ` title="${title}"` : ""}\n${twoslashCode(lines, virtualPath)}\n\`\`\``,
+			`\`\`\`${lang} twoslash${titleMeta}\n${twoslashCode(lines, virtualPath)}\n\`\`\``,
 		);
 		end = match.index + fence.length;
 	}

@@ -45,6 +45,6 @@ Source for this project's key dependencies is vendored under `.repos/`, pinned t
 
 - `effect` (ref `effect@4.0.2`) → `.repos/effect`
 - `orpc` (ref `v2.0.0-beta.44`) → `.repos/orpc`
-- `raf-query` (ref `841ffcf4`, 0.10.0) → `.repos/raf-query`
+- `raf-query` (ref `a9f2aa77`, 0.11.1) → `.repos/raf-query`
 
 Managed by [vendor-src](https://www.npmjs.com/package/vendor-src), a devDependency of this workspace (`pnpm install` runs `vendor-src check`; `pnpm vendor:sync` updates the trees). Its config has to live at the repo root (`../vendor-src.json`, `"dir": "next/.repos"`), because vendor-src looks for the nearest directory with both `.git` and `package.json`. `rootAgentsMd` is off, so keep the list above in sync by hand when adding or bumping a vendored repo.

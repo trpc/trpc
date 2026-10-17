@@ -1,4 +1,4 @@
-import type { QueryClient } from "../client.ts";
+import type { QueryClient } from "@raf-query/core";
 
 const sentByClient = new WeakMap<QueryClient, Set<string>>();
 

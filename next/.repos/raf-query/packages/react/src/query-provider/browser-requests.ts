@@ -1,6 +1,4 @@
-import { Query, type QueryFactory } from "@raf-query/core";
-
-import type { QueryClient } from "../client.ts";
+import { Query, type QueryClient, type QueryFactory } from "@raf-query/core";
 
 /**
  * The digest Next.js gives a boundary that renders only in the browser

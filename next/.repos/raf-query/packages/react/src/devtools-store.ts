@@ -1,7 +1,5 @@
-import { Query } from "@raf-query/core";
+import { Query, type QueryClient } from "@raf-query/core";
 import { useSyncExternalStore } from "react";
-
-import type { QueryClient } from "./client.ts";
 
 /** How the devtools label an entry, most urgent first. */
 export type DevtoolsStatus =

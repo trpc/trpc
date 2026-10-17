@@ -1,13 +1,13 @@
-import type {
-	DehydratedState,
-	DehydrateOptions,
-	HydrateOptions,
-	QueryHandle,
+import {
+	type DehydratedState,
+	type DehydrateOptions,
+	hydrate,
+	type HydrateOptions,
+	type QueryClient,
+	type QueryHandle,
 } from "@raf-query/core";
 import { type AnyRouter, isRedirect } from "@tanstack/react-router";
 import { Predicate } from "effect";
-
-import { hydrate, type QueryClient } from "./client.ts";
 
 declare module "@tanstack/react-router" {
 	interface SerializableExtensions {

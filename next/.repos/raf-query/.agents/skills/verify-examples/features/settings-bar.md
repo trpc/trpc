@@ -40,6 +40,7 @@ Commands:
 - `$CE screenshot --width 390` shows the phone layout. Nothing in the header scrolls sideways at 360 px.
 
 - What a prefetch request looks like depends on the stack: `/api/issues/4`, `/api/issues/4/comments?cursor=0` and `/api/issues/4/assignee` in `tanstack-start`; three `/rpc/` calls in `tanstack-start-effect`; `/issues/4.data` in `react-router`.
+- In `react-router` the click requests the page's `.data` again (a second `/issues/4.data` after the hover's): React Router doesn't reuse the prefetched response, so the loaders run twice. The TanStack apps' click reuses what the hover loaded.
 - `nextjs` has no `On render` option: `next/link` prefetches in the viewport or not at all, and the app adds intent itself. It also prefetches only in a production build (`pnpm --filter @examples/nextjs build && pnpm --filter @examples/nextjs start`); in dev, `$DATA` stays empty for both prefetch recipes.
 - In `nextjs` and `react-router` a navigation always runs the server's page code (an RSC or `.data` fetch), whatever the stale time. Stale time shows in the browser's own requests: `/api/issues/counts` after the back navigation only with `0 ms`. `tanstack-start-effect`'s `/rpc/` calls all share one path; compare how many there are (more with `0 ms`).
 - The `Stale time` values are milliseconds, and `Forever` is `Infinity`. `$CE select --value` takes the value or the label.

@@ -193,6 +193,42 @@ describe("expandSnippets", () => {
 		}).pipe(Effect.provide(NodeServices.layer)),
 	);
 
+	it.effect("shows a region of a component file without Twoslash", () =>
+		Effect.gen(function* () {
+			const page = yield* setup({
+				...app("page"),
+				"page/src/Post.vue": [
+					'<script setup lang="ts">',
+					"// #region script",
+					"const post = usePost();",
+					"// #endregion",
+					"</script>",
+					"",
+					"<template>",
+					"\t<!-- #region template -->",
+					"\t<h1>{{ post.title }}</h1>",
+					"\t<!-- #endregion template -->",
+					"</template>",
+				].join("\n"),
+			});
+			const script = yield* page.expand(sample("page/src/Post.vue#script"));
+			expect(script.markdown).toBe(
+				['```vue title="src/Post.vue"', "const post = usePost();", "```"].join(
+					"\n",
+				),
+			);
+			const template = yield* page.expand(
+				sample("page/src/Post.vue#template", ' title=""'),
+			);
+			expect(template.markdown).toBe(
+				["```vue", "<h1>{{ post.title }}</h1>", "```"].join("\n"),
+			);
+			const whole = yield* page.expand(sample("page/src/Post.vue"));
+			expect(whole.markdown).not.toContain("#region");
+			expect(whole.markdown).toContain("<template>\n\t<h1>");
+		}).pipe(Effect.provide(NodeServices.layer)),
+	);
+
 	it.effect("fails on a file outside a sample app", () =>
 		Effect.gen(function* () {
 			const page = yield* setup({ "page/a.ts": "export const a = 1;\n" });

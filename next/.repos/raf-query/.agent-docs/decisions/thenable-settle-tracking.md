@@ -1,0 +1,7 @@
+# Reading a thenable's `status` tracks its in-place settle (human)
+
+- A first load settles the entry's pending thenable in place (`succeed` / `fail` in `entry.ts` reuse `firstLoad.promise`), so `use()` resumes on the promise it suspended on. The promise's identity doesn't change, so tracking `promise` alone never heard about it: a component that only read `promise.status` stayed on its pending UI.
+- Human: "the tracker should track if props of the thenable are read". `QueryObserver.trackThenable(observer, thenable)` returns a Proxy whose reads of `status` / `value` / `reason` mark it; an observer whose handed-out wrapper is marked notifies when its promise's status differs from the one it had when the result became current (`currentStatus`). `useQuery` returns `trackThenable(observer, promise)` (or of the `resultThenable`).
+- One wrapper per promise, shared by every observer (module `WeakMap`), not one per observer: a mount that suspends gets a new observer on each attempt, and a per-observer wrapper gave `use()` a new promise each time (React's "uncached promise" path). Cost: the read mark is per promise, so once any reader reads `status`, every observer handing out that wrapper hears the settle.
+- Not done: notifying every `promise` tracker on a status change (simpler, but re-renders `use()`-only readers and pass-throughs for nothing).
+- Tests: `observer.test.ts` ("a first load settling its promise in place"), `use-query.test.tsx` ("a component that reads the promise's status"), `ssr.test.tsx` ("enabled: false on the server").

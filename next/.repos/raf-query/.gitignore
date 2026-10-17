@@ -15,6 +15,7 @@
 # Framework build output
 **/.next
 **/.react-router
+**/.svelte-kit
 **/.tanstack
 **/.output
 **/.vercel

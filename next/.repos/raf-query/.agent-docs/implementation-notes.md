@@ -6,9 +6,10 @@ Mechanisms the build should copy, each verified against vendored or local source
 
 | Concern                                                                                                                   | Package                                                                                |
 | ------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| Cache entries, dedupe, retries, gc, staleness, focus/reconnect managers, infinite paging, invalidation, dehydrate/hydrate | `@raf-query/core` (`QueryCache`, Effect-only)                                          |
+| Cache entries, dedupe, retries, gc, staleness, focus/reconnect managers, infinite paging, invalidation, dehydrate/hydrate | `@raf-query/core` (`QueryCache`)                                                       |
 | Stable thenables per (key, data version)                                                                                  | `@raf-query/core` (React-agnostic: a thenable with `status`/`value` is just an object) |
-| Promise `QueryClient`, `allKeyed`, observers, `useSyncExternalStore` subscription, provider, `useWaterfall`               | `@raf-query/react`                                                                     |
+| Promise `QueryClient`, `allKeyed`, observers, `useQuery`'s controls (`promiseControls`, `resultThenable`)                 | `@raf-query/core`                                                                      |
+| `useSyncExternalStore` subscription, provider, `useWaterfall`                                                             | `@raf-query/react`                                                                     |
 | SSR stream glue                                                                                                           | `@raf-query/react/tanstack-router`, `HydrationBoundary`                                |
 
 Mirror TanStack's split: `.repos/query/packages/query-core` (no React import anywhere) and `.repos/query/packages/react-query/src/index.ts` (`export * from '@tanstack/query-core'`). Keep `@raf-query/core` free of React types so another binding could sit on it.

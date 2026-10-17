@@ -27,7 +27,39 @@ With a `layer`, the client defaults to `throwOnError: false`. `useQuery` then re
 tanstack-start-effect/src/docs/effect-errors.tsx#in-react
 ```
 
-Set `throwOnError: true` on the client or on the call to get a rejecting promise again (and throw to an error boundary). That option only exists in the type when `ErrorOf` is typed — promise `queryFn`s always throw.
+Set `throwOnError: true` on the query, on the call, or on the client to get a rejecting promise again (and throw to an error boundary). The call's option only exists in the type when `ErrorOf` is typed — promise `queryFn`s always throw. On the same client, a query whose `queryFn` returns a promise still reads as plain data: `useQuery` tells the two apart by what the `queryFn` returned, on this client or on the server whose data was hydrated, so Effect and promise queries mix freely.
+
+### Set it on the query
+
+A query whose failures always belong to an error boundary sets `throwOnError` in its options, so no read has to repeat it. Reads that don't set their own follow it, and so do their types: TypeScript can't see the flag a client was built with, but it sees the factory's. A read's own `throwOnError` still wins:
+
+```ts twoslash
+import { Effect, Schema } from "effect";
+import { type QueryHandle, queryOptions, useQuery } from "@raf-query/react";
+class IssueNotFound extends Schema.TaggedError<IssueNotFound>()(
+	"IssueNotFound",
+	{ id: Schema.Number },
+) {}
+declare function getIssue(
+	id: number,
+): Effect.Effect<{ title: string }, IssueNotFound>;
+declare const handle: QueryHandle<typeof issueQuery>;
+// ---cut---
+function issueQuery(input: { id: number }) {
+	return queryOptions({
+		queryKey: ["issue", input.id],
+		queryFn: () => getIssue(input.id),
+		throwOnError: true,
+	});
+}
+
+const [issuePromise] = useQuery(issueQuery, handle);
+//     ^?
+const [issueResult] = useQuery(issueQuery, handle, { throwOnError: false });
+//     ^?
+```
+
+A read takes its flag from the call, else the query, else the client. Set it on the query when every read of it should agree, for example in a factory maker that builds a whole API's queries. If you pass `queryOptions`' type parameters yourself, pass the fifth, `TThrow`, as well (`queryOptions<Data, Error, Services, QueryKey, true>`), or set the flag through inference.
 
 `retry` and `retryDelay` still get the error as `unknown` (query defaults share them). Narrow with the schema there too:
 
@@ -57,7 +89,7 @@ Leave a tag out of `catchTags` and it stays in the error type: the promise can r
 
 ## Or let it throw
 
-You don't have to match a `Result`. Set `throwOnError: true` on the client or on the call, and a failure the Effect leaves uncaught behaves like a rejected promise:
+You don't have to match a `Result`. Set `throwOnError: true` on the query, the call or the client, and a failure the Effect leaves uncaught behaves like a rejected promise:
 
 - The Promise verbs (`queryClient.fetch`, `ensure`, `runPromise`) reject with the failure itself, the `IssueNotFound` instance, not a wrapper around it.
 - When a query's first load fails, `use()` throws the failure to the nearest error boundary, and resetting the boundary refetches.

@@ -32,6 +32,7 @@ import type { DocHeading, DocSegment } from "../src/content/types.ts";
 import { collapseRegions } from "./collapse.ts";
 import { ContentError, messageOf } from "./content-error.ts";
 import { appOf, sampleApps } from "./sample-apps.ts";
+import type { TwoslashCache } from "./twoslash-cache.ts";
 
 interface RenderedMarkdown {
 	readonly demos: ReadonlyArray<string>;
@@ -310,21 +311,72 @@ const loadProject = Effect.fn("loadProject")(function* (app: string) {
 	} satisfies Project;
 });
 
+/** The parts of a `@typescript/vfs` environment read here. */
+interface Environment {
+	createFile(fileName: string, content: string): void;
+	readonly languageService: ts.LanguageService;
+}
+
+/**
+ * Compiles a block, and returns the program it compiled in, for the cache to
+ * know which files it read. `program` is missing if it wasn't seen.
+ */
+type Twoslasher = (...args: Parameters<TwoslashShikiFunction>) => {
+	readonly program: ts.Program | undefined;
+	readonly result: ReturnType<TwoslashShikiFunction>;
+};
+
+/** The program a block compiled in, once twoslash is done with it. */
+interface SeenProgram {
+	program?: ts.Program | undefined;
+}
+
 /** A twoslasher per project root; each keeps a TypeScript environment per set of compiler options. */
-const twoslashers = new Map<string, TwoslashShikiFunction>();
+const twoslashers = new Map<string, Twoslasher>();
 
 function twoslasherFor(root: string, tsLibDirectory: string) {
-	let twoslasher = twoslashers.get(root);
-	if (!twoslasher) {
-		twoslasher = createTwoslasher({
-			tsLibDirectory,
-			// @ts-expect-error -- twoslash types `tsModule` as the `typescript` package, which here is TypeScript 7's, with no JavaScript API
-			tsModule: ts,
-			vfsRoot: root,
-		});
-		twoslashers.set(root, twoslasher);
+	const existing = twoslashers.get(root);
+	if (existing) {
+		return existing;
 	}
-	return twoslasher;
+	let onClear: ((program: ts.Program | undefined) => void) | undefined;
+	// Twoslash empties a block's files once it's done with them; until then
+	// the environment's program is the one the block compiled in.
+	const environments = new (class extends Map<string, Environment> {
+		override set(key: string, environment: Environment) {
+			const createFile = environment.createFile.bind(environment);
+			environment.createFile = (fileName, content) => {
+				if (content === "" && onClear) {
+					onClear(environment.languageService.getProgram());
+					onClear = undefined;
+				}
+				createFile(fileName, content);
+			};
+			return super.set(key, environment);
+		}
+	})();
+	const twoslasher = createTwoslasher({
+		// @ts-expect-error -- typed as `@typescript/vfs`'s environment, from a package www doesn't depend on
+		cache: environments,
+		tsLibDirectory,
+		// @ts-expect-error -- twoslash types `tsModule` as the `typescript` package, which here is TypeScript 7's, with no JavaScript API
+		tsModule: ts,
+		vfsRoot: root,
+	});
+	const run: Twoslasher = (code, lang, options) => {
+		const seen: SeenProgram = {};
+		onClear = (program) => {
+			seen.program = program;
+		};
+		try {
+			const result = twoslasher(code, lang, options);
+			return { program: seen.program, result };
+		} finally {
+			onClear = undefined;
+		}
+	};
+	twoslashers.set(root, run);
+	return run;
 }
 
 const blockFilename = /^\/\/ @filename: (.+)$/gm;
@@ -354,6 +406,7 @@ const fileImport = /\bfrom\s+["'](?:~\/|\.{1,2}\/)/;
 const twoslashTransformer = Effect.fn("twoslashTransformer")(function* (
 	markdown: string,
 	samplesDir: string,
+	cache: TwoslashCache | undefined,
 ) {
 	const path = yield* Path.Path;
 	const apps = yield* sampleApps(samplesDir);
@@ -377,6 +430,39 @@ const twoslashTransformer = Effect.fn("twoslashTransformer")(function* (
 	const tsLibDirectory = path.dirname(
 		yield* path.fromFileUrl(new URL(import.meta.resolve("typescript6"))),
 	);
+	const session = cache ? yield* cache.open : undefined;
+	const compile = (
+		root: string,
+		...[code, lang, options]: Parameters<TwoslashShikiFunction>
+	) => {
+		const key = session?.key({ code, lang, options, root });
+		const cached = key === undefined ? undefined : session?.get(key);
+		if (cached) {
+			return cached;
+		}
+		const compiled = twoslasherFor(root, tsLibDirectory)(code, lang, options);
+		const program = compiled.program;
+		if (key !== undefined && program) {
+			// The files under the root outside `node_modules` are the app's,
+			// which the key covers, or a block's, which twoslash writes and
+			// then empties. TypeScript's own libs come with the lockfile.
+			const appFile = (fileName: string) =>
+				fileName.startsWith(`${root}/`) &&
+				!fileName.slice(root.length).includes("/node_modules/");
+			session?.set(
+				key,
+				compiled.result,
+				program
+					.getSourceFiles()
+					.filter(
+						(file) =>
+							!appFile(file.fileName) &&
+							!program.isSourceFileDefaultLibrary(file),
+					),
+			);
+		}
+		return compiled.result;
+	};
 	const twoslasher: TwoslashShikiFunction = (code, lang, twoslashOptions) => {
 		const filename = new RegExp(blockFilename.source, "m").exec(code)?.[1];
 		if (filename === undefined) {
@@ -386,7 +472,7 @@ const twoslashTransformer = Effect.fn("twoslashTransformer")(function* (
 				);
 			}
 			const project = projects.get(inline);
-			return twoslasherFor(inline, tsLibDirectory)(code, lang, {
+			return compile(inline, code, lang, {
 				...twoslashOptions,
 				...(project && { compilerOptions: project.compilerOptions }),
 			});
@@ -404,20 +490,22 @@ const twoslashTransformer = Effect.fn("twoslashTransformer")(function* (
 					.split(path.sep)
 					.join("/")}`,
 		);
-		return twoslasherFor(app, tsLibDirectory)(inApp, lang, {
-			...twoslashOptions,
-			...project,
-		});
+		return compile(app, inApp, lang, { ...twoslashOptions, ...project });
 	};
-	return createTransformerFactory(
-		twoslasher,
-		rendererRich({ jsdoc: false, queryRendering: "line" }),
-	)({ explicitTrigger: true });
+	return {
+		flush: session?.flush ?? Effect.void,
+		transformer: createTransformerFactory(
+			twoslasher,
+			rendererRich({ jsdoc: false, queryRendering: "line" }),
+		)({ explicitTrigger: true }),
+	};
 });
 
 export interface RenderOptions {
 	/** The dir of the sample apps the code blocks compile in. */
 	readonly samplesDir: string;
+	/** Where compiled blocks are kept between renders and builds. */
+	readonly twoslashCache?: TwoslashCache | undefined;
 }
 
 export const renderMarkdown = Effect.fn("renderMarkdown")(function* (
@@ -428,6 +516,11 @@ export const renderMarkdown = Effect.fn("renderMarkdown")(function* (
 	const demos: Array<string> = [];
 	const typeQueries: Array<ReadonlyArray<string>> = [];
 	let collapseId = 0;
+	const blocks = yield* twoslashTransformer(
+		markdown,
+		options.samplesDir,
+		options.twoslashCache,
+	);
 	const processor = unified()
 		.use(remarkParse)
 		.use(remarkGfm)
@@ -440,9 +533,15 @@ export const renderMarkdown = Effect.fn("renderMarkdown")(function* (
 		.use(rehypeHeadings(headings))
 		.use(rehypeShiki, {
 			defaultColor: false,
+			// Loading all of Shiki's languages took seconds per process, so
+			// others load on first use, and an unknown one fails the render. A
+			// block in a language loaded on first use highlights after the rest,
+			// so `ts` and `tsx` load up front: `typeQueries` is in page order.
+			langs: ["ts", "tsx"],
+			lazy: true,
 			themes: { dark: "github-dark", light: "github-light" },
 			transformers: [
-				yield* twoslashTransformer(markdown, options.samplesDir),
+				blocks.transformer,
 				collapseRegions(() => {
 					collapseId += 1;
 					return `code-collapse-${collapseId}`;
@@ -467,7 +566,7 @@ export const renderMarkdown = Effect.fn("renderMarkdown")(function* (
 	const tree = yield* Effect.tryPromise({
 		catch: (cause) => new ContentError({ cause, message: messageOf(cause) }),
 		try: async () => processor.run(processor.parse(markdown)),
-	});
+	}).pipe(Effect.ensuring(blocks.flush));
 	return {
 		demos,
 		headings,

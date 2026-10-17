@@ -51,14 +51,14 @@ export class CancelledError extends Data.TaggedError("CancelledError") {
 }
 
 /**
- * Why a query with `ssr: false` has no data on the server: its promise
- * there rejects with this, and `ensure` / `fetch` die with it.
+ * Why a query with `enabled: false` has no data: `ensure` / `fetch` die
+ * with it, and on a server its promise rejects with it.
  */
-export class BrowserOnlyError extends Data.TaggedError("BrowserOnlyError")<{
+export class DisabledError extends Data.TaggedError("DisabledError")<{
 	readonly hash: string;
 }> {
 	override get message() {
-		return `Query ${this.hash} runs in the browser only (ssr: false)`;
+		return `Query ${this.hash} is disabled (enabled: false)`;
 	}
 }
 
@@ -116,6 +116,12 @@ export interface Entry extends Query {
 	pending: Pending<unknown> | undefined;
 	/** The last reader left during the request in flight: it retries no more. */
 	retriesStopped: boolean;
+	/**
+	 * The last `queryFn` call returned an Effect (`true`) or a promise or
+	 * plain value (`false`), here or on the cache it was hydrated from.
+	 * `undefined` until one has run.
+	 */
+	returnsEffect: boolean | undefined;
 	/** Open while the entry is cached; owns its fibers. */
 	readonly scope: Scope.Closeable;
 	/**
@@ -193,6 +199,7 @@ export function make(cache: CacheState, key: QueryKey, hash: string): Entry {
 		options: undefined,
 		pending: first,
 		retriesStopped: false,
+		returnsEffect: undefined,
 		scope,
 		services: cache.services,
 		signalRead: false,
@@ -213,7 +220,7 @@ export function make(cache: CacheState, key: QueryKey, hash: string): Entry {
 	});
 	const command = (request?: FetchRequest) =>
 		Effect.suspend(() =>
-			isBrowserOnly(entry) ? Effect.void : Effect.ignore(fetch(entry, request)),
+			isDisabled(entry) ? Effect.void : Effect.ignore(fetch(entry, request)),
 		);
 	const commands: Commands = {
 		fetchNextPage: command({ direction: "forward" }),
@@ -243,9 +250,9 @@ function behavior<TName extends keyof QueryBehavior>(
 	return entry.options?.[name] ?? entry.cache.defaults[name];
 }
 
-/** A server cache's entry for an `ssr: false` query: it never runs here. */
-export function isBrowserOnly(entry: Entry) {
-	return entry.cache.isServer && behavior(entry, "ssr") === false;
+/** The entry's latest factory call returned `enabled: false`: it doesn't run. */
+export function isDisabled(entry: Entry) {
+	return behavior(entry, "enabled") === false;
 }
 
 /** Until a factory call attaches options, `meta` comes from hydration. */
@@ -408,7 +415,7 @@ export function fetch(
 export function invalidate(entry: Entry): Effect.Effect<void> {
 	return Effect.suspend(() => {
 		set(entry, { isInvalidated: true });
-		if (!isObserved(entry) || !entry.options || isBrowserOnly(entry)) {
+		if (!isObserved(entry) || !entry.options || isDisabled(entry)) {
 			return Effect.void;
 		}
 		return Effect.ignore(begin(entry, { restart: true }));
@@ -434,7 +441,7 @@ export function reset(entry: Entry): Effect.Effect<void> {
 		// data that was just dropped.
 		if (
 			!entry.options ||
-			isBrowserOnly(entry) ||
+			isDisabled(entry) ||
 			(!isObserved(entry) && !entry.inFlight)
 		) {
 			return Effect.void;
@@ -514,11 +521,17 @@ function begin(
 	if (Predicate.isTagged(entry.scope.state, "Closed")) {
 		return Effect.fail(new CancelledError());
 	}
-	if (isBrowserOnly(entry)) {
-		const error = new BrowserOnlyError({ hash: entry.hash });
-		const firstLoad = entry.pending;
-		entry.pending = undefined;
-		firstLoad?.reject(error);
+	if (isDisabled(entry)) {
+		const error = new DisabledError({ hash: entry.hash });
+		// A server render can't wait for a later factory call, so its readers
+		// reject and React renders the Suspense fallback there, then the
+		// component in the browser. Browser readers stay suspended until a
+		// factory call enables the query.
+		if (entry.cache.isServer) {
+			const firstLoad = entry.pending;
+			entry.pending = undefined;
+			firstLoad?.reject(error);
+		}
 		return Effect.die(error);
 	}
 	const options = entry.options;
@@ -569,7 +582,9 @@ function startRequest(
 	entry.retriesStopped = false;
 	entry.signalRead = false;
 	entry.tasks.cancel("gc");
-	if (!entry.state.hasData && entry.state.status === "error") {
+	// A first load that failed, or was rejected while disabled, has settled
+	// its promise; readers need a pending one again.
+	if (!entry.state.hasData && !entry.pending) {
 		entry.pending = pending();
 		set(entry, {
 			error: null,
@@ -774,8 +789,9 @@ function attempt(
 			entry.signalRead = true;
 			return signal;
 		});
+		entry.returnsEffect = Effect.isEffect(result);
 		// Interrupting an Effect cancels it, whether it reads the signal or not.
-		if (Effect.isEffect(result)) {
+		if (entry.returnsEffect) {
 			entry.signalRead = true;
 		}
 		return result;

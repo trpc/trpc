@@ -10,6 +10,8 @@ React Router apps load data in one of two places, and raf-query fits each differ
 - **[Client-only](#client-only-apps)**: [SPA Mode](https://reactrouter.com/how-to/spa) (`ssr: false`) with [`clientLoader`](https://reactrouter.com/start/framework/data-loading#client-data-loading), or [Data Mode](https://reactrouter.com/start/modes#data)'s [`createBrowserRouter`](https://reactrouter.com/api/data-routers/createBrowserRouter). Loaders run in the browser, on the tab's one `QueryClient`, and nothing is hydrated. `prefetch`, `ensure` and `fetch` work as in [Starting queries](./starting-queries.md).
 - **[Server rendering](#server-rendering)**: [Framework Mode](https://reactrouter.com/start/modes#framework) with [`ssr: true`](https://reactrouter.com/api/framework-conventions/react-router.config.ts#ssr) (the default) and [`loader`](https://reactrouter.com/start/framework/data-loading#server-data-loading). Loaders run on the server with one `QueryClient` per request, which a root middleware creates, and dehydrate it into the loader data. `HydrationBoundary` writes it into the browser's client. Use `prefetch` and `fetch` there: `ensure` waits like `fetch`.
 
+If you can choose the router, prefer [TanStack Start](./tanstack-start.md). A link preloaded on hover runs its route's loaders in the browser, so the next page's queries start in the browser's cache and the click uses them. React Router's `prefetch="intent"` doesn't: see [Prefetching links](#prefetching-links).
+
 ## Client-only apps
 
 ### SPA Mode
@@ -127,9 +129,16 @@ While a link navigation is loading the next route, show pending state with React
 react-router/app/docs/react-router.tsx#pending-ui
 ```
 
-[`prefetch="intent"`](https://reactrouter.com/api/components/Link#prefetch) loads a route's code and its server `loader` data when the user hovers or focuses the link, so a server loader's queries start before the click. A `clientLoader` still runs on the click; to start its queries earlier, call `queryClient.prefetch` from the link's `onPointerEnter`, as in [Preloading on intent](./starting-queries.md#preloading-on-intent). `Link` and `NavLink` also take `"render"`, `"viewport"`, and `"none"` (the default).
-
 Per-query background refetches after the page has rendered use `controls.isFetching`. See [Background fetching indicators](./background-fetching-indicators.md).
+
+## Prefetching links
+
+[`prefetch="intent"`](https://reactrouter.com/api/components/Link#prefetch) on a `Link` or `NavLink` preloads the route's modules when the user hovers or focuses the link (`"render"` does it when the link renders, `"viewport"` when it scrolls into view, and `"none"`, the default, never). With either kind of loader, the click doesn't start from the prefetch's queries:
+
+- **A server `loader`**: the prefetch also requests the loader data, which runs the loaders on the server, but React Router doesn't keep the response. The click requests the loader data again, and the loaders and their queries run a second time. What the prefetch saves is loading the route's code.
+- **A `clientLoader`**: the prefetch doesn't run it; it runs on the click. To start its queries earlier, call `queryClient.prefetch` from the link's `onPointerEnter`, as in [Preloading on intent](./starting-queries.md#preloading-on-intent).
+
+In TanStack Router, the navigation reuses a route preloaded in the last 30 seconds, or joins its loader if it's still running ([Preloading](https://tanstack.com/router/latest/docs/framework/react/guide/preloading)). Its loaders run in the browser, so the queries a preload starts land in the browser's cache, and the navigation's loader finds them there even once the preload is stale. See [TanStack Start](./tanstack-start.md).
 
 ## Search params
 

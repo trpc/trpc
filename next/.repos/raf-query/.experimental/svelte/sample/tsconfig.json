@@ -1,0 +1,10 @@
+{
+	"extends": "$app/tsconfig",
+	"compilerOptions": {
+		"allowImportingTsExtensions": true,
+		"noEmit": true,
+		"skipLibCheck": true,
+		"strict": true
+	},
+	"include": ["src", "*"]
+}

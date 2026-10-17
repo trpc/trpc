@@ -1,0 +1,7 @@
+# Docs point readers who can choose to TanStack Router (human)
+
+Human: "in react-router i think it's incorrect that the loaders actually run on prefetch=\"intent\" … this is one of the reason i prefer tanstack router (prompt people to use tanstack router if they have a choice)".
+
+- **`www/content/react-router.md` recommends TanStack Start** under its intro, for readers picking a router, and its "Prefetching links" section says what `prefetch="intent"` does for each kind of loader. A `clientLoader` isn't run by the prefetch at all: `PrefetchPageLinksImpl` builds data links only for routes with `hasLoader` (a server loader).
+- **Measured** (examples/react-router production build): hovering adds `<link rel="prefetch" href="/issues/4.data">` and the server runs the loaders; the click requests `/issues/4.data` again (resource timing `fetch`, sent over the network), so the loaders run twice. React Router 8's `PrefetchPageLinksImpl` (`react-router/dist/.../dom/ssr/components.js`) only renders `<link rel="prefetch" as="fetch">`; loader responses have no `Cache-Control`. TanStack Start's click made no new request for what the hover loaded; TanStack Router reuses a preload for `preloadStaleTime` (30 s) or joins its in-flight loader (`.repos/router/docs/router/guide/preloading.md`).
+- Lost: the homepage and guide saying intent prefetch starts the React Router page's queries before the click.

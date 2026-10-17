@@ -1,0 +1,9 @@
+# throwOnError on the query's options (human asked, agent designed)
+
+- Human: an app whose layered client throws had to pass `throwOnError: true` on every read (KATTCORP/isbabyoutyet: 34 call sites, nearly all `convexQuery(...)` reads). First tried as an app-wide `Register` default; the human asked for it on the query options instead, overridable per read.
+- **Precedence**: the read's `throwOnError`, else the query's (`queryOptions` / `infiniteQueryOptions`), else the client's. Promise `queryFn`s throw whatever the flags say. Runtime: `throwsOnError(query, readFlag, clientDefault)` in `controls.ts` reads the entry's latest `options.throwOnError`; React's `useQuery` and the shared `QueryBinding` (Svelte, Vue) both call it.
+- **Types**: `queryOptions` keeps a literal `throwOnError` in the bag (`TThrow`, the fifth type parameter, `undefined` when unset); `ThrowOnErrorOf<TFactory>` reads it and `ThrowsOnError` uses it when the read sets none. The client's flag stays invisible to types (a read on a query with no flag is typed `Result`).
+- **Explicit type arguments**: a caller passing `queryOptions<D, E, S>` gets `TThrow = undefined`, so `throwOnError: true` is a type error until `TThrow` is passed too. Chosen over defaulting `TThrow` to `boolean`, which would type-check and then type the reads as `Result` while they throw.
+- Lost: the `Register` default (`Register.throwOnError` plus a required, matching client flag). It made every `new QueryClient` and `QueryProvider` repeat the flag, and it is app-wide where the reason to throw is usually per query or per factory maker.
+- Not in `QueryBehavior` / `config.defaults`: types can't see cache defaults, so a default there would bring back the mismatch this fixes.
+- Lives in `packages/core/src/options.ts`, `packages/core/src/controls.ts`, `packages/core/src/binding.ts`, `packages/react/src/use-query.ts`, `www/content/effect-errors.md#set-it-on-the-query`.

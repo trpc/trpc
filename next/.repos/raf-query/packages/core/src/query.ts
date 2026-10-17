@@ -93,10 +93,10 @@ export const CancelledError: typeof internal.CancelledError =
 
 export type CancelledError = internal.CancelledError;
 
-export const BrowserOnlyError: typeof internal.BrowserOnlyError =
-	internal.BrowserOnlyError;
+export const DisabledError: typeof internal.DisabledError =
+	internal.DisabledError;
 
-export type BrowserOnlyError = internal.BrowserOnlyError;
+export type DisabledError = internal.DisabledError;
 
 export const isQuery: (value: unknown) => value is Query = internal.isQuery;
 
@@ -209,6 +209,18 @@ export function metaUnsafe<TFactory extends QueryFactory>(
 	self: Query<TFactory>,
 ): QueryMeta | undefined {
 	return internal.metaOf(internal.entryOf(self));
+}
+
+/**
+ * Whether the query's `queryFn` returns an Effect (`true`) or a promise or
+ * plain value (`false`), as of its last call, on this cache or the one its
+ * data was hydrated from. `undefined` until one has run. Bindings read typed
+ * errors as a `Result` only for Effects.
+ */
+export function returnsEffectUnsafe<TFactory extends QueryFactory>(
+	self: Query<TFactory>,
+): boolean | undefined {
+	return internal.entryOf(self).returnsEffect;
 }
 
 /** The entry's current state. */

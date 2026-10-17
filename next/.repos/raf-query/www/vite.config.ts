@@ -12,6 +12,12 @@ import { sections, site } from "./src/site.ts";
 const contentDir = new URL("content", import.meta.url).pathname;
 const samplesDir = new URL("samples", import.meta.url).pathname;
 const demosDir = new URL("src/demos", import.meta.url).pathname;
+// Vercel keeps `node_modules` between builds, and CI caches this dir.
+const twoslashCacheDir = new URL(
+	"node_modules/.cache/twoslash",
+	import.meta.url,
+).pathname;
+const lockfile = new URL("../pnpm-lock.yaml", import.meta.url).pathname;
 const pages = await Effect.runPromise(
 	docPages({ contentDir, samplesDir }).pipe(Effect.provide(NodeServices.layer)),
 );
@@ -25,6 +31,7 @@ export default defineConfig({
 			samplesDir,
 			sections,
 			siteUrl: site.url,
+			twoslashCache: { dir: twoslashCacheDir, inputs: [lockfile] },
 		}),
 		tailwindcss(),
 		tanstackStart({

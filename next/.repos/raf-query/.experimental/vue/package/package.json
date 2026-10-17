@@ -1,0 +1,38 @@
+{
+	"name": "@raf-query/experimental-vue",
+	"version": "0.0.0",
+	"private": true,
+	"description": "Experiment, not published: raf-query's bindings for Vue 3.5",
+	"license": "MIT",
+	"type": "module",
+	"sideEffects": false,
+	"exports": {
+		".": "./src/index.ts"
+	},
+	"scripts": {
+		"build": "vp pack",
+		"test": "vp test",
+		"typecheck": "tsc"
+	},
+	"dependencies": {
+		"@raf-query/core": "workspace:*"
+	},
+	"peerDependencies": {
+		"effect": "^4.0.0",
+		"vue": "^3.5.0"
+	},
+	"devDependencies": {
+		"@effect/vitest": "catalog:",
+		"@types/node": "26.6.4",
+		"@vitest/coverage-v8": "5.0.1",
+		"@vue/test-utils": "2.5.1",
+		"effect": "catalog:",
+		"happy-dom": "21.0.1",
+		"typescript": "7.0.2",
+		"vite-plus": "1.0.0",
+		"vue": "3.5.44"
+	},
+	"engines": {
+		"node": ">=22"
+	}
+}

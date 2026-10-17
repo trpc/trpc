@@ -3,12 +3,13 @@
 import {
 	type DehydratedState,
 	hashKey,
+	hydrate,
 	type HydrateOptions,
 	Query,
+	type QueryClient,
 } from "@raf-query/core";
 import { type ReactNode, useEffect, useState } from "react";
 
-import { hydrate, type QueryClient } from "../client.ts";
 import { useQueryClient } from "../provider.tsx";
 
 /**

@@ -1,0 +1,43 @@
+{
+	"name": "@raf-query/experimental-svelte",
+	"version": "0.0.0",
+	"private": true,
+	"description": "Experiment, not published: raf-query's bindings for Svelte 5, built on runes",
+	"license": "MIT",
+	"type": "module",
+	"sideEffects": false,
+	"exports": {
+		".": {
+			"types": "./src/index.ts",
+			"default": "./src/index.ts"
+		}
+	},
+	"scripts": {
+		"build": "svelte-package --input src --output dist",
+		"test": "vp test",
+		"typecheck": "svelte-check --tsconfig ./tsconfig.json --fail-on-warnings"
+	},
+	"dependencies": {
+		"@raf-query/core": "workspace:*"
+	},
+	"peerDependencies": {
+		"effect": "^4.0.0",
+		"svelte": "^5.7.0"
+	},
+	"devDependencies": {
+		"@sveltejs/package": "3.0.1",
+		"@sveltejs/vite-plugin-svelte": "7.3.1",
+		"@testing-library/svelte": "5.4.2",
+		"@types/node": "26.6.4",
+		"@vitest/coverage-v8": "5.0.1",
+		"effect": "catalog:",
+		"happy-dom": "21.0.1",
+		"svelte": "5.57.2",
+		"svelte-check": "4.7.7",
+		"typescript": "6.0.3",
+		"vite-plus": "1.0.0"
+	},
+	"engines": {
+		"node": ">=22"
+	}
+}

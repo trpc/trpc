@@ -14,9 +14,11 @@ import {
 	QueryClientProvider,
 	type QueryHandle,
 	type QueryHandleWithData,
+	type QueryKey,
 	type QueryOptions,
 	queryOptions,
 	type ServicesOf,
+	type ThrowOnErrorOf,
 	useQuery,
 	useWaterfall,
 } from "./index.ts";
@@ -70,16 +72,19 @@ class NotFound {
 	readonly _tag = "NotFound";
 }
 
+function readUser(id: number) {
+	return Effect.gen(function* () {
+		const api = yield* Api;
+		if (id < 0) {
+			return yield* Effect.fail(new NotFound());
+		}
+		return yield* api.user(id);
+	});
+}
+
 function userQuery(input: { id: number }) {
 	return queryOptions({
-		queryFn: () =>
-			Effect.gen(function* () {
-				const api = yield* Api;
-				if (input.id < 0) {
-					return yield* Effect.fail(new NotFound());
-				}
-				return yield* api.user(input.id);
-			}),
+		queryFn: () => readUser(input.id),
 		queryKey: ["user", input.id],
 	});
 }
@@ -201,6 +206,49 @@ describe("types", () => {
 		expectTypeOf<ErrorOf<typeof userQuery>>().toEqualTypeOf<NotFound>();
 		expectTypeOf<DataOf<typeof userQuery>>().toEqualTypeOf<string>();
 		expectTypeOf<ServicesOf<typeof postQuery>>().toEqualTypeOf<never>();
+	});
+
+	it("keep a literal throwOnError in the bag", () => {
+		function throwingUserQuery(input: { id: number }) {
+			return queryOptions({
+				queryFn: () => readUser(input.id),
+				queryKey: ["throwing-user", input.id],
+				throwOnError: true,
+			});
+		}
+		expectTypeOf(throwingUserQuery({ id: 1 })).toEqualTypeOf<
+			QueryOptions<{
+				data: string;
+				error: NotFound;
+				key: readonly ["throwing-user", number];
+				services: Api;
+				throwOnError: true;
+			}>
+		>();
+		expectTypeOf<
+			ThrowOnErrorOf<typeof throwingUserQuery>
+		>().toEqualTypeOf<true>();
+		expectTypeOf<ThrowOnErrorOf<typeof userQuery>>().toEqualTypeOf<undefined>();
+	});
+
+	it("take throwOnError in a factory type declared by hand", () => {
+		type UserFactory = (input: { id: number }) => QueryOptions<{
+			data: string;
+			error: NotFound;
+			services: Api;
+			throwOnError: true;
+		}>;
+		const declaredUserQuery: UserFactory = (input) =>
+			queryOptions<string, NotFound, Api, QueryKey, true>({
+				queryFn: () => readUser(input.id),
+				queryKey: ["declared-user", input.id],
+				throwOnError: true,
+			});
+		const useTypes = (handle: QueryHandle<UserFactory>) => {
+			const [userPromise] = useQuery(declaredUserQuery, handle);
+			expectTypeOf(userPromise).resolves.toEqualTypeOf<string>();
+		};
+		expect(useTypes).toBeTypeOf("function");
 	});
 
 	it("take only factories whose services the client's layer provides", () => {

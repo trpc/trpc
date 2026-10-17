@@ -18,8 +18,8 @@
 		"raf-query": {
 			"packages": [],
 			"url": "https://github.com/KATT/raf-query.git",
-			"version": "841ffcf4d0fa0a40dfc58dc65bfcfadca8948874",
-			"ref": "841ffcf4d0fa0a40dfc58dc65bfcfadca8948874",
+			"version": "a9f2aa7743c64b548c6d982f5caffaf53f9a695a",
+			"ref": "a9f2aa7743c64b548c6d982f5caffaf53f9a695a",
 			"ignore": [
 				"**/.github/**",
 				"pnpm-lock.yaml"

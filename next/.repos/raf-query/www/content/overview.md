@@ -47,10 +47,10 @@ starting-queries
 
 ## Packages
 
-| Package            | Contents                                                                                                                                                          |
-| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@raf-query/core`  | Framework-agnostic and Effect-only: `QueryCache`, `queryOptions` / `infiniteQueryOptions`, handles, dehydrate / hydrate                                           |
-| `@raf-query/react` | `QueryClient` (the cache with Promise methods), hooks, providers, `HydrationBoundary`, `allKeyed`. Re-exports `@raf-query/core`, so apps import only this package |
+| Package            | Contents                                                                                                                                                                       |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `@raf-query/core`  | Framework-agnostic: `QueryClient` (the cache with Promise methods), its Effect `QueryCache`, `queryOptions` / `infiniteQueryOptions`, handles, `allKeyed`, dehydrate / hydrate |
+| `@raf-query/react` | Hooks, providers, `HydrationBoundary`. Re-exports `@raf-query/core`, so apps import only this package                                                                          |
 
 `@raf-query/react` has subpath entries for framework integrations and tooling:
 

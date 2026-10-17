@@ -1,9 +1,8 @@
 "use client";
 
-import type { QueryCache } from "@raf-query/core";
+import type { QueryCache, QueryClient } from "@raf-query/core";
 import { useCallback, useSyncExternalStore } from "react";
 
-import type { QueryClient } from "./client.ts";
 import { useQueryClient } from "./provider.tsx";
 
 // Cache events fire synchronously, sometimes while another component renders

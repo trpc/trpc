@@ -18,6 +18,7 @@ catalog:
 minimumReleaseAgeExclude:
   - happy-dom@21.0.1
   - "@base-ui/react@1.9.0"
+  - svelte-check@4.7.7
 
 # Keep plugins such as @effect/vitest on the Vitest copy bundled by vite-plus.
 overrides:

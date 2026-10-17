@@ -258,12 +258,11 @@ const stepsByMode = {
 			body: (
 				<>
 					<p>
-						React Router runs the loader as soon as a navigation starts, and
-						with <code>{'prefetch="intent"'}</code>, when a link is hovered.
-						Every query the page needs starts there, at the same time, before
-						anything renders. A root middleware creates one client per request,
-						and every loader reads it from the context: nested routes share a
-						cache, and requests never share data.
+						React Router runs the loader on the server as soon as a navigation
+						starts. Every query the page needs starts there, at the same time,
+						before anything renders. A root middleware creates one client per
+						request, and every loader reads it from the context: nested routes
+						share a cache, and requests never share data.
 					</p>
 					<p>
 						<code>prefetch</code> never holds the navigation: the page renders

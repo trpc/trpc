@@ -1,6 +1,6 @@
 "use client";
 
-import { Query } from "@raf-query/core";
+import { Query, type QueryClient } from "@raf-query/core";
 import { Effect, Predicate } from "effect";
 import {
 	type CSSProperties,
@@ -9,7 +9,6 @@ import {
 	useSyncExternalStore,
 } from "react";
 
-import type { QueryClient } from "./client.ts";
 import {
 	countByStatus,
 	type DevtoolsStatus,

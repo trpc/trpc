@@ -1,6 +1,6 @@
 # @raf-query/core
 
-The framework-agnostic cache behind [raf-query](https://raf-query.katt.dev), written in and for [Effect](https://effect.website): every verb is an Effect with typed errors and services, and entries can be watched as Streams.
+The framework-agnostic cache behind [raf-query](https://raf-query.katt.dev), written in and for [Effect](https://effect.website): every verb is an Effect with typed errors and services, and entries can be watched as Streams. It also holds `QueryClient`, the same cache with Promise methods, which the framework bindings re-export.
 
 **[Documentation](https://raf-query.katt.dev/docs/effect)** · [API reference](https://raf-query.katt.dev/docs/api-reference#raf-querycore) · [GitHub](https://github.com/KATT/raf-query)
 

@@ -1,6 +1,6 @@
 {
 	"name": "@raf-query/core",
-	"version": "0.10.0",
+	"version": "0.11.1",
 	"description": "Framework-agnostic core of raf-query, a render-as-you-fetch query library",
 	"keywords": [
 		"query",

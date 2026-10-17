@@ -8,7 +8,7 @@ function pushStateQuery(input: { channel: string }) {
 	return queryOptions({
 		queryKey: ["pushState", input.channel],
 		queryFn: () => detectPushState(input.channel),
-		ssr: false,
+		enabled: typeof window !== "undefined",
 	});
 }
 

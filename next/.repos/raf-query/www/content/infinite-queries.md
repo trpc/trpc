@@ -63,7 +63,7 @@ When a paged query refetches — stale on navigation, invalidated, focused — e
 
 `setData` on a paged query can land while `fetchNextPage` or `fetchPreviousPage` is in flight, for example from a live subscription updating a loaded page. The new page is added to the data as it is when the page arrives, so the write stays. If the write changed the end being loaded (it dropped or replaced the pages there), the page that arrives no longer follows the list and is dropped; load it again with another `fetchNextPage`.
 
-A refetch is different: it replaces every page with what it read, as a plain query's request replaces its data. Write again once it settles (`isFetching` turns `false`) if your writes are newer than the server's reads.
+A refetch reads every page again, and keeps writes that are newer than its reads. A page written after the refetch started reading it stays as written. A page written before that is read again, and the read replaces it. So a live subscription can keep writing pages while a refetch runs, and its results survive. If a write changed the list's page params, only pages whose param the refetch also loaded are kept.
 
 ## Bidirectional lists
 

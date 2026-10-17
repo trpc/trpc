@@ -3,7 +3,8 @@
  * Query's `QueryObserver`: it derives the reader's result from the query's
  * state, keeps a previous query's data for `whilePending: "previous"`, runs
  * `refetchInterval`, and notifies its listeners only when a result property
- * they read changed (see {@link trackResult}). Bindings make one per hook.
+ * they read changed (see {@link trackResult}), or a promise whose `status`
+ * they read settled (see {@link trackThenable}). Bindings make one per hook.
  *
  * The `*Unsafe` functions read and update synchronously, for renders and
  * external stores. While it has listeners, the observer holds a `Scope` (a
@@ -107,12 +108,20 @@ interface Subscription {
 
 interface Impl<TFactory extends QueryFactory> extends QueryObserver<TFactory> {
 	current: Result<DataOf<TFactory>>;
+	/**
+	 * `current.promise.status` when `current` was set. A first load settles
+	 * its promise in place, so the status can change while the promise
+	 * stays the same.
+	 */
+	currentStatus: Thenable<unknown>["status"];
 	/** The last observed query that had data, for `whilePending: "previous"`. */
 	lastWithData: Query.Query<TFactory> | undefined;
 	readonly listeners: Set<() => void>;
 	options: Options;
 	query: Query.Query<TFactory>;
 	subscription: Subscription | undefined;
+	/** The latest {@link trackThenable} wrapper this observer handed out. */
+	tracked: Thenable<unknown> | undefined;
 	/** Result properties a reader has read; empty means notify on any change. */
 	readonly trackedProps: Set<ResultKey>;
 }
@@ -158,13 +167,32 @@ function isResultKey(name: PropertyKey): name is ResultKey {
 	return Predicate.isString(name) && Object.hasOwn(resultKeys, name);
 }
 
-function shallowEqual(a: Result, b: Result) {
-	for (const name of Object.keys(resultKeys)) {
-		if (isResultKey(name) && a[name] !== b[name]) {
-			return false;
-		}
-	}
-	return true;
+/** Whether `next.promise` has a different status than it had in the current result. */
+function settled<TFactory extends QueryFactory>(
+	self: Impl<TFactory>,
+	next: Result,
+) {
+	return self.currentStatus !== next.promise.status;
+}
+
+function anyChanged<TFactory extends QueryFactory>(
+	self: Impl<TFactory>,
+	next: Result,
+) {
+	return (
+		settled(self, next) ||
+		Object.keys(resultKeys).some(
+			(name) => isResultKey(name) && self.current[name] !== next[name],
+		)
+	);
+}
+
+function setCurrent<TFactory extends QueryFactory>(
+	self: Impl<TFactory>,
+	next: Result<DataOf<TFactory>>,
+) {
+	self.current = next;
+	self.currentStatus = next.promise.status;
 }
 
 /** The result for `query` with `options`, given the last query that had data. */
@@ -210,13 +238,16 @@ export function makeUnsafe<TFactory extends QueryFactory>(
 	query: Query.Query<TFactory>,
 	options: Options = {},
 ): QueryObserver<TFactory> {
+	const current = resultOf(query, options, undefined);
 	const self: Impl<TFactory> = Object.assign(Object.create(Proto), {
-		current: resultOf(query, options, undefined),
+		current,
+		currentStatus: current.promise.status,
 		lastWithData: Query.getUnsafe(query).hasData ? query : undefined,
 		listeners: new Set(),
 		options,
 		query,
 		subscription: undefined,
+		tracked: undefined,
 		trackedProps: new Set(),
 	});
 	return self;
@@ -255,8 +286,8 @@ export function getOptimisticResultUnsafe<TFactory extends QueryFactory>(
 ): Result<DataOf<TFactory>> {
 	const impl = implOf(self);
 	const result = resultOf(query, options, impl.lastWithData);
-	if (!shallowEqual(impl.current, result)) {
-		impl.current = result;
+	if (anyChanged(impl, result)) {
+		setCurrent(impl, result);
 	}
 	return result;
 }
@@ -343,6 +374,59 @@ export function trackResult<
 	});
 }
 
+const settledFields: ReadonlySet<PropertyKey> = new Set([
+	"reason",
+	"status",
+	"value",
+]);
+
+/**
+ * One wrapper per promise, shared by every observer, so its identity is as
+ * stable as the promise's: an observer made by a render that suspended
+ * before committing is replaced on the next attempt, and `use()` expects
+ * the same promise again.
+ */
+const wrappers = new WeakMap<Thenable<unknown>, Thenable<unknown>>();
+
+/** Wrappers whose `status`, `value` or `reason` a reader has read. */
+const settledReads = new WeakSet<Thenable<unknown>>();
+
+/**
+ * Wrap `promise`, the result's or one derived from it, so that reading its
+ * `status`, `value` or `reason` marks its settling as tracked. A first load
+ * settles its promise in place, without a new promise, so only readers of
+ * those fields need to hear about it. The mark is the wrapper's, shared by
+ * the observers that hand it out.
+ */
+export function trackThenable<
+	TFactory extends QueryFactory,
+	TThenable extends Thenable<unknown>,
+>(self: QueryObserver<TFactory>, promise: TThenable): TThenable {
+	let wrapper = wrappers.get(promise);
+	if (!wrapper) {
+		const created: Thenable<unknown> = new Proxy(promise, {
+			get: (target, name) => {
+				if (settledFields.has(name)) {
+					settledReads.add(created);
+				}
+				// oxlint-disable-next-line anti-slop/no-reflect-get -- a Proxy trap forwarding to its target
+				const value: unknown = Reflect.get(target, name, target);
+				// `Promise.prototype.then` throws on a receiver that isn't a promise.
+				return Predicate.isFunction(value) ? value.bind(target) : value;
+			},
+		});
+		wrappers.set(promise, created);
+		wrapper = created;
+	}
+	implOf(self).tracked = wrapper;
+	// SAFETY: stored above under the promise it wraps.
+	return wrapper as TThenable;
+}
+
+function readsSettled<TFactory extends QueryFactory>(self: Impl<TFactory>) {
+	return self.tracked !== undefined && settledReads.has(self.tracked);
+}
+
 /** Mark `name` as read, for bindings that track access themselves. */
 export function trackProp<TFactory extends QueryFactory>(
 	self: QueryObserver<TFactory>,
@@ -353,32 +437,35 @@ export function trackProp<TFactory extends QueryFactory>(
 
 /** Recompute the result, and notify listeners if a tracked property changed. */
 function updateResult<TFactory extends QueryFactory>(self: Impl<TFactory>) {
-	const previous = self.current;
 	const next = resultOf(self.query, self.options, self.lastWithData);
 	if (Query.getUnsafe(self.query).hasData) {
 		self.lastWithData = self.query;
 	}
-	if (shallowEqual(previous, next)) {
+	if (!anyChanged(self, next)) {
 		return;
 	}
-	self.current = next;
-	if (shouldNotify(self, previous, next)) {
+	const notify = shouldNotify(self, next);
+	setCurrent(self, next);
+	if (notify) {
 		for (const listener of self.listeners) {
 			listener();
 		}
 	}
 }
 
+/** Whether something tracked differs in `next` from the current result. */
 function shouldNotify<TFactory extends QueryFactory>(
 	self: Impl<TFactory>,
-	previous: Result,
 	next: Result,
 ) {
-	if (self.trackedProps.size === 0) {
+	if (self.trackedProps.size === 0 && !readsSettled(self)) {
+		return true;
+	}
+	if (readsSettled(self) && settled(self, next)) {
 		return true;
 	}
 	for (const name of self.trackedProps) {
-		if (previous[name] !== next[name]) {
+		if (self.current[name] !== next[name]) {
 			return true;
 		}
 	}

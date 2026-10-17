@@ -3,7 +3,7 @@
 import { type ReactNode, useState } from "react";
 
 import { requestInBrowserOnly } from "./browser-requests.ts";
-import { QueryClient, type QueryClientConfig } from "../client.ts";
+import { QueryClient, type QueryClientConfig } from "@raf-query/core";
 import { QueryClientProvider } from "../provider.tsx";
 
 /**

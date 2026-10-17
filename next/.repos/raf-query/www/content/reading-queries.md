@@ -11,7 +11,7 @@ Components read queries with `useQuery`, passing the factory and the handle the 
 tanstack-start/src/docs/reading-queries.ts#intro
 ```
 
-`promise` is a stable `Promise<Data>` owned by the cache. Unwrap it with `use()`. When the cache already has data, the promise is pre-resolved and `use()` returns synchronously without suspending.
+`promise` is a stable `Thenable<Data>` owned by the cache: a `Promise` that also carries its `status`, `value` and `reason`. Unwrap it with `use()`. When the cache already has data, the promise is pre-resolved and `use()` returns synchronously without suspending.
 
 A handle from `ensure` or `fetch` had its data loaded before the route rendered, so `useQuery` returns the data itself. See [Handles](./handles.md#typed-by-what-the-loader-did) for typing the props that receive one.
 

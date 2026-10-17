@@ -2,7 +2,7 @@
 
 import { createContext, type ReactNode, use, useEffect } from "react";
 
-import type { QueryClient } from "./client.ts";
+import type { QueryClient } from "@raf-query/core";
 
 /**
  * A hook can't know which services the provider's client has, so its verbs

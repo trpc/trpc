@@ -7,7 +7,8 @@ import type { QueryKey } from "./key.ts";
  * `queryFn` its error and the services it needs, and the shape of its key.
  * Leave `error` out and it is `unknown` (promises reject with anything);
  * leave `services` out and it is `never`; leave `key` out and it is any
- * {@link QueryKey}.
+ * {@link QueryKey}. `throwOnError` is the query's `throwOnError` option;
+ * leave it out when the query doesn't set one.
  *
  * ```ts
  * type PostOptions = QueryOptions<{ data: Post }>;
@@ -18,11 +19,13 @@ export interface QueryTypes {
 	readonly error?: unknown;
 	readonly key?: QueryKey;
 	readonly services?: unknown;
+	readonly throwOnError?: boolean;
 }
 
 /**
  * The types of a paged query: one page, the param that loads it, and as in
- * {@link QueryTypes}, an Effect `queryFn`'s error and services and the key.
+ * {@link QueryTypes}, an Effect `queryFn`'s error and services, the key and
+ * `throwOnError`.
  */
 export interface InfiniteQueryTypes {
 	readonly error?: unknown;
@@ -30,6 +33,7 @@ export interface InfiniteQueryTypes {
 	readonly page: unknown;
 	readonly pageParam: unknown;
 	readonly services?: unknown;
+	readonly throwOnError?: boolean;
 }
 
 /** `error` of a types bag, `unknown` when it has none. */
@@ -49,36 +53,47 @@ type KeyIn<TTypes> = TTypes extends {
 	? TKey
 	: QueryKey;
 
+/** `throwOnError` of a types bag, `undefined` when it has none. */
+type ThrowIn<TTypes> = TTypes extends {
+	readonly throwOnError: infer TThrow extends boolean;
+}
+	? TThrow
+	: undefined;
+
+/** One object type for an intersection, so bags read as written. */
+type Flat<T> = { [K in keyof T]: T[K] };
+
+type ErrorPart<TError> = unknown extends TError ? unknown : { error: TError };
+
+type ServicesPart<TServices> = [TServices] extends [never]
+	? unknown
+	: { services: TServices };
+
+type ThrowPart<TThrow> = [TThrow] extends [boolean]
+	? { throwOnError: TThrow }
+	: unknown;
+
 /**
  * The bag `queryOptions` returns. `error` is left out when the `queryFn`
  * doesn't name one (`unknown`: a promise or a plain value). `services` is
  * left out when the `queryFn` needs none (`never`). An Effect's error,
  * including `never` when it can't fail, stays. `key` is always there, so two
- * factories with different key shapes have different types.
+ * factories with different key shapes have different types. `throwOnError`
+ * is there when the options set it.
  */
-type QueryTypesOf<TData, TError, TServices, TKey> = unknown extends TError
-	? [TServices] extends [never]
-		? { data: TData; key: TKey }
-		: { data: TData; key: TKey; services: TServices }
-	: [TServices] extends [never]
-		? { data: TData; error: TError; key: TKey }
-		: { data: TData; error: TError; key: TKey; services: TServices };
+type QueryTypesOf<TData, TError, TServices, TKey, TThrow> = Flat<
+	{ data: TData; key: TKey } & ErrorPart<TError> &
+		ServicesPart<TServices> &
+		ThrowPart<TThrow>
+>;
 
 /** As {@link QueryTypesOf}, for a paged query. */
-type InfiniteQueryTypesOf<TPage, TPageParam, TError, TServices, TKey> =
-	unknown extends TError
-		? [TServices] extends [never]
-			? { key: TKey; page: TPage; pageParam: TPageParam }
-			: { key: TKey; page: TPage; pageParam: TPageParam; services: TServices }
-		: [TServices] extends [never]
-			? { error: TError; key: TKey; page: TPage; pageParam: TPageParam }
-			: {
-					error: TError;
-					key: TKey;
-					page: TPage;
-					pageParam: TPageParam;
-					services: TServices;
-				};
+type InfiniteQueryTypesOf<TPage, TPageParam, TError, TServices, TKey, TThrow> =
+	Flat<
+		{ key: TKey; page: TPage; pageParam: TPageParam } & ErrorPart<TError> &
+			ServicesPart<TServices> &
+			ThrowPart<TThrow>
+	>;
 
 /**
  * What a `queryFn` may return: a value, a promise, or an `Effect`. An
@@ -142,6 +157,20 @@ export type RetryPolicy =
 
 /** Options every query accepts. `QueryCache` defaults fill in the rest. */
 export interface QueryBehavior {
+	/**
+	 * `false` keeps the query from running. Default `true`. The factory
+	 * decides per call, so `enabled: typeof window !== "undefined"` runs a
+	 * query only in the browser, for data only a browser has (permissions,
+	 * device APIs, `localStorage`).
+	 *
+	 * While disabled, readers see `isPending`, `ensure` and `fetch` fail with
+	 * `Query.DisabledError`, and `invalidate`, `reset` and `refetch` do
+	 * nothing. In the browser, its promise stays pending until a factory
+	 * call returns `true` and runs it. A server cache never sends it, and its
+	 * promise rejects with `Query.DisabledError`: under Suspense, React
+	 * renders the fallback on the server and the component in the browser.
+	 */
+	readonly enabled?: boolean;
 	/** How long an unread entry stays cached, in ms. `Infinity` keeps it. */
 	readonly gcTime?: number;
 	/**
@@ -160,15 +189,6 @@ export interface QueryBehavior {
 	readonly retryDelay?:
 		| number
 		| ((failureCount: number, error: unknown) => number);
-	/**
-	 * `false`: only the browser runs the query, for data only a browser has
-	 * (permissions, device APIs). A server cache never starts it or sends it.
-	 * Readers there see `isPending`, and a promise that rejects with
-	 * `Query.BrowserOnlyError`: under Suspense, React renders the fallback on
-	 * the server and the query in the browser. `ensure` and `fetch` on the
-	 * server fail with that error. Default `true`.
-	 */
-	readonly ssr?: boolean;
 	/** How long data counts as fresh, in ms. Fresh data is never refetched. */
 	readonly staleTime?: number;
 	/**
@@ -190,8 +210,22 @@ interface ServicesField<TServices> {
 	readonly [servicesType]?: () => TServices;
 }
 
+interface ThrowOnErrorField<TThrow> {
+	/**
+	 * How reads of this query settle on failure when they don't set
+	 * `throwOnError` themselves: `true` rejects (to an error boundary),
+	 * `false` settles with a `Result`. Omit it for the client's default.
+	 * Only an Effect `queryFn`'s typed error reads as a `Result`; a promise
+	 * `queryFn` always rejects.
+	 */
+	readonly throwOnError?: TThrow;
+}
+
 export interface QueryOptions<TTypes extends QueryTypes>
-	extends QueryBehavior, ServicesField<ServicesIn<TTypes>> {
+	extends
+		QueryBehavior,
+		ServicesField<ServicesIn<TTypes>>,
+		ThrowOnErrorField<ThrowIn<TTypes>> {
 	readonly kind: "query";
 	queryFn(context: QueryFunctionContext): QueryFnResult<TTypes>;
 	readonly queryKey: KeyIn<TTypes>;
@@ -233,7 +267,8 @@ export interface InfiniteQueryOptions<TTypes extends InfiniteQueryTypes>
 			}>
 		>,
 		QueryBehavior,
-		ServicesField<ServicesIn<TTypes>> {
+		ServicesField<ServicesIn<TTypes>>,
+		ThrowOnErrorField<ThrowIn<TTypes>> {
 	readonly initialPageParam: TTypes["pageParam"];
 	readonly kind: "infinite";
 	/** Keep at most this many pages; the far end is dropped when paging. */
@@ -250,12 +285,18 @@ export interface InfiniteData<
 }
 
 export type AnyQueryOptions =
-	| QueryOptions<{ data: unknown; error: unknown; services: unknown }>
+	| QueryOptions<{
+			data: unknown;
+			error: unknown;
+			services: unknown;
+			throwOnError: boolean;
+	  }>
 	| InfiniteQueryOptions<{
 			error: unknown;
 			page: unknown;
 			pageParam: unknown;
 			services: unknown;
+			throwOnError: boolean;
 	  }>;
 
 /**
@@ -279,14 +320,20 @@ export type AnyQueryOptions =
  * factories with the same input and data but different keys have different
  * types, and a handle of one doesn't type-check where the other's goes.
  *
+ * `throwOnError: true` or `false` is kept as a literal too, so reads that
+ * don't set their own follow it in their types.
+ *
  * The type parameters are only there for TypeScript to infer the types bag
- * from `queryFn` and `queryKey`; it can't infer a bag's members.
+ * from `queryFn`, `queryKey` and `throwOnError`; it can't infer a bag's
+ * members. Passing them explicitly, pass `TThrow` too when setting
+ * `throwOnError`.
  */
 export function queryOptions<
 	TData,
 	TError = unknown,
 	TServices = never,
 	const TKey extends QueryKey = QueryKey,
+	TThrow extends boolean | undefined = undefined,
 >(
 	options: Omit<
 		QueryOptions<{
@@ -295,17 +342,21 @@ export function queryOptions<
 			key: TKey;
 			services: TServices;
 		}>,
-		"kind"
-	>,
-): QueryOptions<QueryTypesOf<TData, TError, TServices, TKey>> {
-	// SAFETY: `QueryTypesOf` only drops `error` when it is `unknown` and
-	// `services` when it is `never`, which is what `ErrorIn` / `ServicesIn`
-	// fill in for a bag that lacks them. The `queryFn`, the key and the
-	// services phantom are the same type either way.
+		"kind" | "throwOnError"
+	> &
+		ThrowOnErrorField<TThrow>,
+): QueryOptions<QueryTypesOf<TData, TError, TServices, TKey, TThrow>> {
+	// SAFETY: `QueryTypesOf` only drops `error` when it is `unknown`,
+	// `services` when it is `never` and `throwOnError` when it is
+	// `undefined`, which is what `ErrorIn` / `ServicesIn` / `ThrowIn` fill
+	// in for a bag that lacks them. The `queryFn`, the key and the services
+	// phantom are the same type either way.
 	return {
 		...options,
 		kind: "query",
-	} as unknown as QueryOptions<QueryTypesOf<TData, TError, TServices, TKey>>;
+	} as unknown as QueryOptions<
+		QueryTypesOf<TData, TError, TServices, TKey, TThrow>
+	>;
 }
 
 /**
@@ -320,6 +371,7 @@ export function infiniteQueryOptions<
 	TError = unknown,
 	TServices = never,
 	const TKey extends QueryKey = QueryKey,
+	TThrow extends boolean | undefined = undefined,
 >(
 	options: Omit<
 		InfiniteQueryOptions<{
@@ -329,18 +381,19 @@ export function infiniteQueryOptions<
 			pageParam: TPageParam;
 			services: TServices;
 		}>,
-		"kind"
-	>,
+		"kind" | "throwOnError"
+	> &
+		ThrowOnErrorField<TThrow>,
 ): InfiniteQueryOptions<
-	InfiniteQueryTypesOf<TPage, TPageParam, TError, TServices, TKey>
+	InfiniteQueryTypesOf<TPage, TPageParam, TError, TServices, TKey, TThrow>
 > {
-	// SAFETY: as in `queryOptions`. Dropping a default `error` / `services`
-	// doesn't change `queryFn`, the key or the services phantom.
+	// SAFETY: as in `queryOptions`. Dropping a default `error` / `services` /
+	// `throwOnError` doesn't change `queryFn`, the key or the services phantom.
 	return {
 		...options,
 		kind: "infinite",
 	} as unknown as InfiniteQueryOptions<
-		InfiniteQueryTypesOf<TPage, TPageParam, TError, TServices, TKey>
+		InfiniteQueryTypesOf<TPage, TPageParam, TError, TServices, TKey, TThrow>
 	>;
 }
 
@@ -434,6 +487,17 @@ export type ServicesOf<TFactory extends QueryFactory> =
 		: ReturnType<TFactory> extends QueryOptions<infer TTypes>
 			? ServicesIn<TTypes>
 			: never;
+
+/**
+ * The `throwOnError` a factory's options set, `undefined` when they set
+ * none (or for a factory of no particular query).
+ */
+export type ThrowOnErrorOf<TFactory extends QueryFactory> =
+	ReturnType<TFactory> extends InfiniteQueryOptions<infer TTypes>
+		? ThrowIn<TTypes>
+		: ReturnType<TFactory> extends QueryOptions<infer TTypes>
+			? ThrowIn<TTypes>
+			: undefined;
 
 /** Page type of a paged factory. */
 export type PageOf<TFactory extends QueryFactory> =

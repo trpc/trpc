@@ -1,0 +1,20 @@
+{
+	"name": "@examples/experimental-vue",
+	"version": "0.0.0",
+	"private": true,
+	"description": "Experiment: the Vue app the draft Vue guide is written against",
+	"type": "module",
+	"scripts": {
+		"typecheck": "vue-tsc"
+	},
+	"dependencies": {
+		"@raf-query/experimental-vue": "workspace:*",
+		"vue": "3.5.44",
+		"vue-router": "5.4.0"
+	},
+	"devDependencies": {
+		"typescript": "6.0.3",
+		"vite": "8.3.4",
+		"vue-tsc": "3.3.13"
+	}
+}

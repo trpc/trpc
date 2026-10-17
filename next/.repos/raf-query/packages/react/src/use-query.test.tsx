@@ -4,6 +4,9 @@ import { Context, Effect, Layer, Result, Schema } from "effect";
 import { Component, type ReactNode, StrictMode, Suspense, use } from "react";
 
 import {
+	dehydrate,
+	hydrate,
+	type InfiniteData,
 	infiniteQueryOptions,
 	Query,
 	QueryClient,
@@ -11,6 +14,7 @@ import {
 	type QueryHandle,
 	type QueryHandleWithData,
 	queryOptions,
+	type Thenable,
 	useQuery,
 	type UseQueryOptions,
 	useWaterfall,
@@ -179,6 +183,38 @@ describe("useQuery", () => {
 
 		expect(screen.getByText("First")).toBeDefined();
 		expect(test.backend.calls()).toBe(1);
+		cleanup();
+	});
+
+	it("keeps a disabled query suspended, not at the error boundary, until a factory call enables it", async () => {
+		const test = setup();
+		let enabled = false;
+		function permissionQuery() {
+			return queryOptions({
+				enabled,
+				queryFn: async () => "granted",
+				queryKey: ["permission"],
+			});
+		}
+		const handle = test.client.prefetch(permissionQuery);
+		function Permission() {
+			const [permissionPromise] = useQuery(permissionQuery, handle);
+			const permission = use(permissionPromise);
+			return <p>{permission}</p>;
+		}
+
+		await mount(test.view(<Permission />));
+		await test.backend.respond();
+		expect(screen.getByText("Loading")).toBeDefined();
+
+		enabled = true;
+		await act(async () => {
+			test.client.prefetch(permissionQuery);
+			await new Promise((resolve) => {
+				setTimeout(resolve, 10);
+			});
+		});
+		expect(screen.getByText("granted")).toBeDefined();
 		cleanup();
 	});
 
@@ -362,6 +398,123 @@ describe("useQuery", () => {
 		await test.backend.respond();
 		expect(screen.getAllByText("Renamed")).toHaveLength(2);
 		expect(renders).toEqual({ all: 3, promiseOnly: 2 });
+		cleanup();
+	});
+
+	describe("a component that reads the promise's status, not use()", () => {
+		function setupStatus() {
+			const test = setup();
+			function IssueStatus(props: {
+				readonly handle: QueryHandle<typeof test.backend.issueQuery>;
+			}) {
+				const [issuePromise] = useQuery(test.backend.issueQuery, props.handle);
+				if (issuePromise.status === "rejected") {
+					return <p>{`Failed: ${String(issuePromise.reason)}`}</p>;
+				}
+				return (
+					<p>
+						{issuePromise.status === "fulfilled"
+							? issuePromise.value.title
+							: "…"}
+					</p>
+				);
+			}
+			return { ...test, IssueStatus };
+		}
+
+		it("re-renders when a prefetch's first load fulfills", async () => {
+			const test = setupStatus();
+			const handle = test.client.prefetch(test.backend.issueQuery, { id: 1 });
+
+			await mount(test.view(<test.IssueStatus handle={handle} />));
+			expect(screen.getByText("…")).toBeDefined();
+			await test.backend.respond();
+			expect(screen.getByText("First")).toBeDefined();
+			cleanup();
+		});
+
+		it("re-renders when a prefetch's first load rejects", async () => {
+			const test = setupStatus();
+			test.backend.issues.delete(1);
+			const handle = test.client.prefetch(test.backend.issueQuery, { id: 1 });
+
+			await mount(test.view(<test.IssueStatus handle={handle} />));
+			expect(screen.getByText("…")).toBeDefined();
+			await test.backend.respond();
+			expect(screen.getByText("Failed: Error: No issue 1")).toBeDefined();
+			cleanup();
+		});
+
+		it("re-renders when the first load lands with throwOnError: false", async () => {
+			const gate = Promise.withResolvers<string>();
+			function nameQuery() {
+				return queryOptions({
+					queryFn: () => Effect.promise(() => gate.promise),
+					queryKey: ["name"],
+				});
+			}
+			const client = new QueryClient({ isServer: false, layer: Layer.empty });
+			function Name(props: { readonly handle: QueryHandle<typeof nameQuery> }) {
+				const [namePromise] = useQuery(nameQuery, props.handle);
+				return (
+					<p>
+						{namePromise.status === "fulfilled"
+							? Result.getOrThrow(namePromise.value)
+							: "…"}
+					</p>
+				);
+			}
+
+			await mount(
+				<QueryClientProvider client={client}>
+					<Name handle={client.prefetch(nameQuery)} />
+				</QueryClientProvider>,
+			);
+			expect(screen.getByText("…")).toBeDefined();
+			await act(async () => {
+				gate.resolve("Ada");
+				await new Promise((resolve) => {
+					setTimeout(resolve, 10);
+				});
+			});
+			expect(screen.getByText("Ada")).toBeDefined();
+			cleanup();
+		});
+	});
+
+	it("resumes use() on a first load without suspending again", async () => {
+		const test = setup();
+		const renders = { fallback: 0, issue: 0 };
+		const seen = new Set<Promise<unknown>>();
+		function Fallback() {
+			renders.fallback++;
+			return <p>Loading</p>;
+		}
+		function Issue(props: {
+			readonly handle: QueryHandle<typeof test.backend.issueQuery>;
+		}) {
+			renders.issue++;
+			const [issuePromise] = useQuery(test.backend.issueQuery, props.handle);
+			seen.add(issuePromise);
+			const issue = use(issuePromise);
+			return <p>{issue.title}</p>;
+		}
+		const handle = test.client.prefetch(test.backend.issueQuery, { id: 1 });
+
+		await mount(
+			<QueryClientProvider client={test.client}>
+				<Suspense fallback={<Fallback />}>
+					<Issue handle={handle} />
+				</Suspense>
+			</QueryClientProvider>,
+		);
+		// React renders a suspending mount twice before showing the fallback.
+		expect(renders).toEqual({ fallback: 1, issue: 2 });
+		await test.backend.respond();
+
+		expect(screen.getByText("First")).toBeDefined();
+		expect(renders).toEqual({ fallback: 1, issue: 3 });
+		expect(seen.size).toBe(1);
 		cleanup();
 	});
 
@@ -586,7 +739,7 @@ describe("useQuery", () => {
 			const [issue] = useQuery(backend.issueQuery, withData);
 			expectTypeOf(issue).toEqualTypeOf<Issue>();
 			const [promise] = useQuery(backend.issueQuery, handle);
-			expectTypeOf(promise).toEqualTypeOf<Promise<Issue>>();
+			expectTypeOf(promise).toEqualTypeOf<Thenable<Issue>>();
 		};
 		expect(useTypes).toBeTypeOf("function");
 	});
@@ -674,7 +827,7 @@ describe("useQuery", () => {
 			const [namePromise] = useQuery(nameQuery, props.handle);
 			const name = use(namePromise);
 			expectTypeOf(namePromise).toEqualTypeOf<
-				Promise<Result.Result<string, NotFound>>
+				Thenable<Result.Result<string, NotFound>>
 			>();
 			expectTypeOf(name).toEqualTypeOf<Result.Result<string, NotFound>>();
 			return (
@@ -769,6 +922,242 @@ describe("useQuery", () => {
 			expect(screen.getByText(/Error:/)).toBeTruthy();
 		});
 		cleanup();
+	});
+
+	describe("a promise queryFn on a client with a layer", () => {
+		function layered() {
+			const backend = createBackend();
+			const client = new QueryClient({ isServer: false, layer: Layer.empty });
+			expect(client.throwOnError).toBe(false);
+			function Title(props: {
+				readonly handle: QueryHandle<typeof backend.issueQuery>;
+			}) {
+				const [issuePromise] = useQuery(backend.issueQuery, props.handle);
+				expectTypeOf(issuePromise).toEqualTypeOf<Thenable<Issue>>();
+				const issue = use(issuePromise);
+				return <p>{issue.title}</p>;
+			}
+			const view = (children: ReactNode) => (
+				<QueryClientProvider client={client}>
+					<Boundary>
+						<Suspense fallback={<p>Loading</p>}>{children}</Suspense>
+					</Boundary>
+				</QueryClientProvider>
+			);
+			return { backend, client, Title, view };
+		}
+
+		it("returns plain data, not a Result", async () => {
+			const app = layered();
+			const handle = app.client.prefetch(app.backend.issueQuery, { id: 1 });
+			await mount(app.view(<app.Title handle={handle} />));
+			await app.backend.respond();
+			expect(screen.getByText("First")).toBeDefined();
+			cleanup();
+		});
+
+		it("returns plain data for a handle from ensure", async () => {
+			const app = layered();
+			const issueQuery = app.backend.issueQuery;
+			function Title(props: {
+				readonly handle: QueryHandleWithData<typeof issueQuery>;
+			}) {
+				const [issue] = useQuery(issueQuery, props.handle);
+				expectTypeOf(issue).toEqualTypeOf<Issue>();
+				return <p>{issue.title}</p>;
+			}
+			const loading = app.client.ensure(issueQuery, { id: 1 });
+			await app.backend.respond();
+			await mount(app.view(<Title handle={await loading} />));
+			expect(screen.getByText("First")).toBeDefined();
+			cleanup();
+		});
+
+		it("returns plain data hydrated from a server that ran the query", async () => {
+			const app = layered();
+			const server = new QueryClient({ isServer: true });
+			const loading = server.ensure(app.backend.issueQuery, { id: 1 });
+			await app.backend.respond();
+			const loaded = await loading;
+			hydrate(app.client, dehydrate(server));
+
+			await mount(
+				app.view(
+					<app.Title handle={{ input: loaded.input, key: loaded.key }} />,
+				),
+			);
+			expect(screen.getByText("First")).toBeDefined();
+			expect(app.backend.calls()).toBe(1);
+			cleanup();
+		});
+
+		it("throws a failure to the error boundary", async () => {
+			const app = layered();
+			const handle = app.client.prefetch(app.backend.issueQuery, { id: 404 });
+			await mount(app.view(<app.Title handle={handle} />));
+			await app.backend.respond();
+			expect(screen.getByText("Error: Error: No issue 404")).toBeDefined();
+			cleanup();
+		});
+	});
+
+	describe("throwOnError on the query's options", () => {
+		class NotFound extends Schema.TaggedError<NotFound>()("NotFound", {
+			id: Schema.Number,
+		}) {}
+		function readName(id: number) {
+			return Effect.gen(function* () {
+				if (id !== 1) {
+					return yield* Effect.fail(new NotFound({ id }));
+				}
+				return "Ada";
+			});
+		}
+		function throwingNameQuery(input: { id: number }) {
+			return queryOptions({
+				queryFn: () => readName(input.id),
+				queryKey: ["throwing-name", input.id],
+				retry: false,
+				throwOnError: true,
+			});
+		}
+		function resultNameQuery(input: { id: number }) {
+			return queryOptions({
+				queryFn: () => readName(input.id),
+				queryKey: ["result-name", input.id],
+				retry: false,
+				throwOnError: false,
+			});
+		}
+		function view(client: QueryClient<unknown>, children: ReactNode) {
+			return (
+				<QueryClientProvider client={client}>
+					<Boundary>
+						<Suspense fallback={<p>Loading</p>}>{children}</Suspense>
+					</Boundary>
+				</QueryClientProvider>
+			);
+		}
+		function Name(props: {
+			readonly handle: QueryHandle<typeof throwingNameQuery>;
+		}) {
+			const [namePromise] = useQuery(throwingNameQuery, props.handle);
+			expectTypeOf(namePromise).toEqualTypeOf<Thenable<string>>();
+			return <p>{use(namePromise)}</p>;
+		}
+
+		it("reads as plain data on a client with a layer", async () => {
+			const client = new QueryClient({ isServer: false, layer: Layer.empty });
+			expect(client.throwOnError).toBe(false);
+			const handle = client.prefetch(throwingNameQuery, { id: 1 });
+			await mount(view(client, <Name handle={handle} />));
+			await waitFor(() => screen.getByText("Ada"));
+			cleanup();
+		});
+
+		it("throws a failure to the error boundary", async () => {
+			const client = new QueryClient({ isServer: false, layer: Layer.empty });
+			const handle = client.prefetch(throwingNameQuery, { id: 404 });
+			await mount(view(client, <Name handle={handle} />));
+			await waitFor(() => {
+				expect(screen.getByText(/Error: NotFound/)).toBeDefined();
+			});
+			cleanup();
+		});
+
+		it("reads a handle from ensure as plain data", async () => {
+			const client = new QueryClient({ isServer: false, layer: Layer.empty });
+			function EnsuredName(props: {
+				readonly handle: QueryHandleWithData<typeof throwingNameQuery>;
+			}) {
+				const [name] = useQuery(throwingNameQuery, props.handle);
+				expectTypeOf(name).toEqualTypeOf<string>();
+				return <p>{name}</p>;
+			}
+			const handle = await client.ensure(throwingNameQuery, { id: 1 });
+			await mount(view(client, <EnsuredName handle={handle} />));
+			expect(screen.getByText("Ada")).toBeDefined();
+			cleanup();
+		});
+
+		it("is overridden by the call's throwOnError", async () => {
+			const client = new QueryClient({ isServer: false, layer: Layer.empty });
+			function MaybeName(props: {
+				readonly handle: QueryHandle<typeof throwingNameQuery>;
+			}) {
+				const [namePromise] = useQuery(throwingNameQuery, props.handle, {
+					throwOnError: false,
+				});
+				expectTypeOf(namePromise).toEqualTypeOf<
+					Thenable<Result.Result<string, NotFound>>
+				>();
+				return (
+					<p>
+						{Result.match(use(namePromise), {
+							onFailure: (error) => `missing ${error.id}`,
+							onSuccess: (value) => value,
+						})}
+					</p>
+				);
+			}
+			const handle = client.prefetch(throwingNameQuery, { id: 404 });
+			await mount(view(client, <MaybeName handle={handle} />));
+			await waitFor(() => screen.getByText("missing 404"));
+			cleanup();
+		});
+
+		it("overrides the client's default", async () => {
+			const client = new QueryClient({ isServer: false });
+			expect(client.throwOnError).toBe(true);
+			function MaybeName(props: {
+				readonly handle: QueryHandle<typeof resultNameQuery>;
+			}) {
+				const [namePromise] = useQuery(resultNameQuery, props.handle);
+				expectTypeOf(namePromise).toEqualTypeOf<
+					Thenable<Result.Result<string, NotFound>>
+				>();
+				return (
+					<p>
+						{Result.match(use(namePromise), {
+							onFailure: (error) => `missing ${error.id}`,
+							onSuccess: (value) => value,
+						})}
+					</p>
+				);
+			}
+			const handle = client.prefetch(resultNameQuery, { id: 404 });
+			await mount(view(client, <MaybeName handle={handle} />));
+			await waitFor(() => screen.getByText("missing 404"));
+			cleanup();
+		});
+
+		it("types paged reads", () => {
+			function pagesQuery() {
+				return infiniteQueryOptions({
+					getNextPageParam: () => null,
+					initialPageParam: 0,
+					queryFn: (context) => readName(context.pageParam),
+					queryKey: ["name-pages"],
+					throwOnError: true,
+				});
+			}
+			const useTypes = (handle: QueryHandle<typeof pagesQuery>) => {
+				const [pagesPromise] = useQuery(pagesQuery, handle);
+				expectTypeOf(pagesPromise).toEqualTypeOf<
+					Thenable<InfiniteData<{ page: string; pageParam: number }>>
+				>();
+				const [result] = useQuery(pagesQuery, handle, { throwOnError: false });
+				expectTypeOf(result).toEqualTypeOf<
+					Thenable<
+						Result.Result<
+							InfiniteData<{ page: string; pageParam: number }>,
+							NotFound
+						>
+					>
+				>();
+			};
+			expect(useTypes).toBeTypeOf("function");
+		});
 	});
 });
 

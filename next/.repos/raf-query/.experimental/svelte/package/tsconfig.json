@@ -1,0 +1,19 @@
+{
+	"compilerOptions": {
+		"allowImportingTsExtensions": true,
+		"declaration": true,
+		"esModuleInterop": true,
+		"module": "preserve",
+		"moduleResolution": "bundler",
+		"noEmit": true,
+		"resolveJsonModule": true,
+		"rewriteRelativeImportExtensions": true,
+		"skipLibCheck": true,
+		"strict": true,
+		"lib": ["ES2024", "ESNext.Disposable", "DOM", "DOM.Iterable"],
+		"target": "ES2024",
+		"types": ["svelte"]
+	},
+	"include": ["src", "test"],
+	"exclude": ["dist", "node_modules", "coverage"]
+}

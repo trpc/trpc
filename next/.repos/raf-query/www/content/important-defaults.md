@@ -53,15 +53,15 @@ const queryClient = new QueryClient({
 });
 ```
 
-| Option                                            | Default                                                                        |
-| ------------------------------------------------- | ------------------------------------------------------------------------------ |
-| `staleTime`                                       | `0` ms                                                                         |
-| `gcTime`                                          | 5 minutes; `Infinity` on the server                                            |
-| `retry` (count, `boolean`, predicate, `Schedule`) | `3`; `0` on the server                                                         |
-| `retryDelay` (ms, or a function of the count)     | Doubling from 1 s, at most 30 s                                                |
-| `refetchOnWindowFocus`, `refetchOnReconnect`      | `true` (only read, stale queries refetch)                                      |
-| `structuralSharing`                               | `true`                                                                         |
-| `ssr`                                             | `true`; `false` is [browser-only](./ssr-and-hydration.md#browser-only-queries) |
-| `meta`                                            | None                                                                           |
+| Option                                            | Default                                                                                                                                     |
+| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `staleTime`                                       | `0` ms                                                                                                                                      |
+| `gcTime`                                          | 5 minutes; `Infinity` on the server                                                                                                         |
+| `retry` (count, `boolean`, predicate, `Schedule`) | `3`; `0` on the server                                                                                                                      |
+| `retryDelay` (ms, or a function of the count)     | Doubling from 1 s, at most 30 s                                                                                                             |
+| `refetchOnWindowFocus`, `refetchOnReconnect`      | `true` (only read, stale queries refetch)                                                                                                   |
+| `structuralSharing`                               | `true`                                                                                                                                      |
+| `enabled`                                         | `true`; `false` [disables it](./query-factories.md#disabling-a-query), such as [on the server](./ssr-and-hydration.md#browser-only-queries) |
+| `meta`                                            | None                                                                                                                                        |
 
 Watch the defaults at work in [Caching](./caching.md), which has a live demo of an entry going from fresh to stale to garbage-collected.

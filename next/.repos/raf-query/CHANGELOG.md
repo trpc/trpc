@@ -1,5 +1,51 @@
 # Changelog
 
+## [0.11.1](https://github.com/KATT/raf-query/compare/0.11.0...0.11.1) (2026-10-17)
+
+### Features
+
+- **core:** take throwOnError from the query's options (2/2) ([#214](https://github.com/KATT/raf-query/issues/214)) ([ef1f0fd](https://github.com/KATT/raf-query/commit/ef1f0fd8eda2a73f4c4c268e8a3a5cf91a0ba0d8)), references [#448](https://github.com/KATT/raf-query/issues/448)
+
+## [0.11.0](https://github.com/KATT/raf-query/compare/0.10.4...0.11.0) (2026-10-16)
+
+### ⚠ BREAKING CHANGES
+
+- **core:** enabled replaces ssr, as a boolean like TanStack Query's ([#204](https://github.com/KATT/raf-query/issues/204))
+
+### Features
+
+- **core:** enabled replaces ssr, as a boolean like TanStack Query's ([#204](https://github.com/KATT/raf-query/issues/204)) ([b7e543b](https://github.com/KATT/raf-query/commit/b7e543b9d1d34e02061740f749f2ddabcdee2ad2))
+
+## [0.10.4](https://github.com/KATT/raf-query/compare/0.10.3...0.10.4) (2026-10-16)
+
+### Bug Fixes
+
+- **core:** keep pages written during a paged refetch ([#215](https://github.com/KATT/raf-query/issues/215)) ([b6a5946](https://github.com/KATT/raf-query/commit/b6a5946e806e12e9b7df40e80ef0e532c0871b25)), references [#75](https://github.com/KATT/raf-query/issues/75)
+- **react:** read promise queryFns as plain data on a client with a layer (1/2) ([#205](https://github.com/KATT/raf-query/issues/205)) ([a9b156e](https://github.com/KATT/raf-query/commit/a9b156edfa18b1e41e9ea929afc412252a61b83c))
+
+## [0.10.3](https://github.com/KATT/raf-query/compare/0.10.2...0.10.3) (2026-10-16)
+
+### Features
+
+- **core:** add QueryBinding, a framework-free useQuery for bindings ([#197](https://github.com/KATT/raf-query/issues/197)) ([4865802](https://github.com/KATT/raf-query/commit/48658024f4d21d43ce8274de379a19c8898b6173)), references [#194](https://github.com/KATT/raf-query/issues/194)
+
+## [0.10.2](https://github.com/KATT/raf-query/compare/0.10.1...0.10.2) (2026-10-16)
+
+### Features
+
+- **react:** re-render useQuery readers of the thenable's status when the first load settles (2/3) ([#198](https://github.com/KATT/raf-query/issues/198)) ([436d83c](https://github.com/KATT/raf-query/commit/436d83cfd6a3944265eb56d5597c322342c5a6c6))
+- **react:** type useQuery's promise as a Thenable (1/3) ([#200](https://github.com/KATT/raf-query/issues/200)) ([47e5309](https://github.com/KATT/raf-query/commit/47e530957565a2bd345642ae7a4be5d3c501ffb2))
+
+## [0.10.1](https://github.com/KATT/raf-query/compare/0.10.0...0.10.1) (2026-10-16)
+
+### Features
+
+- **core:** export QueryClient, dehydrate, hydrate, allKeyed and the useQuery controls from @raf-query/core ([#193](https://github.com/KATT/raf-query/issues/193)) ([54492ab](https://github.com/KATT/raf-query/commit/54492abbe2966a0645e8a4c77f9c5ab31d6e3a20)), references [#194](https://github.com/KATT/raf-query/issues/194)
+
+### Documentation
+
+- React Router client-only and server sections with one server client per request, Effect under Integrations, official docs links, and ensure waits like fetch in server-only code ([#192](https://github.com/KATT/raf-query/issues/192)) ([841ffcf](https://github.com/KATT/raf-query/commit/841ffcf4d0fa0a40dfc58dc65bfcfadca8948874)), references [#190](https://github.com/KATT/raf-query/issues/190)
+
 ## [0.10.0](https://github.com/KATT/raf-query/compare/0.9.2...0.10.0) (2026-10-16)
 
 ### ⚠ BREAKING CHANGES

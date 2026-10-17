@@ -11,6 +11,10 @@ import { ContentError, messageOf } from "./content-error.ts";
 import { generateRouteTrees, generateRouteTypes } from "./sample-apps.ts";
 import { renderMarkdown } from "./markdown.ts";
 import { expandSnippets } from "./snippets.ts";
+import {
+	makeTwoslashCache,
+	type TwoslashCacheOptions,
+} from "./twoslash-cache.ts";
 
 export interface ContentDirs {
 	/** Directory of the `.md` pages, as an absolute path. */
@@ -28,6 +32,8 @@ export interface ContentOptions extends ContentDirs {
 	readonly sections: ReadonlyArray<string>;
 	/** Absolute site URL, for `llms.txt` and the markdown pages. */
 	readonly siteUrl: string;
+	/** Keeps compiled code blocks on disk, so the next build reuses them. */
+	readonly twoslashCache?: TwoslashCacheOptions | undefined;
 }
 
 /** The `Accept` header agents send to get markdown instead of HTML. */
@@ -170,6 +176,8 @@ function run<A, E>(effect: Effect.Effect<A, E, NodeServices.NodeServices>) {
  */
 export function docsContent(options: ContentOptions): Plugin {
 	const { samplesDir } = options;
+	const twoslashCache =
+		options.twoslashCache && makeTwoslashCache(options.twoslashCache);
 	const rendered = new Map<string, Promise<Doc>>();
 	/** Each page's `twoslash` types, by file, for its markdown. */
 	const typeQueries = new Map<string, ReadonlyArray<ReadonlyArray<string>>>();
@@ -177,7 +185,10 @@ export function docsContent(options: ContentOptions): Plugin {
 	const renderDoc = Effect.fn("renderDoc")(function* (source: Source) {
 		const fs = yield* FileSystem.FileSystem;
 		const path = yield* Path.Path;
-		const result = yield* renderMarkdown(source.markdown, { samplesDir }).pipe(
+		const result = yield* renderMarkdown(source.markdown, {
+			samplesDir,
+			twoslashCache,
+		}).pipe(
 			Effect.mapError(
 				(error) =>
 					new ContentError({
@@ -214,6 +225,7 @@ export function docsContent(options: ContentOptions): Plugin {
 		});
 		const result = yield* renderMarkdown(expanded.markdown, {
 			samplesDir,
+			twoslashCache,
 		}).pipe(
 			Effect.mapError(
 				(error) =>
@@ -437,6 +449,11 @@ export function docsContent(options: ContentOptions): Plugin {
 			}
 			for (const [urlPath, source] of await agentFiles()) {
 				this.emitFile({ fileName: urlPath.slice(1), source, type: "asset" });
+			}
+			if (twoslashCache) {
+				this.environment.logger.info(
+					`twoslash: ${twoslashCache.stats.hits} code blocks from the cache, ${twoslashCache.stats.misses} compiled`,
+				);
 			}
 		},
 		hotUpdate(context) {

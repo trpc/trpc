@@ -76,6 +76,11 @@
 						"importNames": ["onTestFinished"],
 						"message": "Return a Disposable and `using` it instead.",
 						"name": "vitest"
+					},
+					{
+						"importNames": ["onTestFinished"],
+						"message": "Return a Disposable and `using` it instead.",
+						"name": "vite-plus/test"
 					}
 				]
 			}
@@ -491,9 +496,12 @@
 			}
 		},
 		{
-			// Experiment libraries (always `package/`) are not app code; the
-			// callback-inference rules above are for examples.
-			"files": [".experimental/*/package/src/**/*.{ts,tsx}"],
+			// Experiment libraries (always `package/`) and docs samples (`sample/`)
+			// are not app code; the callback-inference rules above are for examples.
+			"files": [
+				".experimental/*/package/src/**/*.{ts,tsx}",
+				".experimental/*/sample/src/**/*.{ts,tsx}"
+			],
 			"rules": {
 				"workspace/infer-callback-params": "off",
 				"workspace/inline-jsx-callback": "off"
@@ -512,6 +520,42 @@
 				"react/no-unstable-nested-components": "off",
 				"react/rules-of-hooks": "off",
 				"workspace/infer-callback-params": "off"
+			}
+		},
+		{
+			// Vue and Svelte composables are named `use…` too, but run once in
+			// `setup` or a component's `<script>`, not on every render, and React
+			// Compiler never sees them, so neither React's rules of hooks nor the
+			// compiler's rules apply.
+			"files": [
+				".experimental/vue/package/src/**",
+				".experimental/svelte/package/{src,test}/**"
+			],
+			"rules": {
+				"react-hooks/rules-of-hooks": "off",
+				"react/rules-of-hooks": "off",
+				"react/error-boundaries": "off",
+				"react/globals": "off",
+				"react/immutability": "off",
+				"react/incompatible-library": "off",
+				"react/preserve-manual-memoization": "off",
+				"react/purity": "off",
+				"react/refs": "off",
+				"react/set-state-in-effect": "off",
+				"react/set-state-in-render": "off",
+				"react/static-components": "off",
+				"react/use-memo": "off",
+				"react/unsupported-syntax": "off",
+				"react/void-use-memo": "off",
+				"react/no-deriving-state-in-effects": "off",
+				"react/invariant": "off",
+				"react/rule-suppression": "off",
+				"react/syntax": "off",
+				"react/todo": "off",
+				"react/capitalized-calls": "off",
+				"react/exhaustive-effect-dependencies": "off",
+				"react/hooks": "off",
+				"react/memo-dependencies": "off"
 			}
 		},
 		{
@@ -534,7 +578,8 @@
 			// need.
 			"files": [
 				"www/samples/*/src/**/*.{ts,tsx}",
-				"www/samples/react-router*/app/**/*.{ts,tsx}"
+				"www/samples/react-router*/app/**/*.{ts,tsx}",
+				".experimental/*/sample/src/**/*.{ts,tsx}"
 			],
 			"rules": {
 				"anti-slop/require-safety-comment-for-type-assertion": "off",
@@ -553,6 +598,29 @@
 			}
 		},
 		{
+			// Svelte's runes, which the Svelte compiler replaces.
+			"files": ["**/*.svelte", "**/*.svelte.ts"],
+			"globals": {
+				"$bindable": "readonly",
+				"$derived": "readonly",
+				"$effect": "readonly",
+				"$host": "readonly",
+				"$inspect": "readonly",
+				"$props": "readonly",
+				"$state": "readonly"
+			}
+		},
+		{
+			// `<script setup>` compiler macros, which the Vue compiler replaces.
+			"files": [".experimental/vue/sample/src/**/*.vue"],
+			"globals": {
+				"defineEmits": "readonly",
+				"defineModel": "readonly",
+				"defineProps": "readonly",
+				"withDefaults": "readonly"
+			}
+		},
+		{
 			// A page's own samples (`src/docs/<page>`, `app/docs/<page>` in the
 			// React Router apps) are its code blocks, shown
 			// one region at a time: fragments with hooks at the top level, bindings
@@ -561,7 +629,8 @@
 			// code rules don't fit.
 			"files": [
 				"www/samples/*/src/docs/**/*.{ts,tsx}",
-				"www/samples/react-router*/app/docs/**/*.{ts,tsx}"
+				"www/samples/react-router*/app/docs/**/*.{ts,tsx}",
+				".experimental/*/sample/src/docs/**/*.{ts,tsx}"
 			],
 			"rules": {
 				"anti-slop/no-runtime-typeof": "off",

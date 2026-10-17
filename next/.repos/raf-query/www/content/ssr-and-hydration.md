@@ -39,21 +39,21 @@ A query sent while pending, that then fails on the server, rejects in the browse
 
 ## Browser-only queries
 
-Some data only the browser can know: a push subscription, a notification permission, a service worker, a media query. That still belongs in the cache — same factory, same handle, same invalidation — just mark the query `ssr: false` so the server never runs it:
+Some data only the browser can know: a push subscription, a notification permission, a service worker, a media query. That still belongs in the cache — same factory, same handle, same invalidation — just disable it where `window` doesn't exist, as in [TanStack Query](https://tanstack.com/query/latest/docs/framework/react/guides/disabling-queries), so the server never runs it:
 
 ```sample
 tanstack-start/src/docs/ssr-and-hydration.ts#browser-only-queries
 ```
 
-A server client never starts it and never sends it. Loaders and components still use it like any query: `prefetch` returns a handle on the server too, and the browser starts the request when the loader or the first read runs there. On the server, readers see it pending:
+A server client never starts a disabled query and never sends it. Loaders and components still use it like any query: `prefetch` returns a handle on the server too, and the browser starts the request when the loader or the first read runs there. On the server, readers see it pending:
 
 ```sample
 tanstack-start/src/docs/ssr-and-hydration.tsx#push-state
 ```
 
-The browser hydrates the same pending state, then renders the result. A reader that calls `use()` on the promise instead needs a Suspense boundary: on the server the promise rejects with `Query.BrowserOnlyError`, so React sends the fallback and renders the boundary in the browser. React reports that boundary to `onRecoverableError` while hydrating.
+The browser hydrates the same pending state, then renders the result. A reader that calls `use()` on the promise instead needs a Suspense boundary: on the server the promise rejects with `Query.DisabledError`, so React sends the fallback and renders the boundary in the browser. React reports that boundary to `onRecoverableError` while hydrating.
 
-`ensure` and `fetch` can't wait for it on the server, so they fail with `Query.BrowserOnlyError`. Use `prefetch` in loaders that also run on the server. `invalidate`, `reset`, `refetch` and the paging controls do nothing there.
+`ensure` and `fetch` can't wait for it on the server, so they fail with `Query.DisabledError`. Use `prefetch` in loaders that also run on the server. `invalidate`, `reset`, `refetch` and the paging controls do nothing there.
 
 ## When the browser already has data
 

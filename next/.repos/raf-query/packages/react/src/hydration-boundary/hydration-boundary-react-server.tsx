@@ -1,4 +1,4 @@
-import { dehydrate } from "../client.ts";
+import { dehydrate } from "@raf-query/core";
 import { Hydrate } from "./hydrate.tsx";
 import type { HydrationBoundaryProps } from "./hydration-boundary.tsx";
 import { sentHashes } from "./sent.ts";

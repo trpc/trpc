@@ -555,17 +555,19 @@ describe("HydrationBoundary with a loader's state (React Router)", () => {
 	});
 });
 
-describe("ssr: false", () => {
+describe("enabled: false on the server", () => {
 	it("renders pending on the server, then runs once in the browser", async () => {
+		// Stands in for `typeof window !== "undefined"`, which happy-dom sets on both sides.
+		let browser = false;
 		const calls: Array<string> = [];
 		function permissionQuery() {
 			return queryOptions({
+				enabled: browser,
 				queryFn: async () => {
 					calls.push("permission");
 					return "granted";
 				},
 				queryKey: ["permission"],
-				ssr: false,
 				staleTime: Infinity,
 			});
 		}
@@ -600,12 +602,13 @@ describe("ssr: false", () => {
 		expect(html).toContain("<p>Detecting</p>");
 		expect(html).toContain("<p>Waiting</p>");
 		expect(errors).toHaveLength(1);
-		expect(errors[0]).toBeInstanceOf(Query.BrowserOnlyError);
+		expect(errors[0]).toBeInstanceOf(Query.DisabledError);
 		expect(calls).toEqual([]);
 
 		const container = document.createElement("div");
 		container.innerHTML = html;
 		document.body.append(container);
+		browser = true;
 		const recoverable: Array<unknown> = [];
 		const root = await act(async () =>
 			hydrateRoot(
@@ -622,6 +625,63 @@ describe("ssr: false", () => {
 		expect(calls).toEqual(["permission"]);
 		// The Suspense boundary the server gave up on; nothing else mismatched.
 		expect(recoverable).toHaveLength(1);
+		act(() => root.unmount());
+		container.remove();
+	});
+
+	it("re-renders a reader of the promise's status once the browser loads it", async () => {
+		let browser = false;
+		function tagQuery() {
+			return queryOptions({
+				enabled: browser,
+				queryFn: async () => "beta",
+				queryKey: ["tag"],
+			});
+		}
+		const loader = new QueryClient({ isServer: true });
+		const handle = loader.prefetch(tagQuery);
+		const state = dehydrate(loader);
+		function Tag() {
+			const [promise] = useQuery(tagQuery, handle);
+			return (
+				<span>{promise.status === "fulfilled" ? promise.value : "…"}</span>
+			);
+		}
+		function Page(props: { readonly client: QueryClient }) {
+			return (
+				<QueryClientProvider client={props.client}>
+					<HydrationBoundary state={state}>
+						<Tag />
+					</HydrationBoundary>
+				</QueryClientProvider>
+			);
+		}
+
+		const stream = await renderToReadableStream(
+			<Page client={new QueryClient({ isServer: true })} />,
+		);
+		await stream.allReady;
+		const html = await new Response(stream).text();
+		expect(html).toContain("<span>…</span>");
+
+		browser = true;
+		const container = document.createElement("div");
+		container.innerHTML = html;
+		document.body.append(container);
+		const recoverable: Array<unknown> = [];
+		const root = await act(async () =>
+			hydrateRoot(
+				container,
+				<Page client={new QueryClient({ isServer: false })} />,
+				{
+					onRecoverableError: (error) => recoverable.push(error),
+				},
+			),
+		);
+		await act(flush);
+
+		expect(container.textContent).toBe("beta");
+		expect(recoverable).toEqual([]);
 		act(() => root.unmount());
 		container.remove();
 	});

@@ -51,7 +51,7 @@ Loaders use the same Promise verbs as a non-Effect app. Prefetch is sync; `ensur
 tanstack-start-effect/src/routes/issues.$issueId.tsx
 ```
 
-With a `layer`, the client defaults to `throwOnError: false`: Effect `useQuery` returns a [`Result`](https://effect.website/docs/v4/data-types/result) so you can match failures inline ([Typed errors](./effect-errors.md#in-react)). Pass `throwOnError: true` when you want a rejecting promise instead.
+With a `layer`, the client defaults to `throwOnError: false`: Effect `useQuery` returns a [`Result`](https://effect.website/docs/v4/data-types/result) so you can match failures inline ([Typed errors](./effect-errors.md#in-react)). Pass `throwOnError: true` on the call, or set it in the query's options, when you want a rejecting promise instead.
 
 A list page that only prefetches never needs `runPromise`:
 

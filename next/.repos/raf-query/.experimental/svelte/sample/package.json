@@ -1,0 +1,25 @@
+{
+	"name": "@examples/experimental-svelte",
+	"version": "0.0.0",
+	"private": true,
+	"description": "Experiment: the SvelteKit app the draft Svelte guide is written against",
+	"type": "module",
+	"imports": {
+		"#lib/*": "./src/lib/*"
+	},
+	"scripts": {
+		"prepare": "svelte-kit sync",
+		"typecheck": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --fail-on-warnings"
+	},
+	"dependencies": {
+		"@raf-query/experimental-svelte": "workspace:*",
+		"svelte": "5.57.2"
+	},
+	"devDependencies": {
+		"@sveltejs/kit": "3.1.0",
+		"@sveltejs/vite-plugin-svelte": "7.3.1",
+		"svelte-check": "4.7.7",
+		"typescript": "6.0.3",
+		"vite": "8.3.4"
+	}
+}
