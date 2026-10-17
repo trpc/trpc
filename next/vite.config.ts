@@ -4,12 +4,12 @@ import { defineConfig } from 'vite-plus';
 // Solid and Svelte ship server builds under Node's conditions; their tests
 // need the browser builds, resolved (and so inlined) by Vite. The SSR tests
 // keep Node's conditions.
-const browserBuild = (name: string, deps: string[]) => ({
+const browserBuild = (name: string, include: string, deps: string[]) => ({
   extends: true as const,
   resolve: { conditions: ['browser', 'development'] },
   test: {
     name,
-    include: [`test/tanstack-query/${name}.test.ts`],
+    include: [include],
     server: { deps: { inline: deps } },
   },
 });
@@ -98,7 +98,7 @@ export default defineConfig({
           exclude: [
             '**/node_modules/**',
             'test/bun/**',
-            'test/tanstack-query/solid.test.ts',
+            'packages/tanstack-solid-query/src/index.test.ts',
             'test/tanstack-query/svelte.test.ts',
             'test/tanstack-query/svelte-ssr.test.ts',
           ],
@@ -109,9 +109,12 @@ export default defineConfig({
           },
         },
       },
-      browserBuild('solid', ['solid-js', '@tanstack/solid-query']),
+      browserBuild('solid', 'packages/tanstack-solid-query/src/index.test.ts', [
+        'solid-js',
+        '@tanstack/solid-query',
+      ]),
       {
-        ...browserBuild('svelte', [
+        ...browserBuild('svelte', 'test/tanstack-query/svelte.test.ts', [
           'svelte',
           '@tanstack/svelte-query',
           '@trpc12/tanstack-query',
