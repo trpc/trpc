@@ -1,4 +1,11 @@
-import type { CreateRule, ESTree } from '@oxlint/plugins';
+import { defineRule, type ESTree } from '@oxlint/plugins';
+
+/**
+ * Identifiers we declare case each acronym as a word: `TrpcError`, not
+ * `TRPCError`; `maxUrlLength`, not `maxURLLength`. Constants
+ * (`SSE_EVENT`), platform names (`toJSON`) and a type parameter's `T` prefix
+ * are left alone.
+ */
 
 const CONSTANT = /^[A-Z0-9_]+$/;
 /** Names the platform calls, so they can't be renamed. */
@@ -11,7 +18,7 @@ const EXPERIMENTAL = 'experimental_';
  * `maxURLLength` → `maxUrlLength`, `toJSON` → `toJson`. A run followed by a
  * lowercase letter keeps its last capital, which starts the next word.
  */
-export const suggest = (name: string): string =>
+const suggest = (name: string): string =>
   name.replace(/[A-Z]{2,}/g, (run: string, offset: number) => {
     const next = name[offset + run.length];
     const word =
@@ -20,10 +27,7 @@ export const suggest = (name: string): string =>
   });
 
 /** The name to use instead, or `undefined` when `name` is fine. */
-export const expected = (
-  name: string,
-  typeParameter = false,
-): string | undefined => {
+const expected = (name: string, typeParameter = false): string | undefined => {
   if (name.startsWith(EXPERIMENTAL)) {
     const fixed = expected(name.slice(EXPERIMENTAL.length), typeParameter);
     return fixed === undefined ? undefined : EXPERIMENTAL + fixed;
@@ -36,12 +40,16 @@ export const expected = (
   return fixed === name ? undefined : fixed;
 };
 
-const rule: CreateRule = {
+const acronymCase = defineRule({
   meta: {
     type: 'suggestion',
     docs: {
       description:
-        'Case acronyms as words in declared names (`TrpcError`, not `TRPCError`)',
+        'Require acronyms in declared names to be cased as words (`TrpcError`, not `TRPCError`)',
+    },
+    schema: [],
+    messages: {
+      acronym: 'Case acronyms as words: `{{fixed}}`, not `{{name}}`.',
     },
   },
   create(context) {
@@ -54,7 +62,8 @@ const rule: CreateRule = {
       if (fixed === undefined) return;
       context.report({
         node,
-        message: `Case acronyms as words: \`${fixed}\`, not \`${node.name}\`.`,
+        messageId: 'acronym',
+        data: { fixed, name: node.name },
       });
     };
     const key = (node: { computed?: boolean; key: ESTree.Node }) => {
@@ -74,6 +83,6 @@ const rule: CreateRule = {
       TSMethodSignature: (node) => key(node),
     };
   },
-};
+});
 
-export default rule;
+export { acronymCase };

@@ -1,10 +1,14 @@
-import acronymCase from './acronym-case.ts';
-import jsdoc from './jsdoc.ts';
+import { eslintCompatPlugin } from '@oxlint/plugins';
 
-export default {
+import { acronymCase } from './acronym-case.ts';
+import { jsdoc } from './jsdoc.ts';
+
+const plugin = eslintCompatPlugin({
   meta: { name: 'trpc' },
   rules: {
     'acronym-case': acronymCase,
     jsdoc,
   },
-};
+});
+
+export default plugin;

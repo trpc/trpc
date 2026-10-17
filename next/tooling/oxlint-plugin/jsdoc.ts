@@ -1,4 +1,4 @@
-import type { CreateRule, ESTree } from '@oxlint/plugins';
+import { defineRule, type ESTree } from '@oxlint/plugins';
 
 import { packageName, publicNames } from './public-exports.ts';
 
@@ -30,12 +30,26 @@ const declaredName = (node: ESTree.Node): string | undefined => {
   }
 };
 
-const rule: CreateRule = {
+const jsdoc = defineRule({
   meta: {
     type: 'suggestion',
     docs: {
       description:
-        "Exports reachable from a package's versioned entry points carry `@since` and `@stability`; experimental values are named `experimental_*` (in an `experimental-*` package, every export is experimental and unprefixed), and deprecated aliases name their replacement (proposal 21)",
+        "Require `@since` and `@stability` on exports reachable from a package's versioned entry points, and stability-consistent names",
+    },
+    schema: [],
+    messages: {
+      missing: '`{{name}}` is public but its JSDoc lacks {{missing}}.',
+      replacement:
+        '`{{name}}` is deprecated: say what replaces it, `@deprecated Use <name>`.',
+      packageStability:
+        '`{{name}}` is in an `experimental-` package, so it is `@stability experimental`.',
+      packagePrefix:
+        '`{{name}}` is in an `experimental-` package, which says it already: export it as `{{unprefixed}}`.',
+      prefix:
+        '`{{name}}` is experimental, so its name starts with `experimental_`: `experimental_{{name}}`.',
+      promoted:
+        "`{{name}}` isn't experimental: export it as `{{unprefixed}}` and keep `{{name}}` as a `@deprecated` alias.",
     },
   },
   create(context) {
@@ -69,7 +83,11 @@ const rule: CreateRule = {
         if (missing.length > 0) {
           context.report({
             node: declaration,
-            message: `\`${name}\` is public but its JSDoc lacks ${missing.map((t) => `\`${t}\``).join(' and ')}.`,
+            messageId: 'missing',
+            data: {
+              name,
+              missing: missing.map((t) => `\`${t}\``).join(' and '),
+            },
           });
           return;
         }
@@ -78,21 +96,25 @@ const rule: CreateRule = {
         if (deprecated && !/@deprecated Use `?[\w$.]+`?/.test(text)) {
           context.report({
             node: declaration,
-            message: `\`${name}\` is deprecated: say what replaces it, \`@deprecated Use <name>\`.`,
+            messageId: 'replacement',
+            data: { name },
           });
         }
         const experimental = /^\s*\*?\s*@stability experimental\b/m.test(text);
         const prefixed = name.startsWith('experimental_');
+        const unprefixed = name.slice('experimental_'.length);
         if (experimentalPackage) {
           if (!experimental) {
             context.report({
               node: declaration,
-              message: `\`${name}\` is in an \`experimental-\` package, so it is \`@stability experimental\`.`,
+              messageId: 'packageStability',
+              data: { name },
             });
           } else if (prefixed) {
             context.report({
               node: declaration,
-              message: `\`${name}\` is in an \`experimental-\` package, which says it already: export it as \`${name.slice('experimental_'.length)}\`.`,
+              messageId: 'packagePrefix',
+              data: { name, unprefixed },
             });
           }
           return;
@@ -101,17 +123,19 @@ const rule: CreateRule = {
         if (experimental && !prefixed) {
           context.report({
             node: declaration,
-            message: `\`${name}\` is experimental, so its name starts with \`experimental_\`: \`experimental_${name}\`.`,
+            messageId: 'prefix',
+            data: { name },
           });
         } else if (prefixed && !experimental && !deprecated) {
           context.report({
             node: declaration,
-            message: `\`${name}\` isn't experimental: export it as \`${name.slice('experimental_'.length)}\` and keep \`${name}\` as a \`@deprecated\` alias.`,
+            messageId: 'promoted',
+            data: { name, unprefixed },
           });
         }
       },
     };
   },
-};
+});
 
-export default rule;
+export { jsdoc };

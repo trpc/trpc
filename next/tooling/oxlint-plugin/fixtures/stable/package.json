@@ -1,0 +1,8 @@
+{
+  "name": "@fixture/stable",
+  "private": true,
+  "exports": {
+    ".": "./index.ts",
+    "./internal": "./internal.ts"
+  }
+}
