@@ -38,12 +38,41 @@ export default defineConfig({
       typeAware: true,
       typeCheck: true,
     },
+    plugins: ['typescript', 'unicorn', 'oxc', 'vitest'],
     jsPlugins: ['./tooling/oxlint-plugin/index.ts'],
     rules: {
       'trpc/acronym-case': 'error',
+      'trpc/no-custom-test-timeout': 'error',
+      'trpc/no-mock': 'error',
       'trpc/typed-objects': 'error',
+      'typescript/ban-ts-comment': [
+        'error',
+        {
+          'ts-expect-error': 'allow-with-description',
+          'ts-ignore': true,
+          'ts-nocheck': true,
+          'ts-check': false,
+          minimumDescriptionLength: 10,
+        },
+      ],
+      'typescript/no-deprecated': 'error',
+      // Clean up with `using`: a helper returns a Disposable that undoes its
+      // setup, and the test's scope disposes it.
+      'vitest/no-hooks': 'error',
+      // Type tests assert with `@ts-expect-error`, not `expect`.
+      'vitest/expect-expect': 'off',
+      // Tests narrow a union (`if (r.ok)`) before asserting on its members.
+      'vitest/no-conditional-expect': 'off',
+      // Shared assertion helpers call `expect` outside a test block.
+      'vitest/no-standalone-expect': 'off',
     },
     overrides: [
+      {
+        files: ['examples/**'],
+        rules: {
+          'trpc/infer-callback-params': 'error',
+        },
+      },
       {
         files: ['packages/*/src/**'],
         excludeFiles: [
