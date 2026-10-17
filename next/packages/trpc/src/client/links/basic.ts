@@ -171,6 +171,13 @@ export interface DedupeContext {
   dedupe?: boolean;
 }
 
+/** One deduped request and the callers still waiting on it. */
+interface InFlight {
+  promise: Promise<Exit.Exit<unknown, AnyTrpcError>>;
+  controller: AbortController;
+  refs: number;
+}
+
 /**
  * Shares one request between identical queries in flight at the same time.
  * Every caller gets the same result value, so a deferred `AsyncIterable`
@@ -194,14 +201,7 @@ export function dedupeLink(
     opts.key ??
     ((op: Operation) =>
       `${op.path}\n${op.input === undefined ? '' : JSON.stringify(danson.serialize(op.input))}`);
-  const inFlight = new Map<
-    string,
-    {
-      promise: Promise<Exit.Exit<unknown, AnyTrpcError>>;
-      controller: AbortController;
-      refs: number;
-    }
-  >();
+  const inFlight = new Map<string, InFlight>();
   return link<{ context: DedupeContext }>(({ op, next }) => {
     if (op.type !== 'query' || op.context.dedupe === false) return next(op);
     const key = keyOf(op);
@@ -210,7 +210,7 @@ export function dedupeLink(
         let entry = inFlight.get(key);
         if (!entry) {
           const controller = new AbortController();
-          const created = {
+          const created: InFlight = {
             controller,
             refs: 0,
             promise: Effect.runPromiseExit(

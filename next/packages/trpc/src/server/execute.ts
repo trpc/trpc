@@ -19,7 +19,7 @@ import {
 } from '../internal/error.ts';
 import { errorConstructors, isDeclaredError } from './declared.ts';
 import { frameSinks } from './frame-sink.ts';
-import type { ResponseHandle } from './middleware.ts';
+import type { MiddlewareOpts, ResponseHandle } from './middleware.ts';
 import { Response as ResponseKey } from './response.ts';
 import type { AnyProcedure, ProcedureInternals } from './procedure.ts';
 import {
@@ -262,7 +262,16 @@ export function callProcedure(
   const { path, signal } = opts;
   const { meta, type } = def;
   const response = opts.response ?? createResponseHandle();
-  const base = { meta, path, type, signal, response };
+  const base: Omit<
+    MiddlewareOpts<unknown, unknown, unknown>,
+    'ctx' | 'input' | 'next'
+  > = {
+    meta,
+    path,
+    type,
+    signal,
+    response,
+  };
 
   const toResult = (exit: Exit.Exit<unknown, AnyTrpcError>) =>
     Exit.isSuccess(exit)

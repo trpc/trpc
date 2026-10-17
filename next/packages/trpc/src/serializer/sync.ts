@@ -143,7 +143,7 @@ function compileSerializers(record: SerializeRecord): CompiledSerializers {
       placeholders.set(s.value, s);
     }
   }
-  const compiled = { all, plain, primitive, placeholders };
+  const compiled: CompiledSerializers = { all, plain, primitive, placeholders };
   compiledSerializers.set(record, compiled);
   return compiled;
 }
@@ -336,7 +336,7 @@ function compileDeserializers(
     if (typeof d === 'function' || 'create' in d) deserializers.set(name, d);
     else placeholders.set(PREFIX + d.placeholder, d.value);
   }
-  const compiled = { deserializers, placeholders };
+  const compiled: CompiledDeserializers = { deserializers, placeholders };
   compiledDeserializers.set(record, compiled);
   return compiled;
 }

@@ -280,8 +280,9 @@ export async function readFormData(
       },
     }),
   );
-  const headers = { 'content-type': contentType };
-  const form = await new Response(body, { headers })
+  const form = await new Response(body, {
+    headers: { 'content-type': contentType },
+  })
     .formData()
     .catch((cause: unknown) => {
       if (size > maxBytes) throw tooLarge();

@@ -491,7 +491,7 @@ export function createFetchHandler<
     set?: Headers,
   ): HttpServerResponse.HttpServerResponse => {
     const { headers: fromHandle, cookies } = responseOptions(set);
-    const options = {
+    const options: HttpServerResponse.Options.WithContentType = {
       status,
       contentType,
       headers: {

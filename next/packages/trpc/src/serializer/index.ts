@@ -31,6 +31,7 @@ import {
   deserializeSync,
   instancesOnly,
   serializeSync,
+  type DeserializeOptions,
   type DeserializeRecord,
   type SerializeRecord,
   type SerializeReturn,
@@ -238,11 +239,11 @@ export function createSerializer(opts: SerializerOptions = {}): Serializer {
   }
   const serializers = { ...customSerializers, ...stdSerializers };
   const withParts = { ...serializers, ...partSerializers };
-  const output = {
+  const output: DeserializeOptions = {
     deserializers: { ...stdDeserializers, ...customDeserializers },
     maxDepth: opts.maxDepth,
   };
-  const input = {
+  const input: DeserializeOptions = {
     deserializers: { ...stdInputDeserializers, ...customInputDeserializers },
     maxDepth: opts.maxDepth,
   };
