@@ -11,7 +11,8 @@ import {
   openapi,
   openApiLink,
 } from '@trpc12/trpc/openapi';
-import { initTrpc, tracked } from '@trpc12/trpc/server';
+import { createUntypedClient } from '@trpc12/trpc/extend';
+import { initTrpc, stream, tracked } from '@trpc12/trpc/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
 import { createTestServer } from './fixtures/server.ts';
@@ -131,4 +132,90 @@ test("output: 'json' decodes openApiLink's plain JSON into the schema's types", 
   expect(post.at).toBeInstanceOf(Date);
   expect(post.at.getTime()).toBe(at.getTime());
   await openapi.dispose();
+});
+
+test('streamed outputs, unvalidated outputs, plain events, opt-outs and paths outside the contract', async () => {
+  const p = initTrpc();
+  const contractOf = {
+    tokens: p.procedure.output(stream(z.string())).query(async function* () {}),
+    numbers: p.procedure
+      .output(stream(z.number()))
+      .subscription(async function* () {}),
+    plain: p.procedure.output(z.number()).subscription(async function* () {}),
+    trusted: p.procedure
+      .output(z.object({ n: z.number() }), { validate: false })
+      .query(() => ({ n: 1 })),
+    strict: p.procedure
+      .input(z.object({ n: z.number() }))
+      .output(z.number())
+      .query(({ input }) => input.n),
+  };
+  const served = {
+    tokens: p.procedure.query(async function* () {
+      yield 'a';
+      yield 'b';
+    }),
+    numbers: p.procedure.subscription(async function* () {
+      yield 1;
+      yield 'two';
+    }),
+    plain: p.procedure.subscription(async function* () {
+      yield 1;
+      yield 'two';
+    }),
+    trusted: p.procedure.query(() => ({ n: 'not a number' })),
+    strict: p.procedure.input(z.unknown()).query(() => 'unchecked'),
+    extra: p.procedure.query(() => 'not in the contract'),
+  };
+  await using http = await createTestServer({ router: served });
+  const client = (opts: Parameters<typeof validationLink>[0]) =>
+    createUntypedClient({
+      links: [validationLink(opts), httpLink({ url: http.url })],
+    });
+  const checked = client({ contract: contractOf });
+  const collect = async (path: string) => {
+    const seen: unknown[] = [];
+    try {
+      for await (const v of checked.subscribe({ path, input: undefined })) {
+        seen.push(v);
+      }
+    } catch (err) {
+      seen.push((err as { code: string }).code);
+    }
+    return seen;
+  };
+
+  const tokens = (await checked.request({
+    type: 'query',
+    path: 'tokens',
+    input: undefined,
+  })) as AsyncIterable<string>;
+  const read: string[] = [];
+  for await (const token of tokens) read.push(token);
+  expect(read).toEqual(['a', 'b']);
+  expect(await collect('numbers')).toEqual([1, 'PARSE_ERROR']);
+  expect(await collect('plain')).toEqual([1, 'PARSE_ERROR']);
+  expect(
+    await checked.request({ type: 'query', path: 'trusted', input: undefined }),
+  ).toEqual({ n: 'not a number' });
+  expect(
+    await checked.request({ type: 'query', path: 'extra', input: undefined }),
+  ).toBe('not in the contract');
+  const [, through] = await safe(
+    checked.request({ type: 'query', path: 'strict.deeper', input: undefined }),
+  );
+  expect(through).toMatchObject({ code: 'NOT_FOUND' });
+
+  const before = http.requests.length;
+  const [, early] = await safe(
+    checked.request({ type: 'query', path: 'strict', input: { n: 'x' } }),
+  );
+  expect(early).toMatchObject({ code: 'BAD_REQUEST' });
+  expect(http.requests).toHaveLength(before);
+
+  const lax = client({ contract: contractOf, input: false, output: false });
+  expect(
+    await lax.request({ type: 'query', path: 'strict', input: { n: 'x' } }),
+  ).toBe('unchecked');
+  expect(http.requests).toHaveLength(before + 1);
 });
