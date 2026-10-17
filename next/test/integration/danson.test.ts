@@ -35,6 +35,7 @@ const danson = createSerializer({
 const t = initTrpc();
 const router = {
   echo: t.procedure.input(z.unknown()).mutation(({ input }) => input),
+  find: t.procedure.input(z.unknown()).query(({ input }) => input ?? 'none'),
   graph: t.procedure.query(() => {
     const root: Record<string, unknown> = { name: 'root', tags: ['$0', '$1'] };
     root['self'] = root;
@@ -163,4 +164,30 @@ test('`string` is a reserved type name', () => {
     },
   });
   expect(() => reserved.serialize('x')).toThrow(DansonError);
+});
+
+test('a GET query carries refs in the URL, and reads the query string strictly or leniently', async () => {
+  const { client, handler } = setup();
+  const cyclic: Record<string, unknown> = { q: 'x' };
+  cyclic['self'] = cyclic;
+  const found = (await client.find.query(cyclic)) as Record<string, unknown>;
+  expect(found['self']).toBe(found);
+
+  const get = async (search: string) =>
+    (await (
+      await handler.fetch(new Request(`http://localhost/trpc/find${search}`))
+    ).json()) as unknown;
+  const refs = encodeURIComponent(JSON.stringify({ $1: 'from refs' }));
+  expect(await get(`?input=%22%241%22&refs=${refs}`)).toEqual({
+    json: 'from refs',
+  });
+  expect(await get(`?refs=${refs}`)).toEqual({ json: 'none' });
+  expect(await get('?input=1&input=2&refs=null&refs=3')).toEqual({ json: 1 });
+  expect(await get('?other&input=%22a+b%22')).toEqual({ json: 'a b' });
+  expect(await get('?%69nput=5')).toEqual({ json: 5 });
+  expect(await get('?input=%22%E0%A4%A%22')).toEqual({ json: '\ufffd%A' });
+  expect(await get('?input')).toMatchObject({
+    json: { error: { code: 'PARSE_ERROR' } },
+  });
+  await handler.dispose();
 });
