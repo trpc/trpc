@@ -116,8 +116,8 @@ export type QueryOptionsIn<TQueryFnData, TError, TData> = Omit<
 >;
 
 /**
- * What `queryOptions()` returns: pass it to `useQuery`, `prefetchQuery`,
- * `fetchQuery` and friends in any TanStack adapter.
+ * What `queryOptions()` returns: pass it to `useQuery`, `queryClient.query`
+ * and friends in any TanStack adapter.
  * @since 0.1.0
  * @stability stable
  */
@@ -290,7 +290,7 @@ export interface QueryProcedureUtils<
   TContext,
 > extends PathUtils {
   /**
-   * Options for `useQuery`, `useSuspenseQuery`, `prefetchQuery`, … in any
+   * Options for `useQuery`, `useSuspenseQuery`, `queryClient.query`, … in any
    * TanStack adapter. `input: skipToken` disables the query.
    *
    * @example

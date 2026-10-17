@@ -21,7 +21,7 @@ test('server render with prefetched data and no subscription', async () => {
     defaultOptions: hydrationOptions({ serializer }),
   });
   const client = createRouterClient(appRouter, { ctx: { locale: null } });
-  await queryClient.prefetchQuery(
+  await queryClient.query(
     createTrpcQueryUtils({ client }).post.byId.queryOptions({
       input: { id: '3' },
     }),

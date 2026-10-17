@@ -32,7 +32,7 @@ test('queryOptions plug into a TanStack DB query collection', async () => {
 
   const tx = posts.insert({ id: '3', title: 'Post 3', createdAt: new Date() });
   expect(posts.get('3')?.title).toBe('Post 3');
-  await tx.isPersisted.promise;
+  await tx.when('settled');
   expect(db.posts.get('3')?.title).toBe('Post 3');
   await vi.waitFor(() =>
     expect(queryClient.getQueryData(list.queryKey)?.items).toHaveLength(3),

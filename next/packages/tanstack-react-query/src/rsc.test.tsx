@@ -46,7 +46,7 @@ test('createTrpcRsc: per-request ctx and query client, and a server HydrationBou
 
   const byId = rsc.trpc.post.byId.queryOptions({ input: { id: '2' } });
   rsc.prefetch(byId);
-  const post = await rsc.getQueryClient().fetchQuery(byId);
+  const post = await rsc.getQueryClient().query(byId);
   expectTypeOf(post).toEqualTypeOf<Post>();
   expect(db.calls).toEqual(['post.byId:2']);
 

@@ -67,7 +67,7 @@ test('queryOptions fetch over HTTP and type the cache', async () => {
     { input: { id: '1' }, type: 'query' },
   ]);
 
-  const post = await queryClient.fetchQuery(options);
+  const post = await queryClient.query(options);
   expect(post).toEqual({
     id: '1',
     title: 'Post 1',
@@ -81,7 +81,7 @@ test('queryOptions fetch over HTTP and type the cache', async () => {
   expectTypeOf(cached).toEqualTypeOf<Post | undefined>();
   expect(cached?.createdAt).toBeInstanceOf(Date);
 
-  expect(await queryClient.fetchQuery(app.trpc.greeting.queryOptions())).toBe(
+  expect(await queryClient.query(app.trpc.greeting.queryOptions())).toBe(
     'hello',
   );
 });
@@ -161,16 +161,16 @@ test('pathFilter and queryFilter invalidate what they match', async () => {
   await using app = await createApp();
   const queryClient = new QueryClient();
   await Promise.all([
-    queryClient.fetchQuery(
+    queryClient.query(
       app.trpc.post.byId.queryOptions({ input: { id: '1' } }),
     ),
-    queryClient.fetchQuery(
+    queryClient.query(
       app.trpc.post.byId.queryOptions({ input: { id: '2' } }),
     ),
-    queryClient.fetchQuery(
+    queryClient.query(
       app.trpc.post.list.queryOptions({ input: { limit: 2 } }),
     ),
-    queryClient.fetchQuery(app.trpc.greeting.queryOptions()),
+    queryClient.query(app.trpc.greeting.queryOptions()),
   ]);
   const stale = () =>
     queryClient
@@ -219,8 +219,8 @@ test('keyPrefix keeps two APIs apart in one QueryClient', async () => {
   expect(billing.pathKey()).toEqual([['billing']]);
 
   await Promise.all([
-    queryClient.fetchQuery(options),
-    queryClient.fetchQuery(
+    queryClient.query(options),
+    queryClient.query(
       app.trpc.post.byId.queryOptions({ input: { id: '1' } }),
     ),
   ]);
@@ -654,7 +654,7 @@ test('observers with the same key share one subscription', async () => {
 test('context reaches the links, typed from what they declare', async () => {
   await using app = await createApp();
   const queryClient = new QueryClient();
-  await queryClient.fetchQuery(
+  await queryClient.query(
     app.trpc.greeting.queryOptions({
       context: { headers: { 'x-locale': 'sv' }, dedupe: false },
     }),
@@ -676,7 +676,7 @@ test('prefetch on the server, hydrate rich types in the browser', async () => {
   const serverTrpc = createTrpcQueryUtils({
     client: createRouterClient(appRouter, { ctx: { locale: 'en' } }),
   });
-  await serverClient.prefetchQuery(
+  await serverClient.query(
     serverTrpc.post.byId.queryOptions({ input: { id: '1' } }),
   );
   const html = JSON.stringify(dehydrate(serverClient));
@@ -711,7 +711,7 @@ test("hydration follows the client's serializer (19)", async () => {
   const serverTrpc = createTrpcQueryUtils({
     client: createRouterClient(appRouter, { ctx: { locale: 'en' } }),
   });
-  await serverClient.prefetchQuery(
+  await serverClient.query(
     serverTrpc.post.byId.queryOptions({ input: { id: '1' } }),
   );
   const html = JSON.stringify(dehydrate(serverClient));
@@ -733,7 +733,7 @@ test('a refetch with equal Dates keeps the data reference', async () => {
   await using app = await createApp();
   const queryClient = new QueryClient();
   const options = app.trpc.post.byId.queryOptions({ input: { id: '2' } });
-  const first = await queryClient.fetchQuery(options);
+  const first = await queryClient.query(options);
   await queryClient.refetchQueries({ queryKey: options.queryKey });
   expect(queryClient.getQueryData(options.queryKey)).toBe(first);
 });

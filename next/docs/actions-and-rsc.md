@@ -107,7 +107,7 @@ export default async function Page({ params }) {
 
 - `ctx` and the query client are memoized per request with React's `cache()`.
 - `HydrationBoundary` dehydrates the request's queries, pending ones included, so they stream in. The browser's `QueryClient` needs `defaultOptions: hydrationOptions({ client })`. If the router declares a [serializer](./serializers.md), `createTrpcRsc` requires the same one as `serializer`, so `Date`s and custom types survive.
-- `await getQueryClient().fetchQuery(…)` reads data in the server component itself. `caller` calls the router without the cache.
+- `await getQueryClient().query(…)` reads data in the server component itself. `caller` calls the router without the cache.
 - A pending query that later fails is redacted in the dehydrated state, unless its error has a `digest`: Next has to see those to detect dynamic rendering. Set `dehydrate.shouldRedactErrors` on your `makeQueryClient` to change that.
 
 ## Next.js data cache

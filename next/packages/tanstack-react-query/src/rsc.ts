@@ -26,8 +26,9 @@
 import {
   dehydrate,
   HydrationBoundary as ClientHydrationBoundary,
+  noop,
   QueryClient,
-  type FetchQueryOptions,
+  type QueryExecuteOptions,
 } from '@tanstack/react-query';
 import {
   createTrpcQueryUtils,
@@ -84,7 +85,7 @@ export interface TrpcRsc<TRouter extends AnyRouter> {
   /** The request's query client. */
   getQueryClient: () => QueryClient;
   /** Starts a query on the request's client without waiting for it. */
-  prefetch: (options: FetchQueryOptions<any, any, any, any>) => void;
+  prefetch: (options: QueryExecuteOptions<any, any, any, any, any>) => void;
   /**
    * Sends the request's queries to the browser cache, pending ones as
    * promises that stream in. Render it around the client components that
@@ -102,7 +103,7 @@ export interface TrpcRsc<TRouter extends AnyRouter> {
  *   router: appRouter,
  *   ctx: async () => ({ user: await auth() }),
  * });
- * const post = await getQueryClient().fetchQuery(
+ * const post = await getQueryClient().query(
  *   trpc.post.byId.queryOptions({ input: { id } }),
  * );
  * ```
@@ -138,7 +139,7 @@ export function createTrpcRsc<TRouter extends AnyRouter>(
     caller,
     getQueryClient,
     prefetch: (options) => {
-      void getQueryClient().prefetchQuery(options);
+      void getQueryClient().query(options).catch(noop);
     },
     HydrationBoundary: ({ children }) => {
       const client = getQueryClient();

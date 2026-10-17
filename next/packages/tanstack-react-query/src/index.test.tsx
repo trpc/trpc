@@ -321,7 +321,7 @@ test('server render with prefetched data, then hydrate without refetching', asyn
   const serverClient = createRouterClient(appRouter, {
     ctx: { locale: null },
   });
-  await serverQueryClient.prefetchQuery(
+  await serverQueryClient.query(
     createTrpcQueryUtils({ client: serverClient }).post.byId.queryOptions({
       input: { id: '3' },
     }),
