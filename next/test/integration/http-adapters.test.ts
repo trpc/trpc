@@ -55,7 +55,7 @@ async function parse(req: IncomingMessage & { body?: unknown }) {
 
 /** Serves `app` behind a Node server whose requests `before` reads first, as Express middleware would. */
 async function listenParsed(
-  app: Parameters<typeof NodeHttpServer.makeHandler>[0],
+  app: ReturnType<typeof toHttpEffect>,
   before: (req: IncomingMessage) => Promise<void>,
 ) {
   const scope = Scope.makeUnsafe();
@@ -96,7 +96,7 @@ async function listen(layer: Layer.Layer<never, never, HttpServer.HttpServer>) {
   );
   const { address } = Context.get(context, HttpServer.HttpServer);
   return {
-    url: `http://127.0.0.1:${(address as AddressInfo).port}/trpc`,
+    url: `http://127.0.0.1:${(address as { port: number }).port}/trpc`,
     [Symbol.asyncDispose]: () =>
       Effect.runPromise(Scope.close(scope, Exit.void)),
   };
