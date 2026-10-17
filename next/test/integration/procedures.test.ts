@@ -529,14 +529,12 @@ test('calls that go wrong in unusual ways fail with one clear error', async () =
     stringData: declared.query(({ errors }) =>
       errors.CONFLICT({ data: 'same string' }),
     ),
-    badMiddleware: u.procedure
-      .use((() => 'nope') as unknown as Parameters<typeof u.procedure.use>[0])
-      .query(() => 1),
+    badMiddleware: u.procedure.use((() => 'nope') as never).query(() => 1),
     handBuiltFailure: u.procedure
       .use((() => ({
         ok: false,
         error: new TrpcError({ code: 'FORBIDDEN', message: 'by hand' }),
-      })) as unknown as Parameters<typeof u.procedure.use>[0])
+      })) as never)
       .query(() => 1),
     schemaFactoryThrows: u.procedure
       .input((() => {
@@ -553,7 +551,7 @@ test('calls that go wrong in unusual ways fail with one clear error', async () =
     ),
   };
   const failure = async (procedure: keyof typeof procedures) => {
-    const [, err] = await safe(
+    const [, err] = await safe<unknown, TrpcError>(
       call(procedures[procedure] as never, undefined, { ctx: {} } as never),
     );
     return err && { code: err.code, message: err.message };
