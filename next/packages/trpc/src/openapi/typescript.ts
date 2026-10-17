@@ -287,19 +287,26 @@ function inferErrors(checker: Checker, errors: Type): InferredTypes['errors'] {
   for (const member of members) {
     if (has(member, TypeFlags.Never)) continue;
     const code = propertyType(checker, member, 'code');
-    if (!code?.isStringLiteralType()) continue;
+    // `error({ code })` with a union of codes: one response per code.
+    const codes = (
+      code?.isUnionType() ? (code.getTypes() ?? []) : code ? [code] : []
+    ).filter((c) => c.isStringLiteralType());
+    if (codes.length === 0) continue;
     const status = propertyType(checker, member, '~status');
     const data = propertyType(checker, member, 'data');
-    found.push({
-      code: code.value,
-      status: status?.isNumberLiteralType()
-        ? status.value
-        : ((ERROR_STATUS as Record<string, number>)[code.value] ?? 400),
-      data:
-        data && !has(data, TypeFlags.Never)
-          ? new TypeToSchema(checker).root(data)
-          : undefined,
-    });
+    const schema =
+      data && !has(data, TypeFlags.Never)
+        ? new TypeToSchema(checker).root(data)
+        : undefined;
+    for (const c of codes) {
+      found.push({
+        code: c.value,
+        status: status?.isNumberLiteralType()
+          ? status.value
+          : ((ERROR_STATUS as Record<string, number>)[c.value] ?? 400),
+        data: schema,
+      });
+    }
   }
   return found;
 }

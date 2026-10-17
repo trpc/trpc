@@ -219,6 +219,7 @@ test('types document as JSON.stringify sends them (21)', async () => {
       holes: { type: 'array', items: { type: 'null' } },
       when: { type: 'string' },
       upper: { type: 'string' },
+      sparse: { type: 'object', properties: {}, additionalProperties: {} },
     },
     // Functions, methods, symbol keys, `undefined` and `bigint` aren't sent.
     required: [
@@ -239,8 +240,22 @@ test('types document as JSON.stringify sends them (21)', async () => {
       'holes',
       'when',
       'upper',
+      'sparse',
     ],
   });
+  const coded = op(shapes, 'get', '/api/coded');
+  expect(
+    Object.entries(coded.responses).map(([status, r]) => [
+      status,
+      r.content?.['application/json']?.schema['properties']?.code?.const,
+    ]),
+  ).toEqual([
+    ['200', undefined],
+    ['400', 'SOMETHING_ODD'],
+    ['403', 'FORBIDDEN'],
+    ['409', 'CONFLICT'],
+    ['default', undefined],
+  ]);
   expect(json(op(shapes, 'get', '/api/empty'), '200')).toEqual({});
   expect(json(op(shapes, 'get', '/api/callable'), '200')).toEqual({});
   const failing = op(shapes, 'get', '/api/failing');

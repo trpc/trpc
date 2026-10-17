@@ -42,6 +42,8 @@ export interface Shapes {
   holes: Array<undefined>;
   when: `v${number}`;
   upper: Uppercase<string>;
+  neither: undefined | void;
+  sparse: Record<string, undefined>;
 }
 
 const shapes = {} as Shapes;
@@ -57,6 +59,14 @@ export const shapesRouter = {
       if (shapes.flag) return yield* error({ code: 'TOO_MANY_REQUESTS' });
       if (shapes.anything) return yield* error({ code: 'FORBIDDEN' });
       return 'ok' as const;
+    }),
+  ),
+  coded: t.procedure.meta(get('/coded')).query(() =>
+    Effect.gen(function* () {
+      const code = shapes.flag ? ('CONFLICT' as const) : ('FORBIDDEN' as const);
+      if (shapes.anything) return yield* error({ code });
+      if (shapes.loose) return yield* error({ code: 'SOMETHING_ODD' });
+      return 1;
     }),
   ),
   later: lazy(async () => ({
