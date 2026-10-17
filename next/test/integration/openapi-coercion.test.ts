@@ -1,4 +1,10 @@
-import { createOpenApiHandler, openapi } from '@trpc12/trpc/openapi';
+import { createTrpcClient } from '@trpc12/trpc/client';
+import { toContract } from '@trpc12/trpc/contract';
+import {
+  createOpenApiHandler,
+  openapi,
+  openApiLink,
+} from '@trpc12/trpc/openapi';
 import { initTrpc } from '@trpc12/trpc/server';
 import { expect, test } from 'vite-plus/test';
 import { z } from 'zod';
@@ -120,4 +126,48 @@ test('form fields are coerced one key at a time (18 (b))', async () => {
     body: 'count=3&done=on&notes=7',
   });
   expect(await res.json()).toEqual({ count: 3, done: true, notes: '7' });
+});
+
+test('openApiLink sends nulls, dates and lists of objects in bracket notation', async () => {
+  const r = {
+    find: t.procedure
+      .meta({ route: { method: 'GET', path: '/find' } })
+      .input(
+        z.object({
+          at: z.string(),
+          none: z.null(),
+          items: z.array(z.object({ id: z.number(), name: z.string() })),
+        }),
+      )
+      .query(({ input }) => input),
+  };
+  const h = createOpenApiHandler({ router: r });
+  const urls: string[] = [];
+  const client = createTrpcClient({
+    router: r,
+    links: [
+      openApiLink({
+        url: 'http://localhost',
+        contract: toContract(r),
+        fetch: (url, init) => {
+          urls.push(decodeURIComponent(String(url)));
+          return h.fetch(new Request(url, init));
+        },
+      }),
+    ],
+  });
+  const input = {
+    at: new Date(0) as unknown as string,
+    none: null,
+    items: [
+      { id: 1, name: 'a' },
+      { id: 2, name: 'b' },
+    ],
+  };
+  expect(await client.find.query(input)).toEqual({
+    ...input,
+    at: '1970-01-01T00:00:00.000Z',
+  });
+  expect(urls[0]).toContain('items[0][id]=1&items[0][name]=a&items[1][id]=2');
+  expect(urls[0]).toContain('none=&');
 });

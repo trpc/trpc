@@ -26,7 +26,7 @@ import {
   tracked,
   type TrackedEnvelope,
 } from '@trpc12/trpc/server';
-import { expect, expectTypeOf, test } from 'vite-plus/test';
+import { expect, expectTypeOf, test, vi } from 'vite-plus/test';
 import { z } from 'zod';
 import { appContract } from './fixtures/contract.ts';
 
@@ -249,8 +249,8 @@ test('query strings use bracket notation, coerced from the JSON Schema', async (
     published: true,
   });
 
-  const repeated = await s.api('/posts?limit=1&tags=x&tags=y');
-  expect(await repeated.json()).toEqual({ limit: 1, tags: ['x', 'y'] });
+  const repeated = await s.api('/posts?limit=1&tags=x&tags=y&tags=z');
+  expect(await repeated.json()).toEqual({ limit: 1, tags: ['x', 'y', 'z'] });
 
   const single = await s.api('/posts?limit=1&tags=only');
   expect(await single.json()).toEqual({ limit: 1, tags: ['only'] });
@@ -693,6 +693,35 @@ test('quiet subscriptions send keep-alive comments', async () => {
   const text = await res.text();
   expect(text).toContain(': ping\n\n');
   expect(text).toContain('data: "b"');
+  await handler.dispose();
+});
+
+test('a cancelled subscription sends no keep-alives while it winds down', async () => {
+  let closed = false;
+  const handler = createOpenApiHandler({
+    router: {
+      slow: t.procedure.subscription(async function* () {
+        try {
+          yield 'a';
+          await new Promise((resolve) => setTimeout(resolve, 60));
+          yield 'b';
+        } finally {
+          closed = true;
+        }
+      }),
+    },
+    createContext: () => ({ user: null }),
+    sse: { pingMs: 5 },
+  });
+  const res = await handler.fetch(new Request('http://localhost/api/slow'));
+  const reader = res.body!.getReader();
+  const decoder = new TextDecoder();
+  let text = '';
+  while (!text.includes('data: "a"')) {
+    text += decoder.decode((await reader.read()).value);
+  }
+  await reader.cancel();
+  await vi.waitFor(() => expect(closed).toBe(true));
   await handler.dispose();
 });
 
