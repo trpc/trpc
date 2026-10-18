@@ -1,14 +1,13 @@
 /**
  * Effect example: services from layers, Effect Schema inputs, a public
  * tagged error, a `Stream` subscription, and the Effect client, where typed
- * errors are in the error channel. Run with `node index.ts`.
+ * errors are in the error channel. `client.ts` is the Effect client;
+ * `pnpm start` runs both.
  */
 import { createServer } from 'node:http';
 import { NodeHttpServer } from '@effect/platform-node';
-import { Context, Effect, Layer, Schema, Stream } from 'effect';
+import { Context, Effect, Layer, ManagedRuntime, Schema, Stream } from 'effect';
 import { HttpServer } from 'effect/http';
-import { httpLink, routerType } from '@trpc12/trpc/client';
-import { createEffectClient } from '@trpc12/trpc/effect';
 import { serve } from '@trpc12/trpc/http';
 import { createFetchHandler, initTrpc, TrpcError } from '@trpc12/trpc/server';
 
@@ -98,57 +97,34 @@ const appRouter = {
 };
 export type AppRouter = typeof appRouter;
 
-const handler = createFetchHandler({
-  router: appRouter,
-  layer: Posts.memory,
-  createContext: (opts) => ({
-    user: opts.request.headers['authorization'] ?? null,
-  }),
-});
-
-const ServerLive = serve(handler).pipe(
-  Layer.provideMerge(
-    NodeHttpServer.layer(createServer, { port: 0, host: '127.0.0.1' }),
-  ),
-);
-
-// --- client --------------------------------------------------------------------------
-
-const program = Effect.gen(function* () {
-  const url = yield* HttpServer.addressFormattedWith(Effect.succeed);
-  const client = createEffectClient({
-    router: routerType<AppRouter>(),
-    links: [
-      httpLink({ url: `${url}/trpc`, headers: { authorization: 'ada' } }),
-    ],
+export async function listen(port = 0) {
+  const handler = createFetchHandler({
+    router: appRouter,
+    layer: Posts.memory,
+    createContext: (opts) => ({
+      user: opts.request.headers['authorization'] ?? null,
+    }),
   });
-
-  const post = yield* client.post.byId.query({ id: '1' });
-  yield* Effect.log('post.byId', post);
-
-  const created = yield* client.post.create.mutate({ title: 'Layers' });
-  yield* Effect.log('post.create', created);
-
-  const missing = yield* client.post.byId.query({ id: '404' }).pipe(
-    Effect.as('found'),
-    // A custom code is always the procedure's own error, with its `data`.
-    Effect.catchTag('POST_NOT_FOUND', (err) =>
-      Effect.succeed(`no post ${err.data.id} (${err.code})`),
+  const runtime = ManagedRuntime.make(
+    serve(handler).pipe(
+      Layer.provideMerge(
+        NodeHttpServer.layer(createServer, { port, host: '127.0.0.1' }),
+      ),
     ),
   );
-  yield* Effect.log('post.byId', missing);
-
-  const titles = yield* client.post.all.subscribe().pipe(
-    Stream.map((p) => p.title),
-    Stream.runCollect,
+  const origin = await runtime.runPromise(
+    HttpServer.addressFormattedWith(Effect.succeed),
   );
-  yield* Effect.log('post.all', titles);
-  if (titles.length !== 2) return yield* Effect.die('expected two posts');
-});
+  return {
+    url: `${origin}/trpc`,
+    [Symbol.asyncDispose]: async () => {
+      await runtime.dispose();
+      await handler.dispose();
+    },
+  };
+}
 
-await Effect.runPromise(
-  program.pipe(
-    Effect.provide(ServerLive),
-    Effect.ensuring(Effect.promise(() => handler.dispose())),
-  ),
-);
+if (import.meta.main) {
+  const server = await listen(Number(process.env['PORT'] ?? 3000));
+  console.log(server.url);
+}
