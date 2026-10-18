@@ -5,5 +5,5 @@
 - (agent) Only `target: 'openapi'` applies it: the `rpc` target documents @trpc12/trpc's own endpoint, whose shapes a REST override wouldn't match. `toContract()` drops `spec`: it can be a function and only matters to the document.
 - (agent) `OperationSpec` is an open record, not a full OpenAPI type: @trpc12/trpc doesn't model the whole OpenAPI vocabulary, and extensions (`x-*`) must pass.
 - Lost: oRPC's `oo.spec()` on errors and middleware.
-- (agent) 2026-10-16: `.route()` became the `route` meta key of the `openapi()` extension ([`root-extensions.md`](./root-extensions.md)). The merge above is that key's `mergeMeta` function, so `.meta({ route })` calls merge the same way; `.concat()` no longer carries a route.
+- (agent) 2026-10-16: `.route()` became the `route` meta key of the `experimental_openapi()` extension ([`root-extensions.md`](./root-extensions.md)). The merge above is that key's `mergeMeta` function, so `.meta({ route })` calls merge the same way; `.concat()` no longer carries a route.
 - Lives in: `packages/trpc/src/server/procedure.ts` (`Route.spec`, `mergeRoute`), `src/server/builder.ts`, `src/server/implement.ts`, `src/contract/index.ts`, `src/openapi/generate.ts`, `src/internal/describe.ts` (`procedureJson`), `packages/trpc/src/openapi/openapi.test.ts`, `docs/openapi/routes.md`.

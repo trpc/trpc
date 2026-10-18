@@ -80,16 +80,16 @@ const matches = (value: unknown, schema: Schema): boolean => {
  *
  * @example
  * ```ts
- * coerceBySchema({ limit: '10', tags: 'a' }, {
+ * experimental_coerceBySchema({ limit: '10', tags: 'a' }, {
  *   type: 'object',
  *   properties: { limit: { type: 'number' }, tags: { type: 'array', items: { type: 'string' } } },
  * });
  * // { limit: 10, tags: ['a'] }
  * ```
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
-export function coerceBySchema(
+export function experimental_coerceBySchema(
   value: unknown,
   schema: JsonSchema | undefined,
   root: JsonSchema | undefined = schema,
@@ -100,7 +100,7 @@ export function coerceBySchema(
   const current = resolve(s, r);
 
   for (const part of (current['allOf'] as JsonSchema[] | undefined) ?? []) {
-    value = coerceBySchema(value, part, r);
+    value = experimental_coerceBySchema(value, part, r);
   }
   const branches = (current['anyOf'] ?? current['oneOf']) as
     | JsonSchema[]
@@ -109,7 +109,7 @@ export function coerceBySchema(
     for (const branch of branches) {
       const b = asSchema(branch);
       if (!b) continue;
-      const candidate = coerceBySchema(value, b, r);
+      const candidate = experimental_coerceBySchema(value, b, r);
       if (matches(candidate, resolve(b, r))) return candidate;
     }
     return value;
@@ -128,14 +128,20 @@ export function coerceBySchema(
     );
     if (option !== undefined) return option;
     if (types.includes('array') && !types.includes('string')) {
-      return [coerceBySchema(value, asSchema(current['items']), r)];
+      return [
+        experimental_coerceBySchema(value, asSchema(current['items']), r),
+      ];
     }
     return coerceString(value, types);
   }
   if (Array.isArray(value)) {
     const prefixItems = current['prefixItems'] as JsonSchema[] | undefined;
     return value.map((item, i) =>
-      coerceBySchema(item, prefixItems?.[i] ?? asSchema(current['items']), r),
+      experimental_coerceBySchema(
+        item,
+        prefixItems?.[i] ?? asSchema(current['items']),
+        r,
+      ),
     );
   }
   if (isObject(value)) {
@@ -144,7 +150,11 @@ export function coerceBySchema(
     return Object.fromEntries(
       Object.entries(value).map(([key, child]) => [
         key,
-        coerceBySchema(child, asSchema(properties[key]) ?? additional, r),
+        experimental_coerceBySchema(
+          child,
+          asSchema(properties[key]) ?? additional,
+          r,
+        ),
       ]),
     );
   }

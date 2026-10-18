@@ -78,7 +78,7 @@ An app that uses one domain can depend on a [contract](./contract-first.md) pack
 
 In the example, [`packages/billing-contract`](../../examples/monorepo/packages/billing-contract/src/index.ts) is the contract, [`packages/billing`](../../examples/monorepo/packages/billing/src/index.ts) implements it with `t.implement()`, and [`apps/billing-widget`](../../examples/monorepo/apps/billing-widget/src/index.ts) calls it with `validationLink`, depending on the contract package alone.
 
-A server that isn't written contract-first can still hand clients a contract: `toContract(router)` derives one, as [`examples/openapi`](../../examples/openapi/index.ts) does for its `openApiLink` client. Its types come from the router's, so the app still needs the server's declarations to stay cheap.
+A server that isn't written contract-first can still hand clients a contract: `toContract(router)` derives one. Its types come from the router's, so the app still needs the server's declarations to stay cheap.
 
 ## In the editor
 

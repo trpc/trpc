@@ -27,8 +27,8 @@ import {
 } from '../internal/error.ts';
 import type { JsonSchema } from '../internal/json-schema.ts';
 import type { MaybePromise } from '../internal/types.ts';
-import { parseBracketNotation } from '../openapi/bracket.ts';
-import { coerceBySchema } from '../openapi/coerce.ts';
+import { experimental_parseBracketNotation } from '../openapi/bracket.ts';
+import { experimental_coerceBySchema } from '../openapi/coerce.ts';
 import {
   callProcedure,
   isUnexpectedError,
@@ -166,8 +166,8 @@ const inputSchemaOf = (procedure: AnyProcedure) => {
 
 /** Framework fields like Next's `$ACTION_ID_…` are not input. */
 const fromFormData = (procedure: AnyProcedure, form: FormData) =>
-  coerceBySchema(
-    parseBracketNotation(
+  experimental_coerceBySchema(
+    experimental_parseBracketNotation(
       [...form.entries()].filter(([key]) => !key.startsWith('$ACTION')),
     ),
     inputSchemaOf(procedure),

@@ -26,13 +26,13 @@ function segmentsOf(key: string): string[] {
  *
  * @example
  * ```ts
- * parseBracketNotation(new URLSearchParams('a[b]=1&tags[]=x&tags[]=y'));
+ * experimental_parseBracketNotation(new URLSearchParams('a[b]=1&tags[]=x&tags[]=y'));
  * // { a: { b: '1' }, tags: ['x', 'y'] }
  * ```
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
-export function parseBracketNotation(
+export function experimental_parseBracketNotation(
   entries: Iterable<[string, Leaf]>,
 ): Record<string, unknown> {
   const root: Record<string, Node> = {};
@@ -80,18 +80,18 @@ export function parseBracketNotation(
 
 /**
  * Turns a value into bracket-notation entries: the inverse of
- * {@link parseBracketNotation}. `undefined` is skipped, `null` is `''`,
+ * {@link experimental_parseBracketNotation}. `undefined` is skipped, `null` is `''`,
  * dates are ISO strings and `Blob`s stay as they are.
  *
  * @example
  * ```ts
- * new URLSearchParams(toBracketNotation({ a: { b: 1 }, tags: ['x', 'y'] }) as string[][]);
+ * new URLSearchParams(experimental_toBracketNotation({ a: { b: 1 }, tags: ['x', 'y'] }) as string[][]);
  * // a[b]=1&tags[]=x&tags[]=y
  * ```
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
-export function toBracketNotation(
+export function experimental_toBracketNotation(
   value: unknown,
   prefix = '',
 ): Array<[string, Leaf]> {

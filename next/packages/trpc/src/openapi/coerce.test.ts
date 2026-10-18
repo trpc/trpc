@@ -1,15 +1,15 @@
 import { createTrpcClient } from '@trpc12/trpc/client';
 import { toContract } from '@trpc12/trpc/contract';
 import {
-  createOpenApiHandler,
-  openapi,
-  openApiLink,
+  experimental_createOpenApiHandler,
+  experimental_openapi,
+  experimental_openApiLink,
 } from '@trpc12/trpc/openapi';
 import { type AnyRouter, initTrpc } from '@trpc12/trpc/server';
 import { expect, test } from 'vite-plus/test';
 import { z } from 'zod';
 
-const t = initTrpc().concat(openapi());
+const t = initTrpc().concat(experimental_openapi());
 
 const Tag = z
   .object({ name: z.string(), weight: z.number() })
@@ -40,7 +40,7 @@ const Input = z.object({
   text: z.string(),
 });
 
-const handler = createOpenApiHandler({
+const handler = experimental_createOpenApiHandler({
   router: {
     echo: t.procedure
       .meta({ route: { method: 'GET', path: '/echo' } })
@@ -128,7 +128,7 @@ test('form fields are coerced one key at a time (18 (b))', async () => {
   expect(await res.json()).toEqual({ count: 3, done: true, notes: '7' });
 });
 
-test('openApiLink sends nulls, dates and lists of objects in bracket notation', async () => {
+test('experimental_openApiLink sends nulls, dates and lists of objects in bracket notation', async () => {
   const r = {
     find: t.procedure
       .meta({ route: { method: 'GET', path: '/find' } })
@@ -141,12 +141,12 @@ test('openApiLink sends nulls, dates and lists of objects in bracket notation', 
       )
       .query((opts) => opts.input),
   } satisfies AnyRouter;
-  const h = createOpenApiHandler({ router: r });
+  const h = experimental_createOpenApiHandler({ router: r });
   const urls: string[] = [];
   const client = createTrpcClient({
     router: r,
     links: [
-      openApiLink({
+      experimental_openApiLink({
         url: 'http://localhost',
         contract: toContract(r),
         fetch: (url, init) => {

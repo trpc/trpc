@@ -2,8 +2,8 @@ import { Effect } from 'effect';
 import { HttpServerRequest, HttpServerResponse } from 'effect/http';
 import { HttpEffect } from 'effect/http';
 import {
-  generateOpenApi,
-  openApiReference,
+  experimental_generateOpenApi,
+  experimental_openApiReference,
   type OpenApiDocument,
 } from '@trpc12/trpc/openapi';
 import { experimental_generateOpenApiFromTypes } from '@trpc12/trpc/openapi/typescript';
@@ -30,7 +30,7 @@ const doc = await experimental_generateOpenApiFromTypes(appRouter, {
 });
 
 test('inferred errors are documented with their status (21)', () => {
-  const runtime = generateOpenApi(appRouter, {
+  const runtime = experimental_generateOpenApi(appRouter, {
     info: { title: 'Posts', version: '1.0.0' },
   });
   expect(Object.keys(op(runtime, 'get', '/api/posts/{id}').responses)).toEqual([
@@ -140,7 +140,7 @@ test('procedures without static schemas get their inferred types (21)', () => {
 });
 
 test('runtime schemas win over types (21)', () => {
-  const runtime = generateOpenApi(appRouter, {
+  const runtime = experimental_generateOpenApi(appRouter, {
     info: { title: 'Posts', version: '1.0.0' },
   });
   expect(json(op(doc, 'get', '/api/posts/count'), '200')).toEqual(
@@ -151,9 +151,9 @@ test('runtime schemas win over types (21)', () => {
   );
 });
 
-test('openApiReference serves a document generated at build time (21)', async () => {
+test('experimental_openApiReference serves a document generated at build time (21)', async () => {
   const handler = HttpEffect.toWebHandler(
-    openApiReference({ document: doc })(
+    experimental_openApiReference({ document: doc })(
       Effect.succeed(HttpServerResponse.text('app')),
     ) as Effect.Effect<
       HttpServerResponse.HttpServerResponse,

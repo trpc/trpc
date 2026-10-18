@@ -1,7 +1,7 @@
 /**
  * Spike (proposal 25): publish a router's procedures as MCP tools.
  *
- * - `mcp()` is a root extension, like `openapi()`: it adds the `mcp` meta key
+ * - `mcp()` is a root extension, like `experimental_openapi()`: it adds the `mcp` meta key
  *   (`.meta({ mcp: { description, annotations } })`), merged key by key.
  * - `describeTools(router)` turns procedures into MCP tool descriptors, with
  *   JSON Schemas from `toContract()` (Standard JSON Schema, the OpenAPI

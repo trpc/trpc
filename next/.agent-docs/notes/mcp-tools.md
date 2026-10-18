@@ -5,7 +5,7 @@
 Code: `next/spikes/mcp/`; run with `pnpm test` from `next/`, or serve it with `node mcp/serve.ts [--port 3333] [--user name]` from `next/spikes/` and point a client at `http://localhost:3333/mcp`. MCP protocol `2025-11-25`; tested with `@modelcontextprotocol/sdk` 1.32.1's client and the MCP Inspector CLI.
 
 ```ts
-const t = initTrpc<{ ctx: Ctx }>().concat(openapi()).concat(mcp());
+const t = initTrpc<{ ctx: Ctx }>().concat(experimental_openapi()).concat(mcp());
 
 const byId = t.procedure
   .meta({ mcp: { description: 'Read one blog post by its id.' } })
@@ -25,7 +25,7 @@ const mcpHandler = createMcpHandler({
 
 ## What works
 
-- **A root extension, like `openapi()`.** `mcp()` adds the `mcp` meta key: `true`, `false`, or `{ name?, title?, description?, annotations? }`, merged key by key across `.meta()` calls. `.meta({ mcp })` without the extension is a type error (`UndeclaredMeta`), as for `route` (`mcp.test-d.ts`).
+- **A root extension, like `experimental_openapi()`.** `mcp()` adds the `mcp` meta key: `true`, `false`, or `{ name?, title?, description?, annotations? }`, merged key by key across `.meta()` calls. `.meta({ mcp })` without the extension is a type error (`UndeclaredMeta`), as for `route` (`mcp.test-d.ts`).
 - **Schemas come from `toContract()`.** Tool `inputSchema` and `outputSchema` are the JSON Schemas the OpenAPI generator already makes through Standard JSON Schema, so zod's `.describe()` reaches the model as the property's `description`. Nothing in the spike converts schemas.
 - **MCP's shape constraints are met by wrapping.** MCP needs `type: 'object'` at the top of both schemas:
   - an object input or output is used as it is (`allOf` from chained inputs gets `type: 'object'` added);
@@ -48,7 +48,7 @@ const mcpHandler = createMcpHandler({
 ## Findings
 
 - **Dates are described as `{}`.** `z.date()` outputs are unrepresentable in JSON Schema, so `toJsonSchema` gives `{}` (`unrepresentable: 'any'`), and the model gets no hint that `at` is an ISO string. The Inspector's `--strict` check flags it. OpenAPI has the same gap; the fix belongs in the shared generator (describe the JSON form, `{ type: 'string', format: 'date-time' }`), not in MCP.
-- **Inputs need the same.** A `z.date()` input arrives as a string from an agent and fails validation; OpenAPI coerces query strings by schema (`coerceBySchema`), but JSON bodies, and so MCP arguments, aren't coerced.
+- **Inputs need the same.** A `z.date()` input arrives as a string from an agent and fails validation; OpenAPI coerces query strings by schema (`experimental_coerceBySchema`), but JSON bodies, and so MCP arguments, aren't coerced.
 - **Clients coerce arguments themselves.** The Inspector CLI sent `id=1` as the number `1`; the validation issue (`expected string, received number`) came back as a tool error and the retry with `"1"` worked. That's the loop MCP wants, and it needs nothing from us.
 - **Names need a separator.** MCP allows `.` in tool names (`[A-Za-z0-9._-]{1,128}`), but model APIs that clients forward tools to allow only `[A-Za-z0-9_-]`, so the default joins segments with `_` (`post_byId`). Two paths that join to one name (`a_b` and `a.b`) throw at creation.
 - **`call()` is the wrong core for the real thing.** It builds the `layer` per call and provides no `HttpServerRequest`, spans or `onError`. A shipped handler should run on `createHandlerCore` like the OpenAPI handler does (shared runtime, masking, `onError`, tracing, Effect HTTP `middleware`, platform args).

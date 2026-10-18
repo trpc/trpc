@@ -2,11 +2,11 @@ import { TrpcError } from '../internal/error.ts';
 import type { ProcedureType } from '../internal/types.ts';
 
 /**
- * REST metadata (04 (g)), the `route` meta key of the {@link openapi}
+ * REST metadata (04 (g)), the `route` meta key of the {@link experimental_openapi}
  * extension. The RPC endpoint ignores it; the OpenAPI handler, generator and
  * link use it (18).
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
 export interface Route {
   /** @default 'GET' for queries and subscriptions, 'POST' for mutations */
@@ -46,7 +46,7 @@ export interface Route {
  * The `route` meta of a router or lazy subtree: `t.router({ meta: { route:
  * { prefix, tags } } }, …)` (08 Q8.3).
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
 export interface RouteGroup {
   /**
@@ -69,7 +69,7 @@ export const routeGroupOf = (
 /**
  * An OpenAPI operation object, as `route.spec` sees it.
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
 export interface OperationSpec {
   readonly [key: string]: unknown;
@@ -96,9 +96,9 @@ export function mergeRoute(route: Route, next: Route): Route {
 }
 
 /**
- * The meta the `openapi()` extension adds.
+ * The meta the `experimental_openapi()` extension adds.
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
 export interface OpenApiMeta {
   /** The procedure's REST mapping; `.meta({ route })` calls merge by key. */
@@ -115,14 +115,14 @@ export const routeOf = (def: { readonly meta: object }): Route | undefined =>
 /**
  * An HTTP method a `route` accepts.
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
 export type HttpMethod = NonNullable<Route['method']>;
 
 /**
  * A procedure's REST mapping, with defaults applied (Q18.2).
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
 export interface ResolvedRoute {
   readonly method: HttpMethod;
@@ -147,13 +147,13 @@ export const normalizePrefix = (prefix: string | undefined): string => {
  *
  * @example
  * ```ts
- * resolveRoute('post.byId', 'query', undefined, '/api');
+ * experimental_resolveRoute('post.byId', 'query', undefined, '/api');
  * // { method: 'GET', path: '/api/post/byId', params: [], successStatus: 200, … }
  * ```
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
-export function resolveRoute(
+export function experimental_resolveRoute(
   path: string,
   type: ProcedureType,
   route: Route | undefined,

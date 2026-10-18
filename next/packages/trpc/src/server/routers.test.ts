@@ -2,9 +2,9 @@ import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
 import { toContract } from '@trpc12/trpc/contract';
 import { getProcedure } from '@trpc12/trpc/extend';
 import {
-  createOpenApiHandler,
-  generateOpenApi,
-  openapi,
+  experimental_createOpenApiHandler,
+  experimental_generateOpenApi,
+  experimental_openapi,
 } from '@trpc12/trpc/openapi';
 import {
   createRouterClient,
@@ -18,7 +18,7 @@ import { createTestServer } from '../fixtures/server.ts';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
 
-const t = initTrpc().concat(openapi());
+const t = initTrpc().concat(experimental_openapi());
 
 const users = t.procedure.query(() => ['ada']);
 const ban = t.procedure
@@ -72,7 +72,7 @@ test('router-level route meta only changes OpenAPI routes (08 Q8.3)', async () =
   expect(await client.admin.users.query()).toEqual(['ada']);
   expect(await client.admin.audit.log.query()).toEqual(['ada']);
 
-  const doc = generateOpenApi(await loadRouter(router), {
+  const doc = experimental_generateOpenApi(await loadRouter(router), {
     info: { title: 'x', version: '1' },
   });
   expect(doc.paths['/api/admin/users']!['get']!.tags).toEqual(['admin']);
@@ -118,7 +118,9 @@ test('lazy() loads a subtree on its first call, once (08 Q8.4)', async () => {
 test('tools that need the whole router ask for loadRouter()', async () => {
   const app = makeRouter();
   expect(() =>
-    generateOpenApi(app.router, { info: { title: 'x', version: '1' } }),
+    experimental_generateOpenApi(app.router, {
+      info: { title: 'x', version: '1' },
+    }),
   ).toThrow(
     /"reports" is lazy and hasn't loaded: pass `await loadRouter\(router\)`/,
   );
@@ -136,7 +138,7 @@ const get = (
 
 test('the OpenAPI handler loads a prefixed lazy subtree on a request under it', async () => {
   const app = makeRouter();
-  const handler = createOpenApiHandler({ router: app.router });
+  const handler = experimental_createOpenApiHandler({ router: app.router });
   expect(await (await get(handler, '/admin/users')).json()).toEqual(['ada']);
   await (await get(handler, '/billing/invoice?n=1')).json();
   expect(app.loads).toMatchObject({ reports: 0, billing: 1 });
@@ -148,7 +150,10 @@ test('the OpenAPI handler loads a prefixed lazy subtree on a request under it', 
 test('with a contract, the OpenAPI handler loads lazy subtrees only when called', async () => {
   const contract = toContract(await loadRouter(makeRouter().router));
   const app = makeRouter();
-  const handler = createOpenApiHandler({ router: app.router, contract });
+  const handler = experimental_createOpenApiHandler({
+    router: app.router,
+    contract,
+  });
   expect(await (await get(handler, '/admin/users')).json()).toEqual(['ada']);
   expect(app.loads).toMatchObject({ reports: 0, billing: 0 });
   expect(await (await get(handler, '/billing/invoice?n=4')).json()).toBe(8);
@@ -156,13 +161,15 @@ test('with a contract, the OpenAPI handler loads lazy subtrees only when called'
 });
 
 test('router-level meta takes only the keys an extension gives a router form', () => {
-  const app = initTrpc<{ meta: { auth?: 'admin' } }>().concat(openapi());
+  const app = initTrpc<{ meta: { auth?: 'admin' } }>().concat(
+    experimental_openapi(),
+  );
   app.router({ meta: { route: { prefix: '/a', tags: ['a'] } } }, { users });
   // @ts-expect-error -- `auth` applies to procedures only
   app.router({ meta: { auth: 'admin' } }, { users });
   // @ts-expect-error -- a router's `route` is `{ prefix, tags }`
   app.router({ meta: { route: { method: 'GET' } } }, { users });
-  // @ts-expect-error -- no `route` meta without openapi()
+  // @ts-expect-error -- no `route` meta without experimental_openapi()
   initTrpc().router({ meta: { route: { prefix: '/a' } } }, { users });
 });
 

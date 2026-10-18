@@ -49,13 +49,13 @@ import {
   type inferRouterServices,
 } from '../server/router.ts';
 import { isTracked } from '../server/tracked.ts';
-import { parseBracketNotation } from './bracket.ts';
-import { coerceBySchema, propertySchema } from './coerce.ts';
+import { experimental_parseBracketNotation } from './bracket.ts';
+import { experimental_coerceBySchema, propertySchema } from './coerce.ts';
 import { toOpenApiError } from './errors.ts';
 import {
   compileRoute,
   normalizePrefix,
-  resolveRoute,
+  experimental_resolveRoute,
   routeOf,
   usesQuery,
   type ResolvedRoute,
@@ -65,7 +65,7 @@ import {
 /**
  * Options shared by every OpenAPI handler.
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
 export interface BaseOpenApiHandlerOptions<TRouter extends AnyRouter> {
   router: TRouter;
@@ -88,10 +88,10 @@ export interface BaseOpenApiHandlerOptions<TRouter extends AnyRouter> {
   onError?: (opts: OnErrorOpts) => void;
   /**
    * Effect HTTP middleware around the handler, outermost first, e.g.
-   * {@link openApiReference} or `cors()`.
+   * {@link experimental_openApiReference} or `cors()`.
    * @example
    * ```ts
-   * middleware: [cors(), openApiReference({ router: appRouter, specGenerateOptions })],
+   * middleware: [cors(), experimental_openApiReference({ router: appRouter, specGenerateOptions })],
    * ```
    */
   middleware?: ReadonlyArray<HttpMiddleware.HttpMiddleware>;
@@ -112,9 +112,9 @@ export interface BaseOpenApiHandlerOptions<TRouter extends AnyRouter> {
 }
 
 /**
- * The options of {@link createOpenApiHandler}.
+ * The options of {@link experimental_createOpenApiHandler}.
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
 export type OpenApiHandlerOptions<
   TRouter extends AnyRouter,
@@ -126,7 +126,7 @@ export type OpenApiHandlerOptions<
 /**
  * A web-standard handler for the REST mapping of a router.
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
 export interface OpenApiHandler<TPlatform = undefined> {
   /** Handles one HTTP request. `platform` reaches `createContext`. */
@@ -155,7 +155,7 @@ export interface OpenApiHandler<TPlatform = undefined> {
  * await openapi.serve(request, { path: 'post.byId', procedure, params: { id: '1' } });
  * ```
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
 export interface OpenApiCall {
   /** The procedure path (`post.byId`), for spans and `onError`. */
@@ -221,17 +221,17 @@ const specificity = (route: ResolvedRoute) =>
  *
  * @example
  * ```ts
- * const openapi = createOpenApiHandler({
+ * const openapi = experimental_createOpenApiHandler({
  *   router: appRouter,
  *   createContext,
- *   middleware: [openApiReference({ router: appRouter, specGenerateOptions: { info: { title: 'API', version: '1.0.0' } } })],
+ *   middleware: [experimental_openApiReference({ router: appRouter, specGenerateOptions: { info: { title: 'API', version: '1.0.0' } } })],
  * });
  * // GET /api/posts/1, GET /api/docs, GET /api/openapi.json
  * ```
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
-export function createOpenApiHandler<
+export function experimental_createOpenApiHandler<
   TRouter extends AnyRouter,
   TPlatform = undefined,
 >(opts: OpenApiHandlerOptions<TRouter, TPlatform>): OpenApiHandler<TPlatform> {
@@ -259,7 +259,7 @@ export function createOpenApiHandler<
     input: JsonSchema | undefined,
     resolve: Entry['resolve'],
   ): Entry => {
-    const resolved = resolveRoute(path, type, route, prefix);
+    const resolved = experimental_resolveRoute(path, type, route, prefix);
     return {
       path,
       type,
@@ -303,7 +303,7 @@ export function createOpenApiHandler<
       const other = seen.get(key);
       if (other) {
         throw new Error(
-          `createOpenApiHandler: "${e.path}" and "${other}" both map to ${key}`,
+          `experimental_createOpenApiHandler: "${e.path}" and "${other}" both map to ${key}`,
         );
       }
       seen.set(key, e.path);
@@ -398,7 +398,7 @@ export function createOpenApiHandler<
         });
       });
       return {
-        value: parseBracketNotation(
+        value: experimental_parseBracketNotation(
           form as unknown as Iterable<[string, string]>,
         ),
         fromStrings: true,
@@ -436,7 +436,7 @@ export function createOpenApiHandler<
     entry: Entry,
     params: Record<string, string>,
   ): Promise<unknown> {
-    const query = parseBracketNotation(url.searchParams);
+    const query = experimental_parseBracketNotation(url.searchParams);
     const body = usesQuery(entry.route.method)
       ? { value: undefined, fromStrings: false }
       : await readBody(request);
@@ -444,7 +444,7 @@ export function createOpenApiHandler<
 
     if (entry.route.inputStructure === 'detailed') {
       const part = (key: string, value: unknown) =>
-        coerceBySchema(value, propertySchema(schema, key), schema);
+        experimental_coerceBySchema(value, propertySchema(schema, key), schema);
       return {
         params: part('params', params),
         query: part('query', query),
@@ -456,10 +456,13 @@ export function createOpenApiHandler<
     const hasParams = Object.keys(params).length > 0;
     if (usesQuery(entry.route.method)) {
       if (!hasParams && Object.keys(query).length === 0) return undefined;
-      return coerceBySchema({ ...query, ...params }, schema);
+      return experimental_coerceBySchema({ ...query, ...params }, schema);
     }
     if (body.fromStrings) {
-      return coerceBySchema({ ...(body.value as object), ...params }, schema);
+      return experimental_coerceBySchema(
+        { ...(body.value as object), ...params },
+        schema,
+      );
     }
     if (!hasParams) return body.value;
     if (body.value !== undefined && !isPlainObject(body.value)) {
@@ -470,7 +473,7 @@ export function createOpenApiHandler<
     }
     return {
       ...(body.value as object | undefined),
-      ...(coerceBySchema(params, schema) as object),
+      ...(experimental_coerceBySchema(params, schema) as object),
     };
   }
 

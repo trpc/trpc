@@ -3,15 +3,15 @@ import { HttpServerResponse } from 'effect/http';
 import { createTrpcClient, routerType, safe } from '@trpc12/trpc/client';
 import { toContract } from '@trpc12/trpc/contract';
 import {
-  createOpenApiHandler,
-  openapi,
-  openApiLink,
+  experimental_createOpenApiHandler,
+  experimental_openapi,
+  experimental_openApiLink,
 } from '@trpc12/trpc/openapi';
 import { error, initTrpc, lazy, tracked } from '@trpc12/trpc/server';
 import { expect, test, vi } from 'vite-plus/test';
 import { z } from 'zod';
 
-const t = initTrpc<{ ctx: { user: string } }>().concat(openapi());
+const t = initTrpc<{ ctx: { user: string } }>().concat(experimental_openapi());
 
 const raw = (body: BodyInit | null, init?: ResponseInit) =>
   HttpServerResponse.fromWeb(new Response(body, init));
@@ -128,9 +128,11 @@ const router = {
 };
 
 const make = (
-  opts: Partial<Parameters<typeof createOpenApiHandler<typeof router>>[0]> = {},
+  opts: Partial<
+    Parameters<typeof experimental_createOpenApiHandler<typeof router>>[0]
+  > = {},
 ) =>
-  createOpenApiHandler({
+  experimental_createOpenApiHandler({
     router,
     createContext: () => ({ user: 'ada' }),
     exposeUnexpectedErrors: true,
@@ -294,7 +296,7 @@ test('a contract route the router lacks is 404', async () => {
     ...router,
     extra: t.procedure.query(() => 'never served'),
   });
-  const handler = createOpenApiHandler({
+  const handler = experimental_createOpenApiHandler({
     router,
     contract,
     createContext: () => ({ user: 'ada' }),
@@ -309,7 +311,7 @@ test('a contract route the router lacks is 404', async () => {
 });
 
 test('createContext and lazy routers that throw are masked 500s', async () => {
-  const throwing = createOpenApiHandler({
+  const throwing = experimental_createOpenApiHandler({
     router,
     exposeUnexpectedErrors: false,
     createContext: () => {
@@ -328,7 +330,7 @@ test('createContext and lazy routers that throw are masked 500s', async () => {
   expect(served.status).toBe(500);
   await throwing.dispose();
 
-  const broken = createOpenApiHandler({
+  const broken = experimental_createOpenApiHandler({
     router: {
       later: lazy(() => Promise.reject(new Error('cannot load'))),
     },
@@ -350,7 +352,10 @@ test('serve() reports input errors with their own status', async () => {
 });
 
 test('fetch(request, platform) hands the platform to createContext', async () => {
-  const handler = createOpenApiHandler<typeof router, { user: string }>({
+  const handler = experimental_createOpenApiHandler<
+    typeof router,
+    { user: string }
+  >({
     router,
     createContext: (opts) => ({ user: opts.platform.user }),
   });
@@ -368,7 +373,7 @@ function linked(fetch?: typeof globalThis.fetch) {
   const client = createTrpcClient({
     router: routerType<typeof router & { missing: typeof router.who }>(),
     links: [
-      openApiLink({
+      experimental_openApiLink({
         url: 'http://localhost/',
         contract,
         headers: (opts) => ({ 'x-op': opts.op.path }),
@@ -385,7 +390,7 @@ function linked(fetch?: typeof globalThis.fetch) {
   return { client, handler, requests };
 }
 
-test('openApiLink reads every kind of response body', async () => {
+test('experimental_openApiLink reads every kind of response body', async () => {
   const app = linked();
   const { client } = app;
   expect(await client.raw.query({ kind: 'none' })).toBeUndefined();
@@ -418,7 +423,7 @@ test('openApiLink reads every kind of response body', async () => {
   await app.handler.dispose();
 });
 
-test('openApiLink sends per-call headers, files in arrays, and signals', async () => {
+test('experimental_openApiLink sends per-call headers, files in arrays, and signals', async () => {
   const app = linked();
   const { client } = app;
   await client.who.query(undefined, { headers: { 'x-call': 'yes' } });
@@ -446,7 +451,7 @@ test('openApiLink sends per-call headers, files in arrays, and signals', async (
   await app.handler.dispose();
 });
 
-test('openApiLink fills a Date path param as ISO, and fails a call missing one', async () => {
+test('experimental_openApiLink fills a Date path param as ISO, and fails a call missing one', async () => {
   const app = linked();
   const at = new Date(0);
   expect(
@@ -465,7 +470,7 @@ test('openApiLink fills a Date path param as ISO, and fails a call missing one',
   await app.handler.dispose();
 });
 
-test('openApiLink reads an untyped body as text', async () => {
+test('experimental_openApiLink reads an untyped body as text', async () => {
   const untyped = (body: string) =>
     linked(
       async () => new Response(new TextEncoder().encode(body)),
@@ -474,7 +479,7 @@ test('openApiLink reads an untyped body as text', async () => {
   expect(await untyped('')).toBeUndefined();
 });
 
-test('openApiLink reads error bodies that are not OpenAPI errors by their status', async () => {
+test('experimental_openApiLink reads error bodies that are not OpenAPI errors by their status', async () => {
   const failing = (body: string, status: number) =>
     safe(
       linked(async () => new Response(body, { status })).client.who.query(),
@@ -493,7 +498,7 @@ test('openApiLink reads error bodies that are not OpenAPI errors by their status
   ).toMatchObject({ code: 'GONE', message: 'left', defined: true });
 });
 
-test('openApiLink turns fetch failures into client errors', async () => {
+test('experimental_openApiLink turns fetch failures into client errors', async () => {
   const failing = (cause: unknown) =>
     linked(() => Promise.reject(cause)).client.who.query();
 
@@ -513,7 +518,7 @@ test('openApiLink turns fetch failures into client errors', async () => {
   expect(aborted).toMatchObject({ code: 'CLIENT_CLOSED_REQUEST' });
 });
 
-test('openApiLink subscriptions yield plain and tracked events, then errors', async () => {
+test('experimental_openApiLink subscriptions yield plain and tracked events, then errors', async () => {
   const app = linked();
   const events: unknown[] = [];
   let failure: unknown;

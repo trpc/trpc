@@ -1,7 +1,7 @@
 import {
-  createOpenApiHandler,
-  generateOpenApi,
-  openapi,
+  experimental_createOpenApiHandler,
+  experimental_generateOpenApi,
+  experimental_openapi,
 } from '@trpc12/trpc/openapi';
 import {
   initTrpc,
@@ -10,7 +10,7 @@ import {
 } from '@trpc12/trpc/server';
 import { expect, test } from 'vite-plus/test';
 
-const t = initTrpc().concat(openapi());
+const t = initTrpc().concat(experimental_openapi());
 
 // A schema library that only speaks JSON Schema: it accepts anything and
 // describes it with whatever JSON Schema it was given.
@@ -142,7 +142,7 @@ const router = {
     .query(() => 'shh'),
 } satisfies AnyRouter;
 
-const handler = createOpenApiHandler({ router });
+const handler = experimental_createOpenApiHandler({ router });
 const api = (path: string, init?: RequestInit) =>
   handler.fetch(new Request(`http://localhost/api${path}`, init));
 
@@ -183,8 +183,8 @@ test('detailed parts are found through allOf, and missing parts pass through', a
   });
 });
 
-test('generateOpenApi documents bodies, errors and filters any JSON Schema can describe', async () => {
-  const doc = generateOpenApi(router, {
+test('experimental_generateOpenApi documents bodies, errors and filters any JSON Schema can describe', async () => {
+  const doc = experimental_generateOpenApi(router, {
     info: { title: 'JSON Schema', version: '1.0.0' },
     filter: (opts) => opts.path !== 'hidden',
   });

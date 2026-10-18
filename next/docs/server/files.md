@@ -88,7 +88,6 @@ const report = await client.report.query({ id }); // File
 
 - When a `File` or `Blob` is the whole output of a call that isn't batched, `httpLink` gets it as the response body, with its `content-type` and a `content-disposition` naming the file, so the URL works as a download link too.
 - Anywhere else (nested in an object, yielded by an async iterable, or in a batch), its bytes stream after the rest of the output as base64 chunks. The value holding it resolves once they've arrived, so a nested `File` is a `File`, not a promise. A file that appears twice is sent once.
-- Over [OpenAPI](../openapi/routes.md), a `File` or `Blob` output is the response body.
 
 ## Binary frames
 

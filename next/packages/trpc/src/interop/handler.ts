@@ -17,7 +17,7 @@ import {
   isMultipartContentType,
 } from '../internal/protocol.ts';
 import type { MaybePromise, ProcedureType } from '../internal/types.ts';
-import { parseBracketNotation } from '../openapi/bracket.ts';
+import { experimental_parseBracketNotation } from '../openapi/bracket.ts';
 import { isAsyncIterable, isPromiseLike } from '../serializer/stream.ts';
 import { isPlainObject } from '../serializer/utils.ts';
 import { readBytes, responseOptions } from '../server/body.ts';
@@ -464,7 +464,7 @@ export function createV11Handler<
             }),
         });
         return {
-          value: parseBracketNotation(
+          value: experimental_parseBracketNotation(
             form as unknown as Iterable<[string, string | Blob]>,
           ),
           json: false,

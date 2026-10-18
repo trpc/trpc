@@ -1,6 +1,6 @@
 import { error, initTrpc } from '@trpc12/trpc/server';
 import { z } from 'zod';
-import { openapi } from '@trpc12/trpc/openapi';
+import { experimental_openapi } from '@trpc12/trpc/openapi';
 
 export interface Post {
   id: string;
@@ -13,7 +13,9 @@ const posts = new Map<string, Post>([
   ['1', { id: '1', title: 'Hello REST', createdAt: new Date(0) }],
 ]);
 
-const t = initTrpc<{ ctx: { user: string | null } }>().concat(openapi());
+const t = initTrpc<{ ctx: { user: string | null } }>().concat(
+  experimental_openapi(),
+);
 
 export const appRouter = t.router(
   { meta: { route: { tags: ['posts'] } } },

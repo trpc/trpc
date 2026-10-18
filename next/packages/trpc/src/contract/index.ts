@@ -216,7 +216,7 @@ export interface ContractSubscriptionOptions<TTracked extends boolean> {
  *
  * @example
  * ```ts
- * const c = contract.create<{ meta: Meta }>().concat(openapi());
+ * const c = contract.create<{ meta: Meta }>().concat(experimental_openapi());
  * export const byId = c
  *   .meta({ route: { method: 'GET', path: '/posts/{id}' } })
  *   .input(z.object({ id: z.string() }))
@@ -295,7 +295,7 @@ export interface ContractBuilder<TDef extends ContractDef> {
    *
    * @example
    * ```ts
-   * const c = contract.create().concat(openapi());
+   * const c = contract.create().concat(experimental_openapi());
    * ```
    */
   concat<$Ext extends BuilderDef>(
@@ -489,7 +489,7 @@ export interface ContractJson<TRouter = unknown> extends RouterType<
  *
  * const client = createTrpcClient({
  *   router: appContract,
- *   links: [openApiLink({ url, contract: appContract })],
+ *   links: [experimental_openApiLink({ url, contract: appContract })],
  * });
  * ```
  * @since 0.1.0

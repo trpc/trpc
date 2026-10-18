@@ -90,7 +90,7 @@ The path is what the input type allows. A refinement that reports its own path (
 
 ## Typing without validating
 
-To type and document a result without running the schema, pass `{ validate: false }`. Since no transform runs, the resolver and the client both get the schema's input type, and [OpenAPI](../openapi/routes.md) describes that side:
+To type and document a result without running the schema, pass `{ validate: false }`. Since no transform runs, the resolver and the client both get the schema's input type:
 
 ```ts twoslash
 // ---cut-start---

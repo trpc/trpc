@@ -61,8 +61,6 @@ t.procedure.input(z.object({ id: z.string() })).query((opts) =>
 );
 ```
 
-`.errors({ POST_NOT_FOUND: PostNotFound })` documents one in OpenAPI.
-
 ## Middleware that provides services
 
 `t.middleware.effect<{ provides: S }>()(fn)` writes a middleware whose `next()` is an `Effect`, so it can provide services:

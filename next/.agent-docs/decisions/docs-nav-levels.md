@@ -10,7 +10,7 @@
 - (agent) "React and Next.js" is a parent page that says which React package to pick, over RSC, Server Actions, `experimental-react` and `experimental-react-atom`.
 - (agent) Migrating from v11 is an overview of four steps, each a page: serve v11 clients, run the codemod (`@trpc12/upgrade`), your v11 links, API changes.
 - (agent) Server, Middleware, Integrations and OpenAPI open with an overview page (`label: Overview`, `order: 0`), as Client, Subscriptions and Adapters already did. Middleware's overview is the list of built-in middleware and the layer each needs, which `server/middleware.md` used to carry.
-- (agent) Links whose v12 page is small, or which live elsewhere (`experimental_socketLink`, `experimental_messagePortLink`, `openApiLink`, `experimental_durableLink`), stay a row of the Links tables pointing at the page that covers them, rather than a page each.
+- (agent) Links whose v12 page is small, or which live elsewhere (`experimental_socketLink`, `experimental_messagePortLink`, `experimental_openApiLink`, `experimental_durableLink`), stay a row of the Links tables pointing at the page that covers them, rather than a page each.
 - (agent) The v11 copy nests the same way, as trpc.io's sidebar does ([`old-docs-copy.md`](./old-docs-copy.md)).
 - Why: one long Links page, or one TanStack Query page for eight packages, made each topic hard to find and link to; a tree keeps the sidebar short while every topic has its own URL, title and social card. Folded sections take the sidebar from about 2,250px of links to a list of headings.
 - Lost: a flat sidebar where every page is one click away; a section can't hold a nested group without a parent page (no label-only folders); pages in other sections take a click to reveal.

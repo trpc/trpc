@@ -3,23 +3,24 @@ title: REST routes
 description: 'Serve the same router over REST: route meta, the handler, inputs, outputs and groups.'
 section: OpenAPI
 order: 1
+hidden: true
 ---
 
-A procedure gets a REST route from its `route` meta, and `createOpenApiHandler` serves the routes next to the RPC handler ([OpenAPI](./overview.md)).
+A procedure gets a REST route from its `route` meta, and `experimental_createOpenApiHandler` serves the routes next to the RPC handler ([OpenAPI](./overview.md)).
 
 ## Route meta
 
-The `openapi()` root extension adds a `route` meta key. A procedure without one is served at its path: `GET /api/post/byId` for queries, `POST /api/post/create` for mutations. `route` picks the method, path and status.
+The `experimental_openapi()` root extension adds a `route` meta key. A procedure without one is served at its path: `GET /api/post/byId` for queries, `POST /api/post/create` for mutations. `route` picks the method, path and status.
 
 ```ts twoslash
 // ---cut-start---
 import { db, type Context } from './server.ts';
 import { initTrpc } from '@trpc12/trpc/server';
 // ---cut-end---
-import { openapi } from '@trpc12/trpc/openapi';
+import { experimental_openapi } from '@trpc12/trpc/openapi';
 import { z } from 'zod';
 
-const t = initTrpc<{ ctx: Context }>().concat(openapi());
+const t = initTrpc<{ ctx: Context }>().concat(experimental_openapi());
 
 const byId = t.procedure
   .meta({ route: { method: 'GET', path: '/posts/{id}', tags: ['posts'] } })
@@ -43,10 +44,10 @@ const create = t.procedure
 
 ```ts twoslash
 // ---cut-start---
-import { openapi } from '@trpc12/trpc/openapi';
+import { experimental_openapi } from '@trpc12/trpc/openapi';
 import { error, initTrpc } from '@trpc12/trpc/server';
 import type { Context } from './server.ts';
-const t = initTrpc<{ ctx: Context }>().concat(openapi());
+const t = initTrpc<{ ctx: Context }>().concat(experimental_openapi());
 const requireUser = t.middleware((opts) =>
   opts.ctx.user
     ? opts.next({ ctx: { user: opts.ctx.user } })
@@ -76,15 +77,18 @@ declare function createContext(): Context;
 declare const layer: Layer.Layer<never>;
 // ---cut-end---
 import { cors } from '@trpc12/trpc/http';
-import { createOpenApiHandler, openApiReference } from '@trpc12/trpc/openapi';
+import {
+  experimental_createOpenApiHandler,
+  experimental_openApiReference,
+} from '@trpc12/trpc/openapi';
 
-const openapi = createOpenApiHandler({
+const openapi = experimental_createOpenApiHandler({
   router: appRouter,
   createContext,
   layer,
   middleware: [
     cors(),
-    openApiReference({
+    experimental_openApiReference({
       router: appRouter,
       specGenerateOptions: { info: { title: 'API', version: '1.0.0' } },
     }),
@@ -95,7 +99,7 @@ const openapi = createOpenApiHandler({
 
 `prefix` defaults to `/api`. Like the RPC handler, it has `fetch(request)` and `dispose()`, and `middleware` takes Effect HTTP middleware, outermost first.
 
-`openApiReference()` is middleware too, so it also works on `createFetchHandler` or any `effect/http` app. It answers `GET /api/docs` and `GET /api/openapi.json` and passes other requests through:
+`experimental_openApiReference()` is middleware too, so it also works on `createFetchHandler` or any `effect/http` app. It answers `GET /api/docs` and `GET /api/openapi.json` and passes other requests through:
 
 - `docsProvider: 'swagger'` serves Swagger UI instead of Scalar; `path` and `specPath` move the two pages.
 - `{ router, specGenerateOptions }` generates the document on the first request. `{ document }` serves one you built, e.g. with the TypeScript generator below; it can be a function.
@@ -141,15 +145,15 @@ const update = t.procedure
 
 ## Groups and lazy subtrees
 
-Under the `openapi()` extension, `t.router({ meta: { route: { prefix, tags } } }, routes)` groups routes for OpenAPI. Types and RPC paths don't change, and it takes no middleware.
+Under the `experimental_openapi()` extension, `t.router({ meta: { route: { prefix, tags } } }, routes)` groups routes for OpenAPI. Types and RPC paths don't change, and it takes no middleware.
 
 ```ts twoslash
 // ---cut-start---
-import { openapi } from '@trpc12/trpc/openapi';
+import { experimental_openapi } from '@trpc12/trpc/openapi';
 import { initTrpc } from '@trpc12/trpc/server';
 import type { Context } from './server.ts';
 // ---cut-end---
-const t = initTrpc<{ ctx: Context }>().concat(openapi());
+const t = initTrpc<{ ctx: Context }>().concat(experimental_openapi());
 // ---cut-start---
 const users = t.procedure.query(() => [{ id: '1', name: 'Ada' }]);
 const ban = t.procedure.mutation(() => {});
@@ -175,7 +179,7 @@ The handler loads unprefixed lazy subtrees at startup, and a prefixed one on the
 ```ts twoslash
 // ---cut-start---
 import { toContract } from '@trpc12/trpc/contract';
-import { createOpenApiHandler } from '@trpc12/trpc/openapi';
+import { experimental_createOpenApiHandler } from '@trpc12/trpc/openapi';
 import { initTrpc, loadRouter } from '@trpc12/trpc/server';
 const t = initTrpc();
 const appRouter = { health: t.procedure.query(() => 'ok') };
@@ -184,7 +188,7 @@ const appRouter = { health: t.procedure.query(() => 'ok') };
 const contract = toContract(await loadRouter(appRouter));
 
 // server
-createOpenApiHandler({ router: appRouter, contract });
+experimental_createOpenApiHandler({ router: appRouter, contract });
 ```
 
 ## Credits

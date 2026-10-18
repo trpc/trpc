@@ -9,20 +9,20 @@ import {
 } from '../internal/error.ts';
 import { parseSse } from '../internal/protocol.ts';
 import type { JsonForm } from '../internal/types.ts';
-import { toBracketNotation } from './bracket.ts';
+import { experimental_toBracketNotation } from './bracket.ts';
 import { fromOpenApiError } from './errors.ts';
 import {
   fillPath,
   normalizePrefix,
-  resolveRoute,
+  experimental_resolveRoute,
   usesQuery,
   type ResolvedRoute,
 } from './routes.ts';
 
 /**
- * The options of {@link openApiLink}.
+ * The options of {@link experimental_openApiLink}.
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
 export interface OpenApiLinkOptions {
   /** The server's origin (and any base path), without the handler prefix. */
@@ -73,7 +73,7 @@ const hasBlob = (value: unknown): boolean =>
 
 /**
  * Calls a router's REST mapping (18 (d)): the endpoints
- * `createOpenApiHandler` serves, at the methods and paths of a JSON
+ * `experimental_createOpenApiHandler` serves, at the methods and paths of a JSON
  * contract. Inputs become path params, bracket-notation query strings or
  * JSON bodies (`multipart/form-data` when they contain a `Blob`), and
  * subscriptions read `text/event-stream`. Works with any server that
@@ -85,14 +85,14 @@ const hasBlob = (value: unknown): boolean =>
  *
  * const client = createTrpcClient({
  *   router: routerType<AppRouter>(),
- *   links: [openApiLink({ url: 'https://api.example.com', contract })],
+ *   links: [experimental_openApiLink({ url: 'https://api.example.com', contract })],
  * });
  * await client.post.byId.query({ id: '1' }); // GET https://api.example.com/api/posts/1
  * ```
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
-export function openApiLink(
+export function experimental_openApiLink(
   opts: OpenApiLinkOptions,
 ): TrpcLink<{ form: JsonForm }> {
   const base = String(opts.url).replace(/\/+$/, '');
@@ -109,7 +109,12 @@ export function openApiLink(
           message: `"${op.path}" is not in the contract`,
         });
       }
-      route = resolveRoute(op.path, procedure.type, procedure.route, prefix);
+      route = experimental_resolveRoute(
+        op.path,
+        procedure.type,
+        procedure.route,
+        prefix,
+      );
       routes.set(op.path, route);
     }
     return route;
@@ -153,7 +158,7 @@ export function openApiLink(
     }
     let url = `${base}${fillPath(route.path, params)}`;
     const search = new URLSearchParams(
-      toBracketNotation(query) as Array<[string, string]>,
+      experimental_toBracketNotation(query) as Array<[string, string]>,
     ).toString();
     if (search) url += `?${search}`;
     if (op.type === 'subscription') {
@@ -164,7 +169,8 @@ export function openApiLink(
     if (body !== undefined && !usesQuery(route.method)) {
       if (hasBlob(body)) {
         const form = new FormData();
-        for (const [k, v] of toBracketNotation(body)) form.append(k, v);
+        for (const [k, v] of experimental_toBracketNotation(body))
+          form.append(k, v);
         payload = form;
       } else {
         headers.set('content-type', 'application/json');

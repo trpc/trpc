@@ -16,12 +16,12 @@ order: 5
 // ---cut-start---
 import { Controller, Inject, Injectable, Module } from '@nestjs/common';
 import { contract } from '@trpc12/trpc/contract';
-import { openapi } from '@trpc12/trpc/openapi';
+import { experimental_openapi } from '@trpc12/trpc/openapi';
 import { initTrpc } from '@trpc12/trpc/server';
 import { Context, Layer } from 'effect';
 import { z } from 'zod';
 import { db, PostSchema, type User } from './server.ts';
-const c = contract.create().concat(openapi());
+const c = contract.create().concat(experimental_openapi());
 const appContract = {
   post: {
     byId: c
@@ -32,7 +32,9 @@ const appContract = {
       .query(),
   },
 };
-const t = initTrpc<{ ctx: { user: User | null } }>().concat(openapi());
+const t = initTrpc<{ ctx: { user: User | null } }>().concat(
+  experimental_openapi(),
+);
 @Injectable()
 class Posts {
   find(id: string) {
@@ -82,7 +84,7 @@ class AppModule {}
 - Bodies Nest's JSON and urlencoded parsers read are used as parsed; others are read from the request.
 - Express only. Nest needs `experimentalDecorators`.
 
-Routes and errors follow the [OpenAPI handler](../openapi/routes.md).
+Routes and errors follow the OpenAPI handler.
 
 ## Credits
 

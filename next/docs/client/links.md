@@ -42,7 +42,6 @@ An operation goes through the links in order and its results come back the other
 | [`localLink`](./links/local.md) | To a router in the same process                                                |
 | `experimental_socketLink`       | Over a raw TCP, TLS or Unix socket ([Raw sockets](../adapters/sockets.md))     |
 | `experimental_messagePortLink`  | To a worker or a `MessagePort` ([Message ports](../adapters/message-ports.md)) |
-| `openApiLink`                   | To each procedure's REST route ([Calling REST](../openapi/client.md))          |
 
 ## Links in the middle
 

@@ -2,6 +2,8 @@
 
 User docs for v12, kept in step with the code. The website in [`../www`](../www) renders these pages; each one is plain Markdown with frontmatter, so they read fine on GitHub too. Design notes and decisions live in [`../.agent-docs/`](../.agent-docs/).
 
+Pages marked (hidden) are unlisted on the site until they're reviewed: out of its sidebar, search, sitemap and `llms.txt`, and `noindex`. `?flags=hidden-docs` lists them again.
+
 ## Getting started
 
 - [Getting started](./getting-started.md): A router, a handler that serves it, and a client that calls it with the router's types.
@@ -57,12 +59,12 @@ User docs for v12, kept in step with the code. The website in [`../www`](../www)
 - [Publisher](./subscriptions/publisher.md): Typed publish/subscribe as an Effect service, with a channel per audience and resumable events.
   - [Publisher backends](./subscriptions/backends.md): Recipes for a Publisher on Redis streams, Postgres LISTEN/NOTIFY and Durable Objects.
 
-## OpenAPI
+## OpenAPI (hidden)
 
 - [OpenAPI](./openapi/overview.md): Serve the router over REST, document it as OpenAPI 3.1, call REST routes from the client, and generate contracts from OpenAPI documents.
 - [REST routes](./openapi/routes.md): Serve the same router over REST: route meta, the handler, inputs, outputs and groups.
 - [The document](./openapi/document.md): Generate an OpenAPI 3.1 document from the router's schemas, or from its types.
-- [Calling REST from the client](./openapi/client.md): openApiLink sends each call to its REST route, typed from a contract.
+- [Calling REST from the client](./openapi/client.md): experimental_openApiLink sends each call to its REST route, typed from a contract.
 - [A contract from OpenAPI](./openapi/from-document.md): Generate a typed contract module from any OpenAPI 3.0 or 3.1 document.
 
 ## Adapters

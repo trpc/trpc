@@ -11,7 +11,7 @@ import type { AnyProcedure, ProcedureInternals } from '../server/procedure.ts';
 import { propertySchema } from './coerce.ts';
 import {
   normalizePrefix,
-  resolveRoute,
+  experimental_resolveRoute,
   routeOf,
   usesQuery,
   type OperationSpec,
@@ -23,7 +23,7 @@ type Schema = Exclude<JsonSchema, boolean>;
  * An OpenAPI 3.1 document. Loosely typed: it is meant to be served or
  * written to a file.
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
 export interface OpenApiDocument {
   readonly openapi: '3.1.1';
@@ -36,7 +36,7 @@ export interface OpenApiDocument {
 /**
  * The document's `info`.
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
 export interface OpenApiInfo {
   readonly title: string;
@@ -47,7 +47,7 @@ export interface OpenApiInfo {
 /**
  * A server the document lists.
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
 export interface OpenApiServer {
   readonly url: string;
@@ -57,7 +57,7 @@ export interface OpenApiServer {
 /**
  * One operation of an {@link OpenApiDocument}.
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
 export interface OpenApiOperation {
   readonly operationId: string;
@@ -71,15 +71,15 @@ export interface OpenApiOperation {
 }
 
 /**
- * The options of {@link generateOpenApi}.
+ * The options of {@link experimental_generateOpenApi}.
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
 export interface GenerateOpenApiOptions {
   info: OpenApiInfo;
   servers?: ReadonlyArray<OpenApiServer>;
   /**
-   * `'openapi'` documents the REST mapping {@link createOpenApiHandler}
+   * `'openapi'` documents the REST mapping {@link experimental_createOpenApiHandler}
    * serves (`route` meta). `'rpc'` documents the RPC endpoint of
    * `createFetchHandler` with zero configuration (O-C).
    * @default 'openapi'
@@ -300,23 +300,23 @@ function errorResponses(
  *
  * @example
  * ```ts
- * const spec = generateOpenApi(appRouter, {
+ * const spec = experimental_generateOpenApi(appRouter, {
  *   info: { title: 'API', version: '1.0.0' },
  *   servers: [{ url: 'https://api.example.com' }],
  * });
  * await fs.writeFile('openapi.json', JSON.stringify(spec, null, 2));
  * ```
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
-export function generateOpenApi(
+export function experimental_generateOpenApi(
   router: object,
   opts: GenerateOpenApiOptions,
 ): OpenApiDocument {
   return generateDocument(router, opts);
 }
 
-/** {@link generateOpenApi}, with types read by `@trpc12/trpc/openapi/typescript`. @internal */
+/** {@link experimental_generateOpenApi}, with types read by `@trpc12/trpc/openapi/typescript`. @internal */
 export function generateDocument(
   router: object,
   opts: GenerateOpenApiOptions,
@@ -348,8 +348,13 @@ export function generateDocument(
     const scoped = scopedRoute(path, routeOf(def), scope);
     const route =
       target === 'rpc'
-        ? resolveRoute(path, def.type, { path: `/${path}` }, prefix)
-        : resolveRoute(path, def.type, scoped, prefix);
+        ? experimental_resolveRoute(
+            path,
+            def.type,
+            { path: `/${path}` },
+            prefix,
+          )
+        : experimental_resolveRoute(path, def.type, scoped, prefix);
     const types = infer?.(path);
     const input = hoist(
       inputJsonSchema(def) ?? types?.input,

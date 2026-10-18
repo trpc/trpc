@@ -11,9 +11,9 @@ import {
   toContract,
 } from '@trpc12/trpc/contract';
 import {
-  createOpenApiHandler,
-  openapi,
-  openApiLink,
+  experimental_createOpenApiHandler,
+  experimental_openapi,
+  experimental_openApiLink,
 } from '@trpc12/trpc/openapi';
 import { createUntypedClient } from '@trpc12/trpc/extend';
 import { type AnyRouter, initTrpc, stream, tracked } from '@trpc12/trpc/server';
@@ -27,7 +27,7 @@ const Post = Schema.Struct({
   at: Schema.Date,
 });
 
-const c = contract.create().concat(openapi());
+const c = contract.create().concat(experimental_openapi());
 const appContract = {
   post: {
     byId: c
@@ -39,7 +39,7 @@ const appContract = {
   },
 } satisfies AnyContractRouter;
 
-const t = initTrpc().concat(openapi());
+const t = initTrpc().concat(experimental_openapi());
 const at = new Date('2026-10-16T00:00:00.000Z');
 const impl = t.implement(appContract);
 const router = impl.router({
@@ -114,8 +114,8 @@ test('results that drift from the contract fail with BAD_RESPONSE', async () => 
   }).rejects.toMatchObject({ code: 'BAD_RESPONSE' });
 });
 
-test("output: 'json' decodes openApiLink's plain JSON into the schema's types", async () => {
-  const openapi = createOpenApiHandler({ router });
+test("output: 'json' decodes experimental_openApiLink's plain JSON into the schema's types", async () => {
+  const openapi = experimental_createOpenApiHandler({ router });
   const json = toContract(appContract);
   const fetchVia = (input: RequestInfo | URL, init?: RequestInit) =>
     openapi.fetch(new Request(input, init));
@@ -123,7 +123,11 @@ test("output: 'json' decodes openApiLink's plain JSON into the schema's types", 
   const plain = createTrpcClient({
     router: json,
     links: [
-      openApiLink({ url: 'http://localhost', contract: json, fetch: fetchVia }),
+      experimental_openApiLink({
+        url: 'http://localhost',
+        contract: json,
+        fetch: fetchVia,
+      }),
     ],
   });
   const raw = await plain.post.byId.query({ id: '1' });
@@ -134,7 +138,11 @@ test("output: 'json' decodes openApiLink's plain JSON into the schema's types", 
     router: json,
     links: [
       validationLink({ contract: appContract, output: 'json' }),
-      openApiLink({ url: 'http://localhost', contract: json, fetch: fetchVia }),
+      experimental_openApiLink({
+        url: 'http://localhost',
+        contract: json,
+        fetch: fetchVia,
+      }),
     ],
   });
   const post = await decoded.post.byId.query({ id: '1' });

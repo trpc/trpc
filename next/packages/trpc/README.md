@@ -38,23 +38,23 @@ const greeting = await client.greet.query({ name: 'tRPC' }); // string
 
 ## Entry points
 
-| Entry                             | For                                                 |
-| --------------------------------- | --------------------------------------------------- |
-| `@trpc12/trpc/server`             | `initTrpc`, routers, handlers, callers, `Publisher` |
-| `@trpc12/trpc/client`             | `createTrpcClient`, links, `safe`                   |
-| `@trpc12/trpc/middleware`         | lifecycle hooks, `rateLimit`, locks, durable calls  |
-| `@trpc12/trpc/effect`             | `createEffectClient`                                |
-| `@trpc12/trpc/contract`           | contract-first routers, `toContract`                |
-| `@trpc12/trpc/serializer`         | `jsonSerializer`, danSON, `createSyncSerializer`    |
-| `@trpc12/trpc/http`               | `serve`, `toHttpEffect` on Effect's `HttpServer`    |
-| `@trpc12/trpc/cloudflare`         | Durable Objects and Workers Traces                  |
-| `@trpc12/trpc/aws-lambda`         | `toLambdaHandler`                                   |
-| `@trpc12/trpc/socket`             | `serveSocket` over TCP, TLS or Unix sockets         |
-| `@trpc12/trpc/openapi`            | REST routes, OpenAPI documents, `openApiLink`       |
-| `@trpc12/trpc/openapi/typescript` | an OpenAPI document from the router's types         |
-| `@trpc12/trpc/actions`            | procedures as React Server Actions                  |
-| `@trpc12/trpc/interop`            | `createV11Handler`, `fromV11Link` for v11 code      |
-| `@trpc12/trpc/extend`             | building blocks for integrations                    |
+| Entry                             | For                                                        |
+| --------------------------------- | ---------------------------------------------------------- |
+| `@trpc12/trpc/server`             | `initTrpc`, routers, handlers, callers, `Publisher`        |
+| `@trpc12/trpc/client`             | `createTrpcClient`, links, `safe`                          |
+| `@trpc12/trpc/middleware`         | lifecycle hooks, `rateLimit`, locks, durable calls         |
+| `@trpc12/trpc/effect`             | `createEffectClient`                                       |
+| `@trpc12/trpc/contract`           | contract-first routers, `toContract`                       |
+| `@trpc12/trpc/serializer`         | `jsonSerializer`, danSON, `createSyncSerializer`           |
+| `@trpc12/trpc/http`               | `serve`, `toHttpEffect` on Effect's `HttpServer`           |
+| `@trpc12/trpc/cloudflare`         | Durable Objects and Workers Traces                         |
+| `@trpc12/trpc/aws-lambda`         | `toLambdaHandler`                                          |
+| `@trpc12/trpc/socket`             | `serveSocket` over TCP, TLS or Unix sockets                |
+| `@trpc12/trpc/openapi`            | REST routes, OpenAPI documents, `experimental_openApiLink` |
+| `@trpc12/trpc/openapi/typescript` | an OpenAPI document from the router's types                |
+| `@trpc12/trpc/actions`            | procedures as React Server Actions                         |
+| `@trpc12/trpc/interop`            | `createV11Handler`, `fromV11Link` for v11 code             |
+| `@trpc12/trpc/extend`             | building blocks for integrations                           |
 
 Each one's docs are listed in [Packages and stability](https://github.com/trpc/trpc/blob/v12/next/docs/packages.md#trpc12trpc-entry-points).
 

@@ -7,7 +7,7 @@ import {
   TrpcError,
   routerType,
 } from '@trpc12/trpc/client';
-import { generateOpenApi } from '@trpc12/trpc/openapi';
+import { experimental_generateOpenApi } from '@trpc12/trpc/openapi';
 import { initTrpc } from '@trpc12/trpc/server';
 import { createTestServer } from '../fixtures/server.ts';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
@@ -129,7 +129,7 @@ test('Effect.catchTag recovers from a tagged error', async () => {
 });
 
 test('.errors() takes a tagged class, which documents it in OpenAPI', () => {
-  const doc = generateOpenApi(
+  const doc = experimental_generateOpenApi(
     { documented: router.documented },
     { info: { title: 'x', version: '1' } },
   );

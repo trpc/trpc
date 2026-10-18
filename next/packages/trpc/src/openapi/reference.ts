@@ -7,17 +7,17 @@ import {
 import type { MaybePromise } from '../internal/types.ts';
 import { loadRouter } from '../server/router.ts';
 import {
-  generateOpenApi,
+  experimental_generateOpenApi,
   type GenerateOpenApiOptions,
   type OpenApiDocument,
 } from './generate.ts';
 
 /**
- * The options of {@link openApiReference}: the document comes from a router
+ * The options of {@link experimental_openApiReference}: the document comes from a router
  * (generated on the first request) or is given, e.g. from
  * `experimental_generateOpenApiFromTypes()` at build time.
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
 export type OpenApiReferenceOptions = {
   /**
@@ -81,15 +81,15 @@ const urlOf = (request: HttpServerRequest.HttpServerRequest) =>
 /**
  * Serves an API reference UI (Scalar by default, or Swagger UI, from a CDN)
  * and the OpenAPI document, as Effect HTTP middleware for
- * `createOpenApiHandler`, `createFetchHandler` or any `effect/http` app.
+ * `experimental_createOpenApiHandler`, `createFetchHandler` or any `effect/http` app.
  * Other requests pass through.
  *
  * @example
  * ```ts
- * createOpenApiHandler({
+ * experimental_createOpenApiHandler({
  *   router: appRouter,
  *   middleware: [
- *     openApiReference({
+ *     experimental_openApiReference({
  *       router: appRouter,
  *       specGenerateOptions: { info: { title: 'API', version: '1.0.0' } },
  *     }),
@@ -98,9 +98,9 @@ const urlOf = (request: HttpServerRequest.HttpServerRequest) =>
  * // GET /api/docs (UI), GET /api/openapi.json (document)
  * ```
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
-export function openApiReference(
+export function experimental_openApiReference(
   opts: OpenApiReferenceOptions,
 ): HttpMiddleware.HttpMiddleware {
   const docsPath = opts.path ?? '/api/docs';
@@ -113,7 +113,7 @@ export function openApiReference(
           ? opts.document()
           : opts.document;
       }
-      return generateOpenApi(
+      return experimental_generateOpenApi(
         await loadRouter(opts.router as never),
         opts.specGenerateOptions!,
       );

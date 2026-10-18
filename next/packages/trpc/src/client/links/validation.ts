@@ -24,7 +24,7 @@ export interface ValidationLinkOptions {
   input?: boolean;
   /**
    * Validate results. `'json'` decodes plain JSON results (`httpLink`'s
-   * default serializer, `openApiLink`) with the Effect Schema's JSON codec,
+   * default serializer, `experimental_openApiLink`) with the Effect Schema's JSON codec,
    * so `Date`s, `bigint`s and classes come back as their types.
    * @default true
    */

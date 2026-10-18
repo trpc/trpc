@@ -393,7 +393,7 @@ function inferRouterTypes(
 }
 
 /**
- * Generates an OpenAPI 3.1 document like `generateOpenApi`, adding what the
+ * Generates an OpenAPI 3.1 document like `experimental_generateOpenApi`, adding what the
  * router's types state (21): errors that are only inferred (returned or
  * failed, never declared) with their status, and the input and output of
  * procedures without static schemas. Where a procedure has a runtime

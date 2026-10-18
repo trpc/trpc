@@ -7,7 +7,7 @@ import {
   safe,
 } from '@trpc12/trpc/client';
 import { experimental_durable } from '@trpc12/trpc/middleware';
-import { createOpenApiHandler } from '@trpc12/trpc/openapi';
+import { experimental_createOpenApiHandler } from '@trpc12/trpc/openapi';
 import { createSerializer } from '@trpc12/trpc/serializer';
 import {
   type AnyRouter,
@@ -220,7 +220,7 @@ test('experimental_durableLink retries a lost response with the same id', async 
 
 test('a call id is kept over REST too', async () => {
   const app = makeRouter();
-  const handler = createOpenApiHandler({
+  const handler = experimental_createOpenApiHandler({
     router: app.router,
     layer: Persistence.layerBackingMemory,
   });

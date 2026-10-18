@@ -29,5 +29,3 @@ The core client works anywhere ([The client](../client/overview.md)). These page
 - [AI SDK](./ai-sdk.md): stream `useChat` responses from a procedure, and give procedures to the model as tools.
 - [Better Auth](./better-auth.md): read the session in a middleware and type `ctx.user` with Better Auth's user.
 - [NestJS](./nestjs.md): serve a contract from Nest controllers with `@trpc12/nest`.
-
-For OpenAPI tools and REST clients, see [OpenAPI](../openapi/overview.md).
