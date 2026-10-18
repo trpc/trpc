@@ -281,6 +281,17 @@ test("the request's signal aborts once every caller's has, so a value already se
   await vi.waitFor(() => expect(interrupted).toBe(1));
 });
 
+test('a call made once every caller has left sends its own request', async () => {
+  const stub = stubbed(() => Stream.fromEffect(Effect.as(Effect.sleep(20), 7)));
+  const controller = new AbortController();
+  const left = stub.client.slow.query(undefined, { signal: controller.signal });
+  controller.abort();
+  const next = stub.client.slow.query();
+  await expect(left).rejects.toMatchObject({ code: 'CLIENT_CLOSED_REQUEST' });
+  await expect(next).resolves.toBe(7);
+  expect(stub.ops.at(-1)!.signal!.aborted).toBe(false);
+});
+
 test('an error reaches every caller', async () => {
   await using ctx = await setup();
   const results = await Promise.allSettled([

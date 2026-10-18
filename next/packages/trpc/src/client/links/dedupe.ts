@@ -1,10 +1,11 @@
-import { Cause, Effect, Exit, Fiber, Queue, Stream } from 'effect';
+import { Deferred, Effect, Scope, Stream } from 'effect';
 import type { AnyTrpcError } from '../../internal/error.ts';
 import {
   link,
   toClientError,
   type EffectLinkOpts,
   type Operation,
+  type OperationStream,
   type ResponseMeta,
   type TrpcLink,
 } from '../link.ts';
@@ -37,19 +38,21 @@ export interface DedupeContext {
 
 interface Caller {
   readonly op: Operation<DedupeContext>;
-  readonly queue: Queue.Queue<unknown, AnyTrpcError | Cause.Done>;
+  /** Failed when its `onResponse` throws, which fails only this caller. */
+  readonly failed: Deferred.Deferred<never, AnyTrpcError>;
 }
 
 interface Shared {
   readonly key: string;
   readonly op: Operation;
   readonly options: Record<string, unknown>;
+  /** The request, run once while any caller reads it. */
+  readonly stream: OperationStream;
   readonly callers: Set<Caller>;
   readonly responses: ResponseMeta[];
   /** The request's `signal`, aborted once every caller's signal has. */
   readonly controller: AbortController;
   unaborted: number;
-  fiber?: Fiber.Fiber<unknown, unknown>;
 }
 
 const ignored = new Set(['dedupe', 'onResponse']);
@@ -105,90 +108,86 @@ export function dedupeLink(
 ): TrpcLink<{ context: DedupeContext }> {
   const joinable = new Set<Shared>();
 
-  const leave = (shared: Shared, caller: Caller) => {
-    if (!shared.callers.delete(caller) || shared.callers.size > 0) return;
-    joinable.delete(shared);
-    Effect.runFork(Fiber.interrupt(shared.fiber!));
-  };
   const tell = (shared: Shared, caller: Caller, meta: ResponseMeta) => {
     try {
       caller.op.context.onResponse?.(meta);
     } catch (cause) {
-      Queue.failCauseUnsafe(caller.queue, Cause.fail(toClientError(cause)));
-      leave(shared, caller);
+      shared.callers.delete(caller);
+      Deferred.doneUnsafe(caller.failed, Effect.fail(toClientError(cause)));
     }
   };
 
-  const run = (shared: Shared, next: EffectLinkOpts['next']) =>
-    Stream.runForEach(
-      next({
-        ...shared.op,
-        signal: shared.controller.signal,
+  const open = (
+    args: EffectLinkOpts<DedupeContext>,
+    key: string,
+    options: Shared['options'],
+  ): Shared => {
+    const callers = new Set<Caller>();
+    const responses: ResponseMeta[] = [];
+    const controller = new AbortController();
+    const forget = Effect.sync(() => joinable.delete(shared));
+    const request = args
+      .next({
+        ...args.op,
+        signal: controller.signal,
         context: {
-          ...shared.op.context,
+          ...args.op.context,
           onResponse: (meta) => {
-            shared.responses.push(meta);
-            for (const caller of shared.callers) tell(shared, caller, meta);
+            responses.push(meta);
+            for (const caller of callers) tell(shared, caller, meta);
           },
         },
-      }),
-      (value) =>
-        Effect.sync(() => {
-          joinable.delete(shared);
-          for (const caller of shared.callers) {
-            Queue.offerUnsafe(caller.queue, value);
-          }
-        }),
-    ).pipe(
-      Effect.onExit((exit) =>
-        Effect.sync(() => {
-          joinable.delete(shared);
-          for (const caller of shared.callers) {
-            if (Exit.isSuccess(exit)) Queue.endUnsafe(caller.queue);
-            else Queue.failCauseUnsafe(caller.queue, exit.cause);
-          }
-        }),
+      })
+      .pipe(
+        Stream.tap(() => forget),
+        Stream.ensuring(forget),
+      );
+    const shared: Shared = {
+      key,
+      op: args.op,
+      options,
+      stream: Effect.runSync(
+        Scope.provide(
+          Stream.share(request, { capacity: 'unbounded' }),
+          Scope.makeUnsafe(),
+        ),
       ),
-      Effect.ignore,
-    );
+      callers,
+      responses,
+      controller,
+      unaborted: 0,
+    };
+    joinable.add(shared);
+    return shared;
+  };
 
   const join = (args: EffectLinkOpts<DedupeContext>) => {
     const op = args.op;
     const key = opts.key ? opts.key(op) : op.path;
     const options = callOptions(op.context);
-    const shared: Shared = [...joinable].find(
-      (other) =>
-        other.key === key &&
-        other.op.lastEventId === op.lastEventId &&
-        (opts.key !== undefined || deepEqual(other.op.input, op.input)) &&
-        deepEqual(other.options, options),
-    ) ?? {
-      key,
-      op,
-      options,
-      callers: new Set(),
-      responses: [],
-      controller: new AbortController(),
-      unaborted: 0,
-    };
-    joinable.add(shared);
-    const caller: Caller = { op, queue: Effect.runSync(Queue.unbounded()) };
+    const shared =
+      [...joinable].find(
+        (other) =>
+          other.key === key &&
+          other.op.lastEventId === op.lastEventId &&
+          (opts.key !== undefined || deepEqual(other.op.input, op.input)) &&
+          deepEqual(other.options, options),
+      ) ?? open(args, key, options);
+    const caller: Caller = { op, failed: Deferred.makeUnsafe() };
     shared.callers.add(caller);
     shared.unaborted++;
     op.signal?.addEventListener('abort', () => {
       if (--shared.unaborted === 0) shared.controller.abort();
     });
     for (const meta of shared.responses) tell(shared, caller, meta);
-    if (!shared.fiber) {
-      // Set before it runs: a link can respond while it starts.
-      Effect.runFork(run(shared, args.next), {
-        onFiberStart: (fiber) => {
-          shared.fiber = fiber;
-        },
-      });
-    }
-    return Stream.fromQueue(caller.queue).pipe(
-      Stream.ensuring(Effect.sync(() => leave(shared, caller))),
+    return shared.stream.pipe(
+      Stream.interruptWhen(Deferred.await(caller.failed)),
+      Stream.ensuring(
+        Effect.sync(() => {
+          shared.callers.delete(caller);
+          if (shared.callers.size === 0) joinable.delete(shared);
+        }),
+      ),
     );
   };
 
