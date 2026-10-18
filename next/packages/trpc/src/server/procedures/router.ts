@@ -1,3 +1,4 @@
+import { Effect } from 'effect';
 import type {
   IsAny,
   Simplify,
@@ -97,6 +98,12 @@ export const routerMetaOf = (node: object): object | undefined =>
 
 /** @internal */
 export interface LazyDef {
+  /**
+   * Loads the subtree: concurrent callers share one load, and its result,
+   * or its failure as a defect, is kept.
+   */
+  readonly loadEffect: Effect.Effect<AnyRouter>;
+  /** {@link LazyDef.loadEffect} as a `Promise`. */
   readonly load: () => Promise<AnyRouter>;
   readonly meta: object | undefined;
   /** Set once loaded. */
@@ -154,19 +161,22 @@ export function lazyWith<TRouter extends AnyRouter>(
   load: () => Promise<TRouter | { default: TRouter }>,
   opts: RouterOptions,
 ): LazyRouter<TRouter> {
-  let pending: Promise<AnyRouter> | undefined;
   const def: LazyDef = {
     meta: opts.meta,
     loaded: undefined,
-    load: () =>
-      (pending ??= load().then((mod) => {
-        const loaded =
-          isLazyModule(mod) && !isProcedure(mod.default)
-            ? mod.default
-            : (mod as TRouter);
-        def.loaded = loaded;
-        return loaded;
-      })),
+    loadEffect: Effect.promise(load).pipe(
+      Effect.map((mod): AnyRouter =>
+        isLazyModule(mod) && !isProcedure(mod.default) ? mod.default : mod,
+      ),
+      Effect.tap((loaded) =>
+        Effect.sync(() => {
+          def.loaded = loaded;
+        }),
+      ),
+      Effect.cached,
+      Effect.runSync,
+    ),
+    load: () => Effect.runPromise(def.loadEffect),
   };
   return { '~lazy': def };
 }
@@ -274,21 +284,26 @@ export function resolveProcedure(
   router: AnyRouter,
   path: string,
 ): AnyProcedure | undefined | Promise<AnyProcedure | undefined> {
-  const step = (
-    node: unknown,
-    segments: ReadonlyArray<string>,
-  ): AnyProcedure | undefined | Promise<AnyProcedure | undefined> => {
-    const found = walk(node, segments);
-    if (isProcedure(found)) return found;
-    if (found instanceof Pending) {
-      return found.lazy['~lazy']
-        .load()
-        .then((loaded) => step(loaded, found.rest));
-    }
-    return undefined;
-  };
-  return step(router, path.split('.'));
+  const found = walk(router, path.split('.'));
+  if (found instanceof Pending) return Effect.runPromise(resolveFrom(found));
+  return isProcedure(found) ? found : undefined;
 }
+
+/** {@link resolveProcedure} as an Effect. @internal */
+export const resolveProcedureEffect = (
+  router: AnyRouter,
+  path: string,
+): Effect.Effect<AnyProcedure | undefined> =>
+  resolveFrom(walk(router, path.split('.')));
+
+const resolveFrom = (
+  found: unknown,
+): Effect.Effect<AnyProcedure | undefined> =>
+  found instanceof Pending
+    ? Effect.flatMap(found.lazy['~lazy'].loadEffect, (loaded) =>
+        resolveFrom(walk(loaded, found.rest)),
+      )
+    : Effect.succeed(isProcedure(found) ? found : undefined);
 
 /**
  * Loads every lazy subtree, for tools that need the whole router at once,
@@ -301,18 +316,28 @@ export function resolveProcedure(
  * @since 0.1.0
  * @stability stable
  */
-export async function loadRouter<TRouter extends AnyRouter>(
+export function loadRouter<TRouter extends AnyRouter>(
   router: TRouter,
 ): Promise<TRouter> {
-  await Promise.all(
-    Object.values(router).map(async (node) => {
-      if (isProcedure(node)) return;
-      const sub = isLazy(node) ? await node['~lazy'].load() : node;
-      await loadRouter(sub as AnyRouter);
-    }),
-  );
-  return router;
+  return Effect.runPromise(loadRouterEffect(router));
 }
+
+/** {@link loadRouter} as an Effect. @internal */
+export const loadRouterEffect = <TRouter extends AnyRouter>(
+  router: TRouter,
+): Effect.Effect<TRouter> => Effect.as(loadAll(router), router);
+
+const loadAll = (router: AnyRouter): Effect.Effect<void> =>
+  Effect.forEach(
+    Object.values(router),
+    (node) =>
+      isProcedure(node)
+        ? Effect.void
+        : isLazy(node)
+          ? Effect.flatMap(node['~lazy'].loadEffect, loadAll)
+          : loadAll(node),
+    { concurrency: 'unbounded', discard: true },
+  );
 
 type RouterMap<R, F extends 'input' | 'output' | 'errors'> = {
   [K in keyof R]: R[K] extends AnyProcedure

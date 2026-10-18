@@ -100,8 +100,10 @@ export {
   isLazy,
   lazy,
   loadRouter,
+  loadRouterEffect,
   mergeRouters,
   resolveProcedure,
+  resolveProcedureEffect,
   router,
   routerMetaOf,
 } from './router.ts';

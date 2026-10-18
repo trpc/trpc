@@ -1,6 +1,7 @@
+import { Effect } from 'effect';
 import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
 import { experimental_toContract } from '@trpc12/trpc/contract';
-import { getProcedure } from '@trpc12/trpc/extend';
+import { getProcedure, resolveProcedure } from '@trpc12/trpc/extend';
 import {
   experimental_createOpenApiHandler,
   experimental_generateOpenApi,
@@ -15,6 +16,7 @@ import {
   type AnyRouter,
 } from '@trpc12/trpc/server';
 import { createTestServer } from '../../fixtures/server.ts';
+import { loadRouterEffect, resolveProcedureEffect } from './router.ts';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
 
@@ -182,4 +184,54 @@ test('lazy() takes a module with a default export or the router itself', async (
   const loaded = await loadRouter(router);
   expect(getProcedure(loaded, 'fromModule.a')).toBe(users);
   expect(getProcedure(loaded, 'direct.a')).toBe(users);
+});
+
+test('concurrent first calls share one load; then resolveProcedure is synchronous', async () => {
+  let loads = 0;
+  const router: AnyRouter = {
+    nested: {
+      deep: lazy(async () => {
+        loads++;
+        await new Promise((resolve) => setTimeout(resolve, 5));
+        return { inner: lazy(async () => ({ a: users })) };
+      }),
+    },
+  };
+  const first = resolveProcedure(router, 'nested.deep.inner.a');
+  expect(first).toBeInstanceOf(Promise);
+  const [a, b, all] = await Promise.all([
+    first,
+    resolveProcedure(router, 'nested.deep.inner.a'),
+    loadRouter(router),
+  ]);
+  expect([a, b]).toEqual([users, users]);
+  expect(all).toBe(router);
+  expect(loads).toBe(1);
+  expect(resolveProcedure(router, 'nested.deep.inner.a')).toBe(users);
+  expect(resolveProcedure(router, 'nested.deep.missing')).toBeUndefined();
+});
+
+test("a failed load stays failed and rejects with the loader's error", async () => {
+  let loads = 0;
+  const failure = new Error('chunk failed to load');
+  const router: AnyRouter = {
+    broken: lazy(async () => {
+      loads++;
+      throw failure;
+    }),
+  };
+  await expect(resolveProcedure(router, 'broken.a')).rejects.toBe(failure);
+  await expect(loadRouter(router)).rejects.toBe(failure);
+  expect(loads).toBe(1);
+});
+
+test('resolveProcedureEffect and loadRouterEffect load lazy subtrees as Effects', async () => {
+  const router: AnyRouter = { admin: lazy(async () => ({ users })) };
+  expect(
+    await Effect.runPromise(resolveProcedureEffect(router, 'admin.users')),
+  ).toBe(users);
+  expect(
+    await Effect.runPromise(resolveProcedureEffect(router, 'admin.nope')),
+  ).toBeUndefined();
+  expect(await Effect.runPromise(loadRouterEffect(router))).toBe(router);
 });
