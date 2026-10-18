@@ -82,15 +82,15 @@ Pages marked (hidden) are unlisted on the site until they're reviewed: out of it
 
 ## Integrations
 
-- [Integrations](./integrations/overview.md): Data fetching for every TanStack Query framework, React and Next.js, and the libraries tRPC works with.
-- [TanStack Query](./integrations/tanstack-query.md): Query, mutation and subscription options for every TanStack Query framework, from one package and an adapter per framework.
+- [Integrations](./integrations/overview.md): Data fetching with TanStack Query, React and Next.js, and the libraries tRPC works with.
+- [TanStack Query](./integrations/tanstack-query.md): Query, mutation and subscription options for TanStack Query, from one package and its React adapter.
   - [React](./integrations/tanstack-query/react.md): @trpc12/tanstack-react-query: the helpers as a module singleton or through context, Suspense, useSubscription, and server components.
-  - [Preact](./integrations/tanstack-query/preact.md): @trpc12/tanstack-preact-query: a context provider for the client, useTrpc() in components, and useSubscription.
-  - [Vue](./integrations/tanstack-query/vue.md): @trpc12/tanstack-vue-query: a Vue plugin or provideTrpc() for the client, useTrpc() in setup, and useSubscription with refs.
-  - [Solid](./integrations/tanstack-query/solid.md): @trpc12/tanstack-solid-query: a context provider for the client, useTrpc() in components, and useSubscription with reactive getters.
-  - [Svelte](./integrations/tanstack-query/svelte.md): @trpc12/tanstack-svelte-query: context helpers for the client, useTrpc() in components, and createSubscription with runes.
-  - [Angular](./integrations/tanstack-query/angular.md): @trpc12/tanstack-angular-query: provideTrpc() next to provideTanStackQuery, injectTrpc() in components, and injectSubscription with signals.
-  - [Lit](./integrations/tanstack-query/lit.md): @trpc12/tanstack-lit-query: a provider element for the client, useTrpc(this) in elements, and createSubscriptionController.
+  - [Preact](./integrations/tanstack-query/preact.md) (hidden): @trpc12/tanstack-preact-query: a context provider for the client, useTrpc() in components, and useSubscription.
+  - [Vue](./integrations/tanstack-query/vue.md) (hidden): @trpc12/tanstack-vue-query: a Vue plugin or provideTrpc() for the client, useTrpc() in setup, and useSubscription with refs.
+  - [Solid](./integrations/tanstack-query/solid.md) (hidden): @trpc12/tanstack-solid-query: a context provider for the client, useTrpc() in components, and useSubscription with reactive getters.
+  - [Svelte](./integrations/tanstack-query/svelte.md) (hidden): @trpc12/tanstack-svelte-query: context helpers for the client, useTrpc() in components, and createSubscription with runes.
+  - [Angular](./integrations/tanstack-query/angular.md) (hidden): @trpc12/tanstack-angular-query: provideTrpc() next to provideTanStackQuery, injectTrpc() in components, and injectSubscription with signals.
+  - [Lit](./integrations/tanstack-query/lit.md) (hidden): @trpc12/tanstack-lit-query: a provider element for the client, useTrpc(this) in elements, and createSubscriptionController.
   - [Query keys and filters](./integrations/tanstack-query/keys.md): How tRPC's query keys are shaped, the filters that invalidate and read them, and keyPrefix for two APIs in one QueryClient.
   - [Subscriptions in TanStack Query](./integrations/tanstack-query/subscriptions.md): subscriptionOptions() for each framework's subscription primitive, shared between components, and liveOptions() and streamedOptions() in the query cache.
   - [Streamed mutations](./integrations/tanstack-query/streamed-mutations.md): A mutation that returns an async iterable fills in as it streams, with chunksOptions(), and stops on unmount or on demand; long jobs pair a mutation with a subscription.

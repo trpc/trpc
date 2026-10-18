@@ -4,6 +4,7 @@ description: '@trpc12/tanstack-lit-query: a provider element for the client, use
 section: Integrations
 parent: integrations/tanstack-query
 order: 7
+hidden: true
 ---
 
 `@trpc12/tanstack-lit-query` re-exports [`@trpc12/tanstack-query`](../tanstack-query.md) and adds a provider element and `@lit/context` consumers for a client and its helpers, and a `createSubscriptionController`. Without a provider, `createTrpcQueryUtils({ client })` works in Lit too.

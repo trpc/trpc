@@ -13,12 +13,6 @@ Everything server- and client-side is one package, `@trpc12/trpc`. The other pac
 | `@trpc12/trpc` ([entry points](#trpc12trpc-entry-points))                      | Routers, handlers, clients, links, middleware and adapters             |
 | [`@trpc12/tanstack-query`](./integrations/tanstack-query.md)                   | TanStack Query options, keys and filters, for any framework            |
 | [`@trpc12/tanstack-react-query`](./integrations/tanstack-query/react.md)       | React: context, `useSubscription`, and server components in `/rsc`     |
-| [`@trpc12/tanstack-preact-query`](./integrations/tanstack-query/preact.md)     | Preact: context and `useSubscription`                                  |
-| [`@trpc12/tanstack-vue-query`](./integrations/tanstack-query/vue.md)           | Vue: an app plugin and `useSubscription`                               |
-| [`@trpc12/tanstack-solid-query`](./integrations/tanstack-query/solid.md)       | Solid: context and `useSubscription`                                   |
-| [`@trpc12/tanstack-svelte-query`](./integrations/tanstack-query/svelte.md)     | Svelte: context and `createSubscription`                               |
-| [`@trpc12/tanstack-angular-query`](./integrations/tanstack-query/angular.md)   | Angular: providers, injectors and `injectSubscription`                 |
-| [`@trpc12/tanstack-lit-query`](./integrations/tanstack-query/lit.md)           | Lit: a provider element and `createSubscriptionController`             |
 | [`@trpc12/experimental-react`](./integrations/experimental-react.md)           | React with `use()` and Suspense, without TanStack Query (experimental) |
 | [`@trpc12/experimental-react-atom`](./integrations/experimental-react-atom.md) | Queries, mutations and subscriptions as Effect atoms (experimental)    |
 | [`@trpc12/nest`](./integrations/nestjs.md)                                     | A contract served from NestJS controllers                              |

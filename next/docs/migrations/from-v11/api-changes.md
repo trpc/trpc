@@ -27,5 +27,5 @@ What each v11 API is in v12. [The codemod](./codemod.md) rewrites the ones with 
 | subscriptions returning `observable()`                             | an async generator or an Effect `Stream`                                                                                          |
 | `input.lastEventId` in a subscription                              | the resolver's `lastEventId` option                                                                                               |
 | `.subscribe(input, { onData, onError })`                           | `for await (const event of client.x.subscribe(input))`                                                                            |
-| `@trpc/react-query`, `@trpc/tanstack-react-query`                  | `@trpc12/tanstack-react-query` (and Solid, Svelte, Vue, Angular, Preact, Lit)                                                     |
+| `@trpc/react-query`, `@trpc/tanstack-react-query`                  | `@trpc12/tanstack-react-query`                                                                                                    |
 | `abortOnUnmount: true`                                             | always on: queries pass TanStack's `signal`, so one nothing observes is cancelled                                                 |

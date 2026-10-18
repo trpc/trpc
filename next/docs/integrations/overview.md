@@ -1,7 +1,7 @@
 ---
 title: Integrations
 label: Overview
-description: Data fetching for every TanStack Query framework, React and Next.js, and the libraries tRPC works with.
+description: Data fetching with TanStack Query, React and Next.js, and the libraries tRPC works with.
 section: Integrations
 order: 0
 ---
@@ -10,9 +10,8 @@ The core client works anywhere ([The client](../client/overview.md)). These page
 
 ## Data fetching
 
-[TanStack Query](./tanstack-query.md) is the stable way to fetch in a UI: `@trpc12/tanstack-query` makes query, mutation and subscription options, and a package per framework provides the client to components.
+[TanStack Query](./tanstack-query.md) is the stable way to fetch in a UI: `@trpc12/tanstack-query` makes query, mutation and subscription options, and [`@trpc12/tanstack-react-query`](./tanstack-query/react.md) provides the client to React components.
 
-- Frameworks: [React](./tanstack-query/react.md), [Preact](./tanstack-query/preact.md), [Vue](./tanstack-query/vue.md), [Solid](./tanstack-query/solid.md), [Svelte](./tanstack-query/svelte.md), [Angular](./tanstack-query/angular.md) and [Lit](./tanstack-query/lit.md).
 - Topics: [query keys and filters](./tanstack-query/keys.md), [subscriptions](./tanstack-query/subscriptions.md), [streamed mutations](./tanstack-query/streamed-mutations.md), [hydration and offline mutations](./tanstack-query/hydration.md) and [TanStack DB](./tanstack-query/tanstack-db.md).
 
 ## React and Next.js

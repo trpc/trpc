@@ -306,7 +306,7 @@ const v12Features: ReadonlyArray<Feature> = [
     title: 'Every runtime',
   },
   {
-    body: 'Query and mutation options for TanStack Query in React, Vue, Solid, Svelte, Angular, Preact and Lit; Server Actions and RSC helpers.',
+    body: 'Query, mutation and subscription options for TanStack Query in React; Server Actions and RSC helpers.',
     icon: <Blocks />,
     slug: 'integrations/tanstack-query',
     title: 'Framework integrations',
