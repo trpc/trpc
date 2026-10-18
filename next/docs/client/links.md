@@ -24,7 +24,14 @@ A client's `links` is a chain: each link gets the operation and the rest of the 
 
 `init` sets `fetch` options. The link's `init` is a default, or a function called once per HTTP request with the calls it carries; a call's `init` is merged onto it (shallowly, but `headers` and `next` key by key). Calls with different `init`s are batched apart. `next` passes Next's data-cache options through:
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { httpLink } from '@trpc12/trpc/client';
+import { client } from './client.ts';
+declare const url: string;
+declare const input: undefined;
+declare function forwardCookies(): HeadersInit;
+// ---cut-end---
 httpLink({
   url,
   init: () => ({ cache: 'no-store', headers: forwardCookies() }),
@@ -38,7 +45,24 @@ await client.post.list.query(input, {
 
 `switchLink`'s `name` becomes a typed call option, so one call can override `pick`:
 
-```ts
+```ts twoslash
+// ---cut-start---
+import {
+  createTrpcClient,
+  httpLink,
+  routerType,
+  switchLink,
+  wsLink,
+} from '@trpc12/trpc/client';
+import { t } from './server.ts';
+const appRouter = {
+  report: t.procedure.query(() => ({ views: 0 })),
+};
+type AppRouter = typeof appRouter;
+declare const url: string;
+declare const wsUrl: string;
+declare const input: undefined;
+// ---cut-end---
 const client = createTrpcClient({
   router: routerType<AppRouter>(),
   links: [
@@ -61,7 +85,24 @@ A branch can be a chain (an array of links), including another `switchLink`. The
 
 A link can change the operation it passes on. That lets one client cover routers served by different backends, even ones with different contexts:
 
-```ts
+```ts twoslash
+// ---cut-start---
+import {
+  createTrpcClient,
+  httpLink,
+  link,
+  routerType,
+  splitLink,
+} from '@trpc12/trpc/client';
+import { t, type AppRouter } from './server.ts';
+const shopRouter = {
+  cart: t.procedure.query(() => [] as string[]),
+};
+type BlogRouter = AppRouter;
+type ShopRouter = typeof shopRouter;
+declare const blogUrl: string;
+declare const shopUrl: string;
+// ---cut-end---
 const unprefix = (prefix: string) =>
   link((opts) =>
     opts.next({ ...opts.op, path: opts.op.path.slice(prefix.length + 1) }),

@@ -39,13 +39,20 @@ createFetchHandler({
 
 A failure that isn't a `TrpcError` is a type error until it is mapped (`Effect.catchTag`), so internals like a database error's query never reach clients. Mark the errors clients may see by making them `TrpcError.Tagged` classes; yielding or throwing one sends it typed, with its `data` validated first:
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { TrpcError } from '@trpc12/trpc/server';
+import { Effect, Schema } from 'effect';
+import { z } from 'zod';
+import { t, type Post } from './server.ts';
+declare const repo: { find: (id: string) => Effect.Effect<Post | undefined> };
+// ---cut-end---
 class PostNotFound extends TrpcError.Tagged('POST_NOT_FOUND', {
   status: 404,
   data: Schema.Struct({ id: Schema.String }),
 }) {}
 
-t.procedure.query((opts) =>
+t.procedure.input(z.object({ id: z.string() })).query((opts) =>
   Effect.gen(function* () {
     const post = yield* repo.find(opts.input.id);
     if (!post) return yield* new PostNotFound({ id: opts.input.id });
@@ -60,7 +67,14 @@ t.procedure.query((opts) =>
 
 `t.middleware.effect<{ provides: S }>()(fn)` writes a middleware whose `next()` is an `Effect`, so it can provide services:
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { Context, Effect } from 'effect';
+import { t, type User } from './server.ts';
+class CurrentUser extends Context.Service<CurrentUser, User | null>()(
+  'CurrentUser',
+) {}
+// ---cut-end---
 const withUser = t.middleware.effect<{ provides: CurrentUser }>()((opts) =>
   opts.next().pipe(Effect.provideService(CurrentUser, opts.ctx.user)),
 );
@@ -76,7 +90,13 @@ The span continues the request's trace: the `http.server` span on Effect HTTP se
 
 `Effect.forkDetach` starts a fiber that keeps running after the call returns, on a long-lived server:
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { Effect } from 'effect';
+import { t, type User } from './server.ts';
+declare const Users: { create: (input: unknown) => Effect.Effect<User> };
+declare const Mailer: { welcome: (user: User) => Effect.Effect<void> };
+// ---cut-end---
 t.procedure.mutation((opts) =>
   Effect.gen(function* () {
     const user = yield* Users.create(opts.input);

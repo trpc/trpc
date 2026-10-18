@@ -47,11 +47,31 @@ for await (const post of client.onPost.subscribe()) {
 
 Yield `tracked(id, data)` to give events ids. SSE sends them as `id:`, and on reconnect the resolver gets `lastEventId` in its options (not in its input). An id can't be empty or hold a line break or NUL, which would end the SSE field:
 
-```ts
+```ts twoslash
+// ---cut-start---
+// @filename: server.ts
+import { initTrpc, tracked } from '@trpc12/trpc/server';
+const t = initTrpc<{ ctx: {} }>();
+declare const posts: {
+  since(
+    lastEventId: string | undefined,
+  ): AsyncIterable<{ id: string; title: string }>;
+};
+// ---cut-end---
 const onPost = t.procedure.subscription(async function* (opts) {
   for await (const post of posts.since(opts.lastEventId))
     yield tracked(post.id, post);
 });
+// ---cut-start---
+export const router = { onPost };
+// @filename: client.ts
+import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import type { router } from './server.ts';
+const client = createTrpcClient({
+  router: routerType<typeof router>(),
+  links: [httpLink({ url: '/trpc' })],
+});
+// ---cut-end---
 
 client.onPost.subscribe(undefined, { lastEventId: '42' }); // resume from a known id
 ```
@@ -64,7 +84,10 @@ While a subscription is quiet, the handler sends a `: ping` comment every 15 sec
 
 The stream is standard SSE, so a browser `EventSource` (or `curl`) can read a subscription without the client. Input goes in the query string as `httpLink` sends it (`/trpc/onPost?input={"channel":"news"}`, URL-encoded). Each `message` event's `data` is a serialized value. An `EventSource` reconnects with `Last-Event-ID` by itself, so close it on the `done` event, or it reconnects when the stream ends. Failures arrive as `error` events with `data`:
 
-```ts
+```ts twoslash
+// ---cut-start---
+declare function render(data: unknown): void;
+// ---cut-end---
 const source = new EventSource('/trpc/onPost');
 source.onmessage = (event) => render(JSON.parse(event.data));
 source.addEventListener('done', () => source.close());

@@ -8,7 +8,14 @@ v11: server/adapters
 
 `createFetchHandler()` returns a web-standard `fetch(request)`. Anything that speaks `Request` and `Response` can serve it directly. On Effect's `HttpServer`, `@trpc12/trpc/http` adds WebSockets, client-disconnect aborts, and Effect's platform layers.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { createFetchHandler } from '@trpc12/trpc/server';
+import { Layer } from 'effect';
+import { appRouter as router, type Context } from './server.ts';
+declare function createContext(): Context;
+declare const layer: Layer.Layer<never>;
+// ---cut-end---
 const handler = createFetchHandler({ router, createContext, layer });
 // handler.fetch(request): Promise<Response>
 // handler.websocket(socket, { request })
@@ -33,7 +40,12 @@ Procedures are served under `endpoint`, `/trpc` by default.
 
 Request-level concerns are Effect `HttpMiddleware` in the handler's `middleware` option, outermost first. They wrap `handler.fetch` and, under `serve()`/`toHttpEffect`, WebSocket upgrades too. Call-level concerns are root `t.use()` [middleware](../server/middleware.md).
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
+const t = initTrpc();
+const router = { health: t.procedure.query(() => 'ok') };
+// ---cut-end---
 import { HttpMiddleware } from 'effect/http';
 import { cors } from '@trpc12/trpc/http';
 

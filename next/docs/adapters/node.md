@@ -8,7 +8,10 @@ v11: server/adapters/standalone
 
 ## The Effect way
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { handler } from './server.ts';
+// ---cut-end---
 import { createServer } from 'node:http';
 import { NodeHttpServer, NodeRuntime } from '@effect/platform-node';
 import { Layer } from 'effect';
@@ -27,7 +30,13 @@ serve(handler).pipe(
 
 The handler is an `effect/http` app underneath: `createContext` gets Effect's `HttpServerRequest`, and on Node the request is never converted to a web `Request`. `handler.routes` is that app as `HttpRouter` routes for the endpoint and the paths under it, WebSocket upgrades included, and `serve(handler)` serves exactly those, so other paths get a 404. Merge them with your own routes:
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { createServer } from 'node:http';
+import { NodeHttpServer, NodeRuntime } from '@effect/platform-node';
+import { Layer } from 'effect';
+import { handler } from './server.ts';
+// ---cut-end---
 import { HttpRouter, HttpServerResponse } from 'effect/http';
 
 const app = Layer.mergeAll(
@@ -48,9 +57,13 @@ HttpRouter.serve(app).pipe(
 
 `NodeHttpServer.makeHandler` turns the Effect app into a `(req, res)` handler. Its resources live in the scope you pass.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { handler } from './server.ts';
+// ---cut-end---
 import { NodeHttpServer } from '@effect/platform-node';
 import { Effect, Exit, Scope } from 'effect';
+import { toHttpEffect } from '@trpc12/trpc/http';
 
 const scope = Scope.makeUnsafe();
 const nodeHandler = await Effect.runPromise(

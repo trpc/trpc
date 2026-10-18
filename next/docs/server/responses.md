@@ -33,7 +33,18 @@ In a batch, headers merge (`set-cookie` appends) and each call keeps its own sta
 
 A procedure can also return its own response, an `HttpServerResponse` from `effect/http` or a web `Response`, for redirects, proxied upstreams or downloads. It's sent as is, with the handle's headers added, and the client's output is the web `Response`:
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import { HttpServerResponse } from 'effect/http';
+import { t } from './server.ts';
+declare const rows: string[][];
+declare function toCsv(rows: string[][]): string;
+const client = createTrpcClient({
+  router: routerType<{ report: typeof report }>(),
+  links: [httpLink({ url: 'http://localhost:3000/trpc' })],
+});
+// ---cut-end---
 const report = t.procedure.query(() =>
   HttpServerResponse.text(toCsv(rows), { contentType: 'text/csv' }),
 );

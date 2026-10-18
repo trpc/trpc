@@ -10,9 +10,13 @@ Nothing here is Next-specific: it works with any React Server Components setup.
 
 `experimental_createAction` from `@trpc12/trpc/actions` makes a factory that sets the ctx, layer and result mode once. `action(procedure)` is then an async function that takes the input or a form's `FormData`:
 
-```ts
+```ts twoslash
 'use server';
 import { experimental_createAction } from '@trpc12/trpc/actions';
+// ---cut-start---
+import { appRouter, type User } from './server.ts';
+declare function auth(): Promise<User | null>;
+// ---cut-end---
 
 const action = experimental_createAction({
   ctx: async () => ({ user: await auth() }),
@@ -21,8 +25,26 @@ const action = experimental_createAction({
 export const createPost = action(appRouter.post.create);
 ```
 
-```tsx
-<form action={createPost}>
+```tsx twoslash
+// ---cut-start---
+import { experimental_createAction } from '@trpc12/trpc/actions';
+import { z } from 'zod';
+import { authed, db } from './server.ts';
+const action = experimental_createAction({ ctx: { user: null } });
+const createPost = action(
+  authed
+    .input(z.object({ title: z.string(), tags: z.array(z.string()) }))
+    .mutation((opts) =>
+      db.post.create({ title: opts.input.title, author: opts.ctx.user.name }),
+    ),
+);
+declare const title: string;
+// ---cut-end---
+<form
+  action={async (form) => {
+    await createPost(form);
+  }}
+>
   <input name="title" />
   <input name="tags[]" value="news" />
 </form>;
@@ -40,8 +62,27 @@ const [post, error] = await createPost({ title, tags: [] });
 
 An action also takes React's `useActionState` call (the previous state, then the input or `FormData`), so React's own hooks give pending state and optimistic UI; there is no `useServerAction`:
 
-```tsx
-'use client';
+```tsx twoslash
+// ---cut-start---
+// @filename: actions.ts
+'use server';
+import { experimental_createAction } from '@trpc12/trpc/actions';
+import { z } from 'zod';
+import { t } from './server.ts';
+const titles: string[] = [];
+const appRouter = {
+  title: {
+    add: t.procedure.input(z.object({ title: z.string() })).mutation((opts) => {
+      titles.push(opts.input.title);
+      return [...titles];
+    }),
+  },
+};
+const action = experimental_createAction({ ctx: { user: null } });
+export const addTitle = action(appRouter.title.add);
+// @filename: titles.tsx
+// ---cut-end---
+('use client');
 import { useActionState, useOptimistic } from 'react';
 import { addTitle } from './actions'; // action(appRouter.title.add)
 
@@ -75,7 +116,12 @@ function Titles() {
 
 `experimental_createCallable` is the same factory for direct calls with typed input (no `FormData`), from server components, loaders or scripts:
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { experimental_createCallable } from '@trpc12/trpc/actions';
+import { appRouter, type Context } from './server.ts';
+declare function createContext(): Promise<Context>;
+// ---cut-end---
 const callable = experimental_createCallable({
   ctx: createContext,
   result: 'throw',

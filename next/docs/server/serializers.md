@@ -20,7 +20,15 @@ Every serializer streams deferred values: a procedure can return promises, gener
 
 The serializer lives on the handler and the links, not on `initTrpc`:
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
+const t = initTrpc();
+const router = { health: t.procedure.query(() => 'ok') };
+type AppRouter = typeof router;
+declare const url: string;
+// ---cut-end---
 import { createSerializer } from '@trpc12/trpc/serializer';
 
 export const serializer = createSerializer();
@@ -34,7 +42,11 @@ const client = createTrpcClient({
 
 `wsLink`, `experimental_messagePortLink`, `experimental_socketLink` and `localLink` take `serializer` the same way. With superjson or devalue, list the types the transformer rebuilds:
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { createSyncSerializer } from '@trpc12/trpc/serializer';
+import superjson from 'superjson';
+// ---cut-end---
 export const serializer = createSyncSerializer<
   Date | Map<any, any> | Set<any> | bigint | undefined
 >(superjson);
@@ -95,7 +107,13 @@ Query inputs go in the URL as `?input=<JSON>`, with object keys sorted (array or
 
 ## Custom types with danSON
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { createSerializer, type CustomType } from '@trpc12/trpc/serializer';
+declare class Decimal {
+  constructor(value: string);
+}
+// ---cut-end---
 const decimal: CustomType<Decimal, string> = {
   is: (v) => v instanceof Decimal,
   serialize: (v) => v.toString(),
@@ -108,7 +126,15 @@ export const serializer = createSerializer({ types: { Decimal: decimal } });
 
 `hydrationOptions({ client })` serializes TanStack Query data with the client's serializer (the first link that has one), so server-rendered data hydrates with the same types the client sees. Type the query context from the client, and it takes the links' form too:
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import { createSerializer } from '@trpc12/trpc/serializer';
+import { createTrpcContext } from '@trpc12/tanstack-react-query';
+import type { AppRouter } from './server.ts';
+const serializer = createSerializer();
+declare const url: string;
+// ---cut-end---
 const makeClient = () =>
   createTrpcClient({
     router: routerType<AppRouter>(),

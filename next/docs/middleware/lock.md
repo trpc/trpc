@@ -7,7 +7,15 @@ order: 3
 
 `experimental_lock()` runs the rest of the call under a lock, so calls with the same key never overlap: the second waits for the first, and fails with `experimental_LockConflict` (`CONFLICT`, 409) if `timeout` (10 seconds) passes first. The resolver gets `ctx.lock.waited`.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { Layer } from 'effect';
+import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
+import { z } from 'zod';
+const t = initTrpc();
+declare function charge(invoice: string, opts: { retried: boolean }): void;
+declare const router: { pay: typeof pay };
+// ---cut-end---
 import { NodeRedis } from '@effect/platform-node';
 import {
   experimental_lock,

@@ -7,7 +7,13 @@ order: 6
 
 [AI SDK](https://ai-sdk.dev/) (v7) streams chat responses as a `ReadableStream` of UI message chunks. A procedure returns that stream as it is, and the client gets a `ReadableStream` back, which is what `useChat`'s transport returns. This needs no adapter package, and it's tested against the real library in `test/integration/`.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import type { LanguageModel } from 'ai';
+import { z } from 'zod';
+import { t } from './server.ts';
+declare const model: LanguageModel;
+// ---cut-end---
 import {
   convertToModelMessages,
   streamText,
@@ -57,8 +63,17 @@ const chat = useChat({
 
 AI SDK takes Standard Schema as a tool's `inputSchema`, so a tool reuses the procedure's input schema and runs the procedure with [`call()`](../server/server-side-calls.md), middleware and validation included:
 
-```ts
-import { tool } from 'ai';
+```ts twoslash
+// ---cut-start---
+import type { LanguageModel } from 'ai';
+import { z } from 'zod';
+import { t, type Context } from './server.ts';
+declare const model: LanguageModel;
+declare const ctx: Context;
+declare const prompt: string;
+declare function forecast(city: string): Promise<string>;
+// ---cut-end---
+import { generateText, tool } from 'ai';
 import { call } from '@trpc12/trpc/server';
 
 const WeatherInput = z.object({ city: z.string() });

@@ -41,7 +41,18 @@ const create = t.procedure
 
 `spec` overrides the generated operation in the document: an object replaces it, a function extends it. Later `.meta({ route })` calls merge into earlier ones key by key, and `spec` functions compose, so a base procedure can add `security` and its procedures add more:
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { openapi } from '@trpc12/trpc/openapi';
+import { error, initTrpc } from '@trpc12/trpc/server';
+import type { Context } from './server.ts';
+const t = initTrpc<{ ctx: Context }>().concat(openapi());
+const requireUser = t.middleware((opts) =>
+  opts.ctx.user
+    ? opts.next({ ctx: { user: opts.ctx.user } })
+    : error({ code: 'UNAUTHORIZED' }),
+);
+// ---cut-end---
 const authed = t.procedure
   .use(requireUser)
   .meta({ route: { spec: (op) => ({ ...op, security: [{ bearer: [] }] }) } });
@@ -57,7 +68,13 @@ const me = authed
 
 ## The handler
 
-```ts
+```ts twoslash
+// ---cut-start---
+import type { Layer } from 'effect';
+import { appRouter, type Context } from './server.ts';
+declare function createContext(): Context;
+declare const layer: Layer.Layer<never>;
+// ---cut-end---
 import { cors } from '@trpc12/trpc/http';
 import { createOpenApiHandler, openApiReference } from '@trpc12/trpc/openapi';
 
@@ -126,8 +143,17 @@ const update = t.procedure
 
 Under the `openapi()` extension, `t.router({ meta: { route: { prefix, tags } } }, routes)` groups routes for OpenAPI. Types and RPC paths don't change, and it takes no middleware.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { openapi } from '@trpc12/trpc/openapi';
+import { initTrpc } from '@trpc12/trpc/server';
+import type { Context } from './server.ts';
+// ---cut-end---
 const t = initTrpc<{ ctx: Context }>().concat(openapi());
+// ---cut-start---
+const users = t.procedure.query(() => [{ id: '1', name: 'Ada' }]);
+const ban = t.procedure.mutation(() => {});
+// ---cut-end---
 
 const appRouter = {
   admin: t.router(
@@ -146,7 +172,14 @@ A `t.lazy(load, { meta: { route: { prefix } } })` subtree is scoped the same way
 
 The handler loads unprefixed lazy subtrees at startup, and a prefixed one on the first request under its prefix. Pass a contract so every route is known up front and each subtree loads on its first request, whatever its prefix:
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { toContract } from '@trpc12/trpc/contract';
+import { createOpenApiHandler } from '@trpc12/trpc/openapi';
+import { initTrpc, loadRouter } from '@trpc12/trpc/server';
+const t = initTrpc();
+const appRouter = { health: t.procedure.query(() => 'ok') };
+// ---cut-end---
 // build step
 const contract = toContract(await loadRouter(appRouter));
 

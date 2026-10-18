@@ -49,7 +49,26 @@ const chat = t.procedure
   });
 ```
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import { stream } from '@trpc12/trpc/server';
+import { z } from 'zod';
+import { t } from './server.ts';
+const Token = z.object({ text: z.string() });
+const Summary = z.object({ tokens: z.number() });
+const chat = t.procedure
+  .output(stream(Token, Summary))
+  .mutation(async function* () {
+    yield { text: 'He' };
+    yield { text: 'llo' };
+    return { tokens: 2 };
+  });
+const client = createTrpcClient({
+  router: routerType<{ chat: typeof chat }>(),
+  links: [httpLink({ url: 'http://localhost:3000/trpc' })],
+});
+// ---cut-end---
 const it = await client.chat.mutate(); // AsyncIterable<Token, Summary>
 ```
 

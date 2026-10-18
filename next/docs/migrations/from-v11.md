@@ -9,7 +9,11 @@ Move the server first. `createV11Handler` serves the new router to `@trpc/client
 
 ## Serve old clients while you migrate
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { appRouter, type Context } from './server.ts';
+declare function createContext(): Context;
+// ---cut-end---
 import superjson from 'superjson';
 import { createV11Handler } from '@trpc12/trpc/interop';
 import { createFetchHandler } from '@trpc12/trpc/server';
@@ -49,7 +53,14 @@ It speaks every v11 link:
 
 Errors go out in v11's shape, so `TRPCClientError` reads them: `{ message, code: -32004, data: { code: 'NOT_FOUND', httpStatus: 404, path } }`. A code v11 doesn't have (`POST_LOCKED`, declared with status `423`) takes v11's code for its status, `INTERNAL_SERVER_ERROR` when there's none; the HTTP status stays. If the v11 router had an `errorFormatter`, reproduce it:
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { createV11Handler } from '@trpc12/trpc/interop';
+import { initTrpc } from '@trpc12/trpc/server';
+import { db } from './server.ts';
+const t = initTrpc();
+const appRouter = { post: { list: t.procedure.query(() => db.post.list()) } };
+// ---cut-end---
 createV11Handler({
   router: appRouter,
   errorFormatter: (opts) => ({
@@ -89,7 +100,14 @@ src/server/index.ts:1:1 observable() subscriptions: return an async generator or
 
 Your own v11 links (`TRPCLink`s) run in a v12 chain through `fromV11Link`, so you can move them over one at a time:
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import type { V11Link } from '@trpc12/trpc/interop';
+import type { AppRouter } from './server.ts';
+declare const authLink: V11Link;
+declare const url: string;
+// ---cut-end---
 import { fromV11Link } from '@trpc12/trpc/interop';
 
 createTrpcClient({
@@ -107,7 +125,11 @@ A v11 terminating link (one that sends the request itself, such as v11's `httpBa
 
 Rewritten for v12, a link returns an Effect `Stream`:
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { link } from '@trpc12/trpc/client';
+declare function token(): string;
+// ---cut-end---
 const authLink = link((opts) =>
   opts.next({
     ...opts.op,

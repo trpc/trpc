@@ -53,7 +53,15 @@ The client still sends the schema's input. A later `.input()` parses the raw cal
 
 `middleware<{ ctx }>()(fn)` (and `middleware.effect`) declares one outside any `t`, typed by the ctx it needs, for a package to publish. Used on a procedure that lacks a key it needs, the key becomes a requirement of the procedure's ctx, the way an Effect requirement moves to whoever runs it: the handler's `createContext` (or an in-process caller's `ctx`) must supply it. A key the procedure has with another type is a type error.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { createFetchHandler, initTrpc, middleware } from '@trpc12/trpc/server';
+import type { HttpServerRequest } from 'effect/http';
+import type { Post } from './server.ts';
+const t = initTrpc();
+declare function dbFor(tenant: string): { posts(): Post[] };
+declare function tenantOf(request: HttpServerRequest.HttpServerRequest): string;
+// ---cut-end---
 const withTenant = middleware<{ ctx: { tenant: string } }>()((opts) =>
   opts.next({ ctx: { db: dbFor(opts.ctx.tenant) } }),
 );
@@ -72,7 +80,12 @@ createFetchHandler({
 
 When the plugin starts with the same middleware as the builder (the same function, in the same order), `.concat()` runs it once, on a builder or on `t`. Elsewhere, middleware applied twice runs twice. For work that should happen once per request, an Effect service in the handler's `layer` is built once, and a middleware can reuse what ctx already has, so nested `call(other, input, { ctx })`s skip it:
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { middleware } from '@trpc12/trpc/server';
+interface Db {}
+declare function connect(): Promise<Db>;
+// ---cut-end---
 const withDb = middleware<{ ctx: { db?: Db } }>()(async (opts) =>
   opts.next({ ctx: { db: opts.ctx.db ?? (await connect()) } }),
 );

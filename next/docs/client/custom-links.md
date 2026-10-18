@@ -12,7 +12,11 @@ v11: client/links
 
 A link of your own declares what it reads, and the client types it as a call option:
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { link } from '@trpc12/trpc/client';
+declare function span(traceId: string | undefined): void;
+// ---cut-end---
 const traceLink = link<{ context: { traceId?: string } }>((opts) => {
   span(opts.op.context.traceId);
   return opts.next(opts.op);
@@ -51,7 +55,19 @@ client.onPost.subscribe; // type error: no link carries subscriptions
 
 `httpLink` hands each call's response to an `onResponse` call option (`{ status, headers }`), before the value goes up the chain. A batched call gets its own line's status and the batch's headers. A link that reads it declares `needs: 'response'`, and the client rejects a `links` array with no link after it that `provides: 'response'`:
 
-```ts
+```ts twoslash
+// @errors: 2322
+// ---cut-start---
+import {
+  createTrpcClient,
+  httpLink,
+  link,
+  routerType,
+} from '@trpc12/trpc/client';
+import type { AppRouter } from './server.ts';
+declare const url: string;
+declare function checkVersion(version: string | null): void;
+// ---cut-end---
 const versionLink = link<{ needs: 'response' }>((opts) =>
   opts.next({
     ...opts.op,

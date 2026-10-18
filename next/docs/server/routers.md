@@ -27,7 +27,15 @@ For OpenAPI, `t.router({ meta }, routes)` groups routes under a prefix and tags 
 
 `lazy()` loads a subtree on its first call, for large routers that should start fast (serverless cold starts). The client types it as if it were inline.
 
-```ts
+```ts twoslash
+// ---cut-start---
+// @filename: admin.ts
+import { t } from './server.ts';
+export default { stats: t.procedure.query(() => 0) };
+// @filename: index.ts
+import { appRouter as blog } from './server.ts';
+const postRouter = blog.post;
+// ---cut-end---
 import { lazy } from '@trpc12/trpc/server';
 
 export const appRouter = {
@@ -48,7 +56,17 @@ With `route` meta, the subtree is scoped like a group, so all its OpenAPI routes
 
 To load nothing until it's called, generate the contract at build time and pass it to the OpenAPI handler:
 
-```ts
+```ts twoslash
+// ---cut-start---
+import * as fs from 'node:fs/promises';
+import type { ContractJson } from '@trpc12/trpc/contract';
+import { toContract } from '@trpc12/trpc/contract';
+import { createOpenApiHandler } from '@trpc12/trpc/openapi';
+import { initTrpc, loadRouter } from '@trpc12/trpc/server';
+const t = initTrpc();
+const appRouter = { health: t.procedure.query(() => 'ok') };
+declare const contract: ContractJson<typeof appRouter>;
+// ---cut-end---
 // build step
 await fs.writeFile(
   'contract.json',

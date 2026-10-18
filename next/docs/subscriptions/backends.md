@@ -7,7 +7,7 @@ order: 3
 
 No backend packages ship; these recipes are yours to copy and adapt. Both serialize events with danSON (so `Date`s survive) and share one helper that replays kept events after `lastEventId`, then follows live ones:
 
-```ts
+```ts twoslash
 import { Effect, Layer, Stream } from 'effect';
 import { createSerializer } from '@trpc12/trpc/serializer';
 import {
@@ -45,7 +45,44 @@ const resume = <TId>(opts: {
 
 Effect's `Redis` service (`effect/persistence`) with `NodeRedis.layer` from `@effect/platform-node`. Each channel is a Redis stream, which keeps history and assigns ids, plus a pub/sub channel for live delivery. Subscribing before reading history means no event falls in between.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { Effect, Layer, Stream } from 'effect';
+import { createSerializer } from '@trpc12/trpc/serializer';
+import {
+  tracked,
+  type PublisherEvents,
+  type PublisherShape,
+} from '@trpc12/trpc/server';
+
+const danson = createSerializer();
+const encode = (data: unknown) => JSON.stringify(danson.serialize(data));
+const decode = (text: string) => danson.deserialize(JSON.parse(text));
+
+const resume = <TId>(opts: {
+  live: Stream.Stream<[TId, string]>;
+  replay: Effect.Effect<[TId, string][]>;
+  after: TId | undefined;
+  newer: (a: TId, b: TId) => boolean;
+  key: (id: TId) => string;
+}) =>
+  Stream.unwrap(
+    Effect.gen(function* () {
+      const replay = opts.after === undefined ? [] : yield* opts.replay;
+      const seen = replay.at(-1)?.[0] ?? opts.after;
+      const live = opts.live.pipe(
+        Stream.filter(([id]) => seen === undefined || opts.newer(id, seen)),
+      );
+      return Stream.concat(Stream.fromIterable(replay), live).pipe(
+        Stream.map(([id, payload]) => tracked(opts.key(id), decode(payload))),
+      );
+    }),
+  );
+import { Publisher } from '@trpc12/trpc/server';
+import type { Post } from './server.ts';
+type PostEvents = { created: Post; deleted: { id: string } };
+class Posts extends Publisher.Service<Posts, PostEvents>()('Posts') {}
+// ---cut-end---
 import { NodeRedis } from '@effect/platform-node';
 import { Redis } from 'effect/persistence';
 
@@ -130,7 +167,44 @@ const layer = Layer.effect(Posts)(
 
 `@effect/sql-pg`'s `PgClient` has `listen` and `notify`. Events go into a table for history; `NOTIFY` carries new ones. `NOTIFY` payloads are capped at 8000 bytes, so for bigger events send only the id and read the row.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { Effect, Layer, Stream } from 'effect';
+import { createSerializer } from '@trpc12/trpc/serializer';
+import {
+  tracked,
+  type PublisherEvents,
+  type PublisherShape,
+} from '@trpc12/trpc/server';
+
+const danson = createSerializer();
+const encode = (data: unknown) => JSON.stringify(danson.serialize(data));
+const decode = (text: string) => danson.deserialize(JSON.parse(text));
+
+const resume = <TId>(opts: {
+  live: Stream.Stream<[TId, string]>;
+  replay: Effect.Effect<[TId, string][]>;
+  after: TId | undefined;
+  newer: (a: TId, b: TId) => boolean;
+  key: (id: TId) => string;
+}) =>
+  Stream.unwrap(
+    Effect.gen(function* () {
+      const replay = opts.after === undefined ? [] : yield* opts.replay;
+      const seen = replay.at(-1)?.[0] ?? opts.after;
+      const live = opts.live.pipe(
+        Stream.filter(([id]) => seen === undefined || opts.newer(id, seen)),
+      );
+      return Stream.concat(Stream.fromIterable(replay), live).pipe(
+        Stream.map(([id, payload]) => tracked(opts.key(id), decode(payload))),
+      );
+    }),
+  );
+import { Publisher } from '@trpc12/trpc/server';
+import type { Post } from './server.ts';
+type PostEvents = { created: Post; deleted: { id: string } };
+class Posts extends Publisher.Service<Posts, PostEvents>()('Posts') {}
+// ---cut-end---
 import { PgClient } from '@effect/sql-pg';
 import { Redacted } from 'effect';
 
@@ -200,7 +274,25 @@ const layer = Layer.effect(Posts)(pgPublisher<PostEvents>()).pipe(
 
 A Durable Object is one process that every request for its name reaches, so `Posts.memory()` is enough inside it. Route the endpoint to the object and serve the router there:
 
-```ts
+```ts twoslash
+// ---cut-start---
+/// <reference types="@cloudflare/workers-types" />
+import { createFetchHandler, initTrpc, Publisher } from '@trpc12/trpc/server';
+import type { Post } from './server.ts';
+class Posts extends Publisher.Service<
+  Posts,
+  { created: Post; deleted: { id: string } }
+>()('Posts') {}
+const t = initTrpc();
+const router = {
+  onCreated: t.procedure.subscription((opts) =>
+    Posts.subscribe('created', { lastEventId: opts.lastEventId }),
+  ),
+};
+interface Env {
+  POSTS_ROOM: DurableObjectNamespace<PostsRoom>;
+}
+// ---cut-end---
 import { DurableObject } from 'cloudflare:workers';
 
 export class PostsRoom extends DurableObject {

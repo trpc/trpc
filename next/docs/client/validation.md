@@ -7,7 +7,27 @@ order: 5
 
 Clients ship no schemas by default. To check calls against a contract in the browser, add `validationLink`: inputs are validated before anything is sent (the same `BAD_REQUEST` the server returns, so forms can show its issues), and results and subscription events are checked when they arrive (`PARSE_ERROR` when the server drifted from the contract):
 
-```ts
+```ts twoslash
+// ---cut-start---
+import {
+  createTrpcClient,
+  httpLink,
+  validationLink,
+} from '@trpc12/trpc/client';
+import { contract } from '@trpc12/trpc/contract';
+import { z } from 'zod';
+import { PostSchema } from './server.ts';
+const c = contract.create();
+const appContract = {
+  post: {
+    byId: c
+      .input(z.object({ id: z.string() }))
+      .output(PostSchema)
+      .query(),
+  },
+};
+declare const url: string;
+// ---cut-end---
 const client = createTrpcClient({
   router: appContract,
   links: [validationLink({ contract: appContract }), httpLink({ url })],

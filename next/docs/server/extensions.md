@@ -7,7 +7,16 @@ order: 10
 
 A package can add middleware, ctx, meta keys, declared errors and Effect services to every procedure of an app. An extension is a procedure builder from the package's own `initTrpc`: its root ctx is what it needs from the app's, its meta type joins the app's (its default meta goes underneath), and the app adds it with `t.concat()`, the same method a procedure builder takes a plugin with:
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { error, initTrpc } from '@trpc12/trpc/server';
+import type { User } from './server.ts';
+declare const limiter: {
+  allow: (ip: string, limit?: { max: number }) => boolean;
+  remaining: (ip: string) => number;
+};
+const audit = () => initTrpc<{ ctx: { user: User | null } }>().procedure;
+// ---cut-end---
 // in a package
 interface RateLimitMeta {
   rateLimit?: { max: number };

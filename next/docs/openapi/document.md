@@ -6,7 +6,10 @@ order: 2
 v11: openapi
 ---
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { appRouter } from './server.ts';
+// ---cut-end---
 import { generateOpenApi } from '@trpc12/trpc/openapi';
 import { loadRouter } from '@trpc12/trpc/server';
 
@@ -25,7 +28,16 @@ The document has schemas for input, output and each declared error. `filter({ pa
 - errors that are only inferred (returned with `error()`, failed or yielded in an Effect), never declared, with their status: a `TrpcError.Tagged` class's literal `status`, the built-in code's status, or `400`;
 - the input and output of procedures without static schemas (no `.output()`, or a ctx-callback input).
 
-```ts
+```ts twoslash
+// ---cut-start---
+// @resolveJsonModule: true
+// @filename: src/router.ts
+export { appRouter } from '../server.ts';
+// @filename: openapi.json
+{ "openapi": "3.1.0", "info": { "title": "API", "version": "1.0.0" }, "paths": {} }
+// @filename: scripts/openapi.ts
+import * as fs from 'node:fs/promises';
+// ---cut-end---
 // scripts/openapi.ts, run at build time
 import { experimental_generateOpenApiFromTypes } from '@trpc12/trpc/openapi/typescript';
 import { appRouter } from '../src/router.ts';
@@ -37,6 +49,10 @@ const doc = await experimental_generateOpenApiFromTypes(appRouter, {
 });
 await fs.writeFile('openapi.json', JSON.stringify(doc, null, 2));
 
+// ---cut-start---
+// @filename: app.ts
+import { openApiReference, type OpenApiDocument } from '@trpc12/trpc/openapi';
+// ---cut-end---
 // server
 import doc from './openapi.json' with { type: 'json' };
 openApiReference({ document: doc as OpenApiDocument });

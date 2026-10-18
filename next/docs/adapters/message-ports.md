@@ -7,9 +7,16 @@ order: 8
 
 `handler.messagePort(port)` serves calls over a `MessagePort`, a web `Worker` or a `worker_threads` port. Messages are structured-cloned objects in the same format as WebSocket messages, so subscriptions, deferred values, aborts and `connectionParams` work as they do over [`wsLink`](../client/links.md).
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
+const t = initTrpc();
+const router = { health: t.procedure.query(() => 'ok') };
+// ---cut-end---
 // worker.ts
 import { parentPort } from 'node:worker_threads';
+
+if (!parentPort) throw new Error('worker.ts runs in a worker thread');
 
 createFetchHandler({
   router,
@@ -22,7 +29,10 @@ createFetchHandler({
 
 On the other side, `experimental_messagePortLink` sends calls to the port:
 
-```ts
+```ts twoslash
+// ---cut-start---
+import type { AppRouter } from './server.ts';
+// ---cut-end---
 import {
   createTrpcClient,
   experimental_messagePortLink,

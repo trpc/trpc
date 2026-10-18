@@ -11,7 +11,14 @@ order: 7
 
 A Durable Object can accept WebSockets with hibernation, so idle connections don't keep it in memory (or on the bill). `experimental_createHibernatingWebSockets()` serves a handler's router that way, from the object's `fetch`, `webSocketMessage` and `webSocketClose`:
 
-```ts
+```ts twoslash
+// ---cut-start---
+/// <reference types="@cloudflare/workers-types" />
+import type { CreateContextOpts } from '@trpc12/trpc/server';
+import { appRouter as router, type AppRouter, type Context } from './server.ts';
+interface Env {}
+declare function createContext(opts: CreateContextOpts<{ env: Env }>): Context;
+// ---cut-end---
 import { DurableObject } from 'cloudflare:workers';
 import { experimental_createHibernatingWebSockets } from '@trpc12/trpc/cloudflare';
 import { createFetchHandler } from '@trpc12/trpc/server';
@@ -53,7 +60,16 @@ export class Room extends DurableObject<Env> {
 
 Provide the object's [publisher](../subscriptions/publisher.md) with `hibernatingPublisher(Posts, { state })`. A subscription that returns `Posts.subscribe(...)` over a hibernating socket is then kept in the socket's attachment (call id, channel, path) instead of a running fiber, and `Posts.publish()` sends each event straight to the matching sockets, validated by the subscription's `.output()`. The object sleeps between events.
 
-```ts
+```ts twoslash
+// ---cut-start---
+/// <reference types="@cloudflare/workers-types" />
+import { DurableObject } from 'cloudflare:workers';
+import { createFetchHandler, initTrpc, Publisher } from '@trpc12/trpc/server';
+import { Effect } from 'effect';
+import { PostSchema as PostInput, type Post } from './server.ts';
+interface Env {}
+const t = initTrpc();
+// ---cut-end---
 import {
   experimental_createHibernatingWebSockets,
   hibernatingPublisher,
@@ -94,21 +110,60 @@ export class Room extends DurableObject<Env> {
 
 [`experimental_durable()`](../middleware/durable.md) needs Effect's `BackingPersistence`. In an object, back it with the object's storage, so kept results and streamed frames outlive an eviction: Effect's `KeyValueStore.makeStringOnly` over `ctx.storage`, under `Persistence.layerBackingKvs`. [`examples/cloudflare/src/storage.ts`](../../examples/cloudflare/src/storage.ts) has one, which the example merges with its publisher layer:
 
-```ts
-handler = createFetchHandler({
-  router,
-  layer: Layer.mergeAll(
-    hibernatingPublisher(Messages, { state: this.ctx, buffer: 100 }),
-    durableObjectPersistence(this.ctx.storage),
+```ts twoslash
+// ---cut-start---
+/// <reference types="@cloudflare/workers-types" />
+import { DurableObject } from 'cloudflare:workers';
+import { hibernatingPublisher } from '@trpc12/trpc/cloudflare';
+import { createFetchHandler, initTrpc, Publisher } from '@trpc12/trpc/server';
+import { Layer } from 'effect';
+import type { Persistence } from 'effect/persistence';
+interface Message {
+  from: string;
+  text: string;
+}
+class Messages extends Publisher.Service<Messages, { message: Message }>()(
+  'Messages',
+) {}
+declare function durableObjectPersistence(
+  storage: DurableObjectStorage,
+): Layer.Layer<Persistence.BackingPersistence>;
+const t = initTrpc();
+const router = {
+  onMessage: t.procedure.subscription((opts) =>
+    Messages.subscribe('message', { lastEventId: opts.lastEventId }),
   ),
-});
+};
+interface Env {}
+class Room extends DurableObject<Env> {
+  // ---cut-end---
+  handler = createFetchHandler({
+    router,
+    layer: Layer.mergeAll(
+      hibernatingPublisher(Messages, { state: this.ctx, buffer: 100 }),
+      durableObjectPersistence(this.ctx.storage),
+    ),
+  });
+  // ---cut-after---
+}
 ```
 
 ## Locks
 
 `experimental_durableLocker(env.LOCKS)` is an [`experimental_lock()`](../middleware/lock.md) locker every Worker instance shares: one object per key. Each caller keeps a hibernatable WebSocket to the object while it holds or waits for the lock, so the object isn't billed meanwhile, waiters are told when it's their turn (nothing polls), and a crashed holder's lock goes when its socket drops. The object delegates to `experimental_durableLockObject(this.ctx)`:
 
-```ts
+```ts twoslash
+// ---cut-start---
+/// <reference types="@cloudflare/workers-types" />
+import { DurableObject } from 'cloudflare:workers';
+import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
+const t = initTrpc();
+const router = { health: t.procedure.query(() => 'ok') };
+interface Env {
+  LOCKS: DurableObjectNamespace<Locks>;
+}
+declare const env: Env;
+// ---cut-end---
 import {
   experimental_durableLocker,
   experimental_durableLockObject,
@@ -137,7 +192,13 @@ Bind `LOCKS` to `Locks` in `wrangler.jsonc` (a `new_sqlite_classes` migration). 
 
 `experimental_workersTracer({ tracing })` is an Effect `Tracer` that records spans with Workers Traces' custom spans API, with no OpenTelemetry SDK: tRPC's server and client spans and any `Effect.withSpan`, with their attributes and an error status on failure. Turn on `observability.traces` in the Wrangler config. Workers nests spans by async context, so pass `snapshot: () => AsyncLocalStorage.snapshot()` (`nodejs_compat`) too: then spans nest as Effect nests them, and the spans Workers adds itself (subrequests, storage, other objects) sit under the call that made them. Without it, every span is a child of the request's.
 
-```ts
+```ts twoslash
+// ---cut-start---
+/// <reference types="@cloudflare/workers-types" />
+import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
+const t = initTrpc();
+const router = { health: t.procedure.query(() => 'ok') };
+// ---cut-end---
 import { tracing } from 'cloudflare:workers';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { experimental_workersTracer } from '@trpc12/trpc/cloudflare';
@@ -157,7 +218,16 @@ Workers spans have no events, so Effect's span events are dropped, and a `tracep
 
 The Worker in front of the object usually authenticates the user already. `connectionToken(schema, { secret })` lets it hand that over: a procedure on the Worker signs claims, the client sends the token as a connection param, and the object's `createContext` verifies it (HMAC-SHA256 with WebCrypto) instead of looking up the session again:
 
-```ts
+```ts twoslash
+// ---cut-start---
+// @filename: token.ts
+/// <reference types="@cloudflare/workers-types" />
+import { Schema } from 'effect';
+interface Env {
+  TOKEN_SECRET: string;
+}
+declare const env: Env;
+// ---cut-end---
 import { connectionToken } from '@trpc12/trpc/cloudflare';
 
 const RoomToken = connectionToken(
@@ -165,6 +235,15 @@ const RoomToken = connectionToken(
   { secret: env.TOKEN_SECRET, ttlSeconds: 600 },
 );
 
+// ---cut-start---
+export { RoomToken };
+// @filename: worker.ts
+import { initTrpc } from '@trpc12/trpc/server';
+import { Schema } from 'effect';
+import type { User } from './server.ts';
+import { RoomToken } from './token.ts';
+const t = initTrpc<{ ctx: { user: User } }>();
+// ---cut-end---
 // the Worker's router
 const workerRouter = {
   roomToken: t.procedure
@@ -174,6 +253,21 @@ const workerRouter = {
     ),
 };
 
+// ---cut-start---
+export type WorkerRouter = typeof workerRouter;
+// @filename: room.ts
+import { DurableObject } from 'cloudflare:workers';
+import { hibernatingPublisher } from '@trpc12/trpc/cloudflare';
+import { createFetchHandler, initTrpc, Publisher } from '@trpc12/trpc/server';
+import { Effect } from 'effect';
+import { RoomToken } from './token.ts';
+interface Env {}
+const t = initTrpc<{ ctx: { room: string; user: string } }>();
+class Notes extends Publisher.Service<
+  Notes,
+  { [inbox: `inbox:${string}`]: { text: string } }
+>()('Notes') {}
+// ---cut-end---
 // the Durable Object's router and handler
 const roomRouter = {
   inbox: t.procedure.subscription((opts) =>
@@ -195,6 +289,17 @@ export class Room extends DurableObject<Env> {
   // sockets, fetch and webSocketMessage as above
 }
 
+// ---cut-start---
+// @filename: browser.ts
+import { createTrpcClient, routerType, wsLink } from '@trpc12/trpc/client';
+import type { WorkerRouter } from './worker.ts';
+declare const url: string;
+declare const room: string;
+const client = createTrpcClient({
+  router: routerType<WorkerRouter>(),
+  links: [wsLink({ url })],
+});
+// ---cut-end---
 // the browser
 const link = wsLink({
   url,

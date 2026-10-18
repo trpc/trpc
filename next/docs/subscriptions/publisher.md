@@ -7,7 +7,16 @@ order: 2
 
 `Publisher` is typed publish/subscribe as an Effect service. Declare a key with its channels, then provide a layer:
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
+import { Effect } from 'effect';
+import { z } from 'zod';
+import type { Post } from './server.ts';
+const t = initTrpc();
+const PostInput = z.object({ title: z.string() });
+declare function savePost(input: { title: string }): Effect.Effect<Post>;
+// ---cut-end---
 import { Publisher } from '@trpc12/trpc/server';
 
 class Posts extends Publisher.Service<
@@ -37,7 +46,13 @@ createFetchHandler({ router, layer: Posts.memory({ buffer: 100 }) });
 
 To reach some subscribers only (a room, a user's inbox), give each audience its own channel. A template literal key types every one of them; take the subscriber's channel from `ctx` on the server, never from client input:
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { initTrpc, Publisher } from '@trpc12/trpc/server';
+import { Schema } from 'effect';
+import type { User } from './server.ts';
+const t = initTrpc<{ ctx: { user: User } }>();
+// ---cut-end---
 class Notes extends Publisher.Service<
   Notes,
   { [inbox: `inbox:${string}`]: { text: string } }

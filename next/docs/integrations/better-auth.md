@@ -7,7 +7,12 @@ order: 7
 
 [Better Auth](https://better-auth.com/) reads the session from the request's headers. Put the headers in the ctx, then a [middleware](../server/middleware.md) turns the session into `ctx.user`:
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { createFetchHandler, error, initTrpc } from '@trpc12/trpc/server';
+import { betterAuth } from 'better-auth';
+const auth = betterAuth({});
+// ---cut-end---
 const t = initTrpc<{ ctx: { headers: Headers } }>();
 
 const authed = t.procedure.use(async (opts) => {

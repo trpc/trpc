@@ -7,7 +7,14 @@ order: 12
 
 A contract describes procedures without implementing them. It lives in its own package, and clients and the OpenAPI generator accept it like a router.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { z } from 'zod';
+import { PostSchema as Post } from './server.ts';
+type Meta = { auth?: boolean };
+const ById = z.object({ id: z.string() });
+const NewPost = z.object({ title: z.string().min(1) });
+// ---cut-end---
 import { contract } from '@trpc12/trpc/contract';
 
 const c = contract.create<{ meta: Meta }>().errors({ UNAUTHORIZED: {} });
@@ -48,7 +55,28 @@ export const appRouter = impl.router({
 
 A client takes the contract as its `router`, so the browser imports no server code and can [validate calls](../client/validation.md) against the contract's schemas:
 
-```ts
+```ts twoslash
+// ---cut-start---
+import {
+  createTrpcClient,
+  httpLink,
+  validationLink,
+} from '@trpc12/trpc/client';
+import { contract } from '@trpc12/trpc/contract';
+import { z } from 'zod';
+import { PostSchema as Post } from './server.ts';
+type Meta = { auth?: boolean };
+const ById = z.object({ id: z.string() });
+const NewPost = z.object({ title: z.string().min(1) });
+declare const url: string;
+const c = contract.create<{ meta: Meta }>().errors({ UNAUTHORIZED: {} });
+const appContract = {
+  post: {
+    byId: c.input(ById).output(Post).errors({ NOT_FOUND: {} }).query(),
+    create: c.meta({ auth: true }).input(NewPost).output(Post).mutation(),
+  },
+};
+// ---cut-end---
 const client = createTrpcClient({
   router: appContract,
   links: [validationLink({ contract: appContract }), httpLink({ url })],

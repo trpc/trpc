@@ -7,7 +7,23 @@ order: 5
 
 `@trpc12/experimental-react-atom` is modeled on Effect's `AtomRpc`. Each query is an atom of its `AsyncResult`, typed with the procedure's errors; the same call returns the same atom. Like [`@trpc12/experimental-react`](./experimental-react.md), the whole package is experimental.
 
-```tsx
+```tsx twoslash
+// ---cut-start---
+import { httpLink, routerType } from '@trpc12/trpc/client';
+import { createSerializer } from '@trpc12/trpc/serializer';
+import { z } from 'zod';
+import { appRouter, db, t } from './server.ts';
+const router = {
+  ...appRouter,
+  post: {
+    ...appRouter.post,
+    rename: t.procedure
+      .input(z.object({ id: z.string(), title: z.string() }))
+      .mutation((opts) => db.post.find(opts.input.id)),
+  },
+};
+type AppRouter = typeof router;
+// ---cut-end---
 import { useAtomSuspense, useAtomSet } from '@effect/atom-react';
 import { createAtomClient } from '@trpc12/experimental-react-atom';
 

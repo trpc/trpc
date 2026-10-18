@@ -7,7 +7,23 @@ order: 3
 
 `openApiLink` sends each call to its REST route. It needs the routes, so it takes a contract; it never needs the router.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { createTrpcClient } from '@trpc12/trpc/client';
+import { openapi } from '@trpc12/trpc/openapi';
+import { initTrpc } from '@trpc12/trpc/server';
+import { z } from 'zod';
+import { db, type Context } from './server.ts';
+const t = initTrpc<{ ctx: Context }>().concat(openapi());
+const appRouter = {
+  post: {
+    byId: t.procedure
+      .meta({ route: { method: 'GET', path: '/posts/{id}' } })
+      .input(z.object({ id: z.string() }))
+      .query((opts) => db.post.find(opts.input.id)),
+  },
+};
+// ---cut-end---
 import { toContract } from '@trpc12/trpc/contract';
 import { openApiLink } from '@trpc12/trpc/openapi';
 

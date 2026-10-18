@@ -14,7 +14,11 @@ Two experimental packages read tRPC in React with `use()` and Suspense, without 
 
 This page is `@trpc12/experimental-react`: render-as-you-fetch, after [raf-query](https://github.com/KATT/raf-query). A route loader (or an event handler) calls `.query()`, which starts the request and returns a promise. The component reads that promise with `useQuery()` and `use()`. Components don't start requests.
 
-```tsx
+```tsx twoslash
+// ---cut-start---
+declare function Spinner(): React.ReactNode;
+declare const loaderData: ReturnType<typeof loader>;
+// ---cut-end---
 import {
   createReactClient,
   standardLinks,
@@ -77,7 +81,28 @@ Query links are tRPC [links](../client/links.md): they sit in the same `links` a
 
 ## Cache methods
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { createReactClient } from '@trpc12/experimental-react';
+import { httpLink, routerType } from '@trpc12/trpc/client';
+import { z } from 'zod';
+import { appRouter, db, t } from './server.ts';
+const router = {
+  ...appRouter,
+  post: {
+    ...appRouter.post,
+    rename: t.procedure
+      .input(z.object({ id: z.string(), title: z.string() }))
+      .mutation((opts) => db.post.find(opts.input.id)),
+  },
+};
+const trpc = createReactClient({
+  router: routerType<typeof router>(),
+  links: [httpLink({ url: '/trpc' })],
+});
+declare const id: string;
+declare const title: string;
+// ---cut-end---
 await trpc.post.byId.invalidate({ id }); // refetches it if it's on screen
 await trpc.invalidate('post'); // every query under post.*
 trpc.post.byId.setData({ id }, (prev) => ({ ...prev!, title }));
@@ -89,7 +114,24 @@ await trpc.post.rename.mutate({ id, title }); // mutations and subscriptions are
 
 On the server, create one client per request (`isServer` defaults to `typeof window === 'undefined'`; a server's cache never drops entries). After the render, `dehydrate(trpc)` encodes the settled queries with the links' serializer, so `Date`s survive with danSON; `hydrate(trpc, state)` writes them into the browser's client before it renders.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import {
+  createReactClient,
+  dehydrate,
+  hydrate,
+} from '@trpc12/experimental-react';
+import { httpLink, routerType } from '@trpc12/trpc/client';
+import type { AppRouter } from './server.ts';
+const makeTrpc = (isServer: boolean) =>
+  createReactClient({
+    router: routerType<AppRouter>(),
+    links: [httpLink({ url: '/trpc' })],
+    isServer,
+  });
+const serverTrpc = makeTrpc(true);
+const trpc = makeTrpc(false);
+// ---cut-end---
 const state = dehydrate(serverTrpc); // send it with the HTML
 hydrate(trpc, state); // in the browser, before hydrateRoot
 ```

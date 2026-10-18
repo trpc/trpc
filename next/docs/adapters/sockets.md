@@ -7,7 +7,10 @@ order: 10
 
 Between services, or where there is no HTTP stack, `serveSocket(handler)` from `@trpc12/trpc/socket` serves the router on Effect's `SocketServer`. The platform layer picks the socket: `NodeSocketServer.layer({ port })` for TCP, `NodeSocketServer.layerTls` for TLS, or `{ path }` for a Unix socket.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { handler } from './server.ts';
+// ---cut-end---
 import { NodeRuntime, NodeSocketServer } from '@effect/platform-node';
 import { Layer } from 'effect';
 import { serveSocket } from '@trpc12/trpc/socket';
@@ -21,7 +24,10 @@ serveSocket(handler).pipe(
 
 The client is `experimental_socketLink` with an Effect `Socket`:
 
-```ts
+```ts twoslash
+// ---cut-start---
+declare const token: string;
+// ---cut-end---
 import { NodeSocket } from '@effect/platform-node';
 import { experimental_socketLink } from '@trpc12/trpc/client';
 

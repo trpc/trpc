@@ -1431,15 +1431,48 @@ importers:
 
   www/samples/docs:
     dependencies:
+      '@cloudflare/workers-types':
+        specifier: 5.20261014.1
+        version: 5.20261014.1
+      '@effect/atom-react':
+        specifier: 4.0.2
+        version: 4.0.2(effect@4.0.2)(react@19.3.0)(scheduler@0.27.0)
+      '@effect/platform-bun':
+        specifier: 4.0.2
+        version: 4.0.2(effect@4.0.2)
       '@effect/platform-node':
         specifier: 4.0.2
         version: 4.0.2(effect@4.0.2)(redis@6.3.0)
+      '@effect/sql-pg':
+        specifier: 4.0.2
+        version: 4.0.2(effect@4.0.2)
+      '@nestjs/common':
+        specifier: 12.1.3
+        version: 12.1.3(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@10.2.2)
+      '@nestjs/core':
+        specifier: 12.1.3
+        version: 12.1.3(@nestjs/common@12.1.3(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@10.2.2))(@nestjs/platform-express@12.1.3)(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@nestjs/platform-express':
+        specifier: 12.1.3
+        version: 12.1.3(@nestjs/common@12.1.3(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@10.2.2))(@nestjs/core@12.1.3)(supports-color@10.2.2)
+      '@tanstack/db':
+        specifier: 0.15.0
+        version: 0.15.0(typescript@7.0.2)
+      '@tanstack/query-db-collection':
+        specifier: 1.4.5
+        version: 1.4.5(@tanstack/query-core@5.104.1)(typescript@7.0.2)
       '@tanstack/react-query':
         specifier: 5.104.1
         version: 5.104.1(react@19.3.0)
       '@trpc12/experimental-react':
         specifier: workspace:*
         version: link:../../../packages/experimental-react
+      '@trpc12/experimental-react-atom':
+        specifier: workspace:*
+        version: link:../../../packages/experimental-react-atom
+      '@trpc12/nest':
+        specifier: workspace:*
+        version: link:../../../packages/nest
       '@trpc12/tanstack-query':
         specifier: workspace:*
         version: link:../../../packages/tanstack-query
@@ -1449,16 +1482,37 @@ importers:
       '@trpc12/trpc':
         specifier: workspace:*
         version: link:../../../packages/trpc
+      ai:
+        specifier: 7.0.138
+        version: 7.0.138(zod@4.6.5)
+      better-auth:
+        specifier: 1.7.7
+        version: 1.7.7(@tanstack/react-start@1.168.61(@voidzero-dev/vite-plus-core@1.1.0(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(typescript@7.0.2)(yaml@2.9.1))(esbuild@0.28.2)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(rolldown@1.2.13)(supports-color@10.2.2))(next@16.4.1(@types/node@26.6.4)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(solid-js@1.9.17)(svelte@5.57.2)(vitest@5.0.3)(vue@3.5.43(typescript@7.0.2))
       effect:
         specifier: 4.0.2
         version: 4.0.2
+      next:
+        specifier: 16.4.1
+        version: 16.4.1(@types/node@26.6.4)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       react:
         specifier: 19.3.0
         version: 19.3.0
+      reflect-metadata:
+        specifier: 0.2.2
+        version: 0.2.2
+      rxjs:
+        specifier: 7.8.2
+        version: 7.8.2
+      superjson:
+        specifier: 2.2.6
+        version: 2.2.6
       zod:
         specifier: 4.6.5
         version: 4.6.5
     devDependencies:
+      '@types/bun':
+        specifier: 1.4.3
+        version: 1.4.3
       '@types/node':
         specifier: 26.6.4
         version: 26.6.4
@@ -10059,12 +10113,43 @@ snapshots:
       zod: 4.6.5
     optionalDependencies:
       '@tanstack/react-start': 1.168.61(@voidzero-dev/vite-plus-core@1.1.0(@types/node@24.19.1)(esbuild@0.28.2)(jiti@2.7.0)(typescript@7.0.2)(yaml@2.9.1))(esbuild@0.28.2)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(rolldown@1.2.13)(supports-color@10.2.2)
-      next: 16.4.1(@babel/core@7.29.7(supports-color@10.2.2))(@types/node@24.19.1)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      next: 16.4.1(@types/node@24.19.1)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       react: 19.3.0
       react-dom: 19.3.0(react@19.3.0)
       solid-js: 1.9.17
       svelte: 5.57.2
       vitest: 5.0.3(@types/node@24.19.1)(@vitest/browser-preview@5.0.3)(@vitest/coverage-v8@5.0.3)(@vitest/ui@5.0.3)(@voidzero-dev/vite-plus-core@1.1.0(@types/node@24.19.1)(esbuild@0.28.2)(jiti@2.7.0)(typescript@7.0.2)(yaml@2.9.1))(happy-dom@20.14.6)
+      vue: 3.5.43(typescript@7.0.2)
+    transitivePeerDependencies:
+      - '@opentelemetry/api'
+
+  better-auth@1.7.7(@tanstack/react-start@1.168.61(@voidzero-dev/vite-plus-core@1.1.0(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(typescript@7.0.2)(yaml@2.9.1))(esbuild@0.28.2)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(rolldown@1.2.13)(supports-color@10.2.2))(next@16.4.1(@types/node@26.6.4)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(solid-js@1.9.17)(svelte@5.57.2)(vitest@5.0.3)(vue@3.5.43(typescript@7.0.2)):
+    dependencies:
+      '@better-auth/core': 1.7.7(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.2)(better-call@1.4.0(zod@4.6.5))(jose@6.2.12)(kysely@0.29.6)(nanostores@1.5.5)
+      '@better-auth/drizzle-adapter': 1.7.7(@better-auth/core@1.7.7(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.2)(better-call@1.4.0(zod@4.6.5))(jose@6.2.12)(kysely@0.29.6)(nanostores@1.5.5))(@better-auth/utils@0.4.2)
+      '@better-auth/kysely-adapter': 1.7.7(@better-auth/core@1.7.7(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.2)(better-call@1.4.0(zod@4.6.5))(jose@6.2.12)(kysely@0.29.6)(nanostores@1.5.5))(@better-auth/utils@0.4.2)(kysely@0.29.6)
+      '@better-auth/memory-adapter': 1.7.7(@better-auth/core@1.7.7(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.2)(better-call@1.4.0(zod@4.6.5))(jose@6.2.12)(kysely@0.29.6)(nanostores@1.5.5))(@better-auth/utils@0.4.2)
+      '@better-auth/mongo-adapter': 1.7.7(@better-auth/core@1.7.7(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.2)(better-call@1.4.0(zod@4.6.5))(jose@6.2.12)(kysely@0.29.6)(nanostores@1.5.5))(@better-auth/utils@0.4.2)
+      '@better-auth/prisma-adapter': 1.7.7(@better-auth/core@1.7.7(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.2)(better-call@1.4.0(zod@4.6.5))(jose@6.2.12)(kysely@0.29.6)(nanostores@1.5.5))(@better-auth/utils@0.4.2)
+      '@better-auth/telemetry': 1.7.7(@better-auth/core@1.7.7(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.2)(better-call@1.4.0(zod@4.6.5))(jose@6.2.12)(kysely@0.29.6)(nanostores@1.5.5))(@better-auth/utils@0.4.2)(@better-fetch/fetch@1.3.2)
+      '@better-auth/utils': 0.4.2
+      '@better-fetch/fetch': 1.3.2
+      '@noble/ciphers': 2.4.0
+      '@noble/hashes': 2.4.0
+      better-call: 1.4.0(zod@4.6.5)
+      defu: 6.1.7
+      jose: 6.2.12
+      kysely: 0.29.6
+      nanostores: 1.5.5
+      zod: 4.6.5
+    optionalDependencies:
+      '@tanstack/react-start': 1.168.61(@voidzero-dev/vite-plus-core@1.1.0(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(typescript@7.0.2)(yaml@2.9.1))(esbuild@0.28.2)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(rolldown@1.2.13)(supports-color@10.2.2)
+      next: 16.4.1(@types/node@26.6.4)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      react: 19.3.0
+      react-dom: 19.3.0(react@19.3.0)
+      solid-js: 1.9.17
+      svelte: 5.57.2
+      vitest: 5.0.3(@types/node@26.6.4)(@vitest/browser-preview@5.0.3)(@vitest/coverage-v8@5.0.3)(@vitest/ui@5.0.3)(@voidzero-dev/vite-plus-core@1.1.0(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(typescript@7.0.2)(yaml@2.9.1))(happy-dom@20.14.6)
       vue: 3.5.43(typescript@7.0.2)
     transitivePeerDependencies:
       - '@opentelemetry/api'
@@ -11583,6 +11668,57 @@ snapshots:
       - '@types/node'
       - babel-plugin-macros
 
+  next@16.4.1(@types/node@24.19.1)(react-dom@19.3.0(react@19.3.0))(react@19.3.0):
+    dependencies:
+      '@next/env': 16.4.1
+      '@swc/helpers': 0.5.23
+      baseline-browser-mapping: 2.11.28
+      caniuse-lite: 1.0.30001816
+      postcss: 8.5.23
+      react: 19.3.0
+      react-dom: 19.3.0(react@19.3.0)
+      styled-jsx: 5.1.6(@babel/core@7.29.7(supports-color@10.2.2))(react@19.3.0)
+    optionalDependencies:
+      '@next/swc-darwin-arm64': 16.4.1
+      '@next/swc-darwin-x64': 16.4.1
+      '@next/swc-linux-arm64-gnu': 16.4.1
+      '@next/swc-linux-arm64-musl': 16.4.1
+      '@next/swc-linux-x64-gnu': 16.4.1
+      '@next/swc-linux-x64-musl': 16.4.1
+      '@next/swc-win32-arm64-msvc': 16.4.1
+      '@next/swc-win32-x64-msvc': 16.4.1
+      sharp: 0.35.5(@types/node@24.19.1)
+    transitivePeerDependencies:
+      - '@babel/core'
+      - '@types/node'
+      - babel-plugin-macros
+    optional: true
+
+  next@16.4.1(@types/node@26.6.4)(react-dom@19.3.0(react@19.3.0))(react@19.3.0):
+    dependencies:
+      '@next/env': 16.4.1
+      '@swc/helpers': 0.5.23
+      baseline-browser-mapping: 2.11.28
+      caniuse-lite: 1.0.30001816
+      postcss: 8.5.23
+      react: 19.3.0
+      react-dom: 19.3.0(react@19.3.0)
+      styled-jsx: 5.1.6(@babel/core@7.29.7(supports-color@10.2.2))(react@19.3.0)
+    optionalDependencies:
+      '@next/swc-darwin-arm64': 16.4.1
+      '@next/swc-darwin-x64': 16.4.1
+      '@next/swc-linux-arm64-gnu': 16.4.1
+      '@next/swc-linux-arm64-musl': 16.4.1
+      '@next/swc-linux-x64-gnu': 16.4.1
+      '@next/swc-linux-x64-musl': 16.4.1
+      '@next/swc-win32-arm64-msvc': 16.4.1
+      '@next/swc-win32-x64-msvc': 16.4.1
+      sharp: 0.35.5(@types/node@26.6.4)
+    transitivePeerDependencies:
+      - '@babel/core'
+      - '@types/node'
+      - babel-plugin-macros
+
   node-releases@2.0.59: {}
 
   npm-run-path@4.0.1:
@@ -12272,6 +12408,40 @@ snapshots:
       '@img/sharp-win32-ia32': 0.35.5
       '@img/sharp-win32-x64': 0.35.5
       '@types/node': 24.19.1
+
+  sharp@0.35.5(@types/node@26.6.4):
+    dependencies:
+      '@img/colour': 1.1.0
+      detect-libc: 2.1.2
+      semver: 7.8.5
+    optionalDependencies:
+      '@img/sharp-darwin-arm64': 0.35.5
+      '@img/sharp-darwin-x64': 0.35.5
+      '@img/sharp-freebsd-wasm32': 0.35.5
+      '@img/sharp-libvips-darwin-arm64': 1.3.4
+      '@img/sharp-libvips-darwin-x64': 1.3.4
+      '@img/sharp-libvips-linux-arm': 1.3.4
+      '@img/sharp-libvips-linux-arm64': 1.3.4
+      '@img/sharp-libvips-linux-ppc64': 1.3.4
+      '@img/sharp-libvips-linux-riscv64': 1.3.4
+      '@img/sharp-libvips-linux-s390x': 1.3.4
+      '@img/sharp-libvips-linux-x64': 1.3.4
+      '@img/sharp-libvips-linuxmusl-arm64': 1.3.4
+      '@img/sharp-libvips-linuxmusl-x64': 1.3.4
+      '@img/sharp-linux-arm': 0.35.5
+      '@img/sharp-linux-arm64': 0.35.5
+      '@img/sharp-linux-ppc64': 0.35.5
+      '@img/sharp-linux-riscv64': 0.35.5
+      '@img/sharp-linux-s390x': 0.35.5
+      '@img/sharp-linux-x64': 0.35.5
+      '@img/sharp-linuxmusl-arm64': 0.35.5
+      '@img/sharp-linuxmusl-x64': 0.35.5
+      '@img/sharp-webcontainers-wasm32': 0.35.5
+      '@img/sharp-win32-arm64': 0.35.5
+      '@img/sharp-win32-ia32': 0.35.5
+      '@img/sharp-win32-x64': 0.35.5
+      '@types/node': 26.6.4
+    optional: true
 
   shebang-command@2.0.0:
     dependencies:

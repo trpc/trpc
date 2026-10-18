@@ -8,7 +8,13 @@ v11: server/adapters/aws-lambda
 
 `@trpc12/trpc/aws-lambda` turns a fetch handler into a Lambda handler for API Gateway REST APIs (payload 1.0), HTTP APIs and function URLs (payload 2.0), Application Load Balancers and Lambda@Edge. The event becomes a web `Request` and the response becomes that event's result shape. `{ event, context }` is the platform argument:
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
+const t = initTrpc<{ ctx: { requestId: string | undefined } }>();
+const router = { health: t.procedure.query(() => 'ok') };
+type AppRouter = typeof router;
+// ---cut-end---
 import { toLambdaHandler, type LambdaPlatform } from '@trpc12/trpc/aws-lambda';
 
 const handler = createFetchHandler<AppRouter, LambdaPlatform>({
@@ -29,7 +35,14 @@ export const main = toLambdaHandler(handler);
 
 A buffered result only arrives once the response ends, so subscriptions and streamed outputs reach the client all at once. With response streaming (function URLs with `InvokeMode: RESPONSE_STREAM`, or API Gateway REST streaming), `toLambdaStreamingHandler` writes the status and headers first and then the body as it is produced:
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { handler } from './server.ts';
+/** Lambda's Node.js runtime global; it marks the handler as streaming and returns it. */
+declare namespace awslambda {
+  function streamifyResponse<THandler>(handler: THandler): THandler;
+}
+// ---cut-end---
 import { toLambdaStreamingHandler } from '@trpc12/trpc/aws-lambda';
 
 export const main = awslambda.streamifyResponse(

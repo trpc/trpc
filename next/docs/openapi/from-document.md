@@ -7,7 +7,10 @@ order: 4
 
 `generateContractFromOpenApi(document, { prefix?, exportName?, patterns? })` turns an OpenAPI 3.0 or 3.1 document into the source of a `@trpc12/trpc/contract` module. Schemas are Effect Schemas, translated by Effect's `SchemaRepresentation`; each operation becomes a procedure with its `route` meta (under `.concat(openapi())`), so the contract works with `openApiLink` and `validationLink` against any REST API:
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { writeFile } from 'node:fs/promises';
+// ---cut-end---
 import { generateContractFromOpenApi } from '@trpc12/trpc/openapi';
 
 const document = await (
@@ -19,12 +22,23 @@ await writeFile(
 );
 ```
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { Schema } from 'effect';
+import { contract as trpcContract } from '@trpc12/trpc/contract';
+import { openapi } from '@trpc12/trpc/openapi';
+// ---cut-end---
 // src/petstore.ts (generated)
 export const Pet = Schema.Struct({
   id: Schema.Number.check(Schema.isInt()),
   name: Schema.String,
 });
+// ---cut-start---
+export const PetsListInput = Schema.Struct({
+  limit: Schema.optionalKey(Schema.Number.check(Schema.isInt())),
+});
+export const PetsListOutput = Schema.Array(Pet);
+// ---cut-end---
 const c = trpcContract.create().concat(openapi());
 export const petstore = {
   pets: {

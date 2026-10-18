@@ -8,7 +8,10 @@ v11: server/adapters/fetch
 
 Cloudflare Workers, Next.js route handlers, Lambda function URLs and other fetch runtimes take `handler.fetch` as it is.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { handler } from './server.ts';
+// ---cut-end---
 // Cloudflare Workers
 export default { fetch: handler.fetch };
 
@@ -22,7 +25,19 @@ export const POST = handler.fetch;
 
 On Workers, `env` and `ctx` come with each request, not with the handler. Pass them as the platform argument, typed by the handler's second type parameter; `createContext` reads them:
 
-```ts
+```ts twoslash
+// ---cut-start---
+/// <reference types="@cloudflare/workers-types" />
+import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
+interface Env {
+  DB: D1Database;
+}
+const t = initTrpc<{
+  ctx: { db: D1Database; waitUntil: (p: Promise<unknown>) => void };
+}>();
+const router = { health: t.procedure.query(() => 'ok') };
+type AppRouter = typeof router;
+// ---cut-end---
 const handler = createFetchHandler<
   AppRouter,
   { env: Env; ctx: ExecutionContext }
@@ -46,8 +61,12 @@ With a platform type, `handler.fetch(request)` without it is a type error, and s
 
 For Effect HTTP middleware in front of the handler on a fetch runtime, convert the Effect app back to a web handler:
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { handler } from './server.ts';
+// ---cut-end---
 import { HttpEffect } from 'effect/http';
+import { toHttpEffect } from '@trpc12/trpc/http';
 
 const fetch = HttpEffect.toWebHandler(toHttpEffect(handler));
 ```
