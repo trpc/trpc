@@ -54,8 +54,8 @@ tester.run('module-boundaries', plugin.rules['module-boundaries']!, {
     },
     // Outside every root, the rule has nothing to check.
     {
-      code: `import { bracket } from '../openapi/bracket.ts';`,
-      filename: at('actions/index.ts'),
+      code: `import { lock } from '../middleware/lock.ts';`,
+      filename: at('cloudflare/lock.ts'),
       options,
     },
   ],
