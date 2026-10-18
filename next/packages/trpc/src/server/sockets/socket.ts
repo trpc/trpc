@@ -96,7 +96,7 @@ export type Transport = 'http' | 'websocket' | 'messagePort' | 'socket';
 /** What the fetch handler shares with socket connections. @internal */
 export interface SocketCoreShape extends Pick<
   HandlerCore,
-  'runEffect' | 'makeContextEffect' | 'publicError' | 'report'
+  'run' | 'makeContext' | 'publicError' | 'report'
 > {
   readonly router: AnyRouter;
   readonly serializer: AnySerializer;
@@ -361,7 +361,7 @@ export const connectionReceiver = (
           try: () => core.deserializeInput(message.input),
           catch: asTrpcError,
         });
-        const ctx = yield* core.makeContextEffect({
+        const ctx = yield* core.makeContext({
           request,
           platform: opts.platform,
           calls: [{ path, type: kind }],
@@ -375,7 +375,7 @@ export const connectionReceiver = (
               park: (sub) => (parked = hibernate({ ...sub, id, path })),
             })
           : undefined;
-        const exit = yield* core.runEffect({
+        const exit = yield* core.run({
           request,
           procedure,
           path,

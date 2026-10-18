@@ -138,7 +138,7 @@ function v11Session(
         typeof params['lastEventId'] === 'string'
           ? params['lastEventId']
           : inputEventId(callInput);
-      const ctx = yield* base.makeContextEffect({
+      const ctx = yield* base.makeContext({
         request,
         platform: opts.platform,
         calls: [{ path, type }],
@@ -146,7 +146,7 @@ function v11Session(
         transport: 'websocket',
         connectionParams: callParams,
       });
-      const exit = yield* base.runEffect({
+      const exit = yield* base.run({
         request,
         procedure,
         path,

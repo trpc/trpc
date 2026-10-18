@@ -631,14 +631,14 @@ export function experimental_createOpenApiHandler<
       request.signal.addEventListener('abort', () => controller.abort(), {
         once: true,
       });
-      const ctx = yield* base.makeContextEffect({
+      const ctx = yield* base.makeContext({
         request: http,
         platform: incoming.platform,
         calls: [{ path: entry.path, type }],
         signal: controller.signal,
       });
       const response = createResponseHandle();
-      const exit = yield* base.runEffect({
+      const exit = yield* base.run({
         request: http,
         procedure,
         path: entry.path,

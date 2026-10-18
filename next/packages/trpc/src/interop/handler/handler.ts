@@ -551,7 +551,7 @@ export function createV11Handler<
       const procedure = call.procedure;
       const response = createResponseHandle();
       const parent = yield* parentSpan(request);
-      const exit = yield* base.runEffect({
+      const exit = yield* base.run({
         request,
         procedure,
         path: call.path,
@@ -601,7 +601,7 @@ export function createV11Handler<
         inputEventId(callInput);
       const response = createResponseHandle();
       const parent = yield* parentSpan(request);
-      const exit = yield* base.runEffect({
+      const exit = yield* base.run({
         request,
         procedure: call.procedure,
         path: call.path,
@@ -693,7 +693,7 @@ export function createV11Handler<
               calls.length,
             );
             const platform = yield* CurrentPlatform;
-            const ctx = yield* base.makeContextEffect({
+            const ctx = yield* base.makeContext({
               request,
               platform,
               calls: calls.flatMap((c) =>

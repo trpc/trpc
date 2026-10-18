@@ -651,7 +651,7 @@ export function createFetchHandler<
     signal: AbortSignal,
   ): Effect.Effect<object, AnyTrpcError> =>
     Effect.flatMap(CurrentPlatform, (platform) =>
-      base.makeContextEffect({ request, platform, calls, signal }),
+      base.makeContext({ request, platform, calls, signal }),
     );
 
   /** Runs a query or mutation and serializes the outcome. */
@@ -730,7 +730,7 @@ export function createFetchHandler<
       }
     };
     return Effect.map(
-      base.runEffect({
+      base.run({
         request,
         procedure,
         path,
@@ -962,7 +962,7 @@ export function createFetchHandler<
     Effect.gen(function* () {
       const lastEventId = request.headers[HEADER.lastEventId];
       const response = createResponseHandle();
-      const exit = yield* base.runEffect({
+      const exit = yield* base.run({
         request,
         procedure,
         path,
@@ -1213,8 +1213,8 @@ export function createFetchHandler<
   const core: SocketCoreShape = {
     router,
     serializer,
-    runEffect: base.runEffect,
-    makeContextEffect: base.makeContextEffect,
+    run: base.run,
+    makeContext: base.makeContext,
     deserializeInput,
     publicError,
     report,
