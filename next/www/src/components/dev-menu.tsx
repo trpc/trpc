@@ -11,18 +11,21 @@ import {
 import { Switch } from '@shared/ui/components/switch';
 import { useLocation, useRouter } from '@tanstack/react-router';
 import { FlaskConical } from 'lucide-react';
-import { useEffect, useSyncExternalStore } from 'react';
+import { useEffect, useState, useSyncExternalStore } from 'react';
 import { toast } from 'sonner';
 
 import {
   applyFlagParam,
+  type FlagName,
   flagNames,
   flagParam,
   flags,
+  flagsOn,
   getOverrides,
   setOverrides,
   siteEnv,
   useFlagOverrides,
+  withFlag,
 } from '~/flags.ts';
 
 /**
@@ -59,7 +62,7 @@ function FlagsToast() {
         <ul className="text-muted-foreground">
           {flagNames.map((name) => (
             <li key={name}>
-              {flags[name].label}: {overrides[name] ? 'on' : 'off'}
+              {flags[name].label}: {overrides[name] === true ? 'on' : 'off'}
             </li>
           ))}
         </ul>
@@ -69,9 +72,27 @@ function FlagsToast() {
 }
 
 /**
+ * The flags on now or at any point since the page loaded, in `flagNames`
+ * order, so a flag turned off from the menu stays in it until the next load.
+ */
+function useFlagsOnThisVisit(on: ReadonlyArray<FlagName>) {
+  const [seen, setSeen] = useState<ReadonlyArray<FlagName>>([]);
+  if (on.some((name) => !seen.includes(name))) {
+    const next = flagNames.filter(
+      (name) => seen.includes(name) || on.includes(name),
+    );
+    setSeen(next);
+    return next;
+  }
+  return seen;
+}
+
+/**
  * Switches for the feature flags (`src/flags.ts`), in a corner of every
- * page. Development and preview builds always show it; production only once
- * `?flags=` has set a flag in this browser, until `?flags=reset`.
+ * page. Development and preview builds always show it, with every flag. On
+ * production, flags are turned on only with `?flags=`: the menu shows once
+ * one is on in this browser, with the ones turned on, to turn them off; with
+ * none left on, it's gone from the next page load.
  */
 export function DevMenu() {
   useFlagsFromUrl();
@@ -81,11 +102,17 @@ export function DevMenu() {
     () => true,
     () => false,
   );
-  const overridden = Object.keys(overrides).length > 0;
-  if (!mounted || (siteEnv === 'production' && !overridden)) {
+  const on = flagsOn(overrides);
+  const onThisVisit = useFlagsOnThisVisit(on);
+  const production = siteEnv === 'production';
+  const listed = production ? onThisVisit : flagNames;
+  if (!mounted || listed.length === 0) {
     return null;
   }
-  const on = flagNames.filter((name) => overrides[name]).length;
+  const productionHint =
+    on.length > 0
+      ? 'Nobody else sees them. With every flag off, this menu is gone from the next page load.'
+      : 'Every flag is off. This menu is gone from the next page load.';
   return (
     <Popover>
       <PopoverTrigger
@@ -99,9 +126,9 @@ export function DevMenu() {
         }
       >
         <FlaskConical className="size-4" />
-        {on > 0 ? (
+        {on.length > 0 ? (
           <span className="absolute -top-0.5 -right-0.5 flex size-4 items-center justify-center rounded-full bg-brand text-[10px] font-bold text-white ring-2 ring-background">
-            {on}
+            {on.length}
           </span>
         ) : null}
       </PopoverTrigger>
@@ -113,10 +140,14 @@ export function DevMenu() {
               {siteEnv}
             </Badge>
           </PopoverTitle>
-          <PopoverDescription>Kept in this browser.</PopoverDescription>
+          <PopoverDescription>
+            {production
+              ? 'Turned on in this browser with ?flags=. Turn them off here.'
+              : 'Kept in this browser.'}
+          </PopoverDescription>
         </PopoverHeader>
         <ul className="-mx-1 grid">
-          {flagNames.map((name) => (
+          {listed.map((name) => (
             <li key={name}>
               <label className="flex cursor-pointer items-start justify-between gap-4 rounded-md p-2 hover:bg-accent/50">
                 <span className="grid gap-0.5">
@@ -129,10 +160,10 @@ export function DevMenu() {
                   </code>
                 </span>
                 <Switch
-                  checked={overrides[name] ?? false}
+                  checked={overrides[name] === true}
                   className="mt-0.5"
                   onCheckedChange={(checked) =>
-                    setOverrides({ ...getOverrides(), [name]: checked })
+                    setOverrides(withFlag(getOverrides(), name, checked))
                   }
                 />
               </label>
@@ -141,19 +172,24 @@ export function DevMenu() {
         </ul>
         <div className="flex items-center justify-between gap-3 border-t pt-2.5">
           <p className="text-xs text-pretty text-muted-foreground">
-            <code className="font-mono">?{flagParam}=-name</code> turns one off;{' '}
-            <code className="font-mono">?{flagParam}=reset</code>
-            {siteEnv === 'production'
-              ? ' forgets them and hides this menu.'
-              : ' forgets them.'}
+            {production ? (
+              productionHint
+            ) : (
+              <>
+                <code className="font-mono">?{flagParam}=-name</code> turns one
+                off; <code className="font-mono">?{flagParam}=reset</code> turns
+                them all off.
+              </>
+            )}
           </p>
           <Button
-            disabled={!overridden}
+            className="shrink-0"
+            disabled={on.length === 0}
             onClick={() => setOverrides({})}
             size="xs"
             variant="outline"
           >
-            Reset
+            {production ? 'Turn all off' : 'Reset'}
           </Button>
         </div>
       </PopoverContent>

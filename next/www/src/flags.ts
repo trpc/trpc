@@ -3,8 +3,8 @@ import { useSyncExternalStore } from 'react';
 /**
  * Features the site ships turned off. Turn one on from the dev menu (in
  * development and preview builds), or anywhere with `?flags=<name>`; turn it
- * off with `?flags=-<name>`, and every flag back to its default with
- * `?flags=reset`. The choice is kept in this browser.
+ * off with `?flags=-<name>`, and every flag off with `?flags=reset`. The
+ * flags turned on are kept in this browser.
  */
 export const flags = {
   partners: {
@@ -19,7 +19,11 @@ export const flags = {
 
 export type FlagName = keyof typeof flags;
 
-export type FlagOverrides = Readonly<Partial<Record<FlagName, boolean>>>;
+/**
+ * The flags this browser turned on. Every flag ships off, so turning one off
+ * forgets it rather than storing `false`.
+ */
+export type FlagOverrides = Readonly<Partial<Record<FlagName, true>>>;
 
 export const flagNames = Object.keys(flags) as ReadonlyArray<FlagName>;
 
@@ -29,16 +33,36 @@ export const flagParam = 'flags';
 const isFlagName = (name: string): name is FlagName =>
   Object.hasOwn(flags, name);
 
+/** `overrides` with `name` turned on or off. */
+export function withFlag(
+  overrides: FlagOverrides,
+  name: FlagName,
+  on: boolean,
+): FlagOverrides {
+  const next: Partial<Record<FlagName, true>> = {};
+  for (const other of flagNames) {
+    if (other === name ? on : overrides[other] === true) {
+      next[other] = true;
+    }
+  }
+  return next;
+}
+
+/** The flags on in `overrides`, in `flagNames` order. */
+export function flagsOn(overrides: FlagOverrides) {
+  return flagNames.filter((name) => overrides[name] === true);
+}
+
 /**
  * `overrides` after a `?flags=` value: comma-separated names to turn on,
- * `-name` to turn off, and `reset` to forget every override. Unknown names
+ * `-name` to turn off, and `reset` to turn every flag off. Unknown names
  * are ignored.
  */
 export function applyFlagParam(
   overrides: FlagOverrides,
   param: string,
 ): FlagOverrides {
-  let next: Partial<Record<FlagName, boolean>> = { ...overrides };
+  let next = overrides;
   for (const raw of param.split(',')) {
     const token = raw.trim();
     if (token === 'reset') {
@@ -48,13 +72,16 @@ export function applyFlagParam(
     const off = token.startsWith('-');
     const name = off ? token.slice(1) : token;
     if (isFlagName(name)) {
-      next[name] = !off;
+      next = withFlag(next, name, !off);
     }
   }
   return next;
 }
 
-/** The overrides in `stored`, keeping only known flags set to a boolean. */
+/**
+ * The flags turned on in `stored`, keeping only known ones. A `false`, which
+ * the site stored before turning a flag off forgot it, counts as off.
+ */
 export function parseOverrides(stored: string | null): FlagOverrides {
   if (stored === null) {
     return {};
@@ -68,10 +95,10 @@ export function parseOverrides(stored: string | null): FlagOverrides {
   if (typeof parsed !== 'object' || parsed === null) {
     return {};
   }
-  const overrides: Partial<Record<FlagName, boolean>> = {};
+  const overrides: Partial<Record<FlagName, true>> = {};
   for (const [name, value] of Object.entries(parsed)) {
-    if (isFlagName(name) && typeof value === 'boolean') {
-      overrides[name] = value;
+    if (isFlagName(name) && value === true) {
+      overrides[name] = true;
     }
   }
   return overrides;
@@ -149,8 +176,8 @@ function subscribe(listener: () => void) {
 }
 
 /**
- * The flags this browser turned on or off. The prerendered page has none,
- * so a flagged feature appears once the page hydrates.
+ * The flags this browser turned on. The prerendered page has none, so a
+ * flagged feature appears once the page hydrates.
  */
 export function useFlagOverrides() {
   return useSyncExternalStore(subscribe, getOverrides, () => noOverrides);
@@ -158,5 +185,5 @@ export function useFlagOverrides() {
 
 /** Whether `name` is on: every flag is off unless this browser turned it on. */
 export function useFlag(name: FlagName) {
-  return useFlagOverrides()[name] ?? false;
+  return useFlagOverrides()[name] === true;
 }
