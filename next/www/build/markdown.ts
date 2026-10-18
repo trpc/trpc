@@ -525,6 +525,7 @@ const loadProject = Effect.fn('loadProject')(function* (app: string) {
 /** The parts of a `@typescript/vfs` environment read here. */
 interface Environment {
   createFile(fileName: string, content: string): void;
+  deleteFile(fileName: string): void;
   readonly languageService: ts.LanguageService;
 }
 
@@ -552,16 +553,22 @@ function twoslasherFor(root: string, tsLibDirectory: string) {
   }
   let onClear: ((program: ts.Program | undefined) => void) | undefined;
   // Twoslash empties a block's files once it's done with them; until then
-  // the environment's program is the one the block compiled in.
+  // the environment's program is the one the block compiled in. They're
+  // deleted instead: an emptied `a.ts` still resolves, so a later block's
+  // `import './a'` would find it, with no text, before its own `a.tsx`.
   const environments = new (class extends Map<string, Environment> {
     override set(key: string, environment: Environment) {
       const createFile = environment.createFile.bind(environment);
       environment.createFile = (fileName, content) => {
-        if (content === '' && onClear) {
+        if (content !== '') {
+          createFile(fileName, content);
+          return;
+        }
+        if (onClear) {
           onClear(environment.languageService.getProgram());
           onClear = undefined;
         }
-        createFile(fileName, content);
+        environment.deleteFile(fileName);
       };
       return super.set(key, environment);
     }
@@ -592,8 +599,8 @@ function twoslasherFor(root: string, tsLibDirectory: string) {
 
 const blockFilename = /^\/\/ @filename: (.+)$/gm;
 
-/** The app that inline blocks compile in, beside its `src/` files. */
-const inlineApp = 'docs';
+/** The app that inline blocks compile in, beside its `src/` files, unless a page's docs name another. */
+const defaultInlineApp = 'docs';
 
 /**
  * Fences with `twoslash` in their meta are compiled, so hovering a name shows
@@ -601,9 +608,10 @@ const inlineApp = 'docs';
  * an expected error. A compile error the block doesn't expect fails the
  * build.
  *
- * A block written inline is a file in the `docs` sample app's `src/`, so
- * it can import the app's files (`./server.ts`) behind a `// ---cut---`.
- * Its `// @filename: client.ts` lines name more files there.
+ * A block written inline is a file in the `docs` sample app's `src/` (the
+ * v11 docs' are in `v11`'s), so it can import the app's files
+ * (`./server.ts`) behind a `// ---cut---`. Its `// @filename: client.ts`
+ * lines name more files there.
  *
  * A `sample` fence's block (`expandSnippets`) is a file of a sample app
  * (`samples/<app>/`), named by its `// @filename`, a path from the samples
@@ -616,6 +624,7 @@ const twoslashTransformer = Effect.fn('twoslashTransformer')(function* (
   markdown: string,
   samplesDir: string,
   cache: TwoslashCache | undefined,
+  inlineApp: string,
 ) {
   const path = yield* Path.Path;
   const apps = yield* sampleApps(samplesDir);
@@ -721,6 +730,8 @@ export interface RenderOptions {
   readonly basePath: string;
   /** The dir of the sample apps the code blocks compile in. */
   readonly samplesDir: string;
+  /** The sample app inline blocks compile in: `docs`, or `v11` for the v11 docs. */
+  readonly inlineApp?: string | undefined;
   /** The page's slug, which its relative links resolve from. */
   readonly slug: string;
   /** Where the files around the docs folder are browsable, for links to them. */
@@ -783,6 +794,7 @@ export const renderMarkdown = Effect.fn('renderMarkdown')(function* (
         markdown,
         options.samplesDir,
         options.twoslashCache,
+        options.inlineApp ?? defaultInlineApp,
       )
     : undefined;
   const processor = parsing(options, headings, anchors, links)

@@ -48,6 +48,8 @@ export interface ContentOptions extends PageDirs {
    * `sample:` import's `{ html }`: `import step from '…/v11/home/step-1.md'`.
    */
   readonly snippetsDir?: string | undefined;
+  /** The sample app the pages' inline code blocks compile in: `docs` unless named. */
+  readonly inlineApp?: string | undefined;
   /** Keeps compiled code blocks on disk, so the next build reuses them. */
   readonly twoslashCache?: TwoslashCacheOptions | undefined;
   /**
@@ -333,6 +335,7 @@ export function docsContent(options: ContentOptions): Plugin {
   const renderDoc = Effect.fn('renderDoc')(function* (source: Source) {
     const result = yield* renderMarkdown(source.markdown, {
       basePath,
+      inlineApp: options.inlineApp,
       samplesDir,
       slug: source.slug,
       sourceUrl: options.sourceUrl,
@@ -397,6 +400,7 @@ export function docsContent(options: ContentOptions): Plugin {
   ) {
     const result = yield* renderMarkdown(markdown, {
       basePath,
+      inlineApp: options.inlineApp,
       samplesDir,
       slug: 'index',
       sourceUrl: options.sourceUrl,

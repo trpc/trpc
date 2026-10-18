@@ -5,39 +5,45 @@ import { Effect, FileSystem, Path } from 'effect';
 import { brokenLinks } from './content.ts';
 import { anchorsOf, renderMarkdown, resolveLink } from './markdown.ts';
 
-/** A samples dir whose `docs` app compiles inline blocks, removed when the test ends. */
+/**
+ * A samples dir whose `docs` and `v11` apps compile inline blocks, each with
+ * its own `greeting`, removed when the test ends.
+ */
 const samples = Effect.gen(function* () {
   const fs = yield* FileSystem.FileSystem;
   const path = yield* Path.Path;
   const root = yield* fs.makeTempDirectoryScoped({ prefix: 'markdown-' });
-  const app = path.join(root, 'docs');
-  yield* fs.makeDirectory(path.join(app, 'src'), { recursive: true });
-  yield* fs.writeFileString(
-    path.join(app, 'src/server.ts'),
-    'export const greeting = "hello" as const;\n',
-  );
-  yield* fs.writeFileString(
-    path.join(app, 'tsconfig.json'),
-    JSON.stringify({
-      compilerOptions: {
-        allowImportingTsExtensions: true,
-        lib: ['es2022'],
-        module: 'esnext',
-        moduleResolution: 'bundler',
-        noEmit: true,
-        strict: true,
-        types: [],
-      },
-      include: ['src'],
-    }),
-  );
+  for (const name of ['docs', 'v11']) {
+    const app = path.join(root, name);
+    yield* fs.makeDirectory(path.join(app, 'src'), { recursive: true });
+    yield* fs.writeFileString(
+      path.join(app, 'src/server.ts'),
+      `export const greeting = "hello from ${name}" as const;\n`,
+    );
+    yield* fs.writeFileString(
+      path.join(app, 'tsconfig.json'),
+      JSON.stringify({
+        compilerOptions: {
+          allowImportingTsExtensions: true,
+          lib: ['es2022'],
+          module: 'esnext',
+          moduleResolution: 'bundler',
+          noEmit: true,
+          strict: true,
+          types: [],
+        },
+        include: ['src'],
+      }),
+    );
+  }
   return root;
 });
 
-const render = (markdown: string, slug = 'client/links') =>
+const render = (markdown: string, slug = 'client/links', inlineApp?: string) =>
   Effect.flatMap(samples, (samplesDir) =>
     renderMarkdown(markdown, {
       basePath: '/docs',
+      inlineApp,
       samplesDir,
       slug,
       sourceUrl: 'https://github.com/trpc/trpc/blob/v12/next',
@@ -84,9 +90,56 @@ describe('renderMarkdown', () => {
           '```',
         ].join('\n'),
       );
-      expect(rendered.typeQueries).toEqual([['const shown: "hello"']]);
+      expect(rendered.typeQueries).toEqual([
+        ['const shown: "hello from docs"'],
+      ]);
       expect(rendered.html).not.toContain('./server.ts');
     }).pipe(Effect.provide(NodeServices.layer)),
+  );
+
+  it.effect('compiles inline blocks in the app `inlineApp` names', () =>
+    Effect.gen(function* () {
+      const rendered = yield* render(
+        [
+          '```ts twoslash',
+          "import { greeting } from './server.ts';",
+          'const shown = greeting;',
+          '//    ^?',
+          '```',
+        ].join('\n'),
+        'server/procedures',
+        'v11',
+      );
+      expect(rendered.typeQueries).toEqual([['const shown: "hello from v11"']]);
+    }).pipe(Effect.provide(NodeServices.layer)),
+  );
+
+  it.effect(
+    "resolves a block's `.tsx` file where an earlier block had a `.ts` of that name",
+    () =>
+      Effect.gen(function* () {
+        const rendered = yield* render(
+          [
+            '```ts twoslash',
+            '// @filename: utils/trpc.ts',
+            'export const trpc = 1;',
+            '// @filename: index.ts',
+            "import { trpc } from './utils/trpc';",
+            'trpc;',
+            '```',
+            '',
+            '```tsx twoslash',
+            '// @filename: utils/trpc.tsx',
+            'export const trpc = "react" as const;',
+            '// @filename: index.ts',
+            "import { trpc } from './utils/trpc';",
+            'const shown = trpc;',
+            '//    ^?',
+            '```',
+          ].join('\n'),
+        );
+        expect(rendered.typeQueries).toEqual([[], ['const shown: "react"']]);
+      }).pipe(Effect.provide(NodeServices.layer)),
   );
 
   it.effect(
