@@ -13,9 +13,9 @@ import { parentPort } from 'node:worker_threads';
 
 createFetchHandler({
   router,
-  createContext: ({ info }) => ({
-    token: info.connectionParams?.['token'],
-    transport: info.transport, // 'messagePort'
+  createContext: (opts) => ({
+    token: opts.info.connectionParams?.['token'],
+    transport: opts.info.transport, // 'messagePort'
   }),
 }).messagePort(parentPort);
 ```

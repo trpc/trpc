@@ -10,21 +10,21 @@ order: 7
 ```ts
 const t = initTrpc<{ ctx: { headers: Headers } }>();
 
-const authed = t.procedure.use(async ({ ctx, next }) => {
-  const session = await auth.api.getSession({ headers: ctx.headers });
+const authed = t.procedure.use(async (opts) => {
+  const session = await auth.api.getSession({ headers: opts.ctx.headers });
   return session
-    ? next({ ctx: { user: session.user, session: session.session } })
+    ? opts.next({ ctx: { user: session.user, session: session.session } })
     : error({ code: 'UNAUTHORIZED' });
 });
 
 const router = {
-  me: authed.query(({ ctx }) => ctx.user.name), // ctx.user is Better Auth's user type
+  me: authed.query((opts) => opts.ctx.user.name), // ctx.user is Better Auth's user type
 };
 
 createFetchHandler({
   router,
-  createContext: ({ request }) => ({
-    headers: new Headers(request.headers as Record<string, string>),
+  createContext: (opts) => ({
+    headers: new Headers(opts.request.headers as Record<string, string>),
   }),
 });
 ```

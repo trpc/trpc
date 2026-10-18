@@ -50,7 +50,7 @@ const me = authed
   .meta({
     route: { path: '/me', spec: (op) => ({ ...op, 'x-internal': true }) },
   })
-  .query(({ ctx }) => ctx.user);
+  .query((opts) => opts.ctx.user);
 ```
 
 `spec` only changes the document (`target: 'openapi'`); `toContract()` leaves it out.
@@ -96,13 +96,22 @@ With the default `inputStructure: 'compact'`, path params merge with the query s
 
 ```ts
 const update = t.procedure
-  .meta({ route: { method: 'PATCH', path: '/posts/{id}', inputStructure: 'detailed', outputStructure: 'detailed' } })
-  .input(z.object({
-    params: z.object({ id: z.string() }),
-    headers: z.object({ 'if-match': z.string() }),
-    body: z.object({ title: z.string() }),
-  }))
-  .mutation(({ input }) => ({ headers: { etag: '…' }, body: … }));
+  .meta({
+    route: {
+      method: 'PATCH',
+      path: '/posts/{id}',
+      inputStructure: 'detailed',
+      outputStructure: 'detailed',
+    },
+  })
+  .input(
+    z.object({
+      params: z.object({ id: z.string() }),
+      headers: z.object({ 'if-match': z.string() }),
+      body: z.object({ title: z.string() }),
+    }),
+  )
+  .mutation((opts) => ({ headers: { etag: '…' }, body: savePost(opts.input) }));
 ```
 
 ## Output and errors

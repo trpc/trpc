@@ -22,11 +22,12 @@ export const { trpc, caller, getQueryClient, prefetch, HydrationBoundary } =
 
 ```tsx
 // app/post/[id]/page.tsx
-export default async function Page({ params }) {
-  prefetch(trpc.post.byId.queryOptions({ input: { id: params.id } }));
+export default async function Page(props) {
+  prefetch(trpc.post.byId.queryOptions({ input: { id: props.params.id } }));
   return (
     <HydrationBoundary>
-      <Post id={params.id} /> {/* a client component using useSuspenseQuery */}
+      {/* a client component using useSuspenseQuery */}
+      <Post id={props.params.id} />
     </HydrationBoundary>
   );
 }

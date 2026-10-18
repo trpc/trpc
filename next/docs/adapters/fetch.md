@@ -28,9 +28,9 @@ const handler = createFetchHandler<
   { env: Env; ctx: ExecutionContext }
 >({
   router,
-  createContext: ({ platform }) => ({
-    db: platform.env.DB,
-    waitUntil: (p: Promise<unknown>) => platform.ctx.waitUntil(p),
+  createContext: (opts) => ({
+    db: opts.platform.env.DB,
+    waitUntil: (p: Promise<unknown>) => opts.platform.ctx.waitUntil(p),
   }),
 });
 

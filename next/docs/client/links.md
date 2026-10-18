@@ -27,7 +27,7 @@ A client's `links` is a chain: each link gets the operation and the rest of the 
 ```ts
 httpLink({
   url,
-  init: ({ ops }) => ({ cache: 'no-store', headers: forwardCookies() }),
+  init: () => ({ cache: 'no-store', headers: forwardCookies() }),
 });
 await client.post.list.query(input, {
   init: { next: { revalidate: 60, tags: ['posts'] } },
@@ -63,8 +63,8 @@ A link can change the operation it passes on. That lets one client cover routers
 
 ```ts
 const unprefix = (prefix: string) =>
-  link(({ op, next }) =>
-    next({ ...op, path: op.path.slice(prefix.length + 1) }),
+  link((opts) =>
+    opts.next({ ...opts.op, path: opts.op.path.slice(prefix.length + 1) }),
   );
 
 createTrpcClient({

@@ -18,9 +18,9 @@ const r = initTrpc<{ ctx: { ip: string }; meta: RateLimitMeta }>({
 export const rateLimit = () =>
   r.procedure
     .errors({ TOO_MANY_REQUESTS: {} })
-    .use(({ ctx, meta, next }) =>
-      limiter.allow(ctx.ip, meta.rateLimit)
-        ? next({ ctx: { remaining: limiter.remaining(ctx.ip) } })
+    .use((opts) =>
+      limiter.allow(opts.ctx.ip, opts.meta.rateLimit)
+        ? opts.next({ ctx: { remaining: limiter.remaining(opts.ctx.ip) } })
         : error({ code: 'TOO_MANY_REQUESTS' }),
     );
 
@@ -31,7 +31,7 @@ const t = initTrpc<{ ctx: { ip: string; user: User | null } }>()
 
 t.procedure
   .meta({ rateLimit: { max: 5 } })
-  .mutation(({ ctx }) => ctx.remaining);
+  .mutation((opts) => opts.ctx.remaining);
 ```
 
 Extensions chain, and `t.middleware` and `t.implement()` see what they add. `t.concat()` is a type error when the root lacks ctx the extension needs, or declares one of its meta keys with another type. Services an extension provides with `.provide()` don't need the handler's `layer`; services it only uses do.

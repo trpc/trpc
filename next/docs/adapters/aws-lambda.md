@@ -13,8 +13,8 @@ import { toLambdaHandler, type LambdaPlatform } from '@trpc12/trpc/aws-lambda';
 
 const handler = createFetchHandler<AppRouter, LambdaPlatform>({
   router,
-  createContext: ({ platform }) => ({
-    requestId: platform.context.awsRequestId,
+  createContext: (opts) => ({
+    requestId: opts.platform.context.awsRequestId,
   }),
 });
 

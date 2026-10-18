@@ -23,11 +23,11 @@ const router = {
         messages: z.array(z.custom<UIMessage>()),
       }),
     )
-    .mutation(async ({ input, signal }) => {
+    .mutation(async (opts) => {
       const result = streamText({
         model,
-        messages: await convertToModelMessages(input.messages),
-        abortSignal: signal,
+        messages: await convertToModelMessages(opts.input.messages),
+        abortSignal: opts.signal,
       });
       return toUIMessageStream({ stream: result.stream });
     }),
@@ -37,10 +37,13 @@ const router = {
 ```tsx
 import { useChat } from '@ai-sdk/react';
 
-const { messages, sendMessage, status } = useChat({
+const chat = useChat({
   transport: {
-    sendMessages: ({ chatId, messages, abortSignal }) =>
-      client.chat.mutate({ chatId, messages }, { signal: abortSignal }),
+    sendMessages: (opts) =>
+      client.chat.mutate(
+        { chatId: opts.chatId, messages: opts.messages },
+        { signal: opts.abortSignal },
+      ),
     reconnectToStream: async () => null,
   },
 });
@@ -61,7 +64,7 @@ import { call } from '@trpc12/trpc/server';
 const WeatherInput = z.object({ city: z.string() });
 const weatherProcedure = t.procedure
   .input(WeatherInput)
-  .query(({ input }) => forecast(input.city));
+  .query((opts) => forecast(opts.input.city));
 
 const weather = tool({
   description: 'The weather in a city',

@@ -18,11 +18,11 @@ const pay = t.procedure
   .input(z.object({ invoice: z.string() }))
   .use(
     experimental_lock<{ input: { invoice: string } }>({
-      key: ({ input }) => `invoice:${input.invoice}`,
+      key: (opts) => `invoice:${opts.input.invoice}`,
     }),
   )
-  .mutation(({ input, ctx }) =>
-    charge(input.invoice, { retried: ctx.lock.waited }),
+  .mutation((opts) =>
+    charge(opts.input.invoice, { retried: opts.ctx.lock.waited }),
   );
 
 createFetchHandler({

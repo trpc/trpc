@@ -52,11 +52,11 @@ Errors go out in v11's shape, so `TRPCClientError` reads them: `{ message, code:
 ```ts
 createV11Handler({
   router: appRouter,
-  errorFormatter: ({ shape, error }) => ({
-    ...shape,
+  errorFormatter: (opts) => ({
+    ...opts.shape,
     data: {
-      ...shape.data,
-      zodError: error.code === 'BAD_REQUEST' ? error.data : null,
+      ...opts.shape.data,
+      zodError: opts.error.code === 'BAD_REQUEST' ? opts.error.data : null,
     },
   }),
 });
@@ -108,10 +108,10 @@ A v11 terminating link (one that sends the request itself, such as v11's `httpBa
 Rewritten for v12, a link returns an Effect `Stream`:
 
 ```ts
-const authLink = link(({ op, next }) =>
-  next({
-    ...op,
-    context: { ...op.context, headers: { authorization: token() } },
+const authLink = link((opts) =>
+  opts.next({
+    ...opts.op,
+    context: { ...opts.op.context, headers: { authorization: token() } },
   }),
 );
 ```

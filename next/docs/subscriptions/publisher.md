@@ -16,15 +16,15 @@ class Posts extends Publisher.Service<
 >()('Posts') {}
 
 const router = {
-  create: t.procedure.input(PostInput).mutation(({ input }) =>
+  create: t.procedure.input(PostInput).mutation((opts) =>
     Effect.gen(function* () {
-      const post = yield* savePost(input);
+      const post = yield* savePost(opts.input);
       yield* Posts.publish('created', post);
       return post;
     }),
   ),
-  onCreated: t.procedure.subscription(({ lastEventId }) =>
-    Posts.subscribe('created', { lastEventId }),
+  onCreated: t.procedure.subscription((opts) =>
+    Posts.subscribe('created', { lastEventId: opts.lastEventId }),
   ),
 };
 
@@ -46,11 +46,13 @@ class Notes extends Publisher.Service<
 const router = {
   notify: t.procedure
     .input(Schema.Struct({ to: Schema.String, text: Schema.String }))
-    .mutation(({ input }) =>
-      Notes.publish(`inbox:${input.to}`, { text: input.text }),
+    .mutation((opts) =>
+      Notes.publish(`inbox:${opts.input.to}`, { text: opts.input.text }),
     ),
-  inbox: t.procedure.subscription(({ ctx, lastEventId }) =>
-    Notes.subscribe(`inbox:${ctx.user.id}`, { lastEventId }),
+  inbox: t.procedure.subscription((opts) =>
+    Notes.subscribe(`inbox:${opts.ctx.user.id}`, {
+      lastEventId: opts.lastEventId,
+    }),
   ),
 };
 ```

@@ -13,9 +13,9 @@ v11: client/links
 A link of your own declares what it reads, and the client types it as a call option:
 
 ```ts
-const traceLink = link<{ context: { traceId?: string } }>(({ op, next }) => {
-  span(op.context.traceId);
-  return next(op);
+const traceLink = link<{ context: { traceId?: string } }>((opts) => {
+  span(opts.op.context.traceId);
+  return opts.next(opts.op);
 });
 // client.post.byId.query(input, { traceId: 'abc' })
 ```
@@ -31,12 +31,17 @@ class RateLimited extends TrpcError.Tagged('RATE_LIMITED', {
   data: Schema.Struct({ retryAfter: Schema.Number }),
 }) {}
 
-const rateLimit = link<{ errors: RateLimited }>(({ op, next }) =>
-  budget.take() ? next(op) : Stream.fail(new RateLimited({ retryAfter: 5 })),
+const rateLimit = link<{ errors: RateLimited }>((opts) =>
+  budget.take()
+    ? opts.next(opts.op)
+    : Stream.fail(new RateLimited({ retryAfter: 5 })),
 );
-const restOnly = link<{ unsupported: 'subscription' }>(…);
+const restOnly = link<{ unsupported: 'subscription' }>(/* … */);
 
-const client = createTrpcClient({ router: routerType<AppRouter>(), links: [rateLimit, restOnly, httpLink({ url })] });
+const client = createTrpcClient({
+  router: routerType<AppRouter>(),
+  links: [rateLimit, restOnly, httpLink({ url })],
+});
 const [, err] = await safe(client.post.create.mutate(input));
 if (err?.defined && err.code === 'RATE_LIMITED') retryIn(err.data.retryAfter);
 client.onPost.subscribe; // type error: no link carries subscriptions
@@ -47,14 +52,14 @@ client.onPost.subscribe; // type error: no link carries subscriptions
 `httpLink` hands each call's response to an `onResponse` call option (`{ status, headers }`), before the value goes up the chain. A batched call gets its own line's status and the batch's headers. A link that reads it declares `needs: 'response'`, and the client rejects a `links` array with no link after it that `provides: 'response'`:
 
 ```ts
-const versionLink = link<{ needs: 'response' }>(({ op, next }) =>
-  next({
-    ...op,
+const versionLink = link<{ needs: 'response' }>((opts) =>
+  opts.next({
+    ...opts.op,
     context: {
-      ...op.context,
+      ...opts.op.context,
       onResponse: (res) => {
         checkVersion(res.headers.get('x-version'));
-        op.context.onResponse?.(res);
+        opts.op.context.onResponse?.(res);
       },
     },
   }),

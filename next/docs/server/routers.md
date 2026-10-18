@@ -10,7 +10,8 @@ A router is a plain object. Keys are path segments: `{ post: { byId } }` serves 
 ```ts twoslash
 // ---cut-start---
 import { appRouter as blog, t } from './server.ts';
-const { byId, create } = blog.post;
+const byId = blog.post.byId;
+const create = blog.post.create;
 // ---cut-end---
 export const appRouter = {
   health: t.procedure.query(() => 'ok'),

@@ -9,9 +9,9 @@ order: 4
 Deno.serve((request) => {
   if (request.headers.get('upgrade') !== 'websocket')
     return handler.fetch(request);
-  const { socket, response } = Deno.upgradeWebSocket(request);
-  handler.websocket(socket, { request });
-  return response;
+  const upgrade = Deno.upgradeWebSocket(request);
+  handler.websocket(upgrade.socket, { request });
+  return upgrade.response;
 });
 ```
 

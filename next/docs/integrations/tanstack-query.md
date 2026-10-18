@@ -84,10 +84,10 @@ A mutation that returns an async iterable (an AI reply, say) can fill in as it s
 
 ```ts
 const send = useMutation(trpc.chat.send.streamedMutationOptions());
-const { data: chunks = [] } = useQuery(trpc.chat.send.chunksOptions());
+const chunks = useQuery(trpc.chat.send.chunksOptions());
 
 send.mutate({ text });
-// chunks: [] → ['ok'] → ['ok', 'hi'], then send.data is ['ok', 'hi']
+// chunks.data: ['ok'] → ['ok', 'hi'], then send.data is ['ok', 'hi']
 ```
 
 `chunksOptions()` never fetches; it reads what the mutation writes to `streamedMutationKey()`. Each `mutate` starts the chunks over. Pass `onChunk(chunk, chunks)` to act on each one.
@@ -112,16 +112,16 @@ A stream tied to one screen fits a streamed mutation. A job that should outlive 
 
 ```ts
 const job = {
-  start: t.procedure.input(Params).mutation(({ input }) => jobs.start(input)), // { id }
+  start: t.procedure.input(Params).mutation((opts) => jobs.start(opts.input)), // { id }
   progress: t.procedure
     .input(z.object({ id: z.string() }))
-    .subscription(async function* ({ input, lastEventId }) {
-      for await (const step of jobs.watch(input.id, { after: lastEventId }))
-        yield tracked(step.id, step);
+    .subscription(async function* (opts) {
+      const steps = jobs.watch(opts.input.id, { after: opts.lastEventId });
+      for await (const step of steps) yield tracked(step.id, step);
     }),
   cancel: t.procedure
     .input(z.object({ id: z.string() }))
-    .mutation(({ input }) => jobs.cancel(input.id)),
+    .mutation((opts) => jobs.cancel(opts.input.id)),
 };
 
 const start = useMutation(trpc.job.start.mutationOptions());
@@ -167,9 +167,9 @@ const posts = createCollection(
     select: (data) => data.items,
     queryClient,
     getKey: (post) => post.id,
-    onInsert: async ({ transaction }) => {
-      for (const { modified } of transaction.mutations) {
-        await client.post.create.mutate({ title: modified.title });
+    onInsert: async (opts) => {
+      for (const mutation of opts.transaction.mutations) {
+        await client.post.create.mutate({ title: mutation.modified.title });
       }
     },
   }),

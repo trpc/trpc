@@ -64,9 +64,11 @@ class Posts extends Publisher.Service<Posts, { created: Post }>()('Posts') {}
 const router = {
   create: t.procedure
     .input(PostInput)
-    .mutation(({ input }) => Effect.as(Posts.publish('created', input), input)),
-  onCreated: t.procedure.subscription(({ lastEventId }) =>
-    Posts.subscribe('created', { lastEventId }),
+    .mutation((opts) =>
+      Effect.as(Posts.publish('created', opts.input), opts.input),
+    ),
+  onCreated: t.procedure.subscription((opts) =>
+    Posts.subscribe('created', { lastEventId: opts.lastEventId }),
   ),
 };
 
@@ -93,10 +95,13 @@ export class Room extends DurableObject<Env> {
 [`experimental_durable()`](../middleware/durable.md) needs Effect's `BackingPersistence`. In an object, back it with the object's storage, so kept results and streamed frames outlive an eviction: Effect's `KeyValueStore.makeStringOnly` over `ctx.storage`, under `Persistence.layerBackingKvs`. [`examples/cloudflare/src/storage.ts`](../../examples/cloudflare/src/storage.ts) has one, which the example merges with its publisher layer:
 
 ```ts
-layer: Layer.mergeAll(
-  hibernatingPublisher(Messages, { state: this.ctx, buffer: 100 }),
-  durableObjectPersistence(this.ctx.storage),
-),
+handler = createFetchHandler({
+  router,
+  layer: Layer.mergeAll(
+    hibernatingPublisher(Messages, { state: this.ctx, buffer: 100 }),
+    durableObjectPersistence(this.ctx.storage),
+  ),
+});
 ```
 
 ## Locks
@@ -123,7 +128,7 @@ export class Locks extends DurableObject<Env> {
 }
 
 // wherever the handler is made
-layer: experimental_durableLocker(env.LOCKS),
+createFetchHandler({ router, layer: experimental_durableLocker(env.LOCKS) });
 ```
 
 Bind `LOCKS` to `Locks` in `wrangler.jsonc` (a `new_sqlite_classes` migration). The example locks a seat across two room objects.
@@ -137,10 +142,13 @@ import { tracing } from 'cloudflare:workers';
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { experimental_workersTracer } from '@trpc12/trpc/cloudflare';
 
-layer: experimental_workersTracer({
-  tracing,
-  snapshot: () => AsyncLocalStorage.snapshot(),
-}),
+createFetchHandler({
+  router,
+  layer: experimental_workersTracer({
+    tracing,
+    snapshot: () => AsyncLocalStorage.snapshot(),
+  }),
+});
 ```
 
 Workers spans have no events, so Effect's span events are dropped, and a `traceparent` from another service doesn't parent the call: its spans join the Worker's own trace. Locally, Wrangler's Local Explorer (`e` in `wrangler dev`) shows the spans; the example's smoke test reads them from its trace store.
@@ -161,23 +169,27 @@ const RoomToken = connectionToken(
 const workerRouter = {
   roomToken: t.procedure
     .input(Schema.Struct({ room: Schema.String }))
-    .query(({ ctx, input }) =>
-      RoomToken.sign({ room: input.room, user: ctx.user.id }),
+    .query((opts) =>
+      RoomToken.sign({ room: opts.input.room, user: opts.ctx.user.id }),
     ),
 };
 
 // the Durable Object's router and handler
 const roomRouter = {
-  inbox: t.procedure.subscription(({ ctx, lastEventId }) =>
-    Notes.subscribe(`inbox:${ctx.user}`, { lastEventId }),
+  inbox: t.procedure.subscription((opts) =>
+    Notes.subscribe(`inbox:${opts.ctx.user}`, {
+      lastEventId: opts.lastEventId,
+    }),
   ),
 };
 
 export class Room extends DurableObject<Env> {
   handler = createFetchHandler({
     router: roomRouter,
-    createContext: ({ info }) =>
-      Effect.runPromise(RoomToken.verify(info.connectionParams?.['token'])),
+    createContext: (opts) =>
+      Effect.runPromise(
+        RoomToken.verify(opts.info.connectionParams?.['token']),
+      ),
     layer: hibernatingPublisher(Notes, { state: this.ctx }),
   });
   // sockets, fetch and webSocketMessage as above

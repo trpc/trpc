@@ -25,12 +25,17 @@ export const appContract = {
 `t.implement(contract)` mirrors the contract. Each leaf already has its input, output, errors and route, and offers only `.use()`, `.provide()` and the terminal the contract declares. `impl.router()` checks at the type level and at runtime that every procedure is implemented and nothing else is added.
 
 ```ts
-const impl = t.implement(appContract).use(authed).provide(Db, () => db);
+const impl = t
+  .implement(appContract)
+  .use(authed)
+  .provide(Db, () => db);
 
 export const appRouter = impl.router({
   post: {
-    byId: impl.post.byId.query(({ input, errors }) => /* … */),
-    create: impl.post.create.mutation(({ input }) => /* … */),
+    byId: impl.post.byId.query(
+      (opts) => findPost(opts.input.id) ?? opts.errors.NOT_FOUND(),
+    ),
+    create: impl.post.create.mutation((opts) => createPost(opts.input)),
   },
 });
 ```

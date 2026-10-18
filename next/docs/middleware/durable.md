@@ -17,7 +17,7 @@ import { experimental_durable } from '@trpc12/trpc/middleware';
 const checkout = t.procedure
   .input(Cart)
   .use(experimental_durable({ ttl: '1 hour' }))
-  .mutation(…);
+  .mutation(/* … */);
 
 createFetchHandler({ router, layer: Persistence.layerBackingMemory });
 

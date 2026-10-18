@@ -12,12 +12,14 @@ import { RateLimiter } from 'effect/persistence';
 import { rateLimit } from '@trpc12/trpc/middleware';
 
 const login = t.procedure
-  .use(rateLimit<{ ctx: { ip: string } }>({
-    key: ({ ctx }) => `login:${ctx.ip}`,
-    limit: 5,
-    window: '1 minute',
-  }))
-  .mutation(…);
+  .use(
+    rateLimit<{ ctx: { ip: string } }>({
+      key: (opts) => `login:${opts.ctx.ip}`,
+      limit: 5,
+      window: '1 minute',
+    }),
+  )
+  .mutation(/* … */);
 
 createFetchHandler({
   router,

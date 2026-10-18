@@ -19,9 +19,9 @@ class PostController {
   @experimental_Implement(appContract.post.byId) // .meta({ route: { method: 'GET', path: '/posts/{id}' } })
   byId() {
     return impl.post.byId.query(
-      ({ input, errors }) =>
-        this.posts.find(input.id) ??
-        errors.NOT_FOUND({ data: { id: input.id } }),
+      (opts) =>
+        this.posts.find(opts.input.id) ??
+        opts.errors.NOT_FOUND({ data: { id: opts.input.id } }),
     );
   }
 }
@@ -29,8 +29,8 @@ class PostController {
 @Module({
   imports: [
     experimental_TrpcModule.forRoot({
-      createContext: ({ platform }) => ({
-        user: platform.switchToHttp().getRequest().user,
+      createContext: (opts) => ({
+        user: opts.platform.switchToHttp().getRequest().user,
       }),
       layer: Db.layer,
     }),

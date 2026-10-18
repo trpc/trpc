@@ -6,7 +6,7 @@ order: 4
 v11: client/vanilla/error-handling
 ---
 
-`safe()` wraps a call and resolves to a result instead of rejecting. Destructure it as a tuple or as an object:
+`safe()` wraps a call and resolves to a result instead of rejecting. Destructure it as a tuple, or read it as an object:
 
 ```ts twoslash
 // ---cut-start---
@@ -15,9 +15,8 @@ import { client } from './client.ts';
 import { safe } from '@trpc12/trpc/client';
 
 const [post, error] = await safe(client.post.byId.query({ id: '1' }));
-const { data, error: err } = await safe(
-  client.post.create.mutate({ title: 'Hi' }),
-);
+const created = await safe(client.post.create.mutate({ title: 'Hi' }));
+if (!created.error) console.log(created.data.title);
 ```
 
 `createSafeClient(client)` returns a client whose every call is safe:

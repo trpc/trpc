@@ -45,10 +45,10 @@ class PostNotFound extends TrpcError.Tagged('POST_NOT_FOUND', {
   data: Schema.Struct({ id: Schema.String }),
 }) {}
 
-t.procedure.query(({ input }) =>
+t.procedure.query((opts) =>
   Effect.gen(function* () {
-    const post = yield* repo.find(input.id);
-    if (!post) return yield* new PostNotFound({ id: input.id });
+    const post = yield* repo.find(opts.input.id);
+    if (!post) return yield* new PostNotFound({ id: opts.input.id });
     return post;
   }),
 );
@@ -61,8 +61,8 @@ t.procedure.query(({ input }) =>
 `t.middleware.effect<{ provides: S }>()(fn)` writes a middleware whose `next()` is an `Effect`, so it can provide services:
 
 ```ts
-const withUser = t.middleware.effect<{ provides: CurrentUser }>()(
-  ({ ctx, next }) => next().pipe(Effect.provideService(CurrentUser, ctx.user)),
+const withUser = t.middleware.effect<{ provides: CurrentUser }>()((opts) =>
+  opts.next().pipe(Effect.provideService(CurrentUser, opts.ctx.user)),
 );
 ```
 
@@ -77,9 +77,9 @@ The span continues the request's trace: the `http.server` span on Effect HTTP se
 `Effect.forkDetach` starts a fiber that keeps running after the call returns, on a long-lived server:
 
 ```ts
-t.procedure.mutation(({ input }) =>
+t.procedure.mutation((opts) =>
   Effect.gen(function* () {
-    const user = yield* Users.create(input);
+    const user = yield* Users.create(opts.input);
     yield* Effect.forkDetach(Mailer.welcome(user));
     return user;
   }),

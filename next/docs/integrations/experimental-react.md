@@ -31,8 +31,8 @@ export const trpc = createReactClient({
 });
 
 // The route's loader starts the request; the navigation doesn't wait for it.
-export const loader = ({ params }: { params: { id: string } }) => ({
-  post: trpc.post.byId.query({ id: params.id }),
+export const loader = (args: { params: { id: string } }) => ({
+  post: trpc.post.byId.query({ id: args.params.id }),
 });
 
 function Post(props: { post: QueryPromise<{ title: string }> }) {
