@@ -151,6 +151,48 @@ test('an abort after the socket started closing is not sent', async () => {
   await connection.link.close();
 });
 
+test('keepAlive pings every intervalMs, and a connection silent for timeoutMs after a ping is dropped', async () => {
+  ScriptedWebSocket.opened = [];
+  const pings: number[] = [];
+  let answering = true;
+  class PingTimingSocket extends ScriptedWebSocket {
+    override send(data: string) {
+      super.send(data);
+      if (this.sent.at(-1)!.type !== 'ping') return;
+      pings.push(Date.now());
+      if (answering) queueMicrotask(() => this.receive({ type: 'pong' }));
+    }
+  }
+  const link = wsLink({
+    url: 'ws://scripted',
+    WebSocket: PingTimingSocket as unknown as typeof WebSocket,
+    keepAlive: { intervalMs: 40, timeoutMs: 400 },
+    reconnect: { attempts: 0 },
+  });
+  const client = createTrpcClient({
+    router: routerType<typeof router>(),
+    links: [link],
+  });
+  const ticks = (async () => {
+    for await (const _ of client.ticks.subscribe());
+  })().catch((error: unknown) => error);
+  while (pings.length < 4) await sleep(5);
+  const gaps = pings.slice(1).map((at, i) => at - pings[i]!);
+  for (const gap of gaps) {
+    expect(gap).toBeGreaterThanOrEqual(30);
+    expect(gap).toBeLessThan(200);
+  }
+
+  const ws = ScriptedWebSocket.opened[0]!;
+  expect(ws.readyState).toBe(1);
+  answering = false;
+  const silentFrom = pings.length;
+  expect(await ticks).toMatchObject({ code: 'NETWORK_ERROR' });
+  expect(ws.readyState).toBe(3);
+  expect(Date.now() - pings[silentFrom]!).toBeGreaterThanOrEqual(390);
+  await link.close();
+});
+
 test('a WebSocket that throws when constructed fails the call as a lost connection', async () => {
   const link = wsLink({
     url: 'ws://scripted',

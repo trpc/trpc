@@ -195,24 +195,33 @@ function makeSocketLink(
     Effect.runFork(RcRef.invalidate(connection));
   }
 
-  /** A connection that answers nothing within `timeoutMs` of a ping is lost. */
+  /**
+   * Pings every `intervalMs`. A connection that answers nothing within
+   * `timeoutMs` of a ping is lost.
+   */
   const keepAlive = (
     conn: Connection,
     timing: { intervalMs: number; timeoutMs: number },
-  ) =>
-    Effect.gen(function* () {
-      for (;;) {
+  ) => {
+    const answered = (received: number) =>
+      Effect.sleep(timing.timeoutMs).pipe(
+        Effect.andThen(
+          Effect.sync(() => {
+            if (conn.lost || conn.received !== received) return;
+            lose(conn);
+            conn.socket.close();
+          }),
+        ),
+      );
+    return Effect.gen(function* () {
+      while (!conn.lost) {
         yield* Effect.sleep(timing.intervalMs);
         const received = conn.received;
         conn.socket.send({ type: 'ping' });
-        yield* Effect.sleep(timing.timeoutMs);
-        if (conn.received === received) {
-          lose(conn);
-          conn.socket.close();
-          return;
-        }
+        yield* Effect.forkChild(answered(received));
       }
     });
+  };
 
   const acquire = Effect.gen(function* () {
     const epoch = closes;
@@ -555,8 +564,8 @@ export interface ConnectionLinkOptions {
    */
   idleMs?: number | undefined;
   /**
-   * Ping after `intervalMs` of each check. A connection that answers nothing within
-   * `timeoutMs` is treated as lost, so it reconnects instead of waiting for
+   * Ping every `intervalMs`. A connection that answers nothing within
+   * `timeoutMs` of a ping is treated as lost, so it reconnects instead of waiting for
    * a close that a dead network never delivers. The traffic also keeps
    * proxies from dropping a quiet socket. `false` sends no pings.
    * @default { intervalMs: 30_000, timeoutMs: 10_000 }
