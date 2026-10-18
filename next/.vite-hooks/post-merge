@@ -3,14 +3,18 @@
 # recopy them, to commit with the merge. A merge that stops on conflicts
 # doesn't run this: run `pnpm --filter @trpc12/www old-docs:copy` after
 # committing it. CI's `old-docs:check` fails until the copies are current.
-cd "$(git rev-parse --show-toplevel)/next" || exit 1
-git diff --quiet ORIG_HEAD HEAD -- ../www && exit 0
+
+# In a worktree, git runs hooks with GIT_DIR set, which makes git (here and
+# in the copy) take the cwd for the top of the tree.
+unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE
+cd "$(git rev-parse --show-toplevel)" || exit 1
+git diff --quiet ORIG_HEAD HEAD -- www && exit 0
 echo "post-merge: the merge changed www/, so recopying the old docs and the blog into next/www"
-if ! pnpm --filter @trpc12/www old-docs:copy; then
-  echo "post-merge: the copy failed; fix what it says, then run \`pnpm --filter @trpc12/www old-docs:copy\`"
+if ! (cd next && pnpm --filter @trpc12/www old-docs:copy); then
+  echo "post-merge: the copy failed; fix what it says, then run \`pnpm --filter @trpc12/www old-docs:copy\` in next/"
   exit 1
 fi
-if [ -n "$(git status --porcelain -- www)" ]; then
+if [ -n "$(git status --porcelain -- next/www)" ]; then
   echo "post-merge: commit what the copy changed in next/www:"
-  git status --short -- www
+  git status --short -- next/www
 fi
