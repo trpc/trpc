@@ -13,6 +13,8 @@ v11: client/tanstack-react-query/setup
 @trpc12/trpc effect @trpc12/tanstack-react-query @tanstack/react-query
 ```
 
+The [`examples/react-spa`](../../../examples/react-spa/README.md) app is a Vite single-page app built on this page and the TanStack Query pages: infinite lists, optimistic updates, subscriptions in and out of the cache, offline mutations and two APIs in one `QueryClient`.
+
 ## A client for the whole app
 
 A single-page app with one client can make the helpers once, in a module, and import them where it needs them:
