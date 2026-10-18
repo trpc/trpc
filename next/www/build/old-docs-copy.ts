@@ -34,6 +34,7 @@ import {
   type CopiedPost,
   convertPage,
   convertPost,
+  convertSnippet,
   dropMissingAnchors,
   type PostAuthor,
   type SidebarItem,
@@ -183,12 +184,6 @@ export const notCopied: Readonly<Record<string, string>> = {
     "The posts' authors, written into each post's frontmatter",
   'docs/.gitignore':
     'Ignores the generated API reference, which links to trpc.io',
-  'docs/landing-intro/Step1.md':
-    "trpc.io's home page shows it (`src/components/QuickIntro.tsx`); no sidebar lists it",
-  'docs/landing-intro/Step2.md':
-    "trpc.io's home page shows it (`src/components/QuickIntro.tsx`); no sidebar lists it",
-  'docs/landing-intro/Step3.md':
-    "trpc.io's home page shows it (`src/components/QuickIntro.tsx`); no sidebar lists it",
   'docs/test-sub.md': 'A Twoslash test page no sidebar lists',
   'versioned_docs/version-10.x/.gitignore':
     'Ignores the generated API reference, which links to trpc.io',
@@ -199,6 +194,17 @@ export const notCopied: Readonly<Record<string, string>> = {
   'versioned_docs/version-10.x/landing-intro/Step3.md':
     "v10's copy of the home page's intro, which nothing shows; no sidebar lists it",
 };
+
+/**
+ * The code of trpc.io's home page's intro (`src/components/QuickIntro.tsx`),
+ * which no sidebar lists, by the file under `v11/home` the home page's v11
+ * steps import it from.
+ */
+const homeSteps = [
+  ['docs/landing-intro/Step1.md', 'step-1.md'],
+  ['docs/landing-intro/Step2.md', 'step-2.md'],
+  ['docs/landing-intro/Step3.md', 'step-3.md'],
+] as const;
 
 /** Where `old-docs.json` says each file went: the files written from it, or why none are. */
 export type Manifest = Readonly<Record<string, ReadonlyArray<string> | string>>;
@@ -646,6 +652,13 @@ A copy of [trpc.io's blog](../../../www/blog), which [trpc.io](https://trpc.io/b
 Don't edit these files: \`www/build/old-docs-copy.ts\` writes them. Change the posts in the repo root's \`www/blog\`, then run \`pnpm --filter @trpc12/www old-docs:copy\`.
 `;
 
+const homeReadme = `# The home page's v11 intro
+
+A copy of the code of [trpc.io's home page's intro](../../../../www/docs/landing-intro), which the home page shows for v11 (\`src/routes/index.tsx\`).
+
+Don't edit these files: \`www/build/old-docs-copy.ts\` writes them. Change the steps in the repo root's \`www/docs/landing-intro\`, then run \`pnpm --filter @trpc12/www old-docs:copy\`.
+`;
+
 /** Where each file under `contentDirs` went, under `CopyDirs.to`. */
 const manifestFile = 'old-docs.json';
 
@@ -708,6 +721,17 @@ export const copyOldDocs = Effect.fn('copyOldDocs')(function* (dirs: CopyDirs) {
       message: `The blog has what the copy can't convert:\n${postProblems.join('\n')}`,
     });
   }
+  const steps = homeSteps.map(([file, name]) => ({
+    file,
+    name,
+    ...convertSnippet(file, docs),
+  }));
+  const stepProblems = steps.flatMap((entry) => entry.problems);
+  if (stepProblems.length > 0) {
+    return yield* new OldDocsCopyError({
+      message: `The home page's intro has what the copy can't convert:\n${stepProblems.join('\n')}`,
+    });
+  }
   /** `to`, `/`-separated from `dirs.to`, as `old-docs.json` names it. */
   const sitePath = (to: string) =>
     path.relative(dirs.to, to).split(path.sep).join('/');
@@ -752,6 +776,12 @@ export const copyOldDocs = Effect.fn('copyOldDocs')(function* (dirs: CopyDirs) {
     const to = sitePath(path.join(blogDir, `${post.post.slug}.md`));
     copies.push([post.post.file, to]);
     inlined.push(...post.inlined.map((file) => [file, to] as const));
+  }
+  const homeDir = path.join(dirs.to, 'v11', 'home');
+  for (const step of steps) {
+    const to = sitePath(path.join(homeDir, step.name));
+    copies.push([step.file, to]);
+    inlined.push(...step.inlined.map((file) => [file, to] as const));
   }
   const accounted = manifestOf({
     notCopied,
@@ -811,6 +841,12 @@ export const copyOldDocs = Effect.fn('copyOldDocs')(function* (dirs: CopyDirs) {
     ),
   );
   yield* fs.writeFileString(path.join(blogDir, 'README.md'), blogReadme);
+  yield* fs.remove(homeDir, { force: true, recursive: true });
+  yield* fs.makeDirectory(homeDir, { recursive: true });
+  yield* Effect.forEach(steps, (step) =>
+    fs.writeFileString(path.join(homeDir, step.name), step.markdown),
+  );
+  yield* fs.writeFileString(path.join(homeDir, 'README.md'), homeReadme);
   yield* fs.writeFileString(
     path.join(dirs.to, manifestFile),
     `${JSON.stringify(accounted.manifest, null, 2)}\n`,
@@ -828,6 +864,7 @@ export const copyOldDocs = Effect.fn('copyOldDocs')(function* (dirs: CopyDirs) {
   );
   report.push(
     `Copied ${posts.length} blog posts.`,
+    `Copied the ${steps.length} steps of the home page's intro.`,
     `Accounted for ${Object.keys(accounted.manifest).length} files in ${manifestFile}.`,
     `Copied ${redirects.length} of trpc.io's redirects to ${redirectsFile}.`,
   );
@@ -852,6 +889,7 @@ function outputsOf(dirs: CopyDirs, path: Path.Path) {
       path.join(dirs.images, version.id, 'img'),
     ]),
     path.join(dirs.to, 'blog'),
+    path.join(dirs.to, 'v11', 'home'),
     path.join(dirs.to, manifestFile),
     path.join(dirs.to, redirectsFile),
   ];

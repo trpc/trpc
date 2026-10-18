@@ -6,6 +6,7 @@ import {
   type CopiedPost,
   convertPage,
   convertPost,
+  convertSnippet,
   dropMissingAnchors,
   externalUrl,
   jsxToHtml,
@@ -617,6 +618,34 @@ describe('convertPost', () => {
     expect(convert('## Hello').problems).toEqual([
       "blog/2025-03-21-announcing-trpc-11.mdx: doesn't open with a paragraph",
     ]);
+  });
+});
+
+describe('convertSnippet', () => {
+  it("writes plain code, as trpc.io's home page shows it, with no frontmatter", () => {
+    const converted = convertSnippet(
+      'docs/landing-intro/Step3.md',
+      docsOf({
+        'docs/landing-intro/Step3.md': [
+          '```twoslash include server',
+          '// @filename: server.ts',
+          'export const appRouter = {};',
+          '```',
+          '',
+          '```ts twoslash',
+          '// @include: server',
+          '// @filename: client.ts',
+          '// ---cut---',
+          'const res = await trpc.greeting.query();',
+          '//    ^?',
+          '```',
+        ].join('\n'),
+      }),
+    );
+    expect(converted.problems).toEqual([]);
+    expect(converted.markdown).toBe(
+      '```ts\nconst res = await trpc.greeting.query();\n```\n',
+    );
   });
 });
 

@@ -187,9 +187,15 @@
   "docs/further/rpc.md": [
     "v11/docs/rpc.md"
   ],
-  "docs/landing-intro/Step1.md": "trpc.io's home page shows it (`src/components/QuickIntro.tsx`); no sidebar lists it",
-  "docs/landing-intro/Step2.md": "trpc.io's home page shows it (`src/components/QuickIntro.tsx`); no sidebar lists it",
-  "docs/landing-intro/Step3.md": "trpc.io's home page shows it (`src/components/QuickIntro.tsx`); no sidebar lists it",
+  "docs/landing-intro/Step1.md": [
+    "v11/home/step-1.md"
+  ],
+  "docs/landing-intro/Step2.md": [
+    "v11/home/step-2.md"
+  ],
+  "docs/landing-intro/Step3.md": [
+    "v11/home/step-3.md"
+  ],
   "docs/main/concepts.mdx": [
     "v11/docs/concepts.md"
   ],

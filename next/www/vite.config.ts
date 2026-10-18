@@ -106,6 +106,11 @@ export default defineConfig({
         samplesDir,
         sections: copy.sections,
         siteUrl: site.url,
+        // trpc.io's home page's intro, which the home page shows for v11.
+        snippetsDir:
+          copy.version.id === 'v11'
+            ? new URL('v11/home', import.meta.url).pathname
+            : undefined,
         sourceUrl: `${site.github}/blob/main/www`,
         summary: site.description,
       }),

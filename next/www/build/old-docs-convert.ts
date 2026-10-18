@@ -1241,10 +1241,12 @@ function convertFile(
   file: string,
   page: LinkingPage,
   docs: CopiedDocs,
-  frontmatterOf: (
-    lines: ReadonlyArray<string>,
-    problems: Array<string>,
-  ) => ReadonlyArray<string>,
+  frontmatterOf:
+    | ((
+        lines: ReadonlyArray<string>,
+        problems: Array<string>,
+      ) => ReadonlyArray<string>)
+    | undefined,
 ): ConvertedPage {
   const images = new Set<string>();
   const inlined = new Set<string>();
@@ -1275,13 +1277,30 @@ function convertFile(
       problems.push(`${file}: a Twoslash block is left in \`${line}\``);
     }
   }
-  const frontmatter = ['---', ...frontmatterOf(lines, problems), '---'];
+  const frontmatter =
+    frontmatterOf === undefined
+      ? []
+      : ['---', ...frontmatterOf(lines, problems), '---', ''];
   return {
     images: [...images].toSorted(),
     inlined: [...inlined].toSorted(),
-    markdown: `${[...frontmatter, '', ...lines].join('\n').trimEnd()}\n`,
+    markdown: `${[...frontmatter, ...lines].join('\n').trimEnd()}\n`,
     problems,
   };
+}
+
+/**
+ * A file trpc.io shows outside its docs, as Markdown without frontmatter:
+ * the code of its home page's intro (`src/components/QuickIntro.tsx`).
+ * Links in it are paths on this site, as a post's are.
+ */
+export function convertSnippet(file: string, docs: CopiedDocs): ConvertedPage {
+  return convertFile(
+    file,
+    { blog: true, slug: 'index', version: v11.id },
+    docs,
+    undefined,
+  );
 }
 
 /** A copied page as a page of this site: its frontmatter and Markdown. */

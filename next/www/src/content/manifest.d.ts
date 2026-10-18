@@ -39,3 +39,11 @@ declare module 'sample:*' {
   const sample: Sample;
   export default sample;
 }
+
+/** A snippet of `docsContent`'s `snippetsDir`: `v11/home/step-1.md`. */
+declare module '*.md' {
+  import type { Sample } from '~/content/types.ts';
+
+  const snippet: Sample;
+  export default snippet;
+}

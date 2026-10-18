@@ -43,6 +43,11 @@ export interface ContentOptions extends PageDirs {
   readonly sourceUrl: string;
   /** What the project is, one line, for `llms.txt`. */
   readonly summary: string;
+  /**
+   * Markdown without frontmatter that code outside the pages imports, as a
+   * `sample:` import's `{ html }`: `import step from '…/v11/home/step-1.md'`.
+   */
+  readonly snippetsDir?: string | undefined;
   /** Keeps compiled code blocks on disk, so the next build reuses them. */
   readonly twoslashCache?: TwoslashCacheOptions | undefined;
   /**
@@ -386,6 +391,29 @@ export function docsContent(options: ContentOptions): Plugin {
     return { files: expanded.files, sample };
   });
 
+  const renderSnippet = Effect.fn('renderSnippet')(function* (
+    file: string,
+    markdown: string,
+  ) {
+    const result = yield* renderMarkdown(markdown, {
+      basePath,
+      samplesDir,
+      slug: 'index',
+      sourceUrl: options.sourceUrl,
+      twoslashCache,
+    }).pipe(
+      Effect.mapError(
+        (error) =>
+          new ContentError({
+            cause: error,
+            message: `${file}: ${error.message}`,
+          }),
+      ),
+    );
+    const sample: Sample = { html: result.html };
+    return sample;
+  });
+
   function render(source: Source): Promise<Rendered> {
     const cached = rendered.get(source.file);
     if (cached) {
@@ -674,6 +702,14 @@ export function docsContent(options: ContentOptions): Plugin {
     sharedDuringBuild: true,
     async transform(code, id) {
       const file = id.split('?')[0] ?? id;
+      if (
+        options.snippetsDir !== undefined &&
+        file.startsWith(`${options.snippetsDir}/`) &&
+        file.endsWith('.md')
+      ) {
+        const sample = await run(renderSnippet(file, code));
+        return { code: `export default ${JSON.stringify(sample)};`, map: null };
+      }
       if (!file.startsWith(options.contentDir) || !file.endsWith('.md')) {
         return undefined;
       }
