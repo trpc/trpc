@@ -129,7 +129,7 @@ import { something } from '@trpc/unknown';
 `),
     ).toMatchInlineSnapshot(`
       [
-        "1:1 observable() subscriptions: return an async generator or an Effect Stream",
+        "1:1 observable(): subscriptions return an async generator or an Effect Stream; a v11 link keeps it under fromV11Link",
         "2:1 adapters: serve createFetchHandler() with serve() from @trpc12/trpc/http (docs/adapters/overview.md)",
         "3:1 @trpc/unknown: no v12 module, see docs/migrations/from-v11.md",
       ]
@@ -195,8 +195,27 @@ export const authLink: TRPCLink<AppRouter> = () => ({ op, next }) => next(op);
 `),
     ).toMatchInlineSnapshot(`
       [
-        "1:15 TRPCLink: keep the link with fromV11Link(link) from @trpc12/trpc/interop, or rewrite it with link() as an Effect Stream function",
+        "1:15 TRPCLink: stays on @trpc/client; keep the link with fromV11Link(link) from @trpc12/trpc/interop, or rewrite it with link() as an Effect Stream function",
       ]
+    `);
+  });
+
+  test('TRPCLink stays imported from @trpc/client, for fromV11Link', () => {
+    const only = `import type { TRPCLink } from '@trpc/client';
+export const authLink: TRPCLink<AppRouter> = () => ({ op, next }) => next(op);
+`;
+    expect(upgrade(only).code).toBe(only);
+    expect(
+      upgrade(`import { createTRPCClient, type TRPCLink } from "@trpc/client";
+declare const authLink: TRPCLink<AppRouter>;
+const client = createTRPCClient<AppRouter>({ links: [authLink] });
+`).code,
+    ).toMatchInlineSnapshot(`
+      "import { createTrpcClient, routerType } from '@trpc12/trpc/client';
+      import { type TRPCLink } from "@trpc/client";
+      declare const authLink: TRPCLink<AppRouter>;
+      const client = createTrpcClient({ router: routerType<AppRouter>(), links: [authLink] });
+      "
     `);
   });
 
@@ -487,18 +506,20 @@ export const handle = (request: Request) =>
   });
 
   test('TRPCClientError<Router>, createTRPCOptionsProxy and spread JSX props are notes', () => {
-    const source = `import { TRPCClientError } from '@trpc/client';
+    const source = `import { TRPCClientError, type TRPCClient } from '@trpc/client';
 import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
 import { TRPCProvider } from './trpc';
 type E = TRPCClientError<AppRouter>;
-const proxy = createTRPCOptionsProxy({ client, queryClient });
+declare const client: TRPCClient<AppRouter>;
+const proxy = createTRPCOptionsProxy<AppRouter>({ client, queryClient });
 const app = <TRPCProvider {...props} trpcClient={client} />;
 `;
     expect(upgrade(source, 'app.tsx').code).toMatchInlineSnapshot(`
-      "import { TrpcError } from '@trpc12/trpc/client';
+      "import { TrpcError, type TrpcClient } from '@trpc12/trpc/client';
       import { createTrpcQueryUtils } from '@trpc12/tanstack-react-query';
       import { TrpcProvider } from './trpc';
       type E = TrpcError<AppRouter>;
+      declare const client: TrpcClient<AppRouter>;
       const proxy = createTrpcQueryUtils({ client, queryClient });
       const app = <TrpcProvider {...props} client={client} />;
       "
@@ -506,9 +527,42 @@ const app = <TRPCProvider {...props} trpcClient={client} />;
     expect(messages(source, 'app.tsx')).toMatchInlineSnapshot(`
       [
         "4:10 TrpcError<TCode, TData> takes a code and data, not a router; use ClientError or safe()",
-        "5:15 createTrpcQueryUtils({ client }): the queryClient goes to QueryClientProvider",
+        "6:15 createTrpcQueryUtils({ client }): the queryClient goes to QueryClientProvider",
       ]
     `);
+  });
+
+  test('helpers whose input moved into their options are notes', () => {
+    const source = `import { useTRPC } from './trpc';
+function Posts() {
+  const trpc = useTRPC();
+  useQuery(trpc.post.list.queryOptions());
+  useQuery(trpc.post.byId.queryOptions({ id: '1' }, { staleTime: 1 }));
+  trpc.post.byId.queryKey({ id: '1' });
+  trpc.post.byId.queryFilter({ id: '1' });
+  trpc.post.feed.infiniteQueryOptions({ limit: 10 });
+  trpc.post.feed.infiniteQueryKey({ limit: 10 });
+  trpc.post.onAdd.subscriptionOptions(undefined, { onData });
+  useMutation(trpc.post.add.mutationOptions({ onSuccess }));
+}
+`;
+    expect(messages(source, 'posts.tsx')).toMatchInlineSnapshot(`
+      [
+        "5:27 queryOptions(input, opts) is queryOptions({ input, ...opts }) in v12",
+        "6:18 queryKey(input) is queryKey({ input }) in v12",
+        "7:18 queryFilter(input, filters) is queryFilter({ input, ...filters }) in v12",
+        "8:18 infiniteQueryOptions(input, opts) is infiniteOptions({ input: (cursor) => ({ ...input, cursor }), ...opts }) in v12",
+        "9:18 infiniteQueryKey(input) is infiniteKey({ input, initialPageParam }) in v12",
+        "10:19 subscriptionOptions(input, opts) is subscriptionOptions({ input, ...opts }) in v12",
+      ]
+    `);
+    // Without v11's TanStack integration, queryOptions() is someone else's.
+    expect(
+      messages(`import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+api.queryOptions({ id: '1' });
+`),
+    ).toEqual([]);
   });
 
   test('shapes with nothing to rewrite are left as they are', () => {

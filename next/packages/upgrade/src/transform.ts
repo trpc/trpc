@@ -78,6 +78,7 @@ const MODULES: Readonly<Record<string, ModuleMap>> = {
     names: {
       createTRPCClient: 'createTrpcClient',
       createTRPCProxyClient: 'createTrpcClient',
+      TRPCClient: 'TrpcClient',
       TRPCClientError: 'TrpcError',
       httpBatchLink: 'httpLink',
       httpBatchStreamLink: 'httpLink',
@@ -105,9 +106,29 @@ const PROJECT_RENAMES: Readonly<Record<string, string>> = {
   useTRPCClient: 'useTrpcClient',
 };
 
+/** v11 names that stay imported from v11: what `fromV11Link` runs. */
+const KEPT: Readonly<Record<string, ReadonlySet<string>>> = {
+  '@trpc/client': new Set(['TRPCLink']),
+};
+
+/** TanStack helpers whose input moved into their options: `queryOptions({ input })`. */
+const QUERY_HELPERS: Readonly<Record<string, string>> = {
+  queryOptions:
+    'queryOptions(input, opts) is queryOptions({ input, ...opts }) in v12',
+  queryKey: 'queryKey(input) is queryKey({ input }) in v12',
+  queryFilter:
+    'queryFilter(input, filters) is queryFilter({ input, ...filters }) in v12',
+  subscriptionOptions:
+    'subscriptionOptions(input, opts) is subscriptionOptions({ input, ...opts }) in v12',
+  infiniteQueryOptions:
+    'infiniteQueryOptions(input, opts) is infiniteOptions({ input: (cursor) => ({ ...input, cursor }), ...opts }) in v12',
+  infiniteQueryKey:
+    'infiniteQueryKey(input) is infiniteKey({ input, initialPageParam }) in v12',
+};
+
 const MODULE_NOTES: Readonly<Record<string, string>> = {
   '@trpc/server/observable':
-    'observable() subscriptions: return an async generator or an Effect Stream',
+    'observable(): subscriptions return an async generator or an Effect Stream; a v11 link keeps it under fromV11Link',
   '@trpc/server/adapters/standalone':
     'adapters: serve createFetchHandler() with serve() from @trpc12/trpc/http (docs/adapters/overview.md)',
   '@trpc/server/adapters/express':
@@ -122,7 +143,7 @@ const MODULE_NOTES: Readonly<Record<string, string>> = {
 
 const NAME_NOTES: Readonly<Record<string, string>> = {
   TRPCLink:
-    'TRPCLink: keep the link with fromV11Link(link) from @trpc12/trpc/interop, or rewrite it with link() as an Effect Stream function',
+    'TRPCLink: stays on @trpc/client; keep the link with fromV11Link(link) from @trpc12/trpc/interop, or rewrite it with link() as an Effect Stream function',
 };
 
 const ROOT_OPTION_NOTES: Readonly<Record<string, string>> = {
@@ -270,7 +291,7 @@ export function upgradeSource(
   };
   const rebuilt = new Map<
     string,
-    { node: Node; names: Set<string>; typeOnly: boolean }
+    { node: Node; names: Set<string>; kept: string[]; typeOnly: boolean }
   >();
 
   for (const statement of program['body'] as Node[]) {
@@ -305,6 +326,7 @@ export function upgradeSource(
       continue;
     }
     const names = new Set<string>();
+    const kept: string[] = [];
     let canRebuild = true;
     for (const spec of statement['specifiers'] as Node[]) {
       if (spec.type !== 'ImportSpecifier' && spec.type !== 'ExportSpecifier') {
@@ -320,6 +342,10 @@ export function upgradeSource(
       const next = own(map.names, name) ?? name;
       const nameNote = own(NAME_NOTES, name);
       if (nameNote) note(spec.start, nameNote);
+      if (own(KEPT, from)?.has(name)) {
+        kept.push(text(spec));
+        continue;
+      }
       const kind =
         spec['importKind'] === 'type' || spec['exportKind'] === 'type'
           ? 'type '
@@ -346,12 +372,17 @@ export function upgradeSource(
     rebuilt.set(`${statement.start}`, {
       node: statement,
       names,
+      kept,
       typeOnly:
         statement['importKind'] === 'type' ||
         statement['exportKind'] === 'type',
     });
     taken.push([statement.start, statement.end]);
   }
+
+  /** Files on v11's TanStack integration, where `x.queryOptions(input)` is a tRPC helper. */
+  const usesQueryHelpers =
+    source.includes('@trpc/tanstack-react-query') || /\buseTRPC\b/.test(source);
 
   const isImportedAs = (node: Node, v11Name: string) =>
     node.type === 'Identifier' && imported.get(node.name) === v11Name;
@@ -565,6 +596,11 @@ export function upgradeSource(
         take(arg.end, node.end, ' })');
         return;
       }
+      const helperNote =
+        usesQueryHelpers && method && own(QUERY_HELPERS, method);
+      if (helperNote && node['arguments'].length > 0) {
+        note(callee['property'].start, helperNote);
+      }
       if (method === 'createCallerFactory' && imported.size > 0) {
         note(
           node.start,
@@ -600,6 +636,9 @@ export function upgradeSource(
             'createWSClient: pass its options to wsLink({ url })',
           );
         } else if (v11 === 'createTRPCOptionsProxy') {
+          // createTrpcQueryUtils infers from the client; its type argument is the client's type.
+          const typeArgs = node['typeArguments'] as Node | undefined;
+          if (typeArgs) take(typeArgs.start, typeArgs.end, '');
           note(
             node.start,
             'createTrpcQueryUtils({ client }): the queryClient goes to QueryClientProvider',
@@ -660,16 +699,21 @@ export function upgradeSource(
     return;
   });
 
-  for (const { node, names, typeOnly } of rebuilt.values()) {
+  for (const { node, names, kept, typeOnly } of rebuilt.values()) {
     const from = own(MODULES, node['source'].value)!.to;
     for (const name of added.get(from) ?? []) names.add(name);
     added.delete(from);
     const keyword = node.type === 'ImportDeclaration' ? 'import' : 'export';
-    s.overwrite(
-      node.start,
-      node.end,
-      `${keyword} ${typeOnly ? 'type ' : ''}{ ${[...names].join(', ')} } from '${from}';`,
-    );
+    const head = `${keyword} ${typeOnly ? 'type ' : ''}`;
+    const statements = [
+      ...(names.size > 0 || kept.length === 0
+        ? [`${head}{ ${[...names].join(', ')} } from '${from}';`]
+        : []),
+      ...(kept.length > 0
+        ? [`${head}{ ${kept.join(', ')} } from ${text(node['source'])};`]
+        : []),
+    ];
+    s.overwrite(node.start, node.end, statements.join('\n'));
   }
   if (added.size > 0) {
     const lines = [...added]

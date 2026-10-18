@@ -19,7 +19,7 @@ It takes files and directories, reads `.js`, `.jsx`, `.ts` and `.tsx` files (and
 
 It keeps your formatting, and rewrites:
 
-- Imports from `@trpc/server`, `@trpc/server/adapters/fetch`, `@trpc/client` and `@trpc/tanstack-react-query` to their `@trpc12/*` entry points, with the names that changed: `initTRPC` to `initTrpc`, `TRPCError` and `TRPCClientError` to `TrpcError`, `fetchRequestHandler` to `createFetchHandler`, `createTRPCClient` to `createTrpcClient`, `createTRPCContext` to `createTrpcContext`, `createTRPCOptionsProxy` to `createTrpcQueryUtils`.
+- Imports from `@trpc/server`, `@trpc/server/adapters/fetch`, `@trpc/client` and `@trpc/tanstack-react-query` to their `@trpc12/*` entry points, with the names that changed: `initTRPC` to `initTrpc`, `TRPCError` and `TRPCClientError` to `TrpcError`, `fetchRequestHandler` to `createFetchHandler`, `createTRPCClient` to `createTrpcClient`, `TRPCClient` to `TrpcClient`, `createTRPCContext` to `createTrpcContext`, `createTRPCOptionsProxy` to `createTrpcQueryUtils`. `TRPCLink` stays imported from `@trpc/client`, for [`fromV11Link`](./links.md).
 - `initTRPC.context<Ctx>().meta<Meta>().create()` to `initTrpc<{ ctx: Ctx; meta: Meta }>()`, `mergeRouters(a, b)` to `{ ...a, ...b }`, and `router.createCaller(ctx)` to `createRouterClient(router, { ctx })`.
 - `httpBatchLink`, `httpBatchStreamLink` and `httpSubscriptionLink` to `httpLink`, and their `transformer` to `serializer`.
 - `createTRPCContext`'s result, destructured as a tuple, with `TRPCProvider`, `useTRPC` and `useTRPCClient` renamed wherever the project uses them.
@@ -32,11 +32,11 @@ The rest it leaves as is and prints as `file:line:column` steps, with the v12 wa
 ```
 would upgrade src/server/trpc.ts
 src/server/trpc.ts:4:3 transformer: drop it here; pass the same createSyncSerializer(transformer) to the handler and every link
-src/server/index.ts:1:1 observable() subscriptions: return an async generator or an Effect Stream
+src/server/index.ts:1:1 observable(): subscriptions return an async generator or an Effect Stream; a v11 link keeps it under fromV11Link
 1 file(s) to upgrade, 2 step(s) by hand
 ```
 
-The steps cover what needs a decision: an `errorFormatter` (declared errors, or [`createV11Handler`](./serve-v11-clients.md) for old clients), `observable()` subscriptions, the standalone, Express and `ws` adapters ([Adapters](../../adapters/overview.md)), `@trpc/react-query` and `@trpc/next`, which have no v12 version, `createWSClient`, `createCallerFactory`, your own `TRPCLink`s ([v11 links](./links.md)), and root options such as `isDev` and `sse` that moved to the handler. A file it can't parse is reported and left alone.
+The steps cover what needs a decision: an `errorFormatter` (declared errors, or [`createV11Handler`](./serve-v11-clients.md) for old clients), `observable()` subscriptions, the standalone, Express and `ws` adapters ([Adapters](../../adapters/overview.md)), `@trpc/react-query` and `@trpc/next`, which have no v12 version, `createWSClient`, `createCallerFactory`, your own `TRPCLink`s ([v11 links](./links.md)), TanStack helpers such as `queryOptions(input)` whose input moved into their options (`queryOptions({ input })`), and root options such as `isDev` and `sse` that moved to the handler. A file it can't parse is reported and left alone.
 
 ## From code
 
