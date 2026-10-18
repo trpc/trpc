@@ -1,7 +1,7 @@
 /**
- * Starts the API on Effect's server, Express and Fastify, and runs the same
- * scenario against each, failing on any unexpected result. Run with
- * `pnpm smoke` (or `pnpm example` from `next/`).
+ * Calls the API the way an app would and throws on any unexpected result.
+ * `pnpm start` runs it against each server; `pnpm client [url]` against a
+ * running `pnpm server`.
  */
 import assert from 'node:assert/strict';
 import {
@@ -10,17 +10,13 @@ import {
   safe,
   type LoggerEvent,
 } from '@trpc12/trpc/client';
-import { createApiClient } from './src/client.ts';
-import { appOrigin, createApiHandler } from './src/handler.ts';
-import {
-  listenEffect,
-  listenExpress,
-  listenFastify,
-  type Listening,
-} from './src/servers.ts';
+import { createApiClient } from './src/api-client.ts';
 
-async function scenario(server: Listening) {
-  const origin = server.origin;
+/** An origin the server's `cors()` allows. */
+const appOrigin = 'https://app.example.test';
+
+export async function main(url: string) {
+  const origin = new URL(url).origin;
 
   // Plain HTTP beside tRPC: health and a CORS preflight.
   const health = await fetch(`${origin}/health`);
@@ -211,16 +207,8 @@ async function scenario(server: Listening) {
       'task.add:true',
     ],
   );
-  console.log(`${server.name}: ok (${audit.length} audited writes)`);
+  console.log(`${origin}: ok (${audit.length} audited writes)`);
 }
 
-for (const listen of [listenEffect, listenExpress, listenFastify]) {
-  const handler = createApiHandler();
-  const server = await listen(handler);
-  try {
-    await scenario(server);
-  } finally {
-    await server.close();
-    await handler.dispose();
-  }
-}
+if (import.meta.main)
+  await main(process.argv[2] ?? 'http://localhost:3000/trpc');

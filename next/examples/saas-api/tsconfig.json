@@ -12,5 +12,5 @@
     "allowImportingTsExtensions": true,
     "types": ["node"]
   },
-  "include": ["src", "smoke.ts"]
+  "include": ["src", "server.ts", "client.ts", "start.ts"]
 }

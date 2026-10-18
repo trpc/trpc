@@ -5,7 +5,10 @@
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vp test run",
-    "smoke": "node smoke.ts"
+    "start": "node start.ts",
+    "server": "node server.ts",
+    "client": "node client.ts",
+    "smoke": "pnpm start"
   },
   "dependencies": {
     "@effect/platform-node": "4.0.2",

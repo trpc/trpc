@@ -21,7 +21,10 @@ export interface Listening {
 }
 
 /** The Effect way: the handler's routes merged with our own. */
-export async function listenEffect(handler: ApiHandler): Promise<Listening> {
+export async function listenEffect(
+  handler: ApiHandler,
+  port = 0,
+): Promise<Listening> {
   const app = Layer.mergeAll(
     handler.routes,
     HttpRouter.add('GET', '/health', HttpServerResponse.text('ok')),
@@ -29,7 +32,7 @@ export async function listenEffect(handler: ApiHandler): Promise<Listening> {
   const runtime = ManagedRuntime.make(
     HttpRouter.serve(app, { disableLogger: true, disableListenLog: true }).pipe(
       Layer.provideMerge(
-        NodeHttpServer.layer(createServer, { port: 0, host: '127.0.0.1' }),
+        NodeHttpServer.layer(createServer, { port, host: '127.0.0.1' }),
       ),
     ),
   );
@@ -51,7 +54,10 @@ async function listening(server: Server) {
   return `http://127.0.0.1:${address.port}`;
 }
 
-export async function listenExpress(handler: ApiHandler): Promise<Listening> {
+export async function listenExpress(
+  handler: ApiHandler,
+  port = 0,
+): Promise<Listening> {
   const scope = Scope.makeUnsafe();
   const nodeHandler = await nodeHandlerFor(handler, scope);
   const app = express();
@@ -62,7 +68,7 @@ export async function listenExpress(handler: ApiHandler): Promise<Listening> {
   app.use(express.json());
   // A route, not `app.use('/trpc', …)`, which strips the prefix from req.url.
   app.all('/trpc{/*path}', nodeHandler);
-  const server = app.listen(0, '127.0.0.1');
+  const server = app.listen(port, '127.0.0.1');
   const origin = await listening(server);
   return {
     name: 'express',
@@ -75,7 +81,10 @@ export async function listenExpress(handler: ApiHandler): Promise<Listening> {
   };
 }
 
-export async function listenFastify(handler: ApiHandler): Promise<Listening> {
+export async function listenFastify(
+  handler: ApiHandler,
+  port = 0,
+): Promise<Listening> {
   const scope = Scope.makeUnsafe();
   const nodeHandler = await nodeHandlerFor(handler, scope);
   const fastify = Fastify();
@@ -92,7 +101,7 @@ export async function listenFastify(handler: ApiHandler): Promise<Listening> {
       });
     }
   });
-  await fastify.listen({ port: 0, host: '127.0.0.1' });
+  await fastify.listen({ port, host: '127.0.0.1' });
   return {
     name: 'fastify',
     origin: await listening(fastify.server),
