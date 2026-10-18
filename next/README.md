@@ -46,21 +46,21 @@ pnpm test
 pnpm example
 ```
 
-| Command             | What it does                                                                                                                                             |
-| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `pnpm install`      | Installs deps; `prepare` installs the git hook dispatcher                                                                                                |
-| `pnpm typecheck`    | `tsc` (TypeScript 7) in every workspace package                                                                                                          |
-| `pnpm check`        | `vp check`: format check, lint and type-aware lint/type check; then `pnpm lint:docs`                                                                     |
-| `pnpm lint:docs`    | Lints the code blocks in `docs/` with the rules that hold for examples (`tooling/docs-lint/`), since oxlint skips Markdown                               |
-| `pnpm fix`          | `vp check --fix`: format and autofix                                                                                                                     |
-| `pnpm test`         | `vp test run`: Vitest, including `*.test-d.ts` type tests                                                                                                |
-| `pnpm coverage`     | `pnpm test` with v8 coverage over `packages/*/src`; fails below 98% statements, branches, functions or lines                                             |
-| `pnpm test:bun`     | `@trpc12/trpc`'s Bun tests (`*.bun.test.ts`); needs `bun` on `PATH`                                                                                      |
-| `pnpm example`      | Runs every example's `smoke` script (`examples/*`; `realtime` needs Redis at `REDIS_URL` and Postgres at `DATABASE_URL`)                                 |
-| `pnpm build`        | `vp pack` per package (`tooling/pack/`): unbundled ESM and declarations in `dist/`, published through `publishConfig.exports`; also builds the docs site |
-| `pnpm docs:dev`     | The docs site at http://localhost:3012, reloading as `docs/` changes                                                                                     |
-| `pnpm docs:build`   | Prerenders the site to `www/dist/client`, and its Vercel output to `www/.vercel/output`; fails on a type error in a twoslash block or a broken link      |
-| `pnpm bench budget` | Gzip size of the client bundles; fails above a ceiling in `budgets` (`tooling/bench/bench.ts`)                                                           |
+| Command             | What it does                                                                                                                                                      |
+| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm install`      | Installs deps; `prepare` installs the git hook dispatcher                                                                                                         |
+| `pnpm typecheck`    | `tsc` (TypeScript 7) in every workspace package                                                                                                                   |
+| `pnpm check`        | `vp check`: format check, lint and type-aware lint/type check; then `pnpm lint:docs`                                                                              |
+| `pnpm lint:docs`    | Lints the code blocks in `docs/` with the rules that hold for examples (`tooling/docs-lint/`), since oxlint skips Markdown                                        |
+| `pnpm fix`          | `vp check --fix`: format and autofix                                                                                                                              |
+| `pnpm test`         | `vp test run`: Vitest, including `*.test-d.ts` type tests                                                                                                         |
+| `pnpm coverage`     | `pnpm test` with v8 coverage over `packages/*/src`; fails below 98% statements, branches, functions or lines                                                      |
+| `pnpm test:bun`     | `@trpc12/trpc`'s Bun tests (`*.bun.test.ts`); needs `bun` on `PATH`                                                                                               |
+| `pnpm example`      | Runs every example's `smoke` script (`examples/*`; `realtime` needs Redis at `REDIS_URL` and Postgres at `DATABASE_URL`, `runtime-matrix` needs `bun` and `deno`) |
+| `pnpm build`        | `vp pack` per package (`tooling/pack/`): unbundled ESM and declarations in `dist/`, published through `publishConfig.exports`; also builds the docs site          |
+| `pnpm docs:dev`     | The docs site at http://localhost:3012, reloading as `docs/` changes                                                                                              |
+| `pnpm docs:build`   | Prerenders the site to `www/dist/client`, and its Vercel output to `www/.vercel/output`; fails on a type error in a twoslash block or a broken link               |
+| `pnpm bench budget` | Gzip size of the client bundles; fails above a ceiling in `budgets` (`tooling/bench/bench.ts`)                                                                    |
 
 Run all of them before pushing: `pnpm fix`, `pnpm check`, `pnpm typecheck`, `pnpm coverage` (which runs `pnpm test`), `pnpm test:bun`, `pnpm example`, `pnpm build` (which builds the docs site too) and `pnpm bench budget`. When a change shrinks a client bundle, lower its `ceiling` to the new size; never raise one without saying so in the PR.
 
@@ -72,6 +72,6 @@ React without TanStack, both experimental as whole packages ([docs](./docs/integ
 
 **Pre-commit:** `.vite-hooks/pre-commit` runs `vp staged` (see `staged` in `vite.config.ts`): `vp check --fix` on staged files under `next/`, plus `vp test related` for staged `.ts` files. `.vite-hooks/post-merge` reruns `pnpm --filter @trpc12/www sponsors:readme` when a merge changed the root's `README.md`. The old docs copied from the root's `www/` are synced by hand ([`../.agents/skills/sync-old-docs/SKILL.md`](../.agents/skills/sync-old-docs/SKILL.md)). `pnpm install` enables it via `vp config` unless `core.hooksPath` is already set to something else. Skip once with `VP_GIT_HOOKS=0 git commit …`.
 
-**CI:** `../.github/workflows/next.yml` runs for changes under `next/`: `typecheck`, `check`, `coverage`, `example` (with Redis and Postgres) and `bench budget`; `typecheck` and `test` against the latest `effect@4.x`; and `test:bun`. `fix` and `build` aren't in CI, so run them locally. After pushing, find the run with `gh run list --workflow next.yml --branch <branch>` and watch it with `gh run watch <id> --exit-status`. Root v11 workflows are untouched.
+**CI:** `../.github/workflows/next.yml` runs for changes under `next/`: `typecheck`, `check`, `coverage`, `example` (with Redis, Postgres, Bun and Deno) and `bench budget`; `typecheck` and `test` against the latest `effect@4.x`; and `test:bun`. `fix` and `build` aren't in CI, so run them locally. After pushing, find the run with `gh run list --workflow next.yml --branch <branch>` and watch it with `gh run watch <id> --exit-status`. Root v11 workflows are untouched.
 
 **Releases:** [Changesets](https://github.com/changesets/changesets) in `.changeset/`, nothing published yet ([decision](./.agent-docs/decisions/versioning.md)). Each package has its own version, and a bump also releases every package that depends on the bumped one (`dependencies` or `peerDependencies`). `pnpm changeset` records a change (`pnpm changeset --minor @trpc12/trpc -m "…"` skips the prompts); a breaking bump, a minor on `0.x`, names each dependent with the same bump, which `tooling/release/release.test.ts` checks. Don't add changesets before the first release, which publishes each package's `0.1.0` as it stands.

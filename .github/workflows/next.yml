@@ -64,6 +64,13 @@ jobs:
       - run: pnpm coverage
         env:
           REDIS_URL: redis://127.0.0.1:6379
+      # examples/runtime-matrix serves its router on Bun and Deno too.
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.4.3
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: 2.9.7
       # examples/react-spa drives the runner's preinstalled Google Chrome.
       - run: pnpm example
         env:
