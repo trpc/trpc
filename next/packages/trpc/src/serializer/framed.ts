@@ -123,13 +123,39 @@ function setAt(
   return target;
 }
 
+/**
+ * Whether a `File` or `Blob` sits in `value`, or in the containers a
+ * transformer walks (plain objects, arrays, `Map`s and `Set`s): it would turn
+ * one into `{}` instead of failing.
+ */
+function holdsBlob(value: unknown, seen = new Set<object>()): boolean {
+  if (value instanceof Blob) return true;
+  if (typeof value !== 'object' || value === null || seen.has(value)) {
+    return false;
+  }
+  seen.add(value);
+  const children: Iterable<unknown> = Array.isArray(value)
+    ? value
+    : value instanceof Map
+      ? [...value.keys(), ...value.values()]
+      : value instanceof Set
+        ? value
+        : isPlainObject(value)
+          ? Object.values(value)
+          : [];
+  for (const child of children) {
+    if (holdsBlob(child, seen)) return true;
+  }
+  return false;
+}
+
 function framedSerializer(
   name: string,
   kind: 'sync' | 'none',
   transformer: SyncTransformer,
 ): Serializer<any> {
   const serialize = (value: unknown): SerializeReturn => {
-    if (value instanceof Blob) {
+    if (holdsBlob(value)) {
       throw new DansonError(
         'A File or Blob needs a streaming serializer such as createSerializer(); a root file output can be a raw response instead',
       );

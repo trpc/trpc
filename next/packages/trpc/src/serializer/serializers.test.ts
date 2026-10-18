@@ -371,3 +371,45 @@ test('nested deferred values stream with every serializer; files in inputs need 
     message: expect.stringContaining('streaming serializer'),
   });
 });
+
+test('a File nested in an input or output fails with the other serializers, before it is sent', async () => {
+  const file = new File(['x'], 'a.txt');
+  const files = {
+    upload: t.procedure.input(z.unknown()).mutation(() => 'ok'),
+    report: t.procedure.query(() => ({ name: 'a.txt', file })),
+  };
+  for (const serializer of [undefined, superjsonSerializer]) {
+    await using server = await createTestServer({ router: files, serializer });
+    let requests = 0;
+    const client = createTrpcClient({
+      router: routerType<typeof files>(),
+      links: [
+        httpLink({
+          url: server.url,
+          serializer,
+          fetch: (input, init) => {
+            requests++;
+            return fetch(input, init);
+          },
+        }),
+      ],
+    });
+    for (const input of [
+      { photos: [file] },
+      new Map([['cover', new Blob(['x'])]]),
+      new Set([file]),
+    ]) {
+      await expect(client.upload.mutate(input)).rejects.toMatchObject({
+        message: expect.stringContaining('streaming serializer'),
+      });
+    }
+    expect(requests).toBe(0);
+    await expect(client.report.query()).rejects.toBeInstanceOf(TrpcError);
+  }
+
+  // Shared and circular references are walked once.
+  const shared: { at: Date } = { at };
+  const loop: Record<string, unknown> = { a: shared, b: shared };
+  loop['self'] = loop;
+  expect(superjsonSerializer.serialize(loop).json).toBeDefined();
+});
