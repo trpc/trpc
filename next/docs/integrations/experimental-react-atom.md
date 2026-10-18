@@ -13,6 +13,8 @@ hidden: true
 @trpc12/trpc effect @trpc12/experimental-react-atom @effect/atom-react
 ```
 
+The [`examples/experimental/react-without-tanstack`](../../examples/experimental/react-without-tanstack/README.md) app reads one router with this package and `@trpc12/experimental-react`, side by side in a Vite page.
+
 ```tsx twoslash
 // ---cut-start---
 import { httpLink, routerType } from '@trpc12/trpc/client';

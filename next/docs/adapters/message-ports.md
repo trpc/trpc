@@ -54,6 +54,8 @@ const client = createTrpcClient({
 - Bytes in [streamed outputs](../server/files.md) pass as they are, without base64. Files as inputs aren't sent; the call fails with a `BAD_REQUEST`.
 - Closing the port is up to you. Electron's `MessagePortMain` and iframe windows work too.
 
+The [`examples/experimental/worker-threads`](../../examples/experimental/worker-threads/README.md) app serves a router from a Node worker thread: CPU work off the main thread, `connectionParams`, files, and a subscription left early.
+
 ## Credits
 
 Serving calls over message ports follows [oRPC's Message Port adapter](https://orpc.dev/docs/adapters/message-port).

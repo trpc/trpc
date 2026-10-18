@@ -46,6 +46,8 @@ const doc = experimental_generateOpenApi(router, {
 - [Calling REST from the client](./client.md): `experimental_openApiLink` sends each call to its REST route, typed from a contract.
 - [A contract from OpenAPI](./from-document.md): generate a typed contract module from any OpenAPI 3.0 or 3.1 document, to call APIs that aren't tRPC.
 
+The [`examples/experimental/openapi`](../../examples/experimental/openapi/README.md) app serves one router over RPC and REST, generates its document from types, and calls it with `fetch` and `experimental_openApiLink`.
+
 ## Credits
 
 REST routes declared in procedure meta come from [trpc-openapi](https://github.com/trpc/trpc-openapi), by [James Berry](https://github.com/jlalmes), which first brought OpenAPI to tRPC routers; [trpc-to-openapi](https://github.com/mcampa/trpc-to-openapi) maintains it for v11. Serving the whole router over REST with no configuration, `.route({ spec })` and OpenAPI-to-contract follow [oRPC](https://orpc.dev)'s OpenAPI support.

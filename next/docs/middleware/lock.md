@@ -54,6 +54,8 @@ The locker is an Effect service, `experimental_Locker`, provided as a layer:
 
 Outside a procedure, take a lock with the service: `yield* (yield* experimental_Locker).acquire(key)` holds it until the surrounding `Effect.scoped` ends.
 
+The [`examples/experimental/durable-jobs`](../../examples/experimental/durable-jobs/README.md) app takes an `experimental_redisLocker()` lock per invoice, so two payments for one invoice on two servers run one at a time.
+
 ## Credits
 
 `experimental_lock()` follows [oRPC's lock helpers](https://orpc.dev/docs/helpers/lock), and its Durable Object store, `experimental_durableLocker()`, works like oRPC's.

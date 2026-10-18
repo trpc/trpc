@@ -15,6 +15,8 @@ The whole package is experimental: the package name says so, every export is `@s
 @trpc12/trpc effect @trpc12/experimental-react
 ```
 
+The [`examples/experimental/react-without-tanstack`](../../examples/experimental/react-without-tanstack/README.md) app reads one router with this package and `@trpc12/experimental-react-atom`, side by side in a Vite page.
+
 ```tsx twoslash
 // ---cut-start---
 declare function Spinner(): React.ReactNode;

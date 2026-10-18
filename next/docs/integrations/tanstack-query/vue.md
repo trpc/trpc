@@ -13,6 +13,8 @@ hidden: true
 @trpc12/trpc effect @trpc12/tanstack-vue-query @tanstack/vue-query
 ```
 
+The [`examples/experimental/framework-matrix`](../../../examples/experimental/framework-matrix/README.md) app has a page per adapter (Vue, Solid and Svelte) on one server.
+
 ## Provide the client
 
 `createTrpcContext` takes the type of the function that makes the client (or of the client, or the router), so the helpers get what its links declare. Install its plugin next to `VueQueryPlugin`:
