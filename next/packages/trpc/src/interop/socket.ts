@@ -95,10 +95,6 @@ function v11Session(
     params: Record<string, unknown>,
   ): Effect.Effect<void> => {
     const path = typeof params['path'] === 'string' ? params['path'] : '';
-    const lastEventId =
-      typeof params['lastEventId'] === 'string'
-        ? params['lastEventId']
-        : inputEventId(params['input']);
     const head = envelope(id, jsonrpc);
     const callParams = connectionParams;
     const controller = new AbortController();
@@ -135,6 +131,10 @@ function v11Session(
             cause,
           }),
       });
+      const lastEventId =
+        typeof params['lastEventId'] === 'string'
+          ? params['lastEventId']
+          : inputEventId(callInput);
       const ctx = yield* base.makeContextEffect({
         request,
         platform: opts.platform,

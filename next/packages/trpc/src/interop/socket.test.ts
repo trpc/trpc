@@ -6,6 +6,7 @@ import { Effect, Exit, Layer, Scope, Stream } from 'effect';
 import { serve } from '@trpc12/trpc/http';
 import { createV11Handler, type V11HandlerOptions } from '@trpc12/trpc/interop';
 import { error, initTrpc, tracked } from '@trpc12/trpc/server';
+import superjson from 'superjson';
 import { expect, test } from 'vite-plus/test';
 import { z } from 'zod';
 
@@ -176,6 +177,24 @@ test('subscriptions resume from params.lastEventId and end with their error', as
     },
     { id: 1, result: { type: 'stopped' } },
   ]);
+  ws.close();
+});
+
+test("a subscription resumes from the input's lastEventId, read after the transformer", async () => {
+  await using app = await start({ transformer: superjson });
+  const ws = await connect(app.url);
+  ws.send({
+    id: 1,
+    method: 'subscription',
+    params: {
+      path: 'feed',
+      input: superjson.serialize({ lastEventId: '7' }),
+    },
+  });
+  expect((await ws.until(2))[1]).toMatchObject({
+    id: 1,
+    result: { type: 'data', id: '8' },
+  });
   ws.close();
 });
 
