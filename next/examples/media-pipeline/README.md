@@ -3,18 +3,21 @@
 Upload photos and get back reports whose fields resolve as they're ready. The example runs tRPC's streaming, file and serializer machinery end to end on Node, and every API it uses is stable.
 
 ```bash
-pnpm --filter @example/media-pipeline smoke   # or `pnpm example` from next/
+pnpm start                       # the server on a free port, then the client against it
+pnpm server                      # or the halves apart: the server on PORT (3000)…
+pnpm client                      # …and the client against http://localhost:3000/trpc
 ```
 
-`index.ts` starts the server on a free port, runs the pipeline with four clients, and throws on any wrong result.
+`pnpm example` (from `next/`) runs `pnpm start`. The layout follows [`examples/README.md`](../README.md). The client throws on any wrong result.
 
 | File        | What's in it                                                                                                                                                                     |
 | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `photos.ts` | The `Photos` service: an in-memory store, a PNG header reader, SVG placeholders, upload status, and a `PubSub` of pipeline events. Tagged errors `PHOTO_NOT_FOUND`, `NOT_A_PNG`. |
+| `server.ts` | `listen(port)`: one store behind two handlers on one `HttpRouter`, `/trpc` (danSON, batching) and `/sync` (`createSyncSerializer(superjson)`).                                   |
+| `client.ts` | `main(url)`: four clients (danSON batched, danSON binary frames, superjson, Effect) driving every feature below.                                                                 |
+| `start.ts`  | Starts the server, runs the client, and stops the server.                                                                                                                        |
 | `router.ts` | The procedures, written in Effect (Effect Schema inputs, services from the layer), plus one async generator, the v11 way.                                                        |
-| `money.ts`  | A `Money` class, kept by danSON through a `CustomType` and by superjson through `registerCustom`.                                                                                |
-| `server.ts` | One store behind two handlers on one `HttpRouter`: `/trpc` (danSON, batching) and `/sync` (`createSyncSerializer(superjson)`).                                                   |
-| `index.ts`  | The smoke: the client side of every feature below.                                                                                                                               |
+| `photos.ts` | The `Photos` service: an in-memory store, a PNG header reader, SVG placeholders, upload status, and a `PubSub` of pipeline events. Tagged errors `PHOTO_NOT_FOUND`, `NOT_A_PNG`. |
+| `money.ts`  | A `Money` class, kept by danSON through a `CustomType` and by superjson through `registerCustom`; both ends import its serializers.                                              |
 
 ## What it covers
 
@@ -29,6 +32,6 @@ pnpm --filter @example/media-pipeline smoke   # or `pnpm example` from next/
 
 ## Notes
 
-- The photos are PNG headers only (signature and `IHDR`), which is all the pipeline reads. `Photos.make({ latency })` sleeps per step to stand in for real work.
+- The photos are PNG headers only (signature and `IHDR`), which is all the pipeline reads. Each step sleeps `STEP_LATENCY` (40ms) to stand in for real work, and the client's timing checks use the same constant.
 - A client that stops reading ends an Effect `Stream` early, and `Stream.onExit` sees a success exit for that, as it does for `Stream.take`. The upload's status compares what was stored with the total to tell the two apart.
 - Building this example found that `createSyncSerializer` and the default JSON serializer sent a `File` nested in an input as `{}` (the server then failed input validation), where the docs say they fail before sending. That is fixed in `@trpc12/trpc`'s `serializer/framed.ts`.
