@@ -27,7 +27,7 @@ import { danson } from '../serializer/danson.ts';
 import type { Serializer } from '../serializer/index.ts';
 import type { Chunk, Frame } from '../serializer/stream.ts';
 import type { SerializeReturn } from '../serializer/sync.ts';
-import { frameSinks, type FrameSink } from './frame-sink.ts';
+import { frameSinks, type FrameSink } from '../server/frame-sink.ts';
 import {
   makeEffectMiddleware,
   ok,
@@ -36,7 +36,7 @@ import {
   type ReqCtx,
   type ReqInput,
   type ReqMeta,
-} from './middleware.ts';
+} from '../server/middleware.ts';
 
 /**
  * Options for {@link experimental_durable}.

@@ -8,8 +8,8 @@ import type {
   ReqCtx,
   ReqInput,
   ReqMeta,
-} from './middleware.ts';
-import { makeEffectMiddleware } from './middleware.ts';
+} from '../server/middleware.ts';
+import { makeEffectMiddleware } from '../server/middleware.ts';
 
 type RateLimitedData = Schema.Struct<{
   readonly limit: Schema.Number;

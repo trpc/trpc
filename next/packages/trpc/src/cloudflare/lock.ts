@@ -4,7 +4,7 @@ import {
   experimental_Locker,
   experimental_LockTimeout,
   type experimental_LockOptions,
-} from '../server/lock.ts';
+} from '../middleware/lock.ts';
 import type { HibernatableWebSocket } from './hibernation.ts';
 
 const TAG = 'trpc-lock';

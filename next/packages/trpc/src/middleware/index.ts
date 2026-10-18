@@ -13,10 +13,7 @@
  * ```
  * @module
  */
-export {
-  experimental_durable,
-  type DurableOptions,
-} from '../server/durable.ts';
+export { experimental_durable, type DurableOptions } from './durable.ts';
 export {
   experimental_lock,
   experimental_LockConflict,
@@ -29,10 +26,6 @@ export {
   type experimental_LockMiddlewareOptions,
   type experimental_LockOptions,
   type experimental_RedisLockerOptions,
-} from '../server/lock.ts';
+} from './lock.ts';
 export { onError, onFinish, onStart, onSuccess } from '../server/middleware.ts';
-export {
-  RateLimited,
-  rateLimit,
-  type RateLimitOptions,
-} from '../server/ratelimit.ts';
+export { RateLimited, rateLimit, type RateLimitOptions } from './ratelimit.ts';

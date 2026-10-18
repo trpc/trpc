@@ -7,4 +7,4 @@
 - (agent) `retryLink`'s `delayMs(attempt, error)` gets the error, so a client can wait `retryAfter`; the default retry still skips typed errors.
 - Why: Redis-backed distributed limits, token buckets and delay mode come from Effect; @trpc12/trpc adds only the tRPC error and headers.
 - Lost: oRPC's Upstash and Cloudflare adapters (a `RateLimiterStore` layer would provide them); oRPC's per-request dedupe of the same limiter and key (leading duplicates in `.concat()` are dropped, [`middleware-dedupe.md`](./middleware-dedupe.md)).
-- Lives in: `packages/trpc/src/server/ratelimit.ts`, `src/middleware/index.ts`, `src/client/links/basic.ts` (`delayMs`), `packages/trpc/src/server/ratelimit.test.ts`, `docs/middleware/rate-limit.md`.
+- Lives in: `packages/trpc/src/middleware/ratelimit.ts`, `src/middleware/index.ts`, `src/client/links/basic.ts` (`delayMs`), `packages/trpc/src/middleware/ratelimit.test.ts`, `docs/middleware/rate-limit.md`.
