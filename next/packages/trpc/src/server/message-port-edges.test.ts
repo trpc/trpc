@@ -12,6 +12,9 @@ import { z } from 'zod';
 const t = initTrpc<{ ctx: { user: string } }>();
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+/** Settles the `hang` call's steps; each test that uses it sets these. */
+const hanging = { started: () => {}, aborted: () => {} };
+
 const router = {
   hello: t.procedure.query((opts) => `hello ${opts.ctx.user}`),
   slow: t.procedure.query(async () => {
@@ -29,6 +32,16 @@ const router = {
       await sleep(5);
     }
   }),
+  hang: t.procedure.query(
+    (opts) =>
+      new Promise<string>((resolve) => {
+        hanging.started();
+        opts.signal.addEventListener('abort', () => {
+          hanging.aborted();
+          resolve('aborted');
+        });
+      }),
+  ),
 };
 
 const handler = createFetchHandler({
@@ -150,6 +163,21 @@ test('a failing createContext fails the call by id; a wrong version closes the p
     type: 'error',
     body: { json: { error: { code: 'UNSUPPORTED_PROTOCOL' } } },
   });
+});
+
+test('a port that closes interrupts its calls and aborts their signals', async () => {
+  const started = new Promise<void>((resolve) => {
+    hanging.started = resolve;
+  });
+  const aborted = new Promise<void>((resolve) => {
+    hanging.aborted = resolve;
+  });
+  using port = serve();
+  port.send({ id: 1, type: 'request', method: 'query', path: 'hang' });
+  await started;
+  port[Symbol.dispose]();
+  await aborted;
+  expect(port.replies).toEqual([]);
 });
 
 test('deferred rejections over a port become wire errors, unexpected ones hidden', async () => {

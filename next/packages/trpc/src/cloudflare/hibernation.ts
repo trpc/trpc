@@ -1,4 +1,4 @@
-import { Effect, Exit, Stream } from 'effect';
+import { Effect, Exit, Scope, Stream } from 'effect';
 import { HttpServerRequest } from 'effect/http';
 import {
   isTrpcError,
@@ -215,7 +215,11 @@ export function experimental_createHibernatingWebSockets<TPlatform>(
       h.toLowerCase(),
     ),
   );
-  const receivers = new WeakMap<HibernatableWebSocket, ConnectionReceiver>();
+  /** Each socket's receiver, its calls in the scope that `close()` ends. */
+  const receivers = new WeakMap<
+    HibernatableWebSocket,
+    { receiver: ConnectionReceiver; scope: Scope.Closeable }
+  >();
 
   const Pair = (
     globalThis as {
@@ -253,10 +257,11 @@ export function experimental_createHibernatingWebSockets<TPlatform>(
   ): ConnectionReceiver | undefined => {
     const attachment = current(socket);
     if (!attachment) return undefined;
-    let receiver = receivers.get(socket);
-    if (!receiver) {
+    let served = receivers.get(socket);
+    if (!served) {
       const request = requestOf(attachment);
-      receiver = connectionReceiver(
+      const scope = Scope.makeUnsafe();
+      const make = connectionReceiver(
         core,
         {
           send(message) {
@@ -302,9 +307,10 @@ export function experimental_createHibernatingWebSockets<TPlatform>(
           },
         },
       );
-      receivers.set(socket, receiver);
+      served = { receiver: Effect.runSync(Scope.provide(make, scope)), scope };
+      receivers.set(socket, served);
     }
-    return receiver;
+    return served.receiver;
   };
 
   const deliver: Deliver = async (key, channel, event) => {
@@ -408,10 +414,11 @@ export function experimental_createHibernatingWebSockets<TPlatform>(
         socket.close(1011, 'Not a tRPC socket');
         return;
       }
-      receiver.receive(parseSocketMessage(data));
+      Effect.runFork(receiver.receive(parseSocketMessage(data)));
     },
     close(socket, code, reason) {
-      receivers.get(socket)?.close();
+      const served = receivers.get(socket);
+      if (served) Effect.runFork(Scope.close(served.scope, Exit.void));
       receivers.delete(socket);
       try {
         // 1005 and 1006 are reported, never sent.

@@ -43,9 +43,10 @@ export interface SocketOutbox {
 
 /** What handles a session's frames and its end. @internal */
 export interface SocketSession<A> {
-  readonly frame: (frame: A) => void;
+  /** Runs before the next frame is read. */
+  readonly frame: (frame: A) => Effect.Effect<void>;
   /** Runs once, when the socket closes or idles out. */
-  readonly close: (event: Socket.CloseEvent) => void;
+  readonly close: (event: Socket.CloseEvent) => Effect.Effect<void>;
 }
 
 const closeOf = (err: unknown): Socket.CloseEvent =>
@@ -93,11 +94,12 @@ export const runSocket = <A>(opts: {
     };
     const session = yield* opts.open(outbox);
     let ended = false;
-    const end = (event: Socket.CloseEvent) => {
-      if (ended) return;
-      ended = true;
-      session.close(event);
-    };
+    const end = (event: Socket.CloseEvent) =>
+      Effect.suspend(() => {
+        if (ended) return Effect.void;
+        ended = true;
+        return session.close(event);
+      });
     const idleMs = opts.idleTimeoutMs;
     const idle = yield* FiberHandle.make();
     const arm = idleMs
@@ -105,11 +107,9 @@ export const runSocket = <A>(opts: {
           idle,
           Effect.sleep(idleMs).pipe(
             Effect.andThen(
-              Effect.sync(() => {
-                outbox.close(1001, 'Idle timeout');
-                end(new Socket.CloseEvent(1001, 'Idle timeout'));
-              }),
+              Effect.sync(() => outbox.close(1001, 'Idle timeout')),
             ),
+            Effect.andThen(end(new Socket.CloseEvent(1001, 'Idle timeout'))),
           ),
         )
       : Effect.void;
@@ -118,12 +118,10 @@ export const runSocket = <A>(opts: {
       Stream.runForEach((frame) =>
         Effect.andThen(
           arm,
-          Effect.sync(() => {
-            if (!ended) session.frame(frame);
-          }),
+          Effect.suspend(() => (ended ? Effect.void : session.frame(frame))),
         ),
       ),
-      Effect.catch((err) => Effect.sync(() => end(closeOf(err)))),
-      Effect.ensuring(Effect.sync(() => end(new Socket.CloseEvent(1006)))),
+      Effect.catch((err) => end(closeOf(err))),
+      Effect.ensuring(end(new Socket.CloseEvent(1006))),
     );
   }).pipe(Effect.scoped);

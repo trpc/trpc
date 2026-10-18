@@ -75,15 +75,16 @@ export const serveAsWebSocket = (
           },
         });
         return {
-          frame: (data) => emit('message', { data }),
-          close: (event) => {
-            readyState = CLOSED;
-            emit('close', {
-              code: event.code,
-              reason: event.reason ?? '',
-              wasClean: event.code !== 1006,
-            });
-          },
+          frame: (data) => Effect.sync(() => emit('message', { data })),
+          close: (event) =>
+            Effect.sync(() => {
+              readyState = CLOSED;
+              emit('close', {
+                code: event.code,
+                reason: event.reason ?? '',
+                wasClean: event.code !== 1006,
+              });
+            }),
         };
       }),
   });

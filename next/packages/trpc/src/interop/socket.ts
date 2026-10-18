@@ -59,18 +59,15 @@ export const serveV11Socket = (
     frames: socketFrames(socket),
     idleTimeoutMs: opts.idleTimeoutMs,
     open: (outbox) =>
-      Effect.gen(function* () {
-        const calls = yield* FiberMap.make<RequestId, void, never>();
-        const fork = yield* FiberMap.runtime(calls)<never>();
-        return v11Session(core, outbox, calls, fork, opts);
-      }),
+      Effect.map(FiberMap.make<RequestId, void, never>(), (calls) =>
+        v11Session(core, outbox, calls, opts),
+      ),
   });
 
 function v11Session(
   core: V11Core,
   outbox: SocketOutbox,
   calls: FiberMap.FiberMap<RequestId, void, never>,
-  fork: (id: RequestId, effect: Effect.Effect<void>) => unknown,
   opts: {
     readonly request: HttpServerRequest.HttpServerRequest;
     readonly platform: unknown;
@@ -218,21 +215,21 @@ function v11Session(
     ) as Effect.Effect<void>;
   };
 
-  const receive = (message: unknown) => {
+  const receive = (message: unknown): Effect.Effect<void> => {
     if (!isRecord(message)) {
       sendError(
         null,
         undefined,
         new TrpcError({ code: 'PARSE_ERROR', message: 'Invalid message' }),
       );
-      return;
+      return Effect.void;
     }
     const { id, jsonrpc, method } = message;
     if (method === 'connectionParams') {
       connectionParams = isRecord(message['data'])
         ? message['data']
         : undefined;
-      return;
+      return Effect.void;
     }
     if (typeof id !== 'number' && typeof id !== 'string') {
       sendError(
@@ -240,12 +237,9 @@ function v11Session(
         jsonrpc,
         new TrpcError({ code: 'PARSE_ERROR', message: '`id` is required' }),
       );
-      return;
+      return Effect.void;
     }
-    if (method === 'subscription.stop') {
-      Effect.runFork(FiberMap.remove(calls, id));
-      return;
-    }
+    if (method === 'subscription.stop') return FiberMap.remove(calls, id);
     if (typeof method !== 'string' || !METHODS.has(method)) {
       sendError(
         id,
@@ -255,7 +249,7 @@ function v11Session(
           message: `Unknown method "${String(method)}"`,
         }),
       );
-      return;
+      return Effect.void;
     }
     if (FiberMap.hasUnsafe(calls, id)) {
       sendError(
@@ -263,41 +257,45 @@ function v11Session(
         jsonrpc,
         new TrpcError({ code: 'BAD_REQUEST', message: `Duplicate id ${id}` }),
       );
-      return;
+      return Effect.void;
     }
-    fork(
-      id,
-      call(
+    return Effect.asVoid(
+      FiberMap.run(
+        calls,
         id,
-        jsonrpc,
-        method as ProcedureType,
-        isRecord(message['params']) ? message['params'] : {},
+        call(
+          id,
+          jsonrpc,
+          method as ProcedureType,
+          isRecord(message['params']) ? message['params'] : {},
+        ),
       ),
     );
   };
 
   return {
-    frame: (data) => {
-      if (data === 'PING') {
-        outbox.send('PONG');
-        return;
-      }
-      if (data === 'PONG') return;
-      const parsed = parseSocketMessage(data);
-      if (parsed === undefined) {
-        sendError(
-          null,
-          undefined,
-          new TrpcError({ code: 'PARSE_ERROR', message: 'Invalid JSON' }),
+    frame: (data) =>
+      Effect.suspend(() => {
+        if (data === 'PING') {
+          outbox.send('PONG');
+          return Effect.void;
+        }
+        if (data === 'PONG') return Effect.void;
+        const parsed = parseSocketMessage(data);
+        if (parsed === undefined) {
+          sendError(
+            null,
+            undefined,
+            new TrpcError({ code: 'PARSE_ERROR', message: 'Invalid JSON' }),
+          );
+          return Effect.void;
+        }
+        return Effect.forEach(
+          Array.isArray(parsed) ? parsed : [parsed],
+          (message) => Effect.suspend(() => receive(message)),
+          { discard: true },
         );
-        return;
-      }
-      for (const message of Array.isArray(parsed) ? parsed : [parsed]) {
-        receive(message);
-      }
-    },
-    close: () => {
-      Effect.runFork(FiberMap.clear(calls));
-    },
+      }),
+    close: () => FiberMap.clear(calls),
   };
 }

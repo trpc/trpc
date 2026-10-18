@@ -64,8 +64,7 @@ import {
 import { httpParts } from './routes.ts';
 import { fromWebSocketLike } from './socket-session.ts';
 import {
-  messagePortConnection,
-  serveConnection,
+  serveMessagePort,
   serveSocketConnection,
   socketCores,
   type MessagePortLike,
@@ -1256,13 +1255,14 @@ export function createFetchHandler<
       );
     },
     messagePort(port, o) {
-      serveConnection(core, messagePortConnection(port), {
-        request: HttpServerRequest.fromWeb(
-          o?.request ?? new Request('http://localhost/'),
-        ),
-        platform: o?.platform,
-        transport: 'messagePort',
-      });
+      Effect.runFork(
+        serveMessagePort(core, port, {
+          request: HttpServerRequest.fromWeb(
+            o?.request ?? new Request('http://localhost/'),
+          ),
+          platform: o?.platform,
+        }),
+      );
     },
     fetch: (request, platform) =>
       http.fetch(

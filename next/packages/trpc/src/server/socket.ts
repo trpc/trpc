@@ -1,5 +1,16 @@
 import { carriesBytes, encodeRecord } from '../internal/frames.ts';
-import { Context, Effect, Exit, Option, Stream, type Tracer } from 'effect';
+import {
+  Cause,
+  Context,
+  Effect,
+  Exit,
+  FiberMap,
+  Option,
+  Queue,
+  Stream,
+  type Scope,
+  type Tracer,
+} from 'effect';
 import { Headers, HttpTraceContext, type HttpServerRequest } from 'effect/http';
 import type { Socket } from 'effect/socket';
 import {
@@ -119,13 +130,11 @@ export interface SocketCore {
 /** The socket core behind each fetch handler, for adapters outside it. @internal */
 export const socketCores: WeakMap<object, SocketCore> = new WeakMap();
 
-/** A connection, whatever carries it. @internal */
+/** Where a connection's server messages go, whatever carries it. @internal */
 export interface Connection {
   send(message: ServerMessage): void;
   /** The client asked for binary messages; transports that have them may send file bytes so. */
   acceptBinary?(): void;
-  onMessage(listener: (message: unknown) => void): void;
-  onClose(listener: () => void): void;
   close(code: number, reason: string): void;
 }
 
@@ -181,9 +190,9 @@ export const serveSocketConnection = (
       opts.messages ?? Stream.map(socketFrames(socket), parseSocketMessage),
     idleTimeoutMs: opts.idleTimeoutMs,
     open: (outbox) =>
-      Effect.sync(() => {
+      Effect.gen(function* () {
         let binary = false;
-        const receiver = connectionReceiver(
+        const receiver = yield* connectionReceiver(
           core,
           {
             send: (message) => outbox.send(encode(message, binary)),
@@ -194,34 +203,34 @@ export const serveSocketConnection = (
           },
           opts,
         );
-        return { frame: receiver.receive, close: receiver.close };
+        return { frame: receiver.receive, close: () => receiver.close };
       }),
   });
 };
 
-/** @internal */
-export function messagePortConnection(port: MessagePortLike): Connection {
-  return {
-    send(message) {
-      port.postMessage(message);
-    },
-    onMessage(listener) {
-      if (port.on) port.on('message', listener);
-      else
-        port.addEventListener?.('message', (e: { data: unknown }) =>
-          listener(e.data),
-        );
-      port.start?.();
-    },
-    onClose(listener) {
-      if (port.on) port.on('close', listener);
-      else port.addEventListener?.('close', listener);
-    },
-    close() {
-      (port as { close?: () => void }).close?.();
-    },
+/**
+ * A port's messages until its `close` event. It listens when called, not
+ * when the stream runs: a fiber may start later than the port's next
+ * message, and ports without a listener drop theirs. @internal
+ */
+export const portMessages = (port: MessagePortLike): Stream.Stream<unknown> => {
+  const queue = Effect.runSync(Queue.unbounded<unknown, Cause.Done>());
+  const offer = (message: unknown) => {
+    Queue.offerUnsafe(queue, message);
   };
-}
+  const end = () => {
+    Queue.endUnsafe(queue);
+  };
+  if (port.on) {
+    port.on('message', offer);
+    port.on('close', end);
+  } else {
+    port.addEventListener?.('message', (e: { data: unknown }) => offer(e.data));
+    port.addEventListener?.('close', end);
+  }
+  port.start?.();
+  return Stream.fromQueue(queue);
+};
 
 /** A subscription's event frame as the message for call `id`. @internal */
 export function frameMessage(id: number, frame: EventFrame): ServerMessage {
@@ -245,41 +254,53 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
 
 /**
- * Serves calls over a connection that delivers messages by callback, a
- * `MessagePort` (10). Each request message is one call with its own
- * `createContext`, like an HTTP request; `connectionParams` from the
- * client's `init` message reach `createContext`.
+ * Serves calls over a `MessagePort` (10) until it closes. Each request
+ * message is one call with its own `createContext`, like an HTTP request;
+ * `connectionParams` from the client's `init` message reach `createContext`.
+ * It listens to `port` when called, as `portMessages` does.
  * @internal
  */
-export function serveConnection(
+export const serveMessagePort = (
   core: SocketCore,
-  conn: Connection,
+  port: MessagePortLike,
   opts: {
-    request: HttpServerRequest.HttpServerRequest;
-    platform?: unknown;
-    transport: Transport;
+    readonly request: HttpServerRequest.HttpServerRequest;
+    readonly platform?: unknown;
   },
-): void {
-  const receiver = connectionReceiver(core, conn, opts);
-  conn.onClose(receiver.close);
-  conn.onMessage(receiver.receive);
-}
+): Effect.Effect<void> => {
+  const messages = portMessages(port);
+  return Effect.gen(function* () {
+    const receiver = yield* connectionReceiver(
+      core,
+      {
+        send: (message) => port.postMessage(message),
+        close: () => (port as { close?: () => void }).close?.(),
+      },
+      { ...opts, transport: 'messagePort' },
+    );
+    yield* Stream.runForEach(messages, receiver.receive).pipe(
+      Effect.ensuring(receiver.close),
+    );
+  }).pipe(Effect.scoped);
+};
 
 /** What `connectionReceiver()` returns. @internal */
 export interface ConnectionReceiver {
-  readonly receive: (message: unknown) => void;
-  /** Aborts the connection's calls. */
-  readonly close: () => void;
+  /** Handles one client message; a request's call runs in its own fiber. */
+  readonly receive: (message: unknown) => Effect.Effect<void>;
+  /** Interrupts the connection's calls and ignores later messages. */
+  readonly close: Effect.Effect<void>;
 }
 
 /**
- * The connection protocol, one message at a time, for transports that
- * deliver messages themselves (a hibernating Durable Object).
+ * The connection protocol, one message at a time. Each call is a fiber in
+ * a `FiberMap` keyed by its id, in the caller's scope, so an `abort`, the
+ * connection's close or the end of the scope interrupts it.
  * @internal
  */
-export function connectionReceiver(
+export const connectionReceiver = (
   core: SocketCore,
-  conn: Pick<Connection, 'send' | 'close' | 'acceptBinary'>,
+  conn: Connection,
   opts: {
     request: HttpServerRequest.HttpServerRequest;
     /** What `createContext` gets as `platform`. */
@@ -298,208 +319,224 @@ export function connectionReceiver(
     /** The client aborted, or the parked call failed. */
     unpark?: (id: number) => void;
   },
-): ConnectionReceiver {
-  const { request } = opts;
-  const calls = new Map<number, AbortController>();
-  let connectionParams = opts.connectionParams;
-  let closed = false;
-  /** The client named another serializer, so its calls would decode wrong. */
-  let refused = false;
+): Effect.Effect<ConnectionReceiver, never, Scope.Scope> =>
+  Effect.map(FiberMap.make<number, void, never>(), (calls) => {
+    const { request } = opts;
+    let connectionParams = opts.connectionParams;
+    let closed = false;
+    /** The client named another serializer, so its calls would decode wrong. */
+    let refused = false;
 
-  const wire = (err: AnyTrpcError) =>
-    core.serializer.serialize(toWireError(core.publicError(err)));
-  const coerceError =
-    (path: string, type: ProcedureType) => (cause: unknown) => {
-      const err = isTrpcError(cause) ? cause : unexpectedError(cause);
-      core.report(err, request, path, type);
-      return toWireError(core.publicError(err));
-    };
-  const sendError = (id: number | null, err: AnyTrpcError) =>
-    conn.send({ id, type: 'error', body: wire(err) });
-
-  const close = () => {
-    closed = true;
-    for (const controller of calls.values()) controller.abort();
-    calls.clear();
-  };
-
-  const receive = (raw: unknown) => {
-    if (closed) return;
-    if (!isRecord(raw) || typeof raw['type'] !== 'string') {
-      sendError(
-        null,
-        new TrpcError({ code: 'PARSE_ERROR', message: 'Invalid message' }),
-      );
-      return;
-    }
-    const message = raw as ClientMessage;
-    switch (message.type) {
-      case 'init': {
-        if (message.version !== PROTOCOL_VERSION) {
-          sendError(
-            null,
-            new TrpcError({
-              code: 'UNSUPPORTED_PROTOCOL',
-              message: `Unsupported protocol version "${String(message.version)}", expected "${PROTOCOL_VERSION}"`,
-            }),
-          );
-          conn.close(1002, 'Unsupported protocol version');
-          return;
-        }
-        connectionParams = isRecord(message.connectionParams)
-          ? message.connectionParams
-          : undefined;
-        if (message.binary === true) conn.acceptBinary?.();
-        refused =
-          typeof message.serializer === 'string' &&
-          message.serializer !== core.serializer.name;
-        conn.send({ type: 'init', serializer: core.serializer.name });
-        if (refused) return;
-        opts.onInit?.(connectionParams);
-        return;
-      }
-      case 'ping':
-        conn.send({ type: 'pong' });
-        return;
-      case 'abort': {
-        calls.get(message.id)?.abort();
-        calls.delete(message.id);
-        opts.unpark?.(message.id);
-        return;
-      }
-      case 'request': {
-        if (refused) return;
-        if (typeof message.id !== 'number' || calls.has(message.id)) {
-          sendError(
-            null,
-            new TrpcError({
-              code: 'BAD_REQUEST',
-              message: 'Each request needs a unique numeric id',
-            }),
-          );
-          return;
-        }
-        void handle(message);
-        return;
-      }
-      default:
-        sendError(
-          null,
-          new TrpcError({ code: 'BAD_REQUEST', message: 'Unknown message' }),
-        );
-    }
-  };
-
-  async function handle(
-    message: Extract<ClientMessage, { type: 'request' }>,
-  ): Promise<void> {
-    const { id, path } = message;
-    const callParams = connectionParams;
-    const controller = new AbortController();
-    calls.set(id, controller);
-    const { signal } = controller;
-    const live = () => !signal.aborted && !closed;
-    let type: ProcedureType | undefined;
-    let parked = false;
-    try {
-      const procedure = await resolveProcedure(core.router, path);
-      type = procedure?.['~trpc'].type;
-      if (!procedure || !type) {
-        throw new TrpcError({
-          code: 'NOT_FOUND',
-          message: `No procedure at path "${path}"`,
-        });
-      }
-      if (type !== message.method) {
-        throw new TrpcError({
-          code: 'METHOD_NOT_SUPPORTED',
-          message: `"${path}" is a ${type}, not a ${String(message.method)}`,
-        });
-      }
-      const input = core.deserializeInput(message.input);
-      const ctx = await core.makeContext({
-        request,
-        platform: opts.platform,
-        calls: [{ path, type }],
-        signal,
-        transport: opts.transport,
-        connectionParams: callParams,
-      });
-      const hibernate = type === 'subscription' ? opts.hibernate : undefined;
-      const services = hibernate
-        ? Context.make(HibernationSlot, {
-            park: (sub) => (parked = hibernate({ ...sub, id, path })),
-          })
-        : undefined;
-      const exit = await core.run({
-        request,
-        procedure,
-        path,
-        ctx,
-        input,
-        signal,
-        response: createResponseHandle(),
-        lastEventId: message.lastEventId,
-        services,
-        parent: traceParent(message.trace),
-      });
-      if (!live()) return;
-      if (Exit.isFailure(exit)) {
-        const err = normalizeCause(exit.cause);
+    const wire = (err: AnyTrpcError) =>
+      core.serializer.serialize(toWireError(core.publicError(err)));
+    const asTrpcError = (cause: unknown) =>
+      isTrpcError(cause) ? cause : unexpectedError(cause);
+    const coerceError =
+      (path: string, type: ProcedureType) => (cause: unknown) => {
+        const err = asTrpcError(cause);
         core.report(err, request, path, type);
-        sendError(id, err);
-        return;
-      }
-      if (type === 'subscription') {
-        const done = await Effect.runPromiseExit(
-          emitEvents(
+        return toWireError(core.publicError(err));
+      };
+    const sendError = (id: number | null, err: AnyTrpcError) =>
+      conn.send({ id, type: 'error', body: wire(err) });
+
+    /**
+     * One request's call. Its `AbortSignal`, shared by `createContext` and
+     * the procedure, aborts when the fiber is interrupted.
+     */
+    const call = (
+      message: Extract<ClientMessage, { type: 'request' }>,
+    ): Effect.Effect<void> => {
+      const { id, path } = message;
+      const callParams = connectionParams;
+      const controller = new AbortController();
+      let type: ProcedureType | undefined;
+      let parked = false;
+      return Effect.gen(function* () {
+        const procedure = yield* Effect.tryPromise({
+          try: async () => resolveProcedure(core.router, path),
+          catch: asTrpcError,
+        });
+        const kind = procedure?.['~trpc'].type;
+        type = kind;
+        if (!procedure || !kind) {
+          return yield* Effect.fail(
+            new TrpcError({
+              code: 'NOT_FOUND',
+              message: `No procedure at path "${path}"`,
+            }),
+          );
+        }
+        if (kind !== message.method) {
+          return yield* Effect.fail(
+            new TrpcError({
+              code: 'METHOD_NOT_SUPPORTED',
+              message: `"${path}" is a ${kind}, not a ${String(message.method)}`,
+            }),
+          );
+        }
+        const input = yield* Effect.try({
+          try: () => core.deserializeInput(message.input),
+          catch: asTrpcError,
+        });
+        const ctx = yield* Effect.tryPromise({
+          try: () =>
+            core.makeContext({
+              request,
+              platform: opts.platform,
+              calls: [{ path, type: kind }],
+              signal: controller.signal,
+              transport: opts.transport,
+              connectionParams: callParams,
+            }),
+          catch: asTrpcError,
+        });
+        const hibernate = kind === 'subscription' ? opts.hibernate : undefined;
+        const services = hibernate
+          ? Context.make(HibernationSlot, {
+              park: (sub) => (parked = hibernate({ ...sub, id, path })),
+            })
+          : undefined;
+        const exit = yield* Effect.tryPromise({
+          try: () =>
+            core.run({
+              request,
+              procedure,
+              path,
+              ctx,
+              input,
+              signal: controller.signal,
+              response: createResponseHandle(),
+              lastEventId: message.lastEventId,
+              services,
+              parent: traceParent(message.trace),
+            }),
+          catch: asTrpcError,
+        });
+        if (Exit.isFailure(exit)) {
+          return yield* Effect.fail(normalizeCause(exit.cause));
+        }
+        if (kind === 'subscription') {
+          yield* emitEvents(
             exit.value as Stream.Stream<unknown, AnyTrpcError>,
             core.serializer,
-            coerceError(path, type),
-            (frame) =>
-              Effect.sync(() => {
-                if (live()) conn.send(frameMessage(id, frame));
-              }),
-          ),
-          { signal },
-        );
-        if (!live()) return;
-        if (Exit.isFailure(done)) {
-          if (parked) opts.unpark?.(id);
-          const err = normalizeCause(done.cause);
-          core.report(err, request, path, type);
-          sendError(id, err);
+            coerceError(path, kind),
+            (frame) => Effect.sync(() => conn.send(frameMessage(id, frame))),
+          );
+          if (!parked) conn.send({ id, type: 'done' });
           return;
         }
-        if (!parked) conn.send({ id, type: 'done' });
-        return;
-      }
-      const serialized = core.serializer.serializeDeferred(exit.value, {
-        coerceError: coerceError(path, type),
-      });
-      if (!serialized.chunks) {
-        conn.send({ id, type: 'result', body: serialized.head });
-        return;
-      }
-      conn.send({ id, type: 'result', body: serialized.head, deferred: true });
-      await Effect.runPromiseExit(
-        Stream.runForEach(serialized.chunks, (chunk) =>
-          Effect.sync(() => {
-            if (live()) conn.send({ id, type: 'chunk', chunk });
-          }),
-        ),
-        { signal },
+        const serialized = core.serializer.serializeDeferred(exit.value, {
+          coerceError: coerceError(path, kind),
+        });
+        if (!serialized.chunks) {
+          conn.send({ id, type: 'result', body: serialized.head });
+          return;
+        }
+        conn.send({
+          id,
+          type: 'result',
+          body: serialized.head,
+          deferred: true,
+        });
+        yield* Stream.runForEach(serialized.chunks, (chunk) =>
+          Effect.sync(() => conn.send({ id, type: 'chunk', chunk })),
+        ).pipe(
+          Effect.catchCause((cause) =>
+            Cause.hasInterruptsOnly(cause) ? Effect.interrupt : Effect.void,
+          ),
+        );
+        conn.send({ id, type: 'done' });
+      }).pipe(
+        Effect.catchCause((cause) => {
+          if (Cause.hasInterruptsOnly(cause)) return Effect.interrupt;
+          return Effect.sync(() => {
+            if (parked) opts.unpark?.(id);
+            const err = normalizeCause(cause);
+            core.report(err, request, path, type);
+            sendError(id, err);
+          });
+        }),
+        Effect.onInterrupt(() => Effect.sync(() => controller.abort())),
       );
-      if (live()) conn.send({ id, type: 'done' });
-    } catch (cause) {
-      if (!live()) return;
-      const err = isTrpcError(cause) ? cause : unexpectedError(cause);
-      core.report(err, request, path, type);
-      sendError(id, err);
-    } finally {
-      if (calls.get(id) === controller) calls.delete(id);
-    }
-  }
+    };
 
-  return { receive, close };
-}
+    const receive = (raw: unknown): Effect.Effect<void> =>
+      Effect.suspend(() => {
+        if (closed) return Effect.void;
+        if (!isRecord(raw) || typeof raw['type'] !== 'string') {
+          sendError(
+            null,
+            new TrpcError({ code: 'PARSE_ERROR', message: 'Invalid message' }),
+          );
+          return Effect.void;
+        }
+        const message = raw as ClientMessage;
+        switch (message.type) {
+          case 'init': {
+            if (message.version !== PROTOCOL_VERSION) {
+              sendError(
+                null,
+                new TrpcError({
+                  code: 'UNSUPPORTED_PROTOCOL',
+                  message: `Unsupported protocol version "${String(message.version)}", expected "${PROTOCOL_VERSION}"`,
+                }),
+              );
+              conn.close(1002, 'Unsupported protocol version');
+              return Effect.void;
+            }
+            connectionParams = isRecord(message.connectionParams)
+              ? message.connectionParams
+              : undefined;
+            if (message.binary === true) conn.acceptBinary?.();
+            refused =
+              typeof message.serializer === 'string' &&
+              message.serializer !== core.serializer.name;
+            conn.send({ type: 'init', serializer: core.serializer.name });
+            if (!refused) opts.onInit?.(connectionParams);
+            return Effect.void;
+          }
+          case 'ping':
+            conn.send({ type: 'pong' });
+            return Effect.void;
+          case 'abort':
+            opts.unpark?.(message.id);
+            return FiberMap.remove(calls, message.id);
+          case 'request': {
+            if (refused) return Effect.void;
+            if (
+              typeof message.id !== 'number' ||
+              FiberMap.hasUnsafe(calls, message.id)
+            ) {
+              sendError(
+                null,
+                new TrpcError({
+                  code: 'BAD_REQUEST',
+                  message: 'Each request needs a unique numeric id',
+                }),
+              );
+              return Effect.void;
+            }
+            return Effect.asVoid(
+              FiberMap.run(calls, message.id, call(message)),
+            );
+          }
+          default:
+            sendError(
+              null,
+              new TrpcError({
+                code: 'BAD_REQUEST',
+                message: 'Unknown message',
+              }),
+            );
+            return Effect.void;
+        }
+      });
+
+    const close = Effect.suspend(() => {
+      closed = true;
+      return FiberMap.clear(calls);
+    });
+
+    return { receive, close };
+  });
