@@ -45,6 +45,10 @@ import {
   type SerializerOption,
 } from '@trpc12/trpc/server';
 
+// The package root also exports these, but it imports React's client hooks,
+// which server components and Server Actions can't import.
+export { cacheTags, revalidationTag } from '@trpc12/tanstack-query';
+
 /** Next's `redirect()`, `notFound()` and dynamic-API errors carry a `digest`. */
 const hasDigest = (error: unknown) =>
   typeof error === 'object' &&

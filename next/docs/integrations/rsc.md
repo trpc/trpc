@@ -54,7 +54,7 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
 
 ## Next.js data cache
 
-`cacheTags(key)` from `@trpc12/tanstack-query` (re-exported by the framework packages) turns a query key into data-cache tags, broad to narrow: `trpc`, each path prefix (`trpc:post`, `trpc:post.byId`), then the path with its input (`trpc:post.byId:{"id":"1"}`, keys sorted). `revalidationTag(key)` is the one tag that covers a key, so revalidating works like `invalidateQueries`:
+`cacheTags(key)` from `@trpc12/tanstack-query` (re-exported by the framework packages, and by `@trpc12/tanstack-react-query/rsc` for server code, since the package root imports React's client hooks) turns a query key into data-cache tags, broad to narrow: `trpc`, each path prefix (`trpc:post`, `trpc:post.byId`), then the path with its input (`trpc:post.byId:{"id":"1"}`, keys sorted). `revalidationTag(key)` is the one tag that covers a key, so revalidating works like `invalidateQueries`:
 
 ```ts twoslash
 // ---cut-start---
@@ -69,7 +69,7 @@ const caller = rsc.caller;
 declare const id: string;
 // ---cut-end---
 import { cacheTag, revalidateTag } from 'next/cache';
-import { cacheTags, revalidationTag } from '@trpc12/tanstack-react-query';
+import { cacheTags, revalidationTag } from '@trpc12/tanstack-react-query/rsc';
 
 async function getPost(id: string) {
   'use cache';

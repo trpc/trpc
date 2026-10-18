@@ -4,7 +4,11 @@ import {
   useQuery,
 } from '@tanstack/react-query';
 import { hydrationOptions } from '@trpc12/tanstack-query';
-import { createTrpcRsc } from '@trpc12/tanstack-react-query/rsc';
+import {
+  cacheTags,
+  createTrpcRsc,
+  revalidationTag,
+} from '@trpc12/tanstack-react-query/rsc';
 import { renderToString } from 'react-dom/server';
 import { initTrpc } from '@trpc12/trpc/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
@@ -94,4 +98,16 @@ test("HydrationBoundary keeps Next's digest errors, which Next needs to see, and
   const [first, second] = element.props.state.queries;
   await expect(first!.promise).rejects.toBe(dynamic);
   await expect(second!.promise).rejects.toThrow('redacted');
+});
+
+test('/rsc exports the data-cache tag helpers, for server components and Server Actions', () => {
+  const rsc = createTrpcRsc({ router: appRouter, serializer });
+  const key = rsc.trpc.post.byId.queryKey({ input: { id: '1' } });
+  expect(cacheTags(key)).toEqual([
+    'trpc',
+    'trpc:post',
+    'trpc:post.byId',
+    'trpc:post.byId:{"id":"1"}',
+  ]);
+  expect(revalidationTag(rsc.trpc.post.pathKey())).toBe('trpc:post');
 });
