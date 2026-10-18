@@ -1,8 +1,8 @@
 ---
 title: The document
 description: Generate an OpenAPI 3.1 document from the router's schemas, or from its types.
-section: OpenAPI
-order: 2
+section: Contracts and OpenAPI
+order: 3
 v11: openapi
 hidden: true
 ---

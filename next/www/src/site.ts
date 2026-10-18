@@ -95,7 +95,7 @@ export const sections = [
   'Middleware',
   'Client',
   'Subscriptions',
-  'OpenAPI',
+  'Contracts and OpenAPI',
   'Adapters',
   'Integrations',
   'Migrations',

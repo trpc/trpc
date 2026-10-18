@@ -49,4 +49,4 @@ export const appRouter = {
 `load` may return the router or a module whose `default` export is the router. Each subtree loads once.
 
 - The RPC handlers, `createRouterClient` and `localLink` load it on the first call under it.
-- Tools that need the whole router ask for it loaded: `toContract(await loadRouter(appRouter))`.
+- Tools that need the whole router ask for it loaded: `await loadRouter(appRouter)`.

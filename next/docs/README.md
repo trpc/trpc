@@ -23,7 +23,6 @@ Pages marked (hidden) are unlisted on the site until they're reviewed: out of it
 - [Effect](./server/effect.md): Resolvers that return Effects, services from the handler's layer, typed failures and tracing.
 - [Extensions](./server/extensions.md): Packages that add middleware, ctx, meta keys, errors and services to every procedure with t.concat().
 - [Serializers](./server/serializers.md): Plain JSON by default; danSON or superjson-style serializers keep Dates, Maps and files, and client types follow.
-- [Contract-first](./server/contract-first.md): Describe procedures in a contract, implement them later, and type clients from the contract alone.
 - [Server-side calls](./server/server-side-calls.md): Call procedures in process with createRouterClient, call() and localLink.
 - [Large routers](./server/large-routers.md): Keep type-checking fast with thousands of procedures, by building the server's declarations and typing apps from them.
 
@@ -58,14 +57,15 @@ Pages marked (hidden) are unlisted on the site until they're reviewed: out of it
 - [Publisher](./subscriptions/publisher.md): Typed publish/subscribe as an Effect service, with a channel per audience and resumable events.
   - [Publisher backends](./subscriptions/backends.md): Recipes for a Publisher on Redis streams and Postgres LISTEN/NOTIFY.
 
-## OpenAPI (hidden)
+## Contracts and OpenAPI (hidden)
 
+- [Contract-first](./server/contract-first.md): Describe procedures in a contract, implement them later, and type clients from the contract alone.
 - [OpenAPI](./openapi/overview.md): Serve the router over REST, document it as OpenAPI 3.1, call REST routes from the client, and generate contracts from OpenAPI documents.
 - [REST routes](./openapi/routes.md): Serve the same router over REST: route meta, the handler, inputs, outputs and groups.
 - [The document](./openapi/document.md): Generate an OpenAPI 3.1 document from the router's schemas, or from its types.
 - [Calling REST from the client](./openapi/client.md): experimental_openApiLink sends each call to its REST route, typed from a contract.
 - [A contract from OpenAPI](./openapi/from-document.md): Generate a typed contract module from any OpenAPI 3.0 or 3.1 document.
-- [Validating on the client](./client/validation.md) (hidden): experimental_validationLink checks inputs before sending and results when they arrive, against a contract.
+- [Validating on the client](./client/validation.md): experimental_validationLink checks inputs before sending and results when they arrive, against a contract.
 
 ## Adapters
 

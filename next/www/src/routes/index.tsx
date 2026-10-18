@@ -510,12 +510,7 @@ function Features(props: { readonly version: HomeVersion }) {
       feature.slug === undefined || !findDoc(docs, feature.slug)?.hidden,
   );
   return (
-    <ul
-      className={cn(
-        'grid gap-4 sm:grid-cols-2',
-        props.version === 'v11' ? 'lg:grid-cols-3' : 'lg:grid-cols-4',
-      )}
-    >
+    <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       {features.map((feature) => {
         const content = (
           <>

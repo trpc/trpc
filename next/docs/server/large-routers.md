@@ -9,12 +9,11 @@ A client's types come from the router's type. If the client reads the server's s
 
 Measured on a generated monorepo with 5000 zod procedures in 50 domain packages, a client app calling 200 of them:
 
-| The app reads                   | Instantiations | Check |
-| ------------------------------- | -------------: | ----: |
-| the server's source             |      4,136,629 | 6.51s |
-| the server's `.d.ts`            |         42,852 | 0.07s |
-| two domains' source             |        253,470 | 0.29s |
-| two domains' contracts (source) |        205,566 | 0.22s |
+| The app reads        | Instantiations | Check |
+| -------------------- | -------------: | ----: |
+| the server's source  |      4,136,629 | 6.51s |
+| the server's `.d.ts` |         42,852 | 0.07s |
+| two domains' source  |        253,470 | 0.29s |
 
 From declarations, the cost doesn't grow with the router. [`spikes/big-routers`](../../spikes/big-routers/generate.ts) generates that monorepo (`node big-routers/bench.ts 50 100` from `spikes/`), and [`examples/monorepo`](../../examples/monorepo/README.md) is a small one laid out the way this page describes, which `pnpm example` type-checks and runs.
 
@@ -71,14 +70,6 @@ The declarations then refer to each domain's type. Inferred from the object inst
 With declarations, one client over the whole `AppRouter` is as cheap as a client of the domains an app uses: the client's types resolve a procedure only when a call reads it, so `Pick<AppRouter, 'posts'>` or a client per domain gains nothing. The example's [`apps/web`](../../examples/monorepo/apps/web/src/index.ts) uses one client over the whole API.
 
 Smaller clients help when the app can't read declarations (no build step before type-checking). A client of `{ posts: PostsRouter }` imported from the posts package loads only that domain, about 16× less than the whole router in the measurement.
-
-## Contracts for apps that need one domain
-
-An app that uses one domain can depend on a [contract](./contract-first.md) package instead of the server. It loads no server code (resolvers, database clients, their types). Build the contract package's declarations too; its cost is then its schemas'.
-
-In the example, [`packages/billing-contract`](../../examples/monorepo/packages/billing-contract/src/index.ts) is the contract, [`packages/billing`](../../examples/monorepo/packages/billing/src/index.ts) implements it with `t.implement()`, and [`apps/billing-widget`](../../examples/monorepo/apps/billing-widget/src/index.ts) calls it, depending on the contract package alone.
-
-A server that isn't written contract-first can still hand clients a contract: `toContract(router)` derives one. Its types come from the router's, so the app still needs the server's declarations to stay cheap.
 
 ## In the editor
 

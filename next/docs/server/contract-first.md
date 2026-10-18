@@ -1,8 +1,9 @@
 ---
 title: Contract-first
 description: Describe procedures in a contract, implement them later, and type clients from the contract alone.
-section: Server
-order: 12
+section: Contracts and OpenAPI
+order: 0
+hidden: true
 ---
 
 A contract describes procedures without implementing them. It lives in its own package, and clients and the OpenAPI generator accept it like a router.
@@ -53,7 +54,7 @@ export const appRouter = impl.router({
 
 ## Clients from a contract
 
-A client takes the contract as its `router`, so the browser imports no server code and can validate calls against the contract's schemas:
+A client takes the contract as its `router`, so the browser imports no server code and can [validate calls](../client/validation.md) against the contract's schemas:
 
 ```ts twoslash
 // ---cut-start---
@@ -88,7 +89,7 @@ const client = createTrpcClient({
 
 ## From a router or a document
 
-`toContract(router)` derives the contract of an existing router, for the OpenAPI handler and build steps ([Lazy subtrees](./routers.md#lazy-subtrees)). To start from an OpenAPI document instead, see A contract from OpenAPI.
+`toContract(router)` derives the contract of an existing router, for the OpenAPI handler and build steps ([Lazy subtrees](./routers.md#lazy-subtrees)). To start from an OpenAPI document instead, see [A contract from OpenAPI](../openapi/from-document.md).
 
 ## Credits
 

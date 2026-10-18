@@ -1,8 +1,8 @@
 ---
 title: REST routes
 description: 'Serve the same router over REST: route meta, the handler, inputs, outputs and groups.'
-section: OpenAPI
-order: 1
+section: Contracts and OpenAPI
+order: 2
 hidden: true
 ---
 
