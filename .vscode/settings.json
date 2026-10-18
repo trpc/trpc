@@ -1,14 +1,20 @@
 {
-  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  // vNext tooling (Oxc via Vite+) only runs when `trpc.code-workspace` is open.
+  "editor.defaultFormatter": "oxc.oxc-vscode",
+  "[javascript]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
+  "[javascriptreact]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
+  "[typescript]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
+  "[typescriptreact]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
+  "[json]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
+  "[jsonc]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
+  "[markdown]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
   "editor.formatOnSave": true,
+  "editor.formatOnSaveMode": "file",
   "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": "explicit"
+    "source.fixAll.oxc": "explicit"
   },
-  "eslint.workingDirectories": [
-    { "pattern": "./examples/**" },
-    { "pattern": "./packages/*" },
-    { "pattern": "./www/*" }
-  ],
+  "eslint.enable": false,
+  "prettier.enable": false,
   "search.exclude": {
     "/www/versioned_docs": true,
     "/www/.docusaurus": true,
@@ -29,16 +35,6 @@
     "titleBar.inactiveForeground": "#639db2"
   },
   "editor.stickyScroll.enabled": true,
-  "tailwindCSS.classAttributes": ["class", "className", "ngClass", "tw"],
-  "tailwindCSS.experimental.classRegex": [
-    ["clsx\\(([^)]*)\\)", "[\"'`]([^\"'`]*).*?[\"'`]", "cn\\(([^)]*)\\)"]
-  ],
-  "tailwindCSS.experimental.configFile": "./www/tailwind.config.ts",
-  "typescript.tsdk": "node_modules/typescript/lib",
-  "typescript.enablePromptUseWorkspaceTsdk": true,
-  // "explorer.excludeGitIgnore": true,
-  "typescript.preferences.autoImportFileExcludePatterns": [
-    "packages/server/src/unstable-core-do-not-import.ts",
-    "**/.repos/**"
-  ]
+  "js/ts.experimental.useTsgo": true,
+  "js/ts.preferences.autoImportFileExcludePatterns": ["**/.repos/**"]
 }

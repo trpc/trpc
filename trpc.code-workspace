@@ -1,0 +1,59 @@
+{
+  // `next` comes first: the Oxc extension finds `vite-plus` (and so
+  // `vite.config.ts`) only from a workspace folder's root.
+  "folders": [
+    { "name": "next", "path": "next" },
+    { "name": "root (v11)", "path": "." }
+  ],
+  "settings": {
+    "editor.defaultFormatter": "oxc.oxc-vscode",
+    "[javascript]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
+    "[javascriptreact]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
+    "[typescript]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
+    "[typescriptreact]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
+    "[json]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
+    "[jsonc]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
+    "[markdown]": { "editor.defaultFormatter": "oxc.oxc-vscode" },
+    "oxc.disableNestedConfig": true,
+    "oxc.fmt.disableNestedConfig": true,
+    "editor.formatOnSave": true,
+    "editor.formatOnSaveMode": "file",
+    "editor.codeActionsOnSave": {
+      "source.fixAll.oxc": "explicit"
+    },
+    "eslint.enable": false,
+    "prettier.enable": false,
+    "js/ts.experimental.useTsgo": true,
+    "js/ts.preferences.autoImportFileExcludePatterns": ["**/.repos/**"],
+    "files.exclude": {
+      "next": true,
+      "**/.repos": true
+    },
+    "files.watcherExclude": {
+      "**/.repos/**": true
+    },
+    "search.exclude": {
+      "next": true,
+      "**/.repos": true,
+      "**/dist": true,
+      "**/coverage": true,
+      "www/v9/**": true,
+      "www/v10/**": true,
+      "www/v11/**": true,
+      "www/blog/**": true
+    }
+  },
+  "extensions": {
+    "recommendations": [
+      "VoidZero.vite-plus-extension-pack",
+      "TypeScriptTeam.native-preview",
+      "orta.vscode-twoslash-queries",
+      "yoavbls.pretty-ts-errors"
+    ],
+    "unwantedRecommendations": [
+      "dbaeumer.vscode-eslint",
+      "esbenp.prettier-vscode",
+      "biomejs.biome"
+    ]
+  }
+}
