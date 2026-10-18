@@ -23,17 +23,6 @@ import {
  */
 export const backpressure = { bufferSize: 16, strategy: 'suspend' } as const;
 
-/** `Effect.forEach`, one item after another. @internal */
-export const forEachSeq = <A, B, E, R>(
-  items: Iterable<A>,
-  f: (item: A) => Effect.Effect<B, E, R>,
-): Effect.Effect<B[], E, R> =>
-  Effect.gen(function* () {
-    const out: B[] = [];
-    for (const item of items) out.push(yield* f(item));
-    return out;
-  });
-
 const done: IteratorReturnResult<undefined> = { done: true, value: undefined };
 
 /**

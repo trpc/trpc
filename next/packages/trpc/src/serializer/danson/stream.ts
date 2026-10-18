@@ -21,7 +21,6 @@ import {
 } from './sync.ts';
 import {
   backpressure,
-  forEachSeq,
   toAsyncIterable,
   toReadableStream,
 } from '../../internal/effects.ts';
@@ -333,24 +332,28 @@ export function deferredChunks(
         // Serializing a chunk may register more sources; start them too.
         const startPending: Effect.Effect<unknown, never, Scope.Scope> =
           Effect.suspend(() =>
-            forEachSeq(pending.splice(0), ([idx, source]) => {
-              active++;
-              return source.pipe(
-                Stream.mapEffect(([status, v]) => chunk(status, v)),
-                Stream.takeUntil(([status]) => status === ERROR),
-                Stream.runForEach(([status, json]) =>
-                  Effect.andThen(
-                    Queue.offer(queue, [idx, status, json]),
-                    startPending,
+            Effect.forEach(
+              pending.splice(0),
+              ([idx, source]) => {
+                active++;
+                return source.pipe(
+                  Stream.mapEffect(([status, v]) => chunk(status, v)),
+                  Stream.takeUntil(([status]) => status === ERROR),
+                  Stream.runForEach(([status, json]) =>
+                    Effect.andThen(
+                      Queue.offer(queue, [idx, status, json]),
+                      startPending,
+                    ),
                   ),
-                ),
-                Effect.catchCause((cause) =>
-                  Effect.sync(() => Queue.failCauseUnsafe(queue, cause)),
-                ),
-                Effect.ensuring(finishOne),
-                Effect.forkScoped,
-              );
-            }),
+                  Effect.catchCause((cause) =>
+                    Effect.sync(() => Queue.failCauseUnsafe(queue, cause)),
+                  ),
+                  Effect.ensuring(finishOne),
+                  Effect.forkScoped,
+                );
+              },
+              { discard: true },
+            ),
           );
 
         yield* startPending;
@@ -587,7 +590,7 @@ export function deserializeStream<T, E>(
               ),
             catch: toDeserializeError,
           });
-          const waits = yield* forEachSeq(refs, collect);
+          const waits = yield* Effect.forEach(refs, (idx) => collect(idx));
           const tail = tails.get(target);
           if (waits.length === 0 && !tail) return settle(target, frame);
           const settled = Deferred.makeUnsafe<void, unknown>();
@@ -595,7 +598,9 @@ export function deserializeStream<T, E>(
           const ready: ReadonlyArray<Deferred.Deferred<void, unknown>> = tail
             ? [tail, ...waits]
             : waits;
-          yield* forEachSeq(ready, (d) => Deferred.await(d)).pipe(
+          yield* Effect.forEach(ready, (d) => Deferred.await(d), {
+            discard: true,
+          }).pipe(
             Effect.matchCause({
               onFailure: (cause) => fail(target, Cause.squash(cause)),
               onSuccess: () => settle(target, frame),
@@ -618,7 +623,9 @@ export function deserializeStream<T, E>(
             const q = queues.get(idx);
             if (q) Queue.failCauseUnsafe(q, Cause.fail(error));
           }
-          yield* forEachSeq([...tails.values()], Deferred.await);
+          yield* Effect.forEach([...tails.values()], (d) => Deferred.await(d), {
+            discard: true,
+          });
           // A no-op once the head is out; a head frame that failed to read leaves it open.
           Deferred.doneUnsafe(
             head,
