@@ -85,6 +85,39 @@ useMutationState({
 
 `input: skipToken` disables a query or a subscription. The options take TanStack's own options next to `input` (`staleTime`, `select`, `onSuccess`, …), and their types follow the procedure's output and errors.
 
+## Errors
+
+The options carry the procedure's error type, so `useQuery` infers `error` as what the call fails with ([Errors](../client/errors.md)): the procedure's own errors, and the built-in ones that can always happen, network failures (`NETWORK_ERROR`) and aborts (`CLIENT_CLOSED_REQUEST`) included. `useQueries`, `useInfiniteQuery`, `useMutation`, `useSuspenseQuery` and `useSubscription` infer it the same way. A procedure without `.input()` has no `BAD_REQUEST` of its own, so its `error` is only the built-in ones. `matchError()` makes you handle each:
+
+```ts twoslash
+// ---cut-start---
+import { useQuery } from '@tanstack/react-query';
+import { createTrpcQueryUtils } from '@trpc12/tanstack-query';
+import { client } from './client.ts';
+const trpc = createTrpcQueryUtils({ client });
+declare const id: string;
+// ---cut-end---
+import { matchError } from '@trpc12/trpc/client';
+
+const post = useQuery(trpc.post.byId.queryOptions({ input: { id } }));
+if (post.error) {
+  const message = matchError(post.error, {
+    NOT_FOUND: (err) => `No post ${err.data.id}`,
+    BAD_REQUEST: () => 'Invalid id',
+    rejected: (err) => err.message,
+    unavailable: () => 'Offline, retrying soon',
+    failed: () => 'Something broke',
+    aborted: () => null,
+  });
+}
+```
+
+TanStack carries the type as far as the options go:
+
+- `QueryCache` and `MutationCache` callbacks see every query, so their error is TanStack's `DefaultError` (`Error`). Registering `Register.defaultError` changes those places only, not the hooks; narrow there with `isTrpcError(err)`.
+- An error boundary gets what `useSuspenseQuery` (or `throwOnError`) throws as React's untyped error; narrow it with `isTrpcError` too. The hook's own `error` stays typed, for a refetch that fails after data arrived.
+- What `select` throws becomes the query's `error`, outside the procedure's type. Keep `select` from throwing.
+
 ## Call options
 
 Pass what links read in `context`, kept apart from TanStack's own options: `trpc.post.byId.queryOptions({ input, context: { dedupe: false } })` ([Call options](../client/overview.md#call-options)).

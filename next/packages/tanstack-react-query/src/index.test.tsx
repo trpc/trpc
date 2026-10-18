@@ -25,8 +25,10 @@ import {
   createTrpcClient,
   httpLink,
   link,
+  matchError,
   routerType,
   TrpcError,
+  type BuiltinError,
   type LinksContext,
   type LinksTypes,
   type TrpcClient,
@@ -107,6 +109,79 @@ test('useQuery reads through the provider; typed errors render', async () => {
   await waitFor(() => expect(text(view.el, '.error')).toBe('NOT_FOUND'));
 });
 
+/** What a client call fails with, as `safe()` sees it. */
+type CallErrorOf<F> = F extends (...args: never[]) => {
+  readonly '~error'?: infer E;
+}
+  ? NonNullable<E>
+  : never;
+
+test("each hook's error is what the call fails with, network and aborts included", async () => {
+  await using app = await createApp();
+  type ByIdError = CallErrorOf<AppClient['post']['byId']['query']>;
+  function Post(props: { id: string }) {
+    const trpc = useTrpc();
+    const greeting = useQuery(trpc.greeting.queryOptions());
+    const post = useQuery(
+      trpc.post.byId.queryOptions({ input: { id: props.id } }),
+    );
+    const [first] = useQueries({
+      queries: [trpc.post.byId.queryOptions({ input: { id: props.id } })],
+    });
+    const feed = useInfiniteQuery(
+      trpc.post.list.infiniteOptions({
+        input: (cursor: number | undefined) => ({ limit: 2, cursor }),
+        initialPageParam: undefined,
+        getNextPageParam: (page) => page.nextCursor,
+      }),
+    );
+    const create = useMutation(trpc.post.create.mutationOptions());
+    const added = useSubscription(trpc.post.onAdd.subscriptionOptions());
+
+    expectTypeOf(greeting.error).toEqualTypeOf<BuiltinError | null>();
+    expectTypeOf(post.error).toEqualTypeOf<ByIdError | null>();
+    expectTypeOf(first.error).toEqualTypeOf<ByIdError | null>();
+    expectTypeOf(feed.error).toEqualTypeOf<CallErrorOf<
+      AppClient['post']['list']['query']
+    > | null>();
+    expectTypeOf(create.error).toEqualTypeOf<CallErrorOf<
+      AppClient['post']['create']['mutate']
+    > | null>();
+    expectTypeOf(added.error).toEqualTypeOf<CallErrorOf<
+      AppClient['post']['onAdd']['subscribe']
+    > | null>();
+    expectTypeOf<
+      BuiltinError<'NETWORK_ERROR' | 'CLIENT_CLOSED_REQUEST'>
+    >().toExtend<ByIdError>();
+
+    if (!post.error) return <p>{post.data?.title ?? 'loading'}</p>;
+    return (
+      <p className="error">
+        {matchError(post.error, {
+          NOT_FOUND: (err) => `missing ${err.data.id}`,
+          BAD_REQUEST: (err) => `invalid ${err.data.issues.length}`,
+          rejected: (err) => `rejected ${err.code}`,
+          unavailable: (err) => `unavailable ${err.code}`,
+          failed: (err) => `failed ${err.code}`,
+          aborted: () => 'aborted',
+        })}
+      </p>
+    );
+  }
+  {
+    using view = mount(<Post id="nope" />, app.client);
+    await waitFor(() => expect(text(view.el, '.error')).toBe('missing nope'));
+  }
+  const down = createTrpcClient({
+    router: routerType<AppRouter>(),
+    links: [httpLink({ url: 'http://127.0.0.1:1/trpc', serializer })],
+  });
+  using view = mount(<Post id="1" />, down);
+  await waitFor(() =>
+    expect(text(view.el, '.error')).toBe('unavailable NETWORK_ERROR'),
+  );
+});
+
 test('useMutation invalidates with pathFilter', async () => {
   await using app = await createApp();
   function Posts() {
@@ -149,6 +224,9 @@ test('useSuspenseQuery suspends until the data arrives', async () => {
       trpc.post.byId.queryOptions({ input: { id: '2' } }),
     );
     expectTypeOf(query.data).toEqualTypeOf<Post>();
+    expectTypeOf(query.error).toEqualTypeOf<CallErrorOf<
+      AppClient['post']['byId']['query']
+    > | null>();
     return <h1>{query.data.title}</h1>;
   }
   using view = mount(
