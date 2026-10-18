@@ -1,0 +1,23 @@
+# `server/`, `serializer/`, `interop/`, `client/` and `openapi/` are grouped into folder modules, each imported through its `index.ts` (human asked)
+
+- Human, 2026-10-18: "queue some refactor to group things based on functionality liiiike everythign that deals with a request handling should be in a folder so it's more natural to follow it - a bunch of stuff is just flat into next/packages/trpc/src/server whereas i'm sure a bunch of it only really has one entrypoint for the rest of the app. do good modules / if possible you can enforce module boundaries with some lint rule or something".
+- (agent) Each folder under `packages/trpc/src/server/` is a module:
+  - `validation/`: `schema.ts` and `stream-schema.ts`, input and output schemas.
+  - `subscriptions/`: `tracked.ts` and `publisher.ts`.
+  - `procedures/`: `procedure.ts`, `router.ts`, `middleware.ts`, `builder.ts`, `implement.ts` and `init.ts`, defining an API.
+  - `execution/`: `execute.ts`, `declared.ts`, `response.ts`, `frame-sink.ts` and `events.ts`, running a call.
+  - `sockets/`: `socket.ts`, `socket-session.ts` and `upgrade.ts`.
+  - `handler/`: `fetch.ts`, `core.ts`, `routes.ts`, `body.ts` and `handler-context.ts`, request handling.
+- (agent) The same holds in the other public entry folders, where a group of files has one job:
+  - `serializer/danson/`: `sync.ts`, `std.ts`, `stream.ts` and `utils.ts`, the danSON port. `serializer/danson.ts`, danSON with no custom types, stays beside `index.ts`, since it is built with `createSerializer()` from there.
+  - `interop/handler/`: `handler.ts`, `socket.ts`, `jsonl.ts` and `errors.ts`, serving v11 clients. `link.ts`, which runs v11 links in a v12 client, stays loose.
+  - `client/links/`: the built-in links, which were already a folder.
+  - `openapi/rest/`: `routes.ts`, `extension.ts`, `bracket.ts`, `coerce.ts` and `errors.ts`, the REST mapping the OpenAPI handler, generator and link share. The features (`handler.ts`, `generate.ts`, `reference.ts`, `link.ts`, `to-contract.ts`, `typescript.ts`) are one file each, so they stay loose; `typescript.ts` is also the `./openapi/typescript` entry.
+- (agent) The built-in middleware (`durable.ts`, `lock.ts`, `ratelimit.ts`) moved into `src/middleware/`, beside the `/middleware` entry that exports it.
+- (agent) A module's `index.ts` re-exports, by name, what the rest of the package uses. That is wider than the public entry points, whose `exports` don't change. A folder's public `index.ts` is a loose file, not a module's: it re-exports from its modules like any other caller.
+- (agent) A module imports only modules before it at runtime: in `server/`, `validation` and `subscriptions`, then `procedures`, then `execution`, `sockets` and `handler`. So the `index.ts` files add no import cycles (`import/no-cycle` fails on one). Only `import type` edges point back, such as `sockets/socket.ts` naming `HandlerCore` from `handler/`.
+- (agent) Lint enforces it with `trpc/module-boundaries`, a rule in `tooling/oxlint-plugin/`, with the five folders as its `roots`. Code outside a module imports only its `index.ts`, and a module's files import each other directly, never their own `index.ts`. Loose files in a root (`server/caller.ts`, `client/link.ts`) aren't modules, and neither are `fixtures/` folders (set as `ignore`). A custom rule because oxlint has no `import/no-restricted-paths`, and `no-restricted-imports` matches the import string rather than the resolved file, so it would need an override per module.
+- (agent) Tests move with their module ([`test-layout.md`](./test-layout.md)). Ones that cover a whole folder (`server/basics`, `errors`, `tagged-errors`, `tracing`; `serializer/protocol`, `serializers`, `transport`) stay loose.
+- Why: a folder holds one feature, and its `index.ts` lists what the rest of the package relies on, so a reader follows a feature without reading its neighbours.
+- Lost: an extra hop through `index.ts` for each import across modules, and `index.ts` lists kept by hand. History needs `git log --follow` across the moves. Importing a barrel brings the whole module into a typecheck program: `server/caller.ts` reaching `localLink` through `client/links/index.ts` made the Workers-typed runtime-matrix check `wsLink` too, which needed the URL passed as a string. Bundles don't change, since the package has `sideEffects: false`.
+- Lives in: `packages/trpc/src/{server,serializer,interop,client,openapi}/*/index.ts`, `packages/trpc/src/middleware/`, `tooling/oxlint-plugin/module-boundaries.ts`, `vite.config.ts` (`trpc/module-boundaries`), `next/AGENTS.md` (Lint and style).
