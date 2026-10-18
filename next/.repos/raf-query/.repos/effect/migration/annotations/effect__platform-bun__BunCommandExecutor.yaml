@@ -1,3 +1,0 @@
-"@effect/platform-bun/BunCommandExecutor#layer":
-  replacement: "BunChildProcessSpawner.layer"
-  note: "CommandExecutor became effect/process/ChildProcessSpawner; the Bun adapter was renamed and still requires FileSystem and Path."

@@ -1,4 +1,0 @@
-distribute-on:
-  small-changeset: 4 linux-medium-js
-  medium-changeset: 8 linux-medium-js
-  large-changeset: 16 linux-medium-js

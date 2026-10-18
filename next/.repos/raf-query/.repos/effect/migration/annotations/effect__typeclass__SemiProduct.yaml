@@ -1,3 +1,0 @@
-"@effect/typeclass/SemiProduct":
-  replacement: none
-  note: The @effect/typeclass package was removed in v4 with no generic typeclass layer replacement. Rewrite this abstraction against the concrete v4 data type and its module functions.

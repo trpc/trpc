@@ -1,3 +1,0 @@
-"@effect/cluster/ShardingRegistrationEvent#match":
-  replacement: "effect/cluster/ShardingRegistrationEvent#match"
-  note: "Moved into core Effect with the same tagged-enum matcher."

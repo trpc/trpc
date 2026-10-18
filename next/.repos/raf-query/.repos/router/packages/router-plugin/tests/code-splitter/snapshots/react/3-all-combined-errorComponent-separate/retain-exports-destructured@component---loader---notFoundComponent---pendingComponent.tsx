@@ -1,1 +1,0 @@
-export { SplitLoader as loader };

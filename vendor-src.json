@@ -7,13 +7,19 @@
 			"packages": [],
 			"url": "https://github.com/Effect-TS/effect.git",
 			"version": "effect@4.0.2",
-			"ref": "effect@4.0.2"
+			"ref": "effect@4.0.2",
+			"ignore": [
+				".repos/**"
+			]
 		},
 		"orpc": {
 			"packages": [],
 			"url": "https://github.com/middleapi/orpc.git",
 			"version": "v2.0.0-beta.44",
-			"ref": "v2.0.0-beta.44"
+			"ref": "v2.0.0-beta.44",
+			"ignore": [
+				".repos/**"
+			]
 		},
 		"raf-query": {
 			"packages": [],
@@ -22,7 +28,8 @@
 			"ref": "a9f2aa7743c64b548c6d982f5caffaf53f9a695a",
 			"ignore": [
 				"**/.github/**",
-				"pnpm-lock.yaml"
+				"pnpm-lock.yaml",
+				".repos/**"
 			]
 		}
 	}

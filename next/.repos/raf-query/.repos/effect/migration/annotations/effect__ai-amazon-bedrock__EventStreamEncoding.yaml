@@ -1,3 +1,0 @@
-"@effect/ai-amazon-bedrock/EventStreamEncoding":
-  replacement: none
-  note: The @effect/ai-amazon-bedrock package and its AWS event-stream decoder were removed from v4. Use the AWS SDK's Bedrock Runtime streaming support or implement decoding in a custom provider client.

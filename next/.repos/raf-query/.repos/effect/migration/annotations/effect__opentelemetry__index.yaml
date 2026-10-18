@@ -1,3 +1,0 @@
-"@effect/opentelemetry/index":
-  replacement: "@effect/opentelemetry"
-  note: "The explicit /index entrypoint was removed; import the same namespaces from the @effect/opentelemetry package root or import specific modules directly."

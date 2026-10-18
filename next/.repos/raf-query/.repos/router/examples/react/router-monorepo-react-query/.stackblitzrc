@@ -1,3 +1,0 @@
-{
-  "startCommand": "cp pnpm-workspace.yaml.example pnpm-workspace.yaml && pnpm install && pnpm dev"
-}

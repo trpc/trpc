@@ -1,4 +1,0 @@
-{
-  "indexToken": { "regex": "[a-z]+-page" },
-  "routeToken": { "regex": "[a-z]+-layout" }
-}

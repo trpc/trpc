@@ -1,7 +1,0 @@
-node_modules
-dist
-src/routeTree.gen.ts
-src/paraglide
-*.local
-port*.txt
-test-results

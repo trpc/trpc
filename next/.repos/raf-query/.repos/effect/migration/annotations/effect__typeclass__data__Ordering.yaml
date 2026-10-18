@@ -1,6 +1,0 @@
-"@effect/typeclass/data/Ordering#Monoid":
-  replacement: "Ordering.Reducer"
-  note: "Renamed and moved to the concrete v4 Ordering module."
-"@effect/typeclass/data/Ordering#Semigroup":
-  replacement: "Ordering.Reducer"
-  note: "The v4 Reducer is also a Combiner and preserves Ordering combination semantics."

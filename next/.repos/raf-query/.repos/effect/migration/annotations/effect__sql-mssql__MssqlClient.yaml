@@ -1,6 +1,0 @@
-"@effect/sql-mssql/MssqlClient#MssqlClient":
-  replacement: "@effect/sql-mssql/MssqlClient#MssqlClient"
-  note: "Retained; the service value is now a Context.Service rather than a GenericTag."
-"@effect/sql-mssql/MssqlClient#MssqlClientConfig":
-  replacement: "@effect/sql-mssql/MssqlClient#MssqlClientConfig"
-  note: "Retained; durations use Duration.Input, parameterTypes is keyed by Statement.PrimitiveKind, and v4 adds retry and timeout options."

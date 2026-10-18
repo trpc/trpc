@@ -1,3 +1,0 @@
-"@effect/rpc/RpcClientError#TypeId":
-  replacement: "none"
-  note: "The marker is private in v4; narrow with instanceof RpcClientError or inspect the public _tag."

@@ -1,6 +1,0 @@
-"@effect/sql-mssql/Parameter#Parameter":
-  replacement: "@effect/sql-mssql/Parameter#Parameter"
-  note: "Retained; the phantom brand key was renamed from ParameterId to TypeId."
-"@effect/sql-mssql/Parameter#ParameterId":
-  replacement: "@effect/sql-mssql/Parameter#TypeId"
-  note: "Renamed; use TypeId for direct brand-key and type references."

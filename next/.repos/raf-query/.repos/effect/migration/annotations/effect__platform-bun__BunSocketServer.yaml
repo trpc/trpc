@@ -1,3 +1,0 @@
-"@effect/platform-bun/BunSocketServer#IncomingMessage":
-  replacement: "BunSocketServer.IncomingMessage"
-  note: "The identifier remains and is now a Context.Service for node:http.IncomingMessage."

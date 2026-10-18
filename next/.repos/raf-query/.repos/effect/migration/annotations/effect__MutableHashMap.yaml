@@ -1,6 +1,0 @@
-"effect/MutableHashMap#MutableHashMap":
-  replacement: "MutableHashMap.MutableHashMap"
-  note: "The MutableHashMap model remains; use its public operations rather than depending on internal representation fields."
-"effect/MutableHashMap#TypeId":
-  replacement: "none"
-  note: "The public MutableHashMap.TypeId was removed; the v4 marker is private."

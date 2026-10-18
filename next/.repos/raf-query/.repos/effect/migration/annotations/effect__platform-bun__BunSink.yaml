@@ -1,9 +1,0 @@
-"@effect/platform-bun/BunSink#stderr":
-  replacement: "stdio.stderr() from Stdio.Stdio"
-  note: "Process stdio moved behind effect/Stdio; provide BunStdio.layer. stderr remains a Sink and can be configured with endOnDone."
-"@effect/platform-bun/BunSink#stdin":
-  replacement: "stdio.stdin from Stdio.Stdio"
-  note: "Standard input is correctly modeled as a Stream in v4, not a writable Sink; manually adapt process.stdin only if writing to it was intentional."
-"@effect/platform-bun/BunSink#stdout":
-  replacement: "stdio.stdout() from Stdio.Stdio"
-  note: "Process stdio moved behind effect/Stdio; provide BunStdio.layer. stdout remains a Sink."

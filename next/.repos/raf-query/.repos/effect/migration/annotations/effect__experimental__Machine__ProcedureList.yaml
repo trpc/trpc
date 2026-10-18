@@ -1,3 +1,0 @@
-"@effect/experimental/Machine/ProcedureList":
-  replacement: none
-  note: The stateful Machine ProcedureList abstraction and brand were not ported to v4. RpcGroup is the closest protocol collection for its schema-backed operations, but it has no initial state or public/private visibility split. Implement state handling and initialization in the replacement actor or workflow, and enforce visibility in that architecture.

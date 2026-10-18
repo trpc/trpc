@@ -1,6 +1,0 @@
-"effect/MutableRef#MutableRef":
-  replacement: "MutableRef.MutableRef"
-  note: "The MutableRef model remains; use its public operations rather than depending on internal representation fields."
-"effect/MutableRef#TypeId":
-  replacement: "none"
-  note: "The public MutableRef.TypeId was removed; the v4 marker is private."

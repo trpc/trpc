@@ -1,3 +1,0 @@
-"@effect/experimental/EventLogServer/Cloudflare":
-  replacement: none
-  note: The Cloudflare adapter was not ported; combine EventLogServerEncrypted.layer with a custom Durable Object RpcServer.Protocol adapter.

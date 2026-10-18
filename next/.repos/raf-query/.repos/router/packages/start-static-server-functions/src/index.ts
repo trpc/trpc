@@ -1,1 +1,0 @@
-export { staticFunctionMiddleware } from './staticFunctionMiddleware'

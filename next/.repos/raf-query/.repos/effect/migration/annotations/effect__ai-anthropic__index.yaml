@@ -1,3 +1,0 @@
-"@effect/ai-anthropic/index":
-  replacement: "@effect/ai-anthropic"
-  note: "The explicit /index entrypoint was removed; import the same namespaces from the @effect/ai-anthropic package root or import specific modules directly."

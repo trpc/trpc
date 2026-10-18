@@ -1,3 +1,0 @@
-"@effect/sql-clickhouse/index":
-  replacement: "@effect/sql-clickhouse"
-  note: "The explicit /index entrypoint was removed; import the same namespaces from the @effect/sql-clickhouse package root or import specific modules directly."

@@ -1,6 +1,0 @@
-"@effect/platform-node-shared/NodeMultipart#fileToReadable":
-  replacement: "@effect/platform-node/NodeMultipart#fileToReadable"
-  note: "The Node multipart implementation moved from @effect/platform-node-shared to @effect/platform-node; its behavior remains."
-"@effect/platform-node-shared/NodeMultipart#stream":
-  replacement: "@effect/platform-node/NodeMultipart#stream"
-  note: "The Node multipart implementation moved from @effect/platform-node-shared to @effect/platform-node; the source and headers call shape remains."

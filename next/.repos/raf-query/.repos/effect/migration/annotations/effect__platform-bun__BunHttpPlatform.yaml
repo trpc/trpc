@@ -1,3 +1,0 @@
-"@effect/platform-bun/BunHttpPlatform#make":
-  replacement: "BunHttpPlatform.layer"
-  note: "The Bun-specific constructor is private; provide the public layer and consume HttpPlatform.HttpPlatform."

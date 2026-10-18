@@ -1,3 +1,0 @@
-effect/MergeState:
-  replacement: none
-  note: Internal execution state of the removed Channel.mergeWith implementation. V4 Channel.merge manages its fibers and queues internally and exposes only a haltStrategy option.

@@ -1,3 +1,0 @@
-"@effect/platform-node/NodeCommandExecutor#layer":
-  replacement: "NodeChildProcessSpawner.layer"
-  note: "CommandExecutor became ChildProcessSpawner; use the @effect/platform-node/NodeChildProcessSpawner re-export."

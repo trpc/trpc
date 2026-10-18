@@ -1,3 +1,0 @@
-"@effect/cli/HelpDoc/Span":
-  replacement: none
-  note: The Span ADT was removed; v4 help fields are strings and terminal styling is owned by CliOutput.

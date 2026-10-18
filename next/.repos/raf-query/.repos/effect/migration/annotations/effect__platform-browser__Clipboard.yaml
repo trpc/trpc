@@ -1,9 +1,0 @@
-"@effect/platform-browser/Clipboard#Clipboard":
-  replacement: "Clipboard.Clipboard"
-  note: "The service remains, now as a Context.Service with a private brand; normal access and provision are unchanged."
-"@effect/platform-browser/Clipboard#ErrorTypeId":
-  replacement: "none"
-  note: "The error marker is private in v4; discriminate ClipboardError by its _tag instead."
-"@effect/platform-browser/Clipboard#TypeId":
-  replacement: "none"
-  note: "The service brand is private in v4; use the Clipboard Context.Service value."

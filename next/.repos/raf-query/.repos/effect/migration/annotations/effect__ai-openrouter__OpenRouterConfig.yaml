@@ -1,6 +1,0 @@
-"@effect/ai-openrouter/OpenRouterConfig#OpenRouterConfig":
-  replacement: "OpenRouterConfig.OpenRouterConfig"
-  note: "Still exported in v4; update imports to the v4 package and use the revised Context.Service-based configuration service."
-"@effect/ai-openrouter/OpenRouterConfig#OpenRouterConfig.Service":
-  replacement: "OpenRouterConfig.OpenRouterConfig.Service"
-  note: "Still exported in v4; update imports to the v4 package and use the revised Context.Service-based configuration service."

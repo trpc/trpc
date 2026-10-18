@@ -1,3 +1,0 @@
-"@effect/platform-node/NodeHttpServer#layerContext":
-  replacement: "NodeHttpServer.layerHttpServices"
-  note: "Direct rename; it provides NodeServices, HttpPlatform, and Etag.Generator, without the removed WorkerManager."

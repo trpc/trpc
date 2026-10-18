@@ -1,3 +1,0 @@
-"@effect/cluster/ClusterCron#make":
-  replacement: "effect/cluster/ClusterCron#make"
-  note: "Moved into core Effect. The constructor remains; Duration.DurationInput is now Duration.Input."

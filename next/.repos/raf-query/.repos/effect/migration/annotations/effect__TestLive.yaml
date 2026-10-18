@@ -1,9 +1,0 @@
-"effect/TestLive#make":
-  replacement: "Effect.provideContext"
-  note: "The wrapper was removed. Apply a captured Context directly with Effect.provideContext; for live time inside it.effect, prefer TestClock.withLive."
-"effect/TestLive#TestLive":
-  replacement: "none"
-  note: "There is no grouped live-default-services object. Use Context.Context plus Effect.provideContext, TestClock.withLive for live time, or it.live for the whole test."
-"effect/TestLive#TestLiveTypeId":
-  replacement: "none"
-  note: "The TestLive nominal wrapper was removed, so its type id has no replacement."
