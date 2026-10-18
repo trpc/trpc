@@ -1,4 +1,14 @@
-import { Cause, Effect, Option, Queue, Stream } from 'effect';
+import {
+  Cause,
+  Effect,
+  Exit,
+  Fiber,
+  Option,
+  Queue,
+  Request,
+  RequestResolver,
+  Stream,
+} from 'effect';
 import {
   codeOfStatus,
   fromWireError,
@@ -484,189 +494,173 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
 
   // --- batching -------------------------------------------------------------------
 
-  interface Pending {
-    op: Operation;
-    aborted: boolean;
-    settled: boolean;
-    resolve: (value: unknown) => void;
-    reject: (error: AnyTrpcError) => void;
+  /**
+   * A call waiting for its batch. `gone` once it settled or its caller
+   * stopped waiting; `onAbort` aborts the batch's request once every call
+   * in it is gone.
+   */
+  interface Batched extends Request.Request<unknown, AnyTrpcError> {
+    readonly op: Operation;
+    readonly key: string;
+    gone: boolean;
     onAbort?: () => void;
   }
-  const queues = { query: [] as Pending[], mutation: [] as Pending[] };
-  let scheduled = false;
+  const Batched = Request.of<Batched>();
 
-  const dispatch = (items: Pending[]): Effect.Effect<void> =>
-    Effect.suspend(() => {
-      const live = items.filter((item) => !item.aborted);
-      if (live.length === 0) return Effect.void;
+  const dispatch = (
+    entries: ReadonlyArray<Request.Entry<Batched>>,
+  ): Effect.Effect<void> =>
+    Effect.gen(function* () {
       const controller = new AbortController();
-      for (const item of live) {
-        item.onAbort = () => {
-          if (live.every((i) => i.aborted || i.settled)) controller.abort();
+      for (const entry of entries) {
+        entry.request.onAbort = () => {
+          if (entries.every((e) => e.request.gone)) controller.abort();
         };
       }
-      const received = new Set<number>();
-      const rejectRest = (err: AnyTrpcError) => {
-        for (const [i, item] of live.entries()) {
-          if (!received.has(i)) item.reject(err);
-        }
+      /** A call settles once: a later answer for it is ignored. */
+      const settle = (
+        entry: Request.Entry<Batched>,
+        exit: Exit.Exit<unknown, AnyTrpcError>,
+      ) => {
+        entry.request.gone = true;
+        entry.completeUnsafe(exit);
       };
-      return Effect.gen(function* () {
-        const frames = yield* Effect.forEach(live, () =>
-          Queue.unbounded<Frame, AnyTrpcError | Cause.Done>(),
-        );
-        const onLine = (line: BatchLine, headers: Headers) => {
-          const item = live[line.i];
-          const queue = frames[line.i];
-          if (!item || !queue) return Effect.void;
-          if ('chunk' in line) {
-            Queue.offerUnsafe(queue, line.chunk as Frame);
-            return Effect.void;
-          }
-          received.add(line.i);
+      /**
+       * Results still decoding. `Effect.request` fails the calls a batch
+       * ends without settling, so the batch waits for them.
+       */
+      const heads: Array<Fiber.Fiber<void>> = [];
+      const frames = yield* Effect.forEach(entries, () =>
+        Queue.unbounded<Frame, AnyTrpcError | Cause.Done>(),
+      );
+      const onLine = (line: BatchLine, headers: Headers) => {
+        const entry = entries[line.i];
+        const queue = frames[line.i];
+        if (!entry || !queue) return Effect.void;
+        if ('chunk' in line) {
+          Queue.offerUnsafe(queue, line.chunk as Frame);
+          return Effect.void;
+        }
+        try {
+          report(entry.request.op, line.status, headers);
+        } catch (error) {
+          settle(entry, Exit.fail(error as AnyTrpcError));
+          Queue.endUnsafe(queue);
+          return Effect.void;
+        }
+        if (line.status >= 400) {
+          let error: AnyTrpcError;
           try {
-            report(item.op, line.status, headers);
-          } catch (error) {
-            item.reject(error as AnyTrpcError);
-            Queue.endUnsafe(queue);
-            return Effect.void;
+            error = fromWireError(serializer.deserialize(line.body as never));
+          } catch (cause) {
+            error = badResponse('Invalid error message')(cause);
           }
-          if (line.status >= 400) {
-            let error: AnyTrpcError;
-            try {
-              error = fromWireError(serializer.deserialize(line.body as never));
-            } catch (cause) {
-              error = badResponse('Invalid error message')(cause);
-            }
-            item.reject(error);
-            Queue.endUnsafe(queue);
-            return Effect.void;
-          }
-          Queue.offerUnsafe(queue, line.body as Frame);
-          return serializer
-            .deserializeStream(Stream.fromQueue(queue), {
-              reviveError,
-              ...streamErrors,
-            })
-            .pipe(
-              Effect.matchCause({
-                onSuccess: item.resolve,
-                onFailure: (cause) =>
-                  item.reject(toHttpError(Cause.squash(cause))),
-              }),
-              Effect.forkDetach,
-            );
-        };
-        yield* Effect.gen(function* () {
-          const calls: BatchCall[] = live.map((item) => {
-            const encoded = encode(item.op);
-            return {
-              path: item.op.path,
-              ...(encoded.json === undefined ? {} : { input: encoded.json }),
-            };
-          });
-          const res = yield* Effect.tryPromise({
-            try: async () =>
-              fetchFn(
-                baseUrl,
-                await requestInit(
-                  live.map((i) => i.op),
-                  {
-                    accept: streamType,
-                    'content-type': CONTENT_TYPE.json,
-                    [HEADER.batch]: '1',
-                  },
-                  {
-                    method: 'POST',
-                    body: JSON.stringify(calls),
-                    signal: controller.signal,
-                  },
-                ),
-              ),
-            catch: toHttpError,
-          });
-          if (!res.ok || !res.body) {
-            const err = yield* Effect.promise(() => readError(res));
-            for (const item of live) {
-              let failure = err;
-              try {
-                report(item.op, res.status, res.headers);
-              } catch (error) {
-                failure = error as AnyTrpcError;
-              }
-              item.reject(failure);
-            }
-            return;
-          }
-          yield* readStream(
-            res.headers.get('content-type') ?? '',
-            res.body,
-          ).pipe(
-            Stream.runForEach((line) => onLine(line as BatchLine, res.headers)),
-          );
-          rejectRest(
-            badResponse('The batch response ended without a result')(),
-          );
-        }).pipe(
-          Effect.catchCause((cause) =>
-            Effect.sync(() => rejectRest(toHttpError(Cause.squash(cause)))),
-          ),
-          Effect.ensuring(
-            Effect.sync(() => {
-              for (const queue of frames) Queue.endUnsafe(queue);
+          settle(entry, Exit.fail(error));
+          Queue.endUnsafe(queue);
+          return Effect.void;
+        }
+        Queue.offerUnsafe(queue, line.body as Frame);
+        return serializer
+          .deserializeStream(Stream.fromQueue(queue), {
+            reviveError,
+            ...streamErrors,
+          })
+          .pipe(
+            Effect.matchCause({
+              onSuccess: (value) => settle(entry, Exit.succeed(value)),
+              onFailure: (cause) =>
+                settle(entry, Exit.fail(toHttpError(Cause.squash(cause)))),
             }),
-          ),
+            Effect.forkDetach,
+            Effect.map((fiber) => {
+              heads.push(fiber);
+            }),
+          );
+      };
+      const failure = yield* Effect.gen(function* () {
+        const ops = entries.map((entry) => entry.request.op);
+        const calls: BatchCall[] = ops.map((op) => {
+          const encoded = encode(op);
+          return {
+            path: op.path,
+            ...(encoded.json === undefined ? {} : { input: encoded.json }),
+          };
+        });
+        const res = yield* Effect.tryPromise({
+          try: async () =>
+            fetchFn(
+              baseUrl,
+              await requestInit(
+                ops,
+                {
+                  accept: streamType,
+                  'content-type': CONTENT_TYPE.json,
+                  [HEADER.batch]: '1',
+                },
+                {
+                  method: 'POST',
+                  body: JSON.stringify(calls),
+                  signal: controller.signal,
+                },
+              ),
+            ),
+          catch: toHttpError,
+        });
+        if (!res.ok || !res.body) {
+          const err = yield* Effect.promise(() => readError(res));
+          for (const entry of entries) {
+            try {
+              report(entry.request.op, res.status, res.headers);
+            } catch (error) {
+              settle(entry, Exit.fail(error as AnyTrpcError));
+            }
+          }
+          return err;
+        }
+        yield* readStream(res.headers.get('content-type') ?? '', res.body).pipe(
+          Stream.runForEach((line) => onLine(line as BatchLine, res.headers)),
         );
-      });
+        return badResponse('The batch response ended without a result')();
+      }).pipe(
+        Effect.catchCause((cause) =>
+          Effect.succeed(toHttpError(Cause.squash(cause))),
+        ),
+        Effect.ensuring(
+          Effect.sync(() => {
+            for (const queue of frames) Queue.endUnsafe(queue);
+          }),
+        ),
+      );
+      yield* Fiber.awaitAll(heads);
+      // Only calls the response never answered are still open.
+      for (const entry of entries) settle(entry, Exit.fail(failure));
     });
 
-  function flush() {
-    scheduled = false;
-    for (const type of ['query', 'mutation'] as const) {
-      const groups = new Map<string, Pending[]>();
-      for (const item of queues[type].splice(0)) {
-        // Calls without a key are unbatchable, so they never get here.
-        const key = initKey(item.op)!;
-        let group = groups.get(key);
-        if (!group) groups.set(key, (group = []));
-        group.push(item);
-      }
-      for (const items of groups.values()) {
-        for (let i = 0; i < items.length; i += maxItems) {
-          Effect.runFork(dispatch(items.slice(i, i + maxItems)));
-        }
-      }
-    }
-  }
+  const resolver = RequestResolver.makeWith<Batched>({
+    batchKey: (entry) => entry.request.key,
+    // A macrotask, so calls started in the same tick share a request.
+    delay: Effect.sleep(0),
+    collectWhile: (entries) => entries.size < maxItems,
+    runAll: dispatch,
+  });
 
   const batched = (op: Operation): OperationStream =>
     Stream.fromEffect(
-      Effect.callback<unknown, AnyTrpcError>((resume) => {
-        const item: Pending = {
+      Effect.suspend(() => {
+        // Calls without an `initKey` are unbatchable, so they never get here.
+        const request = Batched({
           op,
-          aborted: false,
-          settled: false,
-          resolve: (value) => {
-            if (item.settled) return;
-            item.settled = true;
-            resume(Effect.succeed(value));
-          },
-          reject: (error) => {
-            if (item.settled) return;
-            item.settled = true;
-            resume(Effect.fail(error));
-          },
-        };
-        queues[op.type as 'query' | 'mutation'].push(item);
-        if (!scheduled) {
-          scheduled = true;
-          // A macrotask, so calls started in the same tick share a request.
-          Effect.runFork(Effect.andThen(Effect.sleep(0), Effect.sync(flush)));
-        }
-        return Effect.sync(() => {
-          item.aborted = true;
-          item.onAbort?.();
+          key: `${op.type} ${initKey(op)}`,
+          gone: false,
         });
+        return Effect.request(request, resolver).pipe(
+          Effect.onInterrupt(() =>
+            Effect.sync(() => {
+              request.gone = true;
+              request.onAbort?.();
+            }),
+          ),
+        );
       }),
     );
 

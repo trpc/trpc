@@ -492,14 +492,14 @@ const budgets = [
   {
     name: 'minimal JSON client',
     target: 18_000,
-    ceiling: 29_400,
+    ceiling: 30_200,
     code: `import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
 export const client = createTrpcClient({ router: routerType<any>(), links: [httpLink({ url: '/trpc' })] });`,
   },
   {
     name: 'full client (retry, SSE, danSON)',
     target: 25_000,
-    ceiling: 33_400,
+    ceiling: 34_200,
     code: `import { createTrpcClient, httpLink, retryLink, routerType } from '@trpc12/trpc/client';
 import { createSerializer } from '@trpc12/trpc/serializer';
 export const client = createTrpcClient({ router: routerType<any>(), links: [retryLink(), httpLink({ url: '/trpc', serializer: createSerializer() })] });`,
