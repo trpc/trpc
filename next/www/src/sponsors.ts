@@ -1,6 +1,6 @@
 import list from '../sponsors.json' with { type: 'json' };
 
-/** A GitHub sponsor, as `build/sponsors-copy.ts` writes them to `sponsors.json`. */
+/** A sponsor, as `build/sponsors-sync.ts` writes them to `sponsors.json`. */
 export interface Sponsor {
   /** When they started, in ms since the epoch. */
   readonly createdAt: number;
@@ -31,9 +31,9 @@ export function avatarUrl(sponsor: Sponsor, size: number) {
 
 /**
  * The sponsors featured as partners (the `partners` flag), with what the
- * site says about them. They're trpc.io's tiered sponsors (`sections` in the
- * repo root's `www/src/components/sponsors/script.push.ts`); one who stops
- * sponsoring drops out with the next copy of `sponsors.json`.
+ * site says about them; the README lists them as its top tier too
+ * (`build/sponsors-readme.ts`). One who stops sponsoring drops out with the
+ * next sync of `sponsors.json`.
  */
 const partnerDetails = {
   coderabbitai: {
@@ -54,6 +54,8 @@ const partnerDetails = {
 } as const;
 
 export type PartnerLogin = keyof typeof partnerDetails;
+
+export const partnerLogins: ReadonlyArray<string> = Object.keys(partnerDetails);
 
 export interface Partner extends Sponsor {
   /** The brand's color, for the card's glow. */

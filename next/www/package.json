@@ -10,7 +10,9 @@
     "start": "vp preview --port 3012",
     "typecheck": "tsc",
     "old-docs:copy": "node build/old-docs-copy.ts",
-    "old-docs:check": "node build/old-docs-copy.ts --check"
+    "old-docs:check": "node build/old-docs-copy.ts --check",
+    "sponsors:sync": "node build/sponsors-sync.ts",
+    "sponsors:readme": "node build/sponsors-sync.ts --readme-only"
   },
   "dependencies": {
     "@shared/ui": "workspace:*",
