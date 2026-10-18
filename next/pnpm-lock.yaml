@@ -740,6 +740,55 @@ importers:
         specifier: 1.1.0
         version: 1.1.0(@opentelemetry/api@1.9.1)(@types/node@24.19.1)(@vitest/coverage-v8@5.0.3)(@vitest/ui@5.0.3)(esbuild@0.28.2)(happy-dom@20.14.6)(jiti@2.7.0)(svelte@5.57.2)(typescript@7.0.2)(yaml@2.9.1)
 
+  examples/v11-migration:
+    dependencies:
+      '@effect/platform-node':
+        specifier: 4.0.2
+        version: 4.0.2(effect@4.0.2)(redis@6.3.0(@opentelemetry/api@1.9.1))
+      '@tanstack/react-query':
+        specifier: 5.104.1
+        version: 5.104.1(react@19.3.0)
+      '@trpc/client':
+        specifier: 11.19.0
+        version: 11.19.0(@trpc/server@11.19.0(typescript@7.0.2))(typescript@7.0.2)
+      '@trpc/server':
+        specifier: 11.19.0
+        version: 11.19.0(typescript@7.0.2)
+      '@trpc/tanstack-react-query':
+        specifier: 11.19.0
+        version: 11.19.0(@tanstack/react-query@5.104.1(react@19.3.0))(@trpc/client@11.19.0(@trpc/server@11.19.0(typescript@7.0.2))(typescript@7.0.2))(@trpc/server@11.19.0(typescript@7.0.2))(react@19.3.0)(typescript@7.0.2)
+      '@trpc12/tanstack-react-query':
+        specifier: workspace:*
+        version: link:../../packages/tanstack-react-query
+      '@trpc12/trpc':
+        specifier: workspace:*
+        version: link:../../packages/trpc
+      '@trpc12/upgrade':
+        specifier: workspace:*
+        version: link:../../packages/upgrade
+      effect:
+        specifier: 4.0.2
+        version: 4.0.2
+      react:
+        specifier: 19.3.0
+        version: 19.3.0
+      superjson:
+        specifier: 2.2.6
+        version: 2.2.6
+      zod:
+        specifier: 4.6.5
+        version: 4.6.5
+    devDependencies:
+      '@types/node':
+        specifier: ^24.0.0
+        version: 24.19.1
+      '@types/react':
+        specifier: 19.3.0
+        version: 19.3.0
+      typescript:
+        specifier: ^7.0.2
+        version: 7.0.2
+
   packages/experimental-react:
     devDependencies:
       '@tooling/tsconfig':
@@ -5136,6 +5185,16 @@ packages:
     resolution: {integrity: sha512-QRsvrhs5gkEEBCude/cqWZzq788VGtcW3Pb6tT9uDGMSxJrI1D71NWOfQdG1WSZLR2vB+vK7G4rHXAyc3HJuVg==}
     hasBin: true
     peerDependencies:
+      typescript: '>=5.7.2'
+
+  '@trpc/tanstack-react-query@11.19.0':
+    resolution: {integrity: sha512-KYmZBRyqZqm9oY66a3tXxBlT9PLLG+YiH//4VRzrY7jCekeusYwzMkz9GAmyqnmAlc+n/9nbfzTmtIA0IordRw==}
+    hasBin: true
+    peerDependencies:
+      '@tanstack/react-query': ^5.80.3
+      '@trpc/client': 11.19.0
+      '@trpc/server': 11.19.0
+      react: '>=18.2.0'
       typescript: '>=5.7.2'
 
   '@trpc/tanstack-react-query@11.21.1-canary.20.10e2ef98f':
@@ -12197,6 +12256,14 @@ snapshots:
 
   '@trpc/server@11.21.1-canary.20.10e2ef98f(typescript@7.0.2)':
     dependencies:
+      typescript: 7.0.2
+
+  '@trpc/tanstack-react-query@11.19.0(@tanstack/react-query@5.104.1(react@19.3.0))(@trpc/client@11.19.0(@trpc/server@11.19.0(typescript@7.0.2))(typescript@7.0.2))(@trpc/server@11.19.0(typescript@7.0.2))(react@19.3.0)(typescript@7.0.2)':
+    dependencies:
+      '@tanstack/react-query': 5.104.1(react@19.3.0)
+      '@trpc/client': 11.19.0(@trpc/server@11.19.0(typescript@7.0.2))(typescript@7.0.2)
+      '@trpc/server': 11.19.0(typescript@7.0.2)
+      react: 19.3.0
       typescript: 7.0.2
 
   '@trpc/tanstack-react-query@11.21.1-canary.20.10e2ef98f(@tanstack/react-query@5.104.1(react@19.3.0))(@trpc/client@11.21.1-canary.20.10e2ef98f(@trpc/server@11.21.1-canary.20.10e2ef98f(typescript@7.0.2))(typescript@7.0.2))(@trpc/server@11.21.1-canary.20.10e2ef98f(typescript@7.0.2))(react@19.3.0)(typescript@7.0.2)':

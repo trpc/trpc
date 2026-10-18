@@ -1,0 +1,28 @@
+{
+  "name": "@example/v11-migration",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "smoke": "node --experimental-eventsource --disable-warning=UNDICI-ES smoke.ts"
+  },
+  "dependencies": {
+    "@effect/platform-node": "4.0.2",
+    "@tanstack/react-query": "5.104.1",
+    "@trpc/client": "11.19.0",
+    "@trpc/server": "11.19.0",
+    "@trpc/tanstack-react-query": "11.19.0",
+    "@trpc12/tanstack-react-query": "workspace:*",
+    "@trpc12/trpc": "workspace:*",
+    "@trpc12/upgrade": "workspace:*",
+    "effect": "4.0.2",
+    "react": "19.3.0",
+    "superjson": "2.2.6",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/react": "19.3.0",
+    "typescript": "^7.0.2"
+  }
+}
