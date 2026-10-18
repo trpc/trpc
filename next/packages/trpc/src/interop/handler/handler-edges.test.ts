@@ -24,6 +24,10 @@ const router = {
     opts.response.headers.set('x-tag', opts.input);
     return opts.input;
   }),
+  cached: t.procedure.input(z.string()).query((opts) => {
+    if (opts.input) opts.response.headers.set('cache-control', opts.input);
+    return opts.input;
+  }),
   deferred: t.procedure
     .input(z.enum(['defined', 'unexpected']))
     .query((opts) => ({
@@ -162,6 +166,25 @@ test('batches: no input, a non-object input, mixed types, subscriptions', async 
     `/trpc/tagged,tagged?batch=1&input=${encodeURIComponent('{"0":"a","1":"b"}')}`,
   );
   expect(tags.headers.get('x-tag')).toBe('b');
+  await handler.dispose();
+});
+
+test('a GET batch keeps the strictest cache-control every call allows', async () => {
+  const handler = make();
+  const cacheOf = async (inputs: string[]) => {
+    const input = Object.fromEntries(inputs.map((value, i) => [i, value]));
+    const res = await call(
+      handler,
+      `/trpc/${inputs.map(() => 'cached').join(',')}?batch=1&input=${encodeURIComponent(JSON.stringify(input))}`,
+    );
+    await res.body?.cancel();
+    return res.headers.get('cache-control');
+  };
+  expect(await cacheOf(['public, max-age=60', 'public, max-age=10'])).toBe(
+    'public, max-age=10',
+  );
+  expect(await cacheOf(['no-store', 'public, max-age=60'])).toBe('no-store');
+  expect(await cacheOf(['public, max-age=60', ''])).toBeNull();
   await handler.dispose();
 });
 

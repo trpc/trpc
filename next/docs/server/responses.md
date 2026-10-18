@@ -27,7 +27,7 @@ const list = t.procedure.query(() =>
 );
 ```
 
-In a batch, headers merge (`set-cookie` appends) and each call keeps its own status.
+In a batch, headers merge (`set-cookie` appends) and each call keeps its own status. `cache-control` is the strictest policy every call allows: `no-store` or `no-cache` from any call wins, `private` beats `public`, and lifetimes take the shortest, so `max-age=60` and `public, max-age=10` send `max-age=10`. A batch with a call that sets none, an error included, isn't cached. Streamed responses (JSONL, SSE) send `no-cache` unless the call sets its own.
 
 ## Returning a response
 

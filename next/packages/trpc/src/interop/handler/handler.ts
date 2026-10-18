@@ -38,6 +38,7 @@ import {
   type PlatformArgs,
   type PlatformField,
   setHandlerContext,
+  strictestCacheControl,
 } from '../../server/handler/index.ts';
 import {
   createResponseHandle,
@@ -813,9 +814,13 @@ export function createV11Handler<
         for (const result of results) {
           for (const [key, value] of result.headers ?? []) {
             if (key === 'set-cookie') headers.append(key, value);
-            else headers.set(key, value);
+            else if (key !== 'cache-control') headers.set(key, value);
           }
         }
+        const cacheControl = strictestCacheControl(
+          results.map((result) => result.headers?.get('cache-control')),
+        );
+        if (cacheControl) headers.set('cache-control', cacheControl);
         const statuses = new Set(results.map((r) => r.status));
         return json(
           statuses.size === 1 ? results[0]!.status : 207,

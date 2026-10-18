@@ -62,6 +62,7 @@ import {
   type inferRouterContext,
   type inferRouterServices,
 } from '../procedures/index.ts';
+import { strictestCacheControl } from './cache-control.ts';
 import { httpParts } from './routes.ts';
 import {
   fromWebSocketLike,
@@ -804,15 +805,13 @@ export function createFetchHandler<
           : Effect.void,
       ),
     );
-    return respond(
-      200,
-      lines,
-      contentType,
-      contentType === CONTENT_TYPE.sse
-        ? { 'cache-control': 'no-cache' }
-        : { 'cache-control': 'no-cache', vary: 'accept' },
-      headers,
-    );
+    const defaults: Record<string, string> = {};
+    if (!headers?.has('cache-control')) defaults['cache-control'] = 'no-cache';
+    if (contentType !== CONTENT_TYPE.sse) {
+      const vary = headers?.get('vary');
+      defaults['vary'] = vary ? `${vary}, accept` : 'accept';
+    }
+    return respond(200, lines, contentType, defaults, headers);
   };
 
   const runChunks = (
@@ -1158,9 +1157,13 @@ export function createFetchHandler<
           for (const result of results) {
             for (const [key, value] of result.headers ?? []) {
               if (key === 'set-cookie') headers.append(key, value);
-              else headers.set(key, value);
+              else if (key !== 'cache-control') headers.set(key, value);
             }
           }
+          const cacheControl = strictestCacheControl(
+            results.map((result) => result.headers?.get('cache-control')),
+          );
+          if (cacheControl) headers.set('cache-control', cacheControl);
           return linesResponse(
             (write) =>
               Effect.forEach(

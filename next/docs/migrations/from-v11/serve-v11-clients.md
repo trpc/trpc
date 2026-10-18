@@ -78,4 +78,4 @@ What differs from a v11 server:
 
 - `createContext` runs once per WebSocket message, as for v12 sockets, not once per connection. It gets `info.connectionParams`.
 - `httpLink` and `httpBatchLink` get an output's promises settled; a procedure that returns an async iterable needs `httpBatchStreamLink` (as in v11).
-- `responseMeta` is gone: procedures set headers and status on their `response` handle, and the v11 handler sends them.
+- `responseMeta` is gone: procedures set headers and status on their `response` handle, and the v11 handler sends them. A batch's `cache-control` is the strictest policy every call in it allows; a call that sets none keeps the batch uncached.

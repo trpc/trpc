@@ -26,6 +26,20 @@ const router = {
   other: t.procedure.query(() =>
     Effect.as(TrpcResponse.appendHeader('set-cookie', 'c=3'), 'other'),
   ),
+  brief: t.procedure.query((opts) => {
+    opts.response.headers.set(
+      'cache-control',
+      'public, max-age=10, s-maxage=30',
+    );
+    return 'brief';
+  }),
+  feed: t.procedure.query((opts) => {
+    opts.response.headers.set('cache-control', 'max-age=5');
+    opts.response.headers.set('vary', 'cookie');
+    return (async function* () {
+      yield 1;
+    })();
+  }),
   redirect: t.procedure.query(() =>
     HttpServerResponse.redirect('https://example.com/elsewhere', {
       status: 307,
@@ -117,6 +131,7 @@ test('the Response service sets headers and status; a batch merges cookies (04 Q
     body: JSON.stringify([{ path: 'cached' }, { path: 'other' }]),
   });
   expect(batch.headers.getSetCookie()).toEqual(['a=1', 'b=2', 'c=3']);
+  expect(batch.headers.get('cache-control')).toBe('no-cache');
   const lines = (await batch.text())
     .trim()
     .split('\n')
@@ -127,6 +142,33 @@ test('the Response service sets headers and status; a batch merges cookies (04 Q
     [0, 203],
     [1, 200],
   ]);
+});
+
+test('a batch keeps the strictest cache-control every call allows; a streamed call keeps its own', async () => {
+  await using server = await createTestServer({
+    router,
+    createContext,
+    batch: true,
+  });
+  const batch = (...paths: string[]) =>
+    fetch(server.url, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'trpc-batch': '1' },
+      body: JSON.stringify(paths.map((path) => ({ path }))),
+    });
+  const cached = await batch('cached', 'brief');
+  expect(cached.headers.get('cache-control')).toBe('max-age=10, s-maxage=30');
+  expect(cached.headers.get('vary')).toBe('accept');
+  await cached.body?.cancel();
+  const failing = await batch('brief', 'missing');
+  expect(failing.headers.get('cache-control')).toBe('no-cache');
+  await failing.body?.cancel();
+
+  const feed = await fetch(`${server.url}/feed`);
+  expect(feed.headers.get('content-type')).toContain('application/jsonl');
+  expect(feed.headers.get('cache-control')).toBe('max-age=5');
+  expect(feed.headers.get('vary')).toBe('cookie, accept');
+  await feed.body?.cancel();
 });
 
 test('a procedure can return its own response on unbatched HTTP calls (04 Q4.3)', async () => {

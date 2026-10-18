@@ -4,7 +4,8 @@ import type { ResponseHandle } from '../procedures/index.ts';
 /**
  * The call's response headers and status, for Effect code: the same handle
  * resolvers and middleware get as `response`. In a batch, headers merge
- * (`set-cookie` appends) and each call keeps its status. Over WebSockets
+ * (`set-cookie` appends), `cache-control` is the strictest policy every
+ * call allows, and each call keeps its status. Over WebSockets
  * and in-process calls there is no response; the service is a scratch
  * handle nobody reads.
  *
