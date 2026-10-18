@@ -48,7 +48,7 @@ An operation goes through the links in order and its results come back the other
 | [`splitLink`](./links/split.md)   | Picks one of two chains per call                                |
 | [`switchLink`](./links/switch.md) | Picks one of several named chains, and a call can force one     |
 | [`retryLink`](./links/retry.md)   | Retries failed calls                                            |
-| [`dedupeLink`](./links/dedupe.md) | Shares identical queries in flight, and identical subscriptions |
+| [`dedupeLink`](./links/dedupe.md) | Lets a call join an identical one that hasn't sent anything yet |
 | [`loggerLink`](./links/logger.md) | Logs every operation, its results and its errors                |
 
 ## Call options

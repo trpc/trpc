@@ -1,12 +1,12 @@
 ---
 title: dedupeLink
-description: Share one request between identical queries in flight, and one subscription between identical subscribers.
+description: Share one request between identical queries or subscriptions that haven't sent anything back yet.
 section: Client
 parent: client/links
 order: 6
 ---
 
-`dedupeLink()` shares identical queries in flight: a query with the same path, input and call options as one still running gets that one's result instead of sending its own. Identical subscriptions share one too ([Subscriptions](#subscriptions)). Mutations always pass through.
+`dedupeLink()` lets a call join an identical one that hasn't sent anything back yet, instead of sending its own. It's the same rule for queries and subscriptions; mutations always pass through.
 
 ```ts twoslash
 // ---cut-start---
@@ -32,22 +32,18 @@ const [a, b] = await Promise.all([
 await client.post.byId.query({ id }, { dedupe: false });
 ```
 
-The two calls in `Promise.all` make one request. A caller that aborts leaves the others waiting, and the request is aborted only once every caller has.
+The two calls in `Promise.all` make one request, and both get the same value. A call is identical when it has:
 
-- Inputs are compared deeply, so `{ a, b }` and `{ b, a }` are the same input. Plain objects, arrays, `Map`s, `Set`s, `Date`s and the other built-in types compare by content; a `File` or a class instance matches only itself.
-- Call options must be equal too: calls with different `headers` or `init` are sent apart. Every caller's `onResponse` is called, and one that throws fails only its own call.
-- Every caller gets the same result value, so don't change it, and don't change an input while its call is in flight.
-- A stream in the result, an `AsyncIterable` or a `ReadableStream`, is copied to each caller that starts reading it before anyone has read an item. A caller that starts later sends the query again and reads its own.
-- `key(op)` groups calls by a string of yours instead of comparing inputs; call options are still compared.
-- The `dedupe: false` call option sends that query on its own.
+- the same path, or the same `key(op)` when you pass one, which replaces the input comparison;
+- a deeply equal input, so `{ a, b }` and `{ b, a }` match. Plain objects, arrays, `Map`s, `Set`s, `Date`s and the other built-in types compare by content; a `File` or a class instance matches only itself;
+- equal call options: different `headers` or `init` are sent apart. `headers` compare as `Headers`;
+- the same `lastEventId`.
+
+A joining call gets every value, the end and any error, and its `onResponse` is called. Once the first value has arrived, the call isn't joinable any more: a subscription made after its first event subscribes on its own, since it would miss the events before it.
+
+- A caller that stops or aborts leaves the others reading. The request stops once every caller has stopped, and its signal aborts once every caller's signal has.
+- Every caller gets the same value, so don't change it, and don't change an input while its call is in flight.
+- A stream in a query's output, an `AsyncIterable` or a `ReadableStream`, is one stream for every caller: readers would split its items. Callers that each read it should pass `dedupe: false`.
+- The `dedupe: false` call option sends that call on its own.
 
 Put it before [`retryLink`](./retry.md), so a retried query is still shared.
-
-## Subscriptions
-
-A subscription with the same path, input, call options and `lastEventId` as one that hasn't sent an event yet joins it: every subscriber gets every event, the end and any error. One that subscribes after the first event subscribes on its own, since it would miss the events before it (events replayed after its `lastEventId`, or what the resolver sends first). Subscriptions that start together, such as two components mounting at once, share one connection.
-
-- A subscriber that stops or aborts leaves the others subscribed; the subscription stops once every subscriber has.
-- Every subscriber's `onResponse` is called, including for a response that came before it joined, and one that throws fails only its own subscription.
-- A stream in an event is copied to every subscriber when the event arrives, so each one reads all of its items whenever it starts.
-- `dedupe: false` subscribes on its own.

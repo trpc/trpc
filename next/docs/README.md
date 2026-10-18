@@ -43,7 +43,7 @@ Pages marked (experimental) belong to an experiment, unlisted on the site until 
   - [splitLink](./client/links/split.md): Send each call down one of two chains, picked from its path, type or input.
   - [switchLink](./client/links/switch.md): Pick one of several named chains per call, and let a call force one with a typed call option.
   - [retryLink](./client/links/retry.md): Retry failed calls, by default queries that failed outside their typed errors, with backoff.
-  - [dedupeLink](./client/links/dedupe.md): Share one request between identical queries in flight, and one subscription between identical subscribers.
+  - [dedupeLink](./client/links/dedupe.md): Share one request between identical queries or subscriptions that haven't sent anything back yet.
   - [loggerLink](./client/links/logger.md): Log every operation, its results and its errors, to the console or a function of your own.
   - [localLink](./client/links/local.md): Call a router in the same process, through the client and its other links.
   - [Custom links](./client/custom-links.md): Write a link with link(), and declare the call options it reads, the errors it fails with and what it needs.
