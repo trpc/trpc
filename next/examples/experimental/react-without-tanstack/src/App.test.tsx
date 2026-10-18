@@ -1,30 +1,11 @@
-import { once } from 'node:events';
-import { createServer } from 'node:http';
-import type { AddressInfo } from 'node:net';
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { expect, onTestFinished, test } from 'vite-plus/test';
-import { trpcMiddleware } from '../server.ts';
+import { listen } from '../server.ts';
 import { App } from './App.tsx';
 import { createClients, loadPage } from './trpc.ts';
 
 Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
-
-async function listen() {
-  const trpc = await trpcMiddleware();
-  const server = createServer((req, res) =>
-    trpc.middleware(req, res, () => res.writeHead(404).end()),
-  );
-  server.listen(0, '127.0.0.1');
-  await once(server, 'listening');
-  const address = server.address() as AddressInfo;
-  onTestFinished(async () => {
-    server.closeAllConnections();
-    server.close();
-    await trpc.close();
-  });
-  return `http://127.0.0.1:${address.port}/trpc`;
-}
 
 async function waitFor(assertion: () => void, timeout = 3000) {
   const start = Date.now();
@@ -51,7 +32,9 @@ async function addPost(name: string, title: string) {
 }
 
 test('both clients render the router, and each one’s mutation updates its list', async () => {
-  const clients = createClients(await listen());
+  const server = await listen();
+  onTestFinished(() => server[Symbol.asyncDispose]());
+  const clients = createClients(server.url);
   const root = createRoot(
     document.body.appendChild(document.createElement('div')),
   );

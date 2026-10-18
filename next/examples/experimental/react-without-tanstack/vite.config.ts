@@ -25,6 +25,7 @@ function trpcServer(): Plugin {
 export default defineConfig({
   plugins: [react(), tailwindcss(), trpcServer()],
   test: {
+    name: 'react-without-tanstack',
     environment: 'happy-dom',
     // The test server listens on another port than happy-dom's page.
     environmentOptions: {

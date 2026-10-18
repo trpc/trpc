@@ -1,4 +1,10 @@
-import type { IncomingMessage, ServerResponse } from 'node:http';
+import { once } from 'node:events';
+import {
+  createServer,
+  type IncomingMessage,
+  type ServerResponse,
+} from 'node:http';
+import type { AddressInfo } from 'node:net';
 import { NodeHttpServer } from '@effect/platform-node';
 import { Effect, Exit, Scope } from 'effect';
 import { toHttpEffect } from '@trpc12/trpc/http';
@@ -53,7 +59,7 @@ const handler = createFetchHandler({
 
 /**
  * The handler as Node middleware for `/trpc`: Vite's dev and preview servers
- * mount it, and the test serves it with `node:http`.
+ * mount it, and `listen()` serves it with `node:http`.
  */
 export async function trpcMiddleware() {
   const scope = Scope.makeUnsafe();
@@ -74,4 +80,27 @@ export async function trpcMiddleware() {
       await handler.dispose();
     },
   };
+}
+
+export async function listen(port = 0) {
+  const trpc = await trpcMiddleware();
+  const server = createServer((req, res) =>
+    trpc.middleware(req, res, () => res.writeHead(404).end()),
+  );
+  server.listen(port, '127.0.0.1');
+  await once(server, 'listening');
+  const address = server.address() as AddressInfo;
+  return {
+    url: `http://127.0.0.1:${address.port}/trpc`,
+    async [Symbol.asyncDispose]() {
+      server.closeAllConnections();
+      server.close();
+      await trpc.close();
+    },
+  };
+}
+
+if (import.meta.main) {
+  const server = await listen(Number(process.env['PORT'] ?? 3000));
+  console.log(`listening on ${server.url}; pnpm dev serves the page`);
 }

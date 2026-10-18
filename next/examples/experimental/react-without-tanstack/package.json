@@ -3,11 +3,15 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "start": "node start.ts",
+    "server": "node server.ts",
+    "client": "node client.ts",
     "dev": "vp dev",
     "build": "vp build",
     "preview": "vp preview",
-    "typecheck": "tsc --noEmit -p tsconfig.json",
-    "smoke": "vp build && vp test run"
+    "test": "vp test run",
+    "smoke": "vp build && pnpm start",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
     "@effect/atom-react": "4.0.2",
