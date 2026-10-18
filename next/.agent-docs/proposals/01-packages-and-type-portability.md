@@ -202,7 +202,7 @@ export const utils = createTRPCQueryUtils({ client });
 
 > Package name and the single-package layout are given by the [brief](../decisions/brief.md).
 
-- **Q1.1:** [ ] peer dependency · [x] dependency (`^4.0.0`) → [effect-dependency](../decisions/effect-dependency.md)
+- **Q1.1:** [x] peer dependency (`^4.0.0`) · [ ] dependency → [effect-dependency](../decisions/effect-dependency.md)
 - **Q1.2:** [ ] as proposed · [ ] flatter · other: `____`
 - **Q1.3:** [x] `@trpc12/*` · [ ] unscoped → [integration-packages](../decisions/integration-packages.md)
 - **Q1.4:** [ ] yes · [ ] no

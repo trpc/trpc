@@ -1,7 +1,10 @@
-# `effect` is a regular dependency (human)
+# `effect` is a peer dependency (human)
 
-- Human, 2026-10-09 (Q1.1): "can be a dependency instead on ^4.0.0". `@trpc12/trpc` has `"dependencies": { "effect": "^4.0.0" }`, against proposal 01's peer-dependency recommendation.
-- Why: nothing for Promise users to install or think about, and no peer warnings. A caret range lets package managers dedupe against an app's own `effect@4.x`.
-- Lost: an app on an `effect` outside `^4.0.0` (a future v5) gets a second copy, and values crossing between copies (Effects, Schemas, service keys) may not interoperate. A peer dependency would have surfaced that at install time.
+- Human, 2026-10-18: "is effect a peer dep? make it if so". `@trpc12/trpc` has `"peerDependencies": { "effect": "^4.0.0" }`, as proposal 01 recommended. This reverses the 2026-10-09 answer to Q1.1 ("can be a dependency instead on ^4.0.0").
+- Human, 2026-10-18: "make all the installation snippets show installing of both". Every install command that adds `@trpc12/trpc` adds `effect` next to it.
+- Why: an app and @trpc12/trpc share one `effect`, so Effects, Schemas and service keys cross between them, and an app on an `effect` outside `^4.0.0` (a future v5) hears about it at install time instead of getting a second copy. npm, pnpm and Bun install missing peers, so a Promise user who forgets `effect` still gets it.
+- Lost: one more package in every install command. Yarn and older package managers warn about the peer instead of installing it.
+- (agent) Workspace packages pin `effect` in `devDependencies` (`4.0.2`), like the other `@effect/*` pins; the integration packages that import `effect` (`experimental-react`, `experimental-react-atom`, `nest`) declare it as a peer too. The TanStack packages don't import it and get it through `@trpc12/trpc`'s peer.
+- (agent) `tooling/pack/pack.test.ts` checks that every bare import in a package's `dist/` is one of its `dependencies` or `peerDependencies` (or a `node:`/`cloudflare:` builtin), so a schema library such as zod can't become a hidden requirement.
 - (agent) CI's `effect-latest` job widens every `effect` and `@effect/*` pin to `^4.0.0`, updates to the newest 4.x and runs typecheck and tests, on each push and weekly, since users get whatever `^4.0.0` resolves to. The lockfile keeps one pinned version for everything else.
-- Lives in: `packages/trpc/package.json`, `.github/workflows/next.yml` (`effect-latest`). Integration packages follow the same rule.
+- Lives in: `packages/trpc/package.json`, `tooling/pack/pack.test.ts`, `.github/workflows/next.yml` (`effect-latest`), the install commands in `docs/`, `packages/*/README.md` and `www/src/routes/index.tsx`.

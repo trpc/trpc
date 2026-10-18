@@ -1,6 +1,6 @@
 # `@trpc12/trpc` imports no Node; it is built on `effect/http` (human)
 
-- Human, 2026-10-11: "in the server package, we don't wanna import from node directly and instead use Effect's runtime and dependency injection for node etc". `@trpc12/trpc` has no `node:*` imports and no `@types/node`; its only dependency stays `effect` ([`effect-dependency.md`](./effect-dependency.md)).
+- Human, 2026-10-11: "in the server package, we don't wanna import from node directly and instead use Effect's runtime and dependency injection for node etc". `@trpc12/trpc` has no `node:*` imports and no `@types/node`; its only (peer) dependency stays `effect` ([`effect-dependency.md`](./effect-dependency.md)).
 - Human, later: "If effect depends on a lib it's okay but maybe it'd be better to use dependency injection of something that you provide when setting up the respnsne handlers". The platform layer is that injected dependency, so `ws` arriving through `@effect/platform-node` is fine and there is no hand-written WebSocket server.
 - (agent) `@trpc12/trpc/http` replaces the removed `@trpc12/trpc/node`:
   - `toHttpEffect(handler, { endpoint?, allowOrigin? })` turns a fetch handler into an Effect HTTP app. WebSocket upgrades to the endpoint go through `HttpServerRequest.upgrade` and reach `handler.websocket()` as a standard `WebSocket`-shaped object ([`websocket-standard-interface.md`](./websocket-standard-interface.md)). Upgrades elsewhere get a 404, a disallowed origin a 403.

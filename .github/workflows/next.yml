@@ -88,7 +88,7 @@ jobs:
       - run: pnpm --filter @trpc12/www build
 
   effect-latest:
-    # `@trpc12/trpc` depends on `effect@^4`; users get the latest 4.x, the lockfile pins one.
+    # `@trpc12/trpc` has `effect@^4` as a peer; users get the latest 4.x, the lockfile pins one.
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:

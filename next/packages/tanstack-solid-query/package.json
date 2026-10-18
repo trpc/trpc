@@ -36,6 +36,7 @@
     "@tooling/tsconfig": "workspace:*",
     "@trpc12/trpc": "workspace:*",
     "@types/node": "^24.0.0",
+    "effect": "4.0.2",
     "happy-dom": "20.14.6",
     "solid-js": "1.9.17",
     "typescript": "^7.0.2",
