@@ -14,9 +14,10 @@ import {
   type ChunkQueue,
   type PendingSource,
   type Status,
-} from './stream.ts';
-import type { SerializeReturn } from './sync.ts';
-import { DansonError, type JsonValue } from './utils.ts';
+  type SerializeReturn,
+  DansonError,
+  type JsonValue,
+} from './danson/index.ts';
 
 /**
  * A whole-value transformer: superjson, devalue, or your own. `serialize`

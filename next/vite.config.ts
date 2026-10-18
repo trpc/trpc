@@ -121,12 +121,18 @@ export default defineConfig({
         },
       },
       {
-        // A folder under server/ is a module: other code imports its index.ts.
+        // A folder under a root is a module: other code imports its index.ts.
         files: ['packages/trpc/src/**'],
         rules: {
           'trpc/module-boundaries': [
             'error',
-            { roots: ['packages/trpc/src/server'], ignore: ['fixtures'] },
+            {
+              roots: [
+                'packages/trpc/src/server',
+                'packages/trpc/src/serializer',
+              ],
+              ignore: ['fixtures'],
+            },
           ],
         },
       },

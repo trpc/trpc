@@ -24,8 +24,8 @@ import {
   forEachSeq,
   toAsyncIterable,
   toReadableStream,
-} from '../internal/effects.ts';
-import { fromBase64, JsonBytes } from '../internal/frames.ts';
+} from '../../internal/effects.ts';
+import { fromBase64, JsonBytes } from '../../internal/frames.ts';
 import { counter, DansonError } from './utils.ts';
 
 export const VALUE = 0;

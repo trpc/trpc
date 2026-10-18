@@ -39,7 +39,7 @@ import type { MaybePromise, ProcedureType } from '../../internal/types.ts';
 import { jsonSerializer, type AnySerializer } from '../../serializer/index.ts';
 import { backpressure } from '../../internal/effects.ts';
 import { accepts, encodeRecord } from '../../internal/frames.ts';
-import type { Chunk, Frame } from '../../serializer/stream.ts';
+import type { Chunk, Frame } from '../../serializer/danson/index.ts';
 import {
   consumedError,
   parsedBody,

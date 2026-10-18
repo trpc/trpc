@@ -25,8 +25,11 @@ import { HEADER } from '../internal/protocol.ts';
 import type { Unset } from '../internal/types.ts';
 import { danson } from '../serializer/danson.ts';
 import type { Serializer } from '../serializer/index.ts';
-import type { Chunk, Frame } from '../serializer/stream.ts';
-import type { SerializeReturn } from '../serializer/sync.ts';
+import type {
+  Chunk,
+  Frame,
+  SerializeReturn,
+} from '../serializer/danson/index.ts';
 import { CurrentFrameSink } from '../server/execution/index.ts';
 import {
   makeEffectMiddleware,

@@ -1,7 +1,7 @@
 import { Effect, Fiber, Stream } from 'effect';
 import { isTrpcError, type AnyTrpcError } from '../../internal/error.ts';
 import type { AnySerializer } from '../../serializer/index.ts';
-import type { Chunk } from '../../serializer/stream.ts';
+import type { Chunk } from '../../serializer/danson/index.ts';
 import { unexpectedError } from './execute.ts';
 import { isTracked } from '../subscriptions/index.ts';
 

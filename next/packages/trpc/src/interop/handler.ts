@@ -18,8 +18,11 @@ import {
 } from '../internal/protocol.ts';
 import type { MaybePromise, ProcedureType } from '../internal/types.ts';
 import { experimental_parseBracketNotation } from '../openapi/bracket.ts';
-import { isAsyncIterable, isPromiseLike } from '../serializer/stream.ts';
-import { isPlainObject } from '../serializer/utils.ts';
+import {
+  isAsyncIterable,
+  isPromiseLike,
+  isPlainObject,
+} from '../serializer/danson/index.ts';
 import {
   readBytes,
   responseOptions,

@@ -4,4 +4,4 @@
 - Other failures still become `DansonError('Stream failed', { cause })`, and an interrupted source with no failure becomes `DansonError('Stream interrupted')`.
 - Why: before, an abort sometimes ended the iterator quietly and sometimes rejected with the wrapper, so callers couldn't tell "I stopped it" from "it broke".
 - Lost: one error type for every stream failure.
-- Lives in: `packages/trpc/src/serializer/stream.ts`; locked by `packages/trpc/src/client/links/http.test.ts`.
+- Lives in: `packages/trpc/src/serializer/danson/stream.ts`; locked by `packages/trpc/src/client/links/http.test.ts`.

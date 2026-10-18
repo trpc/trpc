@@ -20,14 +20,10 @@ import {
   deserializers as stdDeserializers,
   inputDeserializers as stdInputDeserializers,
   serializers as stdSerializers,
-} from './std.ts';
-import {
   deserializeStream,
   serializeDeferred,
   type Frame,
   type SerializedDeferred,
-} from './stream.ts';
-import {
   deserializeSync,
   instancesOnly,
   serializeSync,
@@ -35,10 +31,19 @@ import {
   type DeserializeRecord,
   type SerializeRecord,
   type SerializeReturn,
-} from './sync.ts';
-import { DansonError } from './utils.ts';
+  DansonError,
+} from './danson/index.ts';
 
-export type { Chunk, Frame, SerializedDeferred } from './stream.ts';
+export {
+  type Chunk,
+  type Frame,
+  type SerializedDeferred,
+  type DeserializeRecord,
+  type SerializeRecord,
+  type SerializeReturn,
+  DansonError,
+  type JsonValue,
+} from './danson/index.ts';
 export type {
   ClientValue,
   DansonForm,
@@ -54,13 +59,6 @@ export {
   type SyncTransformer,
 } from './framed.ts';
 export type { FormOfSerializer } from '../internal/types.ts';
-export type {
-  DeserializeRecord,
-  SerializeRecord,
-  SerializeReturn,
-} from './sync.ts';
-export { DansonError } from './utils.ts';
-export type { JsonValue } from './utils.ts';
 
 /**
  * A custom type the serializer understands.
