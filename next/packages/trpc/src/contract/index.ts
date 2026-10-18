@@ -27,6 +27,9 @@
  * @see ../../../../.agent-docs/proposals/09-contract-first.md
  * @module
  */
+// Loads the entry point declaration emit names errors through (`TrpcError`,
+// `SchemaValidationError`), for packages that import only the contract.
+import type {} from '@trpc12/trpc/server';
 import type { RouterType } from '../client/types.ts';
 import type { AnyTrpcError } from '../internal/error.ts';
 import {
