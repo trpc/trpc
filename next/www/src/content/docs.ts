@@ -1,4 +1,5 @@
 import { notFound, useLocation, useSearch } from '@tanstack/react-router';
+import { useEffect } from 'react';
 import { sections as v12Sections } from 'virtual:docs-manifest';
 import { sections as v9Sections } from 'virtual:v9-docs-manifest';
 import { sections as v10Sections } from 'virtual:v10-docs-manifest';
@@ -9,8 +10,10 @@ import { useFlagsOn } from '~/flags.ts';
 import {
   type HomeSearch,
   type HomeVersion,
+  homeVersionAt,
   homeVersionOf,
   homeVersionSearch,
+  rememberHomeVersion,
 } from '~/home-version.ts';
 import { type CopiedVersion, v9, v10, v11, v12 } from '~/site.ts';
 
@@ -167,6 +170,21 @@ export function useHomeSearch(): HomeSearch {
   return homeVersionSearch(
     onHome ? shown : version.id === 'v12' ? 'v12' : 'v11',
   );
+}
+
+/** Remembers the version the reader browses, so `/` opens on it next time. */
+export function useRememberHomeVersion() {
+  const pathname = useLocation({ select: (location) => location.pathname });
+  const shown = useSearch({
+    select: (search) => search.version,
+    strict: false,
+  });
+  const version = homeVersionAt(pathname, { version: shown });
+  useEffect(() => {
+    if (version !== undefined) {
+      rememberHomeVersion(version);
+    }
+  }, [version]);
 }
 
 const listedVersions = new WeakMap<DocsVersion, Map<string, DocsVersion>>();

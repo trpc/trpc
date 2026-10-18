@@ -16,6 +16,7 @@ import {
   UnpublishedBanner,
   UnpublishedCopyWarning,
 } from '~/components/unpublished.tsx';
+import { useRememberHomeVersion } from '~/content/docs.ts';
 import { type FlagSearch, validateFlagSearch } from '~/flags.ts';
 import { homeVersionScript } from '~/home-version.ts';
 import { blog, site } from '~/site.ts';
@@ -66,12 +67,17 @@ export const Route = createRootRoute({
     ],
     scripts: [{ children: themeScript }, { children: homeVersionScript }],
   }),
-  component: Outlet,
+  component: RootComponent,
   // Every navigation keeps `?flags=`, so the flags stay on page to page.
   search: { middlewares: [retainSearchParams<FlagSearch>(['flags'])] },
   shellComponent: RootDocument,
   validateSearch: validateFlagSearch,
 });
+
+function RootComponent() {
+  useRememberHomeVersion();
+  return <Outlet />;
+}
 
 function RootDocument(props: { readonly children: ReactNode }) {
   return (

@@ -1,3 +1,5 @@
+import { v11, v12 } from './site.ts';
+
 /** Which tRPC the home page shows: v11, the stable release, unless `?version=v12`. */
 export const homeVersions = ['v11', 'v12'] as const;
 
@@ -31,6 +33,76 @@ export function homeVersionSearch(version: HomeVersion): HomeSearch {
   return version === 'v12' ? { version } : {};
 }
 
+/** Where the version the reader last browsed is kept, for `/` to open on. */
+const storageKey = 'trpc-docs:version';
+
+const docsPaths = {
+  v11: v11.basePath,
+  v12: v12.basePath,
+} as const satisfies Record<HomeVersion, string>;
+
+/**
+ * The version a page is browsing, to remember: the one `/` shows, or v11's
+ * or v12's on their docs. The other pages (v10's and v9's docs, the blog)
+ * leave the remembered one as it is.
+ */
+export function homeVersionAt(
+  pathname: string,
+  search: HomeSearch,
+): HomeVersion | undefined {
+  if (pathname === '/') {
+    return homeVersionOf(search);
+  }
+  return homeVersions.find(
+    (version) =>
+      pathname === docsPaths[version] ||
+      pathname.startsWith(`${docsPaths[version]}/`),
+  );
+}
+
+/** Stores v12 for the next visit to `/`; v11, the default, clears it. */
+export function rememberHomeVersion(version: HomeVersion) {
+  try {
+    if (version === defaultHomeVersion) {
+      localStorage.removeItem(storageKey);
+    } else {
+      localStorage.setItem(storageKey, version);
+    }
+  } catch {
+    // Storage is blocked: the next visit opens on the default.
+  }
+}
+
+/**
+ * The version the page opens on: `?version=` when the URL names one, else on
+ * `/` the remembered one, which it writes into the URL with `replaceState`
+ * (no extra history entry) before the router reads it. Stringified into
+ * `homeVersionScript`, so it can't use anything from its module scope.
+ */
+function landingHomeVersion(
+  key: string,
+  versions: ReadonlyArray<string>,
+  fallback: string,
+) {
+  const url = new URL(location.href);
+  const param = url.searchParams.get('version');
+  if (param !== null || url.pathname !== '/') {
+    return param !== null && versions.includes(param) ? param : fallback;
+  }
+  let stored: string | null = null;
+  try {
+    stored = localStorage.getItem(key);
+  } catch {
+    // Storage is blocked: open on the default.
+  }
+  if (stored === null || stored === fallback || !versions.includes(stored)) {
+    return fallback;
+  }
+  url.searchParams.set('version', stored);
+  history.replaceState(history.state, '', url);
+  return stored;
+}
+
 /**
  * Apply `data-home-version` and move shared step `id`s onto the visible
  * panel only (every version ships in the static HTML). Stringified into
@@ -56,10 +128,10 @@ function applyHomeVersion(version: HomeVersion) {
 }
 
 /**
- * Runs before first paint so `/?version=v12` never flashes the prerendered
- * v11 panels. Pairs with the `[data-home-panel]` CSS.
+ * Runs before first paint so `/?version=v12`, typed or remembered, never
+ * flashes the prerendered v11 panels. Pairs with the `[data-home-panel]` CSS.
  */
-export const homeVersionScript = `(${applyHomeVersion.toString()})(((v)=>${JSON.stringify(homeVersions)}.includes(v)?v:${JSON.stringify(defaultHomeVersion)})(new URLSearchParams(location.search).get("version")));`;
+export const homeVersionScript = `(${applyHomeVersion.toString()})((${landingHomeVersion.toString()})(${JSON.stringify(storageKey)},${JSON.stringify(homeVersions)},${JSON.stringify(defaultHomeVersion)}));`;
 
 /** Keep `<html data-home-version>` in sync after client navigations. */
 export function syncHomeVersionAttribute(version: HomeVersion) {
