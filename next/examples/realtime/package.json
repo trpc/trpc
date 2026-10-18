@@ -4,10 +4,11 @@
   "type": "module",
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "smoke": "node index.ts"
+    "smoke": "node --experimental-eventsource index.ts"
   },
   "dependencies": {
     "@effect/platform-node": "4.0.2",
+    "@effect/sql-pg": "4.0.2",
     "@trpc12/trpc": "workspace:*",
     "effect": "4.0.2",
     "zod": "4.6.5"
