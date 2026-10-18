@@ -39,6 +39,7 @@ import {
   type SidebarItem,
   sidebarSections,
 } from './old-docs-convert.ts';
+import { redirectsFile } from './old-routes.ts';
 
 class OldDocsCopyError extends Data.TaggedError('OldDocsCopyError')<{
   readonly message: string;
@@ -105,7 +106,11 @@ const Authors = Schema.Record(
 
 const Redirects = Schema.Struct({
   redirects: Schema.Array(
-    Schema.Struct({ destination: Schema.String, source: Schema.String }),
+    Schema.Struct({
+      destination: Schema.String,
+      permanent: Schema.optional(Schema.Boolean),
+      source: Schema.String,
+    }),
   ),
 });
 
@@ -810,9 +815,21 @@ export const copyOldDocs = Effect.fn('copyOldDocs')(function* (dirs: CopyDirs) {
     path.join(dirs.to, manifestFile),
     `${JSON.stringify(accounted.manifest, null, 2)}\n`,
   );
+  // trpc.io's redirects, which `vercel-output.ts` keeps working here.
+  // Vercel's `permanent` defaults to `true`.
+  const redirects = docs.redirects.map((redirect) => ({
+    destination: redirect.destination,
+    permanent: redirect.permanent ?? true,
+    source: redirect.source,
+  }));
+  yield* fs.writeFileString(
+    path.join(dirs.to, redirectsFile),
+    `${JSON.stringify(redirects, null, 2)}\n`,
+  );
   report.push(
     `Copied ${posts.length} blog posts.`,
     `Accounted for ${Object.keys(accounted.manifest).length} files in ${manifestFile}.`,
+    `Copied ${redirects.length} of trpc.io's redirects to ${redirectsFile}.`,
   );
   const dropped = [...pages, ...posts].flatMap((entry) => entry.dropped);
   return [
@@ -836,6 +853,7 @@ function outputsOf(dirs: CopyDirs, path: Path.Path) {
     ]),
     path.join(dirs.to, 'blog'),
     path.join(dirs.to, manifestFile),
+    path.join(dirs.to, redirectsFile),
   ];
 }
 

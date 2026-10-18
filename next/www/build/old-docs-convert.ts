@@ -39,6 +39,8 @@ export interface CopiedPage {
 /** A redirect of trpc.io's (`www/vercel.json`): `/docs/reactjs/:path` to `/docs/client/react/:path`. */
 export interface Redirect {
   readonly destination: string;
+  /** Vercel's default is `true`. */
+  readonly permanent?: boolean | undefined;
   readonly source: string;
 }
 
@@ -107,7 +109,8 @@ const byTrpcPath = copiedVersions.toSorted(
   (a, b) => b.trpcPath.length - a.trpcPath.length,
 );
 
-const redirectPattern = (source: string) =>
+/** A `vercel.json` path pattern as a regex: `:path` is a segment, `:path*` any rest. */
+export const redirectPattern = (source: string) =>
   new RegExp(
     `^${source
       .replace(/\/$/, '')
