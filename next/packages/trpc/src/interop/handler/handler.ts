@@ -46,7 +46,7 @@ import {
 } from '../../server/execution/index.ts';
 import {
   type AnyProcedure,
-  resolveProcedure,
+  resolveProcedureEffect,
   type AnyRouter,
   type inferRouterContext,
   type inferRouterServices,
@@ -860,10 +860,10 @@ export function createV11Handler<
       if (isBatch && batch && paths.length > batch.maxItems) {
         return yield* fail('BAD_REQUEST', 'Batch call exceeds maximum size');
       }
-      const procedures = yield* Effect.promise(() =>
-        Promise.all(
-          paths.map(async (path) => resolveProcedure(opts.router, path)),
-        ),
+      const procedures = yield* Effect.forEach(
+        paths,
+        (path) => resolveProcedureEffect(opts.router, path),
+        { concurrency: 'unbounded' },
       );
       const calls: Call[] = paths.map((path, i) => ({
         path,

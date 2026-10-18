@@ -57,7 +57,7 @@ import {
 } from '../execution/index.ts';
 import {
   type AnyProcedure,
-  resolveProcedure,
+  resolveProcedureEffect,
   type AnyRouter,
   type inferRouterContext,
   type inferRouterServices,
@@ -822,13 +822,9 @@ export function createFetchHandler<
     path: string,
     parent: Tracer.AnySpan | undefined,
   ): Effect.Effect<HttpServerResponse.HttpServerResponse, AnyTrpcError> => {
-    const found = resolveProcedure(router, path);
-    return found instanceof Promise
-      ? Effect.flatMap(
-          Effect.promise(() => found),
-          (procedure) => singleCall(request, search, path, procedure, parent),
-        )
-      : singleCall(request, search, path, found, parent);
+    return Effect.flatMap(resolveProcedureEffect(router, path), (procedure) =>
+      singleCall(request, search, path, procedure, parent),
+    );
   };
 
   const singleCall = (
@@ -1075,17 +1071,16 @@ export function createFetchHandler<
           ),
         );
       }
-      const calls = yield* Effect.promise(() =>
-        Promise.all(
-          (body as BatchCall[]).map(async (call) => {
-            const path = typeof call?.path === 'string' ? call.path : '';
-            return {
-              path,
-              input: call?.input,
-              procedure: await resolveProcedure(router, path),
-            };
-          }),
-        ),
+      const calls = yield* Effect.forEach(
+        body as BatchCall[],
+        (call) => {
+          const path = typeof call?.path === 'string' ? call.path : '';
+          return Effect.map(
+            resolveProcedureEffect(router, path),
+            (procedure) => ({ path, input: call?.input, procedure }),
+          );
+        },
+        { concurrency: 'unbounded' },
       );
       const controller = new AbortController();
       return yield* abortOnInterrupt(

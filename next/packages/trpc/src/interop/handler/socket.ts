@@ -7,7 +7,7 @@ import {
   createResponseHandle,
   normalizeCause,
 } from '../../server/execution/index.ts';
-import { resolveProcedure } from '../../server/procedures/index.ts';
+import { resolveProcedureEffect } from '../../server/procedures/index.ts';
 import {
   runSocket,
   socketFrames,
@@ -104,9 +104,7 @@ function v11Session(
     const controller = new AbortController();
     const abort = Effect.sync(() => controller.abort());
     return Effect.gen(function* () {
-      const procedure = yield* Effect.promise(async () =>
-        resolveProcedure(core.router, path),
-      );
+      const procedure = yield* resolveProcedureEffect(core.router, path);
       if (!procedure) {
         return yield* Effect.fail(
           new TrpcError({

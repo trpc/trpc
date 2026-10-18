@@ -51,7 +51,7 @@ import {
 } from '../server/execution/index.ts';
 import {
   type AnyProcedure,
-  resolveProcedure,
+  resolveProcedureEffect,
   type AnyRouter,
   type inferRouterContext,
   type inferRouterServices,
@@ -184,7 +184,7 @@ const SelectedCall = Context.Reference<OpenApiCall | undefined>(
 interface Entry {
   readonly path: string;
   readonly type: ProcedureType;
-  readonly resolve: () => MaybePromise<AnyProcedure | undefined>;
+  readonly resolve: () => Effect.Effect<AnyProcedure | undefined>;
   readonly route: ResolvedRoute;
   readonly match: (pathname: string) => Record<string, string> | undefined;
   readonly input: JsonSchema | undefined;
@@ -298,7 +298,7 @@ export function experimental_createOpenApiHandler<
     if (opts.contract) {
       list = Object.entries(opts.contract.procedures).map(([path, p]) =>
         makeEntry(path, p.type, p.route, p.input, () =>
-          resolveProcedure(opts.router, path),
+          resolveProcedureEffect(opts.router, path),
         ),
       );
     } else {
@@ -311,7 +311,7 @@ export function experimental_createOpenApiHandler<
           def.type,
           scopedRoute(leaf.path, routeOf(def), leaf.scope),
           inputJsonSchema(def),
-          () => leaf.procedure,
+          () => Effect.succeed(leaf.procedure),
         );
       });
     }
@@ -349,21 +349,16 @@ export function experimental_createOpenApiHandler<
       def.type,
       call.route ?? routeOf(def),
       input,
-      () => call.procedure,
+      () => Effect.succeed(call.procedure),
     );
   };
 
   /** Loads `lazies`, then rebuilds the routes with what they added. */
   const load = (lazies: FlatRoutes['lazies']) =>
-    Effect.forEach(
-      lazies,
-      (l) =>
-        Effect.tryPromise({
-          try: () => l.lazy['~lazy'].load(),
-          catch: toError,
-        }),
-      { concurrency: 'unbounded', discard: true },
-    ).pipe(
+    Effect.forEach(lazies, (l) => l.lazy['~lazy'].loadEffect, {
+      concurrency: 'unbounded',
+      discard: true,
+    }).pipe(
       Effect.andThen(
         Effect.try({
           try: () => {
@@ -615,10 +610,7 @@ export function experimental_createOpenApiHandler<
     Effect.gen(function* () {
       const { http, request } = incoming;
       const type = entry.type;
-      const procedure = yield* Effect.tryPromise({
-        try: async () => await entry.resolve(),
-        catch: toError,
-      });
+      const procedure = yield* entry.resolve();
       if (!procedure) {
         return yield* Effect.fail(
           new TrpcError({

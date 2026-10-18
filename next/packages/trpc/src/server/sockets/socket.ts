@@ -38,7 +38,7 @@ import {
   unexpectedError,
 } from '../execution/index.ts';
 import type { HandlerCore } from '../handler/index.ts';
-import { resolveProcedure, type AnyRouter } from '../procedures/index.ts';
+import { resolveProcedureEffect, type AnyRouter } from '../procedures/index.ts';
 import { runSocket, socketFrames } from './socket-session.ts';
 
 /** The span a socket call is a child of: the trace context in its message. */
@@ -338,10 +338,7 @@ export const connectionReceiver = (
       let type: ProcedureType | undefined;
       let parked = false;
       return Effect.gen(function* () {
-        const procedure = yield* Effect.tryPromise({
-          try: async () => resolveProcedure(core.router, path),
-          catch: asTrpcError,
-        });
+        const procedure = yield* resolveProcedureEffect(core.router, path);
         const kind = procedure?.['~trpc'].type;
         type = kind;
         if (!procedure || !kind) {

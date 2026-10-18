@@ -6,7 +6,13 @@ import {
   experimental_hibernatingPublisher,
   type HibernatableWebSocket,
 } from '@trpc12/trpc/cloudflare';
-import { createFetchHandler, initTrpc, Publisher } from '@trpc12/trpc/server';
+import {
+  createFetchHandler,
+  initTrpc,
+  lazy,
+  Publisher,
+  type AnyRouter,
+} from '@trpc12/trpc/server';
 import { jsonSerializer } from '@trpc12/trpc/serializer';
 import { expect, test, vi } from 'vite-plus/test';
 import { z } from 'zod';
@@ -404,6 +410,56 @@ test('an event the subscription rejects ends it with an error', async () => {
     expect(sub.deserializeAttachment()).toHaveProperty('subs'),
   );
   create(sockets, sub, 2, 'far too long a title');
+  await vi.waitFor(() =>
+    expect(events(sub, 1)).toEqual([
+      expect.objectContaining({ id: 1, type: 'error' }),
+    ]),
+  );
+  expect(sub.deserializeAttachment()).not.toHaveProperty('subs');
+});
+
+test('a lazy subtree that fails to load after a wake ends its hibernated subscriptions with an error', async () => {
+  const lazyRoom = (
+    state: ReturnType<typeof fakeState>,
+    load: () => Promise<AnyRouter>,
+  ) =>
+    experimental_createHibernatingWebSockets(
+      createFetchHandler({
+        router: {
+          create: pt.procedure
+            .input(z.object({ title: z.string() }))
+            .mutation((opts) =>
+              Effect.as(Posts.publish('created', opts.input), opts.input),
+            ),
+          live: lazy(load),
+        },
+        layer: experimental_hibernatingPublisher(Posts, { state, buffer: 10 }),
+      }),
+      { state },
+    );
+  const live = {
+    onCreated: pt.procedure.subscription((opts) =>
+      Posts.subscribe('created', { lastEventId: opts.lastEventId }),
+    ),
+  };
+  const state = fakeState();
+  const sockets = lazyRoom(state, async () => live);
+  const sub = new FakeSocket();
+  const pub = new FakeSocket();
+  sockets.accept(sub, request);
+  sockets.accept(pub, request);
+  say(sockets, sub, {
+    id: 1,
+    type: 'request',
+    method: 'subscription',
+    path: 'live.onCreated',
+  });
+  await vi.waitFor(() =>
+    expect(sub.deserializeAttachment()).toHaveProperty('subs'),
+  );
+
+  const woken = lazyRoom(state, () => Promise.reject(new Error('gone')));
+  create(woken, pub, 1, 'hello');
   await vi.waitFor(() =>
     expect(events(sub, 1)).toEqual([
       expect.objectContaining({ id: 1, type: 'error' }),

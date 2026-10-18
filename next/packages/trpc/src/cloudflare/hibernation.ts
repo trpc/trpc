@@ -17,7 +17,7 @@ import {
   type PlatformArgs,
   handlerContext,
 } from '../server/handler/index.ts';
-import { resolveProcedure } from '../server/procedures/index.ts';
+import { resolveProcedureEffect } from '../server/procedures/index.ts';
 import {
   connectionReceiver,
   frameMessage,
@@ -348,18 +348,21 @@ export function experimental_createHibernatingWebSockets<TPlatform>(
       if (socket.readyState === OPEN) socket.send(JSON.stringify(message));
     };
     const request = requestOf(attachment);
-    const procedure = await resolveProcedure(core.router, sub.p);
-    if (!procedure) return;
     const report = (err: AnyTrpcError) => {
       core.report(err, request, sub.p, 'subscription');
       return toWireError(core.publicError(err));
     };
     const exit = await Effect.runPromiseExit(
-      emitEvents(
-        procedureEvents(procedure, Stream.make(event)),
-        core.serializer,
-        (cause) => report(isTrpcError(cause) ? cause : unexpectedError(cause)),
-        (frame) => Effect.sync(() => send(frameMessage(sub.c, frame))),
+      Effect.flatMap(resolveProcedureEffect(core.router, sub.p), (procedure) =>
+        procedure
+          ? emitEvents(
+              procedureEvents(procedure, Stream.make(event)),
+              core.serializer,
+              (cause) =>
+                report(isTrpcError(cause) ? cause : unexpectedError(cause)),
+              (frame) => Effect.sync(() => send(frameMessage(sub.c, frame))),
+            )
+          : Effect.void,
       ),
     );
     if (Exit.isFailure(exit)) {
