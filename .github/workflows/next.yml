@@ -55,6 +55,7 @@ jobs:
       - run: pnpm coverage
         env:
           REDIS_URL: redis://127.0.0.1:6379
+      # examples/react-spa drives the runner's preinstalled Google Chrome.
       - run: pnpm example
         env:
           REDIS_URL: redis://127.0.0.1:6379
