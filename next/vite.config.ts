@@ -96,6 +96,7 @@ export default defineConfig({
           'anti-slop-effect/no-manual-tag-comparison': 'error',
           'anti-slop-effect/no-manual-tagged-construction': 'error',
           'anti-slop-effect/prefer-effect-match': 'error',
+          'trpc/no-throw-in-effect': 'error',
         },
       },
       {

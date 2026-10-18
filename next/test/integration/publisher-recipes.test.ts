@@ -201,26 +201,28 @@ const fakeRedis = Layer.effect(Redis.Redis)(
     let ms = 1;
     return yield* Redis.make({
       send: <A>(command: string, ...args: ReadonlyArray<string>) =>
-        Effect.sync(() => {
+        Effect.suspend(() => {
           const [key = ''] = args;
           const list = streams.get(key) ?? [];
           streams.set(key, list);
           if (command === 'XADD') {
             const id = `${ms++}-0`;
             list.push([id, ['data', args.at(-1)!]]);
-            return id as A;
+            return Effect.succeed(id as A);
           }
           if (command === 'XRANGE') {
             const after = args[1]!.slice(1);
-            return list.filter(([id]) => redisNewer(id, after)) as A;
+            return Effect.succeed(
+              list.filter(([id]) => redisNewer(id, after)) as A,
+            );
           }
           if (command === 'PUBLISH') {
             for (const l of listeners.get(key) ?? []) {
               l({ channel: key, message: args[1]! });
             }
-            return 1 as A;
+            return Effect.succeed(1 as A);
           }
-          throw new Error(`fake redis: ${command}`);
+          return Effect.die(new Error(`fake redis: ${command}`));
         }),
       subscribe: (channel, onMessage) =>
         Effect.gen(function* () {
