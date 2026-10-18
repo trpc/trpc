@@ -17,7 +17,7 @@ tester.run('module-boundaries', plugin.rules['module-boundaries']!, {
   valid: [
     {
       code: `import { validate } from './validation/index.ts';`,
-      filename: at('server/execute.ts'),
+      filename: at('server/caller.ts'),
       options,
     },
     {
@@ -35,8 +35,8 @@ tester.run('module-boundaries', plugin.rules['module-boundaries']!, {
     },
     // Loose files in the root aren't modules.
     {
-      code: `import { execute } from '../execute.ts';
-             import { fetchHandler } from '../../server/fetch.ts';`,
+      code: `import { createCaller } from '../caller.ts';
+             import { server } from '../../server/index.ts';`,
       filename: at('server/procedures/router.ts'),
       options,
     },
@@ -68,7 +68,7 @@ tester.run('module-boundaries', plugin.rules['module-boundaries']!, {
     },
     {
       code: `import { validate } from './validation/schema.ts';`,
-      filename: at('server/execute.ts'),
+      filename: at('server/caller.ts'),
       options,
       errors: [
         {
