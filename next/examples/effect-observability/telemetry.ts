@@ -1,5 +1,5 @@
 /**
- * OpenTelemetry for one service, exporting into memory so the smoke and the
+ * OpenTelemetry for one service, exporting into memory so the example and the
  * tests can read the spans. A real app passes an OTLP exporter
  * (`@opentelemetry/exporter-trace-otlp-http`) to the same `NodeSdk.layer`.
  */

@@ -3,13 +3,18 @@
  * Effect services. tRPC opens a `trpc.<path>` span per call once the
  * handler's layer has a tracer; the services' own spans nest under it.
  */
-import { Context, Effect, Layer, Queue, Schema } from 'effect';
+import { createServer } from 'node:http';
+import { NodeHttpServer } from '@effect/platform-node';
+import { Context, Effect, Layer, ManagedRuntime, Queue, Schema } from 'effect';
+import { HttpServer } from 'effect/http';
+import { serve } from '@trpc12/trpc/http';
 import {
   createFetchHandler,
   type FetchHandlerOptions,
   initTrpc,
   TrpcError,
 } from '@trpc12/trpc/server';
+import { formatTrace, inMemoryTelemetry } from './telemetry.ts';
 
 export const User = Schema.Struct({ id: Schema.String, email: Schema.String });
 export type User = typeof User.Type;
@@ -135,3 +140,48 @@ export const apiOptions = (
 
 export const createApiHandler = (layer: Layer.Layer<Db | Mailer>) =>
   createFetchHandler(apiOptions(layer));
+
+/**
+ * Serves the API with an `api` SDK. `spans()` has every span once the
+ * server is disposed, and `mailed()` waits for the next welcome mail.
+ */
+export async function listen(port = 0) {
+  const api = inMemoryTelemetry('api');
+  const outbox = Effect.runSync(Queue.unbounded<string>());
+  const handler = createApiHandler(
+    Layer.mergeAll(Db.memory, Mailer.memory(outbox), api.layer),
+  );
+  const runtime = ManagedRuntime.make(
+    serve(handler).pipe(
+      Layer.provideMerge(
+        NodeHttpServer.layer(createServer, { port, host: '127.0.0.1' }),
+      ),
+      // Effect's HTTP server traces each request too, as `api`.
+      Layer.provide(api.layer),
+    ),
+  );
+  const origin = await runtime.runPromise(
+    HttpServer.addressFormattedWith(Effect.succeed),
+  );
+  return {
+    url: `${origin}/trpc`,
+    spans: api.spans,
+    mailed: () => Effect.runPromise(Queue.take(outbox)),
+    [Symbol.asyncDispose]: async () => {
+      await runtime.dispose();
+      await handler.dispose();
+    },
+  };
+}
+
+if (import.meta.main) {
+  const server = await listen(Number(process.env['PORT'] ?? 3000));
+  console.log(`${server.url} (Ctrl-C prints the server's traces)`);
+  process.once('SIGINT', async () => {
+    await server[Symbol.asyncDispose]();
+    const spans = server.spans();
+    for (const traceId of new Set(spans.map((s) => s.spanContext().traceId))) {
+      console.log(`\n${formatTrace(traceId, spans)}`);
+    }
+  });
+}
