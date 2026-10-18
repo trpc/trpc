@@ -150,3 +150,23 @@ test('an abort after the socket started closing is not sent', async () => {
   expect(ws.sent.map((m) => m.type)).toEqual(['init', 'request']);
   await connection.link.close();
 });
+
+test('a WebSocket that throws when constructed fails the call as a lost connection', async () => {
+  const link = wsLink({
+    url: 'ws://scripted',
+    WebSocket: class {
+      constructor() {
+        throw new SyntaxError('Invalid URL');
+      }
+    } as unknown as typeof WebSocket,
+    keepAlive: false,
+  });
+  const client = createTrpcClient({
+    router: routerType<typeof router>(),
+    links: [link],
+  });
+  expect((await safe(client.hello.query())).error).toMatchObject({
+    code: 'NETWORK_ERROR',
+  });
+  await link.close();
+});

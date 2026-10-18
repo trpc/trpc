@@ -1,12 +1,13 @@
 import { decodeMessage } from '../../internal/frames.ts';
 import {
+  Channel,
   Data,
   Deferred,
   Duration,
   Effect,
-  Exit,
   Fiber,
   Option,
+  PubSub,
   Queue,
   RcRef,
   Scope,
@@ -38,10 +39,11 @@ import { makeDeferredDecoder, badResponse, serializeInput } from './events.ts';
 
 /** One open connection. @internal */
 interface SocketConnection {
+  /** Sends in order; once the connection is closing, sends nothing. */
   send(message: ClientMessage): void;
   close(): void;
-  onMessage(listener: (message: unknown) => void): void;
-  onClose(listener: () => void): void;
+  /** The server's messages; ends or fails when the connection drops. */
+  readonly messages: Stream.Stream<unknown, unknown>;
 }
 
 /** What a call's inbox receives. */
@@ -121,7 +123,8 @@ export interface SocketLink<TDecl extends LinkDecl = {}>
 interface SocketTransport {
   /** The link's name, for errors. */
   name: string;
-  connect(): Promise<SocketConnection>;
+  /** Opens a connection, which closes with the scope. */
+  connect: Effect.Effect<SocketConnection, unknown, Scope.Scope>;
   reconnect:
     | { attempts: number; delayMs: (attempt: number) => number }
     | undefined;
@@ -213,10 +216,7 @@ function makeSocketLink(
 
   const acquire = Effect.gen(function* () {
     const epoch = closes;
-    const socket = yield* Effect.tryPromise({
-      try: () => transport.connect(),
-      catch: lostError,
-    });
+    const socket = yield* Effect.mapError(transport.connect, lostError);
     const conn: Connection = {
       socket,
       calls: new Map(),
@@ -227,7 +227,6 @@ function makeSocketLink(
       Effect.sync(() => {
         conn.lost = true;
         if (current === conn) current = undefined;
-        socket.close();
       }),
     );
     const params = yield* Effect.tryPromise({
@@ -242,8 +241,16 @@ function makeSocketLink(
       socket.close();
       return conn;
     }
-    socket.onMessage((message) => dispatch(conn, message));
-    socket.onClose(() => lose(conn));
+    yield* socket.messages.pipe(
+      Stream.runForEach((message) =>
+        Effect.sync(() => dispatch(conn, message)),
+      ),
+      Effect.ignore,
+      // The messages ended on their own; a released connection interrupts
+      // this fiber instead.
+      Effect.andThen(Effect.sync(() => lose(conn))),
+      Effect.forkScoped,
+    );
     socket.send({
       type: 'init',
       version: PROTOCOL_VERSION,
@@ -577,6 +584,59 @@ const connectionOptions = (
 });
 
 /**
+ * A connection over an Effect `Socket`: sends go to its writer in order
+ * through one queue, and `messages` reads it. A message whose turn comes
+ * when `writable()` is false is dropped.
+ */
+const socketConnection = (
+  socket: Socket.Socket,
+  opts: {
+    encode: (message: ClientMessage) => string;
+    messages: Stream.Stream<unknown, unknown>;
+    writable?: () => boolean;
+  },
+): Effect.Effect<SocketConnection, never, Scope.Scope> =>
+  Effect.gen(function* () {
+    const writer = yield* socket.writer;
+    const outbox = yield* Queue.unbounded<string | Socket.CloseEvent>();
+    yield* Queue.take(outbox).pipe(
+      Effect.flatMap((chunk) =>
+        typeof chunk === 'string' && opts.writable?.() === false
+          ? Effect.void
+          : writer.write(chunk),
+      ),
+      Effect.forever,
+      Effect.ignore,
+      Effect.forkScoped,
+    );
+    return {
+      send: (message) => {
+        Queue.offerUnsafe(outbox, opts.encode(message));
+      },
+      close: () => {
+        Queue.offerUnsafe(outbox, new Socket.CloseEvent(1000));
+      },
+      messages: opts.messages,
+    };
+  });
+
+/** A socket's frames as they arrive; fails when it closes. */
+const frames = (
+  reader: Socket.Reader,
+): Stream.Stream<string | Uint8Array, Socket.SocketError> =>
+  Stream.fromChannel(Channel.fromTransform(() => Effect.succeed(reader.pull)));
+
+/** A WebSocket message: JSON text, or a binary frame. */
+const decodeFrame = (frame: string | Uint8Array): unknown => {
+  if (typeof frame !== 'string') return decodeMessage(frame);
+  try {
+    return JSON.parse(frame);
+  } catch {
+    return undefined;
+  }
+};
+
+/**
  * Options for {@link wsLink}.
  * @since 0.1.0
  * @stability stable
@@ -624,49 +684,34 @@ export function wsLink(opts: WebSocketLinkOptions): SocketLink<any> {
       name: 'wsLink',
       ...connectionOptions(opts),
       binary: opts.binary === true,
-      connect: () =>
-        new Promise((resolve, reject) => {
-          const ws = new Impl(opts.url);
-          ws.binaryType = 'arraybuffer';
-          let open = false;
-          ws.addEventListener(
-            'open',
-            () => {
-              open = true;
-              resolve({
-                send: (message) => {
-                  if (ws.readyState === 1) ws.send(JSON.stringify(message));
-                },
-                close: () => ws.close(1000),
-                onMessage: (listener) =>
-                  ws.addEventListener('message', (event) => {
-                    if (event.data instanceof ArrayBuffer) {
-                      const decoded = decodeMessage(new Uint8Array(event.data));
-                      if (decoded !== undefined) listener(decoded);
-                      return;
-                    }
-                    if (typeof event.data !== 'string') return;
-                    let parsed: unknown;
-                    try {
-                      parsed = JSON.parse(event.data);
-                    } catch {
-                      return;
-                    }
-                    listener(parsed);
+      connect: Effect.gen(function* () {
+        let dialed: WebSocket | undefined;
+        const socket = yield* Socket.fromWebSocket(
+          Effect.acquireRelease(
+            Effect.try({
+              try: () => (dialed = new Impl(opts.url)),
+              catch: (cause) =>
+                new Socket.SocketError({
+                  reason: new Socket.SocketOpenError({
+                    kind: 'Unknown',
+                    cause,
                   }),
-                onClose: (listener) => ws.addEventListener('close', listener),
-              });
-            },
-            { once: true },
-          );
-          ws.addEventListener(
-            'close',
-            () => {
-              if (!open) reject(new Error('The WebSocket did not open'));
-            },
-            { once: true },
-          );
-        }),
+                }),
+            }),
+            (ws) => Effect.sync(() => ws.close(1000)),
+          ),
+          // A socket that doesn't open gets a close event; wait for it.
+          { openTimeout: Duration.infinity },
+        );
+        // Dials the socket and waits for it to open; the scope closes it.
+        const reader = yield* socket.reader;
+        return yield* socketConnection(socket, {
+          encode: (message) => JSON.stringify(message),
+          messages: Stream.map(frames(reader), decodeFrame),
+          // A closing socket may throw on `send` (Deno's does).
+          writable: () => dialed?.readyState === 1,
+        });
+      }),
     },
     opts,
   );
@@ -703,46 +748,52 @@ export function experimental_messagePortLink(
   opts: MessagePortLinkOptions,
 ): SocketLink<any> {
   const { port } = opts;
-  const listeners: ((message: unknown) => void)[] = [];
-  const closeListeners: (() => void)[] = [];
-  let attached = false;
-  const connection: SocketConnection = {
-    send: (message) => port.postMessage(message),
-    close: () => {
-      for (const listener of closeListeners.splice(0)) listener();
-    },
-    onMessage: (listener) => {
-      listeners.push(listener);
-      if (attached) return;
-      attached = true;
-      const deliver = (message: unknown) => {
-        for (const l of listeners) l(message);
-      };
-      if (port.on) port.on('message', deliver);
-      else {
-        port.addEventListener?.('message', (event: { data: unknown }) =>
-          deliver(event.data),
-        );
-      }
-      port.start?.();
-      const closed = () => {
-        for (const l of closeListeners.splice(0)) l();
-      };
-      if (port.on) port.on('close', closed);
-      else port.addEventListener?.('close', closed);
-    },
-    onClose: (listener) => closeListeners.push(listener),
+  // A port can't drop its listeners, so they're added once, on the first
+  // connection, and every connection subscribes to what they hear.
+  const received = Effect.runSync(PubSub.unbounded<unknown>());
+  const portClosed = Deferred.makeUnsafe<void>();
+  const listen = () => {
+    const deliver = (message: unknown) =>
+      PubSub.publishUnsafe(received, message);
+    const closed = () => Deferred.doneUnsafe(portClosed, Effect.void);
+    if (port.on) {
+      port.on('message', deliver);
+      port.on('close', closed);
+    } else {
+      port.addEventListener?.('message', (event: { data: unknown }) =>
+        deliver(event.data),
+      );
+      port.addEventListener?.('close', closed);
+    }
+    port.start?.();
   };
+  let listening = false;
   return makeSocketLink(
     {
       name: 'experimental_messagePortLink',
       reconnect: undefined,
       idleMs: undefined,
       keepAlive: undefined,
-      connect: async () => {
-        listeners.length = 0;
-        return connection;
-      },
+      connect: Effect.gen(function* () {
+        const messages = yield* PubSub.subscribe(received);
+        if (!listening) {
+          listening = true;
+          listen();
+        }
+        const closed = yield* Deferred.make<void>();
+        return {
+          send: (message) => port.postMessage(message),
+          close: () => Deferred.doneUnsafe(closed, Effect.void),
+          messages: Stream.fromSubscription(messages).pipe(
+            Stream.interruptWhen(
+              Effect.raceFirst(
+                Deferred.await(closed),
+                Deferred.await(portClosed),
+              ),
+            ),
+          ),
+        } satisfies SocketConnection;
+      }),
     },
     opts,
   );
@@ -785,55 +836,25 @@ export function experimental_socketLink(
   opts: RawSocketLinkOptions,
 ): SocketLink {
   const connect = Effect.gen(function* () {
-    const scope = yield* Scope.make();
     const socket = yield* opts.socket;
-    const writer = yield* Scope.provide(socket.writer, scope);
-    const outbox = yield* Queue.unbounded<string | Socket.CloseEvent>();
-    const listeners: Array<(message: unknown) => void> = [];
-    const closers: Array<() => void> = [];
-    yield* Queue.take(outbox).pipe(
-      Effect.flatMap(writer.write),
-      Effect.forever,
-      Effect.ignore,
-      Effect.forkIn(scope),
-    );
-    yield* decodeLines(Socket.toStream(socket)).pipe(
-      Stream.runForEach((line) =>
-        Effect.sync(() => {
-          let message: unknown;
+    return yield* socketConnection(socket, {
+      encode: encodeLine,
+      messages: decodeLines(Socket.toStream(socket)).pipe(
+        Stream.map((line): unknown => {
           try {
-            message = JSON.parse(line);
+            return JSON.parse(line);
           } catch {
-            return;
+            return undefined;
           }
-          for (const listener of listeners) listener(message);
         }),
       ),
-      Effect.ignore,
-      Effect.ensuring(
-        Effect.sync(() => {
-          for (const close of closers.splice(0)) close();
-        }),
-      ),
-      Effect.andThen(Scope.close(scope, Exit.void)),
-      Effect.forkIn(scope),
-    );
-    return {
-      send: (message) => {
-        Queue.offerUnsafe(outbox, encodeLine(message));
-      },
-      close: () => {
-        Queue.offerUnsafe(outbox, new Socket.CloseEvent(1000));
-      },
-      onMessage: (listener) => listeners.push(listener),
-      onClose: (listener) => closers.push(listener),
-    } satisfies SocketConnection;
+    });
   });
   return makeSocketLink(
     {
       name: 'experimental_socketLink',
       ...connectionOptions(opts),
-      connect: () => Effect.runPromise(connect),
+      connect,
     },
     opts,
   );
