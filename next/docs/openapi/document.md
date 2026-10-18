@@ -4,7 +4,7 @@ description: Generate an OpenAPI 3.1 document from the router's schemas, or from
 section: Contracts and OpenAPI
 order: 3
 v11: openapi
-hidden: true
+experiment: contracts
 ---
 
 ```ts twoslash

@@ -1,6 +1,7 @@
 import { describe, expect, it } from '@effect/vitest';
 
-import { hiddenPageProblems, readingOrder } from './content.ts';
+import type { ExperimentId } from '../src/experiments.ts';
+import { experimentPageProblems, readingOrder } from './content.ts';
 
 const page = (
   slug: string,
@@ -56,54 +57,60 @@ describe('readingOrder', () => {
   });
 });
 
-describe('hiddenPageProblems', () => {
+describe('experimentPageProblems', () => {
   const doc = (
     slug: string,
     options: {
-      readonly hidden?: boolean;
+      readonly experiment?: ExperimentId;
       readonly links?: ReadonlyArray<string>;
       readonly parent?: string;
     } = {},
   ) => ({
-    doc: { hidden: options.hidden, parent: options.parent, slug },
+    doc: { experiment: options.experiment, parent: options.parent, slug },
     links: (options.links ?? []).map((link) => ({
       hash: undefined,
       slug: link,
     })),
   });
 
-  it('flags a listed page that links to a hidden one, once per page', () => {
+  it("flags a listed page that links to an experiment's page, once per page", () => {
     expect(
-      hiddenPageProblems([
+      experimentPageProblems([
         doc('server/overview', {
           links: ['openapi/routes', 'openapi/routes', 'server/routers'],
         }),
         doc('server/routers'),
-        doc('openapi/routes', { hidden: true }),
-      ]),
-    ).toEqual(['server/overview: links to openapi/routes.md, which is hidden']);
-  });
-
-  it('flags a listed page nested under a hidden one', () => {
-    expect(
-      hiddenPageProblems([
-        doc('openapi/overview', { hidden: true }),
-        doc('openapi/routes', { parent: 'openapi/overview' }),
+        doc('openapi/routes', { experiment: 'contracts' }),
       ]),
     ).toEqual([
-      'openapi/routes: nests under openapi/overview, which is hidden',
+      'server/overview: links to openapi/routes.md, which is in the contracts experiment',
     ]);
   });
 
-  it('lets hidden pages link and nest anywhere', () => {
+  it("flags a listed page nested under an experiment's page", () => {
     expect(
-      hiddenPageProblems([
-        doc('openapi/overview', { hidden: true, links: ['server/routers'] }),
+      experimentPageProblems([
+        doc('openapi/overview', { experiment: 'contracts' }),
+        doc('openapi/routes', { parent: 'openapi/overview' }),
+      ]),
+    ).toEqual([
+      'openapi/routes: nests under openapi/overview, which is in the contracts experiment',
+    ]);
+  });
+
+  it("lets experiments' pages link and nest anywhere, across experiments too", () => {
+    expect(
+      experimentPageProblems([
+        doc('openapi/overview', {
+          experiment: 'contracts',
+          links: ['server/routers', 'subscriptions/publisher'],
+        }),
         doc('openapi/routes', {
-          hidden: true,
+          experiment: 'contracts',
           links: ['openapi/overview'],
           parent: 'openapi/overview',
         }),
+        doc('subscriptions/publisher', { experiment: 'publisher' }),
         doc('server/routers'),
       ]),
     ).toEqual([]);

@@ -3,7 +3,7 @@ title: Rate limiting
 description: rateLimit() counts calls with Effect's RateLimiter, in memory or in Redis, and sets the RateLimit headers.
 section: Middleware
 order: 2
-hidden: true
+experiment: middleware
 ---
 
 `rateLimit()` counts calls with Effect's `RateLimiter` (`effect/persistence`). The store is a layer on the handler: `layerStoreMemory` for one instance, `layerStoreRedis` for many.

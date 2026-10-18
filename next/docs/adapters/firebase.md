@@ -3,7 +3,7 @@ title: Firebase
 description: Call procedures from Firebase callable functions and map their errors to HttpsError.
 section: Adapters
 order: 9
-hidden: true
+experiment: adapters
 ---
 
 A callable function gets JSON `data` and Firebase's `auth`, and reports errors as `HttpsError`. Call the procedure with `call()` and map the error code:

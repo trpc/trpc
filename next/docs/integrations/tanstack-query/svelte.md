@@ -4,7 +4,7 @@ description: '@trpc12/tanstack-svelte-query: context helpers for the client, use
 section: Integrations
 parent: integrations/tanstack-query
 order: 5
-hidden: true
+experiment: tanstack-query-frameworks
 ---
 
 `@trpc12/tanstack-svelte-query` re-exports [`@trpc12/tanstack-query`](../tanstack-query.md) and adds context helpers for a client and its helpers, and a `createSubscription` whose fields follow `$state`. It's for Svelte 5 and `@tanstack/svelte-query` 6.

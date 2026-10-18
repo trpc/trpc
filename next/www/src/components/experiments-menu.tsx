@@ -10,39 +10,32 @@ import {
 } from '@shared/ui/components/popover';
 import { Switch } from '@shared/ui/components/switch';
 import { cn } from '@shared/ui/lib/utils';
-import { useNavigate } from '@tanstack/react-router';
+import { Link } from '@tanstack/react-router';
 import { FlaskConical } from 'lucide-react';
+import { useState } from 'react';
 
+import { v12Docs } from '~/content/docs.ts';
+import { experimentIds, experiments } from '~/experiments.ts';
 import {
-  type FlagName,
-  flagNames,
   flagParam,
   flagParamFor,
-  flags,
   siteEnv,
   useFlagsOn,
+  useSetFlags,
   withFlag,
 } from '~/flags.ts';
 
 /**
- * The header's switches for the feature flags (`src/flags.ts`), in every
- * environment. A switch rewrites `?flags=` in the URL, where the flags live;
- * the page stays where it is.
+ * The header's switches for the experiments (`src/experiments.ts`), in every
+ * environment, each with links to its pages. A switch rewrites `?flags=` in
+ * the URL, where the experiments live; the page stays where it is.
  */
 export function ExperimentsMenu() {
   const on = useFlagsOn();
-  const navigate = useNavigate();
-  const setFlags = (next: ReadonlyArray<FlagName>) =>
-    void navigate({
-      hash: true,
-      hashScrollIntoView: false,
-      replace: true,
-      resetScroll: false,
-      search: (prev) => ({ ...prev, flags: flagParamFor(next) }),
-      to: '.',
-    });
+  const setFlags = useSetFlags();
+  const [open, setOpen] = useState(false);
   return (
-    <Popover>
+    <Popover onOpenChange={setOpen} open={open}>
       <PopoverTrigger
         render={
           <Button
@@ -67,7 +60,11 @@ export function ExperimentsMenu() {
           </span>
         ) : null}
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-80" side="bottom">
+      <PopoverContent
+        align="end"
+        className="max-h-[calc(100dvh-5rem)] w-96 overflow-y-auto"
+        side="bottom"
+      >
         <PopoverHeader>
           <PopoverTitle className="flex items-center justify-between gap-2">
             Experiments
@@ -76,33 +73,54 @@ export function ExperimentsMenu() {
             </Badge>
           </PopoverTitle>
           <PopoverDescription>
-            Features we're trying out, off unless you turn them on. Kept in the
-            URL, so a link you copy shares them.
+            Features we're trying out, with their docs pages. Each is off until
+            you turn it on or open one of its pages. Kept in the URL, so a link
+            you copy shares them.
           </PopoverDescription>
         </PopoverHeader>
         <ul className="-mx-1 grid">
-          {flagNames.map((name) => (
-            <li key={name}>
-              <label className="flex cursor-pointer items-start justify-between gap-4 rounded-md p-2 hover:bg-accent/50">
-                <span className="grid gap-0.5">
-                  <span className="font-medium">{flags[name].label}</span>
-                  <span className="text-xs text-pretty text-muted-foreground">
-                    {flags[name].description}
+          {experimentIds.map((id) => {
+            const pages = v12Docs.allDocs.filter(
+              (doc) => doc.experiment === id,
+            );
+            return (
+              <li className="grid gap-1.5 rounded-md p-2" key={id}>
+                <label className="flex cursor-pointer items-start justify-between gap-4">
+                  <span className="grid gap-0.5">
+                    <span className="font-medium">{experiments[id].label}</span>
+                    <span className="text-xs text-pretty text-muted-foreground">
+                      {experiments[id].description}
+                    </span>
                   </span>
-                  <code className="mt-1 w-fit rounded bg-muted px-1 py-0.5 font-mono text-[11px] text-muted-foreground">
-                    ?{flagParam}={name}
-                  </code>
-                </span>
-                <Switch
-                  checked={on.includes(name)}
-                  className="mt-0.5"
-                  onCheckedChange={(checked) =>
-                    setFlags(withFlag(on, name, checked))
-                  }
-                />
-              </label>
-            </li>
-          ))}
+                  <Switch
+                    checked={on.includes(id)}
+                    className="mt-0.5"
+                    onCheckedChange={(checked) =>
+                      setFlags(withFlag(on, id, checked))
+                    }
+                  />
+                </label>
+                <ul className="flex flex-wrap gap-x-3 gap-y-1 text-xs">
+                  {pages.map((page) => (
+                    <li key={page.slug}>
+                      <Link
+                        className="text-link hover:underline"
+                        onClick={() => setOpen(false)}
+                        params={{ _splat: page.slug }}
+                        search={(prev) => ({
+                          ...prev,
+                          flags: flagParamFor(withFlag(on, id, true)),
+                        })}
+                        to={v12Docs.route}
+                      >
+                        {page.label ?? page.title}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </li>
+            );
+          })}
         </ul>
         <div className="flex items-center justify-between gap-3 border-t pt-2.5">
           <p className="text-xs text-pretty text-muted-foreground">

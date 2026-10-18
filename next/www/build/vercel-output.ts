@@ -82,7 +82,7 @@ const escapeRegExp = (text: string) =>
 
 /**
  * `X-Robots-Tag: noindex` for the pages `paths` and their markdown, which
- * has no `<meta>` of its own: the hidden docs pages.
+ * has no `<meta>` of its own: the experiments' docs pages.
  */
 export const noindexRoutes = (
   paths: ReadonlyArray<string>,

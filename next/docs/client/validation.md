@@ -4,7 +4,7 @@ label: experimental_validationLink
 description: experimental_validationLink checks inputs before sending and results when they arrive, against a contract.
 section: Contracts and OpenAPI
 order: 6
-hidden: true
+experiment: contracts
 ---
 
 Clients ship no schemas by default. To check calls against a contract in the browser, add `experimental_validationLink`: inputs are validated before anything is sent (the same `BAD_REQUEST` the server returns, so forms can show its issues), and results and subscription events are checked when they arrive (`BAD_RESPONSE` when the server drifted from the contract, with the issues on its `cause`):

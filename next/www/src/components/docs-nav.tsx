@@ -1,5 +1,5 @@
 import { Link, useLocation } from '@tanstack/react-router';
-import { ChevronRight, EyeOff } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import { cn } from '@shared/ui/lib/utils';
@@ -165,7 +165,7 @@ function NavItem(props: {
             className:
               'bg-brand/10 font-semibold text-link hover:bg-brand/15 hover:text-link',
           }}
-          className="flex min-w-0 flex-1 items-center gap-1.5 rounded-md px-2 py-1.5 transition-colors"
+          className="block min-w-0 flex-1 rounded-md px-2 py-1.5 transition-colors"
           inactiveProps={{
             className: cn(
               'text-muted-foreground hover:bg-accent/60 hover:text-foreground',
@@ -176,16 +176,7 @@ function NavItem(props: {
           params={{ _splat: doc.slug }}
           to={props.version.route}
         >
-          <span className={cn('min-w-0', doc.hidden && 'opacity-70')}>
-            {doc.label ?? doc.title}
-          </span>
-          {doc.hidden ? (
-            <EyeOff
-              aria-label="Hidden"
-              className="size-3 shrink-0 opacity-70"
-              role="img"
-            />
-          ) : null}
+          {doc.label ?? doc.title}
         </Link>
         {hasChildren ? (
           <button

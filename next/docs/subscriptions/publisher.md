@@ -3,7 +3,7 @@ title: Publisher
 description: Typed publish/subscribe as an Effect service, with a channel per audience and resumable events.
 section: Subscriptions
 order: 2
-hidden: true
+experiment: publisher
 ---
 
 `Publisher` is typed publish/subscribe as an Effect service. Declare a key with its channels, then provide a layer:

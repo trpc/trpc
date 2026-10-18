@@ -3,7 +3,7 @@ title: Contract-first
 description: Describe procedures in a contract, implement them later, and type clients from the contract alone.
 section: Contracts and OpenAPI
 order: 0
-hidden: true
+experiment: contracts
 ---
 
 A contract describes procedures without implementing them. It lives in its own package, and clients and the OpenAPI generator accept it like a router.

@@ -7,6 +7,7 @@ import { parse as parseYaml } from 'yaml';
 
 import { listedSections } from '../src/content/listed.ts';
 import type { Doc, DocMeta, DocSection, Sample } from '../src/content/types.ts';
+import { experimentIds } from '../src/experiments.ts';
 import { stripCollapseMarkers } from './collapse.ts';
 import { ContentError, messageOf } from './content-error.ts';
 import { type DocLink, renderMarkdown, resolveLink } from './markdown.ts';
@@ -66,10 +67,12 @@ const acceptsMarkdown = /\btext\/markdown\b/;
 const Frontmatter = Schema.Struct({
   description: Schema.String,
   /**
-   * Built and served at its URL, but out of the sidebar, search, the sitemap
-   * and `llms.txt`, and `noindex` for search engines, until it's reviewed.
+   * The experiment the page belongs to (`src/experiments.ts`). Built and
+   * served at its URL, but out of the sidebar, search and pagination until
+   * the reader turns it on, and always out of the sitemap and `llms.txt`,
+   * and `noindex` for search engines.
    */
-  hidden: Schema.optional(Schema.Boolean),
+  experiment: Schema.optional(Schema.Literals(experimentIds)),
   label: Schema.optional(Schema.String),
   order: Schema.Number,
   /** The page it nests under in the sidebar, by slug, in the same section. */
@@ -206,7 +209,7 @@ export const docPages = Effect.fn('docPages')(function* (dirs: PageDirs) {
     (source) =>
       Effect.map(lastModified(source.file), (date) => ({
         description: source.frontmatter.description,
-        hidden: source.frontmatter.hidden === true,
+        experiment: source.frontmatter.experiment,
         lastModified: date,
         path: `${dirs.basePath}/${source.slug}`,
         section: source.frontmatter.section,
@@ -300,28 +303,36 @@ export function brokenLinks(
 }
 
 /**
- * A listed page that leads to a hidden one, as one message each: a link to
- * it, or nesting under it in the sidebar. Hidden pages may link anywhere.
+ * A listed page that leads to an experiment's page, as one message each: a
+ * link to it, or nesting under it in the sidebar. Experiments' pages may
+ * link anywhere.
  */
-export function hiddenPageProblems(
+export function experimentPageProblems(
   pages: ReadonlyArray<{
-    readonly doc: Pick<DocMeta, 'hidden' | 'parent' | 'slug'>;
+    readonly doc: Pick<DocMeta, 'experiment' | 'parent' | 'slug'>;
     readonly links: ReadonlyArray<DocLink>;
   }>,
 ) {
-  const hidden = new Set(
-    pages.flatMap((page) => (page.doc.hidden ? [page.doc.slug] : [])),
+  const experimentOf = new Map(
+    pages.flatMap((page) =>
+      page.doc.experiment === undefined
+        ? []
+        : [[page.doc.slug, page.doc.experiment] as const],
+    ),
   );
   return pages
-    .filter((page) => !page.doc.hidden)
+    .filter((page) => page.doc.experiment === undefined)
     .flatMap((page) => [
-      ...(page.doc.parent !== undefined && hidden.has(page.doc.parent)
-        ? [`${page.doc.slug}: nests under ${page.doc.parent}, which is hidden`]
+      ...(page.doc.parent !== undefined && experimentOf.has(page.doc.parent)
+        ? [
+            `${page.doc.slug}: nests under ${page.doc.parent}, which is in the ${experimentOf.get(page.doc.parent)} experiment`,
+          ]
         : []),
       ...[...new Set(page.links.map((link) => link.slug))]
-        .filter((slug) => hidden.has(slug))
+        .filter((slug) => experimentOf.has(slug))
         .map(
-          (slug) => `${page.doc.slug}: links to ${slug}.md, which is hidden`,
+          (slug) =>
+            `${page.doc.slug}: links to ${slug}.md, which is in the ${experimentOf.get(slug)} experiment`,
         ),
     ]);
 }
@@ -335,7 +346,7 @@ export function hiddenPageProblems(
  *
  * The build fails on a page without valid frontmatter, a code block that
  * doesn't compile, a link to a page or heading that doesn't exist, and a
- * listed page that leads to a hidden one.
+ * listed page that leads to an experiment's page.
  */
 export function docsContent(options: ContentOptions): Plugin {
   const samplesDir = options.samplesDir;
@@ -388,8 +399,8 @@ export function docsContent(options: ContentOptions): Plugin {
       anchors: result.anchors,
       doc: {
         description: source.frontmatter.description,
+        experiment: source.frontmatter.experiment,
         headings: result.headings,
-        hidden: source.frontmatter.hidden,
         html: result.html,
         label: source.frontmatter.label,
         lastModified: yield* lastModified(source.file),
@@ -483,10 +494,10 @@ export function docsContent(options: ContentOptions): Plugin {
     if (broken.length > 0) {
       throw new Error(`Broken links in the docs:\n${broken.join('\n')}`);
     }
-    const leaks = hiddenPageProblems(pages.map((entry) => entry.page));
+    const leaks = experimentPageProblems(pages.map((entry) => entry.page));
     if (leaks.length > 0) {
       throw new Error(
-        `Listed pages that lead to hidden ones (add \`hidden: true\` or drop the link):\n${leaks.join('\n')}`,
+        `Listed pages that lead to experiments' pages (add an \`experiment\` or drop the link):\n${leaks.join('\n')}`,
       );
     }
     const ordered = readingOrder(
@@ -506,8 +517,8 @@ export function docsContent(options: ContentOptions): Plugin {
           const doc = bySlug.get(entry.slug)!.page.doc;
           return {
             description: doc.description,
+            experiment: doc.experiment,
             headings: doc.headings,
-            hidden: doc.hidden,
             label: doc.label,
             lastModified: doc.lastModified,
             parent: doc.parent,
@@ -594,7 +605,7 @@ export function docsContent(options: ContentOptions): Plugin {
   /**
    * Files for agents, by URL path: `llms.txt`, `llms-full.txt`, each page's
    * markdown at `<basePath>/<slug>.md`, `/index.md` (the home page's markdown,
-   * the same as `llms.txt`) and `/404.md`. A hidden page has its markdown,
+   * the same as `llms.txt`) and `/404.md`. An experiment's page has its markdown,
    * but `llms.txt` and `llms-full.txt` leave it out.
    */
   async function agentFiles() {
@@ -623,7 +634,7 @@ export function docsContent(options: ContentOptions): Plugin {
       [
         ...intro,
         ...pages
-          .filter((entry) => !entry.page.doc.hidden)
+          .filter((entry) => entry.page.doc.experiment === undefined)
           .map(
             (entry) =>
               `---\n\nSource: ${options.siteUrl}${basePath}/${entry.source.slug}\n\n${pageMarkdown(entry.source, entry.page)}`,

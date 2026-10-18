@@ -9,52 +9,50 @@ import {
 } from './flags.ts';
 
 describe('flagsIn', () => {
-  it('reads comma-separated names, ignoring unknown ones and spaces', () => {
-    expect(flagsIn('partners')).toEqual(['partners']);
-    expect(flagsIn('nope, partners ,also-nope')).toEqual(['partners']);
-    expect(flagsIn('partners,partners')).toEqual(['partners']);
+  it('reads comma-separated experiments, ignoring unknown ones and spaces', () => {
+    expect(flagsIn('publisher')).toEqual(['publisher']);
+    expect(flagsIn('nope, publisher ,also-nope')).toEqual(['publisher']);
+    expect(flagsIn('publisher,publisher')).toEqual(['publisher']);
   });
 
-  it('lists several in the order flags declares them', () => {
-    expect(flagsIn('partners,hidden-docs')).toEqual([
-      'hidden-docs',
-      'partners',
-    ]);
-    expect(flagParamFor(['partners', 'hidden-docs'])).toBe(
-      'hidden-docs,partners',
+  it('lists several in the order experiments declares them', () => {
+    expect(flagsIn('publisher,contracts')).toEqual(['contracts', 'publisher']);
+    expect(flagParamFor(['publisher', 'contracts'])).toBe(
+      'contracts,publisher',
     );
-    expect(withFlag(['partners'], 'hidden-docs', true)).toEqual([
-      'hidden-docs',
-      'partners',
+    expect(withFlag(['publisher'], 'contracts', true)).toEqual([
+      'contracts',
+      'publisher',
     ]);
   });
 
-  it('has none without a string', () => {
+  it('has none without a string, and the old flags are gone', () => {
     expect(flagsIn(undefined)).toEqual([]);
     expect(flagsIn('')).toEqual([]);
     expect(flagsIn(1)).toEqual([]);
+    expect(flagsIn('partners,hidden-docs')).toEqual([]);
   });
 });
 
 describe('flagParamFor', () => {
-  it('lists the flags, and is undefined for none', () => {
-    expect(flagParamFor(['partners'])).toBe('partners');
+  it('lists the experiments, and is undefined for none', () => {
+    expect(flagParamFor(['publisher'])).toBe('publisher');
     expect(flagParamFor([])).toBeUndefined();
   });
 });
 
 describe('withFlag', () => {
-  it('turns a flag on or off', () => {
-    expect(withFlag([], 'partners', true)).toEqual(['partners']);
-    expect(withFlag(['partners'], 'partners', false)).toEqual([]);
-    expect(withFlag(['partners'], 'partners', true)).toEqual(['partners']);
+  it('turns an experiment on or off', () => {
+    expect(withFlag([], 'publisher', true)).toEqual(['publisher']);
+    expect(withFlag(['publisher'], 'publisher', false)).toEqual([]);
+    expect(withFlag(['publisher'], 'publisher', true)).toEqual(['publisher']);
   });
 });
 
 describe('validateFlagSearch', () => {
-  it('keeps the known flags, and drops the param when it names none', () => {
-    expect(validateFlagSearch({ flags: 'partners,nope' })).toEqual({
-      flags: 'partners',
+  it('keeps the known experiments, and drops the param when it names none', () => {
+    expect(validateFlagSearch({ flags: 'publisher,nope' })).toEqual({
+      flags: 'publisher',
     });
     expect(validateFlagSearch({ flags: 'nope' })).toEqual({});
     expect(validateFlagSearch({ other: 'x' })).toEqual({});

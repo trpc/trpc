@@ -30,10 +30,9 @@ export function avatarUrl(sponsor: Sponsor, size: number) {
 }
 
 /**
- * The sponsors featured as partners (the `partners` flag), with what the
- * site says about them; the README lists them as its top tier too
- * (`build/sponsors-readme.ts`). One who stops sponsoring drops out with the
- * next sync of `sponsors.json`.
+ * The sponsors featured as partners, with what the site says about them;
+ * the README lists them as its top tier too (`build/sponsors-readme.ts`).
+ * One who stops sponsoring drops out with the next sync of `sponsors.json`.
  */
 const partnerDetails = {
   coderabbitai: {

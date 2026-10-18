@@ -4,7 +4,7 @@ description: '@trpc12/tanstack-solid-query: a context provider for the client, u
 section: Integrations
 parent: integrations/tanstack-query
 order: 4
-hidden: true
+experiment: tanstack-query-frameworks
 ---
 
 `@trpc12/tanstack-solid-query` re-exports [`@trpc12/tanstack-query`](../tanstack-query.md) and adds a context for a client and its helpers, and a `useSubscription` whose fields are reactive.

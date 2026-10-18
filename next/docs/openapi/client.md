@@ -3,7 +3,7 @@ title: Calling REST from the client
 description: experimental_openApiLink sends each call to its REST route, typed from a contract.
 section: Contracts and OpenAPI
 order: 4
-hidden: true
+experiment: contracts
 ---
 
 `experimental_openApiLink` sends each call to its REST route. It needs the routes, so it takes a contract; it never needs the router.

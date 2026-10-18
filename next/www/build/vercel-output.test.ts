@@ -167,17 +167,17 @@ describe('writeVercelOutput', () => {
       expect(new RegExp(markdownRewrite.src).test('/docs/a')).toBe(false);
       expect(new RegExp(markdownRewrite.src).test('/v9/docs/a')).toBe(false);
 
-      // A hidden page, which says `noindex`, and its markdown.
+      // An experiment's page, which says `noindex`, and its markdown.
       const noindex = config.routes.filter(
         (route: { headers?: Record<string, string> }) =>
           route.headers?.['X-Robots-Tag'] === 'noindex',
       );
       expect(noindex).toHaveLength(1);
-      const hidden = new RegExp(noindex[0].src);
-      expect(hidden.test('/v12/docs/openapi/routes')).toBe(true);
-      expect(hidden.test('/v12/docs/openapi/routes.md')).toBe(true);
-      expect(hidden.test('/v12/docs/client/links')).toBe(false);
-      expect(hidden.test('/v12/docs/openapi/routes/more')).toBe(false);
+      const experimental = new RegExp(noindex[0].src);
+      expect(experimental.test('/v12/docs/openapi/routes')).toBe(true);
+      expect(experimental.test('/v12/docs/openapi/routes.md')).toBe(true);
+      expect(experimental.test('/v12/docs/client/links')).toBe(false);
+      expect(experimental.test('/v12/docs/openapi/routes/more')).toBe(false);
     }).pipe(Effect.scoped, Effect.provide(NodeServices.layer)),
   );
 

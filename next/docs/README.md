@@ -2,7 +2,7 @@
 
 User docs for v12, kept in step with the code. The website in [`../www`](../www) renders these pages; each one is plain Markdown with frontmatter, so they read fine on GitHub too. Design notes and decisions live in [`../.agent-docs/`](../.agent-docs/).
 
-Pages marked (hidden) are unlisted on the site until they're reviewed: out of its sidebar, search, sitemap and `llms.txt`, and `noindex`. `?flags=hidden-docs` lists them again.
+Pages marked (experimental) belong to an experiment, unlisted on the site until they're reviewed: out of its sidebar and search until the experiment is on (from the header's Experiments menu, `?flags=<experiment>`, or by opening one of its pages), and always out of the sitemap and `llms.txt`, and `noindex`.
 
 ## Getting started
 
@@ -30,9 +30,9 @@ Pages marked (hidden) are unlisted on the site until they're reviewed: out of it
 
 - [Built-in middleware](./middleware/overview.md): The middleware in @trpc12/trpc/middleware, for logs and metrics, and how to apply it.
 - [Lifecycle hooks](./middleware/lifecycle.md): onStart, onSuccess, onError and onFinish, for logging and metrics.
-- [Rate limiting](./middleware/rate-limit.md) (hidden): rateLimit() counts calls with Effect's RateLimiter, in memory or in Redis, and sets the RateLimit headers.
-- [Locks](./middleware/lock.md) (hidden): experimental_lock() runs calls with the same key one at a time, across instances.
-- [Durable calls](./middleware/durable.md) (hidden): experimental_durable() keeps a call's result, so a client that lost the response gets it instead of running the mutation twice.
+- [Rate limiting](./middleware/rate-limit.md) (experimental): rateLimit() counts calls with Effect's RateLimiter, in memory or in Redis, and sets the RateLimit headers.
+- [Locks](./middleware/lock.md) (experimental): experimental_lock() runs calls with the same key one at a time, across instances.
+- [Durable calls](./middleware/durable.md) (experimental): experimental_durable() keeps a call's result, so a client that lost the response gets it instead of running the mutation twice.
 
 ## Client
 
@@ -54,10 +54,10 @@ Pages marked (hidden) are unlisted on the site until they're reviewed: out of it
 ## Subscriptions
 
 - [Subscriptions](./subscriptions/overview.md): Streams of events over SSE or WebSockets, with tracked() ids so reconnects resume.
-- [Publisher](./subscriptions/publisher.md) (hidden): Typed publish/subscribe as an Effect service, with a channel per audience and resumable events.
-  - [Publisher backends](./subscriptions/backends.md) (hidden): Recipes for a Publisher on Redis streams and Postgres LISTEN/NOTIFY.
+- [Publisher](./subscriptions/publisher.md) (experimental): Typed publish/subscribe as an Effect service, with a channel per audience and resumable events.
+  - [Publisher backends](./subscriptions/backends.md) (experimental): Recipes for a Publisher on Redis streams and Postgres LISTEN/NOTIFY.
 
-## Contracts and OpenAPI (hidden)
+## Contracts and OpenAPI (experimental)
 
 - [Contract-first](./server/contract-first.md): Describe procedures in a contract, implement them later, and type clients from the contract alone.
 - [OpenAPI](./openapi/overview.md): Serve the router over REST, document it as OpenAPI 3.1, call REST routes from the client, and generate contracts from OpenAPI documents.
@@ -75,35 +75,35 @@ Pages marked (hidden) are unlisted on the site until they're reviewed: out of it
 - [Deno](./adapters/deno.md): Deno.serve with handler.fetch, which upgrades WebSockets with Deno.upgradeWebSocket.
 - [Fetch runtimes](./adapters/fetch.md): Cloudflare Workers, Next.js route handlers and other fetch runtimes take handler.fetch as it is.
 - [AWS Lambda](./adapters/aws-lambda.md): toLambdaHandler for API Gateway, ALB, function URLs and Lambda@Edge, with response streaming.
-- [Cloudflare](./adapters/cloudflare.md) (hidden): Everything in @trpc12/trpc/cloudflare. Durable Objects with hibernating WebSockets, publishers, durable calls, locks and connection tokens, plus Workers Traces.
-- [Message ports](./adapters/message-ports.md) (hidden): Serve calls over a MessagePort, a web Worker or a worker_threads port.
-- [Firebase](./adapters/firebase.md) (hidden): Call procedures from Firebase callable functions and map their errors to HttpsError.
-- [Raw sockets](./adapters/sockets.md) (hidden): serveSocket serves the router over TCP, TLS or Unix sockets, with experimental_socketLink on the client.
+- [Cloudflare](./adapters/cloudflare.md) (experimental): Everything in @trpc12/trpc/cloudflare. Durable Objects with hibernating WebSockets, publishers, durable calls, locks and connection tokens, plus Workers Traces.
+- [Message ports](./adapters/message-ports.md) (experimental): Serve calls over a MessagePort, a web Worker or a worker_threads port.
+- [Firebase](./adapters/firebase.md) (experimental): Call procedures from Firebase callable functions and map their errors to HttpsError.
+- [Raw sockets](./adapters/sockets.md) (experimental): serveSocket serves the router over TCP, TLS or Unix sockets, with experimental_socketLink on the client.
 
 ## Integrations
 
 - [Integrations](./integrations/overview.md): Data fetching with TanStack Query, and React and Next.js on the server.
 - [TanStack Query](./integrations/tanstack-query.md): Query, mutation and subscription options for TanStack Query, from one package and its React adapter.
   - [React](./integrations/tanstack-query/react.md): @trpc12/tanstack-react-query: the helpers as a module singleton or through context, Suspense, useSubscription, and server components.
-  - [Preact](./integrations/tanstack-query/preact.md) (hidden): @trpc12/tanstack-preact-query: a context provider for the client, useTrpc() in components, and useSubscription.
-  - [Vue](./integrations/tanstack-query/vue.md) (hidden): @trpc12/tanstack-vue-query: a Vue plugin or provideTrpc() for the client, useTrpc() in setup, and useSubscription with refs.
-  - [Solid](./integrations/tanstack-query/solid.md) (hidden): @trpc12/tanstack-solid-query: a context provider for the client, useTrpc() in components, and useSubscription with reactive getters.
-  - [Svelte](./integrations/tanstack-query/svelte.md) (hidden): @trpc12/tanstack-svelte-query: context helpers for the client, useTrpc() in components, and createSubscription with runes.
-  - [Angular](./integrations/tanstack-query/angular.md) (hidden): @trpc12/tanstack-angular-query: provideTrpc() next to provideTanStackQuery, injectTrpc() in components, and injectSubscription with signals.
-  - [Lit](./integrations/tanstack-query/lit.md) (hidden): @trpc12/tanstack-lit-query: a provider element for the client, useTrpc(this) in elements, and createSubscriptionController.
+  - [Preact](./integrations/tanstack-query/preact.md) (experimental): @trpc12/tanstack-preact-query: a context provider for the client, useTrpc() in components, and useSubscription.
+  - [Vue](./integrations/tanstack-query/vue.md) (experimental): @trpc12/tanstack-vue-query: a Vue plugin or provideTrpc() for the client, useTrpc() in setup, and useSubscription with refs.
+  - [Solid](./integrations/tanstack-query/solid.md) (experimental): @trpc12/tanstack-solid-query: a context provider for the client, useTrpc() in components, and useSubscription with reactive getters.
+  - [Svelte](./integrations/tanstack-query/svelte.md) (experimental): @trpc12/tanstack-svelte-query: context helpers for the client, useTrpc() in components, and createSubscription with runes.
+  - [Angular](./integrations/tanstack-query/angular.md) (experimental): @trpc12/tanstack-angular-query: provideTrpc() next to provideTanStackQuery, injectTrpc() in components, and injectSubscription with signals.
+  - [Lit](./integrations/tanstack-query/lit.md) (experimental): @trpc12/tanstack-lit-query: a provider element for the client, useTrpc(this) in elements, and createSubscriptionController.
   - [Query keys and filters](./integrations/tanstack-query/keys.md): How tRPC's query keys are shaped, the filters that invalidate and read them, and keyPrefix for two APIs in one QueryClient.
   - [Subscriptions in TanStack Query](./integrations/tanstack-query/subscriptions.md): subscriptionOptions() for each framework's subscription primitive, shared between components, and liveOptions() and streamedOptions() in the query cache.
   - [Streamed mutations](./integrations/tanstack-query/streamed-mutations.md): A mutation that returns an async iterable fills in as it streams, with chunksOptions(), and stops on unmount or on demand; long jobs pair a mutation with a subscription.
   - [Hydration and offline mutations](./integrations/tanstack-query/hydration.md): hydrationOptions() sends the cache to the browser with the client's serializer, and persisted mutations resume with setMutationDefaults.
-  - [TanStack DB](./integrations/tanstack-query/tanstack-db.md) (hidden): A TanStack DB query collection over a procedure's queryOptions(), with optimistic inserts that call mutations.
+  - [TanStack DB](./integrations/tanstack-query/tanstack-db.md) (experimental): A TanStack DB query collection over a procedure's queryOptions(), with optimistic inserts that call mutations.
 - [React and Next.js](./integrations/react.md): Fetching in React, and the pages for server components, Server Actions and route handlers.
   - [React Server Components](./integrations/rsc.md): Prefetch in server components, stream pending queries to the browser, and tag Next's data cache by query key.
   - [Server Actions](./integrations/server-actions.md): Turn procedures into React Server Actions that take typed input or FormData, with useActionState and optimistic updates.
-  - [React without TanStack Query](./integrations/experimental-react.md) (hidden): Render-as-you-fetch with use() and Suspense in @trpc12/experimental-react, where cache features are links.
-  - [React atoms](./integrations/experimental-react-atom.md) (hidden): Query, mutation and subscription atoms on Effect Atom, typed with each procedure's errors.
-- [AI SDK](./integrations/ai-sdk.md) (hidden): Stream useChat responses from a procedure, and give procedures to the model as tools.
-- [Better Auth](./integrations/better-auth.md) (hidden): Read the Better Auth session in a middleware and type ctx.user with its user.
-- [NestJS](./integrations/nestjs.md) (hidden): Serve a contract from Nest controllers with @trpc12/nest.
+  - [React without TanStack Query](./integrations/experimental-react.md) (experimental): Render-as-you-fetch with use() and Suspense in @trpc12/experimental-react, where cache features are links.
+  - [React atoms](./integrations/experimental-react-atom.md) (experimental): Query, mutation and subscription atoms on Effect Atom, typed with each procedure's errors.
+- [AI SDK](./integrations/ai-sdk.md) (experimental): Stream useChat responses from a procedure, and give procedures to the model as tools.
+- [Better Auth](./integrations/better-auth.md) (experimental): Read the Better Auth session in a middleware and type ctx.user with its user.
+- [NestJS](./integrations/nestjs.md) (experimental): Serve a contract from Nest controllers with @trpc12/nest.
 
 ## Migrations
 

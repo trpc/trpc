@@ -4,7 +4,7 @@ description: '@trpc12/tanstack-angular-query: provideTrpc() next to provideTanSt
 section: Integrations
 parent: integrations/tanstack-query
 order: 6
-hidden: true
+experiment: tanstack-query-frameworks
 ---
 
 `@trpc12/tanstack-angular-query` re-exports [`@trpc12/tanstack-query`](../tanstack-query.md) and adds a provider and injectors for a client and its helpers, and an `injectSubscription` that returns signals. It's for `@tanstack/angular-query-experimental`.

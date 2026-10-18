@@ -4,7 +4,7 @@ description: Recipes for a Publisher on Redis streams and Postgres LISTEN/NOTIFY
 section: Subscriptions
 parent: subscriptions/publisher
 order: 1
-hidden: true
+experiment: publisher
 ---
 
 No backend packages ship; these recipes are yours to copy and adapt ([`examples/realtime`](../../examples/realtime/publisher.ts) runs both, across servers). Both serialize events with danSON (so `Date`s survive) and share one helper that replays kept events after `lastEventId`, then follows live ones:

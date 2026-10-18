@@ -1,3 +1,5 @@
+import type { ExperimentId } from '../experiments.ts';
+
 export interface DocHeading {
   readonly depth: 2 | 3;
   readonly id: string;
@@ -7,12 +9,13 @@ export interface DocHeading {
 /** What every page needs to know about every other: nav, search, SEO. */
 export interface DocMeta {
   readonly description: string;
-  readonly headings: ReadonlyArray<DocHeading>;
   /**
-   * Out of the sidebar, search, pagination, the sitemap and `llms.txt`, and
-   * `noindex`, unless the `hidden-docs` flag is on; still served at its URL.
+   * The experiment (`src/experiments.ts`) the page belongs to: out of the
+   * sidebar, search and pagination until it's on, out of the sitemap and
+   * `llms.txt`, and `noindex`; still served at its URL.
    */
-  readonly hidden?: boolean | undefined;
+  readonly experiment?: ExperimentId | undefined;
+  readonly headings: ReadonlyArray<DocHeading>;
   /** The page's name in the sidebar, where it's shorter than its title. */
   readonly label?: string | undefined;
   /** ISO date of the source file's last commit, when git knows it. */

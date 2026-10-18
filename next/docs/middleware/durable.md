@@ -3,7 +3,7 @@ title: Durable calls
 description: experimental_durable() keeps a call's result, so a client that lost the response gets it instead of running the mutation twice.
 section: Middleware
 order: 4
-hidden: true
+experiment: middleware
 ---
 
 `experimental_durable()` keeps a call's result, so a client that lost the response (a dropped connection, a closed tab) calls again and gets it instead of running the mutation twice. The call runs detached from its request: the client going away doesn't interrupt it.

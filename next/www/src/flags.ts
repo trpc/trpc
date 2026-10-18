@@ -1,72 +1,54 @@
-import { useSearch } from '@tanstack/react-router';
-import { useSyncExternalStore } from 'react';
+import { useNavigate, useSearch } from '@tanstack/react-router';
+import { useEffect, useEffectEvent, useSyncExternalStore } from 'react';
+
+import { type ExperimentId, experimentIds } from './experiments.ts';
 
 /**
- * Features the site ships turned off. Turn them on with `?flags=<name>`
- * (comma-separated for several), or from the header's Experiments menu. The
- * URL is the only place they're kept: the site's links carry `?flags=` along
- * while navigating, and a URL without it has every flag off.
+ * Which experiments (`src/experiments.ts`) are on. Turn them on with
+ * `?flags=<id>` (comma-separated for several), from the header's Experiments
+ * menu, or by visiting one of their pages. The URL is the only place they're
+ * kept: the site's links carry `?flags=` along while navigating, and a URL
+ * without it has every experiment off. This is the query parameter.
  */
-export const flags = {
-  'hidden-docs': {
-    description:
-      'Docs pages hidden until they are reviewed, back in the sidebar, search and pagination, marked hidden.',
-    label: 'Hidden docs',
-  },
-  partners: {
-    description:
-      'Our biggest sponsors as partners: on the home page, under the hero and beside the docs.',
-    label: 'Partner placements',
-  },
-} as const satisfies Record<
-  string,
-  { readonly description: string; readonly label: string }
->;
-
-export type FlagName = keyof typeof flags;
-
-export const flagNames = Object.keys(flags) as ReadonlyArray<FlagName>;
-
-/** The query parameter that lists the flags turned on. */
 export const flagParam = 'flags';
 
-/** The root route's search: `?flags=` when it names any flag. */
+/** The root route's search: `?flags=` when it names any experiment. */
 export interface FlagSearch {
   readonly flags?: string | undefined;
 }
 
 /**
- * The flags a `?flags=` value turns on, in `flagNames` order: names
- * separated by commas, ignoring unknown ones.
+ * The experiments a `?flags=` value turns on, in `experiments` order:
+ * names separated by commas, ignoring unknown ones.
  */
-export function flagsIn(param: unknown): ReadonlyArray<FlagName> {
+export function flagsIn(param: unknown): ReadonlyArray<ExperimentId> {
   if (typeof param !== 'string') {
     return [];
   }
   const named = new Set(param.split(',').map((name) => name.trim()));
-  return flagNames.filter((name) => named.has(name));
+  return experimentIds.filter((name) => named.has(name));
 }
 
 /** The `?flags=` value turning on `on`, or `undefined` for none. */
-export function flagParamFor(on: ReadonlyArray<FlagName>) {
-  const value = flagNames.filter((name) => on.includes(name)).join(',');
+export function flagParamFor(on: ReadonlyArray<ExperimentId>) {
+  const value = experimentIds.filter((name) => on.includes(name)).join(',');
   return value === '' ? undefined : value;
 }
 
 /** `on` with `name` turned on or off. */
 export function withFlag(
-  on: ReadonlyArray<FlagName>,
-  name: FlagName,
+  on: ReadonlyArray<ExperimentId>,
+  name: ExperimentId,
   enabled: boolean,
-): ReadonlyArray<FlagName> {
-  return flagNames.filter((other) =>
+): ReadonlyArray<ExperimentId> {
+  return experimentIds.filter((other) =>
     other === name ? enabled : on.includes(other),
   );
 }
 
 /**
  * The root route's `validateSearch`: keeps `?flags=` with only the known
- * flags in it, and drops it when it names none.
+ * experiments in it, and drops it when it names none.
  */
 export function validateFlagSearch(search: Record<string, unknown>) {
   const value = flagParamFor(flagsIn(search[flagParam]));
@@ -107,9 +89,9 @@ export function useHydrated() {
 }
 
 /**
- * The flags the URL turns on. The prerendered page was built without a
- * query string, so this is empty until the page has hydrated, and a flagged
- * feature appears right after.
+ * The experiments the URL turns on. The prerendered page was built without
+ * a query string, so this is empty until the page has hydrated, and an
+ * experiment's pages appear right after.
  */
 export function useFlagsOn() {
   const hydrated = useHydrated();
@@ -120,7 +102,39 @@ export function useFlagsOn() {
   return hydrated ? flagsIn(param) : [];
 }
 
-/** Whether the URL turns `name` on. */
-export function useFlag(name: FlagName) {
-  return useFlagsOn().includes(name);
+/** Rewrites `?flags=` to turn on `next`, leaving the page where it is. */
+export function useSetFlags() {
+  const navigate = useNavigate();
+  return (next: ReadonlyArray<ExperimentId>) =>
+    void navigate({
+      hash: true,
+      hashScrollIntoView: false,
+      replace: true,
+      resetScroll: false,
+      search: (prev) => ({ ...prev, flags: flagParamFor(next) }),
+      to: '.',
+    });
+}
+
+/**
+ * Turns on `experiment` when the reader lands on one of its pages, by link
+ * or by URL. Only on arriving: turning it off from the menu while on the
+ * page keeps it off.
+ */
+export function useEnableOnVisit(
+  experiment: ExperimentId | undefined,
+  slug: string,
+) {
+  const param = useSearch({
+    select: (search) => search.flags,
+    strict: false,
+  });
+  const setFlags = useSetFlags();
+  const enable = useEffectEvent(() => {
+    const on = flagsIn(param);
+    if (experiment !== undefined && !on.includes(experiment)) {
+      setFlags(withFlag(on, experiment, true));
+    }
+  });
+  useEffect(() => enable(), [experiment, slug]);
 }

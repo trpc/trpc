@@ -4,7 +4,7 @@ description: Render-as-you-fetch with use() and Suspense in @trpc12/experimental
 section: Integrations
 parent: integrations/react
 order: 3
-hidden: true
+experiment: experimental-react
 ---
 
 `@trpc12/experimental-react` reads tRPC in React with `use()` and Suspense, without TanStack Query: render-as-you-fetch, after [raf-query](https://github.com/KATT/raf-query). A route loader (or an event handler) calls `.query()`, which starts the request and returns a promise. The component reads that promise with `useQuery()` and `use()`. Components don't start requests.

@@ -1,10 +1,11 @@
+import { Badge } from '@shared/ui/components/badge';
 import { Link, notFound, Outlet } from '@tanstack/react-router';
 import {
   ArrowLeft,
   ArrowRight,
   ChevronRight,
   ExternalLink,
-  EyeOff,
+  FlaskConical,
   Pencil,
 } from 'lucide-react';
 
@@ -25,12 +26,13 @@ import {
   childrenOf,
   type DocsVersion,
   findDoc,
+  listedDocs,
   neighbours,
   useListedDocs,
-  withoutHidden,
 } from '~/content/docs.ts';
 import type { Doc } from '~/content/types.ts';
-import { useFlag } from '~/flags.ts';
+import { experiments } from '~/experiments.ts';
+import { useEnableOnVisit } from '~/flags.ts';
 import { absoluteUrl, ogImageUrl, pageHead, trpcPageUrl } from '~/seo.ts';
 import { site } from '~/site.ts';
 import { partners } from '~/sponsors.ts';
@@ -80,7 +82,7 @@ export function docHead(version: DocsVersion, slug: string) {
     article: { modified: meta.lastModified, section: meta.section },
     description,
     markdownPath: `${path}.md`,
-    noindex: meta.hidden === true,
+    noindex: meta.experiment !== undefined,
     path,
     structuredData: [
       {
@@ -107,7 +109,7 @@ export function docHead(version: DocsVersion, slug: string) {
             '@type': 'ListItem',
             // A section has no page of its own; it opens with its first.
             item: absoluteUrl(
-              `${version.basePath}/${withoutHidden(version).sections.find((section) => section.title === meta.section)?.docs[0]?.slug ?? meta.slug}`,
+              `${version.basePath}/${listedDocs(version).sections.find((section) => section.title === meta.section)?.docs[0]?.slug ?? meta.slug}`,
             ),
             name: meta.section,
             position: 2,
@@ -145,24 +147,13 @@ export function DocPage(props: {
   const around = neighbours(listed, doc.slug);
   const parents = ancestors(version, doc.slug);
   const children = childrenOf(listed, doc.slug);
-  const showPartners = useFlag('partners') && partners.length > 0;
+  const showPartners = partners.length > 0;
+  useEnableOnVisit(doc.experiment, doc.slug);
 
   return (
     <div className="grid min-w-0 gap-10 py-8 xl:grid-cols-[minmax(0,1fr)_13rem]">
       <article className="min-w-0">
         <VersionBanner slug={doc.slug} version={version} />
-        {doc.hidden ? (
-          <p className="mb-6 flex items-start gap-2.5 rounded-lg border border-dashed px-4 py-3 text-sm text-pretty text-muted-foreground">
-            <EyeOff aria-hidden className="mt-0.5 size-4 shrink-0" />
-            <span>
-              <strong className="font-semibold text-foreground">
-                Hidden page.
-              </strong>{' '}
-              It waits for review: the sidebar, search and search engines leave
-              it out, and listed pages don't link to it.
-            </span>
-          </p>
-        ) : null}
         <header className="mb-8 grid gap-3 border-b pb-6">
           <nav aria-label="Breadcrumb">
             <ol className="flex flex-wrap items-center gap-x-1.5 text-sm font-semibold text-link">
@@ -184,6 +175,14 @@ export function DocPage(props: {
               ))}
             </ol>
           </nav>
+          {doc.experiment ? (
+            <p className="flex flex-wrap items-center gap-2 text-sm text-pretty text-muted-foreground">
+              <Badge variant="outline">
+                <FlaskConical className="text-brand" /> Experimental
+              </Badge>
+              {experiments[doc.experiment].label} may change in any release.
+            </p>
+          ) : null}
           <h1 className="text-3xl font-bold tracking-tight text-balance sm:text-4xl">
             {doc.title}
           </h1>

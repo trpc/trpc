@@ -3,7 +3,7 @@ title: Message ports
 description: Serve calls over a MessagePort, a web Worker or a worker_threads port.
 section: Adapters
 order: 8
-hidden: true
+experiment: adapters
 ---
 
 `handler.messagePort(port)` serves calls over a `MessagePort`, a web `Worker` or a `worker_threads` port. Messages are structured-cloned objects in the same format as WebSocket messages, so subscriptions, deferred values, aborts and `connectionParams` work as they do over [`wsLink`](../client/links.md).

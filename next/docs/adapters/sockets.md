@@ -3,7 +3,7 @@ title: Raw sockets
 description: serveSocket serves the router over TCP, TLS or Unix sockets, with experimental_socketLink on the client.
 section: Adapters
 order: 10
-hidden: true
+experiment: adapters
 ---
 
 Between services, or where there is no HTTP stack, `serveSocket(handler)` from `@trpc12/trpc/socket` serves the router on Effect's `SocketServer`. The platform layer picks the socket: `NodeSocketServer.layer({ port })` for TCP, `NodeSocketServer.layerTls` for TLS, or `{ path }` for a Unix socket.

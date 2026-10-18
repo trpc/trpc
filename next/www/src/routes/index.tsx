@@ -33,7 +33,6 @@ import {
   SupportedBy,
 } from '~/components/sponsors/supported-by.tsx';
 import { findDoc, homeDocs } from '~/content/docs.ts';
-import { useFlag } from '~/flags.ts';
 import {
   defaultHomeVersion,
   type HomeVersion,
@@ -504,10 +503,11 @@ const featureCard =
 function Features(props: { readonly version: HomeVersion }) {
   const docs = homeDocs[props.version];
   const route = docs.route;
-  // A card for a hidden page waits, like the page, until it's reviewed.
+  // A card for an experiment's page waits, like the page, in the sidebar.
   const features = (props.version === 'v11' ? v11Features : v12Features).filter(
     (feature) =>
-      feature.slug === undefined || !findDoc(docs, feature.slug)?.hidden,
+      feature.slug === undefined ||
+      findDoc(docs, feature.slug)?.experiment === undefined,
   );
   return (
     <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -545,7 +545,7 @@ function Features(props: { readonly version: HomeVersion }) {
 }
 
 function HomePage() {
-  const showPartners = useFlag('partners') && partners.length > 0;
+  const showPartners = partners.length > 0;
   // Client navigations (and hydration); first paint uses homeVersionScript.
   syncHomeVersionAttribute(homeVersionOf(Route.useSearch()));
   return (

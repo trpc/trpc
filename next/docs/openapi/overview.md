@@ -5,7 +5,7 @@ description: Serve the router over REST, document it as OpenAPI 3.1, call REST r
 section: Contracts and OpenAPI
 order: 1
 v11: openapi
-hidden: true
+experiment: contracts
 ---
 
 `@trpc12/trpc/openapi` puts the same router behind REST routes and an OpenAPI 3.1 document, so tools and clients that don't speak tRPC can call it. RPC and REST run side by side; neither changes the other.

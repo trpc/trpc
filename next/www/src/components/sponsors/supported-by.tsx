@@ -7,7 +7,6 @@ import {
 import { cn } from '@shared/ui/lib/utils';
 import { Heart } from 'lucide-react';
 
-import { useFlag } from '~/flags.ts';
 import {
   avatarUrl,
   partners,
@@ -22,11 +21,11 @@ const moreLink =
   'inline-flex h-9 items-center rounded-full border border-dashed px-3 text-xs font-medium text-muted-foreground transition-colors hover:border-solid hover:text-foreground';
 
 /**
- * Under the home page's hero: the sponsors who give the most, linking to
- * the rest. With the `partners` flag, the partners' logos instead.
+ * Under the home page's hero: the partners' logos, linking to the rest of
+ * the sponsors, or the sponsors who give the most while there are no partners.
  */
 export function SupportedBy() {
-  const showPartners = useFlag('partners') && partners.length > 0;
+  const showPartners = partners.length > 0;
   return (
     <div className="grid gap-2.5">
       <p className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">

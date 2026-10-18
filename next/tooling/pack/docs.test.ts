@@ -38,15 +38,15 @@ const linkedPages = (readme: string | undefined) =>
     ),
   ].map(([, page]) => page!);
 
-/** Packages whose own docs page, the first their README links, is `hidden: true`; the packages page leaves them out too. */
-const hidden = await run(
+/** Packages whose own docs page, the first their README links, is in an experiment; the packages page leaves them out too. */
+const experimental = await run(
   Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem;
     const names = yield* Effect.filter(packages, (opts) => {
       const page = linkedPages(opts.readme)[0];
       if (page === undefined) return Effect.succeed(false);
       return fs.readFileString(`${root}docs/${page}`).pipe(
-        Effect.map((text) => /^hidden: true$/m.test(text.split('\n---\n')[0]!)),
+        Effect.map((text) => /^experiment: /m.test(text.split('\n---\n')[0]!)),
         Effect.orElseSucceed(() => false),
       );
     });
@@ -86,14 +86,14 @@ test.each(packages.map((opts) => [opts.name, opts] as const))(
 
 test.each(
   packages
-    .filter((opts) => !hidden.has(opts.name))
+    .filter((opts) => !experimental.has(opts.name))
     .map((opts) => [opts.name] as const),
 )('%s is listed in docs/packages.md', (name) => {
   expect(packagesPage).toContain(`\`${name}\``);
 });
 
-test('packages whose docs are all hidden are left out of docs/packages.md', () => {
-  expect([...hidden].sort()).toEqual([
+test('packages whose docs are in experiments are left out of docs/packages.md', () => {
+  expect([...experimental].sort()).toEqual([
     '@trpc12/experimental-react',
     '@trpc12/experimental-react-atom',
     '@trpc12/nest',
@@ -104,7 +104,7 @@ test('packages whose docs are all hidden are left out of docs/packages.md', () =
     '@trpc12/tanstack-svelte-query',
     '@trpc12/tanstack-vue-query',
   ]);
-  for (const name of hidden) {
+  for (const name of experimental) {
     expect(packagesPage).not.toContain(`\`${name}\``);
   }
 });

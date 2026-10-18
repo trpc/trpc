@@ -3,7 +3,7 @@ title: A contract from OpenAPI
 description: Generate a typed contract module from any OpenAPI 3.0 or 3.1 document.
 section: Contracts and OpenAPI
 order: 5
-hidden: true
+experiment: contracts
 ---
 
 `experimental_generateContractFromOpenApi(document, { prefix?, exportName?, patterns? })` turns an OpenAPI 3.0 or 3.1 document into the source of a `@trpc12/trpc/contract` module. Schemas are Effect Schemas, translated by Effect's `SchemaRepresentation`; each operation becomes a procedure with its `route` meta (under `.concat(experimental_openapi())`), so the contract works with `experimental_openApiLink` and `experimental_validationLink` against any REST API:

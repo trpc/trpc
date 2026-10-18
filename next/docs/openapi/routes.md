@@ -3,7 +3,7 @@ title: REST routes
 description: 'Serve the same router over REST: route meta, the handler, inputs, outputs and groups.'
 section: Contracts and OpenAPI
 order: 2
-hidden: true
+experiment: contracts
 ---
 
 A procedure gets a REST route from its `route` meta, and `experimental_createOpenApiHandler` serves the routes next to the RPC handler ([OpenAPI](./overview.md)).

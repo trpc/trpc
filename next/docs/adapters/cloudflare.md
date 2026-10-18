@@ -3,7 +3,7 @@ title: Cloudflare
 description: Everything in @trpc12/trpc/cloudflare. Durable Objects with hibernating WebSockets, publishers, durable calls, locks and connection tokens, plus Workers Traces.
 section: Adapters
 order: 7
-hidden: true
+experiment: cloudflare
 ---
 
 `@trpc12/trpc/cloudflare` has what a router needs inside a Durable Object, and a tracer for Workers Traces. A Worker on its own serves `handler.fetch` ([Fetch](./fetch.md)). The [`examples/cloudflare`](../../examples/cloudflare/server.ts) app uses all of it.

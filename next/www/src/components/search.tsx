@@ -48,8 +48,8 @@ function entriesOf(version: DocsVersion): ReadonlyArray<SearchEntry> {
 }
 
 /**
- * Each version's pages and headings, by the version as listed (with or
- * without its hidden pages): search looks in the version being read.
+ * Each version's pages and headings, by the version as listed (with the
+ * experiments that are on): search looks in the version being read.
  */
 const entriesByVersion = new WeakMap<DocsVersion, ReadonlyArray<SearchEntry>>();
 
