@@ -50,11 +50,13 @@ declare const title: string;
   <input name="tags[]" value="news" />
 </form>;
 
-const [post, error] = await createPost({ title, tags: [] });
+const result = await createPost({ title, tags: [] });
+if (result.error) console.log(result.error.code, result.error.message);
+else console.log(result.data.title);
 ```
 
 - `FormData` is parsed with bracket notation (`tags[]=a`, `author[name]=ada`) and coerced from the input's JSON Schema (`'40'` becomes `40` where the schema wants a number). Framework fields such as Next's `$ACTION_ID_…` are dropped.
-- `result: 'safe'` (the default) returns the `[data, error]` / `{ data, error }` result of `safe()` ([Errors without try/catch](../client/errors.md)). `result: 'throw'` returns the data and throws `TrpcError`.
+- `result: 'safe'` (the default) returns `{ data }` or `{ error }`. Both are plain objects, because React sends an action's result to the browser: there an `Error` arrives without its class or `data`, and an array without extra fields, so the result is not `safe()`'s `[data, error]` ([Errors without try/catch](../client/errors.md)). `error` holds the `TrpcError`'s `code`, `message`, `defined` and `data` (defined errors only), and narrows on `code` and `defined` the same way. `result: 'throw'` returns the data and throws `TrpcError`.
 - Results reach the browser, so unexpected errors are masked outside development, as in handlers. `onError` sees them first.
 - A factory whose ctx or layer can't satisfy a procedure is a type error, and so is wrapping a subscription.
 - Next's `redirect()`, `notFound()` and dynamic-API errors thrown in a procedure or `ctx` are rethrown as they are, not returned as errors, so Next can act on them. Any error with a string `digest` counts. The same holds for `call()`, `createRouterClient()` and `localLink` ([Server-side calls](../server/server-side-calls.md)).
@@ -110,12 +112,12 @@ function Titles() {
 }
 ```
 
-- The state starts `undefined` and is then the last result (`{ data, error }` with `result: 'safe'`). The previous state isn't sent to the procedure.
+- The state starts `undefined` and is then the last result (`{ data }` or `{ error }` with `result: 'safe'`). The previous state isn't sent to the procedure.
 - The optimistic value shows until the action settles, then falls back to `result`.
 
 ## Direct calls
 
-`experimental_createCallable` is the same factory for direct calls with typed input (no `FormData`), from server components, loaders or scripts:
+`experimental_createCallable` is the same factory for direct calls with typed input (no `FormData`), from server components, loaders or scripts. Its results stay on the server, so `result: 'safe'` returns `safe()`'s `[data, error]`, with the `TrpcError` itself:
 
 ```ts twoslash
 // ---cut-start---

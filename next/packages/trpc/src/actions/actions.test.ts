@@ -61,14 +61,14 @@ test('experimental_createAction: FormData in, a safe result out (15 Q15.3)', asy
   form.append('tags[]', 'a');
   form.append('tags[]', 'b');
   form.set('author[age]', '40');
-  const [post, err] = await run(form);
-  expect(err).toBeUndefined();
-  expect(post).toEqual({
-    title: 'Hello',
-    draft: true,
-    tags: ['a', 'b'],
-    author: { age: 40 },
-    by: 'ada',
+  expect(await run(form)).toStrictEqual({
+    data: {
+      title: 'Hello',
+      draft: true,
+      tags: ['a', 'b'],
+      author: { age: 40 },
+      by: 'ada',
+    },
   });
 
   const typed = await run({
@@ -88,6 +88,35 @@ test('experimental_createAction: FormData in, a safe result out (15 Q15.3)', asy
   expect(invalid.error).toMatchObject({ code: 'BAD_REQUEST', defined: true });
   if (invalid.error?.defined && invalid.error.code === 'BAD_REQUEST') {
     expect(invalid.error.data.issues[0]!.path).toEqual(['title']);
+  }
+});
+
+test('an action returns plain objects, which React can send to the browser', async () => {
+  const run = experimental_createAction({ ctx: { user: null } })(createPost);
+  const res = await run({
+    title: 'x',
+    draft: false,
+    tags: [],
+    author: { age: 1 },
+  });
+  expect(res).toStrictEqual({
+    error: { code: 'FORBIDDEN', message: 'FORBIDDEN', defined: true },
+  });
+  expect(Object.getPrototypeOf(res.error)).toBe(Object.prototype);
+  expectTypeOf(res.data).toEqualTypeOf<
+    | {
+        title: string;
+        draft: boolean;
+        tags: string[];
+        author: { age: number };
+        by: string;
+      }
+    | undefined
+  >();
+  if (res.error) {
+    expectTypeOf(res.error.message).toEqualTypeOf<string>();
+    // @ts-expect-error -- it's a plain object, not a TrpcError
+    void res.error._tag;
   }
 });
 
@@ -153,6 +182,17 @@ test("result: 'throw' returns the data and throws TrpcError", async () => {
   await expect(callable(conflict)()).rejects.toMatchObject({
     code: 'CONFLICT',
   });
+});
+
+test("a callable's safe result is safe()'s, with the TrpcError itself", async () => {
+  const res = await experimental_createCallable({ ctx: { user: null } })(
+    conflict,
+  )();
+  const [value, err] = res;
+  expect(value).toBeUndefined();
+  expect(err).toBeInstanceOf(TrpcError);
+  expect(res.error).toBe(err);
+  expect(err).toMatchObject({ code: 'CONFLICT' });
 });
 
 test('the factory must satisfy what a procedure needs', () => {

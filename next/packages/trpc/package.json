@@ -172,6 +172,7 @@
     "happy-dom": "20.14.6",
     "react": "19.3.0",
     "react-dom": "19.3.0",
+    "react-server-dom-turbopack": "19.3.0",
     "superjson": "2.2.6",
     "typescript": "^7.0.2",
     "undici": "8.11.2",

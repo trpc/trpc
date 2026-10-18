@@ -12,7 +12,7 @@
  * export const createPost = action(appRouter.post.create);
  *
  * // <form action={createPost}>, or createPost({ title })
- * const [post, error] = await createPost(formData);
+ * const { data, error } = await createPost(formData);
  * ```
  * @module
  */
@@ -41,8 +41,9 @@ import type {
 } from '../server/procedures/index.ts';
 
 /**
- * `'safe'` returns `safe()`'s `[data, error]` / `{ data, error }` result;
- * `'throw'` returns the data and throws `TrpcError`.
+ * `'safe'` returns the error instead of throwing it: an action's
+ * {@link ActionSafeResult}, a callable's `safe()` result. `'throw'` returns
+ * the data and throws `TrpcError`.
  * @since 0.1.0
  * @stability experimental
  */
@@ -75,11 +76,62 @@ export interface CreateActionOptions<
 }
 
 /**
- * What a wrapped procedure resolves to.
+ * A `TrpcError`'s fields as a plain object. React sends an action's result
+ * to the browser, where an `Error` would arrive without its class or `data`.
+ * `code` and `defined` narrow it as they do the error; built-in errors have
+ * no `data`.
+ * @since 0.1.0
+ * @stability experimental
+ */
+export type ActionError<E> = E extends {
+  readonly code: infer C;
+  readonly data: infer D;
+  readonly defined: infer F;
+}
+  ? {
+      readonly code: C;
+      readonly message: string;
+      readonly defined: F;
+    } & ([D] extends [undefined]
+      ? { readonly data?: undefined }
+      : { readonly data: D })
+  : never;
+
+/**
+ * An action's result with `result: 'safe'`: `{ data }` or `{ error }`, plain
+ * objects that survive React's Server Action serialization.
+ * @example
+ * ```ts
+ * const { data, error } = await createPost(formData);
+ * if (error) return error.defined && error.code === 'FORBIDDEN' ? 'Sign in' : error.message;
+ * data.title;
+ * ```
+ * @since 0.1.0
+ * @stability experimental
+ */
+export type ActionSafeResult<T, E> =
+  | { readonly data: T; readonly error?: undefined }
+  | { readonly data?: undefined; readonly error: ActionError<E> };
+
+/**
+ * What an action resolves to.
  * @since 0.1.0
  * @stability experimental
  */
 export type ActionResult<
+  TDef extends ProcedureDef,
+  TMode extends ActionResultMode,
+> = TMode extends 'throw'
+  ? TDef['output']
+  : ActionSafeResult<TDef['output'], ClientError<TDef['errors']>>;
+
+/**
+ * What a callable resolves to: with `result: 'safe'`, `safe()`'s
+ * `[data, error]` / `{ data, error }` with the `TrpcError` itself.
+ * @since 0.1.0
+ * @stability experimental
+ */
+export type CallableResult<
   TDef extends ProcedureDef,
   TMode extends ActionResultMode,
 > = TMode extends 'throw'
@@ -125,7 +177,7 @@ export interface Action<
 export type Callable<
   TDef extends ProcedureDef,
   TMode extends ActionResultMode,
-> = (...args: Args<TDef['input']>) => Promise<ActionResult<TDef, TMode>>;
+> = (...args: Args<TDef['input']>) => Promise<CallableResult<TDef, TMode>>;
 
 /**
  * Why a procedure can't be wrapped by a factory, as a rest-argument error.
@@ -173,8 +225,26 @@ const fromFormData = (procedure: AnyProcedure, form: FormData) =>
     inputSchemaOf(procedure),
   );
 
+/** A `safe()` result, with the `TrpcError` itself. */
+const dualResult = (data: unknown, error: AnyTrpcError | undefined) =>
+  Object.assign([data, error], { data, error });
+
+/** Plain objects: React drops an array's extra fields and an error's class. */
+const plainResult = (data: unknown, error: AnyTrpcError | undefined) =>
+  error === undefined
+    ? { data }
+    : {
+        error: {
+          code: error.code,
+          message: error.message,
+          defined: error.defined,
+          ...(error.data === undefined ? {} : { data: error.data }),
+        },
+      };
+
 function makeFactory<TMode extends ActionResultMode>(
   opts: CreateActionOptions<object, unknown, TMode>,
+  toResult: (data: unknown, error: AnyTrpcError | undefined) => unknown,
 ) {
   const mode: ActionResultMode = opts.result ?? 'safe';
   const expose = opts.exposeUnexpectedErrors ?? isDev();
@@ -208,11 +278,7 @@ function makeFactory<TMode extends ActionResultMode>(
         }),
       );
       if (Exit.isSuccess(exit)) {
-        if (mode === 'throw') return exit.value;
-        return Object.assign([exit.value, undefined], {
-          data: exit.value,
-          error: undefined,
-        });
+        return mode === 'throw' ? exit.value : toResult(exit.value, undefined);
       }
       const error = normalizeCause(exit.cause);
       const signal = frameworkError(error);
@@ -220,17 +286,16 @@ function makeFactory<TMode extends ActionResultMode>(
       opts.onError?.({ error, input });
       const masked = publicError(error);
       if (mode === 'throw') throw masked;
-      return Object.assign([undefined, masked], {
-        data: undefined,
-        error: masked,
-      });
+      return toResult(undefined, masked);
     };
 }
 
 /**
  * Creates `action(procedure)`, which turns a query or mutation into an
  * async function for a React Server Action: it takes the input or a form's
- * `FormData`. The ctx, layer and result mode are set once here.
+ * `FormData`. The ctx, layer and result mode are set once here. With
+ * `result: 'safe'` it resolves to `{ data }` or `{ error }`
+ * ({@link ActionSafeResult}), plain objects React can send to the browser.
  *
  * @example
  * ```ts
@@ -253,12 +318,14 @@ export function experimental_createAction<
   procedure: Procedure<TDef>,
   ...fits: Fits<TDef, TCtx, TServices>
 ) => Action<TDef, TMode> {
-  return makeFactory(opts as never) as never;
+  return makeFactory(opts as never, plainResult) as never;
 }
 
 /**
  * Like {@link experimental_createAction}, for direct calls with typed input (no
- * `FormData`): server components, route loaders, scripts.
+ * `FormData`): server components, route loaders, scripts. Its results stay
+ * on the server, so `result: 'safe'` resolves to `safe()`'s result, with the
+ * `TrpcError` itself.
  *
  * @example
  * ```ts
@@ -279,5 +346,5 @@ export function experimental_createCallable<
   procedure: Procedure<TDef>,
   ...fits: Fits<TDef, TCtx, TServices>
 ) => Callable<TDef, TMode> {
-  return makeFactory(opts as never) as never;
+  return makeFactory(opts as never, dualResult) as never;
 }
