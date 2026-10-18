@@ -20,7 +20,7 @@ The layout is the [examples'](../README.md) one, once per runtime: the root's `s
 | [`server.ts`](./server.ts)                       | Node               | `serve(handler)` on `NodeHttpServer`          | `listen()`, in the start process                                 |
 | [`bun/server.ts`](./bun/server.ts)               | Bun                | `Bun.serve({ fetch })`, no WebSockets         | [`bun/start.ts`](./bun/start.ts): `bun`                          |
 | [`bun/effect-server.ts`](./bun/effect-server.ts) | Bun                | `serve(handler)` on `BunHttpServer`           | [`bun/start.ts`](./bun/start.ts): `bun`                          |
-| [`deno/server.ts`](./deno/server.ts)             | Deno               | `Deno.serve`, `handler.websocket`             | [`deno/start.ts`](./deno/start.ts): `deno run`                   |
+| [`deno/server.ts`](./deno/server.ts)             | Deno               | `Deno.serve`, `websocket.upgrade`             | [`deno/start.ts`](./deno/start.ts): `deno run`                   |
 | [`lambda/server.ts`](./lambda/server.ts)         | AWS Lambda         | `toLambdaHandler`, `toLambdaStreamingHandler` | [`lambda/start.ts`](./lambda/start.ts): a local function URL     |
 | [`workers/server.ts`](./workers/server.ts)       | Cloudflare Workers | `handler.fetch`, visits in KV                 | [`workers/start.ts`](./workers/start.ts): `unstable_startWorker` |
 
@@ -41,7 +41,7 @@ Every check calls the server over the network with the typed client, and fails t
 
 - **Bun:** `Bun.serve` takes `handler.fetch`, but Bun's server WebSockets aren't web-standard. For WebSockets, `bun/effect-server.ts` runs `serve(handler)` on `@effect/platform-bun`'s `BunHttpServer`.
 - **Deno:**
-  - `cors()` wraps `handler.fetch`, but an upgrade passed to `handler.websocket` never goes through it, so `deno/server.ts` checks the origin itself before `Deno.upgradeWebSocket`.
+  - `Deno.serve` takes `handler.fetch` for upgrades too: with `websocket: { upgrade: Deno.upgradeWebSocket }`, the handler upgrades inside its middleware, so `cors()` refuses a cross-origin upgrade with a `403`, as `serve(handler)` does on Node and Bun.
   - Deno 2.9 prints a notice that `request.signal` also aborts after a successful response (its legacy behavior). Calls are unaffected.
 - **Lambda:**
   - [`lambda/function-url.ts`](./lambda/function-url.ts) stands in for a function URL: it turns each request into a payload 2.0 event, and in `streaming` mode reads the streaming handler's prelude and forwards the body as it's written, as `InvokeMode: RESPONSE_STREAM` does.

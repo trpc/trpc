@@ -1,10 +1,11 @@
 /**
- * Deno: `Deno.serve` takes `handler.fetch`, and Deno's web-standard
- * `WebSocket` goes to `handler.websocket`.
+ * Deno: `Deno.serve` takes `handler.fetch`, which upgrades WebSockets with
+ * `Deno.upgradeWebSocket` inside the handler's middleware, so `cors()`
+ * refuses an upgrade from another origin.
  * `pnpm server:deno` serves on `PORT` (default 3000).
  */
 import { createFetchHandler } from '@trpc12/trpc/server';
-import { allowedOrigin, handlerOptions, Visits } from '../src/router.ts';
+import { handlerOptions, Visits } from '../src/router.ts';
 
 const handler = createFetchHandler({
   ...handlerOptions,
@@ -12,6 +13,7 @@ const handler = createFetchHandler({
   createContext: () => ({
     runtime: { name: 'deno', version: Deno.version.deno },
   }),
+  websocket: { upgrade: Deno.upgradeWebSocket },
 });
 
 const server = Deno.serve(
@@ -21,19 +23,7 @@ const server = Deno.serve(
     onListen: (addr) =>
       console.log(`listening on http://${addr.hostname}:${addr.port}/trpc`),
   },
-  (request) => {
-    if (request.headers.get('upgrade') !== 'websocket') {
-      return handler.fetch(request);
-    }
-    // `cors()` wraps `handler.fetch`, but this upgrade never reaches it.
-    const origin = request.headers.get('origin');
-    if (origin !== null && origin !== allowedOrigin) {
-      return new Response(null, { status: 403 });
-    }
-    const upgrade = Deno.upgradeWebSocket(request);
-    handler.websocket(upgrade.socket, { request });
-    return upgrade.response;
-  },
+  (request) => handler.fetch(request),
 );
 
 Deno.addSignalListener('SIGTERM', () => {
