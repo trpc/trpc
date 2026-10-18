@@ -51,11 +51,11 @@ export type Serialize<T> =
   never;
 
 /** JSON serialize [tuples](https://www.typescriptlang.org/docs/handbook/2/objects.html#tuple-types) */
-type SerializeTuple<T extends [unknown, ...unknown[]]> = {
-  [K in keyof T as K extends symbol ? never : K]: T[K] extends NonJsonPrimitive
-    ? null
-    : Serialize<T[K]>;
-};
+type SerializeTuple<T extends unknown[]> = T extends []
+  ? []
+  : T extends [infer Head, ...infer Rest extends unknown[]]
+    ? [Head extends NonJsonPrimitive ? null : Serialize<Head>, ...SerializeTuple<Rest>]
+    : never;
 
 // prettier-ignore
 type SerializeObjectKey<T extends Record<any, any>, K> = 
