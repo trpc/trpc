@@ -1,4 +1,6 @@
 'use client';
+import { Button } from '@shared/ui/components/button';
+import { Input } from '@shared/ui/components/input';
 import {
   useMutation,
   useQueryClient,
@@ -18,26 +20,35 @@ export function Posts() {
   );
   const [title, setTitle] = useState('');
   return (
-    <section>
-      <h2>Posts</h2>
-      <ul>
+    <div className="flex flex-col gap-4">
+      <ul className="flex flex-col gap-1">
         {query.data.map((post) => (
           // `createdAt` is still a `Date` after hydration.
           <li key={post.id}>
-            {post.title} <small>{post.createdAt.toISOString()}</small>
+            {post.title}{' '}
+            <small className="text-muted-foreground">
+              {post.createdAt.toISOString()}
+            </small>
           </li>
         ))}
       </ul>
       <form
+        className="flex gap-2"
         onSubmit={(e) => {
           e.preventDefault();
           create.mutate({ title });
           setTitle('');
         }}
       >
-        <input value={title} onChange={(e) => setTitle(e.target.value)} />
-        <button disabled={create.isPending}>Add</button>
+        <Input
+          aria-label="Title"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+        />
+        <Button type="submit" disabled={create.isPending}>
+          Add
+        </Button>
       </form>
-    </section>
+    </div>
   );
 }

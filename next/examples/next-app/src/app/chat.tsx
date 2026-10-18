@@ -1,4 +1,6 @@
 'use client';
+import { Button } from '@shared/ui/components/button';
+import { Input } from '@shared/ui/components/input';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useTrpc } from '../trpc/client.tsx';
@@ -12,18 +14,24 @@ export function Chat() {
   const words = useQuery(trpc.chat.reply.chunksOptions());
   const [text, setText] = useState('');
   return (
-    <section>
-      <h2>Streamed mutation</h2>
+    <div className="flex flex-col gap-4">
       <form
+        className="flex gap-2"
         onSubmit={(e) => {
           e.preventDefault();
           reply.mutate({ text });
         }}
       >
-        <input value={text} onChange={(e) => setText(e.target.value)} />
-        <button disabled={reply.isPending}>Send</button>
+        <Input
+          aria-label="Message"
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+        />
+        <Button type="submit" disabled={reply.isPending}>
+          Send
+        </Button>
       </form>
       <p>{(words.data ?? []).join('')}</p>
-    </section>
+    </div>
   );
 }

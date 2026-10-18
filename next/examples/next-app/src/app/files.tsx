@@ -1,4 +1,6 @@
 'use client';
+import { Button } from '@shared/ui/components/button';
+import { Input } from '@shared/ui/components/input';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useTrpc } from '../trpc/client.tsx';
 
@@ -10,10 +12,10 @@ export function Files() {
     enabled: false,
   });
   return (
-    <section>
-      <h2>Files</h2>
-      <input
+    <div className="flex flex-col items-start gap-4">
+      <Input
         type="file"
+        aria-label="Upload a file"
         onChange={(e) => {
           const file = e.target.files?.[0];
           if (file) upload.mutate({ file });
@@ -24,17 +26,18 @@ export function Files() {
           {upload.data.name}: {upload.data.size} bytes, “{upload.data.preview}”
         </p>
       )}
-      <button onClick={() => void download.refetch()}>
+      <Button variant="outline" onClick={() => void download.refetch()}>
         Download report.txt
-      </button>
+      </Button>
       {download.data && (
         <a
+          className="text-primary underline-offset-4 hover:underline"
           href={URL.createObjectURL(download.data)}
           download={download.data.name}
         >
           Save {download.data.name}
         </a>
       )}
-    </section>
+    </div>
   );
 }

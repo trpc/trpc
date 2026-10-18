@@ -1,10 +1,12 @@
 /**
- * Builds the app, starts `next start`, and checks the server-rendered page and
- * the tRPC route with a Node client. Run with `pnpm smoke`.
+ * Builds the app, starts `next start`, checks the server-rendered page and the
+ * tRPC route with a Node client, then signs the guestbook's Server Action form
+ * in headless Chrome. Run with `pnpm smoke`.
  */
 import { spawn, spawnSync } from 'node:child_process';
 import { createServer } from 'node:net';
 import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import { chromium } from 'playwright-core';
 import type { AppRouter } from './src/server/router.ts';
 import { serializer } from './src/trpc/serializer.ts';
 
@@ -29,6 +31,7 @@ const server = spawn(next, ['start', '--port', String(port)], {
   stdio: 'inherit',
 });
 const origin = `http://127.0.0.1:${port}`;
+const page = async () => (await fetch(origin)).text();
 
 const assert = (ok: boolean, message: string): void => {
   if (!ok) throw new Error(message);
@@ -45,10 +48,14 @@ try {
     await new Promise((resolve) => setTimeout(resolve, 200));
   }
 
-  const html = await (await fetch(origin)).text();
+  const html = await page();
   assert(
     html.includes('Rendered on the server'),
     'page is missing the prefetched post',
+  );
+  assert(
+    html.includes('Cached in the Next data cache'),
+    'page is missing the cached guestbook',
   );
   console.log('page: server-rendered with the prefetched post');
 
@@ -82,6 +89,95 @@ try {
   const file = await client.files.download.query({ name: 'report' });
   assert(file.name === 'report.txt', 'files.download name');
   console.log('files.download:', file.name, JSON.stringify(await file.text()));
+
+  // The route handler doesn't revalidate, so the page keeps its cached list.
+  await client.guestbook.sign.mutate({
+    name: 'smoke',
+    message: 'Signed through the route handler',
+  });
+  assert(
+    !(await page()).includes('Signed through the route handler'),
+    'the guestbook was not served from the data cache',
+  );
+  console.log('guestbook: served from the data cache after a route write');
+
+  await signInBrowser();
 } finally {
   server.kill();
+}
+
+async function signInBrowser() {
+  // GitHub's Ubuntu runners have Chrome, so nothing is downloaded.
+  const browser = await chromium.launch({ channel: 'chrome' });
+  try {
+    const tab = await browser.newPage();
+    const errors: string[] = [];
+    tab.on('pageerror', (error) => errors.push(error.message));
+    tab.on('console', (message) => {
+      if (message.type() === 'error')
+        errors.push(`${message.text()} ${message.location().url}`);
+    });
+    await tab.goto(origin);
+    const form = tab.locator('form:has(#guestbook-message)');
+    // A form action submitted before hydration would do a full-page POST.
+    await tab.waitForFunction(() =>
+      Object.keys(document.querySelector('#guestbook-message') ?? {}).some(
+        (key) => key.startsWith('__reactFiber'),
+      ),
+    );
+    await tab.evaluate(() => {
+      const seen = window as { sawPending?: boolean };
+      new MutationObserver(() => {
+        if (document.querySelector('[data-pending]')) seen.sawPending = true;
+      }).observe(document.body, { subtree: true, childList: true });
+    });
+
+    const signed = 'Signed with a Server Action';
+    await tab.fill('#guestbook-name', 'Ada');
+    await tab.fill('#guestbook-message', signed);
+    await form.getByRole('button', { name: 'Sign' }).click();
+    await tab
+      .locator('[data-testid=entries] li:not([data-pending])', {
+        hasText: signed,
+      })
+      .waitFor();
+    assert(
+      await tab.evaluate(
+        () => (window as { sawPending?: boolean }).sawPending === true,
+      ),
+      'useOptimistic never showed the pending entry',
+    );
+    const entries = await tab
+      .locator('[data-testid=entries] li')
+      .allInnerTexts();
+    assert(
+      entries.some((text) => text.includes('Signed through the route handler')),
+      `the action did not revalidate the cached list: ${entries.join(' | ')}`,
+    );
+    console.log('guestbook action: optimistic entry, then', entries);
+
+    const fresh = await page();
+    assert(
+      fresh.includes(signed),
+      'a new request still gets the stale guestbook',
+    );
+    console.log('guestbook: a new request gets the revalidated list');
+
+    await tab.fill('#guestbook-name', 'Ada');
+    await tab.fill('#guestbook-message', signed);
+    await form.getByRole('button', { name: 'Sign' }).click();
+    const alert = await tab.getByTestId('sign-error').innerText();
+    assert(
+      alert.includes('CONFLICT') &&
+        alert.includes('Someone already wrote that'),
+      `guestbook conflict: ${alert}`,
+    );
+    const count = await tab.locator('[data-testid=entries] li').count();
+    assert(count === entries.length, `guestbook entries: ${count}`);
+    console.log('guestbook action error:', JSON.stringify(alert));
+
+    assert(errors.length === 0, `browser errors: ${errors.join('\n')}`);
+  } finally {
+    await browser.close();
+  }
 }

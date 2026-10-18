@@ -7,9 +7,39 @@ export interface Post {
   createdAt: Date;
 }
 
-const posts = new Map<string, Post>([
-  ['1', { id: '1', title: 'Rendered on the server', createdAt: new Date(0) }],
-]);
+export interface Entry {
+  id: string;
+  name: string;
+  message: string;
+  createdAt: Date;
+}
+
+// Next bundles the route handler and the pages separately, each with its own
+// copy of this module, so the in-memory "database" lives on `globalThis`.
+const db = ((
+  globalThis as { exampleDb?: ReturnType<typeof seed> }
+).exampleDb ??= seed());
+const posts = db.posts;
+const entries = db.entries;
+
+function seed() {
+  return {
+    posts: new Map<string, Post>([
+      [
+        '1',
+        { id: '1', title: 'Rendered on the server', createdAt: new Date(0) },
+      ],
+    ]),
+    entries: [
+      {
+        id: '1',
+        name: 'tRPC',
+        message: 'Cached in the Next data cache',
+        createdAt: new Date(0),
+      },
+    ] as Entry[],
+  };
+}
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const t = initTrpc();
@@ -27,6 +57,31 @@ export const appRouter = {
         };
         posts.set(post.id, post);
         return post;
+      }),
+  },
+  guestbook: {
+    /** Read by a `'use cache'` function tagged with `cacheTags`. */
+    list: t.procedure.query(() => [...entries]),
+    /** Wrapped as a Server Action, which revalidates `list` after a write. */
+    sign: t.procedure
+      .errors({ CONFLICT: { message: 'Someone already wrote that' } })
+      .input(
+        z.object({
+          name: z.string().trim().min(1).max(40),
+          message: z.string().trim().min(1).max(280),
+        }),
+      )
+      .mutation((opts) => {
+        if (entries.some((entry) => entry.message === opts.input.message)) {
+          return opts.errors.CONFLICT();
+        }
+        const entry: Entry = {
+          id: String(entries.length + 1),
+          ...opts.input,
+          createdAt: new Date(),
+        };
+        entries.push(entry);
+        return entry;
       }),
   },
   chat: {

@@ -9,6 +9,7 @@
     "smoke": "node smoke.ts"
   },
   "dependencies": {
+    "@shared/ui": "workspace:*",
     "@tanstack/react-query": "5.104.1",
     "@trpc12/tanstack-react-query": "workspace:*",
     "@trpc12/trpc": "workspace:*",
@@ -20,9 +21,12 @@
     "zod": "4.6.5"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "4.3.3",
     "@types/node": "^24.19.1",
     "@types/react": "19.3.0",
     "@types/react-dom": "^19.3.0",
+    "playwright-core": "1.64.1",
+    "tailwindcss": "4.3.3",
     "typescript": "^7.0.2"
   }
 }
