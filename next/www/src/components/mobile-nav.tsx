@@ -1,4 +1,8 @@
-import { Button } from '@shared/ui/components/button';
+import { Link } from '@tanstack/react-router';
+import { Menu, Newspaper } from 'lucide-react';
+import { useState } from 'react';
+
+import { Button, buttonVariants } from '@shared/ui/components/button';
 import {
   Dialog,
   DialogContent,
@@ -6,9 +10,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@shared/ui/components/dialog';
-import { Menu } from 'lucide-react';
-import { useState } from 'react';
-
+import { cn } from '@shared/ui/lib/utils';
 import { site } from '~/site.ts';
 
 import { DocsNav } from './docs-nav.tsx';
@@ -32,21 +34,35 @@ export function MobileNav() {
         <Menu />
       </DialogTrigger>
       <DialogContent className="top-0 left-0 h-dvh max-w-80 content-start translate-x-0 translate-y-0 overflow-y-auto rounded-none border-r p-5 sm:max-w-80">
-        <DialogTitle>Documentation</DialogTitle>
+        <DialogTitle className="sr-only">Navigation</DialogTitle>
         <DialogDescription className="sr-only">
-          Every page of the tRPC docs
+          The blog, and every page of the tRPC docs
         </DialogDescription>
+        <nav aria-label="Site" className="flex gap-2 border-b pb-4">
+          <Link
+            activeProps={{ 'aria-current': 'page' }}
+            className={cn(
+              buttonVariants({ size: 'sm', variant: 'outline' }),
+              'aria-[current=page]:bg-accent',
+            )}
+            onClick={() => setOpen(false)}
+            to="/blog"
+          >
+            <Newspaper /> Blog
+          </Link>
+          <a
+            className={buttonVariants({ size: 'sm', variant: 'outline' })}
+            href={site.github}
+          >
+            <GitHubIcon /> GitHub
+          </a>
+        </nav>
+        <p className="text-base leading-none font-medium">Documentation</p>
         <DocsNav
           onNavigate={() => {
             setOpen(false);
           }}
         />
-        <a
-          className="flex items-center gap-2 border-t px-2 pt-4 text-sm text-muted-foreground hover:text-foreground [&_svg]:size-4"
-          href={site.github}
-        >
-          <GitHubIcon /> tRPC on GitHub
-        </a>
       </DialogContent>
     </Dialog>
   );

@@ -55,6 +55,14 @@ export function SiteHeader() {
               {link.label}
             </Link>
           ))}
+          <Link
+            activeProps={{ className: 'text-foreground' }}
+            className={navLink}
+            inactiveProps={{ className: 'text-muted-foreground' }}
+            to="/blog"
+          >
+            Blog
+          </Link>
         </nav>
         <div className="ml-auto flex items-center gap-1">
           <SearchButton />

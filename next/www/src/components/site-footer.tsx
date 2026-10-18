@@ -1,3 +1,5 @@
+import { Link } from '@tanstack/react-router';
+
 import { site } from '~/site.ts';
 
 export function SiteFooter() {
@@ -8,7 +10,10 @@ export function SiteFooter() {
           tRPC is MIT licensed. v12 is a preview: APIs can still change before
           it ships.
         </p>
-        <nav aria-label="Footer" className="flex gap-4">
+        <nav aria-label="Footer" className="flex flex-wrap gap-x-4 gap-y-2">
+          <Link className="hover:text-foreground" to="/blog">
+            Blog
+          </Link>
           <a className="hover:text-foreground" href={site.github}>
             GitHub
           </a>
