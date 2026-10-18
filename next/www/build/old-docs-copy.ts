@@ -1,9 +1,10 @@
 /**
  * Copies the docs trpc.io serves (the repo root's `www`: v11 in `docs/`,
  * v10 and v9 in `versioned_docs/`) into `<version>/docs` as pages of this
- * site, in each version's sidebar sections and order. The copies are
- * committed and nobody edits them: after the docs change, run
- * `pnpm --filter @trpc12/www old-docs:copy` again.
+ * site, in each version's sidebar sections and order, and its blog's posts
+ * into `blog/`. The copies are committed and nobody edits them: after the
+ * docs or the blog change, run `pnpm --filter @trpc12/www old-docs:copy`
+ * again.
  *
  * The pages are converted by `old-docs-convert.ts`. The copy fails on
  * anything it can't convert, and drops the `#hash` of links to headings
@@ -21,8 +22,11 @@ import { type CopiedVersion, copiedVersions } from '../src/site.ts';
 import { anchorsOf } from './markdown.ts';
 import {
   type CopiedPage,
+  type CopiedPost,
   convertPage,
+  convertPost,
   dropMissingAnchors,
+  type PostAuthor,
   type SidebarItem,
   sidebarSections,
 } from './old-docs-convert.ts';
@@ -63,6 +67,32 @@ const DocFrontmatter = Schema.Struct({
   slug: Schema.optional(Schema.String),
   title: Schema.optional(Schema.String),
 });
+
+const PostFrontmatter = Schema.Struct({
+  author: Schema.optional(Schema.String),
+  author_image_url: Schema.optional(Schema.String),
+  author_title: Schema.optional(Schema.String),
+  author_url: Schema.optional(Schema.String),
+  authors: Schema.optional(
+    Schema.Union([Schema.String, Schema.Array(Schema.String)]),
+  ),
+  commentDiscussionId: Schema.optional(Schema.Number),
+  slug: Schema.optional(Schema.String),
+  title: Schema.String,
+});
+
+const Authors = Schema.Record(
+  Schema.String,
+  Schema.Struct({
+    image_url: Schema.optional(Schema.String),
+    name: Schema.String,
+    socials: Schema.optional(
+      Schema.Struct({ github: Schema.optional(Schema.String) }),
+    ),
+    title: Schema.optional(Schema.String),
+    url: Schema.optional(Schema.String),
+  }),
+);
 
 const Redirects = Schema.Struct({
   redirects: Schema.Array(
@@ -126,18 +156,92 @@ const failWith = (message: string) => (cause: unknown) =>
     message: `${message}: ${cause instanceof Error ? cause.message : String(cause)}`,
   });
 
+/** The YAML in `contents`, failing as `name`'s. */
+const yamlOf = (name: string, contents: string) =>
+  Effect.try({
+    catch: failWith(name),
+    try: () => (parseYaml(contents) as unknown) ?? {},
+  });
+
+const frontmatterYaml = (contents: string) =>
+  /^---\n([\s\S]*?)\n---\n/.exec(contents)?.[1] ?? '';
+
 const frontmatterOf = Effect.fn('frontmatterOf')(function* (
   name: string,
   contents: string,
 ) {
-  const yaml = /^---\n([\s\S]*?)\n---\n/.exec(contents)?.[1] ?? '';
-  return yield* Effect.try({
-    catch: failWith(`${name}: invalid frontmatter`),
-    try: () => (parseYaml(yaml) as unknown) ?? {},
-  }).pipe(
+  return yield* yamlOf(name, frontmatterYaml(contents)).pipe(
     Effect.flatMap(Schema.decodeUnknownEffect(DocFrontmatter)),
     Effect.mapError(failWith(`${name}: invalid frontmatter`)),
   );
+});
+
+/**
+ * The blog's posts, as Docusaurus reads them: the date and slug from the
+ * file's name (`2025-03-21-announcing-trpc-11.mdx`) unless the frontmatter
+ * has a `slug`, and the authors from `authors.yml` or the frontmatter.
+ */
+const readPosts = Effect.fn('readPosts')(function* (
+  files: ReadonlyMap<string, string>,
+) {
+  const authorsFile = 'blog/authors.yml';
+  const authors = yield* yamlOf(authorsFile, files.get(authorsFile) ?? '').pipe(
+    Effect.flatMap(Schema.decodeUnknownEffect(Authors)),
+    Effect.mapError(failWith(`${authorsFile}: unexpected authors`)),
+  );
+  const posts: Array<CopiedPost> = [];
+  for (const [file, contents] of files) {
+    const name = /^blog\/(\d{4}-\d{2}-\d{2})-(.+)\.mdx?$/.exec(file);
+    if (!name?.[1] || !name[2]) {
+      continue;
+    }
+    const frontmatter = yield* yamlOf(file, frontmatterYaml(contents)).pipe(
+      Effect.flatMap(Schema.decodeUnknownEffect(PostFrontmatter)),
+      Effect.mapError(failWith(`${file}: invalid frontmatter`)),
+    );
+    const keys =
+      typeof frontmatter.authors === 'string'
+        ? [frontmatter.authors]
+        : (frontmatter.authors ?? []);
+    const byKey: Array<PostAuthor> = [];
+    for (const key of keys) {
+      const author = authors[key];
+      if (!author) {
+        return yield* new OldDocsCopyError({
+          message: `${file}: ${key} isn't in ${authorsFile}`,
+        });
+      }
+      const github = author.socials?.github;
+      byKey.push({
+        image: author.image_url,
+        name: author.name,
+        title: author.title,
+        url:
+          author.url ??
+          (github === undefined ? undefined : `https://github.com/${github}`),
+      });
+    }
+    const inline: ReadonlyArray<PostAuthor> =
+      frontmatter.author === undefined
+        ? []
+        : [
+            {
+              image: frontmatter.author_image_url,
+              name: frontmatter.author,
+              title: frontmatter.author_title,
+              url: frontmatter.author_url,
+            },
+          ];
+    posts.push({
+      authors: [...byKey, ...inline],
+      date: name[1],
+      discussion: frontmatter.commentDiscussionId,
+      file,
+      slug: frontmatter.slug ?? name[2],
+      title: frontmatter.title,
+    });
+  }
+  return posts.toSorted((a, b) => b.date.localeCompare(a.date));
 });
 
 /**
@@ -327,6 +431,7 @@ const readDocs = Effect.fn('readDocs')(function* (www: string) {
     ...(yield* listFiles(www, 'versioned_docs', ['**/*.md', '**/*.mdx'])),
     ...(yield* listFiles(www, 'unversioned', ['*.mdx'])),
     ...(yield* listFiles(www, 'src/components', ['*.tsx'])),
+    ...(yield* listFiles(www, 'blog', ['*.md', '*.mdx', 'authors.yml'])),
   ];
   const files = new Map(
     yield* Effect.forEach(
@@ -374,6 +479,7 @@ const readDocs = Effect.fn('readDocs')(function* (www: string) {
     docs: {
       files,
       pages: versions.flatMap((read) => read.pages),
+      posts: yield* readPosts(files),
       redirects: vercel.redirects,
       releases,
       unlisted: new Map(versions.flatMap((read) => [...read.unlisted])),
@@ -392,16 +498,23 @@ A copy of the [${version.id} docs](../../../../www/${from}), which [trpc.io](${v
 Don't edit these files: \`www/build/old-docs-copy.ts\` writes them. Change the docs in the repo root's \`www/${from}\`, then run \`pnpm --filter @trpc12/www old-docs:copy\`.
 `;
 
+const blogReadme = `# The blog
+
+A copy of [trpc.io's blog](../../../www/blog), which [trpc.io](https://trpc.io/blog) renders. The site serves it at \`/blog\`.
+
+Don't edit these files: \`www/build/old-docs-copy.ts\` writes them. Change the posts in the repo root's \`www/blog\`, then run \`pnpm --filter @trpc12/www old-docs:copy\`.
+`;
+
 export interface CopyDirs {
   /** trpc.io's site: the repo root's `www`. */
   readonly from: string;
-  /** Where the copies go: `<version>/` holds `docs/` and `sections.json`. */
+  /** Where the copies go: `<version>/` holds `docs/` and `sections.json`, and `blog/` the posts. */
   readonly to: string;
   /** Where the images go: `<version>/img` under it, the site's `public/`. */
   readonly images: string;
 }
 
-/** Converts and writes every page of every version's sidebar. */
+/** Converts and writes every page of every version's sidebar, and every post. */
 export const copyOldDocs = Effect.fn('copyOldDocs')(function* (dirs: CopyDirs) {
   const fs = yield* FileSystem.FileSystem;
   const path = yield* Path.Path;
@@ -430,6 +543,26 @@ export const copyOldDocs = Effect.fn('copyOldDocs')(function* (dirs: CopyDirs) {
     ...entry,
     ...dropMissingAnchors(entry.markdown, entry.page, anchors),
   }));
+  // A post shows its images from v11's, as it links v11's pages.
+  const posts = docs.posts.map((post) => {
+    const result = convertPost(post, docs);
+    return {
+      images: result.images,
+      post,
+      problems: result.problems,
+      ...dropMissingAnchors(
+        result.markdown,
+        { slug: post.slug, version: 'v11' },
+        anchors,
+      ),
+    };
+  });
+  const postProblems = posts.flatMap((entry) => entry.problems);
+  if (postProblems.length > 0) {
+    return yield* new OldDocsCopyError({
+      message: `The blog has what the copy can't convert:\n${postProblems.join('\n')}`,
+    });
+  }
   const report: Array<string> = [];
   for (const { sections, version } of read.versions) {
     const own = pages.filter((entry) => entry.page.version === version.id);
@@ -454,7 +587,12 @@ export const copyOldDocs = Effect.fn('copyOldDocs')(function* (dirs: CopyDirs) {
       path.join(versionDir, 'sections.json'),
       `${JSON.stringify(sections, null, 2)}\n`,
     );
-    const images = [...new Set(own.flatMap((entry) => entry.images))];
+    const images = [
+      ...new Set([
+        ...own.flatMap((entry) => entry.images),
+        ...(version.id === 'v11' ? posts.flatMap((entry) => entry.images) : []),
+      ]),
+    ];
     yield* Effect.forEach(images, (image) =>
       fs.copyFile(
         path.join(dirs.from, image),
@@ -465,7 +603,18 @@ export const copyOldDocs = Effect.fn('copyOldDocs')(function* (dirs: CopyDirs) {
       `Copied ${own.length} ${version.id} pages in ${sections.length} sections, and ${images.length} images.`,
     );
   }
-  const dropped = pages.flatMap((entry) => entry.dropped);
+  const blogDir = path.join(dirs.to, 'blog');
+  yield* fs.remove(blogDir, { force: true, recursive: true });
+  yield* fs.makeDirectory(blogDir, { recursive: true });
+  yield* Effect.forEach(posts, (entry) =>
+    fs.writeFileString(
+      path.join(blogDir, `${entry.post.slug}.md`),
+      entry.markdown,
+    ),
+  );
+  yield* fs.writeFileString(path.join(blogDir, 'README.md'), blogReadme);
+  report.push(`Copied ${posts.length} blog posts.`);
+  const dropped = [...pages, ...posts].flatMap((entry) => entry.dropped);
   yield* Console.log(
     [
       ...report,

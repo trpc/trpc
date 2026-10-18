@@ -5,10 +5,12 @@ import react from '@vitejs/plugin-react';
 import { Effect } from 'effect';
 import { defineConfig } from 'vite-plus';
 
+import { blogContent, blogPosts } from './build/blog-content.ts';
 import { docPages, docsContent } from './build/content.ts';
 import { OgCard, ogImages } from './build/og-image.ts';
-import { absoluteUrl, trpcPageUrl } from './src/seo.ts';
+import { absoluteUrl, postDate, trpcPageUrl, trpcPostUrl } from './src/seo.ts';
 import {
+  blog,
   type CopiedVersion,
   copiedVersions,
   sections,
@@ -20,6 +22,8 @@ import v11Sections from './v11/sections.json' with { type: 'json' };
 
 const contentDir = new URL('../docs', import.meta.url).pathname;
 const samplesDir = new URL('samples', import.meta.url).pathname;
+// A copy of trpc.io's blog (`build/old-docs-copy.ts`), served at `/blog`.
+const blogDir = new URL('blog', import.meta.url).pathname;
 // Copies of the older versions' docs (`build/old-docs-copy.ts`), served at
 // `/v11/docs`, `/v10/docs` and `/v9/docs`.
 const copiedSections = { v9: v9Sections, v10: v10Sections, v11: v11Sections };
@@ -35,7 +39,7 @@ const twoslashCacheDir = new URL(
   import.meta.url,
 ).pathname;
 const lockfile = new URL('../pnpm-lock.yaml', import.meta.url).pathname;
-const [pages, copiedPages] = await Effect.runPromise(
+const [pages, copiedPages, posts] = await Effect.runPromise(
   Effect.all([
     docPages({ basePath: '/docs', contentDir, samplesDir }),
     Effect.forEach(copies, (copy) =>
@@ -48,6 +52,7 @@ const [pages, copiedPages] = await Effect.runPromise(
         (found) => ({ pages: found, version: copy.version }),
       ),
     ),
+    blogPosts(blogDir),
   ]).pipe(Effect.provide(NodeServices.layer)),
 );
 const docCard = (
@@ -92,6 +97,12 @@ export default defineConfig({
         summary: site.description,
       }),
     ),
+    blogContent({
+      contentDir: blogDir,
+      manifestId: 'virtual:blog-manifest',
+      samplesDir,
+      sourceUrl: `${site.github}/blob/main/www`,
+    }),
     ogImages({
       cards: [
         OgCard.Home({ path: '/' }),
@@ -107,6 +118,22 @@ export default defineConfig({
               ),
             ),
           ),
+        ),
+        OgCard.Post({
+          description: blog.description,
+          eyebrow: '',
+          path: '/blog',
+          title: `The ${site.name} blog`,
+          url: absoluteUrl('/blog'),
+        }),
+        ...posts.map((post) =>
+          OgCard.Post({
+            description: post.description,
+            eyebrow: `${postDate(post.date)} · ${post.authors.map((author) => author.name).join(', ')}`,
+            path: `/blog/${post.slug}`,
+            title: post.title,
+            url: trpcPostUrl(post.slug),
+          }),
         ),
       ],
     }),
@@ -130,6 +157,13 @@ export default defineConfig({
             sitemap: { exclude: true },
           })),
         ),
+        { path: '/blog', sitemap: { changefreq: 'monthly', priority: 0.5 } },
+        // Like the older versions' pages, each post's canonical link points
+        // at trpc.io.
+        ...posts.map((post) => ({
+          path: `/blog/${post.slug}`,
+          sitemap: { exclude: true },
+        })),
         {
           path: '/404',
           prerender: { enabled: true, outputPath: '/404.html' },
@@ -144,6 +178,9 @@ export default defineConfig({
           const prerendered =
             page.path !== '/docs' &&
             copiedVersions.every((version) => page.path !== version.basePath) &&
+            // An index route (`/blog/`) is found with its slash, which the
+            // host redirects away.
+            (page.path === '/' || !page.path.endsWith('/')) &&
             !/[?#]/.test(page.path);
           // Crawling (which checks that every link resolves) and route
           // discovery add more than the pages listed above: anchors,

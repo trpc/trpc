@@ -69,6 +69,14 @@ export const v9 = {
 /** Newest first, as the version switcher lists them. */
 export const copiedVersions = [v11, v10, v9] as const;
 
+/** trpc.io's blog, copied as it was (`build/old-docs-copy.ts`). */
+export const blog = {
+  description:
+    'Releases, deep dives and lessons learned from building tRPC, by the people who maintain it.',
+  /** Where trpc.io serves it. */
+  url: 'https://trpc.io/blog',
+} as const;
+
 /** Sidebar sections, in order. */
 export const sections = [
   'Getting started',

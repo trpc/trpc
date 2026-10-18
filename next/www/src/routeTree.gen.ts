@@ -12,6 +12,8 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as R404RouteImport } from './routes/404'
 import { Route as DocsRouteImport } from './routes/docs'
+import { Route as BlogIndexRouteImport } from './routes/blog.index'
+import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as DocsIndexRouteImport } from './routes/docs.index'
 import { Route as DocsSplatRouteImport } from './routes/docs.$'
 import { Route as V10DocsRouteImport } from './routes/v10.docs'
@@ -37,6 +39,16 @@ const R404Route = R404RouteImport.update({
 const DocsRoute = DocsRouteImport.update({
   id: '/docs',
   path: '/docs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BlogIndexRoute = BlogIndexRouteImport.update({
+  id: '/blog/',
+  path: '/blog/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BlogSlugRoute = BlogSlugRouteImport.update({
+  id: '/blog/$slug',
+  path: '/blog/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DocsIndexRoute = DocsIndexRouteImport.update({
@@ -99,10 +111,12 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/404': typeof R404Route
   '/docs': typeof DocsRouteWithChildren
+  '/blog/$slug': typeof BlogSlugRoute
   '/docs/$': typeof DocsSplatRoute
   '/v10/docs': typeof V10DocsRouteWithChildren
   '/v11/docs': typeof V11DocsRouteWithChildren
   '/v9/docs': typeof V9DocsRouteWithChildren
+  '/blog/': typeof BlogIndexRoute
   '/docs/': typeof DocsIndexRoute
   '/v10/docs/$': typeof V10DocsSplatRoute
   '/v11/docs/$': typeof V11DocsSplatRoute
@@ -114,7 +128,9 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/404': typeof R404Route
+  '/blog/$slug': typeof BlogSlugRoute
   '/docs/$': typeof DocsSplatRoute
+  '/blog': typeof BlogIndexRoute
   '/docs': typeof DocsIndexRoute
   '/v10/docs/$': typeof V10DocsSplatRoute
   '/v11/docs/$': typeof V11DocsSplatRoute
@@ -128,10 +144,12 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/404': typeof R404Route
   '/docs': typeof DocsRouteWithChildren
+  '/blog/$slug': typeof BlogSlugRoute
   '/docs/$': typeof DocsSplatRoute
   '/v10/docs': typeof V10DocsRouteWithChildren
   '/v11/docs': typeof V11DocsRouteWithChildren
   '/v9/docs': typeof V9DocsRouteWithChildren
+  '/blog/': typeof BlogIndexRoute
   '/docs/': typeof DocsIndexRoute
   '/v10/docs/$': typeof V10DocsSplatRoute
   '/v11/docs/$': typeof V11DocsSplatRoute
@@ -146,10 +164,12 @@ export interface FileRouteTypes {
     | '/'
     | '/404'
     | '/docs'
+    | '/blog/$slug'
     | '/docs/$'
     | '/v10/docs'
     | '/v11/docs'
     | '/v9/docs'
+    | '/blog/'
     | '/docs/'
     | '/v10/docs/$'
     | '/v11/docs/$'
@@ -161,7 +181,9 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/404'
+    | '/blog/$slug'
     | '/docs/$'
+    | '/blog'
     | '/docs'
     | '/v10/docs/$'
     | '/v11/docs/$'
@@ -174,10 +196,12 @@ export interface FileRouteTypes {
     | '/'
     | '/404'
     | '/docs'
+    | '/blog/$slug'
     | '/docs/$'
     | '/v10/docs'
     | '/v11/docs'
     | '/v9/docs'
+    | '/blog/'
     | '/docs/'
     | '/v10/docs/$'
     | '/v11/docs/$'
@@ -191,9 +215,11 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   R404Route: typeof R404Route
   DocsRoute: typeof DocsRouteWithChildren
+  BlogSlugRoute: typeof BlogSlugRoute
   V10DocsRoute: typeof V10DocsRouteWithChildren
   V11DocsRoute: typeof V11DocsRouteWithChildren
   V9DocsRoute: typeof V9DocsRouteWithChildren
+  BlogIndexRoute: typeof BlogIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -217,6 +243,20 @@ declare module '@tanstack/react-router' {
       path: '/docs'
       fullPath: '/docs'
       preLoaderRoute: typeof DocsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/blog/': {
+      id: '/blog/'
+      path: '/blog'
+      fullPath: '/blog/'
+      preLoaderRoute: typeof BlogIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/blog/$slug': {
+      id: '/blog/$slug'
+      path: '/blog/$slug'
+      fullPath: '/blog/$slug'
+      preLoaderRoute: typeof BlogSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/docs/': {
@@ -354,9 +394,11 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   R404Route: R404Route,
   DocsRoute: DocsRouteWithChildren,
+  BlogSlugRoute: BlogSlugRoute,
   V10DocsRoute: V10DocsRouteWithChildren,
   V11DocsRoute: V11DocsRouteWithChildren,
   V9DocsRoute: V9DocsRouteWithChildren,
+  BlogIndexRoute: BlogIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

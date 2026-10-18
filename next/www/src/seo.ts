@@ -1,4 +1,4 @@
-import { type CopiedVersion, site } from './site.ts';
+import { blog, type CopiedVersion, site } from './site.ts';
 
 type JsonValue =
   | boolean
@@ -35,6 +35,19 @@ export function absoluteUrl(path: string) {
 /** A copied page on trpc.io, which serves each version's first page at its `trpcPath`. */
 export function trpcPageUrl(version: CopiedVersion, slug: string) {
   return `${version.url}${version.trpcPath}${slug === version.firstDoc ? '' : `/${slug}`}`;
+}
+
+/** A copied post on trpc.io's blog. */
+export function trpcPostUrl(slug: string) {
+  return `${blog.url}/${slug}`;
+}
+
+/** `2025-03-21` as `March 21, 2025`, whatever the reader's time zone. */
+export function postDate(date: string) {
+  return new Intl.DateTimeFormat('en-US', {
+    dateStyle: 'long',
+    timeZone: 'UTC',
+  }).format(new Date(`${date}T00:00:00Z`));
 }
 
 /** Where the build writes a page's social card (`build/og-image.ts`). */

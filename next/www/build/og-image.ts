@@ -26,6 +26,15 @@ export type OgCard = Data.TaggedEnum<{
     readonly version: 'v12' | CopiedVersion['id'];
   };
   Home: { readonly path: string };
+  /** The blog, or one of its posts. */
+  Post: {
+    readonly description: string;
+    /** Above the title: the post's date and authors. */
+    readonly eyebrow: string;
+    readonly path: string;
+    readonly title: string;
+    readonly url: string;
+  };
 }>;
 export const OgCard = Data.taggedEnum<OgCard>();
 
@@ -176,21 +185,31 @@ const card = (assets: Assets, ...children: ReadonlyArray<ReactNode>) =>
     ...children,
   );
 
-const docCard = (assets: Assets, doc: Data.TaggedEnum.Value<OgCard, 'Doc'>) => {
-  const description = plainText(doc.description);
-  const section = plainText(doc.section);
-  const title = plainText(doc.title);
+/** A page's card: the pill, the eyebrow above the title, and the description. */
+const articleCard = (
+  assets: Assets,
+  article: {
+    readonly description: string;
+    readonly eyebrow: string;
+    readonly pill: string;
+    readonly title: string;
+    readonly url: string;
+  },
+) => {
+  const description = plainText(article.description);
+  const eyebrow = plainText(article.eyebrow);
+  const title = plainText(article.title);
   return card(
     assets,
     box(
       { alignItems: 'center', justifyContent: 'space-between' },
       wordmark(assets, 56),
-      pill(versionLabels[doc.version]),
+      pill(article.pill),
     ),
     box(
       { flexDirection: 'column', flexGrow: 1, justifyContent: 'center' },
       // v11's first page is `tRPC`, in the section `tRPC`.
-      ...(section.toLowerCase() === title.toLowerCase()
+      ...(eyebrow === '' || eyebrow.toLowerCase() === title.toLowerCase()
         ? []
         : [
             box(
@@ -203,7 +222,7 @@ const docCard = (assets: Assets, doc: Data.TaggedEnum.Value<OgCard, 'Doc'>) => {
                 marginBottom: 16,
                 textTransform: 'uppercase',
               },
-              section,
+              eyebrow,
             ),
           ]),
       paragraph(
@@ -235,10 +254,24 @@ const docCard = (assets: Assets, doc: Data.TaggedEnum.Value<OgCard, 'Doc'>) => {
     ),
     box(
       { borderTop: `1px solid ${colors.border}`, paddingTop: 26 },
-      url(doc.url, 24),
+      url(article.url, 24),
     ),
   );
 };
+
+const docCard = (assets: Assets, doc: Data.TaggedEnum.Value<OgCard, 'Doc'>) =>
+  articleCard(assets, {
+    description: doc.description,
+    eyebrow: doc.section,
+    pill: versionLabels[doc.version],
+    title: doc.title,
+    url: doc.url,
+  });
+
+const postCard = (
+  assets: Assets,
+  post: Data.TaggedEnum.Value<OgCard, 'Post'>,
+) => articleCard(assets, { ...post, pill: 'blog' });
 
 const homeCard = (assets: Assets) =>
   card(
@@ -287,6 +320,7 @@ const cardElement = (assets: Assets, ogCard: OgCard) =>
   OgCard.$match(ogCard, {
     Doc: (doc) => docCard(assets, doc),
     Home: () => homeCard(assets),
+    Post: (post) => postCard(assets, post),
   });
 
 const dataUri = (type: string, bytes: Uint8Array) =>

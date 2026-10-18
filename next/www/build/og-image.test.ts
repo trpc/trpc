@@ -65,6 +65,13 @@ describe('makeOgRenderer', () => {
           url: 'https://trpc.io/docs/client/tanstack-react-query',
           version: 'v11',
         }),
+        OgCard.Post({
+          description: 'Although tRPC v11 has been production-ready…',
+          eyebrow: 'March 21, 2025 · tRPC',
+          path: '/blog/announcing-trpc-v11',
+          title: 'Announcing tRPC v11',
+          url: 'https://trpc.io/blog/announcing-trpc-v11',
+        }),
       ];
       for (const card of cards) {
         const png = yield* render(card);

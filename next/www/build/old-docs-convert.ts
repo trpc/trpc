@@ -1,9 +1,10 @@
 /**
  * Turns the docs trpc.io serves (Docusaurus MDX in the repo root's `www`:
- * v11 in `docs/`, v10 and v9 in `versioned_docs/`) into pages of this site:
- * Markdown with this site's frontmatter, which `build/content.ts` renders
- * like any other page. `old-docs-copy.ts` reads the files and writes the
- * result; everything here is a pure function of them.
+ * v11 in `docs/`, v10 and v9 in `versioned_docs/`) and its blog (`blog/`)
+ * into pages and posts of this site: Markdown with this site's frontmatter,
+ * which `build/content.ts` and `build/blog-content.ts` render.
+ * `old-docs-copy.ts` reads the files and writes the result; everything here
+ * is a pure function of them.
  *
  * Twoslash blocks become plain code, showing what trpc.io shows: the hidden
  * setup, `// @…` directives and `// ^?` markers go. Admonitions become
@@ -47,11 +48,46 @@ export interface Release {
   readonly tag: string;
 }
 
+/** A post's author, as `blog/authors.yml` or the post's own frontmatter has them. */
+export interface PostAuthor {
+  readonly image: string | undefined;
+  readonly name: string;
+  readonly title: string | undefined;
+  readonly url: string | undefined;
+}
+
+/** A post of trpc.io's blog (`www/blog`). */
+export interface CopiedPost {
+  readonly authors: ReadonlyArray<PostAuthor>;
+  /** `2025-03-21`, from the file's name. */
+  readonly date: string;
+  /** The GitHub discussion that holds its comments. */
+  readonly discussion: number | undefined;
+  /** Path under `www/`: `blog/2025-03-21-announcing-trpc-11.mdx`. */
+  readonly file: string;
+  /** Path under `/blog`, on trpc.io and here. */
+  readonly slug: string;
+  readonly title: string;
+}
+
+/**
+ * The page a link is on: a page of a version's docs, or a blog post
+ * (`blog`), which links as v11's pages do, since trpc.io's blog means the
+ * docs it serves at `/docs`.
+ */
+export interface LinkingPage {
+  readonly blog?: boolean | undefined;
+  readonly slug: string;
+  readonly version: CopiedVersion['id'];
+}
+
 export interface CopiedDocs {
   /** What the pages read, by path under `www/`: the pages, partials and components. */
   readonly files: ReadonlyMap<string, string>;
   /** Every version's pages. */
   readonly pages: ReadonlyArray<CopiedPage>;
+  /** The blog's posts. */
+  readonly posts: ReadonlyArray<CopiedPost>;
   readonly redirects: ReadonlyArray<Redirect>;
   /** The older versions' last releases. */
   readonly releases: ReadonlyMap<CopiedVersion['id'], Release>;
@@ -236,7 +272,7 @@ export function relativeLink(fromSlug: string, toSlug: string) {
   return `${up === 0 ? './' : '../'.repeat(up)}${rest}.md`;
 }
 
-/** Where a link points: a copied page, or else trpc.io. */
+/** Where a link points: a copied page or post, or else trpc.io. */
 type Target =
   | {
       readonly kind: 'page';
@@ -244,6 +280,7 @@ type Target =
       readonly hash: string;
       readonly version: CopiedVersion['id'];
     }
+  | { readonly kind: 'post'; readonly slug: string; readonly hash: string }
   | { readonly kind: 'image'; readonly file: string }
   | { readonly kind: 'url'; readonly url: string };
 
@@ -258,6 +295,7 @@ function hashOf(url: URL) {
  * any other path is a URL, relative to the page's URL on trpc.io, which
  * trpc.io's redirects may send elsewhere. A `/docs/v10/` URL is a v10 page;
  * a `/docs/` one is the linking page's version's, where it has the page.
+ * A `/blog/` URL is a post.
  */
 export function resolveLink(
   url: string,
@@ -265,8 +303,11 @@ export function resolveLink(
     /** The file the link is written in, under `www/`. */
     readonly file: string;
     /** The page the link renders on. */
-    readonly page: Pick<CopiedPage, 'slug' | 'version'>;
-    readonly docs: Pick<CopiedDocs, 'pages' | 'redirects' | 'unlisted'>;
+    readonly page: LinkingPage;
+    readonly docs: Pick<
+      CopiedDocs,
+      'pages' | 'posts' | 'redirects' | 'unlisted'
+    >;
   },
 ): Target | undefined {
   if (
@@ -310,6 +351,12 @@ export function resolveLink(
           version: page.version,
         };
       }
+      const post = context.docs.posts.find(
+        (candidate) => candidate.file === file,
+      );
+      if (post) {
+        return { hash: hashOf(target), kind: 'post', slug: post.slug };
+      }
       const unlisted = context.docs.unlisted.get(file);
       if (unlisted !== undefined) {
         return { kind: 'url', url: `${v11.url}${unlisted}${target.hash}` };
@@ -319,7 +366,9 @@ export function resolveLink(
   const from = versionOf(context.page.version);
   const target = new URL(
     local,
-    `${v11.url}${from.trpcPath}/${context.page.slug}`,
+    context.page.blog
+      ? `${v11.url}/blog/${context.page.slug}`
+      : `${v11.url}${from.trpcPath}/${context.page.slug}`,
   );
   const decoded = decodeURIComponent(target.pathname);
   const pageOf = (version: CopiedVersion['id'], slug: string) =>
@@ -347,6 +396,13 @@ export function resolveLink(
     };
   }
   const pathname = redirected(decoded, context.docs.redirects) ?? decoded;
+  const postSlug = /^\/blog\/([^/]+)$/.exec(pathname)?.[1];
+  const post = context.docs.posts.find(
+    (candidate) => candidate.slug === postSlug,
+  );
+  if (post) {
+    return { hash: hashOf(target), kind: 'post', slug: post.slug };
+  }
   for (const version of byTrpcPath) {
     if (
       pathname !== version.trpcPath &&
@@ -576,19 +632,22 @@ interface PageContext {
   readonly file: string;
   readonly images: Set<string>;
   /** The page the result renders on, which its links are relative to. */
-  readonly page: CopiedPage;
+  readonly page: LinkingPage;
   readonly problems: Array<string>;
 }
 
 /**
  * A link to a page of the same version is a relative `.md` link in
- * Markdown, which the build checks; one to another version is that page's
- * path on this site.
+ * Markdown, which the build checks; one to another version, or from a
+ * post, is that page's path on this site.
  */
 function rewriteUrl(url: string, context: PageContext, html: boolean) {
   const target = resolveLink(url, context);
   if (!target) {
     return url;
+  }
+  if (target.kind === 'post') {
+    return `/blog/${target.slug}${target.hash ? `#${target.hash}` : ''}`;
   }
   if (target.kind === 'image') {
     context.images.add(target.file);
@@ -603,19 +662,19 @@ function rewriteUrl(url: string, context: PageContext, html: boolean) {
     return target.url;
   }
   const hash = target.hash ? `#${target.hash}` : '';
-  if (html || target.version !== context.page.version) {
+  if (html || context.page.blog || target.version !== context.page.version) {
     return `${versionOf(target.version).basePath}/${target.slug}${hash}`;
   }
   return `${relativeLink(context.page.slug, target.slug)}${hash}`;
 }
 
-/** Resolves an import's specifier to a path under `www/`, or a `@theme/` name. */
+/** Resolves an import's specifier to a path under `www/`, or a `@theme/` or package name. */
 function resolveImport(specifier: string, from: string) {
-  if (specifier.startsWith('@theme/')) {
-    return specifier;
-  }
   if (specifier.startsWith('@site/')) {
     return specifier.slice('@site/'.length);
+  }
+  if (!specifier.startsWith('.') && !specifier.startsWith('/')) {
+    return specifier;
   }
   return new URL(specifier, `file:///${from}`).pathname.slice(1);
 }
@@ -759,29 +818,51 @@ export function searchParamsUrl(expression: string) {
   return `${call[1]}${params.join('&')}`;
 }
 
+/** Posts on X the blog embeds that X no longer serves, by id, and who wrote them. */
+export const deletedTweets: ReadonlyMap<string, string> = new Map([
+  ['1756120297529368801', 'Dan Abramov'],
+]);
+
+/** A `<Tweet>` (react-tweet), in the `<div>` that centers it or not, as a link to it or a note that it's gone. */
+function tweetOf(id: string, context: Converting) {
+  if (context.imports.get('Tweet') !== 'react-tweet') {
+    context.problems.push(`${context.file}: <Tweet> isn't react-tweet's`);
+  }
+  const author = deletedTweets.get(id);
+  return author === undefined
+    ? `\n[View the post on X](https://x.com/i/status/${id})\n`
+    : `\n> [!NOTE] Post deleted\n> ${author}'s post on X that was embedded here has since been deleted.\n`;
+}
+
 /**
  * The StackBlitz embed of v10's quickstart: an `<Iframe>` filling a
- * `<div>` 800px high, as one iframe.
+ * `<div>` 800px high, as one iframe. A `<Tweet>` is a link to the post.
  */
 function convertEmbeds(lines: ReadonlyArray<string>, context: Converting) {
   return editProse(lines, (prose) =>
-    prose.replaceAll(
-      /<div\s+className=\{clsx\(\s*(['"])([^'"]*)\1,?\s*\)\}\s*>\s*<Iframe\s+src=\{([\s\S]*?)\}\s*(?:[\w-]+="[^"]*"\s*)*\/>\s*<\/div>/g,
-      (embed, _quote, classes: string, src: string) => {
-        const url = searchParamsUrl(src);
-        if (
-          context.imports.get('Iframe') !== 'src/components/Iframe' ||
-          !classes.includes('h-[800px]') ||
-          url === undefined
-        ) {
-          context.problems.push(
-            `${context.file}: no conversion for \`${embed.split('\n')[0]}\``,
-          );
-          return embed;
-        }
-        return `<iframe src="${url}" title="StackBlitz" style="width: 100%; height: 800px; border: 0; border-radius: 0.75rem" loading="lazy"></iframe>`;
-      },
-    ),
+    prose
+      .replaceAll(
+        /<div\b[^>]*>\s*<Tweet\s+id="(\d+)"\s*\/>\s*<\/div>|<Tweet\s+id="(\d+)"\s*\/>/g,
+        (_tweet, wrapped: string | undefined, bare: string | undefined) =>
+          tweetOf(wrapped ?? bare ?? '', context),
+      )
+      .replaceAll(
+        /<div\s+className=\{clsx\(\s*(['"])([^'"]*)\1,?\s*\)\}\s*>\s*<Iframe\s+src=\{([\s\S]*?)\}\s*(?:[\w-]+="[^"]*"\s*)*\/>\s*<\/div>/g,
+        (embed, _quote, classes: string, src: string) => {
+          const url = searchParamsUrl(src);
+          if (
+            context.imports.get('Iframe') !== 'src/components/Iframe' ||
+            !classes.includes('h-[800px]') ||
+            url === undefined
+          ) {
+            context.problems.push(
+              `${context.file}: no conversion for \`${embed.split('\n')[0]}\``,
+            );
+            return embed;
+          }
+          return `<iframe src="${url}" title="StackBlitz" style="width: 100%; height: 800px; border: 0; border-radius: 0.75rem" loading="lazy"></iframe>`;
+        },
+      ),
   );
 }
 
@@ -1141,23 +1222,46 @@ function yamlString(value: string) {
   return JSON.stringify(value);
 }
 
-/** A copied page as a page of this site: its frontmatter and Markdown. */
-export function convertPage(page: CopiedPage, docs: CopiedDocs): ConvertedPage {
+/**
+ * Converts the file the page or post at `page` renders, and lays out the
+ * result under the frontmatter `frontmatterOf` writes from its lines.
+ */
+function convertFile(
+  file: string,
+  page: LinkingPage,
+  docs: CopiedDocs,
+  frontmatterOf: (
+    lines: ReadonlyArray<string>,
+    problems: Array<string>,
+  ) => ReadonlyArray<string>,
+): ConvertedPage {
   const images = new Set<string>();
   const problems: Array<string> = [];
-  const source = docs.files.get(page.file);
+  const source = docs.files.get(file);
   if (source === undefined) {
-    return { images: [], markdown: '', problems: [`${page.file} isn't there`] };
+    return { images: [], markdown: '', problems: [`${file} isn't there`] };
   }
-  const body = convertBody(source, {
-    docs,
-    file: page.file,
-    images,
-    page,
+  const body = convertBody(source, { docs, file, images, page, problems });
+  const lines = squeezeBlankLines(body.split('\n'));
+  while (lines[0]?.trim() === '') {
+    lines.shift();
+  }
+  for (const line of lines) {
+    if (/^[ \t>]*(?:`{3,}|~{3,})[^\n]*\btwoslash\b/.test(line)) {
+      problems.push(`${file}: a Twoslash block is left in \`${line}\``);
+    }
+  }
+  const frontmatter = ['---', ...frontmatterOf(lines, problems), '---'];
+  return {
+    images: [...images].toSorted(),
+    markdown: `${[...frontmatter, '', ...lines].join('\n').trimEnd()}\n`,
     problems,
-  });
-  const frontmatter = [
-    '---',
+  };
+}
+
+/** A copied page as a page of this site: its frontmatter and Markdown. */
+export function convertPage(page: CopiedPage, docs: CopiedDocs): ConvertedPage {
+  return convertFile(page.file, page, docs, () => [
     `title: ${yamlString(page.title)}`,
     ...(page.label === undefined || page.label === page.title
       ? []
@@ -1168,22 +1272,53 @@ export function convertPage(page: CopiedPage, docs: CopiedDocs): ConvertedPage {
       ? []
       : [`parent: ${yamlString(page.parent)}`]),
     `order: ${page.order}`,
-    '---',
-  ];
-  const lines = squeezeBlankLines(body.split('\n'));
-  while (lines[0]?.trim() === '') {
-    lines.shift();
-  }
-  for (const line of lines) {
-    if (/^[ \t>]*(?:`{3,}|~{3,})[^\n]*\btwoslash\b/.test(line)) {
-      problems.push(`${page.file}: a Twoslash block is left in \`${line}\``);
-    }
-  }
-  return {
-    images: [...images].toSorted(),
-    markdown: `${[...frontmatter, '', ...lines].join('\n').trimEnd()}\n`,
-    problems,
-  };
+  ]);
+}
+
+/** Markdown as the text it reads as: without links' targets, emphasis or HTML. */
+export function plainProse(markdown: string) {
+  return markdown
+    .replaceAll(/!\[[^\]]*\]\([^)]*\)/g, '')
+    .replaceAll(/\[([^\]]*)\]\([^)]*\)/g, '$1')
+    .replaceAll(/<[^>]+>/g, '')
+    .replaceAll(/(?<!\w)(\*\*|__|\*|_|`)(\S(?:[^\n]*?\S)?)\1(?!\w)/g, '$2')
+    .replaceAll(/\s+/g, ' ')
+    .trim();
+}
+
+/**
+ * A copied post as a post of this site. Its description is its first
+ * paragraph, which trpc.io's blog shows of it above its `truncate`.
+ */
+export function convertPost(post: CopiedPost, docs: CopiedDocs): ConvertedPage {
+  return convertFile(
+    post.file,
+    { blog: true, slug: post.slug, version: v11.id },
+    docs,
+    (lines, problems) => {
+      const end = lines.findIndex((line) => line.trim() === '');
+      const paragraph = lines.slice(0, end === -1 ? undefined : end);
+      if (/^\s*(?:[#>|<]|`{3}|~{3}|[-*+] |\d+\. )/.test(paragraph[0] ?? '#')) {
+        problems.push(`${post.file}: doesn't open with a paragraph`);
+      }
+      return [
+        `title: ${yamlString(post.title)}`,
+        `description: ${yamlString(plainProse(paragraph.join('\n')))}`,
+        `date: ${yamlString(post.date)}`,
+        `authors: ${JSON.stringify(
+          post.authors.map((author) => ({
+            image: author.image,
+            name: author.name,
+            title: author.title,
+            url: author.url,
+          })),
+        )}`,
+        ...(post.discussion === undefined
+          ? []
+          : [`discussion: ${post.discussion}`]),
+      ];
+    },
+  );
 }
 
 /**

@@ -7,7 +7,7 @@ parent: "client/tanstack-react-query"
 order: 49
 ---
 
-Compared to our [classic React Query Integration](../react.md) this client is simpler and more TanStack Query-native, providing factories for common TanStack React Query interfaces like QueryKeys, QueryOptions, and MutationOptions. We think it's the future and recommend using this over the classic client, <a href="https://trpc.io/blog/introducing-tanstack-react-query-client">read the announcement post</a> for more information about this change.
+Compared to our [classic React Query Integration](../react.md) this client is simpler and more TanStack Query-native, providing factories for common TanStack React Query interfaces like QueryKeys, QueryOptions, and MutationOptions. We think it's the future and recommend using this over the classic client, <a href="/blog/introducing-tanstack-react-query-client">read the announcement post</a> for more information about this change.
 
 > [!TIP]
 > You can try this integration out on the homepage of tRPC.io: [https://trpc.io/?try=minimal-react#try-it-out](https://trpc.io/?try=minimal-react#try-it-out)

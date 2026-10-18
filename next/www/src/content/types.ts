@@ -32,6 +32,35 @@ export interface Sample {
   readonly html: string;
 }
 
+export interface PostAuthor {
+  /** Their avatar's URL. */
+  readonly image?: string | undefined;
+  readonly name: string;
+  readonly title?: string | undefined;
+  readonly url?: string | undefined;
+}
+
+/** What the blog's index and each post need to know about every post. */
+export interface PostMeta {
+  readonly authors: ReadonlyArray<PostAuthor>;
+  /** When it was published: `2025-03-21`. */
+  readonly date: string;
+  /** Its first paragraph, as text. */
+  readonly description: string;
+  /** The GitHub discussion that holds its comments. */
+  readonly discussion?: number | undefined;
+  readonly readingMinutes: number;
+  /** Its path under `/blog`: `announcing-trpc-v11`. */
+  readonly slug: string;
+  readonly title: string;
+}
+
+export interface Post extends PostMeta {
+  readonly headings: ReadonlyArray<DocHeading>;
+  /** The post, highlighted and compiled at build time. */
+  readonly html: string;
+}
+
 export interface DocSection {
   readonly docs: ReadonlyArray<DocMeta>;
   readonly title: string;

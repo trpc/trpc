@@ -26,6 +26,13 @@ declare module 'virtual:v9-docs-manifest' {
   export const sections: ReadonlyArray<DocSection>;
 }
 
+declare module 'virtual:blog-manifest' {
+  import type { PostMeta } from '~/content/types.ts';
+
+  /** Every post of the blog's copy (`blog/`), newest first, from `build/blog-content.ts`. */
+  export const posts: ReadonlyArray<PostMeta>;
+}
+
 declare module 'sample:*' {
   import type { Sample } from '~/content/types.ts';
 

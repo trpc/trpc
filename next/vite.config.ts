@@ -30,6 +30,7 @@ export default defineConfig({
       'www/v11/**',
       'www/v10/**',
       'www/v9/**',
+      'www/blog/**',
     ],
   },
   lint: {

@@ -3,10 +3,13 @@ import { describe, expect, it } from '@effect/vitest';
 import {
   type CopiedDocs,
   type CopiedPage,
+  type CopiedPost,
   convertPage,
+  convertPost,
   dropMissingAnchors,
   externalUrl,
   jsxToHtml,
+  plainProse,
   redirected,
   type Release,
   relativeLink,
@@ -53,7 +56,29 @@ const pages = [
   }),
 ];
 
+const posts: ReadonlyArray<CopiedPost> = [
+  {
+    authors: [
+      {
+        image: 'https://github.com/KATT.png',
+        name: 'Alex / KATT',
+        title: 'Creator of tRPC',
+        url: undefined,
+      },
+    ],
+    date: '2025-03-21',
+    discussion: 6622,
+    file: 'blog/2025-03-21-announcing-trpc-11.mdx',
+    slug: 'announcing-trpc-v11',
+    title: 'Announcing tRPC v11',
+  },
+];
+
 const redirects = [
+  {
+    destination: '/blog/announcing-trpc-v11',
+    source: '/blog/announcing-trpc-11',
+  },
   { destination: '/docs/community/awesome-trpc', source: '/docs/awesome-trpc' },
   { destination: '/docs/:path*', source: '/docs/v11/:path*' },
   { destination: 'https://discord.gg/trpc', source: '/discord' },
@@ -62,6 +87,7 @@ const redirects = [
 const docsOf = (files: Record<string, string>): CopiedDocs => ({
   files: new Map(Object.entries(files)),
   pages,
+  posts,
   redirects,
   releases: new Map([
     [
@@ -327,7 +353,7 @@ describe('convertPage', () => {
         '[intro](../introduction.md), [v9](/v9/docs/nextjs#hooks),',
         '[v10](/v10/docs/server/routers), [awesome](../community/awesome-trpc.md#list),',
         '[old](https://trpc.io/docs/further/old), [chat](https://trpc.io/discord),',
-        '[blog](https://trpc.io/blog/announcing-trpc-v11) and [npm](https://npmjs.com).',
+        '[blog](/blog/announcing-trpc-v11) and [npm](https://npmjs.com).',
         '<a href="/v11/docs/client/links">Links</a>',
         '![Diagram](/v11/img/links-diagram.svg)',
         '<img src="/v11/img/split-link-diagram.svg" />',
@@ -488,6 +514,117 @@ describe('convertPage', () => {
   });
 });
 
+describe('convertPost', () => {
+  const post = posts[0] ?? ({} as never);
+  const convert = (body: string) =>
+    convertPost(post, docsOf({ [post.file]: body }));
+
+  it('writes the frontmatter, with its first paragraph as its description', () => {
+    expect(
+      convert(
+        [
+          '---',
+          'slug: announcing-trpc-v11',
+          'title: Announcing tRPC v11',
+          '---',
+          '',
+          'Today, we are _finally_ shipping [v11](/docs)',
+          'with `@trpc/server`!',
+          '',
+          '{/* truncate */}',
+          '',
+          '## Upgrading',
+        ].join('\n'),
+      ),
+    ).toEqual({
+      images: [],
+      markdown: [
+        '---',
+        'title: "Announcing tRPC v11"',
+        'description: "Today, we are finally shipping v11 with @trpc/server!"',
+        'date: "2025-03-21"',
+        'authors: [{"image":"https://github.com/KATT.png","name":"Alex / KATT","title":"Creator of tRPC"}]',
+        'discussion: 6622',
+        '---',
+        '',
+        'Today, we are _finally_ shipping [v11](/v11/docs/introduction)',
+        'with `@trpc/server`!',
+        '',
+        '## Upgrading',
+        '',
+      ].join('\n'),
+      problems: [],
+    });
+  });
+
+  it("links pages by their paths, in the version trpc.io's blog means", () => {
+    const converted = convert(
+      [
+        'See [routers](/docs/server/routers), [v10](/docs/v10/server/routers),',
+        '[the post](./2025-03-21-announcing-trpc-11.mdx#upgrading),',
+        'and [the old one](/blog/announcing-trpc-11).',
+      ].join('\n'),
+    );
+    expect(converted.problems).toEqual([]);
+    expect(converted.markdown.replace(/^---\n[\s\S]*?\n---\n\n/, '')).toBe(
+      [
+        'See [routers](/v11/docs/server/routers), [v10](/v10/docs/server/routers),',
+        '[the post](/blog/announcing-trpc-v11#upgrading),',
+        'and [the old one](/blog/announcing-trpc-v11).',
+        '',
+      ].join('\n'),
+    );
+  });
+
+  it('links an embedded post on X, or says that it was deleted', () => {
+    const converted = convert(
+      [
+        "import { Tweet } from 'react-tweet';",
+        '',
+        'Shipped:',
+        '',
+        '<Tweet id="123" />',
+        '',
+        'As Dan put it:',
+        '',
+        '<div className="flex justify-center">',
+        '  <Tweet id="1756120297529368801" />',
+        '</div>',
+      ].join('\n'),
+    );
+    expect(converted.problems).toEqual([]);
+    expect(converted.markdown.replace(/^---\n[\s\S]*?\n---\n\n/, '')).toBe(
+      [
+        'Shipped:',
+        '',
+        '[View the post on X](https://x.com/i/status/123)',
+        '',
+        'As Dan put it:',
+        '',
+        '> [!NOTE] Post deleted',
+        "> Dan Abramov's post on X that was embedded here has since been deleted.",
+        '',
+      ].join('\n'),
+    );
+  });
+
+  it("reports a post that doesn't open with a paragraph", () => {
+    expect(convert('## Hello').problems).toEqual([
+      "blog/2025-03-21-announcing-trpc-11.mdx: doesn't open with a paragraph",
+    ]);
+  });
+});
+
+describe('plainProse', () => {
+  it('keeps the text of links, emphasis and code, and drops images and HTML', () => {
+    expect(
+      plainProse(
+        '**Bold** and _em_ [link](https://a.b) `code` snake_case_name ![x](y.png) <small>small</small>',
+      ),
+    ).toBe('Bold and em link code snake_case_name small');
+  });
+});
+
 describe('resolveLink', () => {
   const context = {
     docs: docsOf({}),
@@ -532,6 +669,32 @@ describe('resolveLink', () => {
     expect(resolveLink('/discord', context)).toEqual({
       kind: 'url',
       url: 'https://trpc.io/discord',
+    });
+  });
+
+  it("resolves a post's file and its URL, after redirects, and a post's own links from the blog", () => {
+    expect(
+      resolveLink(
+        '../../blog/2025-03-21-announcing-trpc-11.mdx#intro',
+        context,
+      ),
+    ).toEqual({ hash: 'intro', kind: 'post', slug: 'announcing-trpc-v11' });
+    expect(resolveLink('/blog/announcing-trpc-11', context)).toEqual({
+      hash: '',
+      kind: 'post',
+      slug: 'announcing-trpc-v11',
+    });
+    const fromPost = {
+      docs: context.docs,
+      file: 'blog/2025-03-21-announcing-trpc-11.mdx',
+      page: { blog: true, slug: 'announcing-trpc-v11', version: 'v11' },
+    } as const;
+    expect(
+      resolveLink('./2025-03-21-announcing-trpc-11.mdx', fromPost),
+    ).toEqual({ hash: '', kind: 'post', slug: 'announcing-trpc-v11' });
+    expect(resolveLink('other-post', fromPost)).toEqual({
+      kind: 'url',
+      url: 'https://trpc.io/blog/other-post',
     });
   });
 

@@ -96,7 +96,7 @@ With this, we also consider changes on `export`ed TypeScript `type`s as major ch
 When tRPC started and had very few users and we often iterated on the API design whilst being strict with semver.
 
 - The first 9 versions of tRPC were released in the first 8 months of the project.
-- [Version 10](https://trpc.io/blog/announcing-trpc-10) which we released 14 months after v9 should be seen as the real "version 2" of tRPC where we did any fundamental changes to the API decisions. _<small>(2 is 10 in binary, amirite?)</small>_
+- [Version 10](/blog/announcing-trpc-10) which we released 14 months after v9 should be seen as the real "version 2" of tRPC where we did any fundamental changes to the API decisions. _<small>(2 is 10 in binary, amirite?)</small>_
 
 We expect the API to be stable now and are planning to release codemods for any breaking changes in the future, just like we did with the v9->v10 upgrade.
 

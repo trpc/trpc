@@ -32,7 +32,7 @@ See [react-query-v5](#react-query-v5) for more information.
 
 We are excited to announce the new TanStack React Query integration for tRPC is now available in tRPC v11!
 
-<a href="https://trpc.io/blog/introducing-tanstack-react-query-client">Read the blog post</a> for
+<a href="/blog/introducing-tanstack-react-query-client">Read the blog post</a> for
 more information.
 
 ### Stopping subscriptions from the server (rarely breaking)
