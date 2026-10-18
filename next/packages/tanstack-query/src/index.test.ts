@@ -674,7 +674,9 @@ test('observers with the same key share one subscription', async () => {
   expect(db.listeners.size).toBe(0);
 
   const own = new SubscriptionObserver({
-    ...app.trpc.post.onAdd.subscriptionOptions(),
+    ...app.trpc.post.onAdd.subscriptionOptions({
+      context: { dedupe: false },
+    }),
     subscriptionCache: undefined,
   });
   const stopOwn = own.subscribe(() => {});

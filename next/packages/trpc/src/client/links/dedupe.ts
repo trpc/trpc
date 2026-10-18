@@ -7,6 +7,7 @@ import {
   toClientError,
   type EffectLinkOpts,
   type Operation,
+  type OperationStream,
   type ResponseMeta,
   type TrpcLink,
 } from '../link.ts';
@@ -20,7 +21,8 @@ import { deepEqual } from './equal.ts';
 export interface DedupeLinkOptions {
   /**
    * Groups calls by this string instead of comparing their inputs: calls
-   * with the same key and equal call options share a request.
+   * with the same key and equal call options (and, for subscriptions, the
+   * same `lastEventId`) share a request.
    * @default the path, then the inputs compared deeply
    */
   key?: (op: Operation) => string;
@@ -32,7 +34,7 @@ export interface DedupeLinkOptions {
  * @stability stable
  */
 export interface DedupeContext {
-  /** `false` sends this query on its own. */
+  /** `false` sends this query or subscription on its own. */
   dedupe?: boolean;
 }
 
@@ -193,7 +195,7 @@ const pump = (tee: Tee): Effect.Effect<void, unknown> =>
 function leave(tee: Tee, queue: Queue.Queue<unknown, unknown>): void {
   if (!tee.readers.delete(queue) || tee.readers.size > 0) return;
   tee.started = true;
-  Effect.runFork(Fiber.interrupt(tee.fiber!));
+  if (tee.fiber) Effect.runFork(Fiber.interrupt(tee.fiber));
 }
 
 /** What a caller reads one of its streams through. */
@@ -202,11 +204,13 @@ interface Reader {
   return(value?: unknown): Promise<IteratorResult<unknown, unknown>>;
 }
 
-/** A reader of a stream nothing has been read from yet: it gets every item. */
+/**
+ * A reader of a stream nothing has been read from yet: it gets every item.
+ * The source is read from the first reader's first `next()`.
+ */
 function join(tee: Tee, signal: AbortSignal | undefined): Reader {
   const queue = Effect.runSync(Queue.unbounded<unknown, unknown>());
   tee.readers.add(queue);
-  tee.fiber ??= Effect.runFork(pump(tee));
   if (signal?.aborted) leave(tee, queue);
   else
     signal?.addEventListener('abort', () => leave(tee, queue), { once: true });
@@ -218,6 +222,7 @@ function join(tee: Tee, signal: AbortSignal | undefined): Reader {
   )[Symbol.asyncIterator]() as Required<AsyncIterator<unknown>>;
   return {
     next: async () => {
+      if (tee.readers.has(queue)) tee.fiber ??= Effect.runFork(pump(tee));
       const next = await items.next();
       return next.done ? { done: true, value: tee.returned } : next;
     },
@@ -258,10 +263,8 @@ function alone(caller: Caller, path: Path): Reader {
   };
 }
 
-/** The caller's own stream in place of `tee`'s source, of the same kind. */
-function wrap(tee: Tee, path: Path, caller: Caller): Deferred {
-  const read = () =>
-    tee.started ? alone(caller, path) : join(tee, caller.args.op.signal);
+/** A stream of the same kind as `tee`'s source, read through `read`. */
+function wrap(tee: Tee, read: () => Reader): Deferred {
   if (!(tee.source instanceof ReadableStream)) {
     return { [Symbol.asyncIterator]: read };
   }
@@ -293,23 +296,26 @@ function report(caller: Caller, meta: ResponseMeta): void {
   }
 }
 
+/** A tee for each stream in `value`; `null` when it has none. */
+function teesIn(value: unknown): Map<object, Tee> | null {
+  const found = new Set<Deferred>();
+  collect(value, found, new Set());
+  const tees = new Map<object, Tee>();
+  for (const source of found) {
+    tees.set(source, {
+      source,
+      readers: new Set(),
+      started: false,
+      returned: undefined,
+      fiber: undefined,
+    });
+  }
+  return tees.size > 0 ? tees : null;
+}
+
 /** The result as `caller` gets it: the shared value, with its own copy of each stream. */
 function resultFor(entry: InFlight, value: unknown, caller: Caller): unknown {
-  if (entry.tees === undefined) {
-    const found = new Set<Deferred>();
-    collect(value, found, new Set());
-    const tees = new Map<object, Tee>();
-    for (const source of found) {
-      tees.set(source, {
-        source,
-        readers: new Set(),
-        started: false,
-        returned: undefined,
-        fiber: undefined,
-      });
-    }
-    entry.tees = tees.size > 0 ? tees : null;
-  }
+  if (entry.tees === undefined) entry.tees = teesIn(value);
   if (entry.tees === null) return value;
   const signal = caller.args.op.signal;
   entry.holding++;
@@ -324,7 +330,48 @@ function resultFor(entry: InFlight, value: unknown, caller: Caller): unknown {
     value,
     [],
     entry.tees,
-    (tee, path) => wrap(tee, path, caller),
+    (tee, path) =>
+      wrap(tee, () => (tee.started ? alone(caller, path) : join(tee, signal))),
+    new Map(),
+  );
+}
+
+/** One subscription sharing an upstream. */
+interface Subscriber {
+  readonly args: EffectLinkOpts;
+  readonly queue: Queue.Queue<unknown, AnyTrpcError | Cause.Done>;
+}
+
+/** One shared subscription, matchable until its first event. */
+interface Shared {
+  readonly input: unknown;
+  readonly options: Record<string, unknown>;
+  readonly lastEventId: string | undefined;
+  readonly subscribers: Set<Subscriber>;
+  readonly responses: ResponseMeta[];
+  readonly controller: AbortController;
+  fiber: Fiber.Fiber<unknown, unknown> | undefined;
+}
+
+/**
+ * `event` as `subscriber` gets it. Each of its streams is copied to every
+ * subscriber now, so each gets every item whenever it starts reading.
+ */
+function eventFor(
+  event: unknown,
+  tees: Map<object, Tee> | null,
+  subscriber: Subscriber,
+): unknown {
+  if (tees === null) return event;
+  const signal = subscriber.args.op.signal;
+  return rebuild(
+    event,
+    [],
+    tees,
+    (tee) => {
+      const reader = join(tee, signal);
+      return wrap(tee, () => reader);
+    },
     new Map(),
   );
 }
@@ -338,6 +385,12 @@ function resultFor(entry: InFlight, value: unknown, caller: Caller): unknown {
  * that starts later sends its query again for its own. The request is
  * aborted only when every caller has aborted. Don't change an input while
  * its call is in flight.
+ *
+ * Subscriptions with the same path, input, call options and `lastEventId`
+ * share one until it sends its first event: each subscriber gets every
+ * event, and the subscription stops once every subscriber has. A later one
+ * subscribes on its own, since it would miss events. Mutations always
+ * pass through.
  *
  * @example
  * ```ts
@@ -399,12 +452,142 @@ export function dedupeLink(
     return entry;
   };
 
+  const subscriptions = new Map<string, Shared[]>();
+  const forget = (key: string, shared: Shared) => {
+    const rest = (subscriptions.get(key) ?? []).filter(
+      (other) => other !== shared,
+    );
+    if (rest.length > 0) subscriptions.set(key, rest);
+    else subscriptions.delete(key);
+  };
+  const unsubscribe = (key: string, shared: Shared, subscriber: Subscriber) => {
+    if (!shared.subscribers.delete(subscriber) || shared.subscribers.size > 0)
+      return;
+    forget(key, shared);
+    shared.controller.abort();
+    Effect.runFork(Fiber.interrupt(shared.fiber!));
+  };
+  const tell = (
+    key: string,
+    shared: Shared,
+    subscriber: Subscriber,
+    meta: ResponseMeta,
+  ) => {
+    try {
+      subscriber.args.op.context.onResponse?.(meta);
+    } catch (cause) {
+      Queue.failCauseUnsafe(subscriber.queue, Cause.fail(toClientError(cause)));
+      unsubscribe(key, shared, subscriber);
+    }
+  };
+
+  const open = (
+    key: string,
+    args: EffectLinkOpts,
+    options: Record<string, unknown>,
+  ): Shared => {
+    const shared: Shared = {
+      input: args.op.input,
+      options,
+      lastEventId: args.op.lastEventId,
+      subscribers: new Set(),
+      responses: [],
+      controller: new AbortController(),
+      fiber: undefined,
+    };
+    subscriptions.set(key, [...(subscriptions.get(key) ?? []), shared]);
+    return shared;
+  };
+
+  const run = (key: string, args: EffectLinkOpts, shared: Shared) =>
+    Stream.runForEach(
+      args.next({
+        ...args.op,
+        context: {
+          ...args.op.context,
+          onResponse: (meta) => {
+            shared.responses.push(meta);
+            for (const subscriber of shared.subscribers) {
+              tell(key, shared, subscriber, meta);
+            }
+          },
+        },
+        signal: shared.controller.signal,
+      }),
+      (event) =>
+        Effect.sync(() => {
+          forget(key, shared);
+          const tees = teesIn(event);
+          for (const subscriber of shared.subscribers) {
+            Queue.offerUnsafe(
+              subscriber.queue,
+              eventFor(event, tees, subscriber),
+            );
+          }
+        }),
+    ).pipe(
+      Effect.onExit((exit) =>
+        Effect.sync(() => {
+          forget(key, shared);
+          for (const { queue } of shared.subscribers) {
+            if (Exit.isSuccess(exit)) Queue.endUnsafe(queue);
+            else Queue.failCauseUnsafe(queue, exit.cause);
+          }
+        }),
+      ),
+      Effect.ignore,
+    );
+
+  const subscribe = (
+    key: string,
+    args: EffectLinkOpts,
+    options: Record<string, unknown>,
+  ): OperationStream =>
+    Stream.unwrap(
+      Effect.sync(() => {
+        const op = args.op;
+        const shared =
+          subscriptions
+            .get(key)
+            ?.find(
+              (other) =>
+                other.lastEventId === op.lastEventId &&
+                (opts.key !== undefined || deepEqual(other.input, op.input)) &&
+                deepEqual(other.options, options),
+            ) ?? open(key, args, options);
+        const subscriber: Subscriber = {
+          args,
+          queue: Effect.runSync(
+            Queue.unbounded<unknown, AnyTrpcError | Cause.Done>(),
+          ),
+        };
+        shared.subscribers.add(subscriber);
+        for (const meta of shared.responses) {
+          tell(key, shared, subscriber, meta);
+        }
+        if (!shared.fiber) {
+          // Set before it runs: a link can respond while it starts.
+          Effect.runFork(run(key, args, shared), {
+            onFiberStart: (fiber) => {
+              shared.fiber = fiber;
+            },
+          });
+        }
+        return Stream.fromQueue(subscriber.queue).pipe(
+          Stream.ensuring(
+            Effect.sync(() => unsubscribe(key, shared, subscriber)),
+          ),
+        );
+      }),
+    );
+
   return link<{ context: DedupeContext }>((args) => {
     const op = args.op;
-    if (op.type !== 'query' || op.context.dedupe === false)
+    if (op.type === 'mutation' || op.context.dedupe === false)
       return args.next(op);
     const key = opts.key ? opts.key(op) : op.path;
     const options = callOptions(op.context);
+    if (op.type === 'subscription') return subscribe(key, args, options);
     return Stream.fromEffect(
       Effect.callback<unknown, AnyTrpcError>((resume) => {
         const entry =

@@ -7,14 +7,14 @@ import {
   routerType,
 } from '@trpc12/trpc/client';
 import { createSerializer } from '@trpc12/trpc/serializer';
-import { error, initTrpc } from '@trpc12/trpc/server';
+import { error, initTrpc, tracked } from '@trpc12/trpc/server';
 import { createTestServer } from '../../fixtures/server.ts';
 import { expect, test, vi } from 'vite-plus/test';
 import { z } from 'zod';
 
 const t = initTrpc();
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-const state = { finished: 0 };
+const state = { finished: 0, stopped: 0 };
 const calls = new Map<string, number>();
 
 class Money {
@@ -113,6 +113,34 @@ const router = {
   size: t.procedure
     .input(z.object({ file: z.instanceof(File) }))
     .query(async (opts) => (await opts.input.file.text()).length),
+  events: t.procedure
+    .input(z.object({ room: z.string() }))
+    .subscription(async function* (opts) {
+      const start = opts.lastEventId ? Number(opts.lastEventId) + 1 : 1;
+      for (let id = start; id <= 3; id++) {
+        await sleep(10);
+        yield tracked(String(id), `${opts.input.room} ${id}`);
+      }
+    }),
+  forever: t.procedure.subscription(async function* () {
+    try {
+      for (let n = 0; ; n++) {
+        await sleep(5);
+        yield n;
+      }
+    } finally {
+      state.stopped++;
+    }
+  }),
+  refused: t.procedure.subscription(async function* () {
+    await sleep(10);
+    yield* [];
+    throw error({ code: 'CONFLICT', message: 'refused' });
+  }),
+  feeds: t.procedure.subscription(async function* () {
+    await sleep(10);
+    yield { feed: letters() };
+  }),
 };
 type AppRouter = typeof router;
 
@@ -459,4 +487,176 @@ test('a cyclic result with a stream is copied without looping', async () => {
   expect(b.node).toBe(a.node);
   expect((await read(a.feed)).items).toEqual(['a', 'b', 'c']);
   expect((await read(b.feed)).items).toEqual(['a', 'b', 'c']);
+});
+
+const sent = (requests: ReadonlyArray<{ url: string }>, path: string) =>
+  requests.filter((r) => new URL(r.url).pathname.endsWith(`/${path}`)).length;
+
+async function collectAll<T>(iterable: AsyncIterable<T>) {
+  const items: T[] = [];
+  for await (const item of iterable) items.push(item);
+  return items;
+}
+
+test('identical subscriptions share one until its first event, and each gets every event', async () => {
+  await using ctx = await setup();
+  const [a, b, other, resumed] = await Promise.all([
+    collectAll(ctx.client.events.subscribe({ room: 'x' })),
+    collectAll(ctx.client.events.subscribe({ room: 'x' })),
+    collectAll(ctx.client.events.subscribe({ room: 'y' })),
+    collectAll(
+      ctx.client.events.subscribe({ room: 'x' }, { lastEventId: '1' }),
+    ),
+  ]);
+  expect(a.map((e) => e.data)).toEqual(['x 1', 'x 2', 'x 3']);
+  expect(b).toEqual(a);
+  expect(other.map((e) => e.data)).toEqual(['y 1', 'y 2', 'y 3']);
+  expect(resumed.map((e) => e.data)).toEqual(['x 2', 'x 3']);
+  expect(sent(ctx.server.requests, 'events')).toBe(3);
+});
+
+test('a subscription made after the first event subscribes on its own', async () => {
+  await using ctx = await setup();
+  const first = ctx.client.events
+    .subscribe({ room: 'x' })
+    [Symbol.asyncIterator]();
+  expect((await first.next()).value).toMatchObject({ data: 'x 1' });
+  const later = collectAll(ctx.client.events.subscribe({ room: 'x' }));
+  const rest = collectAll({ [Symbol.asyncIterator]: () => first });
+  expect((await later).map((e) => e.data)).toEqual(['x 1', 'x 2', 'x 3']);
+  expect((await rest).map((e) => e.data)).toEqual(['x 2', 'x 3']);
+  expect(sent(ctx.server.requests, 'events')).toBe(2);
+});
+
+test('a subscriber that stops leaves the others; once every one has, the subscription stops', async () => {
+  await using ctx = await setup();
+  const before = state.stopped;
+  const controller = new AbortController();
+  const a = ctx.client.forever.subscribe(undefined, {
+    signal: controller.signal,
+  });
+  const b = ctx.client.forever.subscribe()[Symbol.asyncIterator]();
+  const c = ctx.client.forever.subscribe()[Symbol.asyncIterator]();
+  const seenA: number[] = [];
+  const readA = (async () => {
+    for await (const n of a) seenA.push(n);
+  })();
+  expect(await Promise.all([b.next(), c.next()])).toEqual([
+    { done: false, value: 0 },
+    { done: false, value: 0 },
+  ]);
+  await c.return?.();
+  controller.abort();
+  await readA;
+  expect(await b.next()).toEqual({ done: false, value: 1 });
+  expect(state.stopped).toBe(before);
+  await b.return?.();
+  await vi.waitFor(() => expect(state.stopped).toBe(before + 1));
+  expect(sent(ctx.server.requests, 'forever')).toBe(1);
+});
+
+test('a failing subscription fails every subscriber', async () => {
+  await using ctx = await setup();
+  const results = await Promise.allSettled([
+    collectAll(ctx.client.refused.subscribe()),
+    collectAll(ctx.client.refused.subscribe()),
+  ]);
+  expect(results).toMatchObject([
+    { status: 'rejected', reason: { code: 'CONFLICT' } },
+    { status: 'rejected', reason: { code: 'CONFLICT' } },
+  ]);
+  expect(sent(ctx.server.requests, 'refused')).toBe(1);
+});
+
+test('a stream in a shared event is copied to each subscriber', async () => {
+  await using ctx = await setup();
+  const controller = new AbortController();
+  const [[a], [b]] = await Promise.all([
+    collectAll(ctx.client.feeds.subscribe()),
+    collectAll(ctx.client.feeds.subscribe()),
+    collectAll(
+      ctx.client.feeds.subscribe(undefined, { signal: controller.signal }),
+    ),
+  ]);
+  controller.abort();
+  expect((await read(a!.feed)).items).toEqual(['a', 'b', 'c']);
+  expect((await read(b!.feed)).items).toEqual(['a', 'b', 'c']);
+  expect(sent(ctx.server.requests, 'feeds')).toBe(1);
+});
+
+test('subscribers get onResponse, including one that joins after the response; one that throws fails alone', async () => {
+  const client = createTrpcClient({
+    router: routerType<AppRouter>(),
+    links: [
+      dedupeLink(),
+      link((args) =>
+        Stream.unwrap(
+          Effect.sync(() => {
+            args.op.context.onResponse?.({
+              status: 203,
+              headers: new Headers(),
+            });
+            return Stream.fromEffect(Effect.as(Effect.sleep(20), 7));
+          }),
+        ),
+      ),
+    ],
+  });
+  const statuses: string[] = [];
+  const first = collectAll(
+    client.forever.subscribe(undefined, {
+      onResponse: (meta) => void statuses.push(`a ${meta.status}`),
+    }),
+  );
+  await sleep(5);
+  const results = await Promise.allSettled([
+    first,
+    collectAll(
+      client.forever.subscribe(undefined, {
+        onResponse: (meta) => void statuses.push(`b ${meta.status}`),
+      }),
+    ),
+    collectAll(
+      client.forever.subscribe(undefined, {
+        onResponse: () => {
+          throw new Error('nope');
+        },
+      }),
+    ),
+  ]);
+  expect(statuses).toEqual(['a 203', 'b 203']);
+  expect(results).toMatchObject([
+    { status: 'fulfilled', value: [7] },
+    { status: 'fulfilled', value: [7] },
+    { status: 'rejected', reason: { code: 'CLIENT_ERROR', message: 'nope' } },
+  ]);
+
+  await expect(
+    collectAll(
+      client.forever.subscribe(undefined, {
+        onResponse: () => {
+          throw new Error('alone');
+        },
+      }),
+    ),
+  ).rejects.toMatchObject({ message: 'alone' });
+});
+
+test('dedupe: false and key(op) apply to subscriptions too', async () => {
+  await using server = await createTestServer({ router, serializer });
+  const client = createTrpcClient({
+    router: routerType<AppRouter>(),
+    links: [
+      dedupeLink({ key: (op) => op.path }),
+      httpLink({ url: server.url, serializer }),
+    ],
+  });
+  const [a, b, c] = await Promise.all([
+    collectAll(client.events.subscribe({ room: 'x' })),
+    collectAll(client.events.subscribe({ room: 'y' })),
+    collectAll(client.events.subscribe({ room: 'y' }, { dedupe: false })),
+  ]);
+  expect(b).toEqual(a);
+  expect(c.map((e) => e.data)).toEqual(['y 1', 'y 2', 'y 3']);
+  expect(sent(server.requests, 'events')).toBe(2);
 });
