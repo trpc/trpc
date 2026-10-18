@@ -4,8 +4,7 @@
   "framework": "tanstack-start",
   "git": {
     "deploymentEnabled": {
-      "**": false,
-      "v12": true
+      "main": false
     }
   },
   "ignoreCommand": "sh ../tooling/vercel-ignore/ignore.sh",
