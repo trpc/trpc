@@ -3,18 +3,32 @@
 # recopy them, to commit with the merge. A merge that stops on conflicts
 # doesn't run this: run `pnpm --filter @trpc12/www old-docs:copy` after
 # committing it. CI's `old-docs:check` fails until the copies are current.
+#
+# The README's sponsors section is written from next/www/sponsors.json
+# (www/build/sponsors-sync.ts). When a merge brings `main`'s version of the
+# README, write that section from sponsors.json again.
 
 # In a worktree, git runs hooks with GIT_DIR set, which makes git (here and
 # in the copy) take the cwd for the top of the tree.
 unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE
 cd "$(git rev-parse --show-toplevel)" || exit 1
-git diff --quiet ORIG_HEAD HEAD -- www && exit 0
-echo "post-merge: the merge changed www/, so recopying the old docs and the blog into next/www"
-if ! (cd next && pnpm --filter @trpc12/www old-docs:copy); then
-  echo "post-merge: the copy failed; fix what it says, then run \`pnpm --filter @trpc12/www old-docs:copy\` in next/"
-  exit 1
+status=0
+if ! git diff --quiet ORIG_HEAD HEAD -- www; then
+  echo "post-merge: the merge changed www/, so recopying the old docs and the blog into next/www"
+  if ! (cd next && pnpm --filter @trpc12/www old-docs:copy); then
+    echo "post-merge: the copy failed; fix what it says, then run \`pnpm --filter @trpc12/www old-docs:copy\` in next/"
+    status=1
+  fi
 fi
-if [ -n "$(git status --porcelain -- next/www)" ]; then
-  echo "post-merge: commit what the copy changed in next/www:"
-  git status --short -- next/www
+if ! git diff --quiet ORIG_HEAD HEAD -- README.md; then
+  echo "post-merge: the merge changed README.md, so writing its sponsors from next/www/sponsors.json"
+  if ! (cd next && pnpm --filter @trpc12/www sponsors:readme); then
+    echo "post-merge: writing the sponsors failed; fix what it says, then run \`pnpm --filter @trpc12/www sponsors:readme\` in next/"
+    status=1
+  fi
 fi
+if [ -n "$(git status --porcelain -- next/www README.md)" ]; then
+  echo "post-merge: commit what changed:"
+  git status --short -- next/www README.md
+fi
+exit $status
