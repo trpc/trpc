@@ -13,3 +13,5 @@ Move the server first, so you can deploy before every client (a mobile app in th
 4. **Drop the old endpoint** once no v11 client calls it.
 
 [API changes](./from-v11/api-changes.md) maps each v11 API to its v12 form.
+
+The [`examples/v11-migration`](../../examples/v11-migration/README.md) app follows these steps. Its v11 clients (batching, SSE and WebSocket subscriptions, superjson, TanStack Query) call the new server through `createV11Handler`. Its v12 client keeps a custom v11 link through `fromV11Link`. Its smoke runs the codemod on a copy of the v11 app and checks every step it prints.
