@@ -1,10 +1,11 @@
+import { useSearch } from '@tanstack/react-router';
 import { useSyncExternalStore } from 'react';
 
 /**
- * Features the site ships turned off. Turn one on from the dev menu (in
- * development and preview builds), or anywhere with `?flags=<name>`; turn it
- * off with `?flags=-<name>`, and every flag off with `?flags=reset`. The
- * flags turned on are kept in this browser.
+ * Features the site ships turned off. Turn them on with `?flags=<name>`
+ * (comma-separated for several), or from the header's Experiments menu. The
+ * URL is the only place they're kept: the site's links carry `?flags=` along
+ * while navigating, and a URL without it has every flag off.
  */
 export const flags = {
   partners: {
@@ -19,89 +20,53 @@ export const flags = {
 
 export type FlagName = keyof typeof flags;
 
-/**
- * The flags this browser turned on. Every flag ships off, so turning one off
- * forgets it rather than storing `false`.
- */
-export type FlagOverrides = Readonly<Partial<Record<FlagName, true>>>;
-
 export const flagNames = Object.keys(flags) as ReadonlyArray<FlagName>;
 
-/** The query parameter that turns flags on and off. */
+/** The query parameter that lists the flags turned on. */
 export const flagParam = 'flags';
 
-const isFlagName = (name: string): name is FlagName =>
-  Object.hasOwn(flags, name);
+/** The root route's search: `?flags=` when it names any flag. */
+export interface FlagSearch {
+  readonly flags?: string | undefined;
+}
 
-/** `overrides` with `name` turned on or off. */
+/**
+ * The flags a `?flags=` value turns on, in `flagNames` order: names
+ * separated by commas, ignoring unknown ones.
+ */
+export function flagsIn(param: unknown): ReadonlyArray<FlagName> {
+  if (typeof param !== 'string') {
+    return [];
+  }
+  const named = new Set(param.split(',').map((name) => name.trim()));
+  return flagNames.filter((name) => named.has(name));
+}
+
+/** The `?flags=` value turning on `on`, or `undefined` for none. */
+export function flagParamFor(on: ReadonlyArray<FlagName>) {
+  const value = flagNames.filter((name) => on.includes(name)).join(',');
+  return value === '' ? undefined : value;
+}
+
+/** `on` with `name` turned on or off. */
 export function withFlag(
-  overrides: FlagOverrides,
+  on: ReadonlyArray<FlagName>,
   name: FlagName,
-  on: boolean,
-): FlagOverrides {
-  const next: Partial<Record<FlagName, true>> = {};
-  for (const other of flagNames) {
-    if (other === name ? on : overrides[other] === true) {
-      next[other] = true;
-    }
-  }
-  return next;
-}
-
-/** The flags on in `overrides`, in `flagNames` order. */
-export function flagsOn(overrides: FlagOverrides) {
-  return flagNames.filter((name) => overrides[name] === true);
+  enabled: boolean,
+): ReadonlyArray<FlagName> {
+  return flagNames.filter((other) =>
+    other === name ? enabled : on.includes(other),
+  );
 }
 
 /**
- * `overrides` after a `?flags=` value: comma-separated names to turn on,
- * `-name` to turn off, and `reset` to turn every flag off. Unknown names
- * are ignored.
+ * The root route's `validateSearch`: keeps `?flags=` with only the known
+ * flags in it, and drops it when it names none.
  */
-export function applyFlagParam(
-  overrides: FlagOverrides,
-  param: string,
-): FlagOverrides {
-  let next = overrides;
-  for (const raw of param.split(',')) {
-    const token = raw.trim();
-    if (token === 'reset') {
-      next = {};
-      continue;
-    }
-    const off = token.startsWith('-');
-    const name = off ? token.slice(1) : token;
-    if (isFlagName(name)) {
-      next = withFlag(next, name, !off);
-    }
-  }
-  return next;
-}
-
-/**
- * The flags turned on in `stored`, keeping only known ones. A `false`, which
- * the site stored before turning a flag off forgot it, counts as off.
- */
-export function parseOverrides(stored: string | null): FlagOverrides {
-  if (stored === null) {
-    return {};
-  }
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(stored);
-  } catch {
-    return {};
-  }
-  if (typeof parsed !== 'object' || parsed === null) {
-    return {};
-  }
-  const overrides: Partial<Record<FlagName, true>> = {};
-  for (const [name, value] of Object.entries(parsed)) {
-    if (isFlagName(name) && value === true) {
-      overrides[name] = true;
-    }
-  }
-  return overrides;
+export function validateFlagSearch(search: Record<string, unknown>) {
+  const value = flagParamFor(flagsIn(search[flagParam]));
+  const validated: FlagSearch = value === undefined ? {} : { flags: value };
+  return validated;
 }
 
 /**
@@ -125,65 +90,32 @@ export const siteEnv = siteEnvOf({
   VERCEL_ENV: import.meta.env.VERCEL_ENV,
 });
 
-const storageKey = 'trpc-docs:flags';
-const noOverrides: FlagOverrides = {};
-const listeners = new Set<() => void>();
-let current: FlagOverrides | undefined;
+const subscribeNever = () => () => {};
 
-function readStored() {
-  try {
-    return parseOverrides(localStorage.getItem(storageKey));
-  } catch {
-    // Storage is blocked: every flag keeps its default.
-    return noOverrides;
-  }
-}
-
-export function getOverrides() {
-  current ??= readStored();
-  return current;
-}
-
-export function setOverrides(next: FlagOverrides) {
-  current = next;
-  try {
-    if (Object.keys(next).length === 0) {
-      localStorage.removeItem(storageKey);
-    } else {
-      localStorage.setItem(storageKey, JSON.stringify(next));
-    }
-  } catch {
-    // Storage is blocked: the overrides last until the page reloads.
-  }
-  for (const listener of listeners) {
-    listener();
-  }
-}
-
-function subscribe(listener: () => void) {
-  listeners.add(listener);
-  const onStorage = (event: StorageEvent) => {
-    if (event.key === storageKey) {
-      current = readStored();
-      listener();
-    }
-  };
-  window.addEventListener('storage', onStorage);
-  return () => {
-    listeners.delete(listener);
-    window.removeEventListener('storage', onStorage);
-  };
+/** `false` while the page is prerendered and hydrated, `true` after. */
+export function useHydrated() {
+  return useSyncExternalStore(
+    subscribeNever,
+    () => true,
+    () => false,
+  );
 }
 
 /**
- * The flags this browser turned on. The prerendered page has none, so a
- * flagged feature appears once the page hydrates.
+ * The flags the URL turns on. The prerendered page was built without a
+ * query string, so this is empty until the page has hydrated, and a flagged
+ * feature appears right after.
  */
-export function useFlagOverrides() {
-  return useSyncExternalStore(subscribe, getOverrides, () => noOverrides);
+export function useFlagsOn() {
+  const hydrated = useHydrated();
+  const param = useSearch({
+    select: (search) => search.flags,
+    strict: false,
+  });
+  return hydrated ? flagsIn(param) : [];
 }
 
-/** Whether `name` is on: every flag is off unless this browser turned it on. */
+/** Whether the URL turns `name` on. */
 export function useFlag(name: FlagName) {
-  return useFlagOverrides()[name] === true;
+  return useFlagsOn().includes(name);
 }

@@ -1,66 +1,49 @@
 import { describe, expect, it } from '@effect/vitest';
 
 import {
-  applyFlagParam,
-  flagsOn,
-  parseOverrides,
+  flagParamFor,
+  flagsIn,
   siteEnvOf,
+  validateFlagSearch,
   withFlag,
 } from './flags.ts';
 
+describe('flagsIn', () => {
+  it('reads comma-separated names, ignoring unknown ones and spaces', () => {
+    expect(flagsIn('partners')).toEqual(['partners']);
+    expect(flagsIn('nope, partners ,also-nope')).toEqual(['partners']);
+    expect(flagsIn('partners,partners')).toEqual(['partners']);
+  });
+
+  it('has none without a string', () => {
+    expect(flagsIn(undefined)).toEqual([]);
+    expect(flagsIn('')).toEqual([]);
+    expect(flagsIn(1)).toEqual([]);
+  });
+});
+
+describe('flagParamFor', () => {
+  it('lists the flags, and is undefined for none', () => {
+    expect(flagParamFor(['partners'])).toBe('partners');
+    expect(flagParamFor([])).toBeUndefined();
+  });
+});
+
 describe('withFlag', () => {
-  it('turns a flag on, and forgets it when turned off', () => {
-    expect(withFlag({}, 'partners', true)).toEqual({ partners: true });
-    expect(withFlag({ partners: true }, 'partners', false)).toEqual({});
-    expect(withFlag({}, 'partners', false)).toEqual({});
+  it('turns a flag on or off', () => {
+    expect(withFlag([], 'partners', true)).toEqual(['partners']);
+    expect(withFlag(['partners'], 'partners', false)).toEqual([]);
+    expect(withFlag(['partners'], 'partners', true)).toEqual(['partners']);
   });
 });
 
-describe('flagsOn', () => {
-  it('lists the flags turned on', () => {
-    expect(flagsOn({ partners: true })).toEqual(['partners']);
-    expect(flagsOn({})).toEqual([]);
-  });
-});
-
-describe('applyFlagParam', () => {
-  it('turns flags on by name and off with a `-`', () => {
-    expect(applyFlagParam({}, 'partners')).toEqual({ partners: true });
-    expect(applyFlagParam({ partners: true }, '-partners')).toEqual({});
-  });
-
-  it('turns every flag off on `reset`, then applies what follows it', () => {
-    expect(applyFlagParam({ partners: true }, 'reset')).toEqual({});
-    expect(
-      applyFlagParam({ partners: true }, '-partners, reset, partners'),
-    ).toEqual({
-      partners: true,
+describe('validateFlagSearch', () => {
+  it('keeps the known flags, and drops the param when it names none', () => {
+    expect(validateFlagSearch({ flags: 'partners,nope' })).toEqual({
+      flags: 'partners',
     });
-  });
-
-  it('ignores names that are not flags', () => {
-    expect(applyFlagParam({ partners: true }, 'nope,-also-nope,')).toEqual({
-      partners: true,
-    });
-  });
-});
-
-describe('parseOverrides', () => {
-  it('keeps only known flags turned on', () => {
-    expect(
-      parseOverrides('{"partners":true,"gone":true,"other":"yes"}'),
-    ).toEqual({ partners: true });
-  });
-
-  it('counts a flag stored as false as off', () => {
-    expect(parseOverrides('{"partners":false}')).toEqual({});
-  });
-
-  it('has none for nothing stored, or something that is not an object', () => {
-    expect(parseOverrides(null)).toEqual({});
-    expect(parseOverrides('not json')).toEqual({});
-    expect(parseOverrides('null')).toEqual({});
-    expect(parseOverrides('[true]')).toEqual({});
+    expect(validateFlagSearch({ flags: 'nope' })).toEqual({});
+    expect(validateFlagSearch({ other: 'x' })).toEqual({});
   });
 });
 

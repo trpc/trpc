@@ -3,11 +3,11 @@ import {
   createRootRoute,
   HeadContent,
   Outlet,
+  retainSearchParams,
   Scripts,
 } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
 
-import { DevMenu } from '~/components/dev-menu.tsx';
 import { SiteFooter } from '~/components/site-footer.tsx';
 import { SiteHeader } from '~/components/site-header.tsx';
 import { themeScript } from '~/components/theme-toggle.tsx';
@@ -16,6 +16,7 @@ import {
   UnpublishedBanner,
   UnpublishedCopyWarning,
 } from '~/components/unpublished.tsx';
+import { type FlagSearch, validateFlagSearch } from '~/flags.ts';
 import { site } from '~/site.ts';
 import appCss from '~/styles.css?url';
 
@@ -51,7 +52,10 @@ export const Route = createRootRoute({
     scripts: [{ children: themeScript }],
   }),
   component: Outlet,
+  // Every navigation keeps `?flags=`, so the flags stay on page to page.
+  search: { middlewares: [retainSearchParams<FlagSearch>(['flags'])] },
   shellComponent: RootDocument,
+  validateSearch: validateFlagSearch,
 });
 
 function RootDocument(props: { readonly children: ReactNode }) {
@@ -75,7 +79,6 @@ function RootDocument(props: { readonly children: ReactNode }) {
           </div>
           <SiteFooter />
           <UnpublishedCopyWarning />
-          <DevMenu />
         </ThemeProvider>
         <Scripts />
       </body>

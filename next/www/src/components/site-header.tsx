@@ -5,6 +5,7 @@ import { v12Docs } from '~/content/docs.ts';
 import { cn } from '@shared/ui/lib/utils';
 import { site } from '~/site.ts';
 
+import { ExperimentsMenu } from './experiments-menu.tsx';
 import { GitHubIcon } from './icons.tsx';
 import { Logo } from './logo.tsx';
 import { MobileNav } from './mobile-nav.tsx';
@@ -66,6 +67,7 @@ export function SiteHeader() {
         </nav>
         <div className="ml-auto flex items-center gap-1">
           <SearchButton />
+          <ExperimentsMenu />
           <a
             aria-label="tRPC on GitHub"
             className={cn(
