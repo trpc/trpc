@@ -86,6 +86,53 @@ const t = initTRPC.create({
     `);
   });
 
+  test('t.router(routes) is the routes object; other t.router uses are notes', () => {
+    const source = `import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const router = t.router;
+const post = t.router({ list: t.procedure.query(() => []) });
+export const appRouter = t.router({ post, user: t.router(userRoutes) });
+export const make = () => t.router({ post });
+const other = { router: (routes: object) => routes };
+other.router({ post });
+`;
+    expect(upgrade(source).code).toMatchInlineSnapshot(`
+      "import { initTrpc } from '@trpc12/trpc/server';
+      const t = initTrpc();
+      export const router = t.router;
+      const post = { list: t.procedure.query(() => []) };
+      export const appRouter = { post, user: userRoutes };
+      export const make = () => ({ post });
+      const other = { router: (routes: object) => routes };
+      other.router({ post });
+      "
+    `);
+    expect(messages(source)).toMatchInlineSnapshot(`
+      [
+        "3:23 t.router: a router is a plain object in v12; router(routes) is routes, and t.router({ meta }, routes) takes router meta first",
+      ]
+    `);
+  });
+
+  test('input.lastEventId is a note: v12 passes it to the resolver', () => {
+    expect(
+      messages(`import { tracked } from '@trpc/server';
+export const onAdd = publicProcedure
+  .input(z.object({ lastEventId: z.string().nullish() }).optional())
+  .subscription(async function* (opts) {
+    yield* feed(opts.input?.lastEventId, tracked);
+  });
+const resume = ({ input }: { input: { lastEventId: string } }) => input.lastEventId;
+const other = { lastEventId: '1' }.lastEventId;
+`),
+    ).toMatchInlineSnapshot(`
+      [
+        "5:17 lastEventId: v12 passes it to the resolver as opts.lastEventId; v12 clients send subscribe(input, { lastEventId })",
+        "7:67 lastEventId: v12 passes it to the resolver as opts.lastEventId; v12 clients send subscribe(input, { lastEventId })",
+      ]
+    `);
+  });
+
   test('fetchRequestHandler', () => {
     const source = `import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import { appRouter } from './router';

@@ -20,7 +20,7 @@ It takes files and directories, reads `.js`, `.jsx`, `.ts` and `.tsx` files (and
 It keeps your formatting, and rewrites:
 
 - Imports from `@trpc/server`, `@trpc/server/adapters/fetch`, `@trpc/client` and `@trpc/tanstack-react-query` to their `@trpc12/*` entry points, with the names that changed: `initTRPC` to `initTrpc`, `TRPCError` and `TRPCClientError` to `TrpcError`, `fetchRequestHandler` to `createFetchHandler`, `createTRPCClient` to `createTrpcClient`, `TRPCClient` to `TrpcClient`, `createTRPCContext` to `createTrpcContext`, `createTRPCOptionsProxy` to `createTrpcQueryUtils`. `TRPCLink` stays imported from `@trpc/client`, for [`fromV11Link`](./links.md).
-- `initTRPC.context<Ctx>().meta<Meta>().create()` to `initTrpc<{ ctx: Ctx; meta: Meta }>()`, `mergeRouters(a, b)` to `{ ...a, ...b }`, and `router.createCaller(ctx)` to `createRouterClient(router, { ctx })`.
+- `initTRPC.context<Ctx>().meta<Meta>().create()` to `initTrpc<{ ctx: Ctx; meta: Meta }>()`, `t.router(routes)` to `routes`, `mergeRouters(a, b)` to `{ ...a, ...b }`, and `router.createCaller(ctx)` to `createRouterClient(router, { ctx })`.
 - `httpBatchLink`, `httpBatchStreamLink` and `httpSubscriptionLink` to `httpLink`, and their `transformer` to `serializer`.
 - `createTRPCContext`'s result, destructured as a tuple, with `TRPCProvider`, `useTRPC` and `useTRPCClient` renamed wherever the project uses them.
 - `experimental_*` imports of exports that became stable, to their new names ([Stability](../../packages.md#stability)).
@@ -36,7 +36,7 @@ src/server/index.ts:1:1 observable(): subscriptions return an async generator or
 1 file(s) to upgrade, 2 step(s) by hand
 ```
 
-The steps cover what needs a decision: an `errorFormatter` (declared errors, or [`createV11Handler`](./serve-v11-clients.md) for old clients), `observable()` subscriptions, the standalone, Express and `ws` adapters ([Adapters](../../adapters/overview.md)), `@trpc/react-query` and `@trpc/next`, which have no v12 version, `createWSClient`, `createCallerFactory`, your own `TRPCLink`s ([v11 links](./links.md)), TanStack helpers such as `queryOptions(input)` whose input moved into their options (`queryOptions({ input })`), and root options such as `isDev` and `sse` that moved to the handler. A file it can't parse is reported and left alone.
+The steps cover what needs a decision: an `errorFormatter` (declared errors, or [`createV11Handler`](./serve-v11-clients.md) for old clients), `observable()` subscriptions, the standalone, Express and `ws` adapters ([Adapters](../../adapters/overview.md)), `@trpc/react-query` and `@trpc/next`, which have no v12 version, `createWSClient`, `createCallerFactory`, `t.router` kept as a function, a subscription's `input.lastEventId` (the resolver's `lastEventId` in v12), your own `TRPCLink`s ([v11 links](./links.md)), TanStack helpers such as `queryOptions(input)` whose input moved into their options (`queryOptions({ input })`), and root options such as `isDev` and `sse` that moved to the handler. A file it can't parse is reported and left alone.
 
 ## From code
 
