@@ -1,8 +1,11 @@
-import { type AnyContractRouter, contract } from '@trpc12/trpc/contract';
+import {
+  type AnyContractRouter,
+  experimental_contract,
+} from '@trpc12/trpc/contract';
 import { experimental_openapi } from '@trpc12/trpc/openapi';
 import { z } from 'zod';
 
-const c = contract.create().concat(experimental_openapi());
+const c = experimental_contract.create().concat(experimental_openapi());
 
 export const Post = z.object({ id: z.string(), title: z.string() });
 export type Post = z.infer<typeof Post>;

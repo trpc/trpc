@@ -4,7 +4,7 @@
  */
 import assert from 'node:assert/strict';
 import { createTrpcClient, safe } from '@trpc12/trpc/client';
-import { toContract } from '@trpc12/trpc/contract';
+import { experimental_toContract } from '@trpc12/trpc/contract';
 import { experimental_openApiLink } from '@trpc12/trpc/openapi';
 import { appContract } from './src/contract.ts';
 
@@ -29,7 +29,7 @@ export async function main(url: string) {
       experimental_openApiLink({
         url,
         prefix: '',
-        contract: toContract(appContract),
+        contract: experimental_toContract(appContract),
         headers: () => ({ 'x-user': 'ada' }),
       }),
     ],

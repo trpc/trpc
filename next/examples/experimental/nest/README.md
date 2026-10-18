@@ -7,7 +7,7 @@ A Nest app serving a tRPC contract from a controller with `@trpc12/nest`. See [N
 - `src/app.module.ts` registers `experimental_TrpcModule.forRoot()`. `createContext` reads the `x-user` header, and `layer` provides an Effect service (`RequestCounter`) to the `admin.stats` resolver.
 - `server.ts` starts the app; `client.ts` calls it with `fetch` and with `experimental_openApiLink` built from the same contract, and checks the 401, the 404 and the guard's 403.
 
-Everything from `@trpc12/nest` and `@trpc12/trpc/openapi` is `experimental_*`. `contract`, `t.implement()` and `createTrpcClient()` are stable.
+Everything from `@trpc12/nest`, `@trpc12/trpc/openapi` and `@trpc12/trpc/contract` is `experimental_*`. `t.implement()` and `createTrpcClient()` are stable.
 
 The files follow the [examples layout](../../README.md), with two differences. Nest needs `experimentalDecorators`, which Node's type stripping can't run, so `pnpm build` compiles `src/app.module.ts` to `dist/` (`vite.config.ts`) and `server.ts` loads it from there. And the contract's REST routes are at the server's root, so `listen()`'s `url` is the root, not `/trpc`. Express only.
 
