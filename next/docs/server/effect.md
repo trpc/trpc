@@ -84,6 +84,8 @@ Tracing is opt-in: put a tracer in the handler's `layer` (`@effect/opentelemetry
 
 The span continues the request's trace: the `http.server` span on Effect HTTP servers, or the incoming `traceparent` header on `handler.fetch`, so a traced client and the server share one trace ([Client tracing](../client/tracing.md)). A WebSocket call continues the trace in its message's `trace` field, and starts its own trace without one.
 
+[`examples/effect-observability`](../../examples/effect-observability/README.md) puts these together: an Effect middleware that tags the call's span, service spans under it, and a mail sent with `Effect.forkDetach` whose span joins the trace after the response.
+
 ## Work after the response
 
 `Effect.forkDetach` starts a fiber that keeps running after the call returns, on a long-lived server:
