@@ -73,6 +73,10 @@ Environment: TypeScript 7.0.2 (`tsc` = tsgo), Node 24.21, 4-vCPU VM.
 
 `tsc -b` of the server packages: 6.5s. Before the flat terminals (defs already read by index), `packages/server` was 650,210 and `apps/dts` 142,616 instantiations.
 
+### One program (`pnpm bench typecheck`)
+
+The repo's 3,000-procedure benchmark checks server and client in one program, so it measures source mode: 1,266,138 → 1,249,661 instantiations with both changes (check 1.28s → 1.10s, same machine, medians of 3).
+
 ## Findings
 
 1. **Reading the server from `.d.ts` is the lever.** `apps/source` re-infers every procedure (4.1M instantiations at 5000); `apps/dts` reads declarations (43k, about 100× fewer). Its cost doesn't grow with the router: the client's mapped type resolves only the keys a file touches.

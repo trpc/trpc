@@ -12,7 +12,7 @@
   - `tooling/pack` keeps `import type {} from '@trpc12/trpc/internal'` in the built entry declarations ([`type-portability.md`](./type-portability.md)); without it, a base procedure exported from its own package failed declaration emit with TS2883.
   - `@trpc12/trpc/contract` loads `@trpc12/trpc/server` the same way, so a contract package that imports nothing else emits declarations (TS2883 for `TrpcError` before; found building `examples/monorepo/`). `tooling/portability` compiles a contract-only fixture in its own program.
 - Why: a client should cost what it calls, not what the server has; declarations are where that holds, so the procedure types have to print small and read cheap.
-- Lost: one generic alias for the three terminals (each spells out its def). Source-mode checking is unchanged (the builders' inference dominates it, 4.7M instantiations at 5000 procedures).
+- Lost: one generic alias for the three terminals (each spells out its def). Source-mode checking is about unchanged (the builders' inference dominates it, 4.7M instantiations at 5000 procedures; `pnpm bench typecheck` 1,266,138 → 1,249,661).
 - Open:
   - Editors resolve a project reference to its source by default, so the editor pays source cost even when `tsc -b` doesn't. `disableSourceOfProjectReferenceRedirect: true` in a client's `tsconfig` makes it read the `.d.ts` (exists in TypeScript 7), at the cost of go-to-definition landing in declarations and needing `tsc -b --watch`. Not measured in an editor.
   - `AnyRouter` could accept interfaces (no index signature), which would let the root router be an `interface`, which TypeScript caches by name.
