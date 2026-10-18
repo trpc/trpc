@@ -74,9 +74,9 @@ Smaller clients help when the app can't read declarations (no build step before 
 
 ## Contracts for apps that need one domain
 
-An app that uses one domain can depend on a [contract](./contract-first.md) package instead of the server. It loads no server code (resolvers, database clients, their types), and its calls can be validated against the contract's schemas on the client. Build the contract package's declarations too; its cost is then its schemas'.
+An app that uses one domain can depend on a [contract](./contract-first.md) package instead of the server. It loads no server code (resolvers, database clients, their types). Build the contract package's declarations too; its cost is then its schemas'.
 
-In the example, [`packages/billing-contract`](../../examples/monorepo/packages/billing-contract/src/index.ts) is the contract, [`packages/billing`](../../examples/monorepo/packages/billing/src/index.ts) implements it with `t.implement()`, and [`apps/billing-widget`](../../examples/monorepo/apps/billing-widget/src/index.ts) calls it with `validationLink`, depending on the contract package alone.
+In the example, [`packages/billing-contract`](../../examples/monorepo/packages/billing-contract/src/index.ts) is the contract, [`packages/billing`](../../examples/monorepo/packages/billing/src/index.ts) implements it with `t.implement()`, and [`apps/billing-widget`](../../examples/monorepo/apps/billing-widget/src/index.ts) calls it, depending on the contract package alone.
 
 A server that isn't written contract-first can still hand clients a contract: `toContract(router)` derives one. Its types come from the router's, so the app still needs the server's declarations to stay cheap.
 

@@ -3,7 +3,7 @@ import {
   createTrpcClient,
   httpLink,
   safe,
-  validationLink,
+  experimental_validationLink,
 } from '@trpc12/trpc/client';
 import {
   type AnyContractRouter,
@@ -60,7 +60,7 @@ test('invalid inputs fail on the client with the server error shape, before any 
   const client = createTrpcClient({
     router: appContract,
     links: [
-      validationLink({ contract: appContract, output: 'json' }),
+      experimental_validationLink({ contract: appContract, output: 'json' }),
       httpLink({ url: http.url }),
     ],
   });
@@ -96,7 +96,7 @@ test('results that drift from the contract fail with BAD_RESPONSE', async () => 
   const client = createTrpcClient({
     router: appContract,
     links: [
-      validationLink({ contract: appContract }),
+      experimental_validationLink({ contract: appContract }),
       httpLink({ url: http.url }),
     ],
   });
@@ -137,7 +137,7 @@ test("output: 'json' decodes experimental_openApiLink's plain JSON into the sche
   const decoded = createTrpcClient({
     router: json,
     links: [
-      validationLink({ contract: appContract, output: 'json' }),
+      experimental_validationLink({ contract: appContract, output: 'json' }),
       experimental_openApiLink({
         url: 'http://localhost',
         contract: json,
@@ -194,9 +194,9 @@ test('streamed outputs, unvalidated outputs, plain events, opt-outs and paths ou
       extra: p.procedure.query(() => 'not in the contract'),
     },
   });
-  const client = (opts: Parameters<typeof validationLink>[0]) =>
+  const client = (opts: Parameters<typeof experimental_validationLink>[0]) =>
     createUntypedClient({
-      links: [validationLink(opts), httpLink({ url: http.url })],
+      links: [experimental_validationLink(opts), httpLink({ url: http.url })],
     });
   const checked = client({ contract: contractOf });
   const collect = async (path: string) => {

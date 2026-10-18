@@ -53,14 +53,14 @@ export const appRouter = impl.router({
 
 ## Clients from a contract
 
-A client takes the contract as its `router`, so the browser imports no server code and can [validate calls](../client/validation.md) against the contract's schemas:
+A client takes the contract as its `router`, so the browser imports no server code and can validate calls against the contract's schemas:
 
 ```ts twoslash
 // ---cut-start---
 import {
   createTrpcClient,
   httpLink,
-  validationLink,
+  experimental_validationLink,
 } from '@trpc12/trpc/client';
 import { contract } from '@trpc12/trpc/contract';
 import { z } from 'zod';
@@ -79,7 +79,10 @@ const appContract = {
 // ---cut-end---
 const client = createTrpcClient({
   router: appContract,
-  links: [validationLink({ contract: appContract }), httpLink({ url })],
+  links: [
+    experimental_validationLink({ contract: appContract }),
+    httpLink({ url }),
+  ],
 });
 ```
 

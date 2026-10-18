@@ -47,7 +47,6 @@ Pages marked (hidden) are unlisted on the site until they're reviewed: out of it
   - [dedupeLink](./client/links/dedupe.md): Share one request between identical queries in flight.
   - [loggerLink](./client/links/logger.md): Log every operation, its results and its errors, to the console or a function of your own.
   - [localLink](./client/links/local.md): Call a router in the same process, through the client and its other links.
-  - [Validating on the client](./client/validation.md): validationLink checks inputs before sending and results when they arrive, against a contract.
   - [Custom links](./client/custom-links.md): Write a link with link(), and declare the call options it reads, the errors it fails with and what it needs.
 - [Errors without try/catch](./client/errors.md): safe() and createSafeClient() return result tuples with typed, narrowable errors.
 - [The Effect client](./client/effect.md): createEffectClient returns an Effect per call and a Stream per subscription, with typed errors in the error channel.
@@ -66,6 +65,7 @@ Pages marked (hidden) are unlisted on the site until they're reviewed: out of it
 - [The document](./openapi/document.md): Generate an OpenAPI 3.1 document from the router's schemas, or from its types.
 - [Calling REST from the client](./openapi/client.md): experimental_openApiLink sends each call to its REST route, typed from a contract.
 - [A contract from OpenAPI](./openapi/from-document.md): Generate a typed contract module from any OpenAPI 3.0 or 3.1 document.
+- [Validating on the client](./client/validation.md) (hidden): experimental_validationLink checks inputs before sending and results when they arrive, against a contract.
 
 ## Adapters
 

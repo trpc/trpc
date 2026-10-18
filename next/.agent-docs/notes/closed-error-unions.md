@@ -53,7 +53,7 @@ if (err)
 - **`PARSE_ERROR` means four things:**
   - a foreign response with an unmapped status (520);
   - a body the client can't decode;
-  - `validationLink`'s output mismatch;
+  - `experimental_validationLink`'s output mismatch;
   - the server failing to parse a request.
 
   result-rpc splits these into `HttpFailure`, `DecodeFailure` and `ProtocolViolation`.

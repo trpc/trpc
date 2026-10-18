@@ -13,9 +13,9 @@ import { isStreamSchema } from '../../server/stream-schema.ts';
 import { link, type TrpcLink } from '../link.ts';
 
 /**
- * Options for {@link validationLink}.
+ * Options for {@link experimental_validationLink}.
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
 export interface ValidationLinkOptions {
   /** Where the schemas come from: a contract (`@trpc12/trpc/contract`) or a router. */
@@ -96,17 +96,21 @@ const isEnvelope = (value: unknown): value is { id: string; data: unknown } =>
  * ```ts
  * createTrpcClient({
  *   router: appContract,
- *   links: [validationLink({ contract: appContract }), httpLink({ url })],
+ *   links: [experimental_validationLink({ contract: appContract }), httpLink({ url })],
  * });
  * ```
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
-export function validationLink(
+export function experimental_validationLink(
   opts: ValidationLinkOptions & { output: 'json' },
 ): TrpcLink<{ form: DansonForm }>;
-export function validationLink(opts: ValidationLinkOptions): TrpcLink;
-export function validationLink(opts: ValidationLinkOptions): TrpcLink<any> {
+export function experimental_validationLink(
+  opts: ValidationLinkOptions,
+): TrpcLink;
+export function experimental_validationLink(
+  opts: ValidationLinkOptions,
+): TrpcLink<any> {
   const json = opts.output === 'json';
   return link((args) => {
     const { op } = args;

@@ -95,8 +95,6 @@ A typed error's `data` goes through the same serializer: `new TrpcError({ code: 
 
 In-process callers (`createRouterClient`, `createTrpcRsc`, `localLink({ serializer: false })`) pass values by reference, so they keep native types whatever the serializer.
 
-To keep plain JSON on the wire and still get `Date`s from a contract's Effect Schemas, put `validationLink({ contract, output: 'json' })` before `httpLink`: it decodes results with the schemas' JSON codecs and types them as the schemas' types ([Validating on the client](../client/validation.md)).
-
 ## Files
 
 A root `File` or `Blob` output of an unbatched HTTP call is the response body, with any serializer. On a batching chain, plain JSON can't batch it, so such calls take `{ batch: false }` (a type error otherwise). Files anywhere else, and files in inputs, need danSON; the other serializers fail before sending.

@@ -45,11 +45,11 @@ await client.post.byId.query({ id: '1' }); // GET https://api.example.com/api/po
 
 Declared errors come back as typed `TrpcError`s, as they do over RPC.
 
-REST responses are plain JSON, and the client types say so: a `createdAt: Date` output is a `string` through `experimental_openApiLink`. To get the types back, put `validationLink({ contract, output: 'json' })` in front: it decodes each result with the Effect Schema's JSON codec, and the client types results as the schemas' types again ([Validating on the client](../client/validation.md)):
+REST responses are plain JSON, and the client types say so: a `createdAt: Date` output is a `string` through `experimental_openApiLink`. To get the types back, put `experimental_validationLink({ contract, output: 'json' })` in front: it decodes each result with the Effect Schema's JSON codec, and the client types results as the schemas' types again ([Validating on the client](../client/validation.md)):
 
 ```ts
 links: [
-  validationLink({ contract: appContract, output: 'json' }),
+  experimental_validationLink({ contract: appContract, output: 'json' }),
   experimental_openApiLink({ url, contract: toContract(appContract) }),
 ];
 ```

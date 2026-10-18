@@ -6,7 +6,7 @@ order: 4
 hidden: true
 ---
 
-`experimental_generateContractFromOpenApi(document, { prefix?, exportName?, patterns? })` turns an OpenAPI 3.0 or 3.1 document into the source of a `@trpc12/trpc/contract` module. Schemas are Effect Schemas, translated by Effect's `SchemaRepresentation`; each operation becomes a procedure with its `route` meta (under `.concat(experimental_openapi())`), so the contract works with `experimental_openApiLink` and `validationLink` against any REST API:
+`experimental_generateContractFromOpenApi(document, { prefix?, exportName?, patterns? })` turns an OpenAPI 3.0 or 3.1 document into the source of a `@trpc12/trpc/contract` module. Schemas are Effect Schemas, translated by Effect's `SchemaRepresentation`; each operation becomes a procedure with its `route` meta (under `.concat(experimental_openapi())`), so the contract works with `experimental_openApiLink` and `experimental_validationLink` against any REST API:
 
 ```ts twoslash
 // ---cut-start---
