@@ -3,6 +3,8 @@
 - Human, 2026-10-15 (decisions round 3, Q16 = proposal 22 Q22.4): "B".
 - Human, 2026-10-18 (example-apps research, which candidates of 1–9): "all of them".
 - Human, 2026-10-18 (same round, UI and `next/www`): "create them, they should all use the same ui lib as next/www and they shouldn't touch that".
+- Human, 2026-10-18 (same round, runnable examples): "always make them runnable even if you're just showing server code so there's a 'full example' … like a server.ts + client.ts and a script that runs both is a good general practice".
+- (agent) The layout that makes every example runnable, `server.ts` + `client.ts` + `start.ts` with `pnpm start` running both, is in [`examples/README.md`](../../examples/README.md).
 - `next/examples/`, the original six:
   - `minimal/`: Node HTTP server and client, plain Promise code (exists).
   - `effect/`: Effect server and client (layers, `Stream`, `catchTag`).
