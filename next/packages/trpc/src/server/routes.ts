@@ -1,5 +1,5 @@
 import type { Layer } from 'effect';
-import { Context, Effect } from 'effect';
+import { Effect, type Context } from 'effect';
 import { HttpRouter, HttpServerRequest, HttpServerResponse } from 'effect/http';
 import { isUpgrade, upgradeTo, type ServeSocket } from './upgrade.ts';
 
@@ -35,11 +35,7 @@ export function httpParts(opts: {
     opts.middleware.reduceRight<App>((inner, m) => m(inner), app);
   const { endpoint } = opts;
   const route = wrap(
-    Effect.withFiber((fiber) => {
-      const request = Context.get(
-        fiber.context as Context.Context<HttpServerRequest.HttpServerRequest>,
-        HttpServerRequest.HttpServerRequest,
-      );
+    Effect.flatMap(HttpServerRequest.HttpServerRequest, (request) => {
       if (!isUpgrade(request)) return opts.app;
       const url = new URL(request.url, 'http://localhost');
       if (url.pathname !== endpoint && url.pathname !== `${endpoint}/`) {

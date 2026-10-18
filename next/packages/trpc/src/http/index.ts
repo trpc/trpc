@@ -21,7 +21,7 @@
  * ```
  * @module
  */
-import { Effect, type Layer } from 'effect';
+import { Context, Effect, type Layer } from 'effect';
 import {
   HttpEffect,
   HttpMiddleware,
@@ -36,12 +36,13 @@ import {
   isJsonContentType,
   PROTOCOL_VERSION,
 } from '../internal/protocol.ts';
-import { type FetchHandler, httpApps } from '../server/fetch.ts';
+import { type FetchHandler, HttpApp } from '../server/fetch.ts';
+import { handlerContext } from '../server/handler-context.ts';
 import type { WebSocketLike } from '../server/socket.ts';
 import {
   isUpgrade,
   serveAsWebSocket,
-  socketServers,
+  UpgradeServer,
   upgradeTo,
 } from '../server/upgrade.ts';
 
@@ -144,8 +145,9 @@ export function toHttpEffect(
   HttpServerRequest.HttpServerRequest
 > {
   const endpoint = `/${(opts.endpoint ?? '/trpc').replace(/^\/+|\/+$/g, '')}`;
-  const own = httpApps.get(handler);
-  const serveSocket = socketServers.get(handler);
+  const services = handlerContext(handler);
+  const own = Context.getOrUndefined(services, HttpApp);
+  const serveSocket = Context.getOrUndefined(services, UpgradeServer);
   const fetch =
     own?.app ??
     Effect.flatMap(HttpServerRequest.HttpServerRequest, (request) =>

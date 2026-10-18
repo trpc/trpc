@@ -19,16 +19,17 @@
  * ```
  * @module
  */
-import { Effect, Layer, Stream } from 'effect';
+import { Context, Effect, Layer, Stream } from 'effect';
 import { HttpServerRequest } from 'effect/http';
 import { Socket, SocketServer } from 'effect/socket';
 import { decodeLines, encodeLine } from '../internal/lines.ts';
 import {
   parseSocketMessage,
   serveSocketConnection,
-  socketCores,
-  type SocketCore,
+  SocketCore,
+  type SocketCoreShape,
 } from '../server/socket.ts';
+import { handlerContext } from '../server/handler-context.ts';
 
 /**
  * Options for {@link serveSocket}.
@@ -62,7 +63,7 @@ export interface SocketHandlerLike {
 }
 
 const serveOne = (
-  core: SocketCore,
+  core: SocketCoreShape,
   socket: Socket.Socket,
   opts: SocketOptions,
 ): Effect.Effect<void> =>
@@ -98,7 +99,7 @@ export function serveSocket(
   SocketServer.SocketServerError,
   SocketServer.SocketServer
 > {
-  const core = socketCores.get(handler);
+  const core = Context.getOrUndefined(handlerContext(handler), SocketCore);
   if (!core) {
     throw new TypeError(
       'serveSocket() needs a handler from createFetchHandler()',

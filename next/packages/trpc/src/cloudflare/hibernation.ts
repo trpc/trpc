@@ -1,4 +1,4 @@
-import { Effect, Exit, Scope, Stream } from 'effect';
+import { Context, Effect, Exit, Scope, Stream } from 'effect';
 import { HttpServerRequest } from 'effect/http';
 import {
   isTrpcError,
@@ -18,10 +18,11 @@ import {
   connectionReceiver,
   frameMessage,
   parseSocketMessage,
-  socketCores,
+  SocketCore,
   type ConnectionReceiver,
-  type SocketCore,
+  type SocketCoreShape,
 } from '../server/socket.ts';
+import { handlerContext } from '../server/handler-context.ts';
 import {
   tracked,
   type TrackedEnvelope,
@@ -204,7 +205,7 @@ export function experimental_createHibernatingWebSockets<TPlatform>(
   handler: FetchHandler<TPlatform>,
   opts: HibernatingWebSocketsOptions,
 ): HibernatingWebSockets<TPlatform> {
-  const core = socketCores.get(handler);
+  const core = Context.getOrUndefined(handlerContext(handler), SocketCore);
   if (!core) {
     throw new TypeError(
       'experimental_createHibernatingWebSockets needs a handler from createFetchHandler',
@@ -334,7 +335,7 @@ export function experimental_createHibernatingWebSockets<TPlatform>(
   };
 
   const sendEvent = async (
-    core: SocketCore,
+    core: SocketCoreShape,
     socket: HibernatableWebSocket,
     attachment: Attachment,
     sub: Parked,

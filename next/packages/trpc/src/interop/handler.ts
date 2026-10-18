@@ -29,7 +29,7 @@ import {
 } from '../server/execute.ts';
 import {
   CurrentPlatform,
-  httpApps,
+  HttpApp,
   parentSpan,
   type ContextOption,
   type CreateContextOpts,
@@ -48,7 +48,8 @@ import {
 import { fromWebSocketLike } from '../server/socket-session.ts';
 import type { WebSocketLike } from '../server/socket.ts';
 import { isTracked } from '../server/subscriptions/index.ts';
-import { socketServers } from '../server/upgrade.ts';
+import { setHandlerContext } from '../server/handler-context.ts';
+import { UpgradeServer } from '../server/upgrade.ts';
 import {
   v11Shape,
   type V11ErrorFormatterOpts,
@@ -926,13 +927,17 @@ export function createV11Handler<
     },
     dispose: base.dispose,
   };
-  httpApps.set(handler, { app, middleware });
-  socketServers.set(handler, (socket, request) =>
-    serveV11Socket(core, socket, {
-      request,
-      platform: undefined,
-      idleTimeoutMs,
-    }),
+  setHandlerContext(
+    handler,
+    Context.make(HttpApp, { app, middleware }).pipe(
+      Context.add(UpgradeServer, (socket, request) =>
+        serveV11Socket(core, socket, {
+          request,
+          platform: undefined,
+          idleTimeoutMs,
+        }),
+      ),
+    ),
   );
   return handler as V11Handler<TPlatform>;
 }

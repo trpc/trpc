@@ -1,4 +1,4 @@
-import { Effect } from 'effect';
+import { Context, Effect } from 'effect';
 import type { HttpServerError, HttpServerRequest } from 'effect/http';
 import type { Socket } from 'effect/socket';
 import { runSocket, socketFrames } from './socket-session.ts';
@@ -15,12 +15,21 @@ export type ServeSocket = (
   request: HttpServerRequest.HttpServerRequest,
 ) => Effect.Effect<void>;
 
+/** @internal */
+export interface UpgradeServer {
+  readonly _: unique symbol;
+}
+
 /**
- * How each of our handlers serves an upgraded socket, so
+ * How one of our handlers serves an upgraded socket, so
  * `@trpc12/trpc/http` hands it Effect's `Socket` instead of a `WebSocket`.
  * @internal
  */
-export const socketServers: WeakMap<object, ServeSocket> = new WeakMap();
+export const UpgradeServer: Context.ServiceClass<
+  UpgradeServer,
+  '@trpc12/trpc/UpgradeServer',
+  ServeSocket
+> = Context.Service<UpgradeServer, ServeSocket>()('@trpc12/trpc/UpgradeServer');
 
 /** Upgrades `request` and serves its socket until it closes. @internal */
 export const upgradeTo = (

@@ -66,13 +66,14 @@ import { fromWebSocketLike } from './socket-session.ts';
 import {
   serveMessagePort,
   serveSocketConnection,
-  socketCores,
+  SocketCore,
   type MessagePortLike,
-  type SocketCore,
+  type SocketCoreShape,
   type Transport,
   type WebSocketLike,
 } from './socket.ts';
-import { socketServers, type ServeSocket } from './upgrade.ts';
+import { setHandlerContext } from './handler-context.ts';
+import { UpgradeServer, type ServeSocket } from './upgrade.ts';
 
 const encoder = new TextEncoder();
 
@@ -348,18 +349,27 @@ export const CurrentPlatform: Context.Reference<unknown> =
     defaultValue: () => undefined,
   });
 
-/** The `effect/http` app behind each fetch handler, for `@trpc12/trpc/http`. @internal */
-export const httpApps: WeakMap<
-  object,
-  {
-    readonly app: Effect.Effect<
-      HttpServerResponse.HttpServerResponse,
-      never,
-      HttpServerRequest.HttpServerRequest
-    >;
-    readonly middleware: ReadonlyArray<HttpMiddleware.HttpMiddleware>;
-  }
-> = new WeakMap();
+/** What `HttpApp` holds. @internal */
+export interface HttpAppShape {
+  readonly app: Effect.Effect<
+    HttpServerResponse.HttpServerResponse,
+    never,
+    HttpServerRequest.HttpServerRequest
+  >;
+  readonly middleware: ReadonlyArray<HttpMiddleware.HttpMiddleware>;
+}
+
+/** @internal */
+export interface HttpApp {
+  readonly _: unique symbol;
+}
+
+/** The `effect/http` app behind one of our handlers, for `@trpc12/trpc/http`. @internal */
+export const HttpApp: Context.ServiceClass<
+  HttpApp,
+  '@trpc12/trpc/HttpApp',
+  HttpAppShape
+> = Context.Service<HttpApp, HttpAppShape>()('@trpc12/trpc/HttpApp');
 
 interface CallResult {
   status: number;
@@ -406,17 +416,12 @@ const splitUrl = (url: string): { pathname: string; search: string } => {
 export const parentSpan = (
   request: HttpServerRequest.HttpServerRequest,
 ): Effect.Effect<Tracer.AnySpan | undefined> =>
-  Effect.withFiber((fiber) =>
-    Effect.succeed(parentSpanIn(request, fiber.context)),
+  Effect.map(
+    Effect.serviceOption(Tracer.ParentSpan),
+    (span) =>
+      Option.getOrUndefined(span) ??
+      Option.getOrUndefined(HttpTraceContext.fromHeaders(request.headers)),
   );
-
-/** {@link parentSpan} in the fiber's `context`. */
-const parentSpanIn = (
-  request: HttpServerRequest.HttpServerRequest,
-  context: Context.Context<never>,
-): Tracer.AnySpan | undefined =>
-  Context.getOrUndefined(context, Tracer.ParentSpan) ??
-  Option.getOrUndefined(HttpTraceContext.fromHeaders(request.headers));
 
 /** `Effect.flatMap`, without a step when `effect` has already succeeded. */
 const chain = <A, B, E, E2, R, R2>(
@@ -1176,12 +1181,7 @@ export function createFetchHandler<
     HttpServerResponse.HttpServerResponse,
     never,
     HttpServerRequest.HttpServerRequest
-  > = Effect.withFiber((fiber) => {
-    const context = fiber.context as Context.Context<never>;
-    const request = Context.get(
-      context as Context.Context<HttpServerRequest.HttpServerRequest>,
-      HttpServerRequest.HttpServerRequest,
-    );
+  > = Effect.flatMap(HttpServerRequest.HttpServerRequest, (request) => {
     const parts = splitUrl(request.url);
     const { pathname } = parts;
     const version = request.headers[HEADER.version];
@@ -1197,11 +1197,11 @@ export function createFetchHandler<
       return Effect.fail(protocolError('NOT_FOUND', `Not found: ${pathname}`));
     }
     const rest = pathname.slice(under.length);
-    const parent = parentSpanIn(request, context);
-    if (rest === '' && request.headers[HEADER.batch] === '1') {
-      return batched(request, parent);
-    }
-    return single(request, parts.search, decodeURIComponent(rest), parent);
+    return Effect.flatMap(parentSpan(request), (parent) =>
+      rest === '' && request.headers[HEADER.batch] === '1'
+        ? batched(request, parent)
+        : single(request, parts.search, decodeURIComponent(rest), parent),
+    );
   }).pipe(
     Effect.catchCause((cause) =>
       Effect.flatMap(HttpServerRequest.HttpServerRequest, (request) => {
@@ -1213,7 +1213,7 @@ export function createFetchHandler<
     ),
   ) as never;
 
-  const core: SocketCore = {
+  const core: SocketCoreShape = {
     router,
     serializer,
     runEffect: base.runEffect,
@@ -1269,8 +1269,12 @@ export function createFetchHandler<
       await base.dispose();
     },
   };
-  socketCores.set(handler, core);
-  socketServers.set(handler, serveWebSocket);
-  httpApps.set(handler, { app, middleware });
+  setHandlerContext(
+    handler,
+    Context.make(SocketCore, core).pipe(
+      Context.add(UpgradeServer, serveWebSocket),
+      Context.add(HttpApp, { app, middleware }),
+    ),
+  );
   return handler as FetchHandler<TPlatform>;
 }

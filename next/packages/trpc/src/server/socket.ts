@@ -93,7 +93,7 @@ export interface MessagePortLike {
 export type Transport = 'http' | 'websocket' | 'messagePort' | 'socket';
 
 /** What the fetch handler shares with socket connections. @internal */
-export interface SocketCore extends Pick<
+export interface SocketCoreShape extends Pick<
   HandlerCore,
   'runEffect' | 'makeContextEffect' | 'publicError' | 'report'
 > {
@@ -102,8 +102,17 @@ export interface SocketCore extends Pick<
   deserializeInput(value: unknown): unknown;
 }
 
-/** The socket core behind each fetch handler, for adapters outside it. @internal */
-export const socketCores: WeakMap<object, SocketCore> = new WeakMap();
+/** @internal */
+export interface SocketCore {
+  readonly _: unique symbol;
+}
+
+/** The socket core behind a fetch handler, for adapters outside it. @internal */
+export const SocketCore: Context.ServiceClass<
+  SocketCore,
+  '@trpc12/trpc/SocketCore',
+  SocketCoreShape
+> = Context.Service<SocketCore, SocketCoreShape>()('@trpc12/trpc/SocketCore');
 
 /** Where a connection's server messages go, whatever carries it. @internal */
 export interface Connection {
@@ -142,7 +151,7 @@ export const encodeWebSocketMessage = (
  * @internal
  */
 export const serveSocketConnection = (
-  core: SocketCore,
+  core: SocketCoreShape,
   socket: Socket.Socket,
   opts: {
     readonly request: HttpServerRequest.HttpServerRequest;
@@ -236,7 +245,7 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
  * @internal
  */
 export const serveMessagePort = (
-  core: SocketCore,
+  core: SocketCoreShape,
   port: MessagePortLike,
   opts: {
     readonly request: HttpServerRequest.HttpServerRequest;
@@ -274,7 +283,7 @@ export interface ConnectionReceiver {
  * @internal
  */
 export const connectionReceiver = (
-  core: SocketCore,
+  core: SocketCoreShape,
   conn: Connection,
   opts: {
     request: HttpServerRequest.HttpServerRequest;
