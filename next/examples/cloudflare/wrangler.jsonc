@@ -1,7 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "trpc-cloudflare-example",
-  "main": "src/index.ts",
+  "main": "server.ts",
   "compatibility_date": "2026-10-01",
   "compatibility_flags": ["nodejs_compat"],
   "durable_objects": {

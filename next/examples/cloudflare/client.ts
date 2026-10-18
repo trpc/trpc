@@ -1,8 +1,9 @@
 /**
- * Runs the Worker locally with Wrangler (workerd), then calls a room over
- * HTTP, subscribes to it over a hibernating WebSocket and resumes a durable
- * streamed call whose connection drops. With `SMOKE_URL` set, it checks a
- * deployed Worker instead. `pnpm dev` serves it for a browser.
+ * Calls the Worker at `base`: a room over HTTP, a seat locked across two
+ * rooms, a subscription over a hibernating WebSocket, and a durable streamed
+ * call whose connection drops and resumes. Run directly, it calls
+ * `process.argv[2]` or `wrangler dev`'s `http://localhost:8787`; CI passes the
+ * deployed Worker's URL.
  */
 import {
   createTrpcClient,
@@ -12,21 +13,13 @@ import {
   wsLink,
   routerType,
 } from '@trpc12/trpc/client';
-import { unstable_startWorker } from 'wrangler';
 import type { AppRouter } from './src/router.ts';
 
-const deployed = process.env['SMOKE_URL'];
-const worker = deployed
-  ? undefined
-  : await unstable_startWorker({
-      config: new URL('./wrangler.jsonc', import.meta.url).pathname,
-      dev: { server: { port: 0 }, inspector: false, logLevel: 'warn' },
-    });
-try {
-  await worker?.ready;
-  const base = deployed ?? (await worker!.url);
-  // A room per run, so a deployed object starts empty.
-  const room = deployed ? `smoke-${Date.now()}` : 'lobby';
+export async function main(base: string) {
+  // Wrangler's Local Explorer, with Workers Traces, is only there locally.
+  const local = ['localhost', '127.0.0.1'].includes(new URL(base).hostname);
+  // A room per run, so its object starts empty.
+  const room = `room-${Date.now()}`;
   const url = new URL(`/rooms/${room}/trpc`, base).href;
   const ws = wsLink({ url: url.replace(/^http/, 'ws') });
   const client = createTrpcClient({
@@ -49,7 +42,7 @@ try {
       httpLink({ url: url.replace(`/rooms/${room}/`, `/rooms/${room}-2/`) }),
     ],
   });
-  if (!deployed) {
+  if (local) {
     await fetch(
       new URL('/cdn-cgi/local/explorer/api/local/observability/clear', base),
       {
@@ -68,7 +61,7 @@ try {
   if (claims[0].waited || !claims[1].waited) {
     throw new Error('expected the second claim to wait for the first');
   }
-  if (!deployed) {
+  if (local) {
     // Local Explorer keeps Workers Traces in SQL: the lock's subrequest to
     // the `Locks` object is a child of tRPC's `trpc.claim` span.
     const parents = await waitForRows(
@@ -128,9 +121,9 @@ try {
   if (summaries.length !== 3 || resumedFrom[1] !== '2') {
     throw new Error('expected the digest to resume after two frames');
   }
-} finally {
-  await worker?.dispose();
 }
+
+if (import.meta.main) await main(process.argv[2] ?? 'http://localhost:8787');
 
 /** Polls Local Explorer's trace store until `sql` returns rows. */
 async function waitForRows(

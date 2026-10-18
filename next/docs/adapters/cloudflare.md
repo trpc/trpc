@@ -6,7 +6,7 @@ order: 7
 hidden: true
 ---
 
-`@trpc12/trpc/cloudflare` has what a router needs inside a Durable Object, and a tracer for Workers Traces. A Worker on its own serves `handler.fetch` ([Fetch](./fetch.md)). The [`examples/cloudflare`](../../examples/cloudflare/src/index.ts) app uses all of it.
+`@trpc12/trpc/cloudflare` has what a router needs inside a Durable Object, and a tracer for Workers Traces. A Worker on its own serves `handler.fetch` ([Fetch](./fetch.md)). The [`examples/cloudflare`](../../examples/cloudflare/server.ts) app uses all of it.
 
 ## Serving from a Durable Object
 
@@ -262,7 +262,7 @@ createFetchHandler({
 });
 ```
 
-Workers spans have no events, so Effect's span events are dropped, and a `traceparent` from another service doesn't parent the call: its spans join the Worker's own trace. Locally, Wrangler's Local Explorer (`e` in `wrangler dev`) shows the spans; the example's smoke test reads them from its trace store.
+Workers spans have no events, so Effect's span events are dropped, and a `traceparent` from another service doesn't parent the call: its spans join the Worker's own trace. Locally, Wrangler's Local Explorer (`e` in `wrangler dev`) shows the spans; the example's client reads them from its trace store.
 
 ## Signed connection tokens
 

@@ -4,9 +4,11 @@
   "type": "module",
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "dev": "wrangler dev",
+    "start": "node start.ts",
+    "server": "wrangler dev",
+    "client": "node client.ts",
     "deploy": "wrangler deploy",
-    "smoke": "node smoke.ts"
+    "smoke": "pnpm start"
   },
   "dependencies": {
     "@trpc12/trpc": "workspace:*",

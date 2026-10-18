@@ -156,7 +156,7 @@ jobs:
       - run: pnpm test:bun
 
   cloudflare-deploy:
-    # Deploys examples/cloudflare and runs its smoke against the deployed
+    # Deploys examples/cloudflare and runs its client against the deployed
     # Worker. Skipped until the repo has the CLOUDFLARE_API_TOKEN and
     # CLOUDFLARE_ACCOUNT_ID secrets.
     if: github.event_name == 'push' && github.ref == 'refs/heads/v12'
@@ -202,6 +202,6 @@ jobs:
       - if: steps.credentials.outputs.present == 'true'
         name: Smoke the deployed Worker
         working-directory: next/examples/cloudflare
-        run: pnpm smoke
+        run: pnpm client "$SMOKE_URL"
         env:
           SMOKE_URL: ${{ steps.deploy.outputs.url }}

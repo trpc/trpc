@@ -17,8 +17,8 @@ import {
 } from '@trpc12/trpc/cloudflare';
 import { Layer } from 'effect';
 import { createFetchHandler } from '@trpc12/trpc/server';
-import { appRouter, Messages } from './router.ts';
-import { durableObjectPersistence } from './storage.ts';
+import { appRouter, Messages } from './src/router.ts';
+import { durableObjectPersistence } from './src/storage.ts';
 
 export interface Env {
   ROOMS: DurableObjectNamespace<Room>;
