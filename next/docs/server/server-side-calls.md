@@ -26,4 +26,4 @@ In-process callers (`createRouterClient`, `createTrpcRsc`, `localLink({ serializ
 
 ## Testing
 
-Test in process with `createRouterClient` or `localLink`. `@trpc12/trpc/internal/testing` is a semi-public `TestServer` Effect layer for real-server tests (with `@effect/vitest`'s `it.layer`); it has no compatibility promise.
+Test in process with `createRouterClient` or `localLink`; [`examples/saas-api`](../../examples/saas-api/src/api.test.ts) tests its API with both and with `call()`. `@trpc12/trpc/internal/testing` is a semi-public `TestServer` Effect layer for real-server tests (with `@effect/vitest`'s `it.layer`); it has no compatibility promise.

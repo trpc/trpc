@@ -92,6 +92,6 @@ fastify.register(async (scoped) => {
 createServer((req, res) => nodeHandler(req, res)).listen(3000);
 ```
 
-Batches are sent to the endpoint itself (`/trpc`), so the route must match it as well as the paths under it. The handler reads the body itself. If `express.json()`, `express.text()` or `express.raw()` ran first, it uses `req.body`. Other parsers that consume the stream (for example multipart ones) make the call fail with a 500 that says so, so mount them after the tRPC route.
+Batches are sent to the endpoint itself (`/trpc`), so the route must match it as well as the paths under it. [`examples/saas-api`](../../examples/saas-api/src/servers.ts) serves one API on Effect's server, Express and Fastify this way, and `pnpm example` runs the same calls against each. The handler reads the body itself. If `express.json()`, `express.text()` or `express.raw()` ran first, it uses `req.body`. Other parsers that consume the stream (for example multipart ones) make the call fail with a 500 that says so, so mount them after the tRPC route.
 
 [Middleware and CORS](./overview.md#middleware-and-cors) apply the same way on every adapter.

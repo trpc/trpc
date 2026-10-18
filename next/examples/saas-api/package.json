@@ -1,0 +1,24 @@
+{
+  "name": "@example/saas-api",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vp test run",
+    "smoke": "node smoke.ts"
+  },
+  "dependencies": {
+    "@effect/platform-node": "4.0.2",
+    "@trpc12/trpc": "workspace:*",
+    "effect": "4.0.2",
+    "express": "5.2.1",
+    "fastify": "5.12.7",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@types/express": "5.0.6",
+    "@types/node": "^24.0.0",
+    "typescript": "^7.0.2",
+    "vite-plus": "1.1.0"
+  }
+}

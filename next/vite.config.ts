@@ -93,6 +93,7 @@ export default defineConfig({
           'test/**',
           'examples/effect/**',
           'examples/effect-observability/**',
+          'examples/saas-api/**',
         ],
         rules: {
           'anti-slop-effect/no-manual-tag-comparison': 'error',
@@ -164,6 +165,7 @@ export default defineConfig({
             'www/build/**/*.test.ts',
             'www/src/**/*.test.ts',
             'examples/*/*.test.ts',
+            'examples/*/src/**/*.test.ts',
           ],
           exclude: [
             '**/node_modules/**',

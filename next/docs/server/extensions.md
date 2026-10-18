@@ -43,7 +43,7 @@ t.procedure
   .mutation((opts) => opts.ctx.remaining);
 ```
 
-Extensions chain, and `t.middleware` sees what they add. `t.concat()` is a type error when the root lacks ctx the extension needs, or declares one of its meta keys with another type. Services an extension provides with `.provide()` don't need the handler's `layer`; services it only uses do.
+Extensions chain, and `t.middleware` sees what they add. [`examples/saas-api`](../../examples/saas-api/src/tenancy.ts) has two: a tenancy extension that adds the caller's tenant and role, and an audit extension that starts with the same session middleware, so it runs once. `t.concat()` is a type error when the root lacks ctx the extension needs, or declares one of its meta keys with another type. Services an extension provides with `.provide()` don't need the handler's `layer`; services it only uses do.
 
 ## Merging meta
 
