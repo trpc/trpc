@@ -41,6 +41,10 @@ An export whose name starts with `experimental_` (such as `experimental_createAc
 
 Every export's JSDoc carries `@stability` (`stable` or `experimental`) and `@since`. Until 12.0.0, prereleases promise nothing; `@stability` says how the export is planned to ship.
 
+## Versions
+
+Each package has its own version. When a package releases, every package that depends on it releases too, built against the new version, so the newest version of each `@trpc12/*` package works with the newest of the others. Update them together.
+
 ## Internal entry points
 
 `@trpc12/trpc/internal` holds types that declaration emit refers to. Don't import it; it has no semver. `@trpc12/trpc/internal/testing` is a semi-public `TestServer` Effect layer for real-server tests (with `@effect/vitest`'s `it.layer`); it has no compatibility promise either. Test in process with `createRouterClient` or `localLink` ([Server-side calls](./server/server-side-calls.md)).
