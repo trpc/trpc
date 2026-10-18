@@ -484,7 +484,9 @@ const bundleSizes = Command.make('bundle', {}, () =>
  * Client bundles held to a gzip budget (decision orpc-v2-parity). `target`
  * is the human's budget; `ceiling` is today's size, which CI enforces so the
  * gap only shrinks. Lower a ceiling with each cut, down to the target;
- * raising one needs a reason in the orpc-v2-parity decision.
+ * raising one needs a reason in the orpc-v2-parity decision. Only code these
+ * entries pull in counts: opt-in links and utilities (`dedupeLink`, `wsLink`,
+ * …) have to shake out of them, not be small.
  */
 const budgets = [
   {

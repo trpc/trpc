@@ -37,6 +37,8 @@ pnpm example
 
 `pnpm typecheck` and `pnpm check` are the other local gates (`pnpm fix` autofixes). Commands are listed in `README.md`; run every gate listed there before pushing, then watch the `next.yml` run with `gh run watch <id> --exit-status`. If `node -v` is not 24.x, run `nvm use` before install or test.
 
+`pnpm bench budget` measures only the tree-shaken standard client (`httpLink`, plus `retryLink` and danSON); opt-in links and utilities such as `dedupeLink` only have to shake out of it, so don't bend their design for bundle size ([`decisions/orpc-v2-parity.md`](./.agent-docs/decisions/orpc-v2-parity.md)).
+
 ## Landing on `v12`
 
 Many agents push to `v12` at once, about a hundred commits a day, so a change that waits drifts into conflicts.
