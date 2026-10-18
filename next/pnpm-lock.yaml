@@ -941,6 +941,9 @@ importers:
       '@tanstack/query-core':
         specifier: 5.90.20
         version: 5.90.20
+      '@tanstack/react-query':
+        specifier: 5.104.1
+        version: 5.104.1(react@19.3.0)
       '@tooling/tsconfig':
         specifier: workspace:*
         version: link:../tooling/tsconfig
@@ -950,6 +953,9 @@ importers:
       '@trpc/server':
         specifier: 11.19.0
         version: 11.19.0(typescript@7.0.2)
+      '@trpc12/tanstack-query':
+        specifier: workspace:*
+        version: link:../packages/tanstack-query
       '@types/node':
         specifier: ^24.0.0
         version: 24.19.1
