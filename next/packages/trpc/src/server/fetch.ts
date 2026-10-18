@@ -62,16 +62,18 @@ import {
   type inferRouterServices,
 } from './router.ts';
 import { httpParts } from './routes.ts';
+import { fromWebSocketLike } from './socket-session.ts';
 import {
   messagePortConnection,
   serveConnection,
+  serveSocketConnection,
   socketCores,
-  webSocketConnection,
   type MessagePortLike,
   type SocketCore,
   type Transport,
   type WebSocketLike,
 } from './socket.ts';
+import { socketServers, type ServeSocket } from './upgrade.ts';
 
 const encoder = new TextEncoder();
 
@@ -1220,14 +1222,6 @@ export function createFetchHandler<
     ),
   ) as never;
 
-  const middleware = opts.middleware ?? [];
-  const http = httpParts({
-    app,
-    middleware,
-    endpoint,
-    webSocket: (ws, request) => core.serveWebSocket(ws, request),
-  });
-
   const core: SocketCore = {
     router,
     serializer,
@@ -1236,22 +1230,30 @@ export function createFetchHandler<
     deserializeInput,
     publicError,
     report,
-    serveWebSocket: (socket, request) =>
-      serveConnection(core, webSocketConnection(socket), {
-        request,
-        transport: 'websocket',
-        idleTimeoutMs: opts.websocket?.idleTimeoutMs ?? 60_000,
-      }),
   };
+  const idleTimeoutMs = opts.websocket?.idleTimeoutMs ?? 60_000;
+  const serveWebSocket: ServeSocket = (socket, request) =>
+    serveSocketConnection(core, socket, {
+      request,
+      transport: 'websocket',
+      idleTimeoutMs,
+    });
+
+  const middleware = opts.middleware ?? [];
+  const http = httpParts({ app, middleware, endpoint, serveWebSocket });
 
   const handler: FetchHandler<unknown> = {
     websocket(socket, o) {
-      serveConnection(core, webSocketConnection(socket), {
-        request: HttpServerRequest.fromWeb(o.request),
-        platform: o.platform,
-        transport: 'websocket',
-        idleTimeoutMs: opts.websocket?.idleTimeoutMs ?? 60_000,
-      });
+      Effect.runFork(
+        Effect.flatMap(fromWebSocketLike(socket), (effectSocket) =>
+          serveSocketConnection(core, effectSocket, {
+            request: HttpServerRequest.fromWeb(o.request),
+            platform: o.platform,
+            transport: 'websocket',
+            idleTimeoutMs,
+          }),
+        ),
+      );
     },
     messagePort(port, o) {
       serveConnection(core, messagePortConnection(port), {
@@ -1276,6 +1278,7 @@ export function createFetchHandler<
     },
   };
   socketCores.set(handler, core);
+  socketServers.set(handler, serveWebSocket);
   httpApps.set(handler, { app, middleware });
   return handler as FetchHandler<TPlatform>;
 }

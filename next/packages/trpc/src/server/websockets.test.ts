@@ -10,6 +10,7 @@ import {
   wsLink,
 } from '@trpc12/trpc/client';
 import {
+  createFetchHandler,
   error,
   initTrpc,
   tracked,
@@ -560,4 +561,53 @@ test('the server closes a socket that sends nothing for idleTimeoutMs, and pings
   }
   expect(isClosed).toBe(false);
   pinging.socket.close();
+});
+
+/** A standard server-side `WebSocket` as Deno hands it over: connecting until the upgrade response goes out. */
+class StandardSocket extends EventTarget {
+  readyState = 0;
+  readonly sent: unknown[] = [];
+  closed: { code: number | undefined; reason: string | undefined } | undefined;
+  send(data: string | Uint8Array) {
+    if (this.readyState !== 1) throw new Error('send before open');
+    this.sent.push(typeof data === 'string' ? JSON.parse(data) : data);
+  }
+  close(code?: number, reason?: string) {
+    this.closed = { code, reason };
+    this.readyState = 3;
+    this.dispatchEvent(Object.assign(new Event('close'), { code, reason }));
+  }
+  open() {
+    this.readyState = 1;
+    this.dispatchEvent(new Event('open'));
+  }
+  receive(message: unknown) {
+    this.dispatchEvent(
+      new MessageEvent('message', { data: JSON.stringify(message) }),
+    );
+  }
+}
+
+test('handler.websocket serves a standard socket that opens after the call, and closes it when idle', async () => {
+  const handler = createFetchHandler({
+    router,
+    createContext: () => ({ user: 'deno', transport: 'websocket' }),
+    websocket: { idleTimeoutMs: 80 },
+  });
+  const socket = new StandardSocket();
+  handler.websocket(socket, { request: new Request('http://localhost/trpc') });
+  socket.open();
+  socket.receive({ type: 'init', version: '12' });
+  socket.receive({ id: 1, type: 'request', method: 'query', path: 'whoami' });
+  await vi.waitFor(() =>
+    expect(socket.sent).toContainEqual(
+      expect.objectContaining({ id: 1, type: 'result' }),
+    ),
+  );
+  expect(socket.sent[0]).toMatchObject({ type: 'init' });
+  expect(socket.closed).toBeUndefined();
+  await vi.waitFor(() =>
+    expect(socket.closed).toEqual({ code: 1001, reason: 'Idle timeout' }),
+  );
+  await handler.dispose();
 });

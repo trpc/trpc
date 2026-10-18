@@ -1,6 +1,7 @@
-import { Effect, Predicate, Queue } from 'effect';
+import { Effect } from 'effect';
 import type { HttpServerError, HttpServerRequest } from 'effect/http';
-import { Socket } from 'effect/socket';
+import type { Socket } from 'effect/socket';
+import { runSocket, socketFrames } from './socket-session.ts';
 import type { WebSocketLike } from './socket.ts';
 
 /** @internal */
@@ -8,90 +9,81 @@ export const isUpgrade = (
   request: HttpServerRequest.HttpServerRequest,
 ): boolean => request.headers['upgrade']?.toLowerCase() === 'websocket';
 
+/** Serves an upgraded request's socket until it closes. @internal */
+export type ServeSocket = (
+  socket: Socket.Socket,
+  request: HttpServerRequest.HttpServerRequest,
+) => Effect.Effect<void>;
+
+/**
+ * How each of our handlers serves an upgraded socket, so
+ * `@trpc12/trpc/http` hands it Effect's `Socket` instead of a `WebSocket`.
+ * @internal
+ */
+export const socketServers: WeakMap<object, ServeSocket> = new WeakMap();
+
+/** Upgrades `request` and serves its socket until it closes. @internal */
+export const upgradeTo = (
+  request: HttpServerRequest.HttpServerRequest,
+  serve: (socket: Socket.Socket) => Effect.Effect<void>,
+): Effect.Effect<void, HttpServerError.HttpServerError> =>
+  Effect.flatMap(request.upgrade, serve);
+
 const OPEN = 1;
 const CLOSING = 2;
 const CLOSED = 3;
 
 /**
- * Exposes an Effect `Socket` as a `WebSocketLike` until it closes. Text
- * frames arrive as strings, binary frames as `Uint8Array`.
+ * Serves `socket` to `accept` as a standard `WebSocket`, for a
+ * `websocket()` handler that isn't ours: its contract is the `WebSocket`
+ * shape, and Effect only adapts the other way (`Socket.fromWebSocket`).
+ * @internal
  */
-const serveSocket = (
+export const serveAsWebSocket = (
   socket: Socket.Socket,
   accept: (ws: WebSocketLike) => void,
-) =>
-  Effect.gen(function* () {
-    const reader = yield* socket.reader;
-    const writer = yield* socket.writer;
-    const outbox = yield* Queue.unbounded<
-      string | Uint8Array | Socket.CloseEvent
-    >();
-    const listeners = new Map<string, Array<(event: any) => void>>();
-    const emit = (type: string, event: unknown) => {
-      for (const listener of listeners.get(type) ?? []) listener(event);
-    };
-    let readyState = OPEN;
-    const closed = (code: number, reason: string) => {
-      if (readyState === CLOSED) return;
-      readyState = CLOSED;
-      emit('close', { code, reason, wasClean: code !== 1006 });
-    };
-    const ws: WebSocketLike = {
-      get readyState() {
-        return readyState;
-      },
-      send(data) {
-        if (readyState === OPEN) Queue.offerUnsafe(outbox, data);
-      },
-      close(code, reason) {
-        if (readyState !== OPEN) return;
-        readyState = CLOSING;
-        Queue.offerUnsafe(outbox, new Socket.CloseEvent(code, reason));
-      },
-      addEventListener(type, listener) {
-        const list = listeners.get(type);
-        if (list) list.push(listener);
-        else listeners.set(type, [listener]);
-      },
-    };
-    yield* Queue.take(outbox).pipe(
-      Effect.flatMap(writer.write),
-      Effect.forever,
-      Effect.ignore,
-      Effect.forkScoped,
-    );
-    accept(ws);
-    yield* reader.pull.pipe(
-      Effect.flatMap((frames) =>
-        Effect.sync(() => {
-          for (const data of frames) emit('message', { data });
-        }),
-      ),
-      Effect.forever,
-      Effect.catch((err) =>
-        Effect.sync(() => {
-          const { reason } = err;
-          if (Predicate.isTagged(reason, 'SocketCloseError')) {
-            closed(reason.code, reason.closeReason ?? '');
-          }
-        }),
-      ),
-      Effect.ensuring(Effect.sync(() => closed(1006, ''))),
-    );
+): Effect.Effect<void> =>
+  runSocket({
+    socket,
+    frames: socketFrames(socket),
+    idleTimeoutMs: false,
+    open: (outbox) =>
+      Effect.sync(() => {
+        const listeners = new Map<string, Set<(event: any) => void>>();
+        const emit = (type: string, event: unknown) => {
+          for (const listener of listeners.get(type) ?? []) listener(event);
+        };
+        let readyState = OPEN;
+        accept({
+          get readyState() {
+            return readyState;
+          },
+          send(data) {
+            if (readyState === OPEN) outbox.send(data);
+          },
+          close(code, reason) {
+            if (readyState !== OPEN) return;
+            readyState = CLOSING;
+            outbox.close(code ?? 1000, reason);
+          },
+          addEventListener(type, listener) {
+            const set = listeners.get(type) ?? new Set();
+            listeners.set(type, set.add(listener));
+          },
+          removeEventListener(type, listener) {
+            listeners.get(type)?.delete(listener);
+          },
+        });
+        return {
+          frame: (data) => emit('message', { data }),
+          close: (event) => {
+            readyState = CLOSED;
+            emit('close', {
+              code: event.code,
+              reason: event.reason ?? '',
+              wasClean: event.code !== 1006,
+            });
+          },
+        };
+      }),
   });
-
-/**
- * Upgrades `request` and hands the socket to `onSocket` as a
- * `WebSocketLike`, until it closes. @internal
- */
-export const upgradeTo = (
-  request: HttpServerRequest.HttpServerRequest,
-  onSocket: (ws: WebSocketLike) => void,
-): Effect.Effect<void, HttpServerError.HttpServerError> =>
-  Effect.scoped(
-    Effect.flatMap(request.upgrade, (socket) =>
-      serveSocket(socket, onSocket).pipe(
-        Effect.catchTag('SocketError', () => Effect.void),
-      ),
-    ),
-  );

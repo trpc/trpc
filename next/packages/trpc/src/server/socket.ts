@@ -1,6 +1,7 @@
 import { carriesBytes, encodeRecord } from '../internal/frames.ts';
 import { Context, Effect, Exit, Option, Stream, type Tracer } from 'effect';
 import { Headers, HttpTraceContext, type HttpServerRequest } from 'effect/http';
+import type { Socket } from 'effect/socket';
 import {
   HibernationSlot,
   type ParkedSubscription,
@@ -27,6 +28,7 @@ import {
 import type { ResponseHandle } from './middleware.ts';
 import type { AnyProcedure } from './procedure.ts';
 import { resolveProcedure, type AnyRouter } from './router.ts';
+import { runSocket, socketFrames } from './socket-session.ts';
 
 /** The span a socket call is a child of: the trace context in its message. */
 const traceParent = (trace: unknown): Tracer.AnySpan | undefined =>
@@ -44,9 +46,9 @@ const traceParent = (trace: unknown): Tracer.AnySpan | undefined =>
     : undefined;
 
 /**
- * The parts of a standard `WebSocket` the handler uses: the server-side
- * socket of Deno, Bun, Cloudflare (`WebSocketPair`, after `accept()`) or
- * `@trpc12/trpc/http`'s upgrade.
+ * The parts of a standard `WebSocket` the handler uses, which Effect's
+ * `Socket.fromWebSocket` reads: the server-side socket of Deno, Bun or
+ * Cloudflare (`WebSocketPair`, after `accept()`).
  * @since 0.1.0
  * @stability stable
  */
@@ -55,6 +57,7 @@ export interface WebSocketLike {
   send(data: string | Uint8Array): void;
   close(code?: number, reason?: string): void;
   addEventListener(type: string, listener: (event: any) => void): void;
+  removeEventListener(type: string, listener: (event: any) => void): void;
 }
 
 /**
@@ -111,11 +114,6 @@ export interface SocketCore {
     path?: string,
     type?: ProcedureType,
   ): void;
-  /** Serves an upgraded socket, for `@trpc12/trpc/http`. */
-  serveWebSocket(
-    socket: WebSocketLike,
-    request: HttpServerRequest.HttpServerRequest,
-  ): void;
 }
 
 /** The socket core behind each fetch handler, for adapters outside it. @internal */
@@ -131,8 +129,6 @@ export interface Connection {
   close(code: number, reason: string): void;
 }
 
-const OPEN = 1;
-
 /** A WebSocket frame as a client message, or `undefined` if it isn't JSON text. @internal */
 export function parseSocketMessage(data: unknown): unknown {
   if (typeof data !== 'string') return undefined;
@@ -143,35 +139,65 @@ export function parseSocketMessage(data: unknown): unknown {
   }
 }
 
-/** @internal */
-export function webSocketConnection(socket: WebSocketLike): Connection {
-  let binary = false;
-  return {
-    send(message) {
-      if (socket.readyState !== OPEN) return;
-      socket.send(
-        binary && message.type === 'chunk' && carriesBytes(message.chunk)
-          ? encodeRecord(message)
-          : JSON.stringify(message),
-      );
-    },
-    acceptBinary() {
-      binary = true;
-    },
-    onMessage(listener) {
-      socket.addEventListener('message', (event: { data: unknown }) => {
-        listener(parseSocketMessage(event.data));
-      });
-    },
-    onClose(listener) {
-      socket.addEventListener('close', listener);
-      socket.addEventListener('error', listener);
-    },
-    close(code, reason) {
-      socket.close(code, reason);
-    },
-  };
-}
+/**
+ * A server message as a WebSocket frame: a binary record for file bytes
+ * once the client asked for binary messages, JSON text otherwise. @internal
+ */
+export const encodeWebSocketMessage = (
+  message: ServerMessage,
+  binary: boolean,
+): string | Uint8Array =>
+  binary && message.type === 'chunk' && carriesBytes(message.chunk)
+    ? encodeRecord(message)
+    : JSON.stringify(message);
+
+/**
+ * Serves calls over an Effect `Socket` until it closes (10): a WebSocket
+ * from `request.upgrade` or `Socket.fromWebSocket`, one client message per
+ * frame, unless `messages` frames them otherwise (raw sockets' lines).
+ * @internal
+ */
+export const serveSocketConnection = (
+  core: SocketCore,
+  socket: Socket.Socket,
+  opts: {
+    readonly request: HttpServerRequest.HttpServerRequest;
+    readonly platform?: unknown;
+    readonly transport: Transport;
+    /** Close the socket after this long without a message. */
+    readonly idleTimeoutMs: number | false;
+    readonly messages?: Stream.Stream<unknown, Socket.SocketError>;
+    /** `binary` is set once the client's `init` asks for binary messages. */
+    readonly encode?: (
+      message: ServerMessage,
+      binary: boolean,
+    ) => string | Uint8Array;
+  },
+): Effect.Effect<void> => {
+  const encode = opts.encode ?? encodeWebSocketMessage;
+  return runSocket({
+    socket,
+    frames:
+      opts.messages ?? Stream.map(socketFrames(socket), parseSocketMessage),
+    idleTimeoutMs: opts.idleTimeoutMs,
+    open: (outbox) =>
+      Effect.sync(() => {
+        let binary = false;
+        const receiver = connectionReceiver(
+          core,
+          {
+            send: (message) => outbox.send(encode(message, binary)),
+            acceptBinary: () => {
+              binary = true;
+            },
+            close: (code, reason) => outbox.close(code, reason),
+          },
+          opts,
+        );
+        return { frame: receiver.receive, close: receiver.close };
+      }),
+  });
+};
 
 /** @internal */
 export function messagePortConnection(port: MessagePortLike): Connection {
@@ -219,9 +245,10 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
 
 /**
- * Serves calls over a connection (10). Each request message is one call
- * with its own `createContext`, like an HTTP request; `connectionParams`
- * from the client's `init` message reach `createContext`.
+ * Serves calls over a connection that delivers messages by callback, a
+ * `MessagePort` (10). Each request message is one call with its own
+ * `createContext`, like an HTTP request; `connectionParams` from the
+ * client's `init` message reach `createContext`.
  * @internal
  */
 export function serveConnection(
@@ -231,30 +258,11 @@ export function serveConnection(
     request: HttpServerRequest.HttpServerRequest;
     platform?: unknown;
     transport: Transport;
-    /** Close the connection after this long without a message. */
-    idleTimeoutMs?: number | false | undefined;
   },
 ): void {
   const receiver = connectionReceiver(core, conn, opts);
-  const idleMs = opts.idleTimeoutMs;
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  const arm = () => {
-    if (!idleMs) return;
-    clearTimeout(timer);
-    timer = setTimeout(() => {
-      receiver.close();
-      conn.close(1001, 'Idle timeout');
-    }, idleMs);
-  };
-  conn.onClose(() => {
-    clearTimeout(timer);
-    receiver.close();
-  });
-  conn.onMessage((message) => {
-    arm();
-    receiver.receive(message);
-  });
-  arm();
+  conn.onClose(receiver.close);
+  conn.onMessage(receiver.receive);
 }
 
 /** What `connectionReceiver()` returns. @internal */

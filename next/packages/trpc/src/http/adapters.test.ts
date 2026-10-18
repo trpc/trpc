@@ -153,6 +153,16 @@ test('upgrades reach the endpoint only, through createFetchHandler() and other h
   }
 });
 
+test("another handler's websocket() closes the upgraded socket through the WebSocket it gets", async () => {
+  await using server = await listen(HttpServer.serve(toHttpEffect(plain)));
+  const socket = new WebSocket(server.url.replace('http', 'ws'));
+  await once(socket, 'open');
+  socket.send(JSON.stringify({ type: 'init', version: '0' }));
+  const [event] = (await once(socket, 'close')) as [CloseEvent];
+  expect(event.code).toBe(1002);
+  expect(event.reason).toBe('Unsupported protocol version');
+});
+
 test("serve() serves a createFetchHandler()'s routes, with its middleware; cors() takes a predicate", async () => {
   const seen: string[] = [];
   const tagged = createFetchHandler({

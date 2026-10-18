@@ -1,8 +1,7 @@
 import type { Layer } from 'effect';
 import { Context, Effect } from 'effect';
 import { HttpRouter, HttpServerRequest, HttpServerResponse } from 'effect/http';
-import type { WebSocketLike } from './socket.ts';
-import { isUpgrade, upgradeTo } from './upgrade.ts';
+import { isUpgrade, upgradeTo, type ServeSocket } from './upgrade.ts';
 
 type App = Effect.Effect<
   HttpServerResponse.HttpServerResponse,
@@ -30,10 +29,7 @@ export function httpParts(opts: {
   /** Routes serve this path and those under it; `/` is every path. */
   readonly endpoint: string;
   /** Serves WebSocket upgrades to the endpoint. */
-  readonly webSocket: (
-    ws: WebSocketLike,
-    request: HttpServerRequest.HttpServerRequest,
-  ) => void;
+  readonly serveWebSocket: ServeSocket;
 }): HttpParts {
   const wrap = (app: App) =>
     opts.middleware.reduceRight<App>((inner, m) => m(inner), app);
@@ -50,7 +46,7 @@ export function httpParts(opts: {
         return Effect.succeed(HttpServerResponse.empty({ status: 404 }));
       }
       return Effect.as(
-        upgradeTo(request, (ws) => opts.webSocket(ws, request)),
+        upgradeTo(request, (socket) => opts.serveWebSocket(socket, request)),
         HttpServerResponse.empty(),
       );
     }),
