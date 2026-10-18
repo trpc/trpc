@@ -13,7 +13,7 @@ hidden: true
 @trpc12/trpc effect @trpc12/experimental-react-atom @effect/atom-react
 ```
 
-The [`examples/experimental/react-without-tanstack`](../../examples/experimental/react-without-tanstack/README.md) app reads one router with this package and `@trpc12/experimental-react`, side by side in a Vite page.
+The [`examples/experimental/react-atom`](../../examples/experimental/react-atom/README.md) app uses this package on TanStack Start, with the server render dehydrated into the browser's registry. [`react-suspense`](../../examples/experimental/react-suspense/README.md) is the same page with `@trpc12/experimental-react`.
 
 ```tsx twoslash
 // ---cut-start---
@@ -67,4 +67,4 @@ function Post(props: { id: string }) {
 
 ## Server rendering
 
-Query atoms are serializable. On the server, render with a registry that keeps idle atoms (`AtomRegistry.make({ defaultIdleTTL })`) and call `Hydration.dehydrate(registry)` afterwards; in the browser, wrap the tree in `HydrationBoundary` from `@effect/atom-react`. Results encode with the links' [serializer](../server/serializers.md) (`serializerSchema(serializer)` is that `Schema`, for your own atoms). Failed results aren't carried; the browser runs those queries again.
+Query atoms are serializable. On the server, keep the atoms you load in the request's registry, mounted (`registry.mount(atom)`) or idle with a TTL (`AtomRegistry.make({ defaultIdleTTL })`, whose timers outlive the request), and call `Hydration.dehydrate(registry)` after the render. In the browser, wrap the tree in `HydrationBoundary` from `@effect/atom-react`, or call `Hydration.hydrate(registry, state)` yourself. A browser registry of your own needs an idle TTL, as `@effect/atom-react`'s default registry has (`defaultIdleTTL: 400`): a component reads a hydrated atom before it subscribes, and without a TTL the registry drops the value and runs the query again. Results encode with the links' [serializer](../server/serializers.md) (`serializerSchema(serializer)` is that `Schema`, for your own atoms). Failed results aren't carried; the browser runs those queries again.
