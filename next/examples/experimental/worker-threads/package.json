@@ -3,8 +3,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "typecheck": "tsc --noEmit -p tsconfig.json",
-    "smoke": "node index.ts"
+    "start": "node start.ts",
+    "smoke": "pnpm start",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
     "@trpc12/trpc": "workspace:*",

@@ -28,7 +28,7 @@ function countPrimes(n: number) {
 
 const stats = { cancelled: 0 };
 
-export const workerRouter = {
+export const appRouter = {
   whoami: t.procedure.query((opts) => ({
     threadId,
     token: opts.ctx.token,
@@ -61,4 +61,4 @@ export const workerRouter = {
   }),
   stats: t.procedure.query(() => stats),
 };
-export type WorkerRouter = typeof workerRouter;
+export type AppRouter = typeof appRouter;
