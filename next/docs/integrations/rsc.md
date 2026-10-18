@@ -2,7 +2,8 @@
 title: React Server Components
 description: Prefetch in server components, stream pending queries to the browser, and tag Next's data cache by query key.
 section: Integrations
-order: 3
+parent: integrations/react
+order: 1
 v11: client/tanstack-react-query/server-components
 ---
 
@@ -47,7 +48,7 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
 ```
 
 - `ctx` and the query client are memoized per request with React's `cache()`.
-- `HydrationBoundary` dehydrates the request's queries, pending ones included, so they stream in. The browser's `QueryClient` needs `defaultOptions: hydrationOptions({ client })` ([Hydration](./tanstack-query.md#hydration)). Read a prefetch you don't `await` with `useSuspenseQuery`: with `useQuery`, the server can render the loading state while the browser already has the data, and React reports a hydration mismatch. For a component on `useQuery`, wait for the data instead: `await getQueryClient().query(…)`. If the router declares a [serializer](../server/serializers.md), `createTrpcRsc` requires the same one as `serializer`, so `Date`s and custom types survive.
+- `HydrationBoundary` dehydrates the request's queries, pending ones included, so they stream in. The browser's `QueryClient` needs `defaultOptions: hydrationOptions({ client })` ([Hydration](./tanstack-query/hydration.md)). Read a prefetch you don't `await` with `useSuspenseQuery`: with `useQuery`, the server can render the loading state while the browser already has the data, and React reports a hydration mismatch. For a component on `useQuery`, wait for the data instead: `await getQueryClient().query(…)`. If the router declares a [serializer](../server/serializers.md), `createTrpcRsc` requires the same one as `serializer`, so `Date`s and custom types survive.
 - `await getQueryClient().query(…)` reads data in the server component itself. `caller` calls the router without the cache.
 - A pending query that later fails is redacted in the dehydrated state, unless its error has a `digest`: Next has to see those to detect dynamic rendering. Set `dehydrate.shouldRedactErrors` on your `makeQueryClient` to change that.
 

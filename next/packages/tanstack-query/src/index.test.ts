@@ -417,7 +417,7 @@ test('QueriesObserver (useQueries) takes queryOptions for many inputs', async ()
   ).toBe('Post 2');
 });
 
-test('paused mutations resume in a new client from setMutationDefaults (docs/integrations/tanstack-query.md)', async () => {
+test('paused mutations resume in a new client from setMutationDefaults (docs/integrations/tanstack-query/hydration.md)', async () => {
   await using app = await createApp();
   const options = app.trpc.post.create.mutationOptions();
   onlineManager.setOnline(false);

@@ -1,0 +1,53 @@
+---
+title: The codemod
+description: '@trpc12/upgrade rewrites v11 imports, names, links and transformers to v12, keeps your formatting, and lists what is left as file:line:column steps.'
+section: Migrations
+parent: migrations/from-v11
+order: 2
+---
+
+`@trpc12/upgrade` rewrites a v11 codebase to v12 where there's one v12 form, and prints the rest as steps. It's a dry run unless you pass `--write`:
+
+```sh
+npx @trpc12/upgrade src          # dry run: what would change, what's left
+npx @trpc12/upgrade src --write
+```
+
+It takes files and directories, reads `.js`, `.jsx`, `.ts` and `.tsx` files (and their `.m` and `.c` forms), and skips `node_modules`, `dist`, `.git`, `.next` and `.output`. The bin is `trpc12-upgrade`, for a global install or a `package.json` script.
+
+## What it rewrites
+
+It keeps your formatting, and rewrites:
+
+- Imports from `@trpc/server`, `@trpc/server/adapters/fetch`, `@trpc/client` and `@trpc/tanstack-react-query` to their `@trpc12/*` entry points, with the names that changed: `initTRPC` to `initTrpc`, `TRPCError` and `TRPCClientError` to `TrpcError`, `fetchRequestHandler` to `createFetchHandler`, `createTRPCClient` to `createTrpcClient`, `createTRPCContext` to `createTrpcContext`, `createTRPCOptionsProxy` to `createTrpcQueryUtils`.
+- `initTRPC.context<Ctx>().meta<Meta>().create()` to `initTrpc<{ ctx: Ctx; meta: Meta }>()`, `mergeRouters(a, b)` to `{ ...a, ...b }`, and `router.createCaller(ctx)` to `createRouterClient(router, { ctx })`.
+- `httpBatchLink`, `httpBatchStreamLink` and `httpSubscriptionLink` to `httpLink`, and their `transformer` to `serializer`.
+- `createTRPCContext`'s result, destructured as a tuple, with `TRPCProvider`, `useTRPC` and `useTRPCClient` renamed wherever the project uses them.
+- `experimental_*` imports of exports that became stable, to their new names ([Stability](../../packages.md#stability)).
+
+## What it leaves to you
+
+The rest it leaves as is and prints as `file:line:column` steps, with the v12 way:
+
+```
+would upgrade src/server/trpc.ts
+src/server/trpc.ts:4:3 transformer: drop it here; pass the same createSyncSerializer(transformer) to the handler and every link
+src/server/index.ts:1:1 observable() subscriptions: return an async generator or an Effect Stream
+1 file(s) to upgrade, 2 step(s) by hand
+```
+
+The steps cover what needs a decision: an `errorFormatter` (declared errors, or [`createV11Handler`](./serve-v11-clients.md) for old clients), `observable()` subscriptions, the standalone, Express and `ws` adapters ([Adapters](../../adapters/overview.md)), `@trpc/react-query` and `@trpc/next`, which have no v12 version, `createWSClient`, `createCallerFactory`, your own `TRPCLink`s ([v11 links](./links.md)), and root options such as `isDev` and `sse` that moved to the handler. A file it can't parse is reported and left alone.
+
+## From code
+
+`upgradeSource(source, filename)` rewrites one file's text and returns `{ code, changed, notes }`; `upgradeFiles(paths, { write })` is the CLI's Effect, over files and directories:
+
+```ts
+import { writeFileSync } from 'node:fs';
+import { upgradeSource } from '@trpc12/upgrade';
+
+const result = upgradeSource(source, 'src/server/trpc.ts');
+if (result.changed) writeFileSync('src/server/trpc.ts', result.code);
+for (const note of result.notes)
+  console.log(`${note.line}:${note.column} ${note.message}`);
+```

@@ -2,10 +2,15 @@
 title: React atoms
 description: Query, mutation and subscription atoms on Effect Atom, typed with each procedure's errors.
 section: Integrations
-order: 5
+parent: integrations/react
+order: 4
 ---
 
 `@trpc12/experimental-react-atom` is modeled on Effect's `AtomRpc`. Each query is an atom of its `AsyncResult`, typed with the procedure's errors; the same call returns the same atom. Like [`@trpc12/experimental-react`](./experimental-react.md), the whole package is experimental.
+
+```package-install
+@trpc12/trpc @trpc12/experimental-react-atom @effect/atom-react effect
+```
 
 ```tsx twoslash
 // ---cut-start---

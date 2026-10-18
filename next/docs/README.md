@@ -5,7 +5,7 @@ User docs for v12, kept in step with the code. The website in [`../www`](../www)
 ## Getting started
 
 - [Getting started](./getting-started.md): A router, a handler that serves it, and a client that calls it with the router's types.
-- [Packages and stability](./packages.md): The entry points of @trpc12/trpc, the framework packages, and what experimental_ and @stability promise.
+- [Packages and stability](./packages.md): Every package and entry point, what each is for and where its docs are, and what experimental_ and @stability promise.
 
 ## Server
 
@@ -80,11 +80,24 @@ User docs for v12, kept in step with the code. The website in [`../www`](../www)
 ## Integrations
 
 - [Integrations](./integrations/overview.md): Data fetching for every TanStack Query framework, React and Next.js, and the libraries tRPC works with.
-- [TanStack Query](./integrations/tanstack-query.md): Query and mutation options for every TanStack Query framework, with streamed mutations, subscriptions and hydration.
-- [Server Actions](./integrations/server-actions.md): Turn procedures into React Server Actions that take typed input or FormData, with useActionState and optimistic updates.
-- [React Server Components](./integrations/rsc.md): Prefetch in server components, stream pending queries to the browser, and tag Next's data cache by query key.
-- [React without TanStack Query](./integrations/experimental-react.md): Render-as-you-fetch with use() and Suspense in @trpc12/experimental-react, where cache features are links.
-- [React atoms](./integrations/experimental-react-atom.md): Query, mutation and subscription atoms on Effect Atom, typed with each procedure's errors.
+- [TanStack Query](./integrations/tanstack-query.md): Query, mutation and subscription options for every TanStack Query framework, from one package and an adapter per framework.
+  - [React](./integrations/tanstack-query/react.md): @trpc12/tanstack-react-query: the helpers as a module singleton or through context, Suspense, useSubscription, and server components.
+  - [Preact](./integrations/tanstack-query/preact.md): @trpc12/tanstack-preact-query: a context provider for the client, useTrpc() in components, and useSubscription.
+  - [Vue](./integrations/tanstack-query/vue.md): @trpc12/tanstack-vue-query: a Vue plugin or provideTrpc() for the client, useTrpc() in setup, and useSubscription with refs.
+  - [Solid](./integrations/tanstack-query/solid.md): @trpc12/tanstack-solid-query: a context provider for the client, useTrpc() in components, and useSubscription with reactive getters.
+  - [Svelte](./integrations/tanstack-query/svelte.md): @trpc12/tanstack-svelte-query: context helpers for the client, useTrpc() in components, and createSubscription with runes.
+  - [Angular](./integrations/tanstack-query/angular.md): @trpc12/tanstack-angular-query: provideTrpc() next to provideTanStackQuery, injectTrpc() in components, and injectSubscription with signals.
+  - [Lit](./integrations/tanstack-query/lit.md): @trpc12/tanstack-lit-query: a provider element for the client, useTrpc(this) in elements, and createSubscriptionController.
+  - [Query keys and filters](./integrations/tanstack-query/keys.md): How tRPC's query keys are shaped, the filters that invalidate and read them, and keyPrefix for two APIs in one QueryClient.
+  - [Subscriptions in TanStack Query](./integrations/tanstack-query/subscriptions.md): subscriptionOptions() for each framework's subscription primitive, shared between components, and liveOptions() and streamedOptions() in the query cache.
+  - [Streamed mutations](./integrations/tanstack-query/streamed-mutations.md): A mutation that returns an async iterable fills in as it streams, with chunksOptions(), and stops on unmount or on demand; long jobs pair a mutation with a subscription.
+  - [Hydration and offline mutations](./integrations/tanstack-query/hydration.md): hydrationOptions() sends the cache to the browser with the client's serializer, and persisted mutations resume with setMutationDefaults.
+  - [TanStack DB](./integrations/tanstack-query/tanstack-db.md): A TanStack DB query collection over a procedure's queryOptions(), with optimistic inserts that call mutations.
+- [React and Next.js](./integrations/react.md): Which package to fetch with in React, and the pages for server components, Server Actions and route handlers.
+  - [React Server Components](./integrations/rsc.md): Prefetch in server components, stream pending queries to the browser, and tag Next's data cache by query key.
+  - [Server Actions](./integrations/server-actions.md): Turn procedures into React Server Actions that take typed input or FormData, with useActionState and optimistic updates.
+  - [React without TanStack Query](./integrations/experimental-react.md): Render-as-you-fetch with use() and Suspense in @trpc12/experimental-react, where cache features are links.
+  - [React atoms](./integrations/experimental-react-atom.md): Query, mutation and subscription atoms on Effect Atom, typed with each procedure's errors.
 - [AI SDK](./integrations/ai-sdk.md): Stream useChat responses from a procedure, and give procedures to the model as tools.
 - [Better Auth](./integrations/better-auth.md): Read the Better Auth session in a middleware and type ctx.user with its user.
 - [NestJS](./integrations/nestjs.md): Serve a contract from Nest controllers with @trpc12/nest.
@@ -92,3 +105,7 @@ User docs for v12, kept in step with the code. The website in [`../www`](../www)
 ## Migrations
 
 - [Migrating from v11](./migrations/from-v11.md): Serve v11 clients from the new router with createV11Handler, run the codemod, then move the clients.
+  - [Serving v11 clients](./migrations/from-v11/serve-v11-clients.md): createV11Handler serves the new router to @trpc/client 11 apps on the endpoint they already call, in v11's wire format and error shape.
+  - [The codemod](./migrations/from-v11/codemod.md): @trpc12/upgrade rewrites v11 imports, names, links and transformers to v12, keeps your formatting, and lists what is left as file:line:column steps.
+  - [Your v11 links](./migrations/from-v11/links.md): fromV11Link runs a v11 TRPCLink in a v12 chain, so you can move links one at a time, and what a rewritten link looks like.
+  - [API changes](./migrations/from-v11/api-changes.md): Each v11 API next to its v12 form: init, errors, transformers, handlers, adapters, clients, links, callers and subscriptions.

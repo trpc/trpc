@@ -145,4 +145,4 @@ export const [TrpcProvider, useTrpc] = createTrpcContext<typeof makeClient>();
 
 A router type alone (`createTrpcContext<AppRouter>()`) has no links, so it types the default JSON form.
 
-See [TanStack Query](../integrations/tanstack-query.md#hydration).
+See [Hydration](../integrations/tanstack-query/hydration.md).

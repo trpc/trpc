@@ -78,4 +78,4 @@ Over HTTP the server reads a stream only as fast as the client reads the respons
 
 ## Streams and subscriptions
 
-A streamed query or mutation is one call whose result arrives in pieces; the client consumes it once. A [subscription](../subscriptions/overview.md) is a stream of events the client follows, with `tracked()` ids to resume after a reconnect. For progress of long jobs in TanStack Query, see [Streamed mutations](../integrations/tanstack-query.md#streamed-mutations).
+A streamed query or mutation is one call whose result arrives in pieces; the client consumes it once. A [subscription](../subscriptions/overview.md) is a stream of events the client follows, with `tracked()` ids to resume after a reconnect. For progress of long jobs in TanStack Query, see [Long jobs](../integrations/tanstack-query/streamed-mutations.md#long-jobs).

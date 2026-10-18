@@ -10,15 +10,19 @@ The core client works anywhere ([The client](../client/overview.md)). These page
 
 ## Data fetching
 
-- [TanStack Query](./tanstack-query.md): query, mutation and subscription options for React, Preact, Vue, Solid, Svelte, Angular and Lit, with streamed mutations, offline mutations, TanStack DB and hydration. This is the stable way to fetch in a UI.
-- [React without TanStack Query](./experimental-react.md): render-as-you-fetch with `use()` and Suspense, where cache features are links. Experimental.
-- [React atoms](./experimental-react-atom.md): query, mutation and subscription atoms on Effect Atom. Experimental.
+[TanStack Query](./tanstack-query.md) is the stable way to fetch in a UI: `@trpc12/tanstack-query` makes query, mutation and subscription options, and a package per framework provides the client to components.
+
+- Frameworks: [React](./tanstack-query/react.md), [Preact](./tanstack-query/preact.md), [Vue](./tanstack-query/vue.md), [Solid](./tanstack-query/solid.md), [Svelte](./tanstack-query/svelte.md), [Angular](./tanstack-query/angular.md) and [Lit](./tanstack-query/lit.md).
+- Topics: [query keys and filters](./tanstack-query/keys.md), [subscriptions](./tanstack-query/subscriptions.md), [streamed mutations](./tanstack-query/streamed-mutations.md), [hydration and offline mutations](./tanstack-query/hydration.md) and [TanStack DB](./tanstack-query/tanstack-db.md).
 
 ## React and Next.js
 
+[React and Next.js](./react.md) compares the ways to fetch in React, and covers the server side:
+
 - [React Server Components](./rsc.md): prefetch in server components, stream pending queries to the browser, and tag Next's data cache by query key.
 - [Server Actions](./server-actions.md): procedures as Server Actions that take typed input or `FormData`.
-- Route handlers serve the router with `handler.fetch` ([Fetch runtimes](../adapters/fetch.md)).
+- [React without TanStack Query](./experimental-react.md): render-as-you-fetch with `use()` and Suspense, where cache features are links. Experimental.
+- [React atoms](./experimental-react-atom.md): query, mutation and subscription atoms on Effect Atom. Experimental.
 
 ## Libraries
 

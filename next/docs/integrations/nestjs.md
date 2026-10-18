@@ -2,10 +2,14 @@
 title: NestJS
 description: Serve a contract from Nest controllers with @trpc12/nest.
 section: Integrations
-order: 8
+order: 5
 ---
 
 `@trpc12/nest` serves a contract from Nest controllers. `@experimental_Implement(contract)` adds the Nest route for the contract's REST mapping; the method returns the procedure, so the controller's injected services reach the resolver through `this`. The package is experimental, so its values are named `experimental_*` until it's promoted.
+
+```package-install
+@trpc12/trpc @trpc12/nest @nestjs/common @nestjs/core @effect/platform-node effect rxjs
+```
 
 ```ts twoslash
 // @experimentalDecorators: true

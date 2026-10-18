@@ -1431,6 +1431,15 @@ importers:
 
   www/samples/docs:
     dependencies:
+      '@angular/common':
+        specifier: 22.2.2
+        version: 22.2.2(@angular/core@22.2.2(rxjs@7.8.2))(rxjs@7.8.2)
+      '@angular/core':
+        specifier: 22.2.2
+        version: 22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2)
+      '@angular/platform-browser':
+        specifier: 22.2.2
+        version: 22.2.2(@angular/common@22.2.2(@angular/core@22.2.2(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.2.2(rxjs@7.8.2))
       '@cloudflare/workers-types':
         specifier: 5.20261014.1
         version: 5.20261014.1
@@ -1446,6 +1455,9 @@ importers:
       '@effect/sql-pg':
         specifier: 4.0.2
         version: 4.0.2(effect@4.0.2)
+      '@lit/context':
+        specifier: 1.1.6
+        version: 1.1.6
       '@nestjs/common':
         specifier: 12.1.3
         version: 12.1.3(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@10.2.2)
@@ -1455,15 +1467,33 @@ importers:
       '@nestjs/platform-express':
         specifier: 12.1.3
         version: 12.1.3(@nestjs/common@12.1.3(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@10.2.2))(@nestjs/core@12.1.3)(supports-color@10.2.2)
+      '@tanstack/angular-query-experimental':
+        specifier: 5.104.1
+        version: 5.104.1(@angular/common@22.2.2(@angular/core@22.2.2(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.2.2(rxjs@7.8.2))(csstype@3.2.3)
       '@tanstack/db':
         specifier: 0.15.0
         version: 0.15.0(typescript@7.0.2)
+      '@tanstack/lit-query':
+        specifier: 0.2.26
+        version: 0.2.26(@tanstack/query-core@5.104.1)(lit@3.3.3)
+      '@tanstack/preact-query':
+        specifier: 5.104.1
+        version: 5.104.1(preact@10.29.8)
       '@tanstack/query-db-collection':
         specifier: 1.4.5
         version: 1.4.5(@tanstack/query-core@5.104.1)(typescript@7.0.2)
       '@tanstack/react-query':
         specifier: 5.104.1
         version: 5.104.1(react@19.3.0)
+      '@tanstack/solid-query':
+        specifier: 5.104.1
+        version: 5.104.1(solid-js@1.9.17)
+      '@tanstack/svelte-query':
+        specifier: 6.3.1
+        version: 6.3.1(svelte@5.57.2)
+      '@tanstack/vue-query':
+        specifier: 5.104.1
+        version: 5.104.1(vue@3.5.43(typescript@7.0.2))
       '@trpc12/experimental-react':
         specifier: workspace:*
         version: link:../../../packages/experimental-react
@@ -1473,12 +1503,30 @@ importers:
       '@trpc12/nest':
         specifier: workspace:*
         version: link:../../../packages/nest
+      '@trpc12/tanstack-angular-query':
+        specifier: workspace:*
+        version: link:../../../packages/tanstack-angular-query
+      '@trpc12/tanstack-lit-query':
+        specifier: workspace:*
+        version: link:../../../packages/tanstack-lit-query
+      '@trpc12/tanstack-preact-query':
+        specifier: workspace:*
+        version: link:../../../packages/tanstack-preact-query
       '@trpc12/tanstack-query':
         specifier: workspace:*
         version: link:../../../packages/tanstack-query
       '@trpc12/tanstack-react-query':
         specifier: workspace:*
         version: link:../../../packages/tanstack-react-query
+      '@trpc12/tanstack-solid-query':
+        specifier: workspace:*
+        version: link:../../../packages/tanstack-solid-query
+      '@trpc12/tanstack-svelte-query':
+        specifier: workspace:*
+        version: link:../../../packages/tanstack-svelte-query
+      '@trpc12/tanstack-vue-query':
+        specifier: workspace:*
+        version: link:../../../packages/tanstack-vue-query
       '@trpc12/trpc':
         specifier: workspace:*
         version: link:../../../packages/trpc
@@ -1491,9 +1539,15 @@ importers:
       effect:
         specifier: 4.0.2
         version: 4.0.2
+      lit:
+        specifier: 3.3.3
+        version: 3.3.3
       next:
         specifier: 16.4.1
         version: 16.4.1(@types/node@26.6.4)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      preact:
+        specifier: 10.29.8
+        version: 10.29.8
       react:
         specifier: 19.3.0
         version: 19.3.0
@@ -1503,9 +1557,18 @@ importers:
       rxjs:
         specifier: 7.8.2
         version: 7.8.2
+      solid-js:
+        specifier: 1.9.17
+        version: 1.9.17
       superjson:
         specifier: 2.2.6
         version: 2.2.6
+      svelte:
+        specifier: 5.57.2
+        version: 5.57.2
+      vue:
+        specifier: 3.5.43
+        version: 3.5.43(typescript@7.0.2)
       zod:
         specifier: 4.6.5
         version: 4.6.5
@@ -7316,6 +7379,12 @@ snapshots:
       rxjs: 7.8.2
       tslib: 2.8.1
 
+  '@angular/common@22.2.2(@angular/core@22.2.2(rxjs@7.8.2))(rxjs@7.8.2)':
+    dependencies:
+      '@angular/core': 22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2)
+      rxjs: 7.8.2
+      tslib: 2.8.1
+
   '@angular/compiler@22.2.2':
     dependencies:
       tslib: 2.8.1
@@ -7333,12 +7402,18 @@ snapshots:
       '@angular/core': 22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2)
       tslib: 2.8.1
 
+  '@angular/platform-browser@22.2.2(@angular/common@22.2.2(@angular/core@22.2.2(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.2.2(rxjs@7.8.2))':
+    dependencies:
+      '@angular/common': 22.2.2(@angular/core@22.2.2(rxjs@7.8.2))(rxjs@7.8.2)
+      '@angular/core': 22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2)
+      tslib: 2.8.1
+
   '@angular/platform-server@22.2.2(@angular/common@22.2.2(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/compiler@22.2.2)(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2))(@angular/platform-browser@22.2.2(@angular/common@22.2.2(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2)))(rxjs@7.8.2)':
     dependencies:
-      '@angular/common': 22.2.2(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2))(rxjs@7.8.2)
+      '@angular/common': 22.2.2(@angular/core@22.2.2(rxjs@7.8.2))(rxjs@7.8.2)
       '@angular/compiler': 22.2.2
       '@angular/core': 22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2)
-      '@angular/platform-browser': 22.2.2(@angular/common@22.2.2(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2))
+      '@angular/platform-browser': 22.2.2(@angular/common@22.2.2(@angular/core@22.2.2(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.2.2(rxjs@7.8.2))
       rxjs: 7.8.2
       tslib: 2.8.1
       xhr2: 0.2.1
@@ -9007,6 +9082,16 @@ snapshots:
     transitivePeerDependencies:
       - csstype
 
+  '@tanstack/angular-query-experimental@5.104.1(@angular/common@22.2.2(@angular/core@22.2.2(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.2.2(rxjs@7.8.2))(csstype@3.2.3)':
+    dependencies:
+      '@angular/common': 22.2.2(@angular/core@22.2.2(rxjs@7.8.2))(rxjs@7.8.2)
+      '@angular/core': 22.2.2(@angular/compiler@22.2.2)(rxjs@7.8.2)
+      '@tanstack/query-core': 5.104.1
+    optionalDependencies:
+      '@tanstack/query-devtools': 5.104.1(csstype@3.2.3)
+    transitivePeerDependencies:
+      - csstype
+
   '@tanstack/db-ivm@0.2.0(typescript@7.0.2)':
     dependencies:
       fractional-indexing: 3.4.0
@@ -10113,7 +10198,7 @@ snapshots:
       zod: 4.6.5
     optionalDependencies:
       '@tanstack/react-start': 1.168.61(@voidzero-dev/vite-plus-core@1.1.0(@types/node@24.19.1)(esbuild@0.28.2)(jiti@2.7.0)(typescript@7.0.2)(yaml@2.9.1))(esbuild@0.28.2)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(rolldown@1.2.13)(supports-color@10.2.2)
-      next: 16.4.1(@types/node@24.19.1)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      next: 16.4.1(@babel/core@7.29.7(supports-color@10.2.2))(@types/node@24.19.1)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       react: 19.3.0
       react-dom: 19.3.0(react@19.3.0)
       solid-js: 1.9.17
@@ -11667,32 +11752,6 @@ snapshots:
       - '@babel/core'
       - '@types/node'
       - babel-plugin-macros
-
-  next@16.4.1(@types/node@24.19.1)(react-dom@19.3.0(react@19.3.0))(react@19.3.0):
-    dependencies:
-      '@next/env': 16.4.1
-      '@swc/helpers': 0.5.23
-      baseline-browser-mapping: 2.11.28
-      caniuse-lite: 1.0.30001816
-      postcss: 8.5.23
-      react: 19.3.0
-      react-dom: 19.3.0(react@19.3.0)
-      styled-jsx: 5.1.6(@babel/core@7.29.7(supports-color@10.2.2))(react@19.3.0)
-    optionalDependencies:
-      '@next/swc-darwin-arm64': 16.4.1
-      '@next/swc-darwin-x64': 16.4.1
-      '@next/swc-linux-arm64-gnu': 16.4.1
-      '@next/swc-linux-arm64-musl': 16.4.1
-      '@next/swc-linux-x64-gnu': 16.4.1
-      '@next/swc-linux-x64-musl': 16.4.1
-      '@next/swc-win32-arm64-msvc': 16.4.1
-      '@next/swc-win32-x64-msvc': 16.4.1
-      sharp: 0.35.5(@types/node@24.19.1)
-    transitivePeerDependencies:
-      - '@babel/core'
-      - '@types/node'
-      - babel-plugin-macros
-    optional: true
 
   next@16.4.1(@types/node@26.6.4)(react-dom@19.3.0(react@19.3.0))(react@19.3.0):
     dependencies:

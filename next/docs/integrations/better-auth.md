@@ -2,10 +2,16 @@
 title: Better Auth
 description: Read the Better Auth session in a middleware and type ctx.user with its user.
 section: Integrations
-order: 7
+order: 4
 ---
 
-[Better Auth](https://better-auth.com/) reads the session from the request's headers. Put the headers in the ctx, then a [middleware](../server/middleware.md) turns the session into `ctx.user`:
+[Better Auth](https://better-auth.com/) reads the session from the request's headers. It needs no adapter package:
+
+```package-install
+@trpc12/trpc better-auth
+```
+
+Put the headers in the ctx, then a [middleware](../server/middleware.md) turns the session into `ctx.user`:
 
 ```ts twoslash
 // ---cut-start---

@@ -2,17 +2,17 @@
 title: React without TanStack Query
 description: Render-as-you-fetch with use() and Suspense in @trpc12/experimental-react, where cache features are links.
 section: Integrations
-order: 4
+parent: integrations/react
+order: 3
 ---
 
-Two experimental packages read tRPC in React with `use()` and Suspense, without TanStack Query. Both are experimental as a whole: the package name says so, every export is `@stability experimental`, and the API may change in any release. For a stable React integration, use [TanStack Query](./tanstack-query.md).
+`@trpc12/experimental-react` reads tRPC in React with `use()` and Suspense, without TanStack Query: render-as-you-fetch, after [raf-query](https://github.com/KATT/raf-query). A route loader (or an event handler) calls `.query()`, which starts the request and returns a promise. The component reads that promise with `useQuery()` and `use()`. Components don't start requests.
 
-| Package                           | Model                                                                                                             |
-| --------------------------------- | ----------------------------------------------------------------------------------------------------------------- |
-| `@trpc12/experimental-react`      | Promises: loaders start queries, components read them with `use()`. Features are links, opt-in.                   |
-| `@trpc12/experimental-react-atom` | Effect Atoms: query and mutation atoms read with `useAtomSuspense` ([React atoms](./experimental-react-atom.md)). |
+The whole package is experimental: the package name says so, every export is `@stability experimental`, and the API may change in any release. For a stable React integration, use [TanStack Query](./tanstack-query/react.md); [React and Next.js](./react.md) compares the three.
 
-This page is `@trpc12/experimental-react`: render-as-you-fetch, after [raf-query](https://github.com/KATT/raf-query). A route loader (or an event handler) calls `.query()`, which starts the request and returns a promise. The component reads that promise with `useQuery()` and `use()`. Components don't start requests.
+```package-install
+@trpc12/trpc @trpc12/experimental-react effect
+```
 
 ```tsx twoslash
 // ---cut-start---
