@@ -12,6 +12,7 @@
     "types": ["node"],
     "composite": true,
     "emitDeclarationOnly": true,
+    "declarationMap": true,
     "rootDir": "${configDir}/src",
     "outDir": "${configDir}/dist"
   },
