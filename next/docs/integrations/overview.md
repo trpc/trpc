@@ -1,12 +1,12 @@
 ---
 title: Integrations
 label: Overview
-description: Data fetching with TanStack Query, React and Next.js, and the libraries tRPC works with.
+description: Data fetching with TanStack Query, and React and Next.js on the server.
 section: Integrations
 order: 0
 ---
 
-The core client works anywhere ([The client](../client/overview.md)). These pages cover the packages and recipes that fit it into a framework or a library.
+The core client works anywhere ([The client](../client/overview.md)). These pages cover the packages that fit it into a framework.
 
 ## Data fetching
 
@@ -20,9 +20,3 @@ The core client works anywhere ([The client](../client/overview.md)). These page
 
 - [React Server Components](./rsc.md): prefetch in server components, stream pending queries to the browser, and tag Next's data cache by query key.
 - [Server Actions](./server-actions.md): procedures as Server Actions that take typed input or `FormData`.
-
-## Libraries
-
-- [AI SDK](./ai-sdk.md): stream `useChat` responses from a procedure, and give procedures to the model as tools.
-- [Better Auth](./better-auth.md): read the session in a middleware and type `ctx.user` with Better Auth's user.
-- [NestJS](./nestjs.md): serve a contract from Nest controllers with `@trpc12/nest`.

@@ -3,6 +3,7 @@ title: AI SDK
 description: Stream useChat responses from a procedure, and give procedures to the model as tools.
 section: Integrations
 order: 3
+hidden: true
 ---
 
 [AI SDK](https://ai-sdk.dev/) (v7) streams chat responses as a `ReadableStream` of UI message chunks. A procedure returns that stream as it is, and the client gets a `ReadableStream` back, which is what `useChat`'s transport returns. This needs no adapter package, and it's tested against the real library in `test/integration/`.

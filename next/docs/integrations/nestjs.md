@@ -3,6 +3,7 @@ title: NestJS
 description: Serve a contract from Nest controllers with @trpc12/nest.
 section: Integrations
 order: 5
+hidden: true
 ---
 
 `@trpc12/nest` serves a contract from Nest controllers. `@experimental_Implement(contract)` adds the Nest route for the contract's REST mapping; the method returns the procedure, so the controller's injected services reach the resolver through `this`. The package is experimental, so its values are named `experimental_*` until it's promoted.
@@ -84,7 +85,7 @@ class AppModule {}
 - Bodies Nest's JSON and urlencoded parsers read are used as parsed; others are read from the request.
 - Express only. Nest needs `experimentalDecorators`.
 
-Routes and errors follow the OpenAPI handler.
+Routes and errors follow the [OpenAPI handler](../openapi/routes.md).
 
 ## Credits
 

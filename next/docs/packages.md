@@ -13,7 +13,6 @@ Everything server- and client-side is one package, `@trpc12/trpc`. The other pac
 | `@trpc12/trpc` ([entry points](#trpc12trpc-entry-points))                | Routers, handlers, clients, links, middleware and adapters         |
 | [`@trpc12/tanstack-query`](./integrations/tanstack-query.md)             | TanStack Query options, keys and filters, for any framework        |
 | [`@trpc12/tanstack-react-query`](./integrations/tanstack-query/react.md) | React: context, `useSubscription`, and server components in `/rsc` |
-| [`@trpc12/nest`](./integrations/nestjs.md)                               | A contract served from NestJS controllers                          |
 | [`@trpc12/upgrade`](./migrations/from-v11/codemod.md)                    | The v11 to v12 codemod                                             |
 
 The TanStack packages re-export `@trpc12/tanstack-query`, so an app installs one of them with TanStack's adapter for its framework.

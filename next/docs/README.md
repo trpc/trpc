@@ -82,7 +82,7 @@ Pages marked (hidden) are unlisted on the site until they're reviewed: out of it
 
 ## Integrations
 
-- [Integrations](./integrations/overview.md): Data fetching with TanStack Query, React and Next.js, and the libraries tRPC works with.
+- [Integrations](./integrations/overview.md): Data fetching with TanStack Query, and React and Next.js on the server.
 - [TanStack Query](./integrations/tanstack-query.md): Query, mutation and subscription options for TanStack Query, from one package and its React adapter.
   - [React](./integrations/tanstack-query/react.md): @trpc12/tanstack-react-query: the helpers as a module singleton or through context, Suspense, useSubscription, and server components.
   - [Preact](./integrations/tanstack-query/preact.md) (hidden): @trpc12/tanstack-preact-query: a context provider for the client, useTrpc() in components, and useSubscription.
@@ -101,9 +101,9 @@ Pages marked (hidden) are unlisted on the site until they're reviewed: out of it
   - [Server Actions](./integrations/server-actions.md): Turn procedures into React Server Actions that take typed input or FormData, with useActionState and optimistic updates.
   - [React without TanStack Query](./integrations/experimental-react.md) (hidden): Render-as-you-fetch with use() and Suspense in @trpc12/experimental-react, where cache features are links.
   - [React atoms](./integrations/experimental-react-atom.md) (hidden): Query, mutation and subscription atoms on Effect Atom, typed with each procedure's errors.
-- [AI SDK](./integrations/ai-sdk.md): Stream useChat responses from a procedure, and give procedures to the model as tools.
-- [Better Auth](./integrations/better-auth.md): Read the Better Auth session in a middleware and type ctx.user with its user.
-- [NestJS](./integrations/nestjs.md): Serve a contract from Nest controllers with @trpc12/nest.
+- [AI SDK](./integrations/ai-sdk.md) (hidden): Stream useChat responses from a procedure, and give procedures to the model as tools.
+- [Better Auth](./integrations/better-auth.md) (hidden): Read the Better Auth session in a middleware and type ctx.user with its user.
+- [NestJS](./integrations/nestjs.md) (hidden): Serve a contract from Nest controllers with @trpc12/nest.
 
 ## Migrations
 

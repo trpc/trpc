@@ -3,6 +3,7 @@ title: Better Auth
 description: Read the Better Auth session in a middleware and type ctx.user with its user.
 section: Integrations
 order: 4
+hidden: true
 ---
 
 [Better Auth](https://better-auth.com/) reads the session from the request's headers. It needs no adapter package:
