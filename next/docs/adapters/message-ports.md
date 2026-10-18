@@ -52,3 +52,7 @@ const client = createTrpcClient({
 - `createContext` gets the request passed as `handler.messagePort(port, { request })`, or a placeholder `http://localhost/` request.
 - Bytes in [streamed outputs](../server/files.md) pass as they are, without base64. Files as inputs aren't sent; the call fails with a `BAD_REQUEST`.
 - Closing the port is up to you. Electron's `MessagePortMain` and iframe windows work too.
+
+## Credits
+
+Serving calls over message ports follows [oRPC's Message Port adapter](https://orpc.dev/docs/adapters/message-port).

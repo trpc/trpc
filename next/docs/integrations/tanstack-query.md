@@ -102,3 +102,7 @@ Queries and infinite queries pass TanStack's `signal` to the call, so TanStack [
 ## Structural sharing
 
 A refetch that returns equal data keeps the old reference, `Date`s, `Map`s and `Set`s included, so it doesn't re-render. `queryOptions()` sets `structuralSharing` for that; it's exported for other queries.
+
+## Credits
+
+The Vue, Solid, Svelte and Angular adapters were built to match [oRPC's TanStack Query integration](https://orpc.dev/docs/integrations/tanstack-query).

@@ -93,3 +93,7 @@ const weather = tool({
 
 await generateText({ model, tools: { weather }, prompt });
 ```
+
+## Credits
+
+This recipe follows [oRPC's AI SDK integration](https://orpc.dev/docs/integrations/ai-sdk).

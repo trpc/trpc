@@ -83,3 +83,7 @@ class AppModule {}
 - Express only. Nest needs `experimentalDecorators`.
 
 Routes and errors follow the [OpenAPI handler](../openapi/routes.md).
+
+## Credits
+
+`@trpc12/nest` follows [oRPC's NestJS integration](https://orpc.dev/docs/integrations/nest).

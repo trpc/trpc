@@ -186,3 +186,7 @@ const contract = toContract(await loadRouter(appRouter));
 // server
 createOpenApiHandler({ router: appRouter, contract });
 ```
+
+## Credits
+
+The REST mapping follows oRPC's OpenAPI support: every procedure served with no configuration ([routing](https://orpc.dev/docs/openapi/routing)), [bracket notation](https://orpc.dev/docs/openapi/bracket-notation) and [coercion from the schema](https://orpc.dev/docs/plugins/smart-coercion).

@@ -69,3 +69,7 @@ Where a procedure has a runtime schema, that schema wins, so the two generators 
 `typescript` (7.x) is an optional peer dependency, needed only where this runs. `tsconfig` picks the project; it defaults to the nearest one that includes `file`.
 
 An output declared with `.output(schema, { validate: false })` isn't validated. The document then describes the schema's input side, which is what the resolver returns.
+
+## Credits
+
+The generator follows [oRPC's OpenAPI specification](https://orpc.dev/docs/openapi/specification), and `openApiReference()` its [OpenAPI reference plugin](https://orpc.dev/docs/plugins/openapi-reference).

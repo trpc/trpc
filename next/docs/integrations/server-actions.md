@@ -129,3 +129,7 @@ const callable = experimental_createCallable({
 });
 const post = await callable(appRouter.post.byId)({ id: '1' });
 ```
+
+## Credits
+
+Actions that take `FormData` follow [oRPC's form actions](https://orpc.dev/docs/integrations/next).

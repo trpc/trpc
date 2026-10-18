@@ -312,3 +312,7 @@ const link = wsLink({
 - `verify` fails with `UNAUTHORIZED` when the token is missing, malformed, signed with another secret or past `ttlSeconds` (default an hour). It reads the time from Effect's `Clock`.
 - The claims are encoded with the schema and readable by the client; keep secrets out of them.
 - Expiry is checked whenever `createContext` runs: on each call, and when a subscription starts. A parked subscription keeps getting events after the token expires, until the socket closes or the client reconnects.
+
+## Credits
+
+Hibernating WebSockets, the Durable Object publisher and lock, and Workers Traces follow oRPC's [hibernation integration](https://orpc.dev/docs/integrations/hibernation), [publisher](https://orpc.dev/docs/helpers/publisher), [locks](https://orpc.dev/docs/helpers/lock) and [Cloudflare Traces integration](https://orpc.dev/docs/integrations/cloudflare-traces).

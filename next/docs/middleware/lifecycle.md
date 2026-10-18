@@ -23,3 +23,7 @@ const observed = t.procedure
 `onStart` runs before the rest of the chain, `onSuccess` with the result when the rest succeeds (for a subscription, once the stream is set up), `onError` with the error when it fails, and `onFinish` with the outcome either way. Put them on a base procedure to cover every procedure built from it ([Middleware](../server/middleware.md)).
 
 For spans rather than logs, put a tracer in the handler's `layer`: every call already runs in a `trpc.<path>` span ([Tracing](../server/effect.md#tracing)).
+
+## Credits
+
+The four hooks follow [oRPC](https://orpc.dev)'s `onStart`, `onSuccess`, `onError` and `onFinish` interceptors.

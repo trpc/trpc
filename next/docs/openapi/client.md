@@ -52,3 +52,7 @@ links: [
   openApiLink({ url, contract: toContract(appContract) }),
 ];
 ```
+
+## Credits
+
+`openApiLink` follows [oRPC's OpenAPI link](https://orpc.dev/docs/openapi/link).

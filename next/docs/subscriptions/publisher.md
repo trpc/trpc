@@ -73,3 +73,7 @@ const router = {
 ```
 
 The backend filters by channel, so a process only receives its subscribers' channels (Redis subscribes per channel). To reach several audiences, publish to each channel.
+
+## Credits
+
+The `Publisher` follows [oRPC's publisher helpers](https://orpc.dev/docs/helpers/publisher).

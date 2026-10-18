@@ -52,3 +52,7 @@ The locker is an Effect service, `experimental_Locker`, provided as a layer:
 - [`experimental_durableLocker()`](../adapters/durable-objects.md#locks) on Workers.
 
 Outside a procedure, take a lock with the service: `yield* (yield* experimental_Locker).acquire(key)` holds it until the surrounding `Effect.scoped` ends.
+
+## Credits
+
+`experimental_lock()` follows [oRPC's lock helpers](https://orpc.dev/docs/helpers/lock), and its Durable Object store, `experimental_durableLocker()`, works like oRPC's.

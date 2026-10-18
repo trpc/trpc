@@ -48,3 +48,7 @@ if (err?.defined) {
 ```
 
 It is false for anything else: undeclared thrown errors, network failures (`NETWORK_ERROR`), aborts (`CLIENT_CLOSED_REQUEST`). `isDefinedError(error)` and `isTrpcError(error)` check a caught value.
+
+## Credits
+
+`safe()`, `createSafeClient()` and `isDefinedError()` follow [oRPC's client error handling](https://orpc.dev/docs/client/error-handling).

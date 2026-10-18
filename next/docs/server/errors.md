@@ -91,3 +91,7 @@ Effect.catchTag('NOT_FOUND', () => Effect.succeed(null));
 ```
 
 A failure that isn't a `TrpcError` is a type error until it is mapped, so internals never reach clients. `TrpcError.Tagged` classes mark the errors clients may see ([Effect](./effect.md#errors-clients-may-see)).
+
+## Credits
+
+Declared errors with `.errors()` follow [oRPC's typed errors](https://orpc.dev/docs/error-handling).

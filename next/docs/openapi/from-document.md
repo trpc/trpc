@@ -57,3 +57,7 @@ export const petstore = {
 - Objects that don't mention `additionalProperties` become closed structs (extra keys are still ignored when decoding), except where `allOf` merges them.
 - Error responses in @trpc12/trpc's own shape (`code` and `data`) become `.errors()`, so a document from `generateOpenApi` round-trips with typed errors. Other APIs' errors stay unexpected errors.
 - `pattern`s are ignored unless `patterns: 'apply'`; only use that with documents you trust.
+
+## Credits
+
+Generating contracts from OpenAPI documents follows [oRPC](https://orpc.dev/docs/contract/generate-from-openapi), which does it with a Hey API plugin.

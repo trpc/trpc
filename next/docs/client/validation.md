@@ -39,3 +39,7 @@ const client = createTrpcClient({
 Results are checked against the output's type side, so Effect Schema transformations don't run a second time. With `openApiLink`, whose results are plain JSON, `output: 'json'` decodes them with the Effect Schema's JSON codec, so `Date`s, `bigint`s and classes come back as their types. Standard Schema outputs are validated as they are.
 
 See [Contract-first](../server/contract-first.md) for writing the contract, and [Calling REST from the client](../openapi/client.md) for `openApiLink`.
+
+## Credits
+
+`validationLink` follows oRPC's [request validation](https://orpc.dev/docs/plugins/request-validation) and [response validation](https://orpc.dev/docs/plugins/response-validation) plugins.

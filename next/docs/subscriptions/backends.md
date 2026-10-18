@@ -313,3 +313,7 @@ export default {
 ```
 
 Open SSE streams keep the object in memory; kept events are lost when it's evicted. To let it sleep between events, serve WebSockets with the [hibernation adapter](../adapters/durable-objects.md) and provide `hibernatingPublisher(Posts, { state: this.ctx })` from `@trpc12/trpc/cloudflare` instead of `Posts.memory()` ([subscriptions that hibernate](../adapters/durable-objects.md#subscriptions-that-hibernate)).
+
+## Credits
+
+These backends follow the adapters of [oRPC's publisher](https://orpc.dev/docs/helpers/publisher).
