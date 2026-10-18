@@ -1,11 +1,13 @@
+import { Effect, Stream } from 'effect';
 import {
   createTrpcClient,
   dedupeLink,
   httpLink,
+  link,
   routerType,
 } from '@trpc12/trpc/client';
 import { createSerializer } from '@trpc12/trpc/serializer';
-import { initTrpc } from '@trpc12/trpc/server';
+import { error, initTrpc } from '@trpc12/trpc/server';
 import { createTestServer } from '../../fixtures/server.ts';
 import { expect, test, vi } from 'vite-plus/test';
 import { z } from 'zod';
@@ -13,6 +15,7 @@ import { z } from 'zod';
 const t = initTrpc();
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const state = { finished: 0 };
+const calls = new Map<string, number>();
 
 class Money {
   readonly cents: number;
@@ -67,14 +70,40 @@ const router = {
     })(),
   })),
   bytes: t.procedure.query(() => ({
-    body: new ReadableStream<string>({
-      start(controller) {
-        controller.enqueue('x');
-        controller.enqueue('y');
-        controller.close();
-      },
-    }),
+    meta: { n: 1 },
+    parts: [
+      new ReadableStream<string>({
+        start(controller) {
+          controller.enqueue('x');
+          controller.enqueue('y');
+          controller.close();
+        },
+      }),
+    ],
   })),
+  broken: t.procedure.query(() => ({
+    feed: (async function* () {
+      yield 'a';
+      await sleep(5);
+      throw error({ code: 'CONFLICT', message: 'broke' });
+    })(),
+  })),
+  again: t.procedure
+    .input(z.object({ next: z.enum(['fail', 'plain']) }))
+    .query((opts) => {
+      const n = (calls.get(opts.input.next) ?? 0) + 1;
+      calls.set(opts.input.next, n);
+      if (n === 1) return { feed: letters() };
+      if (opts.input.next === 'fail') {
+        return error({ code: 'NOT_FOUND', message: 'gone' });
+      }
+      return null;
+    }),
+  loop: t.procedure.query(() => {
+    const node: { n: number; self?: unknown } = { n: 1 };
+    node.self = node;
+    return { node, feed: letters() };
+  }),
   price: t.procedure
     .input(z.object({ price: z.instanceof(Money) }))
     .query(async (opts) => {
@@ -271,21 +300,163 @@ test('a stream no caller reads is cancelled once every caller has aborted', asyn
   await vi.waitFor(() => expect(state.finished).toBe(before + 1));
 });
 
-test('a ReadableStream in a shared result is copied too', async () => {
+test('a ReadableStream in a shared result is copied too, and each caller can cancel its own', async () => {
   await using ctx = await setup();
-  const [a, b] = await Promise.all([
+  const [a, b, c] = await Promise.all([
+    ctx.client.bytes.query(),
     ctx.client.bytes.query(),
     ctx.client.bytes.query(),
   ]);
-  expect(a.body).toBeInstanceOf(ReadableStream);
+  expect(a.meta).toBe(b.meta);
+  const [bodyA, bodyB, bodyC] = [a.parts[0]!, b.parts[0]!, c.parts[0]!];
+  expect(bodyA).toBeInstanceOf(ReadableStream);
+  expect(bodyA).not.toBe(bodyB);
+  await bodyC.cancel();
+  const readerB = bodyB.getReader();
   const all = async (body: ReadableStream<string>) => {
     const items: string[] = [];
     for await (const item of body) items.push(item);
     return items;
   };
-  await expect(Promise.all([all(a.body), all(b.body)])).resolves.toEqual([
-    ['x', 'y'],
-    ['x', 'y'],
+  const [itemsA, firstB] = await Promise.all([all(bodyA), readerB.read()]);
+  expect(itemsA).toEqual(['x', 'y']);
+  expect(firstB).toEqual({ done: false, value: 'x' });
+  await readerB.cancel();
+  expect(ctx.server.requests).toHaveLength(1);
+});
+
+test('init, batch and other call options must match too', async () => {
+  await using ctx = await setup();
+  await Promise.all([
+    ctx.client.slow.query(undefined, { init: { headers: { 'x-a': '1' } } }),
+    ctx.client.slow.query(undefined, {
+      init: { headers: new Headers({ 'X-A': '1' }) },
+    }),
   ]);
   expect(ctx.server.requests).toHaveLength(1);
+  await Promise.all([
+    ctx.client.slow.query(undefined, { init: { redirect: 'error' } }),
+    ctx.client.slow.query(),
+    ctx.client.slow.query(undefined, { batch: false }),
+  ]);
+  expect(ctx.server.requests).toHaveLength(4);
+});
+
+test('key(op) groups calls by its string instead of their inputs', async () => {
+  await using server = await createTestServer({ router, serializer });
+  const client = createTrpcClient({
+    router: routerType<AppRouter>(),
+    links: [
+      dedupeLink({ key: (op) => op.path }),
+      httpLink({ url: server.url, serializer }),
+    ],
+  });
+  const [a, b] = await Promise.all([
+    client.echo.query({ a: 1, b: 2 }),
+    client.echo.query({ a: 3, b: 4 }),
+  ]);
+  expect(b).toBe(a);
+  expect(server.requests).toHaveLength(1);
+});
+
+test('a caller that joins after the response arrived still gets onResponse', async () => {
+  const client = createTrpcClient({
+    router: routerType<AppRouter>(),
+    links: [
+      dedupeLink(),
+      link((args) =>
+        Stream.fromEffect(
+          Effect.gen(function* () {
+            args.op.context.onResponse?.({
+              status: 203,
+              headers: new Headers(),
+            });
+            yield* Effect.sleep(20);
+            return 'late';
+          }),
+        ),
+      ),
+    ],
+  });
+  const statuses: number[] = [];
+  const first = client.slow.query();
+  await sleep(5);
+  const second = client.slow.query(undefined, {
+    onResponse: (meta) => void statuses.push(meta.status),
+  });
+  await expect(Promise.all([first, second])).resolves.toEqual(['late', 'late']);
+  expect(statuses).toEqual([203]);
+});
+
+test('a failing stream fails every reader', async () => {
+  await using ctx = await setup();
+  const [a, b] = await Promise.all([
+    ctx.client.broken.query(),
+    ctx.client.broken.query(),
+  ]);
+  const results = await Promise.allSettled([read(a.feed), read(b.feed)]);
+  expect(results.map((r) => r.status)).toEqual(['rejected', 'rejected']);
+  expect(results[0]).toMatchObject({ reason: { code: 'CONFLICT' } });
+  expect(results[1]).toMatchObject({ reason: { code: 'CONFLICT' } });
+});
+
+test('a late reader can stop early, and fails when its own query fails or has no stream', async () => {
+  await using ctx = await setup();
+  const [a, b, c] = await Promise.all([
+    ctx.client.feed.query(),
+    ctx.client.feed.query(),
+    ctx.client.feed.query(),
+  ]);
+  await read(a.feed);
+  for await (const letter of b.feed) {
+    expect(letter).toBe('a');
+    break;
+  }
+  expect(await c.feed[Symbol.asyncIterator]().return?.()).toEqual({
+    done: true,
+    value: undefined,
+  });
+  expect(ctx.server.requests).toHaveLength(2);
+
+  const failing = await Promise.all([
+    ctx.client.again.query({ next: 'fail' }),
+    ctx.client.again.query({ next: 'fail' }),
+  ]);
+  await read(failing[0]!.feed);
+  await expect(read(failing[1]!.feed)).rejects.toMatchObject({
+    code: 'NOT_FOUND',
+  });
+
+  const plain = await Promise.all([
+    ctx.client.again.query({ next: 'plain' }),
+    ctx.client.again.query({ next: 'plain' }),
+  ]);
+  await read(plain[0]!.feed);
+  await expect(read(plain[1]!.feed)).rejects.toMatchObject({
+    code: 'CLIENT_ERROR',
+  });
+});
+
+test('a caller whose signal aborted before it reads gets nothing; the others still read', async () => {
+  await using ctx = await setup();
+  const controller = new AbortController();
+  const [a, b] = await Promise.all([
+    ctx.client.feed.query(undefined, { signal: controller.signal }),
+    ctx.client.feed.query(),
+  ]);
+  controller.abort();
+  expect((await read(a.feed)).items).toEqual([]);
+  expect((await read(b.feed)).items).toEqual(['a', 'b', 'c']);
+});
+
+test('a cyclic result with a stream is copied without looping', async () => {
+  await using ctx = await setup();
+  const [a, b] = await Promise.all([
+    ctx.client.loop.query(),
+    ctx.client.loop.query(),
+  ]);
+  expect(a.node.self).toBe(a.node);
+  expect(b.node).toBe(a.node);
+  expect((await read(a.feed)).items).toEqual(['a', 'b', 'c']);
+  expect((await read(b.feed)).items).toEqual(['a', 'b', 'c']);
 });

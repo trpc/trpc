@@ -42,6 +42,19 @@ test('built-in types compare by content', () => {
   ).toBe(false);
 });
 
+test('sizes and lengths that differ never match', () => {
+  expect(deepEqual(null, {})).toBe(false);
+  expect(deepEqual([1], [1, 2])).toBe(false);
+  expect(deepEqual(new Uint8Array([1]), new Uint8Array([1, 2]))).toBe(false);
+  expect(
+    deepEqual(new Uint8Array([1]).buffer, new Uint8Array([1]).buffer),
+  ).toBe(true);
+  expect(deepEqual(new Map([['a', 1]]), new Map())).toBe(false);
+  expect(deepEqual(new Set([1]), new Set())).toBe(false);
+  const shared: { n: number } = { n: 1 };
+  expect(deepEqual([shared, shared], [{ n: 1 }, { n: 1 }])).toBe(true);
+});
+
 test('anything else equals only itself', () => {
   class Money {
     readonly cents: number;

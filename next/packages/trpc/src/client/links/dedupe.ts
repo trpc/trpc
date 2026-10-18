@@ -105,30 +105,18 @@ const isDeferred = (value: unknown): value is Deferred =>
     value !== null &&
     Symbol.asyncIterator in value);
 
-const isContainer = (value: unknown): value is Record<string, unknown> => {
-  if (Array.isArray(value)) return true;
-  if (typeof value !== 'object' || value === null) return false;
-  const proto = Object.getPrototypeOf(value);
-  return proto === Object.prototype || proto === null;
-};
+const isContainer = (value: unknown): value is Record<string, unknown> =>
+  Array.isArray(value) ||
+  (typeof value === 'object' &&
+    value !== null &&
+    Object.getPrototypeOf(value) === Object.prototype);
 
 /** The streams in a result, in its plain objects and arrays. */
-function collect(value: unknown, tees: Map<object, Tee>, seen: Set<object>) {
-  if (isDeferred(value)) {
-    if (!tees.has(value)) {
-      tees.set(value, {
-        source: value,
-        readers: new Set(),
-        started: false,
-        returned: undefined,
-        fiber: undefined,
-      });
-    }
-    return;
-  }
+function collect(value: unknown, found: Set<Deferred>, seen: Set<object>) {
+  if (isDeferred(value)) found.add(value);
   if (!isContainer(value) || seen.has(value)) return;
   seen.add(value);
-  for (const child of Object.values(value)) collect(child, tees, seen);
+  for (const child of Object.values(value)) collect(child, found, seen);
 }
 
 /** `value` with each stream replaced by `wrap`'s, copying only the containers on the way. */
@@ -189,14 +177,13 @@ const pump = (tee: Tee): Effect.Effect<void, unknown> =>
       }
     }),
   ).pipe(
+    // The pump is interrupted only once no reader is left to tell.
     Effect.onExit((exit) =>
       Effect.sync(() => {
         tee.started = true;
         for (const queue of tee.readers) {
           if (Exit.isSuccess(exit)) Queue.endUnsafe(queue);
-          else if (!Cause.hasInterruptsOnly(exit.cause)) {
-            Queue.failCauseUnsafe(queue, exit.cause);
-          }
+          else Queue.failCauseUnsafe(queue, exit.cause);
         }
       }),
     ),
@@ -206,24 +193,29 @@ const pump = (tee: Tee): Effect.Effect<void, unknown> =>
 function leave(tee: Tee, queue: Queue.Queue<unknown, unknown>): void {
   if (!tee.readers.delete(queue) || tee.readers.size > 0) return;
   tee.started = true;
-  if (tee.fiber) Effect.runFork(Fiber.interrupt(tee.fiber));
+  Effect.runFork(Fiber.interrupt(tee.fiber!));
+}
+
+/** What a caller reads one of its streams through. */
+interface Reader {
+  next(): Promise<IteratorResult<unknown, unknown>>;
+  return(value?: unknown): Promise<IteratorResult<unknown, unknown>>;
 }
 
 /** A reader of a stream nothing has been read from yet: it gets every item. */
-function join(
-  tee: Tee,
-  signal: AbortSignal | undefined,
-): AsyncIterator<unknown, unknown> {
+function join(tee: Tee, signal: AbortSignal | undefined): Reader {
   const queue = Effect.runSync(Queue.unbounded<unknown, unknown>());
   tee.readers.add(queue);
-  signal?.addEventListener('abort', () => leave(tee, queue), { once: true });
   tee.fiber ??= Effect.runFork(pump(tee));
+  if (signal?.aborted) leave(tee, queue);
+  else
+    signal?.addEventListener('abort', () => leave(tee, queue), { once: true });
   const items = toAsyncIterable(
     Stream.fromQueue(queue).pipe(
       Stream.ensuring(Effect.sync(() => leave(tee, queue))),
     ),
     signal,
-  )[Symbol.asyncIterator]();
+  )[Symbol.asyncIterator]() as Required<AsyncIterator<unknown>>;
   return {
     next: async () => {
       const next = await items.next();
@@ -231,14 +223,14 @@ function join(
     },
     return: async (value?: unknown) => {
       leave(tee, queue);
-      await items.return?.();
+      await items.return();
       return { done: true, value };
     },
   };
 }
 
 /** A reader that starts after items were read: it sends its call on its own and reads that. */
-function alone(caller: Caller, path: Path): AsyncIterator<unknown, unknown> {
+function alone(caller: Caller, path: Path): Reader {
   const open = async () => {
     caller.alone ??= Effect.runPromiseExit(
       firstValue(caller.args.next(caller.args.op)),
@@ -260,8 +252,8 @@ function alone(caller: Caller, path: Path): AsyncIterator<unknown, unknown> {
   return {
     next: async () => (await (opened ??= open())).next(),
     return: async (value?: unknown) => {
-      const iterator = await opened?.catch(() => undefined);
-      return (await iterator?.return?.(value)) ?? { done: true, value };
+      if (opened) await (await opened).return?.(value);
+      return { done: true, value };
     },
   };
 }
@@ -273,7 +265,7 @@ function wrap(tee: Tee, path: Path, caller: Caller): Deferred {
   if (!(tee.source instanceof ReadableStream)) {
     return { [Symbol.asyncIterator]: read };
   }
-  let iterator: AsyncIterator<unknown, unknown> | undefined;
+  let iterator: Reader | undefined;
   return new ReadableStream(
     {
       async pull(controller) {
@@ -283,7 +275,7 @@ function wrap(tee: Tee, path: Path, caller: Caller): Deferred {
         else controller.enqueue(next.value);
       },
       async cancel() {
-        await iterator?.return?.();
+        await iterator?.return();
       },
     },
     { highWaterMark: 0 },
@@ -304,8 +296,18 @@ function report(caller: Caller, meta: ResponseMeta): void {
 /** The result as `caller` gets it: the shared value, with its own copy of each stream. */
 function resultFor(entry: InFlight, value: unknown, caller: Caller): unknown {
   if (entry.tees === undefined) {
+    const found = new Set<Deferred>();
+    collect(value, found, new Set());
     const tees = new Map<object, Tee>();
-    collect(value, tees, new Set());
+    for (const source of found) {
+      tees.set(source, {
+        source,
+        readers: new Set(),
+        started: false,
+        returned: undefined,
+        fiber: undefined,
+      });
+    }
     entry.tees = tees.size > 0 ? tees : null;
   }
   if (entry.tees === null) return value;
@@ -417,15 +419,12 @@ export function dedupeLink(
         entry.callers.add(caller);
         for (const meta of entry.responses) report(caller, meta);
         entry.waiting++;
-        let settled = false;
         void entry.promise.then((exit) => {
-          settled = true;
           if (caller.failure) resume(Exit.fail(caller.failure));
           else if (Exit.isFailure(exit)) resume(exit);
           else resume(Exit.succeed(resultFor(entry, exit.value, caller)));
         });
         return Effect.sync(() => {
-          if (settled) return;
           entry.callers.delete(caller);
           if (--entry.waiting === 0) {
             remove(key, entry);
