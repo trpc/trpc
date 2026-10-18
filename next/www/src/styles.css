@@ -6,6 +6,14 @@ html {
   scroll-padding-top: 4.5rem;
 }
 
+/* In-page links glide to their heading. The router scrolls `instant`ly
+   (`scrollRestorationBehavior`), so a new page starts at the top. */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
 .prose {
   --tw-prose-body: var(--foreground);
   --tw-prose-headings: var(--foreground);

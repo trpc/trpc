@@ -13,6 +13,9 @@ export function getRouter() {
     defaultStaleTime: Number.POSITIVE_INFINITY,
     routeTree,
     scrollRestoration: true,
+    // `styles.css` makes scrolling smooth for in-page links; a page change or
+    // going back still jumps.
+    scrollRestorationBehavior: 'instant',
   });
 }
 
