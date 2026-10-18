@@ -224,10 +224,15 @@ function installCommand(
   return `${manager} ${verb}${flag} ${packages}`;
 }
 
+/** v12's npm scope. Its packages aren't published yet. */
+const unpublishedScope = '@trpc12/';
+
 /**
  * A `package-install` fence lists packages (`-D` first for dev
  * dependencies) and shows the install command for each package manager, as
- * tabs. The reader's choice applies to every block (`DocBody`).
+ * tabs. The reader's choice applies to every block (`DocBody`). A block
+ * that installs a `@trpc12/` package is marked `data-unpublished`, which
+ * `rehypeCodeTabs` badges.
  */
 function remarkPackageInstall() {
   return (tree: MdastRoot) => {
@@ -252,6 +257,11 @@ function remarkPackageInstall() {
           hProperties: {
             className: ['code-tabs'],
             dataTabs: 'package-manager',
+            ...(packages
+              .split(' ')
+              .some((name) => name.startsWith(unpublishedScope))
+              ? { dataUnpublished: '' }
+              : {}),
           },
         },
         type: 'paragraph',
@@ -424,6 +434,21 @@ function rehypeCodeTabs() {
         })),
         properties: { className: ['code-tabs-list'], role: 'tablist' },
         tagName: 'div',
+        type: 'element',
+      });
+      if (node.properties['dataUnpublished'] === undefined) {
+        return;
+      }
+      // Outside the tablist, whose children are tabs only; CSS sets it on
+      // the tablist's row.
+      node.children.unshift({
+        children: [{ type: 'text', value: 'Not on npm yet' }],
+        properties: {
+          className: ['code-unpublished'],
+          title:
+            'The @trpc12 packages aren’t published until tRPC v12 is released',
+        },
+        tagName: 'span',
         type: 'element',
       });
     });

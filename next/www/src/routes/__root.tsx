@@ -11,6 +11,10 @@ import { SiteFooter } from '~/components/site-footer.tsx';
 import { SiteHeader } from '~/components/site-header.tsx';
 import { themeScript } from '~/components/theme-toggle.tsx';
 import { ThemeProvider } from '~/components/theme-provider.tsx';
+import {
+  UnpublishedBanner,
+  UnpublishedCopyWarning,
+} from '~/components/unpublished.tsx';
 import { site } from '~/site.ts';
 import appCss from '~/styles.css?url';
 
@@ -63,11 +67,13 @@ function RootDocument(props: { readonly children: ReactNode }) {
           >
             Skip to content
           </a>
+          <UnpublishedBanner />
           <SiteHeader />
           <div className="flex-1" id="content">
             {props.children}
           </div>
           <SiteFooter />
+          <UnpublishedCopyWarning />
         </ThemeProvider>
         <Scripts />
       </body>

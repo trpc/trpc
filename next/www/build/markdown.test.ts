@@ -165,6 +165,23 @@ describe('renderMarkdown', () => {
     }).pipe(Effect.provide(NodeServices.layer)),
   );
 
+  it.effect('badges an install of @trpc12 packages, which are not on npm', () =>
+    Effect.gen(function* () {
+      const unpublished = yield* render(
+        '```package-install\n@trpc12/trpc zod\n```',
+      );
+      expect(unpublished.html).toContain('data-unpublished');
+      expect(unpublished.html).toContain(
+        '<span class="code-unpublished" title="The @trpc12 packages aren’t published until tRPC v12 is released">Not on npm yet</span>',
+      );
+      const published = yield* render(
+        '```package-install\n@tanstack/db @trpc/server\n```',
+      );
+      expect(published.html).not.toContain('data-unpublished');
+      expect(published.html).not.toContain('code-unpublished');
+    }).pipe(Effect.provide(NodeServices.layer)),
+  );
+
   it.effect('collects h2 and h3 headings with ids', () =>
     Effect.gen(function* () {
       const rendered = yield* render(

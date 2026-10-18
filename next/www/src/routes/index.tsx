@@ -265,8 +265,16 @@ function HomePage() {
                 Migrating from v11
               </Link>
             </div>
-            <p className="font-mono text-sm text-muted-foreground">
-              <span className="select-none">$ </span>pnpm add @trpc12/trpc zod
+            <p className="flex flex-wrap items-center gap-x-3 gap-y-1.5 font-mono text-sm text-muted-foreground">
+              <span>
+                <span className="select-none">$ </span>pnpm add @trpc12/trpc zod
+              </span>
+              <span
+                className="code-unpublished static! font-sans"
+                title="The @trpc12 packages aren’t published until tRPC v12 is released"
+              >
+                Not on npm yet
+              </span>
             </p>
           </div>
           <div className="grid min-w-0 grid-cols-1 gap-3">
