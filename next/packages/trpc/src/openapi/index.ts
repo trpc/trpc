@@ -26,14 +26,22 @@
 export {
   experimental_parseBracketNotation,
   experimental_toBracketNotation,
-} from './bracket.ts';
-export { experimental_coerceBySchema } from './coerce.ts';
+  experimental_coerceBySchema,
+  type OpenApiErrorBody,
+  experimental_openapi,
+  type OpenApiMeta,
+  type OperationSpec,
+  type Route,
+  type RouteGroup,
+  experimental_resolveRoute,
+  type HttpMethod,
+  type ResolvedRoute,
+} from './rest/index.ts';
 export {
   experimental_generateContractFromOpenApi,
   type GenerateContractOptions,
   type OpenApiSource,
 } from './to-contract.ts';
-export type { OpenApiErrorBody } from './errors.ts';
 export {
   experimental_generateOpenApi,
   type GenerateOpenApiOptions,
@@ -49,21 +57,9 @@ export {
   type OpenApiHandler,
   type OpenApiHandlerOptions,
 } from './handler.ts';
-export { experimental_openapi } from './extension.ts';
-export type {
-  OpenApiMeta,
-  OperationSpec,
-  Route,
-  RouteGroup,
-} from './routes.ts';
 export { experimental_openApiLink, type OpenApiLinkOptions } from './link.ts';
 export {
   experimental_openApiReference,
   type OpenApiReferenceOptions,
 } from './reference.ts';
-export {
-  experimental_resolveRoute,
-  type HttpMethod,
-  type ResolvedRoute,
-} from './routes.ts';
 export type { JsonSchema } from '../internal/json-schema.ts';

@@ -7,7 +7,7 @@ import {
   routerMetaOf,
   type AnyLazyRouter,
 } from '../server/procedures/index.ts';
-import { routeGroupOf, routeOf, type Route } from '../openapi/routes.ts';
+import { routeGroupOf, routeOf, type Route } from '../openapi/rest/index.ts';
 import { isSchema, isStreamSchema } from '../server/validation/index.ts';
 import { toJsonSchema, type JsonSchema } from './json-schema.ts';
 

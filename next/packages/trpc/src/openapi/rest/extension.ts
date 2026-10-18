@@ -2,7 +2,7 @@ import {
   type ProcedureBuilder,
   initTrpc,
   type RootDef,
-} from '../server/procedures/index.ts';
+} from '../../server/procedures/index.ts';
 import { mergeRoute, type OpenApiMeta } from './routes.ts';
 
 /**

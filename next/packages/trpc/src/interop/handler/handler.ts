@@ -17,7 +17,7 @@ import {
   isMultipartContentType,
 } from '../../internal/protocol.ts';
 import type { MaybePromise, ProcedureType } from '../../internal/types.ts';
-import { experimental_parseBracketNotation } from '../../openapi/bracket.ts';
+import { experimental_parseBracketNotation } from '../../openapi/rest/index.ts';
 import {
   isAsyncIterable,
   isPromiseLike,

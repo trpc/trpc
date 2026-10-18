@@ -57,10 +57,11 @@ import {
   type inferRouterServices,
 } from '../server/procedures/index.ts';
 import { isTracked } from '../server/subscriptions/index.ts';
-import { experimental_parseBracketNotation } from './bracket.ts';
-import { experimental_coerceBySchema, propertySchema } from './coerce.ts';
-import { toOpenApiError } from './errors.ts';
 import {
+  experimental_parseBracketNotation,
+  experimental_coerceBySchema,
+  propertySchema,
+  toOpenApiError,
   compileRoute,
   normalizePrefix,
   experimental_resolveRoute,
@@ -68,7 +69,7 @@ import {
   usesQuery,
   type ResolvedRoute,
   type Route,
-} from './routes.ts';
+} from './rest/index.ts';
 
 /**
  * Options shared by every OpenAPI handler.

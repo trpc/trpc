@@ -1,4 +1,4 @@
-import type { JsonSchema } from '../internal/json-schema.ts';
+import type { JsonSchema } from '../../internal/json-schema.ts';
 
 type Schema = Exclude<JsonSchema, boolean>;
 

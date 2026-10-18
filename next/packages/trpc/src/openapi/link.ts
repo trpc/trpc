@@ -9,15 +9,15 @@ import {
 } from '../internal/error.ts';
 import { parseSse } from '../internal/protocol.ts';
 import type { JsonForm } from '../internal/types.ts';
-import { experimental_toBracketNotation } from './bracket.ts';
-import { fromOpenApiError } from './errors.ts';
 import {
+  experimental_toBracketNotation,
+  fromOpenApiError,
   fillPath,
   normalizePrefix,
   experimental_resolveRoute,
   usesQuery,
   type ResolvedRoute,
-} from './routes.ts';
+} from './rest/index.ts';
 
 /**
  * The options of {@link experimental_openApiLink}.

@@ -132,6 +132,7 @@ export default defineConfig({
                 'packages/trpc/src/serializer',
                 'packages/trpc/src/interop',
                 'packages/trpc/src/client',
+                'packages/trpc/src/openapi',
               ],
               ignore: ['fixtures'],
             },

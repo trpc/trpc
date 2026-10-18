@@ -3,7 +3,7 @@ import {
   toBuiltinError,
   TrpcError,
   type AnyTrpcError,
-} from '../internal/error.ts';
+} from '../../internal/error.ts';
 
 /**
  * The JSON body of an OpenAPI error response.

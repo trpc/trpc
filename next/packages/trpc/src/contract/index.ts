@@ -66,7 +66,7 @@ import {
   type ProcedureBuilder,
   type Unlazy,
 } from '../server/procedures/index.ts';
-import { routeOf, type Route } from '../openapi/routes.ts';
+import { routeOf, type Route } from '../openapi/rest/index.ts';
 import type {
   AnySchema,
   InOf,

@@ -27,8 +27,10 @@ import {
 } from '../internal/error.ts';
 import type { JsonSchema } from '../internal/json-schema.ts';
 import type { MaybePromise } from '../internal/types.ts';
-import { experimental_parseBracketNotation } from '../openapi/bracket.ts';
-import { experimental_coerceBySchema } from '../openapi/coerce.ts';
+import {
+  experimental_parseBracketNotation,
+  experimental_coerceBySchema,
+} from '../openapi/rest/index.ts';
 import {
   callProcedure,
   isUnexpectedError,

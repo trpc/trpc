@@ -1,5 +1,5 @@
-import { TrpcError } from '../internal/error.ts';
-import type { ProcedureType } from '../internal/types.ts';
+import { TrpcError } from '../../internal/error.ts';
+import type { ProcedureType } from '../../internal/types.ts';
 
 /**
  * REST metadata (04 (g)), the `route` meta key of the {@link experimental_openapi}

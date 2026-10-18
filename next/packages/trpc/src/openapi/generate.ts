@@ -11,14 +11,14 @@ import type {
   AnyProcedure,
   ProcedureInternals,
 } from '../server/procedures/index.ts';
-import { propertySchema } from './coerce.ts';
 import {
+  propertySchema,
   normalizePrefix,
   experimental_resolveRoute,
   routeOf,
   usesQuery,
   type OperationSpec,
-} from './routes.ts';
+} from './rest/index.ts';
 
 type Schema = Exclude<JsonSchema, boolean>;
 
