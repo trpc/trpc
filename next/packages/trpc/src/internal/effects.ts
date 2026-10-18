@@ -43,21 +43,3 @@ export function toAsyncIterable<A, E>(
     },
   };
 }
-
-/** `Stream.toReadableStream`, read through {@link toAsyncIterable}. @internal */
-export function toReadableStream<A, E>(
-  stream: Stream.Stream<A, E>,
-): ReadableStream<A> {
-  let iterator: AsyncIterator<A> | undefined;
-  return new ReadableStream<A>({
-    async pull(controller) {
-      iterator ??= toAsyncIterable(stream)[Symbol.asyncIterator]();
-      const next = await iterator.next();
-      if (next.done) controller.close();
-      else controller.enqueue(next.value);
-    },
-    async cancel() {
-      await iterator?.return?.();
-    },
-  });
-}

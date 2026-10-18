@@ -19,11 +19,7 @@ import {
   type SerializeRecord,
   type SerializeReturn,
 } from './sync.ts';
-import {
-  backpressure,
-  toAsyncIterable,
-  toReadableStream,
-} from '../../internal/effects.ts';
+import { backpressure, toAsyncIterable } from '../../internal/effects.ts';
 import { fromBase64, JsonBytes } from '../../internal/frames.ts';
 import { counter, DansonError } from './utils.ts';
 
@@ -418,8 +414,12 @@ export function deferredBuilders(
     },
     AsyncIterable: (idx: number): AsyncIterable<unknown, unknown> =>
       iterateWithReturn(take(idx), revive),
+    // Nothing queued ahead of a read: a failure errors the stream, which
+    // drops what's queued, so items before it would be lost.
     ReadableStream: (idx: number): ReadableStream<unknown> =>
-      toReadableStream(iterate(idx)),
+      Stream.toReadableStream(iterate(idx), {
+        strategy: { highWaterMark: 0 },
+      }),
   };
 }
 
