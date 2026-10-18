@@ -1,5 +1,6 @@
-import { Cause, Effect, Exit, FiberMap, Scope, Stream } from 'effect';
+import { Cause, Effect, Exit, FiberMap, Stream } from 'effect';
 import type { HttpServerRequest } from 'effect/http';
+import type { Socket } from 'effect/socket';
 import {
   isTrpcError,
   TrpcError,
@@ -12,13 +13,18 @@ import {
   unexpectedError,
 } from '../server/execute.ts';
 import { resolveProcedure } from '../server/router.ts';
-import { parseSocketMessage, type WebSocketLike } from '../server/socket.ts';
+import {
+  runSocket,
+  socketFrames,
+  type SocketOutbox,
+  type SocketSession,
+} from '../server/socket-session.ts';
+import { parseSocketMessage } from '../server/socket.ts';
 import { isTracked } from '../server/tracked.ts';
 import type { V11Core } from './handler.ts';
 
 type RequestId = number | string;
 
-const OPEN = 1;
 const METHODS = new Set(['query', 'mutation', 'subscription']);
 
 const isRecord = (v: unknown): v is Record<string, unknown> =>
@@ -31,34 +37,50 @@ export const inputEventId = (value: unknown): string | undefined =>
     : undefined;
 
 /**
- * v11's `wsLink` protocol over `socket`: JSON-RPC-style requests, `started`,
- * `data` and `stopped` results, `subscription.stop`, `PING`/`PONG` and a
- * `connectionParams` message. Each request gets its own `createContext`,
- * like a v12 socket call. The connection's calls run in one `FiberMap`, so
- * `subscription.stop` and a closed socket interrupt them.
+ * v11's `wsLink` protocol over `socket`, until it closes: JSON-RPC-style
+ * requests, `started`, `data` and `stopped` results, `subscription.stop`,
+ * `PING`/`PONG` and a `connectionParams` message. Each request gets its
+ * own `createContext`, like a v12 socket call. The connection's calls run
+ * in one `FiberMap` in the session's scope, so `subscription.stop` and a
+ * closed socket interrupt them.
  * @internal
  */
-export function serveV11Socket(
+export const serveV11Socket = (
   core: V11Core,
-  socket: WebSocketLike,
+  socket: Socket.Socket,
   opts: {
     readonly request: HttpServerRequest.HttpServerRequest;
     readonly platform: unknown;
     readonly idleTimeoutMs: number | false;
   },
-): void {
+): Effect.Effect<void> =>
+  runSocket({
+    socket,
+    frames: socketFrames(socket),
+    idleTimeoutMs: opts.idleTimeoutMs,
+    open: (outbox) =>
+      Effect.gen(function* () {
+        const calls = yield* FiberMap.make<RequestId, void, never>();
+        const fork = yield* FiberMap.runtime(calls)<never>();
+        return v11Session(core, outbox, calls, fork, opts);
+      }),
+  });
+
+function v11Session(
+  core: V11Core,
+  outbox: SocketOutbox,
+  calls: FiberMap.FiberMap<RequestId, void, never>,
+  fork: (id: RequestId, effect: Effect.Effect<void>) => unknown,
+  opts: {
+    readonly request: HttpServerRequest.HttpServerRequest;
+    readonly platform: unknown;
+  },
+): SocketSession<string | Uint8Array> {
   const { base, output } = core;
   const { request } = opts;
   let connectionParams: Record<string, unknown> | undefined;
-  const scope = Scope.makeUnsafe();
-  const calls = Effect.runSync(
-    FiberMap.make<RequestId, void, never>().pipe(Scope.provide(scope)),
-  );
-  const fork = Effect.runSync(FiberMap.runtime(calls)<never>());
 
-  const send = (message: unknown) => {
-    if (socket.readyState === OPEN) socket.send(JSON.stringify(message));
-  };
+  const send = (message: unknown) => outbox.send(JSON.stringify(message));
   const envelope = (id: RequestId | null, jsonrpc: unknown) => ({
     id,
     ...(jsonrpc === '2.0' ? { jsonrpc } : {}),
@@ -254,44 +276,28 @@ export function serveV11Socket(
     );
   };
 
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  const arm = () => {
-    if (opts.idleTimeoutMs === false) return;
-    clearTimeout(timer);
-    timer = setTimeout(
-      () => socket.close(1001, 'Idle timeout'),
-      opts.idleTimeoutMs,
-    );
+  return {
+    frame: (data) => {
+      if (data === 'PING') {
+        outbox.send('PONG');
+        return;
+      }
+      if (data === 'PONG') return;
+      const parsed = parseSocketMessage(data);
+      if (parsed === undefined) {
+        sendError(
+          null,
+          undefined,
+          new TrpcError({ code: 'PARSE_ERROR', message: 'Invalid JSON' }),
+        );
+        return;
+      }
+      for (const message of Array.isArray(parsed) ? parsed : [parsed]) {
+        receive(message);
+      }
+    },
+    close: () => {
+      Effect.runFork(FiberMap.clear(calls));
+    },
   };
-  let closed = false;
-  const close = () => {
-    if (closed) return;
-    closed = true;
-    clearTimeout(timer);
-    Effect.runFork(Scope.close(scope, Exit.void));
-  };
-  socket.addEventListener('close', close);
-  socket.addEventListener('error', close);
-  socket.addEventListener('message', (event: { data: unknown }) => {
-    if (closed) return;
-    arm();
-    if (event.data === 'PING') {
-      if (socket.readyState === OPEN) socket.send('PONG');
-      return;
-    }
-    if (event.data === 'PONG') return;
-    const parsed = parseSocketMessage(event.data);
-    if (parsed === undefined) {
-      sendError(
-        null,
-        undefined,
-        new TrpcError({ code: 'PARSE_ERROR', message: 'Invalid JSON' }),
-      );
-      return;
-    }
-    for (const message of Array.isArray(parsed) ? parsed : [parsed]) {
-      receive(message);
-    }
-  });
-  arm();
 }
