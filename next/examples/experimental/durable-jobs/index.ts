@@ -139,7 +139,9 @@ console.log('lost response, retried:', paid, 'call ids', sentIds);
 if (paid.status !== 'paid')
   throw new Error(`expected paid, got ${paid.status}`);
 if (sentIds.length !== 2 || sentIds[0] === null || sentIds[0] !== sentIds[1]) {
-  throw new Error(`expected one retry with the same call id: ${sentIds}`);
+  throw new Error(
+    `expected one retry with the same call id: ${sentIds.join()}`,
+  );
 }
 if (db.charges.get(`inv-${run}-1`) !== 1) throw new Error('charged twice');
 
@@ -194,9 +196,10 @@ function cutAfter(res: Response, lines: number): Response {
 const resumedFrom: Array<string | null> = [];
 // A load balancer that loses A mid-response and sends the retry to B.
 const failover = connect(a.url, async (url, init) => {
-  resumedFrom.push(new Headers(init?.headers).get('trpc-resume-from'));
-  if (resumedFrom.length === 1) return cutAfter(await fetch(url, init), 3);
-  return fetch(String(url).replace(a.url, b.url), init);
+  const request = new Request(url, init);
+  resumedFrom.push(request.headers.get('trpc-resume-from'));
+  if (resumedFrom.length === 1) return cutAfter(await fetch(request), 3);
+  return fetch(new Request(request.url.replace(a.url, b.url), request));
 });
 const report = await failover.report.build.mutate({ name: 'october' });
 const rows: Array<{ row: number; total: number }> = [];
@@ -207,7 +210,7 @@ console.log('report rows', rows.map((r) => r.row).join(','), summary, {
 });
 if (rows.length !== 5 || summary.rows !== 5) throw new Error('rows missing');
 if (resumedFrom.join() !== ',3') {
-  throw new Error(`expected a resume from frame 3: ${resumedFrom}`);
+  throw new Error(`expected a resume from frame 3: ${resumedFrom.join()}`);
 }
 if (db.reportRuns !== 1) throw new Error('the report ran twice');
 
