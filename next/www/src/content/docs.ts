@@ -98,6 +98,23 @@ export function findDoc(
   return version.allDocs.find((doc) => doc.slug === slug);
 }
 
+/** The pages `slug` nests under in the sidebar, outermost first. */
+export function ancestors(
+  version: DocsVersion,
+  slug: string,
+): ReadonlyArray<DocMeta> {
+  const parent = findDoc(version, findDoc(version, slug)?.parent ?? '');
+  return parent ? [...ancestors(version, parent.slug), parent] : [];
+}
+
+/** The pages nested right under `slug`, in sidebar order. */
+export function childrenOf(
+  version: DocsVersion,
+  slug: string,
+): ReadonlyArray<DocMeta> {
+  return version.allDocs.filter((doc) => doc.parent === slug);
+}
+
 /** The pages before and after `slug` in sidebar order. */
 export function neighbours(version: DocsVersion, slug: string) {
   const index = version.allDocs.findIndex((doc) => doc.slug === slug);

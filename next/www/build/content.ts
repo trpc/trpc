@@ -59,6 +59,8 @@ const Frontmatter = Schema.Struct({
   description: Schema.String,
   label: Schema.optional(Schema.String),
   order: Schema.Number,
+  /** The page it nests under in the sidebar, by slug, in the same section. */
+  parent: Schema.optional(Schema.String),
   section: Schema.String,
   title: Schema.String,
   v11: Schema.optional(Schema.String),
@@ -203,6 +205,57 @@ function run<A, E>(effect: Effect.Effect<A, E, NodeServices.NodeServices>) {
   return Effect.runPromise(Effect.provide(effect, NodeServices.layer));
 }
 
+interface NavEntry {
+  readonly order: number;
+  readonly parent?: string | undefined;
+  readonly section: string;
+  readonly slug: string;
+}
+
+/**
+ * The pages in reading order, which is the sidebar's: by `order`, each one
+ * followed by the pages nested under it. Throws on a `parent` that isn't a
+ * page of the same section, and on parents that form a cycle.
+ */
+export function readingOrder<A extends NavEntry>(
+  entries: ReadonlyArray<A>,
+): ReadonlyArray<A> {
+  const bySlug = new Map(entries.map((entry) => [entry.slug, entry]));
+  const children = new Map<string | undefined, Array<A>>();
+  for (const entry of entries) {
+    if (entry.parent !== undefined) {
+      const parent = bySlug.get(entry.parent);
+      if (!parent) {
+        throw new Error(`${entry.slug}: parent ${entry.parent} isn't a page`);
+      }
+      if (parent.section !== entry.section) {
+        throw new Error(
+          `${entry.slug}: parent ${entry.parent} is in section "${parent.section}", not "${entry.section}"`,
+        );
+      }
+    }
+    children.set(entry.parent, [...(children.get(entry.parent) ?? []), entry]);
+  }
+  const ordered: Array<A> = [];
+  const visit = (parent: string | undefined) => {
+    const siblings = (children.get(parent) ?? []).toSorted(
+      (a, b) => a.order - b.order || a.slug.localeCompare(b.slug),
+    );
+    for (const entry of siblings) {
+      ordered.push(entry);
+      visit(entry.slug);
+    }
+  };
+  visit(undefined);
+  const unreached = entries.filter((entry) => !ordered.includes(entry));
+  if (unreached.length > 0) {
+    throw new Error(
+      `Pages whose parents form a cycle: ${unreached.map((entry) => entry.slug).join(', ')}`,
+    );
+  }
+  return ordered;
+}
+
 /** Links to a page or a heading that doesn't exist, as one message per link. */
 export function brokenLinks(
   pages: ReadonlyArray<{
@@ -295,6 +348,7 @@ export function docsContent(options: ContentOptions): Plugin {
         html: result.html,
         label: source.frontmatter.label,
         lastModified: yield* lastModified(source.file),
+        parent: source.frontmatter.parent,
         section: source.frontmatter.section,
         slug: source.slug,
         title: source.frontmatter.title,
@@ -360,20 +414,27 @@ export function docsContent(options: ContentOptions): Plugin {
     if (broken.length > 0) {
       throw new Error(`Broken links in the docs:\n${broken.join('\n')}`);
     }
+    const ordered = readingOrder(
+      pages.map((entry) => ({
+        order: entry.order,
+        parent: entry.page.doc.parent,
+        section: entry.page.doc.section,
+        slug: entry.page.doc.slug,
+      })),
+    );
+    const bySlug = new Map(pages.map((entry) => [entry.page.doc.slug, entry]));
     return options.sections.map((title) => ({
-      docs: pages
-        .filter((entry) => entry.page.doc.section === title)
-        .toSorted(
-          (a, b) =>
-            a.order - b.order || a.page.doc.slug.localeCompare(b.page.doc.slug),
-        )
+      docs: ordered
+        .filter((entry) => entry.section === title)
         .map((entry): DocMeta => {
-          const doc = entry.page.doc;
+          // SAFETY: `readingOrder` only returns the slugs it was given.
+          const doc = bySlug.get(entry.slug)!.page.doc;
           return {
             description: doc.description,
             headings: doc.headings,
             label: doc.label,
             lastModified: doc.lastModified,
+            parent: doc.parent,
             section: doc.section,
             slug: doc.slug,
             title: doc.title,
@@ -431,9 +492,16 @@ export function docsContent(options: ContentOptions): Plugin {
     ];
     for (const section of sections) {
       lines.push(`## ${section.title}`, '');
+      const parents = new Map(
+        section.docs.map((doc) => [doc.slug, doc.parent]),
+      );
+      const depth = (slug: string | undefined): number => {
+        const parent = slug === undefined ? undefined : parents.get(slug);
+        return parent === undefined ? 0 : 1 + depth(parent);
+      };
       for (const doc of section.docs) {
         lines.push(
-          `- [${doc.title}](${options.siteUrl}${basePath}/${doc.slug}.md): ${doc.description}`,
+          `${'  '.repeat(depth(doc.slug))}- [${doc.title}](${options.siteUrl}${basePath}/${doc.slug}.md): ${doc.description}`,
         );
       }
       lines.push('');

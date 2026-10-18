@@ -1,5 +1,11 @@
 import { Link, notFound, Outlet } from '@tanstack/react-router';
-import { ArrowLeft, ArrowRight, ExternalLink, Pencil } from 'lucide-react';
+import {
+  ArrowLeft,
+  ArrowRight,
+  ChevronRight,
+  ExternalLink,
+  Pencil,
+} from 'lucide-react';
 
 import { DocBody } from '~/components/doc-body.tsx';
 import { DocsNav } from '~/components/docs-nav.tsx';
@@ -9,7 +15,13 @@ import {
   TableOfContents,
 } from '~/components/toc.tsx';
 import { VersionBanner } from '~/components/version-banner.tsx';
-import { type DocsVersion, findDoc, neighbours } from '~/content/docs.ts';
+import {
+  ancestors,
+  childrenOf,
+  type DocsVersion,
+  findDoc,
+  neighbours,
+} from '~/content/docs.ts';
 import type { Doc } from '~/content/types.ts';
 import { absoluteUrl, pageHead, v11PageUrl } from '~/seo.ts';
 import { site } from '~/site.ts';
@@ -80,11 +92,17 @@ export function docHead(version: DocsVersion, slug: string) {
             position: 1,
           },
           { '@type': 'ListItem', name: meta.section, position: 2 },
+          ...ancestors(version, meta.slug).map((parent, index) => ({
+            '@type': 'ListItem',
+            item: absoluteUrl(`${version.basePath}/${parent.slug}`),
+            name: parent.title,
+            position: 3 + index,
+          })),
           {
             '@type': 'ListItem',
             item: absoluteUrl(path),
             name: meta.title,
-            position: 3,
+            position: 3 + ancestors(version, meta.slug).length,
           },
         ],
       },
@@ -104,13 +122,34 @@ export function DocPage(props: {
   const doc = props.doc;
   const version = props.version;
   const around = neighbours(version, doc.slug);
+  const parents = ancestors(version, doc.slug);
+  const children = childrenOf(version, doc.slug);
 
   return (
     <div className="grid min-w-0 gap-10 py-8 xl:grid-cols-[minmax(0,1fr)_13rem]">
       <article className="min-w-0">
         <VersionBanner slug={doc.slug} version={version} />
         <header className="mb-8 grid gap-3 border-b pb-6">
-          <p className="text-sm font-semibold text-link">{doc.section}</p>
+          <nav aria-label="Breadcrumb">
+            <ol className="flex flex-wrap items-center gap-x-1.5 text-sm font-semibold text-link">
+              <li>{doc.section}</li>
+              {parents.map((parent) => (
+                <li className="flex items-center gap-1.5" key={parent.slug}>
+                  <ChevronRight
+                    aria-hidden
+                    className="size-3.5 text-muted-foreground"
+                  />
+                  <Link
+                    className="hover:underline"
+                    params={{ _splat: parent.slug }}
+                    to={version.route}
+                  >
+                    {parent.label ?? parent.title}
+                  </Link>
+                </li>
+              ))}
+            </ol>
+          </nav>
           <h1 className="text-3xl font-bold tracking-tight text-balance sm:text-4xl">
             {doc.title}
           </h1>
@@ -129,6 +168,34 @@ export function DocPage(props: {
           key={doc.slug}
         />
         <DocBody html={doc.html} />
+        {children.length > 0 ? (
+          <section aria-labelledby="pages-under" className="mt-10">
+            <h2
+              className="mb-4 text-lg font-semibold tracking-tight"
+              id="pages-under"
+            >
+              Pages under {doc.label ?? doc.title}
+            </h2>
+            <ul className="grid gap-3 sm:grid-cols-2">
+              {children.map((child) => (
+                <li key={child.slug}>
+                  <Link
+                    className="grid h-full gap-1 rounded-lg border p-4 transition-colors hover:bg-accent/50"
+                    params={{ _splat: child.slug }}
+                    to={version.route}
+                  >
+                    <span className="font-medium">
+                      {child.label ?? child.title}
+                    </span>
+                    <span className="text-sm text-pretty text-muted-foreground">
+                      {child.description}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
         <footer className="mt-12 grid gap-6 border-t pt-6">
           {version.id === 'v12' ? (
             <a

@@ -12,6 +12,8 @@ export interface DocMeta {
   readonly label?: string | undefined;
   /** ISO date of the source file's last commit, when git knows it. */
   readonly lastModified: string | undefined;
+  /** The slug of the page it nests under in the sidebar. */
+  readonly parent?: string | undefined;
   readonly section: string;
   /** The page's path under `docs/`, without `.md`: `client/links`. */
   readonly slug: string;
