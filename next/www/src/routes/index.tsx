@@ -18,6 +18,14 @@ import procedure from 'sample:home/src/server.ts#procedure';
 import serve from 'sample:home/src/server.ts#serve';
 
 import { DocBody } from '~/components/doc-body.tsx';
+import { PartnerCards } from '~/components/sponsors/partners.tsx';
+import { SponsorCloud } from '~/components/sponsors/sponsor-cloud.tsx';
+import {
+  SponsorButton,
+  SupportedBy,
+} from '~/components/sponsors/supported-by.tsx';
+import { useFlag } from '~/flags.ts';
+import { partners } from '~/sponsors.ts';
 import { Badge } from '@shared/ui/components/badge';
 import { buttonVariants } from '@shared/ui/components/button';
 import { cn } from '@shared/ui/lib/utils';
@@ -283,6 +291,7 @@ const docLink =
   'inline-flex items-center gap-1 font-medium text-link underline-offset-4 hover:underline';
 
 function HomePage() {
+  const showPartners = useFlag('partners') && partners.length > 0;
   return (
     <main>
       {/* `clip`, unlike `hidden`, keeps the sticky column sticky. */}
@@ -357,6 +366,7 @@ function HomePage() {
                 Not on npm yet
               </span>
             </p>
+            <SupportedBy />
           </div>
           <div className="grid min-w-0 grid-cols-1 gap-3">
             <DocBody
@@ -457,6 +467,31 @@ function HomePage() {
             </li>
           ))}
         </ul>
+      </section>
+
+      <section
+        aria-labelledby="sponsors"
+        className="mx-auto max-w-7xl border-t px-4 py-16 sm:px-6"
+      >
+        <div className="mb-10 flex flex-wrap items-end justify-between gap-x-8 gap-y-4">
+          <div>
+            <h2
+              className="mb-2 text-2xl font-bold tracking-tight sm:text-3xl"
+              id="sponsors"
+            >
+              <HashLink id="sponsors">Sponsors</HashLink>
+            </h2>
+            <p className="max-w-2xl text-muted-foreground">
+              tRPC is MIT licensed and built in the open, kept going by the
+              companies and people below. Thank you!
+            </p>
+          </div>
+          <SponsorButton />
+        </div>
+        {showPartners ? <PartnerCards /> : null}
+        <SponsorCloud
+          className={cn('mx-auto max-w-3xl', showPartners && 'mt-12')}
+        />
       </section>
 
       <section

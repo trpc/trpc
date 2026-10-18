@@ -11,6 +11,10 @@ import { DocBody } from '~/components/doc-body.tsx';
 import { DocsNav } from '~/components/docs-nav.tsx';
 import { PageActions } from '~/components/page-actions.tsx';
 import {
+  PartnersRail,
+  PartnersStrip,
+} from '~/components/sponsors/partners.tsx';
+import {
   CollapsedTableOfContents,
   TableOfContents,
 } from '~/components/toc.tsx';
@@ -23,8 +27,10 @@ import {
   neighbours,
 } from '~/content/docs.ts';
 import type { Doc } from '~/content/types.ts';
+import { useFlag } from '~/flags.ts';
 import { absoluteUrl, pageHead, trpcPageUrl } from '~/seo.ts';
 import { site } from '~/site.ts';
+import { partners } from '~/sponsors.ts';
 
 export function DocsLayout() {
   return (
@@ -124,6 +130,7 @@ export function DocPage(props: {
   const around = neighbours(version, doc.slug);
   const parents = ancestors(version, doc.slug);
   const children = childrenOf(version, doc.slug);
+  const showPartners = useFlag('partners') && partners.length > 0;
 
   return (
     <div className="grid min-w-0 gap-10 py-8 xl:grid-cols-[minmax(0,1fr)_13rem]">
@@ -197,6 +204,7 @@ export function DocPage(props: {
           </section>
         ) : null}
         <footer className="mt-12 grid gap-6 border-t pt-6">
+          {showPartners ? <PartnersStrip className="xl:hidden" /> : null}
           {version.copied ? (
             <a
               className={footerLink}
@@ -247,8 +255,9 @@ export function DocPage(props: {
         </footer>
       </article>
       <aside className="hidden xl:block">
-        <div className="sticky top-22">
+        <div className="sticky top-22 grid gap-10">
           <TableOfContents headings={doc.headings} key={doc.slug} />
+          {showPartners ? <PartnersRail /> : null}
         </div>
       </aside>
     </div>
