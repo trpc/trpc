@@ -19,6 +19,7 @@ import {
   TrpcError,
   withStatusHint,
   type AnyTrpcError,
+  type CodeError,
   type WireError,
 } from '../internal/error.ts';
 import { HEADER } from '../internal/protocol.ts';
@@ -175,7 +176,7 @@ export function experimental_durable<TReq extends MiddlewareRequirements = {}>(
   ReqInput<TReq>,
   ReqMeta<TReq>,
   {},
-  TrpcError,
+  CodeError<'CONFLICT' | 'BAD_REQUEST'>,
   Persistence.BackingPersistence,
   never,
   never,

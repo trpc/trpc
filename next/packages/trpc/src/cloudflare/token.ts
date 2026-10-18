@@ -1,6 +1,6 @@
 import { Clock, Effect, Redacted, Result, Schema } from 'effect';
 import { Base64Url } from 'effect/encoding';
-import { TrpcError } from '../internal/error.ts';
+import { TrpcError, type CodeError } from '../internal/error.ts';
 
 /**
  * Options for {@link experimental_connectionToken}.
@@ -38,7 +38,9 @@ export interface ConnectionToken<A> {
    * The claims of a token this secret signed. Fails with `UNAUTHORIZED`
    * when it's missing, malformed, tampered with or expired.
    */
-  readonly verify: (token: unknown) => Effect.Effect<A, TrpcError>;
+  readonly verify: (
+    token: unknown,
+  ) => Effect.Effect<A, CodeError<'UNAUTHORIZED'>>;
 }
 
 const encoder = new TextEncoder();

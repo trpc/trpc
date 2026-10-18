@@ -15,6 +15,7 @@ import {
   createFetchHandler,
   initTrpc,
   TrpcError,
+  type inferProcedureErrors,
 } from '@trpc12/trpc/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { createTestServer } from '../fixtures/server.ts';
@@ -245,6 +246,16 @@ test('experimental_durable() requires BackingPersistence', () => {
   >().toEqualTypeOf<Layer.Layer<Persistence.BackingPersistence, any, never>>();
   // @ts-expect-error -- BackingPersistence is required
   createFetchHandler({ router: app.router });
+});
+
+test('experimental_durable() adds CONFLICT and BAD_REQUEST, not every code', () => {
+  const app = makeRouter();
+  expectTypeOf<
+    inferProcedureErrors<typeof app.router.order>['code']
+  >().toEqualTypeOf<'OUT_OF_STOCK' | 'BAD_REQUEST' | 'CONFLICT'>();
+  expectTypeOf<
+    inferProcedureErrors<typeof app.router.fail>['code']
+  >().toEqualTypeOf<'BAD_REQUEST' | 'CONFLICT'>();
 });
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
