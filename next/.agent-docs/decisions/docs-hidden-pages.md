@@ -13,6 +13,7 @@
 - Human, 2026-10-18 (decision round, TanStack DB): "a". The TanStack DB page is hidden; Hydration and offline mutations stays.
 - Human, 2026-10-18 (decision round, experimental React packages): "a". React without TanStack Query (`@trpc12/experimental-react`) and React atoms (`@trpc12/experimental-react-atom`) are hidden. The React page no longer compares three ways to fetch: it points at `@trpc12/tanstack-react-query`.
 - Human, 2026-10-18 (decision round, library recipes): "A". AI SDK, Better Auth and NestJS are hidden, so the integrations overview loses its Libraries section and the packages table its `@trpc12/nest` row.
+- Human, 2026-10-18 (decision round, Server Actions and RSC): "c". Both stay listed: Server Actions (`experimental_createAction`, already `experimental_`) and React Server Components (`createTrpcRsc`).
 - Why: the v12 docs grew a page for every oRPC parity row and every agent call, which is too much to review and makes it hard to tell what to use; hiding keeps the work (and its tests) while the site shows what's been reviewed.
 - Lost: hidden features are invisible to readers who don't know the flag; their pages' links from listed pages, which go until a page is shown again.
 - Open: reviewing each hidden page and dropping its `hidden: true`, with the links back.
