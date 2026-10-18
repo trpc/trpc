@@ -1,16 +1,15 @@
 /**
  * The chat server: rooms anyone can read, and an inbox per user that only
  * its owner can. Both are channels of one `Publisher`, and the backend
- * (Redis or Postgres) is how separate server processes share events.
+ * (Redis or Postgres) is how separate servers share events.
  *
- * `BACKEND=redis|postgres PORT=3000 node server.ts` serves until SIGTERM
- * and prints `{"url":…}` once it listens. `IDLE_TIMEOUT_MS` closes
- * WebSockets that send nothing, `wsLink`'s pings included, for that long.
+ * `BACKEND=redis|postgres PORT=3000 node server.ts` serves until Ctrl-C;
+ * start a second one on another port to see events cross servers.
  */
 import { createServer } from 'node:http';
-import { NodeHttpServer, NodeRedis, NodeRuntime } from '@effect/platform-node';
+import { NodeHttpServer, NodeRedis } from '@effect/platform-node';
 import { PgClient } from '@effect/sql-pg';
-import { Effect, Layer, Redacted } from 'effect';
+import { Effect, Layer, ManagedRuntime, Redacted } from 'effect';
 import { HttpServer } from 'effect/http';
 import { serve } from '@trpc12/trpc/http';
 import { createSerializer } from '@trpc12/trpc/serializer';
@@ -21,7 +20,7 @@ import {
   Publisher,
 } from '@trpc12/trpc/server';
 import { z } from 'zod';
-import { pgPublisher, redisPublisher } from './publisher.ts';
+import { createEventsTable, pgPublisher, redisPublisher } from './publisher.ts';
 
 /** Messages carry a `Date`, so both ends use danSON instead of plain JSON. */
 export const serializer = createSerializer();
@@ -88,8 +87,8 @@ const appRouter = {
 };
 export type AppRouter = typeof appRouter;
 
-export const redisUrl = process.env['REDIS_URL'] ?? 'redis://127.0.0.1:6379';
-export const databaseUrl =
+const redisUrl = process.env['REDIS_URL'] ?? 'redis://127.0.0.1:6379';
+const databaseUrl =
   process.env['DATABASE_URL'] ??
   'postgres://postgres:postgres@127.0.0.1:5432/postgres';
 
@@ -98,52 +97,73 @@ const backends = {
     Layer.effect(Chat)(redisPublisher<ChatEvents>({ prefix: 'chat' })).pipe(
       Layer.provide(NodeRedis.layer({ url: redisUrl })),
     ),
+  // `create table if not exists` on start; with several servers starting at
+  // once, run it as a migration instead.
   postgres: () =>
-    Layer.effect(Chat)(pgPublisher<ChatEvents>()).pipe(
-      Layer.provide(PgClient.layer({ url: Redacted.make(databaseUrl) })),
-    ),
+    Layer.effect(Chat)(
+      Effect.andThen(createEventsTable, pgPublisher<ChatEvents>()),
+    ).pipe(Layer.provide(PgClient.layer({ url: Redacted.make(databaseUrl) }))),
 };
 export type Backend = keyof typeof backends;
 
-if (import.meta.main) {
-  const backend = (process.env['BACKEND'] ?? 'redis') as Backend;
+/**
+ * Starts a server; run as many as you like against the same backend.
+ * `idleTimeoutMs` closes WebSockets that send nothing, `wsLink`'s pings
+ * included, for that long.
+ */
+export async function listen(
+  port = 0,
+  opts: { backend?: Backend; idleTimeoutMs?: number } = {},
+) {
   const handler = createFetchHandler({
     router: appRouter,
-    layer: backends[backend](),
+    layer: backends[opts.backend ?? 'redis'](),
     serializer,
     // Browsers can't set WebSocket headers, so `wsLink` sends the token as
     // `connectionParams`; over HTTP it's a header.
-    createContext: (opts) => {
-      const param = opts.info.connectionParams?.['token'];
+    createContext: (o) => {
+      const param = o.info.connectionParams?.['token'];
       const token =
         typeof param === 'string'
           ? param
-          : opts.request.headers['authorization']?.replace(/^Bearer /, '');
+          : o.request.headers['authorization']?.replace(/^Bearer /, '');
       return { user: token === undefined ? undefined : users[token] };
     },
-    websocket: {
-      idleTimeoutMs: Number(process.env['IDLE_TIMEOUT_MS'] ?? 60_000),
-    },
+    websocket: { idleTimeoutMs: opts.idleTimeoutMs ?? 60_000 },
   });
-  const server = serve(handler).pipe(
-    Layer.provideMerge(
-      NodeHttpServer.layer(createServer, {
-        port: Number(process.env['PORT'] ?? 3000),
-        host: '127.0.0.1',
-        // On SIGTERM the server waits this long for open connections to
-        // end (20 s by default). Subscriptions never end on their own, so
-        // close their sockets soon; clients resume on another server.
-        gracefulShutdownTimeout: '500 millis',
-      }),
+  const server = createServer();
+  const runtime = ManagedRuntime.make(
+    serve(handler).pipe(
+      Layer.provideMerge(
+        NodeHttpServer.layer(() => server, {
+          port,
+          host: '127.0.0.1',
+          // On close, the server waits this long for open connections to
+          // end (20 s by default). Subscriptions never end on their own, so
+          // close their sockets soon; clients resume on another server.
+          gracefulShutdownTimeout: '500 millis',
+        }),
+      ),
     ),
   );
-  Effect.gen(function* () {
-    const address = yield* HttpServer.addressFormattedWith(Effect.succeed);
-    console.log(JSON.stringify({ url: `${address}/trpc` }));
-    return yield* Effect.never;
-  }).pipe(
-    Effect.provide(server),
-    Effect.ensuring(Effect.promise(() => handler.dispose())),
-    NodeRuntime.runMain,
+  const address = await runtime.runPromise(
+    HttpServer.addressFormattedWith(Effect.succeed),
   );
+  return {
+    url: `${address}/trpc`,
+    async [Symbol.asyncDispose]() {
+      await runtime.dispose();
+      // Connections that went idle while closing stay open, and a request
+      // on one would reach no handler, so a client reusing it would hang.
+      server.closeAllConnections();
+      await handler.dispose();
+    },
+  };
+}
+
+if (import.meta.main) {
+  const server = await listen(Number(process.env['PORT'] ?? 3000), {
+    backend: (process.env['BACKEND'] ?? 'redis') as Backend,
+  });
+  console.log(`listening on ${server.url}`);
 }

@@ -94,7 +94,7 @@ source.onmessage = (event) => render(JSON.parse(event.data));
 source.addEventListener('done', () => source.close());
 ```
 
-The [`examples/realtime`](../../examples/realtime/index.ts) app reads a room this way, next to `wsLink` clients, and both resume after the server restarts.
+The [`examples/realtime`](../../examples/realtime/client.ts) app reads a room this way, next to `wsLink` clients, and both resume after the server restarts.
 
 ## Over WebSockets
 

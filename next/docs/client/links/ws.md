@@ -49,4 +49,4 @@ The link pings every 30 s and treats a connection that answers nothing for 10 s 
 
 The server closes a socket that sends nothing for 60 s (code 1001) and stops its subscriptions; set `createFetchHandler({ websocket: { idleTimeoutMs } })`, or `false` to keep silent sockets open.
 
-The [`examples/realtime`](../../../examples/realtime/index.ts) app sends a token in `connectionParams`, restarts a server under its subscriptions, and has the server drop a client that sends no pings; each one resumes from its last event.
+The [`examples/realtime`](../../../examples/realtime/client.ts) app sends a token in `connectionParams`, restarts a server under its subscriptions, and has the server drop a client that sends no pings; each one resumes from its last event.
