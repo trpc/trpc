@@ -1,4 +1,9 @@
 {
+  "git": {
+    "deploymentEnabled": {
+      "v12": false
+    }
+  },
   "redirects": [
     {
       "source": "/docs/server/output-validation",
