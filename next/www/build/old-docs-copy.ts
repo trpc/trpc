@@ -4,8 +4,10 @@
  * site, in each version's sidebar sections and order, and its blog's posts
  * into `blog/`. The copies are committed and nobody edits them: after the
  * docs or the blog change (a merge of `main`), run
- * `pnpm --filter @trpc12/www old-docs:copy` again. `old-docs:check` (CI)
- * fails when the committed copies aren't what the copy writes.
+ * `pnpm --filter @trpc12/www old-docs:copy` again, as
+ * `.agents/skills/sync-old-docs/SKILL.md` says; nothing reruns it.
+ * `old-docs:check` fails when the committed copies aren't what the copy
+ * writes.
  *
  * The pages are converted by `old-docs-convert.ts`. The copy fails on
  * anything it can't convert, and drops the `#hash` of links to headings
