@@ -280,6 +280,15 @@ export function createAtomClient(opts: {
         : runtime.atom(
             at(client, key.path).subscribe(key.input) as Stream.Stream<unknown>,
           );
+    // The atom that runs the query is the serializable one: withReactivity
+    // reads it through `get.once`, so a hydrated value on a wrapper would
+    // still send the request.
+    if (key.type === 'query') {
+      atom = Atom.serializable(atom, {
+        key: `trpc:${id}`,
+        schema: resultSchema as Schema.Codec<unknown, unknown>,
+      });
+    }
     if (options?.reactivityKeys) {
       atom = runtime.factory.withReactivity(options.reactivityKeys)(atom);
     }
@@ -288,12 +297,6 @@ export function createAtomClient(opts: {
       atom = Duration.isFinite(ttl)
         ? Atom.setIdleTTL(atom, ttl)
         : Atom.keepAlive(atom);
-    }
-    if (key.type === 'query') {
-      atom = Atom.serializable(atom, {
-        key: `trpc:${id}`,
-        schema: resultSchema as Schema.Codec<unknown, unknown>,
-      });
     }
     return atom;
   });

@@ -161,6 +161,43 @@ test('query atoms hydrate with the serializer: the browser renders without a req
   expect(db.calls).toEqual([]);
 });
 
+test('a hydrated atom with reactivity keys renders without a request, and a mutation still refetches it', async () => {
+  using _db = freshDb();
+  const query = (app: ReturnType<typeof setup>) =>
+    app.trpc.post.byId.query({ id: '1' }, { reactivityKeys: ['posts'] });
+  const server = setup();
+  const serverRegistry = AtomRegistry.make({ defaultIdleTTL: 60_000 });
+  await Effect.runPromise(
+    AtomRegistry.getResult(serverRegistry, query(server)),
+  );
+  const state = JSON.parse(JSON.stringify(Hydration.dehydrate(serverRegistry)));
+  serverRegistry.dispose();
+
+  const browser = setup();
+  Hydration.hydrate(browser.registry, state);
+  db.calls = [];
+  const post = query(browser);
+  const unmount = browser.registry.mount(post);
+  expect(AsyncResult.getOrThrow(browser.registry.get(post)).title).toBe(
+    'Hello',
+  );
+  await new Promise((resolve) => setTimeout(resolve, 10));
+  expect(db.calls).toEqual([]);
+
+  const rename = browser.trpc.post.rename.mutation();
+  browser.registry.set(rename, {
+    input: { id: '1', title: 'Renamed' },
+    reactivityKeys: ['posts'],
+  });
+  await until(
+    browser.registry,
+    post,
+    (r) => done(r) && AsyncResult.getOrThrow(r).title === 'Renamed',
+  );
+  expect(db.calls).toEqual(['rename:1', 'byId:1']);
+  unmount();
+});
+
 test('array and Date inputs key by value; options are part of the key', async () => {
   using _db = freshDb();
   const { trpc, registry } = setup();
