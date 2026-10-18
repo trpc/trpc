@@ -24,7 +24,9 @@ Three entry files at the example's root, beside its `README.md`. Other modules g
 
 `pnpm start` runs the example. `pnpm server` and `pnpm client` in two terminals run the halves apart, so you can point other clients at the server. `pnpm example` (from `next/`) runs every example's `smoke`, which is `pnpm start`, with any build step it needs first (`tsc -b && pnpm start`).
 
-A server that isn't a Node process keeps the same three files: `server.ts` is the runtime's entry (a Worker's `export default`, a Next route), and `start.ts` starts it that runtime's way (Wrangler's `unstable_startWorker`, `next build` and `next start`) before calling `main(url)`.
+A server that isn't a Node process keeps the same three files: `server.ts` is the runtime's entry (a Worker's `export default`), and `start.ts` starts it that runtime's way (Wrangler's `unstable_startWorker`) before calling `main(url)`.
+
+Framework apps (Next.js, TanStack Start, …) don't use this layout. They keep their framework's own files and scripts (`next dev`, `next build`, `next start`), and their `smoke` builds and checks the app however suits it.
 
 Tests of the example's own code are `*.test.ts` files under its root or `src/`; `pnpm test` from `next/` runs them.
 

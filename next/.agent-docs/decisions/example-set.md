@@ -4,7 +4,8 @@
 - Human, 2026-10-18 (example-apps research, which candidates of 1–9): "all of them".
 - Human, 2026-10-18 (same round, UI and `next/www`): "create them, they should all use the same ui lib as next/www and they shouldn't touch that".
 - Human, 2026-10-18 (same round, runnable examples): "always make them runnable even if you're just showing server code so there's a 'full example' … like a server.ts + client.ts and a script that runs both is a good general practice".
-- (agent) The layout that makes every example runnable, `server.ts` + `client.ts` + `start.ts` with `pnpm start` running both, is in [`examples/README.md`](../../examples/README.md).
+- Human, 2026-10-18 (same round, which examples the layout is for): "i mean it doesn't apply if you do e.g. a next.js or a tanstack start app etc".
+- (agent) The layout that makes every example runnable, `server.ts` + `client.ts` + `start.ts` with `pnpm start` running both, is in [`examples/README.md`](../../examples/README.md). Framework apps (Next.js, TanStack Start, …) keep their framework's own layout and scripts.
 - `next/examples/`, the original six:
   - `minimal/`: Node HTTP server and client, plain Promise code (exists).
   - `effect/`: Effect server and client (layers, `Stream`, `catchTag`).
