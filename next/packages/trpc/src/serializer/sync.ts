@@ -256,7 +256,7 @@ export function serializeSync(
       const result: JsonObject = {};
       ancestors.add(thing);
       const object = thing as Record<string, unknown>;
-      for (const key in object) {
+      for (const key of Object.keys(object)) {
         setOwn(result, key, toJson(object[key], [result, key]));
       }
       ancestors.delete(thing);

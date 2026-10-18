@@ -8,7 +8,15 @@
  *
  * @internal
  */
-import { Cause, Deferred, Effect, Exit, Queue, Scope, Stream } from 'effect';
+import {
+  Cause,
+  Deferred,
+  Effect,
+  Exit,
+  Queue,
+  type Scope,
+  Stream,
+} from 'effect';
 import {
   deserializeSync,
   instancesOnly,
@@ -153,7 +161,7 @@ function blobStreams(frame: SerializeReturn): number[] {
     } else if (typeof v === 'object' && v !== null) {
       const o = v as Record<string, unknown>;
       if (isBlobMarker(o)) out.push((o['value'] as BlobRef).stream);
-      else for (const key in o) walk(o[key]);
+      else for (const child of Object.values(o)) walk(child);
     }
   };
   walk(frame.json);
