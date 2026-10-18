@@ -8,6 +8,7 @@
   },
   "dependencies": {
     "@angular/common": "22.2.2",
+    "@angular/compiler": "22.2.2",
     "@angular/core": "22.2.2",
     "@angular/platform-browser": "22.2.2",
     "@cloudflare/workers-types": "5.20261014.1",
