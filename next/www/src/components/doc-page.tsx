@@ -11,13 +11,8 @@ import {
 import { VersionBanner } from '~/components/version-banner.tsx';
 import { type DocsVersion, findDoc, neighbours } from '~/content/docs.ts';
 import type { Doc } from '~/content/types.ts';
-import { absoluteUrl, pageHead } from '~/seo.ts';
-import { site, v11 } from '~/site.ts';
-
-/** A v11 page on trpc.io, which serves the first page at `/docs`. */
-export function v11PageUrl(slug: string) {
-  return `${v11.url}/docs${slug === v11.firstDoc ? '' : `/${slug}`}`;
-}
+import { absoluteUrl, pageHead, v11PageUrl } from '~/seo.ts';
+import { site } from '~/site.ts';
 
 export function DocsLayout() {
   return (

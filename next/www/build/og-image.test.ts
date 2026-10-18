@@ -1,0 +1,76 @@
+import { NodeServices } from '@effect/platform-node';
+import { describe, expect, it } from '@effect/vitest';
+import { Effect } from 'effect';
+
+import { ogImagePath } from '../src/seo.ts';
+import { displayUrl, makeOgRenderer, OgCard, plainText } from './og-image.ts';
+
+/** A PNG's width and height, from its `IHDR` chunk. */
+const pngSize = (png: Uint8Array) => {
+  const view = new DataView(png.buffer, png.byteOffset, png.byteLength);
+  return { height: view.getUint32(20), width: view.getUint32(16) };
+};
+
+describe('ogImagePath', () => {
+  it('mirrors the page path under /og', () => {
+    expect(ogImagePath('/')).toBe('/og/index.png');
+    expect(ogImagePath('/docs/client/links')).toBe('/og/docs/client/links.png');
+    expect(ogImagePath('/v11/docs/quickstart')).toBe(
+      '/og/v11/docs/quickstart.png',
+    );
+  });
+});
+
+describe('plainText', () => {
+  it('drops emoji, which the fonts lack, and the parentheses around them', () => {
+    expect(plainText('TanStack React Query (⭐️)')).toBe('TanStack React Query');
+    expect(plainText('Next.js Integration › App Router')).toBe(
+      'Next.js Integration › App Router',
+    );
+  });
+});
+
+describe('displayUrl', () => {
+  it('splits the host from the path', () => {
+    expect(displayUrl('https://v12.trpc.io/docs/server/procedures')).toEqual({
+      host: 'v12.trpc.io',
+      path: '/docs/server/procedures',
+    });
+    expect(displayUrl('https://v12.trpc.io')).toEqual({
+      host: 'v12.trpc.io',
+      path: '',
+    });
+  });
+});
+
+describe('makeOgRenderer', () => {
+  it.effect('renders each kind of card as a 1200×630 PNG', () =>
+    Effect.gen(function* () {
+      const render = yield* makeOgRenderer();
+      const cards = [
+        OgCard.Home({ path: '/' }),
+        OgCard.Doc({
+          description: 'Queries, mutations and subscriptions.',
+          path: '/docs/server/procedures',
+          section: 'Server',
+          title: 'Procedures',
+          url: 'https://v12.trpc.io/docs/server/procedures',
+          version: 'v12',
+        }),
+        OgCard.Doc({
+          description: '',
+          path: '/v11/docs/client/tanstack-react-query',
+          section: 'TanStack React Query (⭐️)',
+          title: 'Set up the React Query Integration',
+          url: 'https://trpc.io/docs/client/tanstack-react-query',
+          version: 'v11',
+        }),
+      ];
+      for (const card of cards) {
+        const png = yield* render(card);
+        expect([...png.subarray(1, 4)]).toEqual([0x50, 0x4e, 0x47]);
+        expect(pngSize(png)).toEqual({ height: 630, width: 1200 });
+      }
+    }).pipe(Effect.provide(NodeServices.layer)),
+  );
+});

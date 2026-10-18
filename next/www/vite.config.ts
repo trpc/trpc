@@ -6,6 +6,8 @@ import { Effect } from 'effect';
 import { defineConfig } from 'vite-plus';
 
 import { docPages, docsContent } from './build/content.ts';
+import { OgCard, ogImages } from './build/og-image.ts';
+import { absoluteUrl, v11PageUrl } from './src/seo.ts';
 import { sections, site, v11 } from './src/site.ts';
 import v11Sections from './v11/sections.json' with { type: 'json' };
 
@@ -25,6 +27,19 @@ const [pages, v11Pages] = await Effect.runPromise(
     docPages({ basePath: v11.basePath, contentDir: v11Dir, samplesDir }),
   ]).pipe(Effect.provide(NodeServices.layer)),
 );
+const docCard = (
+  page: (typeof pages)[number],
+  version: 'v11' | 'v12',
+  url: string,
+) =>
+  OgCard.Doc({
+    description: page.description,
+    path: page.path,
+    section: page.section,
+    title: page.title,
+    url,
+    version,
+  });
 
 export default defineConfig({
   plugins: [
@@ -51,6 +66,19 @@ export default defineConfig({
       siteUrl: site.url,
       sourceUrl: `${site.github}/blob/main/www`,
       summary: site.description,
+    }),
+    ogImages({
+      cards: [
+        OgCard.Home({ path: '/' }),
+        ...pages.map((page) => docCard(page, 'v12', absoluteUrl(page.path))),
+        ...v11Pages.map((page) =>
+          docCard(
+            page,
+            'v11',
+            v11PageUrl(page.path.slice(`${v11.basePath}/`.length)),
+          ),
+        ),
+      ],
     }),
     tailwindcss(),
     tanstackStart({
