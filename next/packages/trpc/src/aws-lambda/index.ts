@@ -17,7 +17,8 @@
  * ```
  * @module
  */
-import { Effect, Stream } from 'effect';
+import { Effect, Result, Stream } from 'effect';
+import { Base64 } from 'effect/encoding';
 
 /**
  * An API Gateway REST API (payload 1.0) or Application Load Balancer event.
@@ -253,17 +254,6 @@ const isEdge = (event: LambdaEvent): event is LambdaEdgeEvent =>
   'Records' in event;
 const isAlb = (event: LambdaV1Event) => event.requestContext?.elb !== undefined;
 
-const decodeBase64 = (data: string): Uint8Array =>
-  Uint8Array.from(atob(data), (c) => c.charCodeAt(0));
-
-const encodeBase64 = (bytes: Uint8Array): string => {
-  let binary = '';
-  for (let i = 0; i < bytes.length; i += 0x8000) {
-    binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
-  }
-  return btoa(binary);
-};
-
 const isText = (type: string | null): boolean =>
   type !== null &&
   /^(text\/|application\/(json|jsonl|x-www-form-urlencoded|xml|javascript)\b|[^;]*\+json\b)/i.test(
@@ -277,7 +267,7 @@ const bodyOf = (
   data === undefined || data === null || data === ''
     ? null
     : base64
-      ? (decodeBase64(data) as BodyInit)
+      ? (Result.getOrThrow(Base64.decode(data)) as BodyInit)
       : data;
 
 const v1Request = (event: LambdaV1Event, signal: AbortSignal): Request => {
@@ -390,7 +380,7 @@ const toResult = (
       yield* Effect.promise(() => response.arrayBuffer()),
     );
     const text = isText(response.headers.get('content-type'));
-    const body = text ? new TextDecoder().decode(bytes) : encodeBase64(bytes);
+    const body = text ? new TextDecoder().decode(bytes) : Base64.encode(bytes);
     const cookies = response.headers.getSetCookie();
     const headers: Record<string, string> = {};
     for (const [k, v] of response.headers) {
