@@ -10,30 +10,7 @@
  * @internal
  */
 import { Stream } from 'effect';
-
-/** Padded base64 of `bytes`. @internal */
-export function toBase64(bytes: Uint8Array): string {
-  let binary = '';
-  // Slices bound the argument count of `fromCharCode`.
-  for (let i = 0; i < bytes.length; i += 0x8000) {
-    binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
-  }
-  return btoa(binary);
-}
-
-/** The bytes of padded base64; `undefined` when it isn't. @internal */
-export function fromBase64(text: string): Uint8Array<ArrayBuffer> | undefined {
-  if (text.length % 4 !== 0) return undefined;
-  let binary: string;
-  try {
-    binary = atob(text);
-  } catch {
-    return undefined;
-  }
-  const out = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) out[i] = binary.charCodeAt(i);
-  return out;
-}
+import { Base64 } from 'effect/encoding';
 
 const JSON_RECORD = 0;
 const BYTES_RECORD = 1;
@@ -55,7 +32,7 @@ export class JsonBytes extends Uint8Array<ArrayBuffer> {
     );
   }
   toJSON(): string {
-    return toBase64(this);
+    return Base64.encode(this);
   }
 }
 

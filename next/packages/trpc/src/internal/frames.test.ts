@@ -1,5 +1,4 @@
 import { Effect, Exit, Stream } from 'effect';
-import { Base64 } from 'effect/encoding';
 import { expect, test } from 'vite-plus/test';
 import {
   accepts,
@@ -7,9 +6,7 @@ import {
   decodeMessage,
   decodeRecords,
   encodeRecord,
-  fromBase64,
   JsonBytes,
-  toBase64,
 } from './frames.ts';
 
 const decode = (chunks: Uint8Array[]) =>
@@ -23,18 +20,6 @@ test('JSON writes file bytes as base64, so JSONL lines are unchanged', () => {
   expect(JSON.stringify([3, 0, { json: bytes(0, 255, 1) }])).toBe(
     '[3,0,{"json":"AP8B"}]',
   );
-});
-
-test('base64 matches Effect Base64, past the slice size too; malformed input is undefined', () => {
-  for (const size of [0, 1, 2, 3, 0x8000 + 7]) {
-    const data = Uint8Array.from({ length: size }, (_, i) => (i * 37) % 256);
-    const text = toBase64(data);
-    expect(text).toBe(Base64.encode(data));
-    expect(fromBase64(text)).toEqual(data);
-  }
-  for (const bad of ['AP8', 'AP8B!', 'A=P8']) {
-    expect(fromBase64(bad)).toBeUndefined();
-  }
 });
 
 test('records carry lines and their bytes unencoded, however the stream is cut', async () => {

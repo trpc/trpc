@@ -8,7 +8,17 @@
  *
  * @internal
  */
-import { Cause, Deferred, Effect, Exit, Queue, Scope, Stream } from 'effect';
+import {
+  Cause,
+  Deferred,
+  Effect,
+  Exit,
+  Queue,
+  Result,
+  Scope,
+  Stream,
+} from 'effect';
+import { Base64 } from 'effect/encoding';
 import {
   deserializeSync,
   instancesOnly,
@@ -20,7 +30,7 @@ import {
   type SerializeReturn,
 } from './sync.ts';
 import { backpressure, toAsyncIterable } from '../../internal/effects.ts';
-import { fromBase64, JsonBytes } from '../../internal/frames.ts';
+import { JsonBytes } from '../../internal/frames.ts';
 import { counter, DansonError } from './utils.ts';
 
 export const VALUE = 0;
@@ -120,9 +130,10 @@ async function* byteChunks(blob: Blob): AsyncGenerator<JsonBytes> {
 function toBytes(chunks: unknown[]): Uint8Array<ArrayBuffer>[] {
   return chunks.map((chunk) => {
     if (chunk instanceof Uint8Array) return chunk as Uint8Array<ArrayBuffer>;
-    const decoded = fromBase64(String(chunk));
-    if (!decoded) throw new DansonError('Malformed file bytes');
-    return decoded;
+    const decoded = Base64.decode(String(chunk));
+    if (Result.isFailure(decoded))
+      throw new DansonError('Malformed file bytes');
+    return decoded.success as Uint8Array<ArrayBuffer>;
   });
 }
 
