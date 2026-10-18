@@ -7,9 +7,17 @@ import {
   type Tracer,
 } from 'effect';
 import { HttpServerRequest } from 'effect/http';
-import { TrpcError, type AnyTrpcError } from '../internal/error.ts';
+import {
+  isTrpcError,
+  TrpcError,
+  type AnyTrpcError,
+} from '../internal/error.ts';
 import type { MaybePromise, ProcedureType } from '../internal/types.ts';
-import { callProcedure, isUnexpectedError } from './execute.ts';
+import {
+  callProcedure,
+  isUnexpectedError,
+  unexpectedError,
+} from './execute.ts';
 import type { CreateContextOpts, OnErrorOpts } from './fetch.ts';
 import type { ResponseHandle } from './middleware.ts';
 import type { AnyProcedure } from './procedure.ts';
@@ -63,6 +71,10 @@ export interface HandlerCore {
     opts: RunOpts,
   ) => Effect.Effect<Exit.Exit<unknown, AnyTrpcError>>;
   readonly makeContext: (opts: MakeContextOpts) => Promise<object>;
+  /** `makeContext` as an Effect, failing with what `createContext` threw. */
+  readonly makeContextEffect: (
+    opts: MakeContextOpts,
+  ) => Effect.Effect<object, AnyTrpcError>;
   /** Masks unexpected errors unless `exposeUnexpectedErrors`. */
   readonly publicError: (err: AnyTrpcError) => AnyTrpcError;
   readonly report: (
@@ -85,63 +97,61 @@ const isDev = () => {
 export function createHandlerCore(opts: CoreOptions): HandlerCore {
   const expose = opts.exposeUnexpectedErrors ?? isDev();
   const runtime = opts.layer ? ManagedRuntime.make(opts.layer) : undefined;
-  let services: Promise<Context.Context<any>> | undefined;
-  let ready: Context.Context<any> | undefined = runtime
-    ? undefined
-    : (Context.empty() as Context.Context<any>);
-  const getServices = () =>
-    (services ??= ready
-      ? Promise.resolve(ready)
-      : runtime!.context().then((context) => (ready = context)));
+  const noServices = Effect.succeed(Context.empty() as Context.Context<any>);
+  /** The layer's services, built once by the runtime on first use. */
+  const services: Effect.Effect<Context.Context<any>> = runtime
+    ? Effect.suspend(() =>
+        runtime.cachedContext
+          ? Effect.succeed(runtime.cachedContext)
+          : Effect.orDie(runtime.contextEffect),
+      )
+    : noServices;
 
-  const prepare = (o: RunOpts, layer: Context.Context<any>) => {
-    let context = layer;
-    if (o.request) {
-      context = Context.add(
-        context,
-        HttpServerRequest.HttpServerRequest,
-        o.request,
+  /** The call with its services in place of the running fiber's. */
+  const call = (o: RunOpts) =>
+    Effect.flatMap(services, (layer) => {
+      let context = layer;
+      if (o.request) {
+        context = Context.add(
+          context,
+          HttpServerRequest.HttpServerRequest,
+          o.request,
+        );
+      }
+      if (o.services) context = Context.merge(context, o.services);
+      return Effect.updateContext<unknown, AnyTrpcError, any, never>(
+        callProcedure(o),
+        () => context,
       );
-    }
-    if (o.services) context = Context.merge(context, o.services);
-    return { call: callProcedure(o), context };
-  };
+    });
+
+  const createContext = (o: MakeContextOpts): MaybePromise<object> =>
+    opts.createContext
+      ? opts.createContext({
+          request: o.request,
+          platform: o.platform,
+          info: {
+            calls: o.calls,
+            signal: o.signal,
+            transport: o.transport ?? 'http',
+            connectionParams: o.connectionParams,
+          },
+        })
+      : {};
+  const noContext = Effect.succeed({});
 
   return {
-    run: async (o) => {
-      const prepared = prepare(o, ready ?? (await getServices()));
-      return Effect.runPromiseExitWith(prepared.context)(prepared.call, {
-        signal: o.signal,
-      });
-    },
-    runEffect: (o) => {
-      const inline = (layer: Context.Context<any>) => {
-        const prepared = prepare(o, layer);
-        // The call's services replace the server fiber's, as in `run`.
-        return Effect.exit(
-          Effect.updateContext<unknown, AnyTrpcError, any, never>(
-            prepared.call,
-            () => prepared.context,
-          ),
-        );
-      };
-      return ready
-        ? inline(ready)
-        : Effect.flatMap(Effect.promise(getServices), inline);
-    },
-    makeContext: async (o) => {
-      if (!opts.createContext) return {};
-      return await opts.createContext({
-        request: o.request,
-        platform: o.platform,
-        info: {
-          calls: o.calls,
-          signal: o.signal,
-          transport: o.transport ?? 'http',
-          connectionParams: o.connectionParams,
-        },
-      });
-    },
+    run: (o) => Effect.runPromiseExit(call(o), { signal: o.signal }),
+    runEffect: (o) => Effect.exit(call(o)),
+    makeContext: async (o) => await createContext(o),
+    makeContextEffect: (o) =>
+      opts.createContext
+        ? Effect.tryPromise({
+            try: async () => await createContext(o),
+            catch: (cause) =>
+              isTrpcError(cause) ? cause : unexpectedError(cause),
+          })
+        : noContext,
     publicError: (err) =>
       isUnexpectedError(err) && !expose
         ? new TrpcError({
