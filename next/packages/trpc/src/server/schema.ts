@@ -191,21 +191,29 @@ export interface ZodInputIssues<TZodIssue> extends ReadonlyArray<
 > {}
 
 /**
- * Zod's issue union, read from a schema's type so @trpc12/trpc doesn't
- * depend on zod: a zod 4 schema's `_zod.run` reports raw issues, and
- * `invalid_union`'s nested `errors` are the finished ones.
+ * The part of a zod 4 schema's type that @trpc12/trpc reads. Zod is matched
+ * by shape, never imported, so it stays optional.
  * @internal
  */
-export type ZodIssueOf<S> = S extends {
-  readonly _zod: { run(...args: never): infer R };
+export interface ZodLike<TResult = unknown> {
+  readonly _zod: { run(...args: never): TResult };
 }
-  ? Extract<
-      Awaited<R> extends { issues: ReadonlyArray<infer I> } ? I : never,
-      { code: 'invalid_union' }
-    > extends { errors: ReadonlyArray<ReadonlyArray<infer I>> }
-    ? I
-    : never
-  : never;
+
+/**
+ * Zod's issue union, read from a schema's type: a zod 4 schema's `_zod.run`
+ * reports raw issues, and `invalid_union`'s nested `errors` are the finished
+ * ones.
+ * @internal
+ */
+export type ZodIssueOf<S> =
+  S extends ZodLike<infer R>
+    ? Extract<
+        Awaited<R> extends { issues: ReadonlyArray<infer I> } ? I : never,
+        { code: 'invalid_union' }
+      > extends { errors: ReadonlyArray<ReadonlyArray<infer I>> }
+      ? I
+      : never
+    : never;
 
 /**
  * An Effect Schema issue as it reaches the client: one leaf of Effect's
@@ -239,7 +247,7 @@ export type EffectInputIssue<TInput = unknown> = {
  * @stability stable
  */
 export type inferInputIssue<S> = S extends StandardSchemaV1
-  ? S extends { readonly _zod: unknown }
+  ? S extends ZodLike
     ? ZodOrStandardIssue<ZodIssueOf<S>, InOf<S>>
     : InputIssue<InOf<S>>
   : EffectInputIssue<InOf<S>>;
