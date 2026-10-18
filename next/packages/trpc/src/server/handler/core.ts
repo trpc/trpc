@@ -64,13 +64,11 @@ export interface MakeContextOpts {
 
 /** What every handler shares: ctx, services, masking and `onError`. @internal */
 export interface HandlerCore {
-  readonly run: (opts: RunOpts) => Promise<Exit.Exit<unknown, AnyTrpcError>>;
-  /** `run` in the calling fiber; interrupting it interrupts the call. */
+  /** Runs a call in the calling fiber; interrupting it interrupts the call. */
   readonly runEffect: (
     opts: RunOpts,
   ) => Effect.Effect<Exit.Exit<unknown, AnyTrpcError>>;
-  readonly makeContext: (opts: MakeContextOpts) => Promise<object>;
-  /** `makeContext` as an Effect, failing with what `createContext` threw. */
+  /** `createContext` as an Effect, failing with what it threw. */
   readonly makeContextEffect: (
     opts: MakeContextOpts,
   ) => Effect.Effect<object, AnyTrpcError>;
@@ -140,9 +138,7 @@ export function createHandlerCore(opts: CoreOptions): HandlerCore {
   const noContext = Effect.succeed({});
 
   return {
-    run: (o) => Effect.runPromiseExit(call(o), { signal: o.signal }),
     runEffect: (o) => Effect.exit(call(o)),
-    makeContext: async (o) => await createContext(o),
     makeContextEffect: (o) =>
       opts.createContext
         ? Effect.tryPromise({
