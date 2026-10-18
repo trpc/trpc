@@ -1,0 +1,16 @@
+# next/www's v11, v10 and v9 docs and blog are copies of the root's www/
+# (www/build/old-docs-copy.ts). When a merge (of `main`) changes www/,
+# recopy them, to commit with the merge. A merge that stops on conflicts
+# doesn't run this: run `pnpm --filter @trpc12/www old-docs:copy` after
+# committing it. CI's `old-docs:check` fails until the copies are current.
+cd "$(git rev-parse --show-toplevel)/next" || exit 1
+git diff --quiet ORIG_HEAD HEAD -- ../www && exit 0
+echo "post-merge: the merge changed www/, so recopying the old docs and the blog into next/www"
+if ! pnpm --filter @trpc12/www old-docs:copy; then
+  echo "post-merge: the copy failed; fix what it says, then run \`pnpm --filter @trpc12/www old-docs:copy\`"
+  exit 1
+fi
+if [ -n "$(git status --porcelain -- www)" ]; then
+  echo "post-merge: commit what the copy changed in next/www:"
+  git status --short -- www
+fi
