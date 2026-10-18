@@ -543,19 +543,17 @@ export function createV11Handler<
       const procedure = call.procedure;
       const response = createResponseHandle();
       const parent = yield* parentSpan(request);
-      const exit = yield* Effect.promise((_interrupted) =>
-        base.run({
-          request,
-          procedure,
-          path: call.path,
-          ctx,
-          input: callInput,
-          signal,
-          response,
-          allowResponse: single,
-          parent,
-        }),
-      );
+      const exit = yield* base.runEffect({
+        request,
+        procedure,
+        path: call.path,
+        ctx,
+        input: callInput,
+        signal,
+        response,
+        allowResponse: single,
+        parent,
+      });
       if (Exit.isFailure(exit)) {
         return {
           ok: false,
@@ -595,19 +593,17 @@ export function createV11Handler<
         inputEventId(callInput);
       const response = createResponseHandle();
       const parent = yield* parentSpan(request);
-      const exit = yield* Effect.promise((_interrupted) =>
-        base.run({
-          request,
-          procedure: call.procedure,
-          path: call.path,
-          ctx,
-          input: callInput,
-          signal: controller.signal,
-          response,
-          lastEventId,
-          parent,
-        }),
-      );
+      const exit = yield* base.runEffect({
+        request,
+        procedure: call.procedure,
+        path: call.path,
+        ctx,
+        input: callInput,
+        signal: controller.signal,
+        response,
+        lastEventId,
+        parent,
+      });
       const frame = (event: string | undefined, data: string, id?: string) =>
         `${event === undefined ? '' : `event: ${event}\n`}data: ${data}\n${id === undefined ? '' : `id: ${id}\n`}\n`;
       const errorFrame = (err: AnyTrpcError) => {
@@ -690,20 +686,13 @@ export function createV11Handler<
               calls.length,
             );
             const platform = yield* CurrentPlatform;
-            const ctx = yield* Effect.tryPromise({
-              try: () =>
-                base.makeContext({
-                  request,
-                  platform,
-                  calls: calls.flatMap((c) =>
-                    c.type === 'unknown'
-                      ? []
-                      : [{ path: c.path, type: c.type }],
-                  ),
-                  signal: controller.signal,
-                }),
-              catch: (cause) =>
-                isTrpcError(cause) ? cause : unexpectedError(cause),
+            const ctx = yield* base.makeContextEffect({
+              request,
+              platform,
+              calls: calls.flatMap((c) =>
+                c.type === 'unknown' ? [] : [{ path: c.path, type: c.type }],
+              ),
+              signal: controller.signal,
             });
             return { inputs, ctx };
           }),

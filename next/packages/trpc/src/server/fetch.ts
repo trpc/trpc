@@ -638,22 +638,14 @@ export function createFetchHandler<
     return Effect.flatMap(readBody(request), (body) => deserialize(body));
   };
 
-  const noContext = Effect.succeed({});
   const makeContext = (
     request: HttpServerRequest.HttpServerRequest,
     calls: CreateContextOpts['info']['calls'],
     signal: AbortSignal,
   ): Effect.Effect<object, AnyTrpcError> =>
-    opts.createContext
-      ? Effect.withFiber((fiber) => {
-          const platform = Context.get(fiber.context, CurrentPlatform);
-          return Effect.tryPromise({
-            try: () => base.makeContext({ request, platform, calls, signal }),
-            catch: (cause) =>
-              isTrpcError(cause) ? cause : unexpectedError(cause),
-          });
-        })
-      : noContext;
+    Effect.flatMap(CurrentPlatform, (platform) =>
+      base.makeContextEffect({ request, platform, calls, signal }),
+    );
 
   /** Runs a query or mutation and serializes the outcome. */
   const execute = (
@@ -1224,8 +1216,8 @@ export function createFetchHandler<
   const core: SocketCore = {
     router,
     serializer,
-    run: base.run,
-    makeContext: base.makeContext,
+    runEffect: base.runEffect,
+    makeContextEffect: base.makeContextEffect,
     deserializeInput,
     publicError,
     report,

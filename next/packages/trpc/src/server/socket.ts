@@ -36,8 +36,7 @@ import {
   normalizeCause,
   unexpectedError,
 } from './execute.ts';
-import type { ResponseHandle } from './middleware.ts';
-import type { AnyProcedure } from './procedure.ts';
+import type { HandlerCore } from './core.ts';
 import { resolveProcedure, type AnyRouter } from './router.ts';
 import { runSocket, socketFrames } from './socket-session.ts';
 
@@ -94,37 +93,13 @@ export interface MessagePortLike {
 export type Transport = 'http' | 'websocket' | 'messagePort' | 'socket';
 
 /** What the fetch handler shares with socket connections. @internal */
-export interface SocketCore {
+export interface SocketCore extends Pick<
+  HandlerCore,
+  'runEffect' | 'makeContextEffect' | 'publicError' | 'report'
+> {
   readonly router: AnyRouter;
   readonly serializer: AnySerializer;
-  run(opts: {
-    procedure: AnyProcedure;
-    path: string;
-    ctx: object;
-    input: unknown;
-    signal: AbortSignal;
-    response: ResponseHandle;
-    lastEventId?: string | undefined;
-    services?: Context.Context<never> | undefined;
-    request?: HttpServerRequest.HttpServerRequest | undefined;
-    parent?: Tracer.AnySpan | undefined;
-  }): Promise<Exit.Exit<unknown, AnyTrpcError>>;
-  makeContext(opts: {
-    request: HttpServerRequest.HttpServerRequest;
-    platform: unknown;
-    calls: ReadonlyArray<{ path: string; type: ProcedureType }>;
-    signal: AbortSignal;
-    transport: Transport;
-    connectionParams: Record<string, unknown> | undefined;
-  }): Promise<object>;
   deserializeInput(value: unknown): unknown;
-  publicError(err: AnyTrpcError): AnyTrpcError;
-  report(
-    err: AnyTrpcError,
-    request: HttpServerRequest.HttpServerRequest,
-    path?: string,
-    type?: ProcedureType,
-  ): void;
 }
 
 /** The socket core behind each fetch handler, for adapters outside it. @internal */
@@ -379,17 +354,13 @@ export const connectionReceiver = (
           try: () => core.deserializeInput(message.input),
           catch: asTrpcError,
         });
-        const ctx = yield* Effect.tryPromise({
-          try: () =>
-            core.makeContext({
-              request,
-              platform: opts.platform,
-              calls: [{ path, type: kind }],
-              signal: controller.signal,
-              transport: opts.transport,
-              connectionParams: callParams,
-            }),
-          catch: asTrpcError,
+        const ctx = yield* core.makeContextEffect({
+          request,
+          platform: opts.platform,
+          calls: [{ path, type: kind }],
+          signal: controller.signal,
+          transport: opts.transport,
+          connectionParams: callParams,
         });
         const hibernate = kind === 'subscription' ? opts.hibernate : undefined;
         const services = hibernate
@@ -397,21 +368,17 @@ export const connectionReceiver = (
               park: (sub) => (parked = hibernate({ ...sub, id, path })),
             })
           : undefined;
-        const exit = yield* Effect.tryPromise({
-          try: () =>
-            core.run({
-              request,
-              procedure,
-              path,
-              ctx,
-              input,
-              signal: controller.signal,
-              response: createResponseHandle(),
-              lastEventId: message.lastEventId,
-              services,
-              parent: traceParent(message.trace),
-            }),
-          catch: asTrpcError,
+        const exit = yield* core.runEffect({
+          request,
+          procedure,
+          path,
+          ctx,
+          input,
+          signal: controller.signal,
+          response: createResponseHandle(),
+          lastEventId: message.lastEventId,
+          services,
+          parent: traceParent(message.trace),
         });
         if (Exit.isFailure(exit)) {
           return yield* Effect.fail(normalizeCause(exit.cause));

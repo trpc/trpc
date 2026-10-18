@@ -1,17 +1,9 @@
 import { Cause, Effect, Exit, FiberMap, Stream } from 'effect';
 import type { HttpServerRequest } from 'effect/http';
 import type { Socket } from 'effect/socket';
-import {
-  isTrpcError,
-  TrpcError,
-  type AnyTrpcError,
-} from '../internal/error.ts';
+import { TrpcError, type AnyTrpcError } from '../internal/error.ts';
 import type { ProcedureType } from '../internal/types.ts';
-import {
-  createResponseHandle,
-  normalizeCause,
-  unexpectedError,
-} from '../server/execute.ts';
+import { createResponseHandle, normalizeCause } from '../server/execute.ts';
 import { resolveProcedure } from '../server/router.ts';
 import {
   runSocket,
@@ -109,6 +101,7 @@ function v11Session(
         : inputEventId(params['input']);
     const head = envelope(id, jsonrpc);
     const callParams = connectionParams;
+    const controller = new AbortController();
     return Effect.gen(function* () {
       const procedure = yield* Effect.promise(async () =>
         resolveProcedure(core.router, path),
@@ -142,28 +135,23 @@ function v11Session(
             cause,
           }),
       });
-      const exit = yield* Effect.tryPromise({
-        try: async (signal) => {
-          const ctx = await base.makeContext({
-            request,
-            platform: opts.platform,
-            calls: [{ path, type }],
-            signal,
-            transport: 'websocket',
-            connectionParams: callParams,
-          });
-          return base.run({
-            request,
-            procedure,
-            path,
-            ctx,
-            input: callInput,
-            signal,
-            response: createResponseHandle(),
-            lastEventId,
-          });
-        },
-        catch: (cause) => (isTrpcError(cause) ? cause : unexpectedError(cause)),
+      const ctx = yield* base.makeContextEffect({
+        request,
+        platform: opts.platform,
+        calls: [{ path, type }],
+        signal: controller.signal,
+        transport: 'websocket',
+        connectionParams: callParams,
+      });
+      const exit = yield* base.runEffect({
+        request,
+        procedure,
+        path,
+        ctx,
+        input: callInput,
+        signal: controller.signal,
+        response: createResponseHandle(),
+        lastEventId,
       });
       if (Exit.isFailure(exit)) {
         return yield* Effect.fail(normalizeCause(exit.cause));
@@ -212,6 +200,7 @@ function v11Session(
               sendError(id, jsonrpc, normalizeCause(cause), path, method),
             ),
       ),
+      Effect.onInterrupt(() => Effect.sync(() => controller.abort())),
     ) as Effect.Effect<void>;
   };
 
