@@ -638,7 +638,7 @@ const twoslashTransformer = Effect.fn('twoslashTransformer')(function* (
     }
     return compiled.result;
   };
-  const twoslasher: TwoslashShikiFunction = (code, lang, twoslashOptions) => {
+  const compileBlock: TwoslashShikiFunction = (code, lang, twoslashOptions) => {
     const filename = new RegExp(blockFilename.source, 'm').exec(code)?.[1];
     const app = filename === undefined ? undefined : appOfFile(filename);
     if (app === undefined) {
@@ -666,6 +666,12 @@ const twoslashTransformer = Effect.fn('twoslashTransformer')(function* (
           .join('/')}`,
     );
     return compile(app, inApp, lang, { ...twoslashOptions, ...project });
+  };
+  const twoslasher: TwoslashShikiFunction = (code, lang, twoslashOptions) => {
+    const result = compileBlock(code, lang, twoslashOptions);
+    // A `// ---cut-after---` indented inside a hidden wrapper's object keeps
+    // the line break before it, which would show as an empty line.
+    return { ...result, code: result.code.trimEnd() };
   };
   return {
     flush: session?.flush ?? Effect.void,

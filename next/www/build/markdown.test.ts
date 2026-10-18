@@ -89,6 +89,31 @@ describe('renderMarkdown', () => {
     }).pipe(Effect.provide(NodeServices.layer)),
   );
 
+  it.effect(
+    'shows a property of a hidden call without an empty line after it',
+    () =>
+      Effect.gen(function* () {
+        const rendered = yield* render(
+          [
+            '```ts twoslash',
+            '// ---cut-start---',
+            'const wrap = (opts: { layer: number }) => opts;',
+            'wrap({',
+            '  // ---cut-end---',
+            '  layer: 1,',
+            '  // ---cut-after---',
+            '});',
+            '```',
+          ].join('\n'),
+        );
+        expect(rendered.html).toContain('layer');
+        expect(rendered.html).not.toContain('wrap');
+        expect(rendered.html).not.toMatch(
+          /<span class="line"><\/span><\/code>/,
+        );
+      }).pipe(Effect.provide(NodeServices.layer)),
+  );
+
   it.effect('fails on a compile error the block does not expect', () =>
     Effect.gen(function* () {
       const error = yield* Effect.flip(
