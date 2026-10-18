@@ -70,6 +70,12 @@ const docCard = (
   });
 
 export default defineConfig({
+  define: {
+    // Which flags' dev menu shows (`src/flags.ts`): not on production.
+    'import.meta.env.VERCEL_ENV': JSON.stringify(
+      process.env['VERCEL_ENV'] ?? '',
+    ),
+  },
   plugins: [
     docsContent({
       agentFiles: true,

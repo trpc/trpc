@@ -161,6 +161,7 @@ export default defineConfig({
             'spikes/**/*.test.ts',
             'tooling/**/*.test.ts',
             'www/build/**/*.test.ts',
+            'www/src/**/*.test.ts',
           ],
           exclude: [
             '**/node_modules/**',

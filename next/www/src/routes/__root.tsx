@@ -7,6 +7,7 @@ import {
 } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
 
+import { DevMenu } from '~/components/dev-menu.tsx';
 import { SiteFooter } from '~/components/site-footer.tsx';
 import { SiteHeader } from '~/components/site-header.tsx';
 import { themeScript } from '~/components/theme-toggle.tsx';
@@ -74,6 +75,7 @@ function RootDocument(props: { readonly children: ReactNode }) {
           </div>
           <SiteFooter />
           <UnpublishedCopyWarning />
+          <DevMenu />
         </ThemeProvider>
         <Scripts />
       </body>
