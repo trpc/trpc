@@ -34,7 +34,7 @@ import {
   type Procedure,
 } from './procedure.ts';
 import type { EventOutput, ResultOf } from './validation/index.ts';
-import type { TrackedEnvelope } from './tracked.ts';
+import type { TrackedEnvelope } from './subscriptions/index.ts';
 
 /** A contract procedure's def, read by index (see `ProcedureDefOf`). */
 type ContractDefOf<T extends AnyProcedure> = NonNullable<T['~trpc']['~types']>;

@@ -20,7 +20,7 @@ import {
   type SocketSession,
 } from '../server/socket-session.ts';
 import { parseSocketMessage } from '../server/socket.ts';
-import { isTracked } from '../server/tracked.ts';
+import { isTracked } from '../server/subscriptions/index.ts';
 import type { V11Core } from './handler.ts';
 
 type RequestId = number | string;

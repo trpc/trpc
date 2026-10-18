@@ -75,7 +75,7 @@ import type {
   OutputServices,
   StreamedOutput,
 } from '../server/validation/index.ts';
-import type { TrackedEnvelope } from '../server/tracked.ts';
+import type { TrackedEnvelope } from '../server/subscriptions/index.ts';
 import type { Unlazy } from '../server/router.ts';
 
 export type { JsonSchema } from '../internal/json-schema.ts';

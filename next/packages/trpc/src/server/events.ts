@@ -3,7 +3,7 @@ import { isTrpcError, type AnyTrpcError } from '../internal/error.ts';
 import type { AnySerializer } from '../serializer/index.ts';
 import type { Chunk } from '../serializer/stream.ts';
 import { unexpectedError } from './execute.ts';
-import { isTracked } from './tracked.ts';
+import { isTracked } from './subscriptions/index.ts';
 
 /** @internal */
 export type EventFrame =

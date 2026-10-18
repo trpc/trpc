@@ -47,7 +47,7 @@ import {
 } from '../server/router.ts';
 import { fromWebSocketLike } from '../server/socket-session.ts';
 import type { WebSocketLike } from '../server/socket.ts';
-import { isTracked } from '../server/tracked.ts';
+import { isTracked } from '../server/subscriptions/index.ts';
 import { socketServers } from '../server/upgrade.ts';
 import {
   v11Shape,

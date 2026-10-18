@@ -48,7 +48,7 @@ import {
   type inferRouterContext,
   type inferRouterServices,
 } from '../server/router.ts';
-import { isTracked } from '../server/tracked.ts';
+import { isTracked } from '../server/subscriptions/index.ts';
 import { experimental_parseBracketNotation } from './bracket.ts';
 import { experimental_coerceBySchema, propertySchema } from './coerce.ts';
 import { toOpenApiError } from './errors.ts';

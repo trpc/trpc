@@ -128,8 +128,9 @@ export {
   type StreamOutput,
   type StreamSchema,
 } from './validation/index.ts';
-export { tracked, type TrackedEnvelope } from './tracked.ts';
 export {
+  tracked,
+  type TrackedEnvelope,
   makeMemoryPublisher,
   Publisher,
   type MemoryPublisherOptions,
@@ -137,7 +138,7 @@ export {
   type PublisherEvents,
   type PublisherShape,
   type SubscribeOptions,
-} from './publisher.ts';
+} from './subscriptions/index.ts';
 export {
   createFetchHandler,
   type BaseHandlerOptions,

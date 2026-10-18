@@ -15,7 +15,7 @@ import {
 import {
   createTestServer,
   type NodeTestServer as TestServer,
-} from '../fixtures/server.ts';
+} from '../../fixtures/server.ts';
 import { expect, expectTypeOf, test, vi } from 'vite-plus/test';
 import { z } from 'zod';
 

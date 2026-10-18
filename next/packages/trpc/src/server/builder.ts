@@ -43,7 +43,7 @@ import type {
   StreamedOutput,
   StreamOutput,
 } from './validation/index.ts';
-import type { TrackedEnvelope } from './tracked.ts';
+import type { TrackedEnvelope } from './subscriptions/index.ts';
 
 /**
  * The builder's state: one mapped bag (03 G-A).

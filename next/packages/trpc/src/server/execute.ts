@@ -35,7 +35,7 @@ import {
   type OutputSchema,
   type StreamSchema,
 } from './validation/index.ts';
-import { isTracked, tracked } from './tracked.ts';
+import { isTracked, tracked } from './subscriptions/index.ts';
 
 const unexpectedErrors = new WeakSet<AnyTrpcError>();
 

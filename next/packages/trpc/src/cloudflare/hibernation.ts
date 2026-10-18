@@ -22,7 +22,10 @@ import {
   type ConnectionReceiver,
   type SocketCore,
 } from '../server/socket.ts';
-import { tracked, type TrackedEnvelope } from '../server/tracked.ts';
+import {
+  tracked,
+  type TrackedEnvelope,
+} from '../server/subscriptions/index.ts';
 
 /**
  * The server-side `WebSocket` a Durable Object gets from
