@@ -1,3 +1,0 @@
-"@effect/opentelemetry/Metrics#layer":
-  replacement: "OtelMetrics.layer"
-  note: "The Metrics module was renamed to OtelMetrics; the layer remains and now also accepts an optional temporality setting."

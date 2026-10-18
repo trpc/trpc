@@ -1,6 +1,0 @@
-effect/PartitionedSemaphore#PartitionedSemaphore:
-  replacement: "PartitionedSemaphore.PartitionedSemaphore"
-  note: "The model remains and now also exposes capacity, available, take, release, withPermit, and conditional permit operations."
-effect/PartitionedSemaphore#TypeId:
-  replacement: "PartitionedSemaphore.PartitionedTypeId"
-  note: "The public type id was renamed to distinguish it from the regular Semaphore type id."

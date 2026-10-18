@@ -1,3 +1,0 @@
-effect/ChildExecutorDecision:
-  replacement: none
-  note: Removed with the v3 channel executor and Channel.concatMapWithCustom. Choose Channel.flatMap, Channel.switchMap, or Channel.mergeAll instead; v4 exposes no child-executor decision ADT.

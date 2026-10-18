@@ -1,5 +1,0 @@
-{
-  "routesDirectory": "./routes",
-  "generatedRouteTree": "./routeTree.gen.ts",
-  "virtualRouteConfig": "./routes.ts"
-}

@@ -1,3 +1,0 @@
-"@effect/typeclass/data/Tuple#Bicovariant":
-  replacement: "effect/Tuple"
-  note: "The @effect/typeclass package and its Tuple instance dictionaries were removed in v4. Use the concrete effect/Tuple operations directly."

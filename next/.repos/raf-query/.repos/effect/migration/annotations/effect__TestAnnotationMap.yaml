@@ -1,3 +1,0 @@
-effect/TestAnnotationMap:
-  replacement: none
-  note: TestAnnotationMap was removed with TestAnnotation. Use an application-owned HashMap or Ref only when arbitrary typed annotations are still required; it is not part of the v4 test runner.

@@ -1,3 +1,0 @@
-"@effect/sql-mssql/index":
-  replacement: "@effect/sql-mssql"
-  note: "The explicit /index entrypoint was removed; import the same namespaces from the @effect/sql-mssql package root or import specific modules directly."

@@ -1,9 +1,0 @@
-{
-  "$schema": "https://json.schemastore.org/tsconfig",
-  "extends": "../../../tsconfig.base.json",
-  "include": [],
-  "references": [
-    { "path": "tsconfig.fixtures.json" },
-    { "path": "tsconfig.src.json" }
-  ]
-}

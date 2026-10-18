@@ -1,9 +1,0 @@
-"@effect/platform-node-shared/NodeSink#stderr":
-  replacement: "stdio.stderr() from Stdio.Stdio"
-  note: "Standard error moved to effect/Stdio; provide NodeStdio.layer or NodeServices.layer."
-"@effect/platform-node-shared/NodeSink#stdin":
-  replacement: "NodeSink.fromWritable({ evaluate: () => process.stdin, onError: ... })"
-  note: "There is no Stdio sink because stdin is a readable stream in v4; use a manual adapter only if writing to process.stdin was intentional."
-"@effect/platform-node-shared/NodeSink#stdout":
-  replacement: "stdio.stdout() from Stdio.Stdio"
-  note: "Standard output moved to effect/Stdio; provide NodeStdio.layer or NodeServices.layer."

@@ -1,3 +1,0 @@
-"@effect/sql-kysely/Mysql":
-  replacement: none
-  note: The integration was removed; use native Kysely with MysqlDialect and wrap promises, or rewrite against @effect/sql-mysql2 for Effect-native queries.

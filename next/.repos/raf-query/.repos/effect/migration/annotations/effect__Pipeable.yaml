@@ -1,3 +1,0 @@
-"effect/Pipeable#PipeableConstructor":
-  replacement: "Pipeable.PipeableConstructor"
-  note: "Still exported; its rest arguments are ReadonlyArray<any> in v4, so make explicit constructor typings readonly-compatible."

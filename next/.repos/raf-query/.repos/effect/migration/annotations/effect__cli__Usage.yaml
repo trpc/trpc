@@ -1,3 +1,0 @@
-"@effect/cli/Usage":
-  replacement: none
-  note: The Usage ADT was removed; Command builds a plain HelpDoc.usage string internally.

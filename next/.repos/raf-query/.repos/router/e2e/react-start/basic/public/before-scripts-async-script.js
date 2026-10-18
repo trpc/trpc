@@ -1,2 +1,0 @@
-console.log('BEFORE_SCRIPTS_ASYNC_SCRIPT loaded')
-window.BEFORE_SCRIPTS_ASYNC_SCRIPT = true

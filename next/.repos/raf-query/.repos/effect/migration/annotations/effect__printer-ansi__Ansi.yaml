@@ -1,3 +1,0 @@
-"@effect/printer-ansi/Ansi":
-  replacement: none
-  note: The @effect/printer-ansi package was removed in v4 with no public replacement. Use a maintained ANSI library or local escape-string helpers; the v4 CLI ANSI helpers are internal and cannot be imported.

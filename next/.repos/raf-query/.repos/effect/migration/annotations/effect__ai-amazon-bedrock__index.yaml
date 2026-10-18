@@ -1,3 +1,0 @@
-"@effect/ai-amazon-bedrock/index":
-  replacement: "none"
-  note: "The @effect/ai-amazon-bedrock provider package was removed from v4 with no direct replacement. Use @aws-sdk/client-bedrock-runtime directly or build a custom v4 provider integration."

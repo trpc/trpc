@@ -1,3 +1,0 @@
-"@effect/experimental/Persistence/Lmdb":
-  replacement: none
-  note: The LMDB backend was not ported; implement a custom BackingPersistence layer or use a supported Kvs, Redis, or SQL backend.

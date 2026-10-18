@@ -1,6 +1,0 @@
-"@effect/typeclass/data/String#Monoid":
-  replacement: "String.ReducerConcat"
-  note: "Renamed and moved to the concrete v4 String module."
-"@effect/typeclass/data/String#Semigroup":
-  replacement: "String.ReducerConcat"
-  note: "The v4 Reducer is also a Combiner and preserves string concatenation."

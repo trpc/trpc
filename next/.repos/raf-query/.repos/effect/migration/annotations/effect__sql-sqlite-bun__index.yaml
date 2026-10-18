@@ -1,3 +1,0 @@
-"@effect/sql-sqlite-bun/index":
-  replacement: "@effect/sql-sqlite-bun"
-  note: "The explicit /index entrypoint was removed; import the same namespaces from the @effect/sql-sqlite-bun package root or import specific modules directly."

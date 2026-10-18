@@ -1,3 +1,0 @@
-"@effect/ai-amazon-bedrock/AmazonBedrockLanguageModel":
-  replacement: none
-  note: The @effect/ai-amazon-bedrock language-model integration was removed from v4. Use another supported v4 provider or implement LanguageModel.LanguageModel with @aws-sdk/client-bedrock-runtime.

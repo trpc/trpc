@@ -1,8 +1,0 @@
-.assets-leaf {
-  border-color: #2563eb;
-  background-image: url('/asset-bg-leaf.svg');
-}
-
-.assets-leaf::before {
-  content: 'assets-leaf-css';
-}

@@ -1,3 +1,0 @@
-"@effect/cli/AutoCorrect":
-  replacement: none
-  note: V4 suggestion distance is internal and fixed; the public configurable distance helper was removed.

@@ -1,3 +1,0 @@
-"effect/Streamable":
-  replacement: "none"
-  note: "Removed in v4 with no direct replacement. Instead of extending Streamable.Class, expose the underlying stream as a value (e.g. a property or method built with Stream.suspend)."

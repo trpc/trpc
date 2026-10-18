@@ -1,9 +1,0 @@
-"effect/Struct#entries":
-  replacement: "Object.entries"
-  note: "Use the native helper, adding a cast when the old precise key and value type is required."
-"effect/Struct#getEquivalence":
-  replacement: "Struct.makeEquivalence"
-  note: "Direct rename; the fields object call shape is unchanged."
-"effect/Struct#getOrder":
-  replacement: "Struct.makeOrder"
-  note: "Direct rename; the fields object call shape is unchanged."

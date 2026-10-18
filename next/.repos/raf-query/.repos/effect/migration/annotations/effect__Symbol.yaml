@@ -1,3 +1,0 @@
-"effect/Symbol#Equivalence":
-  replacement: "Equivalence.strictEqual<symbol>()"
-  note: "The dedicated symbol instance was removed; it used strict equality."

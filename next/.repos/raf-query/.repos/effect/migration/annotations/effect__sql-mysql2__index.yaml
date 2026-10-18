@@ -1,3 +1,0 @@
-"@effect/sql-mysql2/index":
-  replacement: "@effect/sql-mysql2"
-  note: "The explicit /index entrypoint was removed; import the same namespaces from the @effect/sql-mysql2 package root or import specific modules directly."

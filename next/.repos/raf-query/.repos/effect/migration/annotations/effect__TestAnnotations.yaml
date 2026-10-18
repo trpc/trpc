@@ -1,3 +1,0 @@
-effect/TestAnnotations:
-  replacement: none
-  note: The annotation service was removed. Use Vitest metadata/options for runner concerns, an ordinary Ref or Context.Reference for application-owned test state, and FiberSet for explicit fiber tracking.

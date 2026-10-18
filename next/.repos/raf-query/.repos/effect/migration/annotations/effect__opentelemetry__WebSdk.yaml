@@ -1,3 +1,0 @@
-"@effect/opentelemetry/WebSdk#Configuration":
-  replacement: "WebSdk.Configuration"
-  note: "The configuration interface remains; v4 adds metricTemporality and loggerMergeWithExisting options."

@@ -1,8 +1,0 @@
-[
-  {
-    "op": "add",
-    "path": "/info/x-custom",
-    "value": "custom-value",
-    "description": "Add custom extension"
-  }
-]

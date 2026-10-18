@@ -1,3 +1,0 @@
-effect/ModuleVersion:
-  replacement: none
-  note: The mutable module-version facility was removed; the v4 build version is private and effect/package.json is metadata, not an equivalent runtime API. No mutable version setter remains; the v3 runtime-isolation mechanism has no public v4 equivalent.

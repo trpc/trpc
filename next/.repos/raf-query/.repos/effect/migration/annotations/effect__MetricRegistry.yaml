@@ -1,9 +1,0 @@
-effect/MetricRegistry#MetricRegistry:
-  replacement: "Metric.MetricRegistry"
-  note: "The method-bearing registry became a Context.Reference whose service is a Map. Metrics register metadata and hooks lazily."
-effect/MetricRegistry#make:
-  replacement: "new Map<string, Metric.Metric.Metadata<any, any>>()"
-  note: "Provide a fresh Map to Metric.MetricRegistry for isolation. Read it through Metric.snapshot or snapshotUnsafe."
-effect/MetricRegistry#MetricRegistryTypeId:
-  replacement: "none"
-  note: "The registry service is an ordinary Map behind a Context.Reference and has no public brand."

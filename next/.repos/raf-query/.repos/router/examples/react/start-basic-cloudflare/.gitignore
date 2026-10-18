@@ -1,6 +1,0 @@
-node_modules
-.DS_Store
-.cache
-.env
-dist
-.wrangler
