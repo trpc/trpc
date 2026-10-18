@@ -1,4 +1,5 @@
-import { Effect, Schedule, Stream } from 'effect';
+import { Effect, Fiber, Predicate, Schedule, Stream } from 'effect';
+import { HttpRouter, HttpServerRequest } from 'effect/http';
 import { EventSource } from 'undici';
 import {
   createTrpcClient,
@@ -7,6 +8,7 @@ import {
   routerType,
 } from '@trpc12/trpc/client';
 import {
+  createFetchHandler,
   error,
   initTrpc,
   tracked,
@@ -30,7 +32,11 @@ const authed = t.procedure.use((opts) =>
     : error({ code: 'UNAUTHORIZED', message: 'Sign in first' }),
 );
 
-const state = { cleanups: 0, lastEventIds: [] as (string | undefined)[] };
+const state = {
+  cleanups: 0,
+  waiting: 0,
+  lastEventIds: [] as (string | undefined)[],
+};
 let current: TestServer | undefined;
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -48,6 +54,17 @@ const router = {
         yield n++;
         await sleep(5);
       }
+    } finally {
+      state.cleanups++;
+    }
+  }),
+  waiting: t.procedure.subscription(async function* (opts) {
+    state.waiting++;
+    try {
+      await new Promise((resolve) =>
+        opts.signal.addEventListener('abort', resolve, { once: true }),
+      );
+      yield 'aborted';
     } finally {
       state.cleanups++;
     }
@@ -161,6 +178,36 @@ test('aborting the signal ends the subscription quietly', async () => {
   }
   expect(seen.slice(0, 2)).toEqual([0, 1]);
   await vi.waitFor(() => expect(state.cleanups).toBe(before + 1));
+});
+
+test('a subscription awaiting its signal ends when the client leaves mid-write', async () => {
+  const before = { cleanups: state.cleanups, waiting: state.waiting };
+  const handler = createFetchHandler({
+    router,
+    createContext: () => ({ user: null }),
+  });
+  const request = HttpServerRequest.fromWeb(
+    new Request('http://localhost/trpc/waiting'),
+  );
+  await Effect.gen(function* () {
+    const app = yield* HttpRouter.toHttpEffect(handler.routes);
+    const response = yield* Effect.provideService(
+      app,
+      HttpServerRequest.HttpServerRequest,
+      request,
+    );
+    const body = response.body;
+    if (!Predicate.isTagged(body, 'Stream')) throw new Error('not a stream');
+    // Stuck on its first chunk, like a server waiting for a socket to drain.
+    const writer = yield* Effect.forkChild(
+      Stream.runForEach(body.stream, () => Effect.never),
+    );
+    yield* Effect.promise(() =>
+      vi.waitFor(() => expect(state.waiting).toBe(before.waiting + 1)),
+    );
+    yield* Fiber.interrupt(writer);
+  }).pipe(Effect.scoped, Effect.runPromise);
+  await vi.waitFor(() => expect(state.cleanups).toBe(before.cleanups + 1));
 });
 
 test('a signal aborted before subscribing yields nothing and sends nothing', async () => {

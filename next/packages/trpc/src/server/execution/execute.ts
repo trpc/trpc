@@ -119,6 +119,24 @@ const isPlainObject = (value: unknown): value is Record<string, unknown> =>
 const isAsyncIterable = (value: unknown): value is AsyncIterable<unknown> =>
   typeof value === 'object' && value !== null && Symbol.asyncIterator in value;
 
+/**
+ * Closing doesn't wait for the iterator's `return()`: a generator paused at
+ * an `await` returns only once that settles, and a subscription usually
+ * awaits its `signal`, which aborts once the stream has closed.
+ */
+const returnUnawaited = <A>(iterable: AsyncIterable<A>): AsyncIterable<A> => ({
+  [Symbol.asyncIterator]() {
+    const iterator = iterable[Symbol.asyncIterator]();
+    return {
+      next: () => iterator.next(),
+      return: (value?: unknown) => {
+        iterator.return?.(value).catch(() => {});
+        return Promise.resolve({ done: true, value });
+      },
+    };
+  },
+});
+
 /** Typed `TrpcError` failures stay failures; anything else is a defect (02 d.i). */
 const refail = <A, R>(
   effect: Effect.Effect<A, unknown, R>,
@@ -659,7 +677,9 @@ function toEventStream(
       (cause) => Stream.fromEffect(refail(Effect.failCause(cause))),
     );
   } else if (isAsyncIterable(value)) {
-    stream = Stream.orDie(Stream.fromAsyncIterable(value, (cause) => cause));
+    stream = Stream.orDie(
+      Stream.fromAsyncIterable(returnUnawaited(value), (cause) => cause),
+    );
   } else {
     return Stream.die(
       new Error('A subscription must return an AsyncIterable or a Stream'),
