@@ -11,7 +11,7 @@ You can add middleware(s) to a procedure with the `t.procedure.use()` method. Th
 
 In the example below, any call to a `adminProcedure` will ensure that the user is an "admin" before executing.
 
-```ts
+```ts twoslash
 import { TRPCError, initTRPC } from '@trpc/server';
 
 interface Context {
@@ -39,7 +39,35 @@ export const adminProcedure = publicProcedure.use(async (opts) => {
 });
 ```
 
-```ts
+```ts twoslash
+// @filename: trpc.ts
+import { TRPCError, initTRPC } from '@trpc/server';
+
+interface Context {
+  user?: {
+    id: string;
+    isAdmin: boolean;
+    // [..]
+  };
+}
+
+const t = initTRPC.context<Context>().create();
+export const publicProcedure = t.procedure;
+export const router = t.router;
+
+export const adminProcedure = publicProcedure.use(async (opts) => {
+  const { ctx } = opts;
+  if (!ctx.user?.isAdmin) {
+    throw new TRPCError({ code: 'UNAUTHORIZED' });
+  }
+  return opts.next({
+    ctx: {
+      user: ctx.user,
+    },
+  });
+});
+// @filename: _app.ts
+// ---cut---
 import { adminProcedure, publicProcedure, router } from './trpc';
 
 const adminRouter = router({
@@ -59,7 +87,17 @@ export const appRouter = router({
 
 In the example below timings for queries are logged automatically.
 
-```ts
+```ts twoslash
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+
+
+export const publicProcedure = t.procedure;
+export const router = t.router;
+
+declare function logMock(...args: any[]): void;
+// ---cut---
+
 export const loggedProcedure = publicProcedure.use(async (opts) => {
   const start = Date.now();
 
@@ -76,7 +114,34 @@ export const loggedProcedure = publicProcedure.use(async (opts) => {
 });
 ```
 
-```ts
+```ts twoslash
+// @filename: trpc.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+
+
+export const publicProcedure = t.procedure;
+export const router = t.router;
+
+declare function logMock(...args: any[]): void;
+// ---cut---
+
+export const loggedProcedure = publicProcedure.use(async (opts) => {
+  const start = Date.now();
+
+  const result = await opts.next();
+
+  const durationMs = Date.now() - start;
+  const meta = { path: opts.path, type: opts.type, durationMs };
+
+  result.ok
+    ? console.log('OK request timing:', meta)
+    : console.error('Non-OK request timing', meta);
+
+  return result;
+});
+// @filename: _app.ts
+// ---cut---
 import { loggedProcedure, router } from './trpc';
 
 export const appRouter = router({
@@ -91,7 +156,16 @@ export const appRouter = router({
 
 Below we have an example of a middleware that changes properties of a context, the changes are then available to all chained consumers, such as other middlewares and procedures:
 
-```ts
+```ts twoslash
+// @target: esnext
+import { initTRPC, TRPCError } from '@trpc/server';
+
+const t = initTRPC.context<Context>().create();
+const publicProcedure = t.procedure;
+const router = t.router;
+
+// ---cut---
+
 type Context = {
   // user is nullable
   user?: {
@@ -103,6 +177,7 @@ const protectedProcedure = publicProcedure.use(async function isAuthed(opts) {
   const { ctx } = opts;
   // `ctx.user` is nullable
   if (!ctx.user) {
+    //     ^?
     throw new TRPCError({ code: 'UNAUTHORIZED' });
   }
 
@@ -110,6 +185,7 @@ const protectedProcedure = publicProcedure.use(async function isAuthed(opts) {
     ctx: {
       // ✅ user value is known to be non-null now
       user: ctx.user,
+      // ^?
     },
   });
 });
@@ -117,6 +193,7 @@ const protectedProcedure = publicProcedure.use(async function isAuthed(opts) {
 protectedProcedure.query((opts) => {
   const { ctx } = opts;
   return ctx.user;
+  //     ^?
 });
 ```
 
@@ -131,9 +208,11 @@ tRPC has an API called `.concat()` which allows you to independently define a pa
 
 This helper primarily targets creating plugins and libraries with tRPC.
 
-```ts
+```ts twoslash
+// @target: esnext
 // ------------------------------------------------
 // 🧩🧩🧩 a library creating a reusable plugin 🧩🧩🧩
+// @filename: myPlugin.ts
 
 import { initTRPC, TRPCError } from '@trpc/server';
 
@@ -162,6 +241,7 @@ export function createMyPlugin() {
 }
 // ------------------------------------
 // 🚀🚀🚀 the app using the plugin 🚀🚀🚀
+// @filename: app.ts
 import { createMyPlugin } from './myPlugin';
 import { initTRPC, TRPCError } from '@trpc/server';
 
@@ -187,6 +267,7 @@ const procedureWithPlugin = publicProcedure
   )
   .use(opts => {
     const { ctx } = opts;
+    //      ^?
     return opts.next()
   })
 
@@ -207,7 +288,17 @@ We have a powerful feature called `.pipe()` which allows you to extend middlewar
 
 Below we have an example of a middleware that extends a base middleware(foo). Like the context extension example above, piping middlewares will change properties of the context, and procedures will receive the new context value.
 
-```ts
+```ts twoslash
+// @target: esnext
+import { initTRPC, TRPCError } from '@trpc/server';
+
+const t = initTRPC.create();
+const publicProcedure = t.procedure;
+const router = t.router;
+const middleware = t.middleware;
+
+// ---cut---
+
 const fooMiddleware = t.middleware((opts) => {
   return opts.next({
     ctx: {
@@ -219,6 +310,7 @@ const fooMiddleware = t.middleware((opts) => {
 const barMiddleware = fooMiddleware.unstable_pipe((opts) => {
   const { ctx } = opts;
   ctx.foo;
+  //   ^?
   return opts.next({
     ctx: {
       bar: 'bar' as const,
@@ -230,12 +322,13 @@ const barProcedure = publicProcedure.use(barMiddleware);
 barProcedure.query((opts) => {
   const { ctx } = opts;
   return ctx.bar;
+  //     ^?
 });
 ```
 
 Beware that the order in which you pipe your middlewares matter and that the context must overlap. An example of a forbidden pipe is shown below. Here, the `fooMiddleware` overrides the `ctx.a` while `barMiddleware` still expects the root context from the initialization in `initTRPC` - so piping `fooMiddleware` with `barMiddleware` would not work, while piping `barMiddleware` with `fooMiddleware` does work.
 
-```ts
+```ts twoslash
 import { initTRPC } from '@trpc/server';
 
 const t = initTRPC
@@ -249,6 +342,7 @@ const t = initTRPC
 const fooMiddleware = t.middleware((opts) => {
   const { ctx } = opts;
   ctx.a; // 👈 fooMiddleware expects `ctx.a` to be an object
+  //  ^?
   return opts.next({
     ctx: {
       a: 'a' as const, // 👈 `ctx.a` is no longer an object
@@ -259,6 +353,7 @@ const fooMiddleware = t.middleware((opts) => {
 const barMiddleware = t.middleware((opts) => {
   const { ctx } = opts;
   ctx.a; // 👈 barMiddleware expects `ctx.a` to be an object
+  //  ^?
   return opts.next({
     ctx: {
       foo: 'foo' as const,
@@ -266,6 +361,7 @@ const barMiddleware = t.middleware((opts) => {
   });
 });
 
+// @errors: 2345
 // ❌ `ctx.a` does not overlap from `fooMiddleware` to `barMiddleware`
 fooMiddleware.unstable_pipe(barMiddleware);
 
@@ -283,7 +379,8 @@ the `Context` type is tied to the `Context` type of the tRPC instance. This mean
 
 Using `experimental_standaloneMiddleware` you can create a middleware that explicitly defines its requirements, i.e. the Context, Input and Meta types:
 
-```ts
+```ts twoslash
+// @target: esnext
 import {
   experimental_standaloneMiddleware,
   initTRPC,
@@ -317,11 +414,13 @@ const accessControlledProcedure = t1.procedure
   .input(z.object({ projectId: z.string() }))
   .use(projectAccessMiddleware);
 
+// @errors: 2345
 // ❌ `ctx.allowedProjects` satisfies "string[]" but `input.projectId` does not satisfy "string"
 const accessControlledProcedure2 = t1.procedure
   .input(z.object({ projectId: z.number() }))
   .use(projectAccessMiddleware);
 
+// @errors: 2345
 // ❌ `ctx.allowedProjects` does not satisfy "string[]" even though `input.projectId` satisfies "string"
 const t2 = initTRPC
   .context<{
@@ -336,7 +435,8 @@ const accessControlledProcedure3 = t2.procedure
 
 Here is an example with multiple standalone middlewares:
 
-```ts
+```ts twoslash
+// @target: esnext
 import { experimental_standaloneMiddleware, initTRPC } from '@trpc/server';
 import * as z from 'zod';
 

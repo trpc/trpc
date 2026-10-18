@@ -10,7 +10,15 @@ By default, tRPC does not cancel requests on unmount. If you want to opt into th
 
 ### Globally
 
-```ts title="client.ts"
+```ts twoslash title="client.ts"
+// @filename: server/routers/_app.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
+
+// @filename: client.ts
+// ---cut---
 import { httpBatchLink } from '@trpc/client';
 import { createTRPCNext } from '@trpc/next';
 import type { AppRouter } from './server/routers/_app';
@@ -33,7 +41,26 @@ export const trpc = createTRPCNext<AppRouter>({
 
 You may also override this behavior at the request level.
 
-```tsx title="client.ts"
+```tsx twoslash title="client.ts"
+// @jsx: react-jsx
+// @filename: server/routers/_app.ts
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+const t = initTRPC.create();
+export const appRouter = t.router({
+  post: t.router({
+    byId: t.procedure.input(z.object({ id: z.string() })).query(() => ({ id: '1', title: 'Hello' })),
+  }),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: utils/trpc.tsx
+import { createTRPCReact } from '@trpc/react-query';
+import type { AppRouter } from '../server/routers/_app';
+export const trpc = createTRPCReact<AppRouter>();
+
+// @filename: client.ts
+// ---cut---
 import { trpc } from './utils/trpc';
 import { useRouter } from 'next/router';
 

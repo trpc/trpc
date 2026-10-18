@@ -13,7 +13,15 @@ order: 36
 
 ## Usage
 
-```tsx
+```tsx twoslash
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
+
+// @filename: client.ts
+// ---cut---
 import { createTRPCClient, unstable_localLink } from '@trpc/client';
 import type { AppRouter } from './server';
 import { appRouter } from './server';
@@ -47,7 +55,13 @@ const client = createTRPCClient<AppRouter>({
 
 The `localLink` accepts the following options:
 
-```ts
+```ts twoslash
+type AnyRouter = any;
+type inferRouterContext<T> = any;
+type inferClientTypes<T> = any;
+type ErrorHandlerOptions<T> = any;
+type TransformerOptions<T> = {};
+// ---cut---
 type LocalLinkOptions<TRouter extends AnyRouter> = {
   router: TRouter;
   createContext: () => Promise<inferRouterContext<TRouter>>;

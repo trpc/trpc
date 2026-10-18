@@ -15,7 +15,15 @@ order: 40
 
 You can import and add the `retryLink` to the `links` array when creating your tRPC client. This link can be placed before or after other links in your setup, depending on your requirements.
 
-```ts
+```ts twoslash
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
+
+// @filename: client.ts
+// ---cut---
 import { createTRPCClient, httpBatchLink, retryLink } from '@trpc/client';
 import type { AppRouter } from './server';
 
@@ -55,7 +63,11 @@ In the example above, we add the `retryLink` before the `httpBatchLink`. The `re
 
 ## Options
 
-```ts
+```ts twoslash
+type InferrableClientTypes = any;
+type Operation = { id: number; type: string; input: unknown; path: string };
+type TRPCClientError<T> = Error & { data: any };
+// ---cut---
 interface RetryLinkOptions<TInferrable extends InferrableClientTypes> {
   /**
    * The retry function

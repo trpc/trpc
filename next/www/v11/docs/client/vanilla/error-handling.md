@@ -12,7 +12,65 @@ A failed procedure call rejects with a [`TRPCClientError`](./infer-types.md#infe
 
 `query()` and `mutate()` behave like any other promise, so a `try`/`catch` works as you would expect. TypeScript has no way to describe what a function throws, though, so `cause` arrives as `unknown` and has to be narrowed:
 
-```ts title="client.ts"
+```ts twoslash title="client.ts"
+// @target: esnext
+// @module: esnext
+// @module: esnext
+// @filename: server.ts
+// ---cut---
+
+import { initTRPC } from '@trpc/server';
+import { z } from "zod";
+
+class RateLimitError extends Error {
+  constructor(public readonly retryAfterMs: number) {
+    super('Too many requests');
+  }
+}
+
+const t = initTRPC.create();
+
+const rateLimited = t.procedure.errors((opts) => {
+  if (opts.error.cause instanceof RateLimitError) {
+    return {
+      ...opts.shape,
+      data: {
+        ...opts.shape.data,
+        kind: 'RATE_LIMIT' as const,
+        retryAfterMs: opts.error.cause.retryAfterMs,
+      },
+    };
+  }
+  return undefined;
+});
+
+const appRouter = t.router({
+  post: t.router({
+    byId: rateLimited
+      .input(z.string())
+      .query((opts) => {
+        // imaginary db call
+        return { id: 1, title: 'tRPC is the best!' };
+    }),
+  }),
+});
+
+export type AppRouter = typeof appRouter;
+
+// @filename: trpc.ts
+import { createTRPCClient, httpBatchLink } from "@trpc/client";
+import type { AppRouter } from "./server";
+
+export const trpc = createTRPCClient<AppRouter>({
+  links: [
+    httpBatchLink({
+      url: "http://localhost:3000/api/trpc",
+    }),
+  ],
+});
+
+// @filename: client.ts
+// ---cut---
 import { TRPCClientError } from '@trpc/client';
 import type { AppRouter } from './server';
 import { trpc } from './trpc';
@@ -34,7 +92,65 @@ See [Inferring Types](./infer-types.md#infer-trpcclienterror-types) for a reusab
 
 `safe()` awaits a `query()` or `mutate()` call without letting it throw, handing back a `[data, error]` pair instead. Exactly one side is ever set, so checking either one narrows the other:
 
-```ts title="client.ts"
+```ts twoslash title="client.ts"
+// @target: esnext
+// @module: esnext
+// @module: esnext
+// @filename: server.ts
+// ---cut---
+
+import { initTRPC } from '@trpc/server';
+import { z } from "zod";
+
+class RateLimitError extends Error {
+  constructor(public readonly retryAfterMs: number) {
+    super('Too many requests');
+  }
+}
+
+const t = initTRPC.create();
+
+const rateLimited = t.procedure.errors((opts) => {
+  if (opts.error.cause instanceof RateLimitError) {
+    return {
+      ...opts.shape,
+      data: {
+        ...opts.shape.data,
+        kind: 'RATE_LIMIT' as const,
+        retryAfterMs: opts.error.cause.retryAfterMs,
+      },
+    };
+  }
+  return undefined;
+});
+
+const appRouter = t.router({
+  post: t.router({
+    byId: rateLimited
+      .input(z.string())
+      .query((opts) => {
+        // imaginary db call
+        return { id: 1, title: 'tRPC is the best!' };
+    }),
+  }),
+});
+
+export type AppRouter = typeof appRouter;
+
+// @filename: trpc.ts
+import { createTRPCClient, httpBatchLink } from "@trpc/client";
+import type { AppRouter } from "./server";
+
+export const trpc = createTRPCClient<AppRouter>({
+  links: [
+    httpBatchLink({
+      url: "http://localhost:3000/api/trpc",
+    }),
+  ],
+});
+
+// @filename: client.ts
+// ---cut---
 import { safe } from '@trpc/client';
 import { trpc } from './trpc';
 
@@ -42,6 +158,7 @@ const [post, error] = await safe(trpc.post.byId.query('1'));
 
 if (error) {
   console.log(error.data);
+  //                ^?
 } else {
   console.log(post.title);
 }

@@ -9,7 +9,13 @@ order: 65
 
 We provide a getQueryKey helper that accepts a `router` or `procedure` so that you can easily provide the native function the correct query key.
 
-```tsx
+```tsx twoslash
+type AnyQueryProcedure = any;
+type AnyRouter = any;
+type DeepPartial<T> = T;
+type TInput = unknown;
+type TRPCQueryKey = any[];
+// ---cut---
 // Queries
 declare function getQueryKey(
   procedure: AnyQueryProcedure,
@@ -32,7 +38,31 @@ type QueryType = "query" | "infinite" | "any";
 >
 > The query type `any` will match all queries in the cache only if the `react query` method where it's used uses fuzzy matching. See [TanStack/query#5111 (comment)](https://github.com/TanStack/query/issues/5111#issuecomment-1464864361) for more context.
 
-```tsx
+```tsx twoslash
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+const t = initTRPC.create();
+const appRouter = t.router({
+  post: t.router({
+    list: t.procedure.query(() => {
+      return [
+        { id: '1', title: 'everlong' },
+        { id: '2', title: 'After Dark' },
+      ];
+    }),
+  }),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: utils/trpc.tsx
+import { createTRPCReact } from '@trpc/react-query';
+import type { AppRouter } from '../server';
+export const trpc = createTRPCReact<AppRouter>();
+
+// @filename: component.tsx
+import React from 'react';
+// ---cut---
 import { useIsFetching, useQueryClient } from '@tanstack/react-query';
 import { getQueryKey } from '@trpc/react-query';
 import { trpc } from './utils/trpc';

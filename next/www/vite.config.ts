@@ -103,6 +103,8 @@ export default defineConfig({
         agentFiles: false,
         basePath: copy.version.basePath,
         contentDir: copy.dir,
+        // trpc.io compiled v11's blocks with Twoslash, and so does the site.
+        inlineApp: copy.version.id === 'v11' ? 'v11' : undefined,
         manifestId: `virtual:${copy.version.id}-docs-manifest`,
         samplesDir,
         sections: copy.sections,
@@ -114,6 +116,10 @@ export default defineConfig({
             : undefined,
         sourceUrl: `${site.github}/blob/main/www`,
         summary: site.description,
+        twoslashCache:
+          copy.version.id === 'v11'
+            ? { dir: twoslashCacheDir, inputs: [lockfile] }
+            : undefined,
       }),
     ),
     blogContent({

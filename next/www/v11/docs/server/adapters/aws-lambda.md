@@ -62,7 +62,7 @@ yarn add @trpc/server
 
 Implement your tRPC router. A sample router is given below:
 
-```ts title="server.ts"
+```ts twoslash title="server.ts"
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
@@ -83,7 +83,15 @@ export type AppRouter = typeof appRouter;
 
 tRPC includes an adapter for API Gateway out of the box. This adapter lets you run your routes through the API Gateway handler.
 
-```ts title="server.ts"
+```ts twoslash title="server.ts"
+// @filename: router.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
+
+// @filename: server.ts
+// ---cut---
 import type { APIGatewayProxyEventV2 } from 'aws-lambda';
 import type { CreateAWSLambdaContextOptions } from '@trpc/server/adapters/aws-lambda';
 import { awsLambdaRequestHandler } from '@trpc/server/adapters/aws-lambda';
@@ -117,7 +125,11 @@ API Gateway has two different event data formats when it invokes a Lambda. For R
 
 To infer what version you might have, supply the context as following:
 
-```ts
+```ts twoslash
+import type { APIGatewayProxyEvent } from 'aws-lambda';
+import type { CreateAWSLambdaContextOptions } from '@trpc/server/adapters/aws-lambda';
+
+// ---cut---
 function createContext({
   event,
   context,
@@ -142,7 +154,22 @@ The signature of a streaming handler is different from the default handler. The 
 
 > Note that the `awslambda` namespace is automatically provided by the Lambda execution environment. You can import the types from `@types/aws-lambda` to augment the global namespace with the `awslambda` namespace.
 
-```ts title="server.ts"
+```ts twoslash title="server.ts"
+/// <reference types="aws-lambda" />
+// @filename: router.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({
+  iterable: t.procedure.query(async function* () {
+    for (let i = 0; i < 10; i++) {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+      yield i;
+    }
+  }),
+});
+
+// @filename: server.ts
+// ---cut---
 /// <reference types="aws-lambda" />
 import type { APIGatewayProxyEventV2 } from 'aws-lambda';
 import type { CreateAWSLambdaContextOptions } from '@trpc/server/adapters/aws-lambda';

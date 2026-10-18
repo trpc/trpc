@@ -1,9 +1,3 @@
-# next/www's v11, v10 and v9 docs and blog are copies of the root's www/
-# (www/build/old-docs-copy.ts). When a merge (of `main`) changes www/,
-# recopy them, to commit with the merge. A merge that stops on conflicts
-# doesn't run this: run `pnpm --filter @trpc12/www old-docs:copy` after
-# committing it. CI's `old-docs:check` fails until the copies are current.
-#
 # The README's sponsors section is written from next/www/sponsors.json
 # (www/build/sponsors-sync.ts). When a merge brings `main`'s version of the
 # README, write that section from sponsors.json again.
@@ -13,13 +7,6 @@
 unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE
 cd "$(git rev-parse --show-toplevel)" || exit 1
 status=0
-if ! git diff --quiet ORIG_HEAD HEAD -- www; then
-  echo "post-merge: the merge changed www/, so recopying the old docs and the blog into next/www"
-  if ! (cd next && pnpm --filter @trpc12/www old-docs:copy); then
-    echo "post-merge: the copy failed; fix what it says, then run \`pnpm --filter @trpc12/www old-docs:copy\` in next/"
-    status=1
-  fi
-fi
 if ! git diff --quiet ORIG_HEAD HEAD -- README.md; then
   echo "post-merge: the merge changed README.md, so writing its sponsors from next/www/sponsors.json"
   if ! (cd next && pnpm --filter @trpc12/www sponsors:readme); then
@@ -27,8 +14,8 @@ if ! git diff --quiet ORIG_HEAD HEAD -- README.md; then
     status=1
   fi
 fi
-if [ -n "$(git status --porcelain -- next/www README.md)" ]; then
+if [ -n "$(git status --porcelain -- README.md)" ]; then
   echo "post-merge: commit what changed:"
-  git status --short -- next/www README.md
+  git status --short -- README.md
 fi
 exit $status

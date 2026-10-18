@@ -5,14 +5,11 @@ on:
     branches: [v12]
     paths:
       - 'next/**'
-      # trpc.io's docs and blog, which next/www copies (merges of `main`).
-      - 'www/**'
       - 'vendor-src.json'
       - '.github/workflows/next.yml'
   pull_request:
     paths:
       - 'next/**'
-      - 'www/**'
       - 'vendor-src.json'
       - '.github/workflows/next.yml'
   schedule:
@@ -65,10 +62,11 @@ jobs:
       - run: pnpm bench budget
 
   www:
-    # The docs site: compiles every twoslash block in docs/ and fails on
-    # broken links between pages.
+    # The docs site: compiles every twoslash block in docs/ and the v11 docs'
+    # copies, and fails on broken links between pages.
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # A cold twoslash cache (any lockfile change) compiles all ~530 blocks.
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
@@ -82,12 +80,6 @@ jobs:
       - run: pnpm install --frozen-lockfile
         env:
           VP_GIT_HOOKS: '0'
-      # The v11, v10 and v9 docs and the blog are copies of the root's www/:
-      # fails when they aren't what `old-docs:copy` writes from it. The copy
-      # pins v10's and v9's links to their last releases (`sources` in
-      # www/build/old-docs-copy.ts), so it reads those tags.
-      - run: git fetch --depth=1 origin tag v10.45.4 tag v9.27.4
-      - run: pnpm --filter @trpc12/www old-docs:check
       # Compiled blocks, keyed by the lockfile inside; a stale entry recompiles.
       - uses: actions/cache@v4
         with:

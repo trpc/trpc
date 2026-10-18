@@ -6,8 +6,10 @@
  * `old-docs-copy.ts` reads the files and writes the result; everything here
  * is a pure function of them.
  *
- * Twoslash blocks become plain code, showing what trpc.io shows: the hidden
- * setup, `// @…` directives and `// ^?` markers go. Admonitions become
+ * v11's Twoslash blocks stay Twoslash blocks, which the site compiles in the
+ * `v11` sample app as trpc.io compiled them; elsewhere they become plain
+ * code, showing what trpc.io shows: the hidden setup, `// @…` directives and
+ * `// ^?` markers go. Either way `// @include:` is expanded. Admonitions become
  * alerts, `<Tabs>` become tab groups, partials and the few components the
  * pages use are inlined, and links point at the copied pages of any
  * version, after trpc.io's redirects, or at trpc.io for anything else.
@@ -592,8 +594,8 @@ function inlineComponent(source: string) {
   return /=\{|\{[^}]*\}/.test(html) ? undefined : html;
 }
 
-/** Plain code for a Twoslash block: what trpc.io shows of it. */
-export function plainCode(
+/** A Twoslash block with its `// @include:` lines replaced by the `twoslash include` blocks they name. */
+export function expandIncludes(
   code: string,
   includes: ReadonlyMap<string, string>,
   problems: Array<string>,
@@ -612,16 +614,45 @@ export function plainCode(
       },
     );
   }
-  const lines = removeTwoslashNotations(expanded)
-    .split('\n')
-    .filter((line) => !/^[ \t]*\/\/ @(?:filename|include): /.test(line));
+  return trimBlankLines(expanded.split('\n')).join('\n');
+}
+
+function trimBlankLines(lines: Array<string>) {
   while (lines[0]?.trim() === '') {
     lines.shift();
   }
   while (lines.at(-1)?.trim() === '') {
     lines.pop();
   }
-  return lines.join('\n');
+  return lines;
+}
+
+/**
+ * A `// ^?` above the last `// ---cut---` queries code that isn't shown,
+ * which trpc.io's Twoslash ignored and this site's rejects; it goes.
+ */
+function withoutHiddenQueries(code: string) {
+  const lines = code.split('\n');
+  const cut = lines.findLastIndex((line) =>
+    /^[ \t]*\/\/ ---cut(?:-before)?---[ \t]*$/.test(line),
+  );
+  return lines
+    .filter((line, index) => index > cut || !/^[ \t]*\/\/\s*\^[?|]/.test(line))
+    .join('\n');
+}
+
+/** Plain code for a Twoslash block: what trpc.io shows of it. */
+export function plainCode(
+  code: string,
+  includes: ReadonlyMap<string, string>,
+  problems: Array<string>,
+) {
+  const lines = removeTwoslashNotations(
+    expandIncludes(code, includes, problems),
+  )
+    .split('\n')
+    .filter((line) => !/^[ \t]*\/\/ @(?:filename|include): /.test(line));
+  return trimBlankLines(lines).join('\n');
 }
 
 /** A fence's info, without `twoslash`, its language in lowercase and its title in double quotes. */
@@ -640,6 +671,8 @@ interface PageContext {
   /** The page the result renders on, which its links are relative to. */
   readonly page: LinkingPage;
   readonly problems: Array<string>;
+  /** Whether Twoslash blocks stay Twoslash blocks (v11's), or become plain code. */
+  readonly twoslash: boolean;
 }
 
 /**
@@ -759,7 +792,8 @@ function convertFences(lines: ReadonlyArray<string>, context: Converting) {
   const output = [...lines];
   for (const fence of fencesOf(lines).toReversed()) {
     const twoslash = /\btwoslash\b/.test(fence.info);
-    const opening = `${fence.indent}${fence.marker}${plainInfo(fence.info)}`;
+    const info = plainInfo(fence.info);
+    const opening = `${fence.indent}${fence.marker}${info}`;
     if (!twoslash) {
       output[fence.start] = opening;
       continue;
@@ -771,14 +805,18 @@ function convertFences(lines: ReadonlyArray<string>, context: Converting) {
       )
       .join('\n');
     const problems: Array<string> = [];
-    const code = plainCode(body, context.includes, problems);
+    const code = context.twoslash
+      ? withoutHiddenQueries(expandIncludes(body, context.includes, problems))
+      : plainCode(body, context.includes, problems);
     context.problems.push(
       ...problems.map((problem) => `${context.file}: ${problem}`),
     );
     output.splice(
       fence.start,
       fence.end - fence.start + 1,
-      opening,
+      context.twoslash
+        ? `${fence.indent}${fence.marker}${info.replace(/^[\w-]*/, (lang) => `${lang} twoslash`)}`
+        : opening,
       ...code
         .split('\n')
         .map((line) => (line === '' ? '' : `${fence.indent}${line}`)),
@@ -1240,6 +1278,7 @@ function yamlString(value: string) {
 function convertFile(
   file: string,
   page: LinkingPage,
+  twoslash: boolean,
   docs: CopiedDocs,
   frontmatterOf:
     | ((
@@ -1267,12 +1306,13 @@ function convertFile(
     inlined,
     page,
     problems,
+    twoslash,
   });
   const lines = squeezeBlankLines(body.split('\n'));
   while (lines[0]?.trim() === '') {
     lines.shift();
   }
-  for (const line of lines) {
+  for (const line of twoslash ? [] : lines) {
     if (/^[ \t>]*(?:`{3,}|~{3,})[^\n]*\btwoslash\b/.test(line)) {
       problems.push(`${file}: a Twoslash block is left in \`${line}\``);
     }
@@ -1298,6 +1338,7 @@ export function convertSnippet(file: string, docs: CopiedDocs): ConvertedPage {
   return convertFile(
     file,
     { blog: true, slug: 'index', version: v11.id },
+    true,
     docs,
     undefined,
   );
@@ -1305,7 +1346,7 @@ export function convertSnippet(file: string, docs: CopiedDocs): ConvertedPage {
 
 /** A copied page as a page of this site: its frontmatter and Markdown. */
 export function convertPage(page: CopiedPage, docs: CopiedDocs): ConvertedPage {
-  return convertFile(page.file, page, docs, () => [
+  return convertFile(page.file, page, page.version === v11.id, docs, () => [
     `title: ${yamlString(page.title)}`,
     ...(page.label === undefined || page.label === page.title
       ? []
@@ -1338,6 +1379,7 @@ export function convertPost(post: CopiedPost, docs: CopiedDocs): ConvertedPage {
   return convertFile(
     post.file,
     { blog: true, slug: post.slug, version: v11.id },
+    false,
     docs,
     (lines, problems) => {
       const end = lines.findIndex((line) => line.trim() === '');

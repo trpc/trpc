@@ -16,7 +16,19 @@ You can use WebSockets for all or some of the communication with your server, se
 yarn add ws
 ```
 
-```ts title="server/wsServer.ts"
+```ts twoslash title="server/wsServer.ts"
+// @filename: trpc.ts
+import type { CreateWSSContextFnOptions } from '@trpc/server/adapters/ws';
+export const createContext = (opts: CreateWSSContextFnOptions) => ({});
+
+// @filename: routers/app.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+
+// @filename: wsServer.ts
+// @types: node
+// ---cut---
 import { applyWSSHandler } from '@trpc/server/adapters/ws';
 import { WebSocketServer } from 'ws';
 import { appRouter } from './routers/app';
@@ -59,7 +71,15 @@ process.on('SIGTERM', () => {
 > [!TIP]
 > You can use [Links](../client/links.md) to route queries and/or mutations to HTTP transport and subscriptions over WebSockets.
 
-```tsx title="client.ts"
+```tsx twoslash title="client.ts"
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
+
+// @filename: client.ts
+// ---cut---
 import { createTRPCClient, createWSClient, wsLink } from '@trpc/client';
 import type { AppRouter } from './server';
 
@@ -85,11 +105,12 @@ const client = createTRPCClient<AppRouter>({
 
 In order to authenticate with WebSockets, you can define `connectionParams` to `createWSClient`. This will be sent as the first message when the client establishes a WebSocket connection.
 
-```ts title="server/context.ts"
+```ts twoslash title="server/context.ts"
 import type { CreateWSSContextFnOptions } from '@trpc/server/adapters/ws';
 
 export const createContext = async (opts: CreateWSSContextFnOptions) => {
   const token = opts.info.connectionParams?.token;
+  //    ^?
 
   // [... authenticate]
 
@@ -99,7 +120,16 @@ export const createContext = async (opts: CreateWSSContextFnOptions) => {
 export type Context = Awaited<ReturnType<typeof createContext>>;
 ```
 
-```ts title="client/trpc.ts"
+```ts twoslash title="client/trpc.ts"
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+import superjson from 'superjson';
+const t = initTRPC.create({ transformer: superjson });
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
+
+// @filename: client.ts
+// ---cut---
 import { createTRPCClient, createWSClient, wsLink } from '@trpc/client';
 import type { AppRouter } from './server';
 import superjson from 'superjson';
@@ -127,7 +157,8 @@ You can send an initial `lastEventId` when initializing the subscription and it 
 > [!NOTE] Info
 > If you're fetching data based on the `lastEventId`, and capturing all events is critical, you may want to use `ReadableStream`'s or a similar pattern as an intermediary as is done in [our full-stack SSE example](https://github.com/trpc/examples-next-sse-chat) to prevent newly emitted events being ignored while yield'ing the original batch based on `lastEventId`.
 
-```ts
+```ts twoslash
+// @types: node
 import EventEmitter, { on } from 'events';
 import { initTRPC, tracked } from '@trpc/server';
 import { z } from 'zod';
@@ -180,7 +211,7 @@ export const subRouter = router({
 
 #### Request
 
-```ts
+```ts twoslash
 interface RequestMessage {
   id: number | string;
   jsonrpc?: '2.0';
@@ -196,7 +227,9 @@ interface RequestMessage {
 
 _... below, or an error._
 
-```ts
+```ts twoslash
+type TOutput = any;
+// ---cut---
 interface ResponseMessage {
   id: number | string;
   jsonrpc?: '2.0';
@@ -211,7 +244,7 @@ interface ResponseMessage {
 
 #### Start a subscription
 
-```ts
+```ts twoslash
 interface SubscriptionRequest {
   id: number | string;
   jsonrpc?: '2.0';
@@ -225,7 +258,7 @@ interface SubscriptionRequest {
 
 #### To cancel a subscription, call `subscription.stop`
 
-```ts
+```ts twoslash
 interface SubscriptionStopRequest {
   id: number | string; // <-- id of your created subscription
   jsonrpc?: '2.0';
@@ -237,7 +270,9 @@ interface SubscriptionStopRequest {
 
 _... below, or an error._
 
-```ts
+```ts twoslash
+type TData = any;
+// ---cut---
 interface SubscriptionResponse {
   id: number | string;
   jsonrpc?: '2.0';
@@ -259,7 +294,7 @@ interface SubscriptionResponse {
 
 If the connection is initialized with `?connectionParams=1`, the first message has to be connection params.
 
-```ts
+```ts twoslash
 interface ConnectionParamsMessage {
   data: Record<string, string> | null;
   method: 'connectionParams';

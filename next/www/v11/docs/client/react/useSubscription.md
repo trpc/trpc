@@ -18,7 +18,7 @@ The `useSubscription` hook can be used to subscribe to a [subscription](../../se
 > - If you pass `skipToken` from `@tanstack/react-query`, the subscription will be paused.
 > - Have a look at our [SSE example](https://github.com/trpc/examples-next-sse-chat) for a complete example of how to use subscriptions
 
-```tsx
+```tsx twoslash
 interface UseTRPCSubscriptionOptions<TOutput, TError> {
   /**
    * Called when the subscription is started.
@@ -49,7 +49,7 @@ interface UseTRPCSubscriptionOptions<TOutput, TError> {
 
 The return type is a discriminated union on `status`:
 
-```ts
+```ts twoslash
 type TRPCSubscriptionResult<TOutput, TError> =
   | TRPCSubscriptionIdleResult<TOutput>
   | TRPCSubscriptionConnectingResult<TOutput, TError>
@@ -91,7 +91,9 @@ interface TRPCSubscriptionErrorResult<TOutput, TError> {
 
 ## Example Procedure
 
-```tsx title="server/routers/_app.ts"
+```tsx twoslash title="server/routers/_app.ts"
+// @target: esnext
+// @types: node
 import EventEmitter, { on } from 'events';
 import { initTRPC } from '@trpc/server';
 
@@ -116,7 +118,27 @@ export type AppRouter = typeof appRouter;
 
 ## Example React Component
 
-```tsx title="components/PostFeed.tsx"
+```tsx twoslash title="components/PostFeed.tsx"
+// @target: esnext
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+type Post = { id: string; title: string };
+const appRouter = t.router({
+  onPostAdd: t.procedure.subscription(async function* () {
+    yield { id: '1', title: 'Hello' } as Post;
+  }),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: utils/trpc.tsx
+import { createTRPCReact } from '@trpc/react-query';
+import type { AppRouter } from '../server';
+export const trpc = createTRPCReact<AppRouter>();
+
+// @filename: components/PostFeed.tsx
+import React from 'react';
+// ---cut---
 import { trpc } from '../utils/trpc';
 
 type Post = { id: string; title: string };

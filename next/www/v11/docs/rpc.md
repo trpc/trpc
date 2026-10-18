@@ -17,7 +17,12 @@ order: 83
 
 Nested procedures are separated by dots, so a request to `byId` below would end up being a request to `/api/trpc/post.byId`.
 
-```ts
+```ts twoslash
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+const router = t.router;
+const publicProcedure = t.procedure;
+// ---cut---
 export const appRouter = router({
   post: router({
     byId: publicProcedure.input(String).query(async (opts) => {
@@ -40,7 +45,17 @@ When batching, we combine all parallel procedure calls of the same HTTP method i
 
 #### Given a router like this exposed at `/api/trpc`:
 
-```tsx title="server/router.ts"
+```tsx twoslash title="server/router.ts"
+import { initTRPC } from '@trpc/server';
+
+type Post = { id: string; title: string; body: string };
+type Context = {
+  post: { findUnique: (opts: { where: { id: string } }) => Promise<Post | null> };
+  findRelatedPostsById: (id: string) => Promise<Post[]>;
+};
+
+const t = initTRPC.context<Context>().create();
+// ---cut---
 export const appRouter = t.router({
   postById: t.procedure.input(String).query(async (opts) => {
     const post = await opts.ctx.post.findUnique({
@@ -57,7 +72,13 @@ export const appRouter = t.router({
 
 #### ... And two queries defined like this in a React component:
 
-```tsx title="MyComponent.tsx"
+```tsx twoslash title="MyComponent.tsx"
+// @jsx: react-jsx
+import React from 'react';
+
+const trpc = null as any;
+
+// ---cut---
 export function MyComponent() {
   const post1 = trpc.postById.useQuery('1');
   const relatedPosts = trpc.relatedPosts.useQuery('1');
@@ -86,7 +107,7 @@ export function MyComponent() {
 
 **\*) `input` in the above is the result of:**
 
-```ts
+```ts twoslash
 encodeURIComponent(
   JSON.stringify({
     0: '1', // <-- input for `postById`
@@ -149,7 +170,9 @@ In order to have a specification that works regardless of the transport layer we
 
 </details>
 
-```ts
+```ts twoslash
+type TOutput = any;
+// ---cut---
 interface SuccessResponse {
   result: {
     data: TOutput; // output from procedure
@@ -191,7 +214,7 @@ interface SuccessResponse {
 
 ## Error Codes \<-> HTTP Status
 
-```ts
+```ts twoslash
 const HTTP_STATUS_CODES = {
   PARSE_ERROR: 400,
   BAD_REQUEST: 400,
@@ -222,7 +245,7 @@ const HTTP_STATUS_CODES = {
 <details>
 <summary>Available codes & JSON-RPC code</summary>
 
-```ts
+```ts twoslash
 /**
  * JSON-RPC 2.0 Error codes
  *
@@ -271,7 +294,12 @@ export const TRPC_ERROR_CODES_BY_KEY = {
 
 To override the HTTP method used for queries/mutations, you can use the `methodOverride` option:
 
-```tsx title="server/httpHandler.ts"
+```tsx twoslash title="server/httpHandler.ts"
+import { initTRPC } from '@trpc/server';
+import { createHTTPHandler } from '@trpc/server/adapters/standalone';
+const t = initTRPC.create();
+const router = t.router({});
+// ---cut---
 // Your server must separately allow the client to override the HTTP method
 const handler = createHTTPHandler({
   router: router,
@@ -279,7 +307,15 @@ const handler = createHTTPHandler({
 });
 ```
 
-```tsx title="client/trpc.ts"
+```tsx twoslash title="client/trpc.ts"
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
+
+// @filename: client.ts
+// ---cut---
 import { createTRPCClient, httpLink } from '@trpc/client';
 import type { AppRouter } from './server';
 

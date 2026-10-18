@@ -277,17 +277,34 @@ describe('convertPage', () => {
     expect(converted.body).toContain('<div data-tab="pnpm">');
   });
 
-  it("shows a Twoslash block's code as trpc.io does, with its includes", () => {
-    const converted = convert(
+  const twoslashPage = [
+    '```twoslash include trpc',
+    "import { initTRPC } from '@trpc/server';",
+    'export const t = initTRPC.create();',
+    '```',
+    '',
+    "```TS twoslash title='server.ts'",
+    '// @filename: trpc.ts',
+    '// @include: trpc',
+    '//    ^?',
+    '// @filename: server.ts',
+    '// ---cut---',
+    "import { t } from './trpc';",
+    'const router = t.router({});',
+    '//    ^?',
+    '// @errors: 2322',
+    '```',
+  ].join('\n');
+
+  it("keeps v11's Twoslash blocks, with their includes, for the site to compile", () => {
+    const converted = convert(twoslashPage);
+    expect(converted.problems).toEqual([]);
+    expect(converted.body).toBe(
       [
-        '```twoslash include trpc',
+        '```ts twoslash title="server.ts"',
+        '// @filename: trpc.ts',
         "import { initTRPC } from '@trpc/server';",
         'export const t = initTRPC.create();',
-        '```',
-        '',
-        "```TS twoslash title='server.ts'",
-        '// @filename: trpc.ts',
-        '// @include: trpc',
         '// @filename: server.ts',
         '// ---cut---',
         "import { t } from './trpc';",
@@ -295,8 +312,13 @@ describe('convertPage', () => {
         '//    ^?',
         '// @errors: 2322',
         '```',
+        '',
       ].join('\n'),
     );
+  });
+
+  it("shows an older version's Twoslash block as trpc.io does, as plain code", () => {
+    const converted = convert(twoslashPage, {}, 6);
     expect(converted.problems).toEqual([]);
     expect(converted.body).toBe(
       [
@@ -324,7 +346,7 @@ describe('convertPage', () => {
       ].join('\n'),
     );
     expect(converted.problems).toEqual([]);
-    expect(converted.body).toBe('```ts\nworks();\n```\n');
+    expect(converted.body).toBe('```ts twoslash\nworks();\n```\n');
   });
 
   it('reports an include that no block defines', () => {
@@ -622,7 +644,7 @@ describe('convertPost', () => {
 });
 
 describe('convertSnippet', () => {
-  it("writes plain code, as trpc.io's home page shows it, with no frontmatter", () => {
+  it("keeps the Twoslash block, as v11's pages do, with no frontmatter", () => {
     const converted = convertSnippet(
       'docs/landing-intro/Step3.md',
       docsOf({
@@ -644,7 +666,17 @@ describe('convertSnippet', () => {
     );
     expect(converted.problems).toEqual([]);
     expect(converted.markdown).toBe(
-      '```ts\nconst res = await trpc.greeting.query();\n```\n',
+      [
+        '```ts twoslash',
+        '// @filename: server.ts',
+        'export const appRouter = {};',
+        '// @filename: client.ts',
+        '// ---cut---',
+        'const res = await trpc.greeting.query();',
+        '//    ^?',
+        '```',
+        '',
+      ].join('\n'),
     );
   });
 });

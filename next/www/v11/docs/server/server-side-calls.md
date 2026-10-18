@@ -24,7 +24,8 @@ With the `t.createCallerFactory`-function you can create a server-side caller of
 
 We create the router with a query to list posts and a mutation to add posts, and then we call each method.
 
-```ts
+```ts twoslash
+// @target: esnext
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
@@ -81,13 +82,55 @@ const addedPost = await caller.post.add({
 });
 
 const postList = await caller.post.list();
+//     ^?
 ```
 
 ### Example usage in an integration test
 
 > Taken from [https://github.com/trpc/examples-next-prisma-starter/blob/main/src/server/routers/post.test.ts](https://github.com/trpc/examples-next-prisma-starter/blob/main/src/server/routers/post.test.ts)
 
-```ts
+```ts twoslash
+// @target: esnext
+// @filename: context.ts
+export async function createContextInner(opts: {}) {
+  return { user: undefined };
+}
+
+// @filename: _app.ts
+import { initTRPC, type inferProcedureInput } from '@trpc/server';
+import { z } from 'zod';
+import { createContextInner } from './context';
+
+type Context = Awaited<ReturnType<typeof createContextInner>>;
+
+const t = initTRPC.context<Context>().create();
+
+const posts: { id: string; title: string; text: string }[] = [];
+
+export const appRouter = t.router({
+  post: t.router({
+    add: t.procedure
+      .input(z.object({ title: z.string(), text: z.string() }))
+      .mutation((opts) => {
+        const post = { id: `${Math.random()}`, ...opts.input };
+        posts.push(post);
+        return post;
+      }),
+    byId: t.procedure
+      .input(z.object({ id: z.string() }))
+      .query((opts) => posts.find((p) => p.id === opts.input.id)!),
+  }),
+});
+
+export type AppRouter = typeof appRouter;
+export const createCaller = t.createCallerFactory(appRouter);
+
+// @filename: test.ts
+import { type inferProcedureInput } from '@trpc/server';
+import { createContextInner } from './context';
+import { type AppRouter, createCaller } from './_app';
+
+// ---cut---
 async function testAddAndGetPost() {
   const ctx = await createContextInner({});
   const caller = createCaller(ctx);
@@ -110,7 +153,8 @@ With the `router.createCaller({})` function (first argument is `Context`) we ret
 
 We create the router with an input query, and then we call the asynchronous `greeting` procedure to get the result.
 
-```ts
+```ts twoslash
+// @target: esnext
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
@@ -125,13 +169,15 @@ const router = t.router({
 
 const caller = router.createCaller({});
 const result = await caller.greeting({ name: 'tRPC' });
+//     ^?
 ```
 
 ### Mutation example
 
 We create the router with a mutation, and then we call the asynchronous `post` procedure to get the result.
 
-```ts
+```ts twoslash
+// @target: esnext
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
@@ -149,6 +195,7 @@ const router = t.router({
 
 const caller = router.createCaller({});
 const result = await caller.post.add('Four');
+//     ^?
 ```
 
 ### Context with middleware example
@@ -163,7 +210,8 @@ We create a middleware to check the context before executing the `secret` proced
 
 <br />
 
-```ts
+```ts twoslash
+// @target: esnext
 import { initTRPC, TRPCError } from '@trpc/server';
 
 type Context = {
@@ -209,6 +257,7 @@ const router = t.router({
     },
   });
   const result = await authorizedCaller.secret();
+  //     ^?
 }
 ```
 
@@ -219,7 +268,31 @@ const router = t.router({
 > This example shows how to use the caller in a Next.js API endpoint. tRPC creates API endpoints for you already, so this file is only meant to show
 > how to call a procedure from another, custom endpoint.
 
-```ts
+```ts twoslash
+// @target: esnext
+// @filename: server/routers/_app.ts
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+
+const t = initTRPC.create();
+
+export const appRouter = t.router({
+  post: t.router({
+    byId: t.procedure
+      .input(z.object({ id: z.string() }))
+      .query((opts) => {
+        return { id: opts.input.id, title: 'Example Post' };
+      }),
+  }),
+});
+
+// @filename: pages/api/post.ts
+import { TRPCError } from '@trpc/server';
+import { getHTTPStatusCodeFromError } from '@trpc/server/http';
+import { appRouter } from '../../server/routers/_app';
+import type { NextApiRequest, NextApiResponse } from 'next';
+
+// ---cut---
 type ResponseData = {
   data?: {
     postTitle: string;
@@ -266,7 +339,9 @@ export default async (
 The `createCallerFactory` and the `createCaller` function can take an error handler through the `onError` option. This can be used to throw errors that are not wrapped in a TRPCError, or respond to errors in some other way. Any handler passed to createCallerFactory will be called before the handler passed to createCaller.
 The handler is called with the same arguments as an error formatter would be, except for the shape field:
 
-```ts
+```ts twoslash
+import { TRPCError } from '@trpc/server';
+// ---cut---
 interface OnErrorShape {
   ctx: unknown;
   error: TRPCError;
@@ -276,7 +351,8 @@ interface OnErrorShape {
 }
 ```
 
-```ts
+```ts twoslash
+// @target: esnext
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 

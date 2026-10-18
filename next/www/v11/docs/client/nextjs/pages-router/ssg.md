@@ -16,7 +16,41 @@ This can be done using [server-side helpers](./server-side-helpers.md) to prefet
 
 ## Fetch data in `getStaticProps`
 
-```tsx title="pages/posts/[id].tsx"
+```tsx twoslash title="pages/posts/[id].tsx"
+// @jsx: react-jsx
+// @filename: server/context.ts
+export declare const prisma: {
+  post: {
+    findMany: (opts: { select: { id: true } }) => Promise<{ id: string }[]>;
+  };
+};
+
+// @filename: server/routers/_app.ts
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+import superjson from 'superjson';
+const t = initTRPC.create({ transformer: superjson });
+export const appRouter = t.router({
+  post: t.router({
+    byId: t.procedure
+      .input(z.object({ id: z.string() }))
+      .query(() => ({
+        id: '1',
+        title: 'Example Post',
+        text: 'Hello world',
+        createdAt: new Date(),
+      })),
+  }),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: utils/trpc.tsx
+import { createTRPCReact } from '@trpc/react-query';
+import type { AppRouter } from '../server/routers/_app';
+export const trpc = createTRPCReact<AppRouter>();
+
+// @filename: page.tsx
+// ---cut---
 import { createServerSideHelpers } from '@trpc/react-query/server';
 import { prisma } from './server/context';
 import { appRouter } from './server/routers/_app';
@@ -99,7 +133,22 @@ This might be preferable if you want to minimize the number of requests to your 
 
 This can be done per query:
 
-```tsx
+```tsx twoslash
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+const appRouter = t.router({
+  example: t.procedure.query(() => 'hello'),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: utils/trpc.tsx
+import { createTRPCReact } from '@trpc/react-query';
+import type { AppRouter } from '../server';
+export const trpc = createTRPCReact<AppRouter>();
+
+// @filename: component.tsx
+// ---cut---
 import { trpc } from './utils/trpc';
 
 const data = trpc.example.useQuery(
@@ -112,7 +161,16 @@ const data = trpc.example.useQuery(
 
 Or globally, if every query across your app should behave the same way:
 
-```tsx title="utils/trpc.ts"
+```tsx twoslash title="utils/trpc.ts"
+// @filename: utils/api/trpc/[trpc].ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
+
+// @filename: utils/trpc.ts
+declare function getBaseUrl(): string;
+// ---cut---
 import { httpBatchLink } from '@trpc/client';
 import { createTRPCNext } from '@trpc/next';
 import superjson from 'superjson';
