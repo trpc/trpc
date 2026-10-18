@@ -190,6 +190,32 @@ test('bodies that are not JSON, or are invalid JSON, are rejected', async () => 
   await handler.dispose();
 });
 
+test('a body that fails mid-read is a 400, and empty forms are an empty input', async () => {
+  const onError = vi.fn<() => void>();
+  const handler = make({ onError });
+  const broken = await api(handler, '/echo', {
+    ...post(
+      new ReadableStream({
+        pull: (c) => c.error(new Error('connection reset')),
+      }),
+    ),
+    duplex: 'half',
+  } as RequestInit);
+  expect(broken.status).toBe(400);
+  expect(await broken.json()).toMatchObject({
+    code: 'BAD_REQUEST',
+    message: 'Could not read the request body',
+  });
+  expect(onError).toHaveBeenCalledOnce();
+
+  const form = await api(handler, '/echo', {
+    method: 'POST',
+    headers: { 'content-type': 'multipart/form-data; boundary=x' },
+  });
+  expect(await form.json()).toEqual({});
+  await handler.dispose();
+});
+
 test('a route with path params merges them into an object body, and refuses others', async () => {
   const handler = make();
   const noBody = await api(handler, '/things/1', { method: 'POST' });

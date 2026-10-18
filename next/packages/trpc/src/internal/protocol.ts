@@ -267,40 +267,6 @@ export const isMultipartContentType = (value: string | null): boolean =>
   hasMediaType(value, 'multipart/form-data');
 
 /**
- * Reads a form body of `contentType`, failing with `tooLarge()` once it
- * passes `maxBytes`, as a declared length can't be trusted. Bytes past the
- * limit are drained and dropped: cancelling the body makes some servers
- * (Node) drop the connection before the 413 is sent.
- */
-export async function readFormData(
-  request: Request,
-  contentType: string,
-  maxBytes: number,
-  tooLarge: () => Error,
-): Promise<FormData> {
-  if (!request.body) return new FormData();
-  let size = 0;
-  const body = request.body.pipeThrough(
-    new TransformStream<Uint8Array, Uint8Array>({
-      transform(chunk, controller) {
-        size += chunk.byteLength;
-        if (size <= maxBytes) controller.enqueue(chunk);
-      },
-    }),
-  );
-  const form = await new Response(body, {
-    headers: { 'content-type': contentType },
-  })
-    .formData()
-    .catch((cause: unknown) => {
-      if (size > maxBytes) throw tooLarge();
-      throw cause;
-    });
-  if (size > maxBytes) throw tooLarge();
-  return form;
-}
-
-/**
  * Decodes a byte stream as UTF-8 text. `TextDecoder` with `stream: true`
  * rather than `TextDecoderStream`, which React Native's Hermes lacks.
  */

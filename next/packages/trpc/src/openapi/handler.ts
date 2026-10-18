@@ -1,4 +1,12 @@
-import { Cause, Context, Effect, Exit, Stream, type Layer } from 'effect';
+import {
+  Cause,
+  Context,
+  Effect,
+  Exit,
+  Fiber,
+  Stream,
+  type Layer,
+} from 'effect';
 import {
   HttpEffect,
   HttpServerRequest,
@@ -24,12 +32,12 @@ import {
   contentDisposition,
   hasMediaType,
   isJsonContentType,
-  readFormData,
 } from '../internal/protocol.ts';
 import type { MaybePromise, ProcedureType } from '../internal/types.ts';
 import {
   createHandlerCore,
   CurrentPlatform,
+  readBytes,
   type ContextOption,
   type CreateContextOpts,
   type LayerOption,
@@ -181,7 +189,26 @@ interface Entry {
   readonly input: JsonSchema | undefined;
 }
 
+/** A request as `app` received it. */
+interface Incoming {
+  readonly http: HttpServerRequest.HttpServerRequest;
+  readonly request: Request;
+  readonly url: URL;
+  readonly platform: unknown;
+}
+
+interface Body {
+  readonly value: unknown;
+  /** From a form, so every value is a string to coerce. */
+  readonly fromStrings: boolean;
+}
+const noBody: Body = { value: undefined, fromStrings: false };
+
 const encoder = new TextEncoder();
+const decoder = new TextDecoder();
+
+const toError = (cause: unknown): AnyTrpcError =>
+  isTrpcError(cause) ? cause : unexpectedError(cause);
 
 const json = (status: number, body: unknown, headers?: Headers) => {
   const h = new Headers(headers);
@@ -241,13 +268,6 @@ export function experimental_createOpenApiHandler<
       layer?: Layer.Layer<any, any, never>;
     },
   );
-  const platforms = new WeakMap<Request, unknown>();
-  const httpRequests = new WeakMap<
-    Request,
-    HttpServerRequest.HttpServerRequest
-  >();
-  /** Set by `app` before it serves the request. */
-  const httpOf = (request: Request) => httpRequests.get(request)!;
   const prefix = normalizePrefix(opts.prefix);
   const maxBodySize = opts.maxBodySize ?? 1_048_576;
   const ssePingMs = opts.sse?.pingMs ?? 15_000;
@@ -312,7 +332,6 @@ export function experimental_createOpenApiHandler<
   };
   let entries = build();
 
-  const selected = new WeakMap<Request, OpenApiCall>();
   /** Input JSON Schemas by schema, so a procedure built per request reuses one. */
   const inputSchemas = new WeakMap<object, JsonSchema | undefined>();
   const entryFor = (call: OpenApiCall): Entry => {
@@ -333,28 +352,51 @@ export function experimental_createOpenApiHandler<
     );
   };
 
+  /** Loads `lazies`, then rebuilds the routes with what they added. */
+  const load = (lazies: FlatRoutes['lazies']) =>
+    Effect.forEach(
+      lazies,
+      (l) =>
+        Effect.tryPromise({
+          try: () => l.lazy['~lazy'].load(),
+          catch: toError,
+        }),
+      { concurrency: 'unbounded', discard: true },
+    ).pipe(
+      Effect.andThen(
+        Effect.try({
+          try: () => {
+            entries = build();
+          },
+          catch: toError,
+        }),
+      ),
+    );
+
   /** Loads lazy subtrees without a prefix, until none are left. */
-  const loadUnprefixed = async (): Promise<void> => {
-    const unprefixed = pending.filter((l) => !l.scope.prefix);
-    if (unprefixed.length === 0) return;
-    await Promise.all(unprefixed.map((l) => l.lazy['~lazy'].load()));
-    entries = build();
-    await loadUnprefixed();
-  };
-  let startup: Promise<void> | undefined = loadUnprefixed();
-  startup.catch(() => {});
+  const loadUnprefixed: Effect.Effect<void, AnyTrpcError> = Effect.suspend(
+    () => {
+      const unprefixed = pending.filter((l) => !l.scope.prefix);
+      if (unprefixed.length === 0) return Effect.void;
+      return Effect.andThen(load(unprefixed), loadUnprefixed);
+    },
+  );
+  /** Started with the handler; the first request waits for it. */
+  let startup: Fiber.Fiber<void, AnyTrpcError> | undefined =
+    Effect.runFork(loadUnprefixed);
 
   /** Loads the prefixed lazy subtrees `pathname` falls under. */
-  const loadFor = async (pathname: string): Promise<void> => {
-    const hits = pending.filter((l) =>
-      `${pathname}/`.startsWith(`${prefix}${l.scope.prefix}/`),
-    );
-    if (hits.length === 0) return;
-    await Promise.all(hits.map((l) => l.lazy['~lazy'].load()));
-    entries = build();
-    await loadUnprefixed();
-    await loadFor(pathname);
-  };
+  const loadFor = (pathname: string): Effect.Effect<void, AnyTrpcError> =>
+    Effect.suspend(() => {
+      const hits = pending.filter((l) =>
+        `${pathname}/`.startsWith(`${prefix}${l.scope.prefix}/`),
+      );
+      if (hits.length === 0) return Effect.void;
+      return load(hits).pipe(
+        Effect.andThen(loadUnprefixed),
+        Effect.andThen(loadFor(pathname)),
+      );
+    });
 
   const fail = (
     err: AnyTrpcError,
@@ -367,79 +409,81 @@ export function experimental_createOpenApiHandler<
       headers,
     );
 
-  async function readBody(request: Request): Promise<{
-    value: unknown;
-    fromStrings: boolean;
-  }> {
-    const length = Number(request.headers.get('content-length') ?? 0);
-    if (length > maxBodySize) {
-      throw new TrpcError({
-        code: 'PAYLOAD_TOO_LARGE',
-        message: 'Request body is too large',
-      });
-    }
-    const type = request.headers.get('content-type');
-    if (isForm(type)) {
-      const form = await readFormData(
-        request,
-        type,
-        maxBodySize,
-        () =>
+  const readBody = (
+    http: HttpServerRequest.HttpServerRequest,
+  ): Effect.Effect<Body, AnyTrpcError> =>
+    Effect.gen(function* () {
+      const bytes = yield* readBytes(http, maxBodySize);
+      const type = http.headers['content-type'] ?? null;
+      if (isForm(type)) {
+        const form =
+          bytes.byteLength === 0
+            ? new FormData()
+            : yield* Effect.tryPromise({
+                try: () =>
+                  new Response(bytes as BodyInit, {
+                    headers: { 'content-type': type },
+                  }).formData(),
+                catch: (cause) =>
+                  new TrpcError({
+                    code: 'PARSE_ERROR',
+                    message: 'Invalid form body',
+                    cause,
+                  }),
+              });
+        return {
+          value: experimental_parseBracketNotation(
+            form as unknown as Iterable<[string, string]>,
+          ),
+          fromStrings: true,
+        };
+      }
+      const text = decoder.decode(bytes);
+      if (text === '') return noBody;
+      if (!isJsonContentType(type)) {
+        return yield* Effect.fail(
           new TrpcError({
-            code: 'PAYLOAD_TOO_LARGE',
-            message: 'Request body is too large',
+            code: 'UNSUPPORTED_MEDIA_TYPE',
+            message:
+              'Bodies must be application/json, application/x-www-form-urlencoded or multipart/form-data',
           }),
-      ).catch((cause: unknown) => {
-        if (cause instanceof TrpcError) throw cause;
-        throw new TrpcError({
-          code: 'PARSE_ERROR',
-          message: 'Invalid form body',
-          cause,
-        });
+        );
+      }
+      return yield* Effect.try({
+        try: () => ({ value: JSON.parse(text) as unknown, fromStrings: false }),
+        catch: (cause) =>
+          new TrpcError({
+            code: 'PARSE_ERROR',
+            message: 'Invalid JSON',
+            cause,
+          }),
       });
-      return {
-        value: experimental_parseBracketNotation(
-          form as unknown as Iterable<[string, string]>,
-        ),
-        fromStrings: true,
-      };
-    }
-    const text = await request.text();
-    if (encoder.encode(text).byteLength > maxBodySize) {
-      throw new TrpcError({
-        code: 'PAYLOAD_TOO_LARGE',
-        message: 'Request body is too large',
-      });
-    }
-    if (text === '') return { value: undefined, fromStrings: false };
-    if (!isJsonContentType(type)) {
-      throw new TrpcError({
-        code: 'UNSUPPORTED_MEDIA_TYPE',
-        message:
-          'Bodies must be application/json, application/x-www-form-urlencoded or multipart/form-data',
-      });
-    }
-    try {
-      return { value: JSON.parse(text), fromStrings: false };
-    } catch (cause) {
-      throw new TrpcError({
-        code: 'PARSE_ERROR',
-        message: 'Invalid JSON',
-        cause,
-      });
-    }
-  }
+    });
 
-  async function readInput(
+  const readInput = (
+    http: HttpServerRequest.HttpServerRequest,
     request: Request,
     url: URL,
     entry: Entry,
     params: Record<string, string>,
-  ): Promise<unknown> {
+  ): Effect.Effect<unknown, AnyTrpcError> =>
+    Effect.flatMap(
+      usesQuery(entry.route.method) ? Effect.succeed(noBody) : readBody(http),
+      (body) =>
+        Effect.try({
+          try: () => inputOf(request, url, entry, params, body),
+          catch: toError,
+        }),
+    );
+
+  function inputOf(
+    request: Request,
+    url: URL,
+    entry: Entry,
+    params: Record<string, string>,
+    body: Body,
+  ): unknown {
     const query = experimental_parseBracketNotation(url.searchParams);
-    const body = usesQuery(entry.route.method)
-      ? { value: undefined, fromStrings: false }
-      : await readBody(request);
     const schema = entry.input;
 
     if (entry.route.inputStructure === 'detailed') {
@@ -508,7 +552,7 @@ export function experimental_createOpenApiHandler<
   }
 
   function events(
-    request: Request,
+    http: HttpServerRequest.HttpServerRequest,
     entry: Entry,
     stream: Stream.Stream<unknown, AnyTrpcError>,
     controller: AbortController,
@@ -525,7 +569,7 @@ export function experimental_createOpenApiHandler<
       Stream.catchCause((cause) => {
         if (Cause.hasInterruptsOnly(cause)) return Stream.empty;
         const err = normalizeCause(cause);
-        base.report(err, httpOf(request), entry.path, 'subscription');
+        base.report(err, http, entry.path, 'subscription');
         return Stream.make(
           `event: error\ndata: ${JSON.stringify(toOpenApiError(base.publicError(err)))}\n\n`,
         );
@@ -562,139 +606,158 @@ export function experimental_createOpenApiHandler<
     return new Response(body, { status: 200, headers });
   }
 
-  async function serve(
-    request: Request,
-    url: URL,
+  const serve = (
+    incoming: Incoming,
     entry: Entry,
     params: Record<string, string>,
-  ): Promise<Response> {
-    const type = entry.type;
-    const procedure = await entry.resolve();
-    if (!procedure) {
-      throw new TrpcError({
-        code: 'NOT_FOUND',
-        message: `The contract's "${entry.path}" is not in the router`,
+  ): Effect.Effect<Response, AnyTrpcError> =>
+    Effect.gen(function* () {
+      const { http, request } = incoming;
+      const type = entry.type;
+      const procedure = yield* Effect.tryPromise({
+        try: async () => await entry.resolve(),
+        catch: toError,
       });
-    }
-    const input = await readInput(request, url, entry, params);
-    const controller = new AbortController();
-    request.signal.addEventListener('abort', () => controller.abort(), {
-      once: true,
-    });
-    const ctx = await base.makeContext({
-      request: httpOf(request),
-      platform: platforms.get(request),
-      calls: [{ path: entry.path, type }],
-      signal: controller.signal,
-    });
-    const response = createResponseHandle();
-    const exit = await base.run({
-      request: httpOf(request),
-      procedure,
-      path: entry.path,
-      ctx,
-      input,
-      signal: controller.signal,
-      response,
-      lastEventId: request.headers.get('last-event-id') ?? undefined,
-      allowResponse: type !== 'subscription',
-    });
-    if (Exit.isFailure(exit)) {
-      const err = normalizeCause(exit.cause);
-      base.report(err, httpOf(request), entry.path, type);
-      return fail(err, response.headers, procedure);
-    }
-    if (type === 'subscription') {
-      return events(
+      if (!procedure) {
+        return yield* Effect.fail(
+          new TrpcError({
+            code: 'NOT_FOUND',
+            message: `The contract's "${entry.path}" is not in the router`,
+          }),
+        );
+      }
+      const input = yield* readInput(
+        http,
         request,
+        incoming.url,
         entry,
-        exit.value as Stream.Stream<unknown, AnyTrpcError>,
-        controller,
+        params,
+      );
+      // Outlives this fiber: a subscription's events are read after it ends.
+      const controller = new AbortController();
+      request.signal.addEventListener('abort', () => controller.abort(), {
+        once: true,
+      });
+      const ctx = yield* base.makeContextEffect({
+        request: http,
+        platform: incoming.platform,
+        calls: [{ path: entry.path, type }],
+        signal: controller.signal,
+      });
+      const response = createResponseHandle();
+      const exit = yield* base.runEffect({
+        request: http,
+        procedure,
+        path: entry.path,
+        ctx,
+        input,
+        signal: controller.signal,
+        response,
+        lastEventId: request.headers.get('last-event-id') ?? undefined,
+        allowResponse: type !== 'subscription',
+      });
+      if (Exit.isFailure(exit)) {
+        const err = normalizeCause(exit.cause);
+        base.report(err, http, entry.path, type);
+        return fail(err, response.headers, procedure);
+      }
+      if (type === 'subscription') {
+        return events(
+          http,
+          entry,
+          exit.value as Stream.Stream<unknown, AnyTrpcError>,
+          controller,
+          response.headers,
+        );
+      }
+      if (HttpServerResponse.isHttpServerResponse(exit.value)) {
+        const web = HttpServerResponse.toWeb(exit.value);
+        for (const [key, value] of response.headers) {
+          if (key === 'set-cookie') web.headers.append(key, value);
+          else if (!web.headers.has(key)) web.headers.set(key, value);
+        }
+        return web;
+      }
+      return output(
+        entry,
+        exit.value,
+        response.status ?? entry.route.successStatus,
         response.headers,
       );
-    }
-    if (HttpServerResponse.isHttpServerResponse(exit.value)) {
-      const web = HttpServerResponse.toWeb(exit.value);
-      for (const [key, value] of response.headers) {
-        if (key === 'set-cookie') web.headers.append(key, value);
-        else if (!web.headers.has(key)) web.headers.set(key, value);
-      }
-      return web;
-    }
-    return output(
-      entry,
-      exit.value,
-      response.status ?? entry.route.successStatus,
-      response.headers,
-    );
-  }
+    });
 
-  async function serveWeb(request: Request): Promise<Response> {
-    const url = new URL(request.url);
-    const call = selected.get(request);
-    if (call) {
-      try {
-        return await serve(request, url, entryFor(call), { ...call.params });
-      } catch (cause) {
-        const err = isTrpcError(cause) ? cause : unexpectedError(cause);
-        base.report(
-          err,
-          httpOf(request),
-          call.path,
-          call.procedure['~trpc'].type,
-        );
-        return fail(err);
-      }
-    }
-    try {
+  /** Reports what `effect` failed or died with and sends it as the response. */
+  const recover = (
+    effect: Effect.Effect<Response, AnyTrpcError>,
+    http: HttpServerRequest.HttpServerRequest,
+    path?: string,
+    type?: ProcedureType,
+  ): Effect.Effect<Response, AnyTrpcError> =>
+    Effect.catchCause(effect, (cause) => {
+      if (Cause.hasInterruptsOnly(cause)) return Effect.failCause(cause);
+      const err = toError(Cause.squash(cause));
+      base.report(err, http, path, type);
+      return Effect.succeed(fail(err));
+    });
+
+  const route = (incoming: Incoming): Effect.Effect<Response, AnyTrpcError> =>
+    Effect.gen(function* () {
+      const { url } = incoming;
+      const method = incoming.request.method;
       if (startup) {
-        await startup;
+        yield* Fiber.join(startup);
         startup = undefined;
       }
-      await loadFor(url.pathname);
+      yield* loadFor(url.pathname);
       let allowed = false;
       for (const entry of entries) {
         const params = entry.match(url.pathname);
         if (!params) continue;
-        if (entry.route.method !== request.method) {
+        if (entry.route.method !== method) {
           allowed = true;
           continue;
         }
-        try {
-          return await serve(request, url, entry, params);
-        } catch (cause) {
-          const err = isTrpcError(cause) ? cause : unexpectedError(cause);
-          base.report(err, httpOf(request), entry.path, entry.type);
-          return fail(err);
-        }
+        return yield* recover(
+          serve(incoming, entry, params),
+          incoming.http,
+          entry.path,
+          entry.type,
+        );
       }
-      throw new TrpcError(
-        allowed
-          ? {
-              code: 'METHOD_NOT_SUPPORTED',
-              message: `${request.method} is not supported for ${url.pathname}`,
-            }
-          : { code: 'NOT_FOUND', message: `Not found: ${url.pathname}` },
+      return yield* Effect.fail(
+        new TrpcError(
+          allowed
+            ? {
+                code: 'METHOD_NOT_SUPPORTED',
+                message: `${method} is not supported for ${url.pathname}`,
+              }
+            : { code: 'NOT_FOUND', message: `Not found: ${url.pathname}` },
+        ),
       );
-    } catch (cause) {
-      const err = isTrpcError(cause) ? cause : unexpectedError(cause);
-      base.report(err, httpOf(request));
-      return fail(err);
-    }
-  }
+    });
 
   const app = Effect.gen(function* () {
     const http = yield* HttpServerRequest.HttpServerRequest;
-    const platform = yield* CurrentPlatform;
     // `webHandler` is the only way in, so the source is a web Request.
     const request = http.source as Request;
-    httpRequests.set(request, http);
-    if (platform !== undefined) platforms.set(request, platform);
+    const incoming: Incoming = {
+      http,
+      request,
+      url: new URL(request.url),
+      platform: yield* CurrentPlatform,
+    };
     const call = yield* SelectedCall;
-    if (call) selected.set(request, call);
-    return HttpServerResponse.fromWeb(
-      yield* Effect.promise(() => serveWeb(request)),
-    );
+    const response = yield* call
+      ? recover(
+          Effect.suspend(() =>
+            serve(incoming, entryFor(call), { ...call.params }),
+          ),
+          http,
+          call.path,
+          call.procedure['~trpc'].type,
+        )
+      : recover(route(incoming), http);
+    return HttpServerResponse.fromWeb(response);
   });
   const served = (opts.middleware ?? []).reduceRight<
     Effect.Effect<HttpServerResponse.HttpServerResponse, any, any>
