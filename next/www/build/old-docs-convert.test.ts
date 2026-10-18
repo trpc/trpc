@@ -1,22 +1,26 @@
 import { describe, expect, it } from '@effect/vitest';
 
 import {
+  type CopiedDocs,
+  type CopiedPage,
   convertPage,
   dropMissingAnchors,
+  externalUrl,
   jsxToHtml,
+  redirected,
+  type Release,
   relativeLink,
-  resolveV11Link,
+  resolveLink,
+  searchParamsUrl,
   sidebarSections,
   styleOf,
-  type V11Docs,
-  type V11Page,
-} from './v11-convert.ts';
+} from './old-docs-convert.ts';
 
 const page = (
   slug: string,
   file: string,
-  fields: Partial<V11Page> = {},
-): V11Page => ({
+  fields: Partial<CopiedPage> = {},
+): CopiedPage => ({
   description: `About ${slug}`,
   file,
   label: undefined,
@@ -25,6 +29,7 @@ const page = (
   section: 'Backend Usage',
   slug,
   title: slug,
+  version: 'v11',
   ...fields,
 });
 
@@ -33,20 +38,53 @@ const pages = [
   page('server/procedures', 'docs/server/procedures.md'),
   page('server/routers', 'docs/server/routers.md'),
   page('client/links', 'docs/client/links/overview.md'),
+  page('community/awesome-trpc', 'docs/community/awesome-trpc.md'),
+  page('introduction', 'versioned_docs/version-10.x/main/introduction.mdx', {
+    version: 'v10',
+  }),
+  page('server/routers', 'versioned_docs/version-10.x/server/routers.md', {
+    version: 'v10',
+  }),
+  page('example-apps', 'versioned_docs/version-10.x/main/example-apps.mdx', {
+    version: 'v10',
+  }),
+  page('nextjs', 'versioned_docs/version-9.x/nextjs/introduction.md', {
+    version: 'v9',
+  }),
 ];
 
-/** Converts `body` as the page `server/procedures`, among `files`. */
-function convert(body: string, files: Record<string, string> = {}) {
-  const docs: V11Docs = {
-    archived: new Map([
-      ['versioned_docs/version-9.x/nextjs/introduction.md', '/docs/v9/nextjs'],
-    ]),
-    files: new Map(
-      Object.entries({ ...files, 'docs/server/procedures.md': body }),
-    ),
-    pages,
-  };
-  const converted = convertPage(pages[1] ?? page('', ''), docs);
+const redirects = [
+  { destination: '/docs/community/awesome-trpc', source: '/docs/awesome-trpc' },
+  { destination: '/docs/:path*', source: '/docs/v11/:path*' },
+  { destination: 'https://discord.gg/trpc', source: '/discord' },
+];
+
+const docsOf = (files: Record<string, string>): CopiedDocs => ({
+  files: new Map(Object.entries(files)),
+  pages,
+  redirects,
+  releases: new Map([
+    [
+      'v10',
+      {
+        paths: new Set([
+          'examples/minimal',
+          'packages/client/src/links/wsLink.ts',
+        ]),
+        tag: 'v10.45.4',
+      },
+    ],
+  ]),
+  unlisted: new Map([['docs/further/old.md', '/docs/further/old']]),
+});
+
+/** Converts `body` as the page at `index` in `pages`, among `files`. */
+function convert(body: string, files: Record<string, string> = {}, index = 1) {
+  const target = pages[index] ?? page('', '');
+  const converted = convertPage(
+    target,
+    docsOf({ ...files, [target.file]: body }),
+  );
   return {
     ...converted,
     body: converted.markdown.replace(/^---\n[\s\S]*?\n---\n\n/, ''),
@@ -55,11 +93,6 @@ function convert(body: string, files: Record<string, string> = {}) {
 
 describe('convertPage', () => {
   it('writes the frontmatter, with the label only where it differs', () => {
-    const docs: V11Docs = {
-      archived: new Map(),
-      files: new Map([['docs/a.md', '---\nid: a\n---\n\nHello.\n']]),
-      pages: [],
-    };
     expect(
       convertPage(
         page('a', 'docs/a.md', {
@@ -68,7 +101,7 @@ describe('convertPage', () => {
           section: 'tRPC',
           title: 'A "quoted" title',
         }),
-        docs,
+        docsOf({ 'docs/a.md': '---\nid: a\n---\n\nHello.\n' }),
       ).markdown,
     ).toBe(
       [
@@ -117,6 +150,35 @@ describe('convertPage', () => {
         '',
         '> [!TIP] AI Agents',
         '> Install the skills.',
+        '',
+      ].join('\n'),
+    );
+  });
+
+  it('closes an admonition reopened by mistake, which Docusaurus nests the page in', () => {
+    const converted = convert(
+      [
+        ':::tip',
+        'Careful!',
+        ':::tip',
+        '',
+        '## Next',
+        '',
+        ':::note',
+        'Ok.',
+        ':::',
+      ].join('\n'),
+    );
+    expect(converted.problems).toEqual([]);
+    expect(converted.body).toBe(
+      [
+        '> [!TIP]',
+        '> Careful!',
+        '',
+        '## Next',
+        '',
+        '> [!NOTE]',
+        '> Ok.',
         '',
       ].join('\n'),
     );
@@ -196,7 +258,7 @@ describe('convertPage', () => {
         'export const t = initTRPC.create();',
         '```',
         '',
-        "```ts twoslash title='server.ts'",
+        "```TS twoslash title='server.ts'",
         '// @filename: trpc.ts',
         '// @include: trpc',
         '// @filename: server.ts',
@@ -245,28 +307,75 @@ describe('convertPage', () => {
     ]);
   });
 
-  it('points links at the copied pages, or else at trpc.io', () => {
+  it('points links at the copied pages of any version, or else at trpc.io', () => {
     const converted = convert(
       [
         '[Routers](./routers.md#merging), [links](/docs/client/links),',
         '[intro](/docs), [v9](../../versioned_docs/version-9.x/nextjs/introduction.md#hooks),',
+        '[v10](https://trpc.io/docs/v10/server/routers), [awesome](/docs/awesome-trpc#list),',
+        '[old](../further/old.md), [chat](https://trpc.io/discord),',
         '[blog](/blog/announcing-trpc-v11) and [npm](https://npmjs.com).',
         '<a href="../client/links">Links</a>',
         '![Diagram](/img/links-diagram.svg)',
+        '<img src="/v11/img/split-link-diagram.svg" />',
       ].join('\n'),
     );
     expect(converted.problems).toEqual([]);
     expect(converted.body).toBe(
       [
         '[Routers](./routers.md#merging), [links](../client/links.md),',
-        '[intro](../introduction.md), [v9](https://trpc.io/docs/v9/nextjs#hooks),',
+        '[intro](../introduction.md), [v9](/v9/docs/nextjs#hooks),',
+        '[v10](/v10/docs/server/routers), [awesome](../community/awesome-trpc.md#list),',
+        '[old](https://trpc.io/docs/further/old), [chat](https://trpc.io/discord),',
         '[blog](https://trpc.io/blog/announcing-trpc-v11) and [npm](https://npmjs.com).',
         '<a href="/v11/docs/client/links">Links</a>',
         '![Diagram](/v11/img/links-diagram.svg)',
+        '<img src="/v11/img/split-link-diagram.svg" />',
         '',
       ].join('\n'),
     );
     expect(converted.images).toEqual(['static/img/links-diagram.svg']);
+  });
+
+  it("points an older version's `/docs/` links at its own pages, where it has them", () => {
+    const converted = convert(
+      [
+        '[routers](/docs/server/routers), [procedures](/docs/server/procedures),',
+        '[v11 routers](/docs/v11/server/routers), [apps](/main/example-apps.mdx),',
+        '![Diagram](/img/links-diagram.svg)',
+      ].join('\n'),
+      {},
+      6,
+    );
+    expect(converted.problems).toEqual([]);
+    expect(converted.body).toBe(
+      [
+        '[routers](./routers.md), [procedures](/v11/docs/server/procedures),',
+        '[v11 routers](/v11/docs/server/routers), [apps](../example-apps.md),',
+        '![Diagram](/v10/img/links-diagram.svg)',
+        '',
+      ].join('\n'),
+    );
+  });
+
+  it("pins an older version's links to the repo at its release, and links what moved", () => {
+    const converted = convert(
+      [
+        '[ws](https://github.com/trpc/trpc/blob/main/packages/client/src/links/wsLink.ts),',
+        '[gone](https://github.com/trpc/trpc/blob/main/packages/gone.ts),',
+        '| Beam | https://github.com/planetscale/beam |',
+      ].join('\n'),
+      {},
+      6,
+    );
+    expect(converted.body).toBe(
+      [
+        '[ws](https://github.com/trpc/trpc/blob/v10.45.4/packages/client/src/links/wsLink.ts),',
+        '[gone](https://github.com/trpc/trpc/blob/main/packages/gone.ts),',
+        '| Beam | https://web.archive.org/web/20231212214304/https://github.com/planetscale/beam |',
+        '',
+      ].join('\n'),
+    );
   });
 
   it('reports a link to a file that is not a page', () => {
@@ -322,6 +431,39 @@ describe('convertPage', () => {
     );
   });
 
+  it('turns the StackBlitz embed into an iframe', () => {
+    const converted = convert(
+      [
+        "import { Iframe } from '@site/src/components/Iframe';",
+        "import { searchParams } from '@site/src/utils/searchParams';",
+        "import clsx from 'clsx';",
+        '',
+        '<div',
+        '  className={clsx(',
+        "    'relative h-[800px] w-full',",
+        '  )}',
+        '>',
+        '  <Iframe',
+        '    src={',
+        '      `https://stackblitz.com/github/trpc/trpc/tree/main/examples/minimal?` +',
+        '      searchParams({',
+        "        embed: '1',",
+        "        file: ['client/index.ts', 'server/index.ts'],",
+        '      })',
+        '    }',
+        '    frameBorder="0"',
+        '  />',
+        '</div>',
+      ].join('\n'),
+      {},
+      6,
+    );
+    expect(converted.problems).toEqual([]);
+    expect(converted.body).toBe(
+      '<iframe src="https://stackblitz.com/github/trpc/trpc/tree/v10.45.4/examples/minimal?embed=1&file=client%2Findex.ts&file=server%2Findex.ts" title="StackBlitz" style="width: 100%; height: 800px; border: 0; border-radius: 0.75rem" loading="lazy"></iframe>\n',
+    );
+  });
+
   it('reports what it has no conversion for', () => {
     const converted = convert(
       [
@@ -346,34 +488,133 @@ describe('convertPage', () => {
   });
 });
 
-describe('resolveV11Link', () => {
-  const context: Parameters<typeof resolveV11Link>[1] = {
+describe('resolveLink', () => {
+  const context = {
+    docs: docsOf({}),
     file: 'docs/server/procedures.md',
-    pages,
-    slug: 'server/procedures',
-  };
+    page: { slug: 'server/procedures', version: 'v11' },
+  } as const;
 
   it('resolves file paths from the file, and URLs from the page', () => {
-    expect(resolveV11Link('../client/links/overview.md', context)).toEqual({
+    expect(resolveLink('../client/links/overview.md', context)).toEqual({
       hash: '',
       kind: 'page',
       slug: 'client/links',
+      version: 'v11',
     });
-    expect(resolveV11Link('routers#lazy', context)).toEqual({
+    expect(resolveLink('routers#lazy', context)).toEqual({
       hash: 'lazy',
       kind: 'page',
       slug: 'server/routers',
+      version: 'v11',
     });
-    expect(resolveV11Link('https://trpc.io/docs', context)).toEqual({
+    expect(resolveLink('https://trpc.io/docs', context)).toEqual({
       hash: '',
       kind: 'page',
       slug: 'introduction',
+      version: 'v11',
+    });
+    expect(resolveLink('https://trpc.io/docs/v10', context)).toEqual({
+      hash: '',
+      kind: 'page',
+      slug: 'introduction',
+      version: 'v10',
     });
   });
 
-  it('leaves anchors and other sites alone', () => {
-    expect(resolveV11Link('#options', context)).toBeUndefined();
-    expect(resolveV11Link('https://github.com/trpc', context)).toBeUndefined();
+  it('follows trpc.io’s redirects, and leaves the site where they do', () => {
+    expect(resolveLink('/docs/v11/server/routers', context)).toEqual({
+      hash: '',
+      kind: 'page',
+      slug: 'server/routers',
+      version: 'v11',
+    });
+    expect(resolveLink('/discord', context)).toEqual({
+      kind: 'url',
+      url: 'https://trpc.io/discord',
+    });
+  });
+
+  it('leaves anchors, other sites and the copied images alone', () => {
+    expect(resolveLink('#options', context)).toBeUndefined();
+    expect(resolveLink('https://github.com/trpc', context)).toBeUndefined();
+    expect(resolveLink('/v9/img/logo.svg', context)).toBeUndefined();
+  });
+});
+
+describe('redirected', () => {
+  it('follows redirects, with their params', () => {
+    expect(
+      redirected('/docs/reactjs/useQuery/', [
+        {
+          destination: '/docs/client/react/:path',
+          source: '/docs/reactjs/:path',
+        },
+        { destination: '/docs/v11/:path*', source: '/docs/client/:path*' },
+        { destination: '/docs/:path*', source: '/docs/v11/:path*' },
+      ]),
+    ).toBe('/docs/react/useQuery');
+    expect(redirected('/docs/x', [])).toBe('/docs/x');
+    expect(
+      redirected('/sponsor', [
+        { destination: 'https://github.com/sponsors/KATT', source: '/sponsor' },
+      ]),
+    ).toBeUndefined();
+  });
+});
+
+describe('externalUrl', () => {
+  const release: Release = {
+    paths: new Set(['examples/minimal', 'packages/server/src/index.ts']),
+    tag: 'v9.27.4',
+  };
+
+  it("pins links to the repo's main to the release, where it has the file", () => {
+    expect(
+      externalUrl(
+        'https://github.com/trpc/trpc/tree/main/examples/minimal/',
+        release,
+      ),
+    ).toBe('https://github.com/trpc/trpc/tree/v9.27.4/examples/minimal/');
+    expect(
+      externalUrl(
+        'https://codesandbox.io/s/github/trpc/trpc/tree/main/examples/minimal?file=/a.ts',
+        release,
+      ),
+    ).toBe(
+      'https://codesandbox.io/s/github/trpc/trpc/tree/v9.27.4/examples/minimal?file=/a.ts',
+    );
+    expect(
+      externalUrl('https://github.com/trpc/trpc/blob/main/README.md', release),
+    ).toBe('https://github.com/trpc/trpc/blob/main/README.md');
+    expect(
+      externalUrl(
+        'https://github.com/trpc/trpc/tree/main/examples/minimal',
+        undefined,
+      ),
+    ).toBe('https://github.com/trpc/trpc/tree/main/examples/minimal');
+  });
+
+  it('links what moved where it is now', () => {
+    expect(externalUrl('http://hilde.gg', undefined)).toBe(
+      'https://github.com/nehalist/hilde',
+    );
+  });
+});
+
+describe('searchParamsUrl', () => {
+  it('builds the URL as `searchParams` does, or gives up on anything else', () => {
+    expect(
+      searchParamsUrl(
+        "`https://a.io/?` + searchParams({ a: '1', // a comment\n b: ['x/y', 'z'] })",
+      ),
+    ).toBe('https://a.io/?a=1&b=x%2Fy&b=z');
+    expect(searchParamsUrl("`https://a.io/?` + other({ a: '1' })")).toBe(
+      undefined,
+    );
+    expect(searchParamsUrl('`https://a.io/?` + searchParams({ a: b })')).toBe(
+      undefined,
+    );
   });
 });
 
@@ -405,10 +646,11 @@ describe('jsxToHtml', () => {
 });
 
 describe('dropMissingAnchors', () => {
-  it("drops the hash of links to headings that don't exist", () => {
+  it("drops the hash of links to headings that don't exist, in any version", () => {
     const anchors = new Map([
-      ['server/routers', new Set(['merging'])],
-      ['client/links', new Set<string>()],
+      ['v11:server/routers', new Set(['merging'])],
+      ['v11:client/links', new Set<string>()],
+      ['v9:nextjs', new Set(['hooks'])],
     ]);
     const result = dropMissingAnchors(
       [
@@ -418,8 +660,10 @@ describe('dropMissingAnchors', () => {
         '[d](../client/links.md#gone)',
         '```',
         '[e](../client/links.md#gone)',
+        '[f](/v9/docs/nextjs#hooks) [g](/v9/docs/nextjs#gone)',
+        '<a href="/v11/docs/client/links#gone">h</a>',
       ].join('\n'),
-      'server/procedures',
+      { slug: 'server/procedures', version: 'v11' },
       anchors,
     );
     expect(result.markdown).toBe(
@@ -430,11 +674,15 @@ describe('dropMissingAnchors', () => {
         '[d](../client/links.md#gone)',
         '```',
         '[e](../client/links.md)',
+        '[f](/v9/docs/nextjs#hooks) [g](/v9/docs/nextjs)',
+        '<a href="/v11/docs/client/links">h</a>',
       ].join('\n'),
     );
     expect(result.dropped).toEqual([
-      'server/procedures: ./routers.md#gone',
-      'server/procedures: ../client/links.md#gone',
+      'v11 server/procedures: ./routers.md#gone',
+      'v11 server/procedures: ../client/links.md#gone',
+      'v11 server/procedures: /v9/docs/nextjs#gone',
+      'v11 server/procedures: /v11/docs/client/links#gone',
     ]);
   });
 });
@@ -533,6 +781,97 @@ describe('sidebarSections', () => {
         },
       ],
       sections: ['tRPC', 'Client'],
+    });
+  });
+
+  it('opens a category with the doc it links, or with a generated index of its items', () => {
+    expect(
+      sidebarSections([
+        {
+          items: ['main/quickstart'],
+          label: 'tRPC',
+          link: { id: 'main/introduction', type: 'doc' },
+          type: 'category',
+        },
+        {
+          items: [
+            'server/routers',
+            {
+              items: ['server/adapters/express'],
+              label: 'Adapters',
+              link: { id: 'server/adapters/overview', type: 'doc' },
+              type: 'category',
+            },
+          ],
+          label: 'Backend Usage',
+          link: {
+            slug: '/server/introduction',
+            title: 'tRPC server documentation',
+            type: 'generated-index',
+          },
+          type: 'category',
+        },
+        'migration/migrate-from-v9-to-v10',
+      ]),
+    ).toEqual({
+      entries: [
+        {
+          id: 'main/introduction',
+          label: undefined,
+          order: 0,
+          parent: undefined,
+          section: 'tRPC',
+        },
+        {
+          id: 'main/quickstart',
+          label: undefined,
+          order: 1,
+          parent: undefined,
+          section: 'tRPC',
+        },
+        {
+          id: 'index:server/introduction',
+          index: {
+            description: '',
+            items: ['server/routers', 'server/adapters/overview'],
+            slug: 'server/introduction',
+            title: 'tRPC server documentation',
+          },
+          label: undefined,
+          order: 2,
+          parent: undefined,
+          section: 'Backend Usage',
+        },
+        {
+          id: 'server/routers',
+          label: undefined,
+          order: 3,
+          parent: undefined,
+          section: 'Backend Usage',
+        },
+        {
+          id: 'server/adapters/overview',
+          label: 'Adapters',
+          order: 4,
+          parent: undefined,
+          section: 'Backend Usage',
+        },
+        {
+          id: 'server/adapters/express',
+          label: undefined,
+          order: 5,
+          parent: 'server/adapters/overview',
+          section: 'Backend Usage',
+        },
+        {
+          id: 'migration/migrate-from-v9-to-v10',
+          label: undefined,
+          order: 6,
+          parent: undefined,
+          section: '',
+        },
+      ],
+      sections: ['tRPC', 'Backend Usage', ''],
     });
   });
 });

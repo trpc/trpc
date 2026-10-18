@@ -62,7 +62,7 @@ tRPC can run standalone or mounted as an endpoint on your existing REST API usin
 - 🐎&nbsp; Snappy DX - No code generation, run-time bloat, or build pipeline.
 - 🍃&nbsp; Light - tRPC has zero runtime dependencies and a tiny client-side footprint.
 - 🐻&nbsp; For new and old projects - Easy to start with or add to your existing brownfield project.
-- 🔋&nbsp; Framework agnostic - The tRPC community has built [adapters](https://trpc.io/docs/awesome-trpc#-extensions--community-add-ons) for all of the most popular frameworks.
+- 🔋&nbsp; Framework agnostic - The tRPC community has built [adapters](./community/awesome-trpc.md#-extensions--community-add-ons) for all of the most popular frameworks.
 - 🥃&nbsp; Subscriptions support - Add typesafe real-time updates to your application.
 - ⚡️&nbsp; Request batching - Requests made at the same time can be automatically combined into one.
 - 👀&nbsp; Examples - Check out an [example](./example-apps.md) to learn with or use as a starting point.

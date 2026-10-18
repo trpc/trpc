@@ -7,7 +7,7 @@ parent: "server/adapters"
 order: 19
 ---
 
-You can create a tRPC server within any edge runtime that follow the [WinterCG](https://wintercg.org/), specifically the [Minimum Common Web Platform API](https://common-min-api.proposal.wintercg.org/) specification.
+You can create a tRPC server within any edge runtime that follow the [WinterCG](https://wintercg.org/), specifically the [Minimum Common Web Platform API](https://min-common-api.proposal.wintertc.org/) specification.
 
 Some of these runtimes include, but are not limited to:
 

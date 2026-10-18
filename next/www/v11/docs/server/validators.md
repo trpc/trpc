@@ -308,7 +308,7 @@ export const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 ```
 
-### With [effect](https://github.com/Effect-TS/effect/tree/main/packages/schema)
+### With [effect](https://effect.website/docs/schema/introduction/)
 
 ```ts
 import { initTRPC } from '@trpc/server';

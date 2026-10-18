@@ -11,7 +11,7 @@ order: 38
 It's important to note that when you provide links for `splitLink` to execute, `splitLink` will create an entirely new link chain based on the links you passed. Therefore, you need to use a [**terminating link**](../links.md#the-terminating-link) if you only provide one link or add the terminating link at the end of the array if you provide multiple links to be executed on a branch. Here's a visual representation of how `splitLink` works:
 
 <div align="center" style="margin-bottom: 12px">
-  <img src="https://trpc.io/v11/img/split-link-diagram.svg" alt="" style="width: 100%; height: 100%" />
+  <img src="/v11/img/split-link-diagram.svg" alt="" style="width: 100%; height: 100%" />
 </div>
 
 ## Usage Example

@@ -52,7 +52,7 @@ A collection of resources on tRPC.
 | sidebase - Scaffold a starter project using sidebase (Nuxt 3, tRPC, Tailwind CSS, Prisma)           | https://sidebase.io                                         |
 | Create JD App - Scaffold a starter project using the JD Stack (SolidStart, tRPC, Tailwind, Prisma)  | https://github.com/OrJDev/create-jd-app                     |
 | Create tRPC App - Create tRPC-powered apps with one command                                         | https://github.com/omar-dulaimi/create-trpc-app             |
-| viteRPC - Monorepo template powered by Vite (Vite, tRPC, Tailwind CSS)                              | https://github.com/mnik01/viteRPC                           |
+| viteRPC - Monorepo template powered by Vite (Vite, tRPC, Tailwind CSS)                              | https://web.archive.org/web/20241114210459/https://github.com/mnik01/viteRPC                           |
 | Start UI [web] - Opinionated frontend starter (tRPC, Prisma, Next.js, Chakra UI)                    | https://github.com/bearstudio/start-ui-web                  |
 | Nx Plugin for AWS - Scaffold a project using tRPC with Nx, and deploy to AWS with CDK or Terraform  | https://awslabs.github.io/nx-plugin-for-aws/en/guides/trpc/ |
 
@@ -116,11 +116,11 @@ A collection of resources on tRPC.
 | [Cal.com](https://cal.com) - Scheduling infrastructure                                                                                         | https://github.com/calcom/cal.com                   |
 | [Skill Recordings](https://github.com/skillrecordings/products) - Hosting courses by Matt Pocock, Kent C Dodds, Dan Abramov, and many others   | https://github.com/skillrecordings/products         |
 | [SST](https://sst.dev) - A framework that makes it easy to build serverless apps.                                                              | https://github.com/serverless-stack/sst             |
-| [Beam](https://planetscale.com/blog/introducing-beam) - A simple message board for your organization or project.                               | https://github.com/planetscale/beam                 |
+| [Beam](https://web.archive.org/web/20231214211856/https://planetscale.com/blog/introducing-beam) - A simple message board for your organization or project.                               | https://web.archive.org/web/20231212214304/https://github.com/planetscale/beam                 |
 | [Rallly](https://rallly.co) - Self-hostable doodle poll alternative.                                                                           | https://github.com/lukevella/rallly                 |
-| [Hilde](http://hilde.gg) - Match-making app for games like foosball, air hockey and similar                                                    | https://github.com/nehalist/hilde                   |
+| [Hilde](https://github.com/nehalist/hilde) - Match-making app for games like foosball, air hockey and similar                                                    | https://github.com/nehalist/hilde                   |
 | [Answer Overflow](https://www.answeroverflow.com/) - Discord bot that indexes help channel content into Google                                 | https://github.com/AnswerOverflow/AnswerOverflow    |
-| [Prisma Editor](https://prisma-editor.bahumaish.app/) - Powerful tool to visualize and edit Prisma Schema                                      | https://github.com/mohammed-bahumaish/prisma-editor |
+| [Prisma Editor](https://github.com/mohammed-bahumaish/prisma-editor) - Powerful tool to visualize and edit Prisma Schema                                      | https://github.com/mohammed-bahumaish/prisma-editor |
 | [Saleor Apps](https://saleor.io/) - Official apps/integrations for Saleor Commerce                                                             | https://github.com/saleor/apps                      |
 | [Rao Pics App](https://github.com/rao-pics/rao-pics) - Visit Photo on any device. Supported MacOS/Windows                                      | https://github.com/rao-pics/rao-pics                |
 | [Tianji](https://tianji.msgbyte.com/) - All-in-One Insight Hub. Tianji = Website Analytics + Uptime Monitor + Server Status                    | https://github.com/msgbyte/tianji                   |

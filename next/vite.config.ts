@@ -26,8 +26,10 @@ export default defineConfig({
       'spikes/**/generated/**',
       'packages/*/src/**/fixtures/generated/**',
       'www/src/routeTree.gen.ts',
-      // `pnpm --filter @trpc12/www v11:copy` writes these.
+      // `pnpm --filter @trpc12/www old-docs:copy` writes these.
       'www/v11/**',
+      'www/v10/**',
+      'www/v9/**',
     ],
   },
   lint: {

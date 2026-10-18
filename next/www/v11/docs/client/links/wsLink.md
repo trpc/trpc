@@ -27,7 +27,7 @@ const trpcClient = createTRPCClient<AppRouter>({
 
 ## Authentication / Connection params
 
-[See more here](../../server/websockets.md)
+[See more here](../../server/websockets.md#connection-params)
 
 ## `wsLink` / `createWSClient` Options
 

@@ -1,23 +1,24 @@
 /**
- * Turns the v11 docs (Docusaurus MDX in the repo root's `www/docs`) into
- * pages of this site: Markdown with this site's frontmatter, which
- * `build/content.ts` renders like any other page. `v11-copy.ts` reads the
- * files and writes the result; everything here is a pure function of them.
+ * Turns the docs trpc.io serves (Docusaurus MDX in the repo root's `www`:
+ * v11 in `docs/`, v10 and v9 in `versioned_docs/`) into pages of this site:
+ * Markdown with this site's frontmatter, which `build/content.ts` renders
+ * like any other page. `old-docs-copy.ts` reads the files and writes the
+ * result; everything here is a pure function of them.
  *
  * Twoslash blocks become plain code, showing what trpc.io shows: the hidden
  * setup, `// @…` directives and `// ^?` markers go. Admonitions become
  * alerts, `<Tabs>` become tab groups, partials and the few components the
- * pages use are inlined, and links point at the copied pages, or at
- * trpc.io for anything else. Whatever the copy can't convert is a problem,
- * so a new construct in the v11 docs fails the copy instead of rendering
- * as raw MDX.
+ * pages use are inlined, and links point at the copied pages of any
+ * version, after trpc.io's redirects, or at trpc.io for anything else.
+ * Whatever the copy can't convert is a problem, so a new construct in the
+ * docs fails the copy instead of rendering as raw MDX.
  */
 import { removeTwoslashNotations } from 'twoslash/fallback';
 
-import { v11 } from '../src/site.ts';
+import { type CopiedVersion, copiedVersions, v11 } from '../src/site.ts';
 
-/** A page of the v11 sidebar. */
-export interface V11Page {
+/** A page of a version's sidebar. */
+export interface CopiedPage {
   readonly description: string;
   /** Path under `www/`: `docs/server/procedures.md`. */
   readonly file: string;
@@ -28,20 +29,87 @@ export interface V11Page {
   /** The slug of the page it nests under in the sidebar. */
   readonly parent: string | undefined;
   readonly section: string;
-  /** Path under `/docs` on trpc.io, and under `/v11/docs` here. */
+  /** Path under the version's `trpcPath` on trpc.io, and its `basePath` here. */
   readonly slug: string;
   readonly title: string;
+  readonly version: CopiedVersion['id'];
 }
 
-export interface V11Docs {
-  /**
-   * The docs of the versions before v11 (`versioned_docs/`), which trpc.io
-   * still serves: their URL paths, by path under `www/`.
-   */
-  readonly archived: ReadonlyMap<string, string>;
+/** A redirect of trpc.io's (`www/vercel.json`): `/docs/reactjs/:path` to `/docs/client/react/:path`. */
+export interface Redirect {
+  readonly destination: string;
+  readonly source: string;
+}
+
+/** A version's last release: its tag, and the files and dirs the repo had at it. */
+export interface Release {
+  readonly paths: ReadonlySet<string>;
+  readonly tag: string;
+}
+
+export interface CopiedDocs {
   /** What the pages read, by path under `www/`: the pages, partials and components. */
   readonly files: ReadonlyMap<string, string>;
-  readonly pages: ReadonlyArray<V11Page>;
+  /** Every version's pages. */
+  readonly pages: ReadonlyArray<CopiedPage>;
+  readonly redirects: ReadonlyArray<Redirect>;
+  /** The older versions' last releases. */
+  readonly releases: ReadonlyMap<CopiedVersion['id'], Release>;
+  /**
+   * Docs no sidebar lists, which trpc.io still serves: their URL paths, by
+   * path under `www/`.
+   */
+  readonly unlisted: ReadonlyMap<string, string>;
+}
+
+export function versionOf(id: CopiedVersion['id']): CopiedVersion {
+  return copiedVersions.find((version) => version.id === id) ?? v11;
+}
+
+/** The copied versions, the longest `trpcPath` first, so `/docs/v10` isn't read as v11's `v10` page. */
+const byTrpcPath = copiedVersions.toSorted(
+  (a, b) => b.trpcPath.length - a.trpcPath.length,
+);
+
+const redirectPattern = (source: string) =>
+  new RegExp(
+    `^${source
+      .replace(/\/$/, '')
+      .replaceAll(/[.+?^${}()|[\]\\]/g, '\\$&')
+      .replaceAll(/:(\w+)\*/g, '(?<$1>.*)')
+      .replaceAll(/:(\w+)/g, '(?<$1>[^/]+)')}$`,
+  );
+
+/**
+ * Where trpc.io sends `pathname`, following its redirects, or `undefined`
+ * when it leaves the site (`/discord`).
+ */
+export function redirected(
+  pathname: string,
+  redirects: ReadonlyArray<Redirect>,
+): string | undefined {
+  let current = pathname.replace(/(.)\/$/, '$1');
+  for (let hops = 0; hops < 10; hops++) {
+    const redirect = redirects
+      .map((candidate) => ({
+        candidate,
+        match: redirectPattern(candidate.source).exec(current),
+      }))
+      .find((found) => found.match !== null);
+    if (!redirect?.match) {
+      return current;
+    }
+    const groups = redirect.match.groups ?? {};
+    const destination = redirect.candidate.destination.replaceAll(
+      /:(\w+)\*?/g,
+      (_param, name: string) => groups[name] ?? '',
+    );
+    if (/^[a-z]+:/i.test(destination)) {
+      return undefined;
+    }
+    current = destination.replace(/(.)\/$/, '$1');
+  }
+  return current;
 }
 
 export interface ConvertedPage {
@@ -168,9 +236,14 @@ export function relativeLink(fromSlug: string, toSlug: string) {
   return `${up === 0 ? './' : '../'.repeat(up)}${rest}.md`;
 }
 
-/** Where a v11 link points: a copied page, or else trpc.io. */
+/** Where a link points: a copied page, or else trpc.io. */
 type Target =
-  | { readonly kind: 'page'; readonly slug: string; readonly hash: string }
+  | {
+      readonly kind: 'page';
+      readonly slug: string;
+      readonly hash: string;
+      readonly version: CopiedVersion['id'];
+    }
   | { readonly kind: 'image'; readonly file: string }
   | { readonly kind: 'url'; readonly url: string };
 
@@ -180,21 +253,27 @@ function hashOf(url: URL) {
 
 /**
  * Resolves a link as Docusaurus does: a path to an `.md` or `.mdx` file is
- * that file, relative to the linking file (or to `docs/` from `/docs/`);
- * any other path is a URL, relative to the page's URL on trpc.io.
+ * that file, relative to the linking file (or, from `/`, to the version's
+ * docs dir or to `www/`);
+ * any other path is a URL, relative to the page's URL on trpc.io, which
+ * trpc.io's redirects may send elsewhere. A `/docs/v10/` URL is a v10 page;
+ * a `/docs/` one is the linking page's version's, where it has the page.
  */
-export function resolveV11Link(
+export function resolveLink(
   url: string,
   context: {
     /** The file the link is written in, under `www/`. */
     readonly file: string;
     /** The page the link renders on. */
-    readonly slug: string;
-    readonly pages: ReadonlyArray<V11Page>;
-    readonly archived?: ReadonlyMap<string, string> | undefined;
+    readonly page: Pick<CopiedPage, 'slug' | 'version'>;
+    readonly docs: Pick<CopiedDocs, 'pages' | 'redirects' | 'unlisted'>;
   },
 ): Target | undefined {
-  if (url.startsWith('#') || url === '') {
+  if (
+    url.startsWith('#') ||
+    url === '' ||
+    copiedVersions.some((version) => url.startsWith(`${version.imagePath}/`))
+  ) {
     return undefined;
   }
   const scheme = /^[a-z][a-z\d+.-]*:/i.test(url);
@@ -205,35 +284,91 @@ export function resolveV11Link(
     return undefined;
   }
   const local = onSite ? url.slice(onSite[0].length) || '/' : url;
-  const byFile = (file: string) =>
-    context.pages.find((page) => page.file === file);
-  const bySlug = (slug: string) =>
-    context.pages.find((page) => page.slug === slug);
+  const pages = context.docs.pages;
   const pathOnly = local.split(/[?#]/)[0] ?? '';
   if (/\.mdx?$/.test(pathOnly)) {
-    const base = local.startsWith('/docs/')
-      ? 'file:///'
-      : `file:///${context.file}`;
-    const target = new URL(local, base);
-    const file = decodeURIComponent(target.pathname.slice(1));
-    const page = byFile(file);
-    if (page) {
-      return { hash: hashOf(target), kind: 'page', slug: page.slug };
-    }
-    const archived = context.archived?.get(file);
-    if (archived !== undefined) {
-      return { kind: 'url', url: `${v11.url}${archived}${target.hash}` };
+    // A path from `/` is under the version's docs dir, or under `www/`.
+    const root = /^(?:versioned_docs\/[^/]+|docs)\//.exec(context.file)?.[0];
+    const candidates: ReadonlyArray<readonly [string, string]> =
+      local.startsWith('/')
+        ? [
+            ...(root === undefined
+              ? []
+              : [[`.${local}`, `file:///${root}`] as const]),
+            [local, 'file:///'],
+          ]
+        : [[local, `file:///${context.file}`]];
+    for (const [path, base] of candidates) {
+      const target = new URL(path, base);
+      const file = decodeURIComponent(target.pathname.slice(1));
+      const page = pages.find((candidate) => candidate.file === file);
+      if (page) {
+        return {
+          hash: hashOf(target),
+          kind: 'page',
+          slug: page.slug,
+          version: page.version,
+        };
+      }
+      const unlisted = context.docs.unlisted.get(file);
+      if (unlisted !== undefined) {
+        return { kind: 'url', url: `${v11.url}${unlisted}${target.hash}` };
+      }
     }
   }
-  const pageUrl = `${v11.url}/docs/${context.slug}`;
-  const target = new URL(local, pageUrl);
-  const pathname = decodeURIComponent(target.pathname).replace(/\/$/, '');
-  const docs = /^\/docs(?:\/(.*))?$/.exec(pathname);
-  if (docs) {
-    const page = bySlug(docs[1] || v11.firstDoc);
-    if (page) {
-      return { hash: hashOf(target), kind: 'page', slug: page.slug };
+  const from = versionOf(context.page.version);
+  const target = new URL(
+    local,
+    `${v11.url}${from.trpcPath}/${context.page.slug}`,
+  );
+  const decoded = decodeURIComponent(target.pathname);
+  const pageOf = (version: CopiedVersion['id'], slug: string) =>
+    pages.find(
+      (candidate) => candidate.version === version && candidate.slug === slug,
+    );
+  // The older versions' docs were written as the current docs, so their
+  // `/docs/…` means their own version, which trpc.io serves at
+  // `/docs/v10/…` now; its redirects are for the current docs.
+  const unversioned =
+    /^\/docs(?:\/|$)/.test(decoded) && !/^\/docs\/v\d+(?:\/|$)/.test(decoded);
+  const own = unversioned
+    ? pageOf(
+        context.page.version,
+        decoded.replace(/\/$/, '').slice('/docs/'.length) ||
+          versionOf(context.page.version).firstDoc,
+      )
+    : undefined;
+  if (own) {
+    return {
+      hash: hashOf(target),
+      kind: 'page',
+      slug: own.slug,
+      version: own.version,
+    };
+  }
+  const pathname = redirected(decoded, context.docs.redirects) ?? decoded;
+  for (const version of byTrpcPath) {
+    if (
+      pathname !== version.trpcPath &&
+      !pathname.startsWith(`${version.trpcPath}/`)
+    ) {
+      continue;
     }
+    const slug =
+      pathname.slice(version.trpcPath.length + 1) || version.firstDoc;
+    const page =
+      (unversioned && version.id === v11.id
+        ? pageOf(context.page.version, slug)
+        : undefined) ?? pageOf(version.id, slug);
+    if (page) {
+      return {
+        hash: hashOf(target),
+        kind: 'page',
+        slug: page.slug,
+        version: page.version,
+      };
+    }
+    break;
   }
   const image = /^\/img\/([\w.-]+)$/.exec(pathname);
   if (image?.[1]) {
@@ -245,8 +380,84 @@ export function resolveV11Link(
   };
 }
 
-function imageUrl(file: string) {
-  return `${v11.imagePath}/${file.split('/').at(-1) ?? file}`;
+/** Pages that moved or went away since the docs linked them, and where they are now. */
+export const movedLinks: ReadonlyMap<string, string> = new Map([
+  [
+    'https://planetscale.com/blog/introducing-beam',
+    'https://web.archive.org/web/20231214211856/https://planetscale.com/blog/introducing-beam',
+  ],
+  [
+    'https://github.com/planetscale/beam',
+    'https://web.archive.org/web/20231212214304/https://github.com/planetscale/beam',
+  ],
+  [
+    'https://github.com/mnik01/viteRPC',
+    'https://web.archive.org/web/20241114210459/https://github.com/mnik01/viteRPC',
+  ],
+  ['http://hilde.gg', 'https://github.com/nehalist/hilde'],
+  [
+    'https://prisma-editor.bahumaish.app/',
+    'https://github.com/mohammed-bahumaish/prisma-editor',
+  ],
+  ['https://typeschema.com', 'https://github.com/decs/typeschema'],
+  [
+    'https://common-min-api.proposal.wintercg.org/',
+    'https://min-common-api.proposal.wintertc.org/',
+  ],
+  [
+    'https://github.com/Effect-TS/effect/tree/main/packages/schema',
+    'https://effect.website/docs/schema/introduction/',
+  ],
+  [
+    'https://github.com/trpc/trpc/tree/main/packages/tests/server/react/polymorphism.test.tsx',
+    'https://github.com/trpc/trpc/blob/main/packages/react-query/test/polymorphism.test.tsx',
+  ],
+  [
+    'https://github.com/trpc/trpc/blob/main/packages/client/src/links/httpBatchLink/index.ts',
+    'https://github.com/trpc/trpc/blob/v10.45.4/packages/client/src/links/httpBatchLink.ts',
+  ],
+  [
+    'https://github.com/trpc/trpc/blob/feature/output-parser-oas/packages/server/test/outputParser.test.ts',
+    'https://github.com/trpc/trpc/blob/v9.27.4/packages/server/test/outputParser.test.ts',
+  ],
+  [
+    'https://vercel.com/docs/serverless-functions/edge-caching',
+    'https://vercel.com/docs/edge-cache',
+  ],
+  ...[
+    'prefetching',
+    'query-invalidation',
+    'query-cancellation',
+    'migrating-to-react-query-4',
+  ].map(
+    (guide) =>
+      [
+        `https://tanstack.com/query/v4/docs/guides/${guide}`,
+        `https://tanstack.com/query/v4/docs/framework/react/guides/${guide}`,
+      ] as const,
+  ),
+]);
+
+const repoMain =
+  /^(https:\/\/(?:(?:www\.)?github\.com|githubbox\.com|codesandbox\.io\/s\/github|stackblitz\.com\/github)\/trpc\/trpc\/(?:blob|tree)\/)main\/([^?#]*)/;
+
+/**
+ * A link off the site as a copy has it: where it moved, and a link to a
+ * file on the repo's `main` at the version's last release, which has it.
+ * The older docs meant their own code, which `main` may no longer have.
+ */
+export function externalUrl(url: string, release: Release | undefined) {
+  const file = repoMain.exec(url);
+  const path = decodeURIComponent(file?.[2] ?? '').replace(/\/$/, '');
+  const pinned =
+    file && release?.paths.has(path)
+      ? `${file[1]}${release.tag}/${url.slice(`${file[1]}main/`.length)}`
+      : url;
+  return movedLinks.get(pinned) ?? pinned;
+}
+
+function imageUrl(file: string, version: CopiedVersion) {
+  return `${version.imagePath}/${file.split('/').at(-1) ?? file}`;
 }
 
 /** Parses JSX attributes: `value="zod" default style={{ width: '100%' }}`. */
@@ -352,36 +563,36 @@ export function plainCode(
   return lines.join('\n');
 }
 
-/** A fence's info, without `twoslash` and with its title in double quotes. */
+/** A fence's info, without `twoslash`, its language in lowercase and its title in double quotes. */
 function plainInfo(info: string) {
-  const lang = /^[\w-]*/.exec(info)?.[0] ?? '';
+  const lang = (/^[\w-]*/.exec(info)?.[0] ?? '').toLowerCase();
   const title = /\btitle\s*=\s*(["'])(.*?)\1/.exec(info)?.[2];
   return `${lang}${title === undefined ? '' : ` title="${title}"`}`;
 }
 
 interface PageContext {
-  readonly docs: V11Docs;
+  readonly docs: CopiedDocs;
   /** The file being converted: the page, or a partial it includes. */
   readonly file: string;
   readonly images: Set<string>;
-  readonly problems: Array<string>;
   /** The page the result renders on, which its links are relative to. */
-  readonly slug: string;
+  readonly page: CopiedPage;
+  readonly problems: Array<string>;
 }
 
+/**
+ * A link to a page of the same version is a relative `.md` link in
+ * Markdown, which the build checks; one to another version is that page's
+ * path on this site.
+ */
 function rewriteUrl(url: string, context: PageContext, html: boolean) {
-  const target = resolveV11Link(url, {
-    archived: context.docs.archived,
-    file: context.file,
-    pages: context.docs.pages,
-    slug: context.slug,
-  });
+  const target = resolveLink(url, context);
   if (!target) {
     return url;
   }
   if (target.kind === 'image') {
     context.images.add(target.file);
-    return imageUrl(target.file);
+    return imageUrl(target.file, versionOf(context.page.version));
   }
   if (target.kind === 'url') {
     if (/\.mdx?(?:[?#]|$)/.test(target.url)) {
@@ -392,9 +603,10 @@ function rewriteUrl(url: string, context: PageContext, html: boolean) {
     return target.url;
   }
   const hash = target.hash ? `#${target.hash}` : '';
-  return html
-    ? `${v11.basePath}/${target.slug}${hash}`
-    : `${relativeLink(context.slug, target.slug)}${hash}`;
+  if (html || target.version !== context.page.version) {
+    return `${versionOf(target.version).basePath}/${target.slug}${hash}`;
+  }
+  return `${relativeLink(context.page.slug, target.slug)}${hash}`;
 }
 
 /** Resolves an import's specifier to a path under `www/`, or a `@theme/` name. */
@@ -520,6 +732,59 @@ function youTubeEmbed(attributes: ReadonlyMap<string, string | true>) {
   return `<iframe src="https://www.youtube-nocookie.com/embed/${id}" title="${title}" style="aspect-ratio: 16 / 9; width: 100%; max-width: 42rem; border: 0" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`;
 }
 
+/**
+ * `` `https://stackblitz.com/…?` + searchParams({ embed: '1', file: ['a.ts'] }) ``
+ * as the URL it builds (`src/utils/searchParams.ts`): each value, or each
+ * of an array's, as `key=value`.
+ */
+export function searchParamsUrl(expression: string) {
+  const call = /^`([^`$]*)`\s*\+\s*searchParams\(\s*\{([\s\S]*)\}\s*\)$/.exec(
+    expression.trim(),
+  );
+  if (!call) {
+    return undefined;
+  }
+  const object = (call[2] ?? '').replaceAll(/\/\/[^\n]*/g, '');
+  const entry = /(\w+)\s*:\s*(\[[^\]]*\]|'[^']*'|"[^"]*")/g;
+  if (object.replaceAll(entry, '').replaceAll(/[\s,]/g, '') !== '') {
+    return undefined;
+  }
+  const params = Array.from(object.matchAll(entry), (match) =>
+    Array.from(
+      (match[2] ?? '').matchAll(/'([^']*)'|"([^"]*)"/g),
+      (value) =>
+        `${match[1]}=${encodeURIComponent(value[1] ?? value[2] ?? '')}`,
+    ),
+  ).flat();
+  return `${call[1]}${params.join('&')}`;
+}
+
+/**
+ * The StackBlitz embed of v10's quickstart: an `<Iframe>` filling a
+ * `<div>` 800px high, as one iframe.
+ */
+function convertEmbeds(lines: ReadonlyArray<string>, context: Converting) {
+  return editProse(lines, (prose) =>
+    prose.replaceAll(
+      /<div\s+className=\{clsx\(\s*(['"])([^'"]*)\1,?\s*\)\}\s*>\s*<Iframe\s+src=\{([\s\S]*?)\}\s*(?:[\w-]+="[^"]*"\s*)*\/>\s*<\/div>/g,
+      (embed, _quote, classes: string, src: string) => {
+        const url = searchParamsUrl(src);
+        if (
+          context.imports.get('Iframe') !== 'src/components/Iframe' ||
+          !classes.includes('h-[800px]') ||
+          url === undefined
+        ) {
+          context.problems.push(
+            `${context.file}: no conversion for \`${embed.split('\n')[0]}\``,
+          );
+          return embed;
+        }
+        return `<iframe src="${url}" title="StackBlitz" style="width: 100%; height: 800px; border: 0; border-radius: 0.75rem" loading="lazy"></iframe>`;
+      },
+    ),
+  );
+}
+
 /** A self-closing component, as Markdown or HTML. */
 function expandComponent(
   tag: string,
@@ -547,7 +812,7 @@ function expandComponent(
   if (source.endsWith('.svg')) {
     context.images.add(source);
     const style = attributes.get('style');
-    return `<img src="${imageUrl(source)}" alt=""${
+    return `<img src="${imageUrl(source, versionOf(context.page.version))}" alt=""${
       typeof style === 'string' && style.startsWith('{{')
         ? ` style="${styleOf(style)}"`
         : ''
@@ -597,7 +862,13 @@ function convertProse(lines: ReadonlyArray<string>, context: Converting) {
           (_link, url: string, title: string) =>
             `](${rewriteUrl(url, context, false)}${title})`,
         )
-        .replaceAll(/^<\/?p>[ \t]*$/gm, '');
+        .replaceAll(/^<\/?p>[ \t]*$/gm, '')
+        // Link targets, and the bare URLs GitHub's Markdown links.
+        .replaceAll(
+          /https?:\/\/[^\s<>"'`)\]|\uE000]+?(?=[.,;:!?*]*(?:[\s<>"'`)\]|\uE000]|$))/g,
+          (url) =>
+            externalUrl(url, context.docs.releases.get(context.page.version)),
+        );
       for (const match of converted.matchAll(/<\/?([A-Z][\w.]*)/g)) {
         if (match[1] !== 'Tabs' && match[1] !== 'TabItem') {
           context.problems.push(
@@ -720,13 +991,17 @@ function convertTabs(lines: ReadonlyArray<string>, context: Converting) {
 function convertAdmonitions(lines: ReadonlyArray<string>, context: Converting) {
   const output: Array<string> = [];
   const mask = inFences(lines);
-  let open: { readonly indent: string } | undefined;
+  let open: { readonly indent: string; readonly name: string } | undefined;
   for (const [index, line] of lines.entries()) {
     const fenced = mask[index];
     const start = fenced
       ? null
       : /^([ \t]*):::(\w+)(?:[ \t]+(.*))?$/.exec(line);
-    if (start) {
+    // `:::tip` in an open tip is a typo for `:::`: Docusaurus nests the rest
+    // of the page in it.
+    const reopened =
+      open !== undefined && start?.[2] === open.name && !start[3]?.trim();
+    if (start && !reopened) {
       const admonition = admonitions[start[2] ?? ''];
       if (open || !admonition) {
         context.problems.push(`${context.file}: \`${line.trim()}\``);
@@ -734,7 +1009,7 @@ function convertAdmonitions(lines: ReadonlyArray<string>, context: Converting) {
         continue;
       }
       const title = start[3]?.trim() || admonition.title;
-      open = { indent: start[1] ?? '' };
+      open = { indent: start[1] ?? '', name: start[2] ?? '' };
       // An alert is a block of its own, as an admonition is in MDX: a line
       // of HTML right above it would otherwise swallow it.
       if ((output.at(-1) ?? '').trim() !== '') {
@@ -749,7 +1024,7 @@ function convertAdmonitions(lines: ReadonlyArray<string>, context: Converting) {
       output.push(line);
       continue;
     }
-    if (!fenced && /^[ \t]*:::[ \t]*$/.test(line)) {
+    if (reopened || (!fenced && /^[ \t]*:::[ \t]*$/.test(line))) {
       while (output.at(-1) === `${open.indent}>`) {
         output.pop();
       }
@@ -846,6 +1121,7 @@ function convertBody(source: string, context: PageContext): string {
   lines = takeImports(lines, converting);
   lines = takeIncludes(lines, converting);
   lines = convertFences(lines, converting);
+  lines = convertEmbeds(lines, converting);
   lines = convertProse(lines, converting);
   lines = convertTabs(lines, converting);
   lines = convertAdmonitions(lines, converting);
@@ -865,8 +1141,8 @@ function yamlString(value: string) {
   return JSON.stringify(value);
 }
 
-/** A v11 page as a page of this site: its frontmatter and Markdown. */
-export function convertPage(page: V11Page, docs: V11Docs): ConvertedPage {
+/** A copied page as a page of this site: its frontmatter and Markdown. */
+export function convertPage(page: CopiedPage, docs: CopiedDocs): ConvertedPage {
   const images = new Set<string>();
   const problems: Array<string> = [];
   const source = docs.files.get(page.file);
@@ -877,8 +1153,8 @@ export function convertPage(page: V11Page, docs: V11Docs): ConvertedPage {
     docs,
     file: page.file,
     images,
+    page,
     problems,
-    slug: page.slug,
   });
   const frontmatter = [
     '---',
@@ -912,40 +1188,71 @@ export function convertPage(page: V11Page, docs: V11Docs): ConvertedPage {
 
 /**
  * Drops the `#hash` of each link to a page that has no such heading, so the
- * build's link check passes; Docusaurus only warns about these.
+ * build's link check passes; Docusaurus only warns about these. `anchors`
+ * holds each page's heading ids by `<version>:<slug>`; links between
+ * versions are paths on this site, in Markdown or HTML.
  */
 export function dropMissingAnchors(
   markdown: string,
-  slug: string,
+  page: Pick<CopiedPage, 'slug' | 'version'>,
   anchors: ReadonlyMap<string, ReadonlySet<string>>,
 ) {
   const dropped: Array<string> = [];
+  const keep = (
+    version: CopiedVersion['id'],
+    slug: string | undefined,
+    hash: string,
+  ) => {
+    const ids =
+      slug === undefined ? undefined : anchors.get(`${version}:${slug}`);
+    return !ids || ids.has(decodeURIComponent(hash));
+  };
+  const onSite = (path: string) => {
+    const version = copiedVersions.find((candidate) =>
+      path.startsWith(`${candidate.basePath}/`),
+    );
+    return version === undefined
+      ? undefined
+      : { slug: path.slice(version.basePath.length + 1), version: version.id };
+  };
   const lines = editProse(markdown.split('\n'), (prose) =>
     keepingInlineCode(prose, (masked) =>
-      masked.replaceAll(
-        /\]\(([^)\s#]+\.md)#([^)\s]+)\)/g,
-        (link, path: string, hash: string) => {
-          const target = new URL(path, `file:///docs/${slug}.md`);
-          const targetSlug = /^\/docs\/(.+)\.md$/.exec(
-            decodeURIComponent(target.pathname),
-          )?.[1];
-          const ids =
-            targetSlug === undefined ? undefined : anchors.get(targetSlug);
-          if (!ids || ids.has(decodeURIComponent(hash))) {
-            return link;
-          }
-          dropped.push(`${slug}: ${path}#${hash}`);
-          return `](${path})`;
-        },
-      ),
+      masked
+        .replaceAll(
+          /\]\(([^)\s#]+\.md)#([^)\s]+)\)/g,
+          (link, path: string, hash: string) => {
+            const target = new URL(path, `file:///docs/${page.slug}.md`);
+            const slug = /^\/docs\/(.+)\.md$/.exec(
+              decodeURIComponent(target.pathname),
+            )?.[1];
+            if (keep(page.version, slug, hash)) {
+              return link;
+            }
+            dropped.push(`${page.version} ${page.slug}: ${path}#${hash}`);
+            return `](${path})`;
+          },
+        )
+        .replaceAll(
+          /(\]\(|href=")(\/[^)\s"#]+)#([^)\s"]+)([)"])/g,
+          (link, open: string, path: string, hash: string, close: string) => {
+            const target = onSite(path);
+            if (!target || keep(target.version, target.slug, hash)) {
+              return link;
+            }
+            dropped.push(`${page.version} ${page.slug}: ${path}#${hash}`);
+            return `${open}${path}${close}`;
+          },
+        ),
     ),
   );
   return { dropped, markdown: lines.join('\n') };
 }
 
 /**
- * An item of a Docusaurus sidebar, as `sidebars.ts` writes it: a doc's id,
- * or a `doc`, a `category` of items, or a kind the copy skips (`link`).
+ * An item of a Docusaurus sidebar, as `sidebars.ts` or a version's
+ * `versioned_sidebars/*.json` writes it: a doc's id, or a `doc`, a
+ * `category` of items (which may link a doc or a generated index of its
+ * items), or a kind the copy skips (`link`).
  */
 export type SidebarItem =
   | string
@@ -953,12 +1260,34 @@ export type SidebarItem =
       readonly id?: string | undefined;
       readonly items?: ReadonlyArray<SidebarItem> | undefined;
       readonly label?: string | undefined;
+      readonly link?: CategoryLink | undefined;
       readonly type: string;
     };
 
+/** What a category opens: a doc, or a generated index of its items at `slug`. */
+export interface CategoryLink {
+  readonly description?: string | undefined;
+  readonly id?: string | undefined;
+  readonly slug?: string | undefined;
+  readonly title?: string | undefined;
+  readonly type: string;
+}
+
+/** The page Docusaurus generates for a category, listing its items. */
+export interface GeneratedIndex {
+  readonly description: string;
+  /** The ids of the docs it lists: the category's docs and the docs its categories open with. */
+  readonly items: ReadonlyArray<string>;
+  /** Its slug, without the leading `/`. */
+  readonly slug: string;
+  readonly title: string;
+}
+
 /** Where each doc of the sidebar sits: its section, the doc it nests under, and its order. */
 export interface SidebarEntry {
+  /** A doc's id, or `index:<slug>` for a generated index. */
   readonly id: string;
+  readonly index?: GeneratedIndex | undefined;
   readonly label: string | undefined;
   readonly order: number;
   /** The id of the doc it nests under, if any. */
@@ -969,26 +1298,60 @@ export interface SidebarEntry {
 const docId = (item: SidebarItem) =>
   typeof item === 'string' ? item : item.type === 'doc' ? item.id : undefined;
 
+/** The page a category opens with: the doc it links, its generated index, or else its first doc. */
+function categoryOverview(item: Exclude<SidebarItem, string>):
+  | {
+      readonly id: string;
+      readonly index?: GeneratedIndex;
+      readonly items: ReadonlyArray<SidebarItem>;
+    }
+  | undefined {
+  if (item.link?.type === 'doc' && item.link.id !== undefined) {
+    return { id: item.link.id, items: item.items ?? [] };
+  }
+  if (item.link?.type === 'generated-index' && item.link.slug !== undefined) {
+    const slug = item.link.slug.replace(/^\//, '');
+    const items = item.items ?? [];
+    return {
+      id: `index:${slug}`,
+      index: {
+        description: item.link.description ?? '',
+        items: items.flatMap((child): Array<string> => {
+          const id =
+            docId(child) ??
+            (typeof child === 'string'
+              ? undefined
+              : categoryOverview(child)?.id);
+          return id === undefined ? [] : [id];
+        }),
+        slug,
+        title: item.link.title ?? item.label ?? slug,
+      },
+      items,
+    };
+  }
+  const [first, ...rest] = item.items ?? [];
+  const id = first === undefined ? undefined : docId(first);
+  return id === undefined ? undefined : { id, items: rest };
+}
+
 /**
- * The sidebar's docs in order. A top-level category is a section. A nested
- * category opens with its overview doc, which takes the category's label
- * and nests the category's other items: "Links" is `client/links/overview`,
- * with `httpLink` and the rest under it. A nested category that doesn't
- * open with a doc puts its items where it stands.
+ * The sidebar's docs in order. A top-level category is a section, which
+ * starts with the doc or generated index it links. A nested category opens
+ * with its overview: the doc it links, its generated index, or else its
+ * first doc, which takes the category's label and nests the category's
+ * other items: "Links" is `client/links/overview`, with `httpLink` and the
+ * rest under it. A nested category without one puts its items where it
+ * stands.
  */
 export function sidebarSections(items: ReadonlyArray<SidebarItem>) {
   const sections: Array<string> = [];
   const entries: Array<SidebarEntry> = [];
-  const add = (
-    id: string,
-    label: string | undefined,
-    section: string,
-    parent: string | undefined,
-  ) => {
-    if (!sections.includes(section)) {
-      sections.push(section);
+  const add = (entry: Omit<SidebarEntry, 'order'>) => {
+    if (!sections.includes(entry.section)) {
+      sections.push(entry.section);
     }
-    entries.push({ id, label, order: entries.length, parent, section });
+    entries.push({ ...entry, order: entries.length });
   };
   const walk = (
     children: ReadonlyArray<SidebarItem>,
@@ -998,30 +1361,38 @@ export function sidebarSections(items: ReadonlyArray<SidebarItem>) {
     for (const item of children) {
       const id = docId(item);
       if (id !== undefined) {
-        add(
+        add({
           id,
-          typeof item === 'string' ? undefined : item.label,
-          section ?? '',
+          label: typeof item === 'string' ? undefined : item.label,
           parent,
-        );
-      } else if (
-        typeof item !== 'string' &&
-        item.type === 'category' &&
-        item.items
-      ) {
-        const label = item.label ?? '';
-        if (section === undefined) {
-          walk(item.items, label, undefined);
-          continue;
+          section: section ?? '',
+        });
+        continue;
+      }
+      if (typeof item === 'string' || item.type !== 'category' || !item.items) {
+        continue;
+      }
+      const label = item.label ?? '';
+      const overview =
+        item.link === undefined && section === undefined
+          ? undefined
+          : categoryOverview(item);
+      if (section === undefined) {
+        if (overview && item.link !== undefined) {
+          add({
+            id: overview.id,
+            index: overview.index,
+            label: undefined,
+            parent: undefined,
+            section: label,
+          });
         }
-        const [first, ...rest] = item.items;
-        const overview = first === undefined ? undefined : docId(first);
-        if (overview === undefined) {
-          walk(item.items, section, parent);
-        } else {
-          add(overview, label, section, parent);
-          walk(rest, section, overview);
-        }
+        walk(item.items, label, undefined);
+      } else if (overview === undefined) {
+        walk(item.items, section, parent);
+      } else {
+        add({ id: overview.id, index: overview.index, label, parent, section });
+        walk(overview.items, section, overview.id);
       }
     }
   };

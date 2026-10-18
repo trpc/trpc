@@ -194,7 +194,7 @@ export const trpc = createTRPCNext<AppRouter>({
 ```
 
 > [!NOTE]
-> `createTRPCNext` does not work with the tRPC-v9 interop mode. If you are migrating from v9 using interop, you should continue using [the old way of initializing tRPC](https://trpc.io/docs/v9/nextjs#4-create-trpc-hooks).
+> `createTRPCNext` does not work with the tRPC-v9 interop mode. If you are migrating from v9 using interop, you should continue using [the old way of initializing tRPC](/v9/docs/nextjs#4-create-trpc-hooks).
 
 ### 5. Configure `_app.tsx`
 

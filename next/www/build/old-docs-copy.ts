@@ -1,32 +1,43 @@
 /**
- * Copies the v11 docs (the repo root's `www/docs`, which trpc.io renders)
- * into `v11/docs` as pages of this site, in the v11 sidebar's sections and
- * order. The copy is committed and nobody edits it: after the v11 docs
- * change, run `pnpm --filter @trpc12/www v11:copy` again.
+ * Copies the docs trpc.io serves (the repo root's `www`: v11 in `docs/`,
+ * v10 and v9 in `versioned_docs/`) into `<version>/docs` as pages of this
+ * site, in each version's sidebar sections and order. The copies are
+ * committed and nobody edits them: after the docs change, run
+ * `pnpm --filter @trpc12/www old-docs:copy` again.
  *
- * The pages are converted by `v11-convert.ts`. The copy fails on anything it
- * can't convert, and drops the `#hash` of links to headings that don't
- * exist, which Docusaurus only warns about and this site's build rejects.
+ * The pages are converted by `old-docs-convert.ts`. The copy fails on
+ * anything it can't convert, and drops the `#hash` of links to headings
+ * that don't exist, which Docusaurus only warns about and this site's build
+ * rejects.
  */
 import { stripTypeScriptTypes } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { NodeRuntime, NodeServices } from '@effect/platform-node';
 import { Console, Data, Effect, FileSystem, Path, Schema } from 'effect';
+import { ChildProcess, ChildProcessSpawner } from 'effect/process';
 import { parse as parseYaml } from 'yaml';
 
-import { v11 } from '../src/site.ts';
-import { headingsOf } from './markdown.ts';
+import { type CopiedVersion, copiedVersions } from '../src/site.ts';
+import { anchorsOf } from './markdown.ts';
 import {
+  type CopiedPage,
   convertPage,
   dropMissingAnchors,
   type SidebarItem,
   sidebarSections,
-  type V11Page,
-} from './v11-convert.ts';
+} from './old-docs-convert.ts';
 
-class V11CopyError extends Data.TaggedError('V11CopyError')<{
+class OldDocsCopyError extends Data.TaggedError('OldDocsCopyError')<{
   readonly message: string;
 }> {}
+
+const CategoryLink = Schema.Struct({
+  description: Schema.optional(Schema.String),
+  id: Schema.optional(Schema.String),
+  slug: Schema.optional(Schema.String),
+  title: Schema.optional(Schema.String),
+  type: Schema.String,
+});
 
 const SidebarItem: Schema.Codec<SidebarItem> = Schema.Union([
   Schema.String,
@@ -38,6 +49,7 @@ const SidebarItem: Schema.Codec<SidebarItem> = Schema.Union([
       ),
     ),
     label: Schema.optional(Schema.String),
+    link: Schema.optional(CategoryLink),
     type: Schema.String,
   }),
 ]);
@@ -52,8 +64,65 @@ const DocFrontmatter = Schema.Struct({
   title: Schema.optional(Schema.String),
 });
 
+const Redirects = Schema.Struct({
+  redirects: Schema.Array(
+    Schema.Struct({ destination: Schema.String, source: Schema.String }),
+  ),
+});
+
+/**
+ * Where trpc.io's Docusaurus config keeps each version's docs and sidebar,
+ * and an older version's last release, which its links to `main` mean.
+ */
+const sources = {
+  v9: {
+    dir: 'versioned_docs/version-9.x',
+    release: 'v9.27.4',
+    sidebar: 'versioned_sidebars/version-9.x-sidebars.json',
+  },
+  v10: {
+    dir: 'versioned_docs/version-10.x',
+    release: 'v10.45.4',
+    sidebar: 'versioned_sidebars/version-10.x-sidebars.json',
+  },
+  v11: { dir: 'docs', release: undefined, sidebar: 'sidebars.ts' },
+} as const satisfies Record<
+  CopiedVersion['id'],
+  {
+    readonly dir: string;
+    readonly release: string | undefined;
+    readonly sidebar: string;
+  }
+>;
+
+/** The files and dirs the repo had at `tag`, from the git checkout `www` is in. */
+const readRelease = Effect.fn('readRelease')(function* (
+  www: string,
+  tag: string,
+) {
+  const spawner = yield* ChildProcessSpawner.ChildProcessSpawner;
+  const listing = yield* spawner
+    .string(
+      ChildProcess.make(
+        'git',
+        ['ls-tree', '-r', '-t', '--full-tree', '--name-only', tag],
+        {
+          cwd: www,
+          stderr: 'ignore',
+        },
+      ),
+    )
+    .pipe(Effect.orElseSucceed(() => ''));
+  if (listing.trim() === '') {
+    return yield* new OldDocsCopyError({
+      message: `git has no tag ${tag}: run \`git fetch origin tag ${tag}\``,
+    });
+  }
+  return { paths: new Set(listing.trim().split('\n')), tag };
+});
+
 const failWith = (message: string) => (cause: unknown) =>
-  new V11CopyError({
+  new OldDocsCopyError({
     message: `${message}: ${cause instanceof Error ? cause.message : String(cause)}`,
   });
 
@@ -89,21 +158,34 @@ function docOf(path: string, frontmatter: typeof DocFrontmatter.Type) {
 }
 
 /**
- * Runs `sidebars.ts` for its config. Its imports are types and an env
- * parser for the API reference, which the copy leaves out.
+ * Reads a sidebar: a version's JSON, or `sidebars.ts`, run for its config.
+ * Its imports are types and an env parser for the API reference, which the
+ * copy leaves out.
  */
 const readSidebar = Effect.fn('readSidebar')(function* (file: string) {
   const fs = yield* FileSystem.FileSystem;
   const source = yield* fs.readFileString(file);
-  const javascript = [
-    'const parseEnv = () => ({});',
-    stripTypeScriptTypes(source.replaceAll(/^import\s[^;]*;$/gm, '')),
-  ].join('\n');
-  const loaded: unknown = yield* Effect.tryPromise({
-    catch: failWith(`${file} didn't run`),
-    try: async () =>
-      import(`data:text/javascript,${encodeURIComponent(javascript)}`),
-  });
+  const loaded: unknown = file.endsWith('.json')
+    ? {
+        default: yield* Effect.try({
+          catch: failWith(`${file}`),
+          try: () => JSON.parse(source) as unknown,
+        }),
+      }
+    : yield* Effect.tryPromise({
+        catch: failWith(`${file} didn't run`),
+        try: async () =>
+          import(
+            `data:text/javascript,${encodeURIComponent(
+              [
+                'const parseEnv = () => ({});',
+                stripTypeScriptTypes(
+                  source.replaceAll(/^import\s[^;]*;$/gm, ''),
+                ),
+              ].join('\n'),
+            )}`
+          ),
+      });
   const config = yield* Schema.decodeUnknownEffect(
     Schema.Struct({ default: Sidebars }),
   )(loaded).pipe(Effect.mapError(failWith(`${file}: unexpected sidebar`)));
@@ -128,22 +210,124 @@ const listFiles = Effect.fn('listFiles')(function* (
     .toSorted();
 });
 
-/** The v11 pages of the sidebar, with what the copy reads to convert them. */
-const readV11Docs = Effect.fn('readV11Docs')(function* (www: string) {
+/** A doc, as the copy reads it before placing it in the sidebar. */
+type Doc = Omit<CopiedPage, 'order' | 'parent' | 'section'>;
+
+/** Docusaurus leaves out files and dirs whose name starts with `_`: partials. */
+const isPartial = (file: string) => /(?:^|\/)_/.test(file);
+
+/** One version's pages, and the docs its sidebar doesn't list. */
+const readVersion = Effect.fn('readVersion')(function* (
+  www: string,
+  version: CopiedVersion,
+  files: ReadonlyMap<string, string>,
+) {
+  const path = yield* Path.Path;
+  const source = sources[version.id];
+  const sidebar = sidebarSections(
+    yield* readSidebar(path.join(www, source.sidebar)),
+  );
+  const byId = new Map<string, Doc>();
+  const byFile = new Map<string, Doc>();
+  for (const [name, contents] of files) {
+    const doc = new RegExp(
+      `^${source.dir.replaceAll('.', '\\.')}/(.+)\\.mdx?$`,
+    ).exec(name)?.[1];
+    if (doc === undefined || isPartial(doc)) {
+      continue;
+    }
+    const frontmatter = yield* frontmatterOf(name, contents);
+    const derived = docOf(doc, frontmatter);
+    const entry: Doc = {
+      description: frontmatter.description ?? '',
+      file: name,
+      label: frontmatter.sidebar_label,
+      slug: derived.slug === '' ? version.firstDoc : derived.slug,
+      title: frontmatter.title ?? derived.base,
+      version: version.id,
+    };
+    byId.set(derived.id, entry);
+    byFile.set(name, entry);
+  }
+  const pages: Array<CopiedPage> = [];
+  /** The generated indexes' Markdown, which links the docs they list. */
+  const indexes = new Map<string, string>();
+  for (const entry of sidebar.entries) {
+    let doc = byId.get(entry.id);
+    if (entry.index) {
+      const index = entry.index;
+      const file = `generated/${version.id}/${index.slug}.md`;
+      const list = index.items.map((id) => {
+        const item = byId.get(id);
+        return item === undefined
+          ? undefined
+          : `- [${item.label ?? item.title}](${version.trpcPath}/${item.slug})${item.description ? `: ${item.description}` : ''}`;
+      });
+      if (list.includes(undefined)) {
+        return yield* new OldDocsCopyError({
+          message: `${version.id}: the index ${index.slug} lists a doc that isn't there`,
+        });
+      }
+      indexes.set(file, `${list.join('\n')}\n`);
+      doc = {
+        description: index.description,
+        file,
+        label: entry.label,
+        slug: index.slug,
+        title: index.title,
+        version: version.id,
+      };
+      byId.set(entry.id, doc);
+    }
+    if (!doc) {
+      return yield* new OldDocsCopyError({
+        message: `The ${version.id} sidebar lists ${entry.id}, which isn't a doc`,
+      });
+    }
+    const parent =
+      entry.parent === undefined ? undefined : byId.get(entry.parent);
+    if (entry.parent !== undefined && !parent) {
+      return yield* new OldDocsCopyError({
+        message: `The ${version.id} sidebar nests ${entry.id} under ${entry.parent}, which isn't a doc`,
+      });
+    }
+    const label = entry.label ?? doc.label;
+    pages.push({
+      ...doc,
+      label,
+      order: entry.order,
+      parent: parent?.slug,
+      // A doc outside the categories is a section of its own.
+      section: entry.section || (label ?? doc.title),
+    });
+  }
+  const sections = [...new Set(pages.map((page) => page.section))];
+  if (pages[0]?.slug !== version.firstDoc) {
+    return yield* new OldDocsCopyError({
+      message: `The ${version.id} sidebar starts at ${pages[0]?.slug}, not at ${version.firstDoc} (\`firstDoc\` in src/site.ts)`,
+    });
+  }
+  const unlisted = new Map(
+    [...byFile]
+      .filter(([file]) => !pages.some((page) => page.file === file))
+      .map(([file, doc]) => [
+        file,
+        `${version.trpcPath}${doc.slug === version.firstDoc ? '' : `/${doc.slug}`}`,
+      ]),
+  );
+  return { indexes, pages, sections, unlisted };
+});
+
+/** Every version's pages, with what the copy reads to convert them. */
+const readDocs = Effect.fn('readDocs')(function* (www: string) {
   const fs = yield* FileSystem.FileSystem;
   const path = yield* Path.Path;
-  const sidebar = sidebarSections(
-    yield* readSidebar(path.join(www, 'sidebars.ts')),
-  );
   const names = [
     ...(yield* listFiles(www, 'docs', ['**/*.md', '**/*.mdx'])),
+    ...(yield* listFiles(www, 'versioned_docs', ['**/*.md', '**/*.mdx'])),
     ...(yield* listFiles(www, 'unversioned', ['*.mdx'])),
     ...(yield* listFiles(www, 'src/components', ['*.tsx'])),
   ];
-  const archivedNames = yield* listFiles(www, 'versioned_docs', [
-    '**/*.md',
-    '**/*.mdx',
-  ]);
   const files = new Map(
     yield* Effect.forEach(
       names,
@@ -155,145 +339,136 @@ const readV11Docs = Effect.fn('readV11Docs')(function* (www: string) {
       { concurrency: 'unbounded' },
     ),
   );
-  const archived = new Map<string, string>();
-  for (const name of archivedNames) {
-    const match = /^versioned_docs\/version-(\d+)\.x\/(.+)\.mdx?$/.exec(name);
-    if (!match?.[1] || !match[2]) {
-      continue;
+  const versions = yield* Effect.forEach(copiedVersions, (version) =>
+    Effect.map(readVersion(www, version, files), (read) => ({
+      ...read,
+      version,
+    })),
+  );
+  for (const read of versions) {
+    for (const [file, contents] of read.indexes) {
+      files.set(file, contents);
     }
-    const doc = docOf(
-      match[2],
-      yield* frontmatterOf(
-        name,
-        yield* fs.readFileString(path.join(www, name)),
-      ),
-    );
-    archived.set(
-      name,
-      `/docs/v${match[1]}${doc.slug === '' ? '' : `/${doc.slug}`}`,
-    );
   }
-  const byId = new Map<string, Omit<V11Page, 'order' | 'parent' | 'section'>>();
-  for (const [name, contents] of files) {
-    const doc = /^docs\/(.+)\.mdx?$/.exec(name)?.[1];
-    if (doc === undefined) {
-      continue;
-    }
-    const frontmatter = yield* frontmatterOf(name, contents);
-    const derived = docOf(doc, frontmatter);
-    byId.set(derived.id, {
-      description: frontmatter.description ?? '',
-      file: name,
-      label: frontmatter.sidebar_label,
-      slug: derived.slug === '' ? v11.firstDoc : derived.slug,
-      title: frontmatter.title ?? derived.base,
-    });
-  }
-  const pages: Array<V11Page> = [];
-  for (const entry of sidebar.entries) {
-    const doc = byId.get(entry.id);
-    if (!doc) {
-      return yield* new V11CopyError({
-        message: `The sidebar lists ${entry.id}, which isn't a doc`,
-      });
-    }
-    const parent =
-      entry.parent === undefined ? undefined : byId.get(entry.parent);
-    if (entry.parent !== undefined && !parent) {
-      return yield* new V11CopyError({
-        message: `The sidebar nests ${entry.id} under ${entry.parent}, which isn't a doc`,
-      });
-    }
-    pages.push({
-      ...doc,
-      label: entry.label ?? doc.label,
-      order: entry.order,
-      parent: parent?.slug,
-      section: entry.section,
-    });
-  }
-  if (pages[0]?.slug !== v11.firstDoc) {
-    return yield* new V11CopyError({
-      message: `The sidebar starts at ${pages[0]?.slug}, not at ${v11.firstDoc} (\`v11.firstDoc\` in src/site.ts)`,
-    });
-  }
-  return { archived, files, pages, sections: sidebar.sections };
+  const vercel = yield* fs.readFileString(path.join(www, 'vercel.json')).pipe(
+    Effect.flatMap((json) =>
+      Effect.try({
+        catch: failWith('vercel.json'),
+        try: () => JSON.parse(json) as unknown,
+      }),
+    ),
+    Effect.flatMap(Schema.decodeUnknownEffect(Redirects)),
+    Effect.mapError(failWith('vercel.json: unexpected redirects')),
+  );
+  const releases = new Map(
+    yield* Effect.forEach(copiedVersions, (version) => {
+      const tag = sources[version.id].release;
+      return tag === undefined
+        ? Effect.succeed([])
+        : Effect.map(readRelease(www, tag), (release) => [
+            [version.id, release] as const,
+          ]);
+    }).pipe(Effect.map((entries) => entries.flat())),
+  );
+  return {
+    docs: {
+      files,
+      pages: versions.flatMap((read) => read.pages),
+      redirects: vercel.redirects,
+      releases,
+      unlisted: new Map(versions.flatMap((read) => [...read.unlisted])),
+    },
+    versions,
+  };
 });
 
-const readme = `# The v11 docs
+const readme = (
+  version: CopiedVersion,
+  from: string,
+) => `# The ${version.id} docs
 
-A copy of the [v11 docs](../../../../www/docs), which [trpc.io](${v11.url}/docs) renders. The site serves it at \`${v11.basePath}\`, for v11 users while v12 is experimental.
+A copy of the [${version.id} docs](../../../../www/${from}), which [trpc.io](${version.url}${version.trpcPath}) renders. The site serves it at \`${version.basePath}\`, for ${version.id} users while v12 is experimental.
 
-Don't edit these files: \`www/build/v11-copy.ts\` writes them. Change the v11 docs in the repo root's \`www/docs\`, then run \`pnpm --filter @trpc12/www v11:copy\`.
+Don't edit these files: \`www/build/old-docs-copy.ts\` writes them. Change the docs in the repo root's \`www/${from}\`, then run \`pnpm --filter @trpc12/www old-docs:copy\`.
 `;
 
 export interface CopyDirs {
-  /** The v11 site: the repo root's `www`. */
+  /** trpc.io's site: the repo root's `www`. */
   readonly from: string;
-  /** Where the pages go: `v11/` holds `docs/` and `sections.json`. */
+  /** Where the copies go: `<version>/` holds `docs/` and `sections.json`. */
   readonly to: string;
-  /** Where the images the pages show go, under the site's `public/`. */
+  /** Where the images go: `<version>/img` under it, the site's `public/`. */
   readonly images: string;
 }
 
-/** Converts and writes every v11 page of the sidebar. */
-export const copyV11 = Effect.fn('copyV11')(function* (dirs: CopyDirs) {
+/** Converts and writes every page of every version's sidebar. */
+export const copyOldDocs = Effect.fn('copyOldDocs')(function* (dirs: CopyDirs) {
   const fs = yield* FileSystem.FileSystem;
   const path = yield* Path.Path;
-  const docs = yield* readV11Docs(dirs.from);
+  const read = yield* readDocs(dirs.from);
+  const docs = read.docs;
   const converted = docs.pages.map((page) => ({
     page,
     ...convertPage(page, docs),
   }));
   const problems = converted.flatMap((entry) => entry.problems);
   if (problems.length > 0) {
-    return yield* new V11CopyError({
-      message: `The v11 docs have what the copy can't convert:\n${problems.join('\n')}`,
+    return yield* new OldDocsCopyError({
+      message: `The docs have what the copy can't convert:\n${problems.join('\n')}`,
     });
   }
   const anchors = new Map(
     yield* Effect.forEach(converted, (entry) =>
       Effect.map(
-        headingsOf(entry.markdown.replace(/^---\n[\s\S]*?\n---\n/, '')),
-        (headings) =>
-          [
-            entry.page.slug,
-            new Set(headings.map((heading) => heading.id)),
-          ] as const,
+        anchorsOf(entry.markdown.replace(/^---\n[\s\S]*?\n---\n/, '')),
+        (ids) =>
+          [`${entry.page.version}:${entry.page.slug}`, new Set(ids)] as const,
       ),
     ),
   );
   const pages = converted.map((entry) => ({
     ...entry,
-    ...dropMissingAnchors(entry.markdown, entry.page.slug, anchors),
+    ...dropMissingAnchors(entry.markdown, entry.page, anchors),
   }));
-  const docsDir = path.join(dirs.to, 'docs');
-  yield* fs.remove(docsDir, { force: true, recursive: true });
-  yield* fs.remove(dirs.images, { force: true, recursive: true });
-  yield* fs.makeDirectory(dirs.images, { recursive: true });
-  yield* Effect.forEach(pages, (entry) => {
-    const file = path.join(docsDir, `${entry.page.slug}.md`);
-    return Effect.andThen(
-      fs.makeDirectory(path.dirname(file), { recursive: true }),
-      fs.writeFileString(file, entry.markdown),
+  const report: Array<string> = [];
+  for (const { sections, version } of read.versions) {
+    const own = pages.filter((entry) => entry.page.version === version.id);
+    const versionDir = path.join(dirs.to, version.id);
+    const docsDir = path.join(versionDir, 'docs');
+    const imagesDir = path.join(dirs.images, version.id, 'img');
+    yield* fs.remove(docsDir, { force: true, recursive: true });
+    yield* fs.remove(imagesDir, { force: true, recursive: true });
+    yield* fs.makeDirectory(imagesDir, { recursive: true });
+    yield* Effect.forEach(own, (entry) => {
+      const file = path.join(docsDir, `${entry.page.slug}.md`);
+      return Effect.andThen(
+        fs.makeDirectory(path.dirname(file), { recursive: true }),
+        fs.writeFileString(file, entry.markdown),
+      );
+    });
+    yield* fs.writeFileString(
+      path.join(docsDir, 'README.md'),
+      readme(version, sources[version.id].dir),
     );
-  });
-  yield* fs.writeFileString(path.join(docsDir, 'README.md'), readme);
-  yield* fs.writeFileString(
-    path.join(dirs.to, 'sections.json'),
-    `${JSON.stringify(docs.sections, null, 2)}\n`,
-  );
-  const images = [...new Set(pages.flatMap((entry) => entry.images))];
-  yield* Effect.forEach(images, (image) =>
-    fs.copyFile(
-      path.join(dirs.from, image),
-      path.join(dirs.images, path.basename(image)),
-    ),
-  );
+    yield* fs.writeFileString(
+      path.join(versionDir, 'sections.json'),
+      `${JSON.stringify(sections, null, 2)}\n`,
+    );
+    const images = [...new Set(own.flatMap((entry) => entry.images))];
+    yield* Effect.forEach(images, (image) =>
+      fs.copyFile(
+        path.join(dirs.from, image),
+        path.join(imagesDir, path.basename(image)),
+      ),
+    );
+    report.push(
+      `Copied ${own.length} ${version.id} pages in ${sections.length} sections, and ${images.length} images.`,
+    );
+  }
   const dropped = pages.flatMap((entry) => entry.dropped);
   yield* Console.log(
     [
-      `Copied ${pages.length} v11 pages in ${docs.sections.length} sections, and ${images.length} images.`,
+      ...report,
       ...(dropped.length > 0
         ? [
             `Dropped the #hash of ${dropped.length} links to headings that don't exist:`,
@@ -307,9 +482,9 @@ export const copyV11 = Effect.fn('copyV11')(function* (dirs: CopyDirs) {
 if (import.meta.main) {
   const here = (relative: string) =>
     fileURLToPath(new URL(relative, import.meta.url));
-  copyV11({
+  copyOldDocs({
     from: here('../../../www'),
-    images: here('../public/v11/img'),
-    to: here('../v11'),
+    images: here('../public'),
+    to: here('..'),
   }).pipe(Effect.provide(NodeServices.layer), NodeRuntime.runMain);
 }
