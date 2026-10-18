@@ -168,6 +168,22 @@ export default {
     `);
   });
 
+  test('FetchCreateContextFnOptions becomes CreateContextOpts, with a note on its shape', () => {
+    const source = `import type { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
+export const createContext = (opts: FetchCreateContextFnOptions) => ({});
+`;
+    expect(upgrade(source).code).toMatchInlineSnapshot(`
+      "import type { CreateContextOpts } from '@trpc12/trpc/server';
+      export const createContext = (opts: CreateContextOpts) => ({});
+      "
+    `);
+    expect(messages(source)).toMatchInlineSnapshot(`
+      [
+        "1:15 CreateContextOpts: opts.req is opts.request, whose headers are a record (request.headers['authorization']); response headers go on the procedure's response handle, docs/server/responses.md",
+      ]
+    `);
+  });
+
   test('modules without a v12 version are notes', () => {
     expect(
       messages(`import { observable } from '@trpc/server/observable';
