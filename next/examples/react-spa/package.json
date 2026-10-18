@@ -7,7 +7,7 @@
     "dev": "vp dev",
     "preview": "vp preview",
     "build": "vp build",
-    "start": "node server/main.ts",
+    "start": "vp build && node server.ts",
     "smoke": "node smoke.ts"
   },
   "dependencies": {

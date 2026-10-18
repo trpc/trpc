@@ -11,8 +11,10 @@ An issue tracker built with Vite+ and React 19 on [`@trpc12/tanstack-react-query
 | [`src/app.tsx`](./src/app.tsx)                   | `liveOptions()`: counters pushed by a subscription, read with `useQuery`; an offline switch on TanStack's `onlineManager`                                              |
 | [`src/activity.tsx`](./src/activity.tsx)         | `streamedOptions()` with `maxChunks`: the newest events of a subscription, in the cache                                                                                |
 | [`server/tracker.ts`](./server/tracker.ts)       | the router: a cursor-paged query, `tracked()` comments that resume from `lastEventId`, and `Date`s over danSON                                                         |
-| [`server/main.ts`](./server/main.ts)             | both APIs' `handler.routes` merged with Effect's `HttpStaticServer` for the built app, on `NodeHttpServer`                                                             |
+| [`server.ts`](./server.ts)                       | both APIs' `handler.routes` merged with Effect's `HttpStaticServer` for the built app, on `NodeHttpServer`; `listen()` for the smoke                                   |
 | [`vite.config.ts`](./vite.config.ts)             | the same APIs inside `vp dev` and `vp preview`, mounted with `NodeHttpServer.makeHandler`                                                                              |
+
+The app is the client, so this example has `server.ts` and no `client.ts` (the layout in [`../README.md`](../README.md) is for examples with a separate client).
 
 Queries keep `structuralSharing` (the default from `queryOptions()`), so an equal refetch, `Date`s included, keeps its references. [`cache.test.ts`](./cache.test.ts) checks that, the key prefix, and the offline create from draft to resume, with the routers in process over `localLink`.
 
@@ -20,8 +22,8 @@ Queries keep `structuralSharing` (the default from `queryOptions()`), so an equa
 
 From this folder:
 
+- `pnpm start`: builds the app and serves it with both APIs from `server.ts`, at http://localhost:3000.
 - `pnpm dev`: Vite's dev server with both APIs, at http://localhost:5173.
-- `pnpm build && pnpm start`: the production build, served with the APIs by `server/main.ts` at http://localhost:3000.
 - `pnpm test` from `next/` runs `cache.test.ts` with the other suites.
 - `pnpm smoke` (also run by `pnpm example` from `next/`): builds, starts the server and drives the app in headless Chrome. It pages through the list, creates, closes and deletes issues, waits for comments from another client and for the live counters, then goes offline, queues an issue, reloads, and checks the queued mutation reached the server. It uses the installed Google Chrome (GitHub's runners have one); set `CHROME_PATH` to use another Chromium.
 

@@ -1,9 +1,9 @@
 /**
- * Builds the app with `vp build`, serves it with both APIs (`server/main.ts`)
- * and drives it in headless Chrome: the infinite list, optimistic writes,
- * live comments and counters, and a mutation queued offline that resumes
- * after a reload. `cache.test.ts` checks the same cache behaviour in
- * process. Run with `pnpm smoke`; `CHROME_PATH` picks the browser.
+ * Builds the app with `vp build`, serves it with both APIs (`server.ts`) and
+ * drives it in headless Chrome: the infinite list, optimistic writes, live
+ * comments and counters, and a mutation queued offline that resumes after a
+ * reload. `cache.test.ts` checks the same cache behaviour in process. Run
+ * with `pnpm smoke`; `CHROME_PATH` picks the browser.
  */
 import { spawnSync } from 'node:child_process';
 import {
@@ -13,8 +13,7 @@ import {
   safe,
 } from '@trpc12/trpc/client';
 import { chromium, type Page } from 'playwright-core';
-import { startServer } from './server/main.ts';
-import type { TrackerRouter } from './server/tracker.ts';
+import { type AppRouter, listen } from './server.ts';
 import { serializer } from './src/serializer.ts';
 import { storageKey } from './src/storage-key.ts';
 
@@ -27,10 +26,10 @@ const assert = (ok: boolean, message: string): void => {
   if (!ok) throw new Error(message);
 };
 
-const server = await startServer({ port: 0 });
+await using server = await listen();
 const tracker = createTrpcClient({
-  router: routerType<TrackerRouter>(),
-  links: [httpLink({ url: `${server.url}/trpc`, batch: true, serializer })],
+  router: routerType<AppRouter>(),
+  links: [httpLink({ url: server.url, batch: true, serializer })],
 });
 const browser = await chromium.launch(
   process.env['CHROME_PATH']
@@ -52,7 +51,7 @@ try {
   page.on('console', (message) => {
     if (message.type() === 'error') errors.push(message.text());
   });
-  await page.goto(server.url);
+  await page.goto(new URL('/', server.url).href);
 
   // Infinite list: five a page, newest first, names from the directory API.
   const issues = page.getByRole('list', { name: 'Issues' });
@@ -165,5 +164,4 @@ try {
   assert(errors.length === 0, `browser errors:\n${errors.join('\n')}`);
 } finally {
   await browser.close();
-  await server.dispose();
 }
