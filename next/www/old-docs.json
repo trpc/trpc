@@ -303,6 +303,9 @@
     "v9/docs/contributing.md",
     "v9/docs/sponsors.md"
   ],
+  "src/components/sponsors/script.output.ts": [
+    "sponsors.json"
+  ],
   "static/img/links-diagram.svg": [
     "public/v10/img/links-diagram.svg",
     "public/v11/img/links-diagram.svg"

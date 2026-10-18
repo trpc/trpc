@@ -32,6 +32,7 @@ export default defineConfig({
       'www/v9/**',
       'www/blog/**',
       'www/old-docs.json',
+      'www/sponsors.json',
     ],
   },
   lint: {

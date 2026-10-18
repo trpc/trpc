@@ -1,9 +1,10 @@
 /**
  * Copies the docs trpc.io serves (the repo root's `www`: v11 in `docs/`,
  * v10 and v9 in `versioned_docs/`) into `<version>/docs` as pages of this
- * site, in each version's sidebar sections and order, and its blog's posts
- * into `blog/`. The copies are committed and nobody edits them: after the
- * docs or the blog change (a merge of `main`), run
+ * site, in each version's sidebar sections and order, its blog's posts
+ * into `blog/`, and its sponsors into `sponsors.json` (`sponsors-copy.ts`).
+ * The copies are committed and nobody edits them: after the docs, the blog
+ * or the sponsors change (a merge of `main`), run
  * `pnpm --filter @trpc12/www old-docs:copy` again. `old-docs:check` (CI)
  * fails when the committed copies aren't what the copy writes.
  *
@@ -39,6 +40,7 @@ import {
   type SidebarItem,
   sidebarSections,
 } from './old-docs-convert.ts';
+import { sponsorsFile, sponsorsJson, sponsorsSource } from './sponsors-copy.ts';
 
 class OldDocsCopyError extends Data.TaggedError('OldDocsCopyError')<{
   readonly message: string;
@@ -748,6 +750,10 @@ export const copyOldDocs = Effect.fn('copyOldDocs')(function* (dirs: CopyDirs) {
     copies.push([post.post.file, to]);
     inlined.push(...post.inlined.map((file) => [file, to] as const));
   }
+  const sponsors = yield* sponsorsJson(
+    yield* fs.readFileString(path.join(dirs.from, sponsorsSource)),
+  );
+  copies.push([sponsorsSource, sponsorsFile]);
   const accounted = manifestOf({
     notCopied,
     sources: read.contentFiles,
@@ -806,12 +812,14 @@ export const copyOldDocs = Effect.fn('copyOldDocs')(function* (dirs: CopyDirs) {
     ),
   );
   yield* fs.writeFileString(path.join(blogDir, 'README.md'), blogReadme);
+  yield* fs.writeFileString(path.join(dirs.to, sponsorsFile), sponsors);
   yield* fs.writeFileString(
     path.join(dirs.to, manifestFile),
     `${JSON.stringify(accounted.manifest, null, 2)}\n`,
   );
   report.push(
     `Copied ${posts.length} blog posts.`,
+    `Copied the sponsors to ${sponsorsFile}.`,
     `Accounted for ${Object.keys(accounted.manifest).length} files in ${manifestFile}.`,
   );
   const dropped = [...pages, ...posts].flatMap((entry) => entry.dropped);
@@ -835,6 +843,7 @@ function outputsOf(dirs: CopyDirs, path: Path.Path) {
       path.join(dirs.images, version.id, 'img'),
     ]),
     path.join(dirs.to, 'blog'),
+    path.join(dirs.to, sponsorsFile),
     path.join(dirs.to, manifestFile),
   ];
 }
@@ -952,7 +961,7 @@ if (import.meta.main) {
       ),
   ).pipe(
     Command.withDescription(
-      "Copy trpc.io's v11, v10 and v9 docs and its blog into the site",
+      "Copy trpc.io's v11, v10 and v9 docs, its blog and its sponsors into the site",
     ),
   );
   Command.run(command, { version: '0.0.0' }).pipe(
