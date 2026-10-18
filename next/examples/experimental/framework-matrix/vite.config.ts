@@ -37,7 +37,8 @@ const noJestDom: Plugin = {
 
 export default defineConfig((env) => ({
   plugins: [
-    solid({ include: 'src/solid/**' }),
+    // Absolute, since `pnpm test` from next/ resolves globs from there.
+    solid({ include: `${new URL('src/solid', import.meta.url).pathname}/**` }),
     noJestDom,
     svelte({ configFile: false }),
     tailwindcss(),
