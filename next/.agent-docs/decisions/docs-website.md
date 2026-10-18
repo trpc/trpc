@@ -9,5 +9,6 @@
 - Why: compiled examples are the only docs that stay right through a rewrite this large; keeping Markdown as the source keeps the GitHub reading and the agents' workflow ("update docs with each change") as they were.
 - Lost: MDX and React components inside pages (a page is Markdown only); typechecking the blocks that stay plain `ts`; a generated API reference.
 - (agent) Since 2026-10-17 the site also serves a copy of the v11 docs at `/v11/docs`, with a version switcher and a banner on every page linking each page to its counterpart ([`v11-docs-copy.md`](./v11-docs-copy.md)).
+- (agent) Every page has a social card (`og:image`), rendered in the build ([`og-images.md`](./og-images.md)).
 - Open: the Vercel project and the domain (`site.url` is `https://v12.trpc.io`, unclaimed); the repo side is ready ([`docs-website-on-vercel.md`](./docs-website-on-vercel.md)); full-text search (the dialog matches titles, descriptions and headings).
 - Lives in: `next/www/` (`build/`, `src/`, `samples/`), `next/docs/`, `next/vite.config.ts` (`www/build` tests), `.github/workflows/next.yml` (`www`).
