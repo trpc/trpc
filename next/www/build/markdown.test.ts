@@ -3,7 +3,7 @@ import { describe, expect, it } from '@effect/vitest';
 import { Effect, FileSystem, Path } from 'effect';
 
 import { brokenLinks } from './content.ts';
-import { headingsOf, renderMarkdown, resolveLink } from './markdown.ts';
+import { anchorsOf, renderMarkdown, resolveLink } from './markdown.ts';
 
 /** A samples dir whose `docs` app compiles inline blocks, removed when the test ends. */
 const samples = Effect.gen(function* () {
@@ -182,15 +182,16 @@ describe('renderMarkdown', () => {
     }).pipe(Effect.provide(NodeServices.layer)),
   );
 
-  it.effect('collects h2 and h3 headings with ids', () =>
+  it.effect('collects h2 and h3 headings, and every heading as an anchor', () =>
     Effect.gen(function* () {
-      const rendered = yield* render(
-        '## Call options\n\n### `signal`\n\n#### Deep',
-      );
+      const markdown = '## Call options\n\n### `signal`\n\n#### Deep';
+      const rendered = yield* render(markdown);
       expect(rendered.headings).toEqual([
         { depth: 2, id: 'call-options', text: 'Call options' },
         { depth: 3, id: 'signal', text: 'signal' },
       ]);
+      expect(rendered.anchors).toEqual(['call-options', 'signal', 'deep']);
+      expect(yield* anchorsOf(markdown)).toEqual(rendered.anchors);
     }).pipe(Effect.provide(NodeServices.layer)),
   );
 
@@ -204,7 +205,7 @@ describe('renderMarkdown', () => {
       ]);
       expect(rendered.html).toContain('id="params"');
       expect(rendered.html).not.toContain('{#params}');
-      expect(yield* headingsOf(markdown)).toEqual(rendered.headings);
+      expect(yield* anchorsOf(markdown)).toEqual(['params', 'other']);
     }).pipe(Effect.provide(NodeServices.layer)),
   );
 
@@ -274,23 +275,19 @@ describe('resolveLink', () => {
     expect(resolveLink('a', 'https://example.com')).toEqual({ kind: 'other' });
     expect(resolveLink('a', 'mailto:a@b.c')).toEqual({ kind: 'other' });
     expect(resolveLink('a', '#heading')).toEqual({ kind: 'other' });
+    expect(resolveLink('a', '/v9/docs/nextjs#hooks')).toEqual({
+      kind: 'other',
+    });
   });
 });
 
 describe('brokenLinks', () => {
   it('reports missing pages and headings', () => {
-    const page = (slug: string, ids: ReadonlyArray<string>) => ({
-      description: '',
-      headings: ids.map((id) => ({ depth: 2 as const, id, text: id })),
-      lastModified: undefined,
-      section: 'Core',
-      slug,
-      title: slug,
-    });
     expect(
       brokenLinks([
         {
-          doc: page('a', ['intro']),
+          anchors: ['intro'],
+          doc: { slug: 'a' },
           links: [
             { hash: 'intro', slug: 'a' },
             { hash: undefined, slug: 'b' },

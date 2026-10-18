@@ -81,6 +81,8 @@ interface Source {
 }
 
 interface Rendered {
+  /** Every heading's id, which links can point at. */
+  readonly anchors: ReadonlyArray<string>;
   readonly doc: Doc;
   readonly links: ReadonlyArray<DocLink>;
   /** Each `twoslash` block's `// ^?` types, for the page's markdown. */
@@ -259,11 +261,12 @@ export function readingOrder<A extends NavEntry>(
 /** Links to a page or a heading that doesn't exist, as one message per link. */
 export function brokenLinks(
   pages: ReadonlyArray<{
-    readonly doc: DocMeta;
+    readonly anchors: ReadonlyArray<string>;
+    readonly doc: Pick<DocMeta, 'slug'>;
     readonly links: ReadonlyArray<DocLink>;
   }>,
 ) {
-  const bySlug = new Map(pages.map((page) => [page.doc.slug, page.doc]));
+  const bySlug = new Map(pages.map((page) => [page.doc.slug, page]));
   return pages.flatMap((page) =>
     page.links.flatMap((link) => {
       const target = bySlug.get(link.slug);
@@ -272,10 +275,7 @@ export function brokenLinks(
           `${page.doc.slug}: links to ${link.slug}.md, which isn't a page`,
         ];
       }
-      if (
-        link.hash !== undefined &&
-        !target.headings.some((heading) => heading.id === link.hash)
-      ) {
+      if (link.hash !== undefined && !target.anchors.includes(link.hash)) {
         return [
           `${page.doc.slug}: links to ${link.slug}.md#${link.hash}, which has no such heading`,
         ];
@@ -342,6 +342,7 @@ export function docsContent(options: ContentOptions): Plugin {
       ),
     );
     const page: Rendered = {
+      anchors: result.anchors,
       doc: {
         description: source.frontmatter.description,
         headings: result.headings,

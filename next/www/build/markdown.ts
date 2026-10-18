@@ -42,6 +42,9 @@ export interface DocLink {
 }
 
 interface RenderedMarkdown {
+  /** Every heading's id, which links can point at. */
+  readonly anchors: ReadonlyArray<string>;
+  /** The `h2` and `h3` headings, for the table of contents. */
   readonly headings: ReadonlyArray<DocHeading>;
   readonly html: string;
   readonly links: ReadonlyArray<DocLink>;
@@ -154,10 +157,15 @@ export type ResolvedLink =
  * Links are written as relative paths between the `.md` files
  * (`../client/links.md#batching`), so they work on GitHub too. A link to a
  * page points at `<basePath>/<slug>`, and a link out of the docs folder (an
- * example, a design note) points at the file on GitHub.
+ * example, a design note) points at the file on GitHub. A path from `/` is
+ * a page of the site, as written.
  */
 export function resolveLink(fromSlug: string, url: string): ResolvedLink {
-  if (/^[a-z][a-z\d+.-]*:/i.test(url) || url.startsWith('#')) {
+  if (
+    /^[a-z][a-z\d+.-]*:/i.test(url) ||
+    url.startsWith('#') ||
+    url.startsWith('/')
+  ) {
     return { kind: 'other' };
   }
   const base = new URL(`file:///docs/${fromSlug}.md`);
@@ -289,8 +297,8 @@ function remarkCodeMeta() {
   };
 }
 
-/** Ids and anchor links for `h2` / `h3`, collected for the table of contents. */
-function rehypeHeadings(headings: Array<DocHeading>) {
+/** Ids and anchor links for every heading; `h2` / `h3` are collected for the table of contents. */
+function rehypeHeadings(headings: Array<DocHeading>, anchors: Array<string>) {
   return () => (tree: HastRoot) => {
     const slugger = new GithubSlugger();
     visit(tree, 'element', (node: Element) => {
@@ -303,6 +311,7 @@ function rehypeHeadings(headings: Array<DocHeading>) {
           ? node.properties.id
           : slugger.slug(text);
       node.properties.id = id;
+      anchors.push(id);
       if (node.tagName === 'h2' || node.tagName === 'h3') {
         headings.push({ depth: node.tagName === 'h2' ? 2 : 3, id, text });
       }
@@ -724,6 +733,7 @@ export interface RenderOptions {
 function parsing(
   options: Pick<RenderOptions, 'basePath' | 'slug' | 'sourceUrl'>,
   headings: Array<DocHeading>,
+  anchors: Array<string>,
   links: Array<DocLink>,
 ) {
   return unified()
@@ -736,22 +746,23 @@ function parsing(
     .use(remarkCodeMeta)
     .use(remarkRehype, { allowDangerousHtml: true })
     .use(rehypeRaw)
-    .use(rehypeHeadings(headings));
+    .use(rehypeHeadings(headings, anchors));
 }
 
-/** The `h2` and `h3` headings a page renders, which links can point at. */
-export const headingsOf = Effect.fn('headingsOf')(function* (markdown: string) {
-  const headings: Array<DocHeading> = [];
+/** The ids of the headings a page renders, which links can point at. */
+export const anchorsOf = Effect.fn('anchorsOf')(function* (markdown: string) {
+  const anchors: Array<string> = [];
   const processor = parsing(
     { basePath: '/docs', slug: 'index', sourceUrl: '' },
-    headings,
+    [],
+    anchors,
     [],
   );
   yield* Effect.tryPromise({
     catch: (cause) => new ContentError({ cause, message: messageOf(cause) }),
     try: async () => processor.run(processor.parse(markdown)),
   });
-  return headings;
+  return anchors;
 });
 
 const twoslashFence = /^[ \t]*```\w*[^\n]*\btwoslash\b/m;
@@ -761,6 +772,7 @@ export const renderMarkdown = Effect.fn('renderMarkdown')(function* (
   options: RenderOptions,
 ) {
   const headings: Array<DocHeading> = [];
+  const anchors: Array<string> = [];
   const links: Array<DocLink> = [];
   const typeQueries: Array<ReadonlyArray<string>> = [];
   let collapseId = 0;
@@ -773,7 +785,7 @@ export const renderMarkdown = Effect.fn('renderMarkdown')(function* (
         options.twoslashCache,
       )
     : undefined;
-  const processor = parsing(options, headings, links)
+  const processor = parsing(options, headings, anchors, links)
     .use(rehypeShiki, {
       defaultColor: false,
       // Loading all of Shiki's languages took seconds per process, so
@@ -812,6 +824,7 @@ export const renderMarkdown = Effect.fn('renderMarkdown')(function* (
     try: async () => processor.run(processor.parse(markdown)),
   }).pipe(Effect.ensuring(blocks?.flush ?? Effect.void));
   const rendered: RenderedMarkdown = {
+    anchors,
     headings,
     html: toHtml(tree),
     links,
