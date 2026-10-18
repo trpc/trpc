@@ -45,7 +45,12 @@ import type {
   Unset,
   Value,
 } from '../internal/types.ts';
-import type { DeclaredErrors, ErrorMapInput } from '../server/builder.ts';
+import type {
+  DeclaredErrors,
+  ErrorMapInput,
+  BuilderDef,
+  ProcedureBuilder,
+} from '../server/builder.ts';
 import {
   isProcedure,
   mergeMeta,
@@ -58,7 +63,6 @@ import {
   type Step,
 } from '../server/procedure.ts';
 import { routeOf, type Route } from '../openapi/routes.ts';
-import type { BuilderDef, ProcedureBuilder } from '../server/builder.ts';
 import type {
   AnySchema,
   InOf,

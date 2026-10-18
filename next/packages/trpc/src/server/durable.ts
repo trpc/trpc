@@ -1,5 +1,5 @@
 import {
-  Cause,
+  type Cause,
   Deferred,
   Duration,
   Effect,
@@ -16,7 +16,7 @@ import {
   isTrpcError,
   statusOf,
   toWireError,
-  TrpcError,
+  type TrpcError,
   withStatusHint,
   type AnyTrpcError,
   type WireError,

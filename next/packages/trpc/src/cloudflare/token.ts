@@ -1,6 +1,6 @@
 import { Clock, Effect, Redacted, Result, Schema } from 'effect';
 import { Base64Url } from 'effect/encoding';
-import { TrpcError } from '../internal/error.ts';
+import type { TrpcError } from '../internal/error.ts';
 import { failure, Reason, type ReasonOf } from '../internal/failure.ts';
 
 /**

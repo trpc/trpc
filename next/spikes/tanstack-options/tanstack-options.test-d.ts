@@ -1,5 +1,5 @@
 import {
-  QueryClient,
+  type QueryClient,
   skipToken,
   type InfiniteData,
 } from '@tanstack/query-core';

@@ -1,4 +1,4 @@
-import { Cause, Effect, FiberSet, Queue, Stream } from 'effect';
+import { type Cause, Effect, FiberSet, Queue, Stream } from 'effect';
 import { backpressure } from '../internal/effects.ts';
 import { isAsyncIterable, isPromiseLike } from '../serializer/stream.ts';
 import { isPlainObject } from '../serializer/utils.ts';

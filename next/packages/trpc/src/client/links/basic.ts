@@ -1,4 +1,4 @@
-import { Effect, Exit, Stream } from 'effect';
+import { Effect, type Exit, Stream } from 'effect';
 import { serverFailure, type AnyTrpcError } from '../../internal/error.ts';
 import { HEADER } from '../../internal/protocol.ts';
 import type { IsAny, ProcedureType } from '../../internal/types.ts';
