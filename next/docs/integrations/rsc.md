@@ -54,7 +54,9 @@ export default async function Page(props: { params: Promise<{ id: string }> }) {
 
 ## Next.js data cache
 
-`cacheTags(key)` from `@trpc12/tanstack-query` (re-exported by the framework packages, and by `@trpc12/tanstack-react-query/rsc` for server code, since the package root imports React's client hooks) turns a query key into data-cache tags, broad to narrow: `trpc`, each path prefix (`trpc:post`, `trpc:post.byId`), then the path with its input (`trpc:post.byId:{"id":"1"}`, keys sorted). `revalidationTag(key)` is the one tag that covers a key, so revalidating works like `invalidateQueries`:
+`cacheTags(key)` turns a query key into data-cache tags, broad to narrow: `trpc`, each path prefix (`trpc:post`, `trpc:post.byId`), then the path with its input (`trpc:post.byId:{"id":"1"}`, keys sorted). `revalidationTag(key)` is the one tag that covers a key, so revalidating works like `invalidateQueries`. Both come from `@trpc12/tanstack-query` and every framework package; in server components and Server Actions, import them from `@trpc12/tanstack-react-query/rsc`, since the package root imports React's client hooks.
+
+Tag a `'use cache'` function (Next's `cacheComponents: true`) that reads through `caller`, then revalidate after a write:
 
 ```ts twoslash
 // ---cut-start---
@@ -68,23 +70,25 @@ const trpc = rsc.trpc;
 const caller = rsc.caller;
 declare const id: string;
 // ---cut-end---
-import { cacheTag, revalidateTag } from 'next/cache';
+import { cacheLife, cacheTag, revalidateTag, updateTag } from 'next/cache';
 import { cacheTags, revalidationTag } from '@trpc12/tanstack-react-query/rsc';
 
 async function getPost(id: string) {
   'use cache';
+  cacheLife('max');
   cacheTag(...cacheTags(trpc.post.byId.queryKey({ input: { id } })));
   return caller.post.byId.query({ id });
 }
 
-// in a Server Action, after a write
-revalidateTag(
-  revalidationTag(trpc.post.byId.queryKey({ input: { id } })),
-  'max',
-); // that post
-revalidateTag(revalidationTag(trpc.post.pathKey()), 'max'); // every post.* call
+// in a Server Action, after a write: the refreshed page waits for fresh data
+updateTag(revalidationTag(trpc.post.byId.queryKey({ input: { id } }))); // that post
+updateTag(revalidationTag(trpc.post.pathKey())); // every post.* call
+
+// in a route handler or webhook: stale-while-revalidate
+revalidateTag(revalidationTag(trpc.post.pathKey()), 'max');
 ```
 
-An input whose tag would be longer than Next's 256 characters gets no tag of its own; it revalidates with its path.
+- `updateTag` only works in Server Actions. A write that goes through the tRPC route handler doesn't revalidate anything by itself, so cached pages keep the old data until something revalidates their tags.
+- An input whose tag would be longer than Next's 256 characters gets no tag of its own; it revalidates with its path.
 
-The [`examples/next-app`](../../examples/next-app) app puts these together with [Server Actions](./server-actions.md).
+The [`examples/next-app`](../../examples/next-app) guestbook puts these together: [`guestbook.tsx`](../../examples/next-app/src/app/guestbook/guestbook.tsx) caches the list under `cacheTags`, and the [Server Action](./server-actions.md) in [`actions.ts`](../../examples/next-app/src/app/guestbook/actions.ts) calls `updateTag(revalidationTag(trpc.guestbook.pathKey()))` after signing.
