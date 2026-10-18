@@ -223,13 +223,29 @@ test('close() fails calls in flight, and the next call reconnects', async () => 
   await using ctx = await setup();
   const upgrades = countUpgrades(ctx.server);
   const pending = ctx.client.slow.query();
-  const ticks = collect(ctx.client.ticks.subscribe());
-  await sleep(10);
+  const ticks = ctx.client.ticks.subscribe()[Symbol.asyncIterator]();
+  expect(await ticks.next()).toEqual({ done: false, value: 0 });
   await ctx.link.close();
   await expect(pending).rejects.toMatchObject({
     code: 'CLIENT_CLOSED_REQUEST',
   });
-  await expect(ticks).rejects.toMatchObject({ code: 'CLIENT_CLOSED_REQUEST' });
+  await expect(ticks.next()).rejects.toMatchObject({
+    code: 'CLIENT_CLOSED_REQUEST',
+  });
+  expect(await ctx.client.slow.query()).toBe('done');
+  expect(upgrades.count).toBe(2);
+});
+
+test('close() while the connection opens closes it too', async () => {
+  await using ctx = await setup();
+  const upgrades = countUpgrades(ctx.server);
+  const upgraded = new Promise((r) => ctx.server.server.once('upgrade', r));
+  const pending = ctx.client.slow.query();
+  await upgraded;
+  await ctx.link.close();
+  await expect(pending).rejects.toMatchObject({
+    code: 'CLIENT_CLOSED_REQUEST',
+  });
   expect(await ctx.client.slow.query()).toBe('done');
   expect(upgrades.count).toBe(2);
 });

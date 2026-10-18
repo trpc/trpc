@@ -145,6 +145,8 @@ function makeSocketLink(
   /** Every call's inbox, so `close()` can fail them wherever they are. */
   const live = new Set<Queue.Queue<Signal>>();
   let current: Connection | undefined;
+  /** Bumped by `close()`, which can't reach a connection still opening. */
+  let closes = 0;
 
   const revive = (message: Extract<ServerMessage, { type: 'error' }>) => {
     try {
@@ -210,6 +212,7 @@ function makeSocketLink(
     });
 
   const acquire = Effect.gen(function* () {
+    const epoch = closes;
     const socket = yield* Effect.tryPromise({
       try: () => transport.connect(),
       catch: lostError,
@@ -234,6 +237,11 @@ function makeSocketLink(
           : opts.connectionParams,
       catch: lostError,
     });
+    if (closes !== epoch) {
+      conn.lost = true;
+      socket.close();
+      return conn;
+    }
     socket.onMessage((message) => dispatch(conn, message));
     socket.onClose(() => lose(conn));
     socket.send({
@@ -262,10 +270,19 @@ function makeSocketLink(
     }).pipe(Scope.provide(Scope.makeUnsafe())),
   );
 
-  /** A connection that isn't lost, or `undefined` if none opens. */
-  const connected: Effect.Effect<Connection | undefined, never, Scope.Scope> =
+  /**
+   * A connection that isn't lost, or `undefined` if none opens. Fails with
+   * the error `close()` gave the call while it waited.
+   */
+  const connected = (
+    inbox: Queue.Queue<Signal>,
+  ): Effect.Effect<Connection | undefined, AnyTrpcError, Scope.Scope> =>
     Effect.gen(function* () {
       for (;;) {
+        const signal = yield* Queue.poll(inbox);
+        if (Option.isSome(signal) && Signal.$is('Fail')(signal.value)) {
+          return yield* Effect.fail(signal.value.error);
+        }
         const conn = yield* Effect.option(RcRef.get(connection));
         if (Option.isNone(conn)) return undefined;
         if (!conn.value.lost) return conn.value;
@@ -287,7 +304,7 @@ function makeSocketLink(
         try: call.request,
         catch: (cause) => cause as AnyTrpcError,
       });
-      const conn = yield* connected;
+      const conn = yield* connected(inbox);
       if (!conn) return 'silent';
       if (conn.refused) return yield* Effect.fail(conn.refused);
       const { id } = call.op;
@@ -487,6 +504,7 @@ function makeSocketLink(
             message: 'The link was closed',
           }),
         });
+        closes++;
         for (const inbox of live) Queue.offerUnsafe(inbox, signal);
         const conn = current;
         yield* RcRef.invalidate(connection);
