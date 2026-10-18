@@ -19,16 +19,14 @@
  * ```
  * @module
  */
-import { Effect, Layer, Queue, Stream } from 'effect';
+import { Effect, Layer, Stream } from 'effect';
 import { HttpServerRequest } from 'effect/http';
 import { Socket, SocketServer } from 'effect/socket';
-import type { ServerMessage } from '../internal/protocol.ts';
 import { decodeLines, encodeLine } from '../internal/lines.ts';
 import {
   parseSocketMessage,
-  serveConnection,
+  serveSocketConnection,
   socketCores,
-  type Connection,
   type SocketCore,
 } from '../server/socket.ts';
 
@@ -68,43 +66,15 @@ const serveOne = (
   socket: Socket.Socket,
   opts: SocketOptions,
 ): Effect.Effect<void> =>
-  Effect.gen(function* () {
-    const writer = yield* socket.writer;
-    const outbox = yield* Queue.unbounded<string | Socket.CloseEvent>();
-    yield* Queue.take(outbox).pipe(
-      Effect.flatMap((chunk) => writer.write(chunk)),
-      Effect.forever,
-      Effect.ignore,
-      Effect.forkScoped,
-    );
-    const listeners: Array<(message: unknown) => void> = [];
-    const closers: Array<() => void> = [];
-    const conn: Connection = {
-      send: (message: ServerMessage) => {
-        Queue.offerUnsafe(outbox, encodeLine(message));
-      },
-      onMessage: (listener) => listeners.push(listener),
-      onClose: (listener) => closers.push(listener),
-      close: (code, reason) => {
-        Queue.offerUnsafe(outbox, new Socket.CloseEvent(code, reason));
-      },
-    };
-    serveConnection(core, conn, {
-      request: HttpServerRequest.fromWeb(new Request('http://localhost/')),
-      transport: 'socket',
-      idleTimeoutMs: opts.idleTimeoutMs ?? 60_000,
-    });
-    yield* decodeLines(Socket.toStream(socket)).pipe(
-      Stream.runForEach((line) =>
-        Effect.sync(() => {
-          const message = parseSocketMessage(line);
-          for (const listener of listeners) listener(message);
-        }),
-      ),
-      Effect.ignore,
-    );
-    for (const close of closers) close();
-  }).pipe(Effect.scoped);
+  serveSocketConnection(core, socket, {
+    request: HttpServerRequest.fromWeb(new Request('http://localhost/')),
+    transport: 'socket',
+    idleTimeoutMs: opts.idleTimeoutMs ?? 60_000,
+    messages: decodeLines(Socket.toStream(socket)).pipe(
+      Stream.map(parseSocketMessage),
+    ),
+    encode: encodeLine,
+  });
 
 /**
  * Serves `handler`'s router on the current `SocketServer`: every accepted

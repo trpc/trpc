@@ -37,8 +37,13 @@ import {
   PROTOCOL_VERSION,
 } from '../internal/protocol.ts';
 import { type FetchHandler, httpApps } from '../server/fetch.ts';
-import { socketCores, type WebSocketLike } from '../server/socket.ts';
-import { isUpgrade, upgradeTo } from '../server/upgrade.ts';
+import type { WebSocketLike } from '../server/socket.ts';
+import {
+  isUpgrade,
+  serveAsWebSocket,
+  socketServers,
+  upgradeTo,
+} from '../server/upgrade.ts';
 
 /**
  * Anything with a web-standard `fetch` method, like `createFetchHandler()`.
@@ -140,7 +145,7 @@ export function toHttpEffect(
 > {
   const endpoint = `/${(opts.endpoint ?? '/trpc').replace(/^\/+|\/+$/g, '')}`;
   const own = httpApps.get(handler);
-  const core = socketCores.get(handler);
+  const serveSocket = socketServers.get(handler);
   const fetch =
     own?.app ??
     Effect.flatMap(HttpServerRequest.HttpServerRequest, (request) =>
@@ -165,10 +170,12 @@ export function toHttpEffect(
           (reason) => new HttpServerError.HttpServerError({ reason }),
         ),
       );
-      yield* upgradeTo(request, (ws) =>
-        (handler as WebSocketHandlerLike).websocket(ws, {
-          request: webRequest,
-        }),
+      yield* upgradeTo(request, (socket) =>
+        serveAsWebSocket(socket, (ws) =>
+          (handler as WebSocketHandlerLike).websocket(ws, {
+            request: webRequest,
+          }),
+        ),
       );
     });
   const inner = !('websocket' in handler)
@@ -180,8 +187,8 @@ export function toHttpEffect(
         if (url.pathname !== endpoint && url.pathname !== `${endpoint}/`) {
           return HttpServerResponse.empty({ status: 404 });
         }
-        yield* core
-          ? upgradeTo(request, (ws) => core.serveWebSocket(ws, request))
+        yield* serveSocket
+          ? upgradeTo(request, (socket) => serveSocket(socket, request))
           : Effect.scoped(viaWeb(request));
         return HttpServerResponse.empty();
       });

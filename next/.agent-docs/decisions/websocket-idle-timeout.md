@@ -7,4 +7,5 @@
 - (agent) Hibernating Durable Object sockets don't get the timer: it would wake the object, and Cloudflare already handles dead sockets there.
 - Why: dead clients' subscriptions are cleaned up from the pings clients already send, with no new wire message.
 - Lost: server-initiated pings for clients that never ping (a non-browser client must ping, or set its own idle handling).
-- Lives in: `packages/trpc/src/server/socket.ts` (`serveConnection`), `src/server/fetch.ts` (`websocket.idleTimeoutMs`); `packages/trpc/src/server/websockets.test.ts`.
+- (agent) The timer is a `FiberHandle` fiber that each frame restarts, in `runSocket` ([`websocket-sessions-on-effect-socket.md`](./websocket-sessions-on-effect-socket.md)); raw TCP sockets and the v11 handler share it.
+- Lives in: `packages/trpc/src/server/socket-session.ts` (`runSocket`), `src/server/socket.ts` (`serveSocketConnection`), `src/server/fetch.ts` (`websocket.idleTimeoutMs`); `packages/trpc/src/server/websockets.test.ts`.

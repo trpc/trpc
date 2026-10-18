@@ -1,0 +1,22 @@
+{
+  "name": "@tooling/release",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@changesets/assemble-release-plan": "7.0.0",
+    "@changesets/config": "4.0.1",
+    "@changesets/read": "1.0.1",
+    "@changesets/types": "7.0.0",
+    "@manypkg/get-packages": "3.1.0",
+    "effect": "^4.0.0"
+  },
+  "devDependencies": {
+    "@tooling/tsconfig": "workspace:*",
+    "@types/node": "^24.0.0",
+    "typescript": "^7.0.2",
+    "vite-plus": "1.1.0"
+  }
+}

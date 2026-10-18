@@ -45,8 +45,10 @@ import {
   type inferRouterContext,
   type inferRouterServices,
 } from '../server/router.ts';
+import { fromWebSocketLike } from '../server/socket-session.ts';
 import type { WebSocketLike } from '../server/socket.ts';
 import { isTracked } from '../server/tracked.ts';
+import { socketServers } from '../server/upgrade.ts';
 import {
   v11Shape,
   type V11ErrorFormatterOpts,
@@ -905,6 +907,7 @@ export function createV11Handler<
   }) as never;
 
   const middleware = opts.middleware ?? [];
+  const idleTimeoutMs = opts.websocket?.idleTimeoutMs ?? false;
   const served = middleware.reduceRight<
     Effect.Effect<HttpServerResponse.HttpServerResponse, any, any>
   >((inner, m) => m(inner), app);
@@ -922,14 +925,25 @@ export function createV11Handler<
           : (Context.make(CurrentPlatform, platform) as Context.Context<never>),
       ),
     websocket(socket, o) {
-      serveV11Socket(core, socket, {
-        request: HttpServerRequest.fromWeb(o.request),
-        platform: o.platform,
-        idleTimeoutMs: opts.websocket?.idleTimeoutMs ?? false,
-      });
+      Effect.runFork(
+        Effect.flatMap(fromWebSocketLike(socket), (effectSocket) =>
+          serveV11Socket(core, effectSocket, {
+            request: HttpServerRequest.fromWeb(o.request),
+            platform: o.platform,
+            idleTimeoutMs,
+          }),
+        ),
+      );
     },
     dispose: base.dispose,
   };
   httpApps.set(handler, { app, middleware });
+  socketServers.set(handler, (socket, request) =>
+    serveV11Socket(core, socket, {
+      request,
+      platform: undefined,
+      idleTimeoutMs,
+    }),
+  );
   return handler as V11Handler<TPlatform>;
 }

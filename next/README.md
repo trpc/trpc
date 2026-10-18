@@ -25,6 +25,7 @@ next/
   tooling/tsconfig/     `@tooling/tsconfig`: the shared, strictest tsconfigs every package, suite and tool extends (examples stay standalone)
   tooling/docs-lint/    lints the code blocks in docs/ (oxlint skips Markdown)
   tooling/vercel-ignore/  Vercel's ignored build step for the docs site: skips a deployment when nothing it renders changed
+  tooling/release/      checks the Changesets release plan (`.changeset/config.json`): dependents bump with their dependencies
   docs/                 Markdown user docs, a folder per sidebar section (index: docs/README.md)
   www/                  `@trpc12/www`: the docs site, rendered from docs/ with compiled twoslash examples
   www/samples/          the apps the docs' and home page's code blocks compile in
@@ -72,3 +73,5 @@ React without TanStack, both experimental as whole packages ([docs](./docs/integ
 **Pre-commit:** `.vite-hooks/pre-commit` runs `vp staged` (see `staged` in `vite.config.ts`): `vp check --fix` on staged files under `next/`, plus `vp test related` for staged `.ts` files. `.vite-hooks/post-merge` reruns `pnpm --filter @trpc12/www sponsors:readme` when a merge changed the root's `README.md`. The old docs copied from the root's `www/` are synced by hand ([`../.agents/skills/sync-old-docs/SKILL.md`](../.agents/skills/sync-old-docs/SKILL.md)). `pnpm install` enables it via `vp config` unless `core.hooksPath` is already set to something else. Skip once with `VP_GIT_HOOKS=0 git commit …`.
 
 **CI:** `../.github/workflows/next.yml` runs for changes under `next/`: `typecheck`, `check`, `coverage`, `example` (with Redis) and `bench budget`; `typecheck` and `test` against the latest `effect@4.x`; and `test:bun`. `fix` and `build` aren't in CI, so run them locally. After pushing, find the run with `gh run list --workflow next.yml --branch <branch>` and watch it with `gh run watch <id> --exit-status`. Root v11 workflows are untouched.
+
+**Releases:** [Changesets](https://github.com/changesets/changesets) in `.changeset/`, nothing published yet ([decision](./.agent-docs/decisions/versioning.md)). Each package has its own version, and a bump also releases every package that depends on the bumped one (`dependencies` or `peerDependencies`). `pnpm changeset` records a change (`pnpm changeset --minor @trpc12/trpc -m "…"` skips the prompts); a breaking bump, a minor on `0.x`, names each dependent with the same bump, which `tooling/release/release.test.ts` checks. Don't add changesets before the first release, which publishes each package's `0.1.0` as it stands.

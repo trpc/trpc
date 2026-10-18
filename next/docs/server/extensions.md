@@ -43,11 +43,11 @@ t.procedure
   .mutation((opts) => opts.ctx.remaining);
 ```
 
-Extensions chain, and `t.middleware` and `t.implement()` see what they add. `t.concat()` is a type error when the root lacks ctx the extension needs, or declares one of its meta keys with another type. Services an extension provides with `.provide()` don't need the handler's `layer`; services it only uses do.
+Extensions chain, and `t.middleware` sees what they add. `t.concat()` is a type error when the root lacks ctx the extension needs, or declares one of its meta keys with another type. Services an extension provides with `.provide()` don't need the handler's `layer`; services it only uses do.
 
 ## Merging meta
 
-Meta keys a root doesn't declare are a type error, and a later `.meta()` replaces a key unless its root says how to merge it. An extension sets that for its own keys with `initTrpc({ mergeMeta })`. Contracts take extensions too, for their meta: `contract.create().concat(extension)`.
+Meta keys a root doesn't declare are a type error, and a later `.meta()` replaces a key unless its root says how to merge it. An extension sets that for its own keys with `initTrpc({ mergeMeta })`.
 
 ## Building integrations
 

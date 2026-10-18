@@ -35,7 +35,7 @@ await client.post.create.mutate({ title: 'Hi' });
 
 Queries are called with `.query()`, mutations with `.mutate()` and subscriptions with `.subscribe()`, which returns an async iterable ([Subscriptions](../subscriptions/overview.md)).
 
-`routerType<AppRouter>()` types the client from the router type alone. A [contract](../server/contract-first.md) can stand in for it: `router: appContract`.
+`routerType<AppRouter>()` types the client from the router type alone.
 
 ## Call options
 

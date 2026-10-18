@@ -26,7 +26,7 @@ const byId = t.procedure
 
 ## Declaring errors
 
-Declaring errors with `.errors()` is optional. It adds typed constructors and `data` schemas. It also types what inference can't see: errors thrown from helpers (a `throw` has no type) and contracts, which have no resolver.
+Declaring errors with `.errors()` is optional. It adds typed constructors and `data` schemas. It also types what inference can't see: errors thrown from helpers, since a `throw` has no type.
 
 ```ts twoslash
 // ---cut-start---

@@ -1,8 +1,8 @@
 ---
 title: Calling REST from the client
 description: experimental_openApiLink sends each call to its REST route, typed from a contract.
-section: OpenAPI
-order: 3
+section: Contracts and OpenAPI
+order: 4
 hidden: true
 ---
 

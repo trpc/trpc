@@ -1,8 +1,8 @@
 ---
 title: A contract from OpenAPI
 description: Generate a typed contract module from any OpenAPI 3.0 or 3.1 document.
-section: OpenAPI
-order: 4
+section: Contracts and OpenAPI
+order: 5
 hidden: true
 ---
 

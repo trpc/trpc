@@ -2,8 +2,8 @@
 title: OpenAPI
 label: Overview
 description: Serve the router over REST, document it as OpenAPI 3.1, call REST routes from the client, and generate contracts from OpenAPI documents.
-section: OpenAPI
-order: 0
+section: Contracts and OpenAPI
+order: 1
 v11: openapi
 hidden: true
 ---

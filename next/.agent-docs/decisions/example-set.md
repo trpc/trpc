@@ -1,17 +1,33 @@
-# Six examples: the proposed five plus Cloudflare (human)
+# The example set: the original six, monorepo, and the nine research candidates (human)
 
 - Human, 2026-10-15 (decisions round 3, Q16 = proposal 22 Q22.4): "B".
-- `next/examples/`:
+- Human, 2026-10-18 (example-apps research, which candidates of 1–9): "all of them".
+- Human, 2026-10-18 (same round, UI and `next/www`): "create them, they should all use the same ui lib as next/www and they shouldn't touch that".
+- `next/examples/`, the original six:
   - `minimal/`: Node HTTP server and client, plain Promise code (exists).
   - `effect/`: Effect server and client (layers, `Stream`, `catchTag`).
   - `next-app/`: Next.js with TanStack Query, streamed mutations and files.
   - `openapi/`: `.route()`, the generated document and a REST call.
   - `realtime/`: WebSockets with a Redis-backed Publisher and `tracked()` resume.
   - `cloudflare/`: a Worker with a hibernating Durable Object via `@trpc12/trpc/cloudflare`.
-- (agent) Each depends on `@trpc12/trpc: workspace:*` and runs in CI with a typecheck and a smoke run, like `pnpm example` does for `minimal` today.
-- Why: one example per distinct runtime or feature; docs snippets already come from tested code.
-- Lost: a plain React single-page-app example (`react-vite`); `next-app` covers TanStack Query.
+- The nine research candidates, added 2026-10-18 ("all of them"):
+  - `saas-api/`: a multi-tenant API mounted in Express and Fastify; the server builder, middleware, errors, `Response`, links and in-process testing.
+  - `v11-migration/`: a `@trpc/*@11` app on `createV11Handler`, then `fromV11Link`, then the `trpc12-upgrade` codemod.
+  - `runtime-matrix/`: one router served on Node, Bun, Deno, AWS Lambda and a stateless Worker.
+  - `react-spa/`: a Vite + React app using the whole of `@trpc12/tanstack-react-query`.
+  - `next-app/` extended with a Server Action form and data-cache tags.
+  - `media-pipeline/`: files, binary frames, nested-promise and `Stream` outputs, serializers.
+  - `realtime/` extended with the Postgres publisher, a raw `EventSource` reader and `wsLink` reconnects.
+  - `effect-observability/`: OTel spans from client to DB service, Effect middleware, `TestServer`.
+  - The experimental bundle under `examples/experimental/`: `openapi` (moved from `examples/openapi/`, since it is all `experimental_*`), `durable-jobs`, `worker-threads`, `react-without-tanstack`, `nest`, `framework-matrix`.
+- `react-spa` reverses the earlier "Lost: a plain React single-page-app example (`react-vite`)": "all of them" includes it.
+- Every example with a UI uses `next/www`'s UI library and stack (the shadcn components in `@shared/ui`, Tailwind, React), as dependencies. No example imports code from `next/www`, and building them changes nothing under `next/www/`.
+- Experimental examples live in `next/examples/experimental/`, not the research's `next/www/.experimental/`: the human said the examples "shouldn't touch" `next/www`.
+- (agent) Each depends on `@trpc12/trpc: workspace:*` and runs in CI with a typecheck and a smoke run, like `pnpm example` does for `minimal` today. An example that needs a CI service (Deno, Postgres, a headless browser) adds it to the `check` job in the smallest way.
+- Why: one example per distinct runtime or feature; docs snippets already come from tested code. The research found most of the stable, listed surface never runs in a real app; the nine candidates cover almost all of it, so the release ships with each stable feature run end to end.
+- Lost: a small set that is cheap to keep green. Every example is another smoke in `pnpm example` and another thing a breaking change must update.
 - (agent) Built: `pnpm example` runs each example's `smoke` script in CI. `cloudflare/` runs on workerd through Wrangler's `unstable_startWorker`, and on Cloudflare itself once deployed ([`deployed-cloudflare-examples.md`](./deployed-cloudflare-examples.md)). `realtime/` runs two servers against a real Redis (a CI service). `next-app/` runs `next build` and `next start`, then checks the server-rendered page and calls the route with a Node client.
 - (agent) What the `next-app` smoke found: RSC refused the serializer's null-prototype objects, so `serialize` now emits plain objects; batches POST to the bare endpoint, so the Next route is `app/api/trpc/[[...trpc]]/route.ts`.
 - (agent) A seventh, `monorepo/`, for [large routers](./large-routers.md): domain packages, a contract package, an api package naming `AppRouter`, and two apps, all TypeScript project references built with `tsc -b`. Its packages are workspace packages (`examples/monorepo/{packages,apps}/*` in `pnpm-workspace.yaml`) named `@acme/*`; only the root `@example/monorepo` has scripts.
-- Lives in: `next/examples/{minimal,effect,next-app,openapi,realtime,cloudflare,monorepo}/`, root `pnpm example`, `.github/workflows/next.yml`.
+- (agent) A stable-tagged feature whose docs page is still hidden (`rateLimit()`, the non-React TanStack adapters) is labelled "unreviewed" in the README of the example that uses it, until its page is listed.
+- Lives in: `next/examples/{minimal,effect,next-app,openapi,realtime,cloudflare,monorepo}/` and each new example's directory as it lands, `next/examples/experimental/`, root `pnpm example`, `.github/workflows/next.yml`.
