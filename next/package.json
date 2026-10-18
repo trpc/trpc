@@ -5,10 +5,11 @@
   "scripts": {
     "prepare": "vp config --no-agent --hooks-dir .vite-hooks",
     "typecheck": "pnpm -r run typecheck",
-    "check": "vp check",
+    "check": "vp check && pnpm lint:docs",
     "fix": "vp check --fix",
     "fmt": "vp fmt",
-    "lint": "vp lint",
+    "lint": "vp lint && pnpm lint:docs",
+    "lint:docs": "node tooling/docs-lint/docs-lint.ts",
     "test": "vp test run",
     "coverage": "vp test run --coverage",
     "test:watch": "vp test watch",

@@ -62,7 +62,7 @@ Custom rules are in `tooling/oxlint-plugin/` (see its `AGENTS.md`). Never write 
 
 Effect code follows the `anti-slop-effect` rules. Build tagged values with `Data.taggedEnum` or tagged classes, not `{ _tag: … }` literals. Test them with `Predicate.isTagged`, `Option.isSome`/`isNone` or `Result.isFailure`, not by comparing `_tag`; recover with `Effect.catchReason`, not by branching on `err.reason._tag`. Use `Match` or a `Record` lookup instead of chained literal ternaries. In tests, assert with `expect(x).toSatisfy(Predicate.isTagged('X'))` or `toBeInstanceOf`, not `toMatchObject({ _tag })`.
 
-Destructuring (`trpc/no-overzealous-destructuring`): take one parameter and read its members, named `opts` by default, `args` where `opts` would shadow, and `props` for components. Destructure only keys read three or more times. Name a call's result instead of destructuring it (`const serialized = serializeDeferred(…)`). After a bulk codemod, compare `eslint/no-shadow` counts before and after, and check that renamed locals don't collide with existing functions.
+Destructuring (`trpc/no-overzealous-destructuring`, also checked in `docs/` code blocks by `pnpm lint:docs`): take one parameter and read its members, named `opts` by default, `args` where `opts` would shadow, and `props` for components. Destructure only keys read three or more times. Name a call's result instead of destructuring it (`const serialized = serializeDeferred(…)`). After a bulk codemod, compare `eslint/no-shadow` counts before and after, and check that renamed locals don't collide with existing functions.
 
 ## Vendored Source
 

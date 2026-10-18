@@ -209,5 +209,6 @@ export default defineConfig({
   staged: {
     '*': 'vp check --fix',
     '*.ts': 'vp test related --run',
+    'docs/**/*.md': 'node tooling/docs-lint/docs-lint.ts',
   },
 });

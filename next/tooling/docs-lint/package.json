@@ -1,0 +1,21 @@
+{
+  "name": "@tooling/docs-lint",
+  "private": true,
+  "description": "Lints the code blocks in docs/ with the trpc oxlint rules that apply to examples",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@effect/platform-node": "^4.0.2",
+    "effect": "^4.0.0",
+    "oxlint": "1.87.0"
+  },
+  "devDependencies": {
+    "@tooling/oxlint-plugin": "workspace:*",
+    "@tooling/tsconfig": "workspace:*",
+    "@types/node": "^24.0.0",
+    "typescript": "^7.0.2",
+    "vite-plus": "1.1.0"
+  }
+}

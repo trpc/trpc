@@ -13,8 +13,12 @@ Entry `index.ts`. Rules, switched on in `vite.config.ts` (everywhere unless note
 | `jsdoc`                        | `@since` and `@stability` on exports reachable from versioned entry points; `packages/*/src`, not tests or fixtures                                   |
 | `no-mock`                      | No module mocks (`vi.mock`, `vi.hoisted`, …); `vi.fn`, `vi.spyOn` and `vi.stubGlobal` stay allowed                                                    |
 | `no-custom-test-timeout`       | Tests keep Vitest's default timeouts                                                                                                                  |
-| `no-overzealous-destructuring` | A destructured local is read at least three times; off in `spikes/**`                                                                                 |
+| `no-overzealous-destructuring` | A destructured local is read at least three times; off in `spikes/**`, on in `docs/` code blocks                                                      |
 | `infer-callback-params`        | Callbacks leave their parameters to inference from the call; `examples/**` only                                                                       |
+
+## Code blocks in `docs/`
+
+Oxlint skips Markdown, so `../docs-lint` (`pnpm lint:docs`, part of `pnpm check` and `pnpm lint`) writes each `ts`/`tsx`/`js`/`jsx` block to a temp file, padded so problems point at the page's lines, and runs the rules in its `rules` with this plugin. A block that doesn't parse fails too: write placeholders as comments (`.mutation(/* … */)`), not `…`. To check another rule on examples, add it to `rules` there.
 
 ## `anti-slop-effect`
 
