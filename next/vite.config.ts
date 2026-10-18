@@ -47,12 +47,14 @@ export default defineConfig({
       typeAware: true,
       typeCheck: true,
     },
-    plugins: ['typescript', 'unicorn', 'oxc', 'vitest'],
+    plugins: ['typescript', 'unicorn', 'oxc', 'vitest', 'import'],
     jsPlugins: [
       './tooling/oxlint-plugin/index.ts',
       './tooling/oxlint-plugin/anti-slop/effect/index.ts',
     ],
     rules: {
+      // Runtime import cycles only: `import type` edges are erased and ignored.
+      'import/no-cycle': 'error',
       'trpc/acronym-case': 'error',
       'trpc/no-custom-test-timeout': 'error',
       'trpc/no-mock': 'error',
