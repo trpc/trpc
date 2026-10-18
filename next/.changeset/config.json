@@ -1,0 +1,19 @@
+{
+  "$schema": "https://unpkg.com/@changesets/config@4.0.1/schema.json",
+  "changelog": "@changesets/cli/changelog",
+  "commit": false,
+  "format": false,
+  "fixed": [],
+  "linked": [],
+  "access": "public",
+  "baseBranch": "v12",
+  "updateInternalDependencies": "patch",
+  "ignore": ["@trpc12/www"],
+  "privatePackages": {
+    "version": true,
+    "tag": false
+  },
+  "___experimentalUnsafeOptions_WILL_CHANGE_IN_PATCH": {
+    "updateInternalDependents": "always"
+  }
+}
