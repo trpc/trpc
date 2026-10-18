@@ -38,13 +38,13 @@ import {
 } from '../internal/protocol.ts';
 import { type FetchHandler, HttpApp } from '../server/fetch.ts';
 import { handlerContext } from '../server/handler-context.ts';
-import type { WebSocketLike } from '../server/socket.ts';
 import {
+  type WebSocketLike,
   isUpgrade,
   serveAsWebSocket,
   UpgradeServer,
   upgradeTo,
-} from '../server/upgrade.ts';
+} from '../server/sockets/index.ts';
 
 /**
  * Anything with a web-standard `fetch` method, like `createFetchHandler()`.

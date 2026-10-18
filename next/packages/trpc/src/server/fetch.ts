@@ -63,8 +63,8 @@ import {
   type inferRouterServices,
 } from './procedures/index.ts';
 import { httpParts } from './routes.ts';
-import { fromWebSocketLike } from './socket-session.ts';
 import {
+  fromWebSocketLike,
   serveMessagePort,
   serveSocketConnection,
   SocketCore,
@@ -72,9 +72,10 @@ import {
   type SocketCoreShape,
   type Transport,
   type WebSocketLike,
-} from './socket.ts';
+  UpgradeServer,
+  type ServeSocket,
+} from './sockets/index.ts';
 import { setHandlerContext } from './handler-context.ts';
-import { UpgradeServer, type ServeSocket } from './upgrade.ts';
 
 const encoder = new TextEncoder();
 

@@ -13,8 +13,8 @@ import {
   socketFrames,
   type SocketOutbox,
   type SocketSession,
-} from '../server/socket-session.ts';
-import { parseSocketMessage } from '../server/socket.ts';
+  parseSocketMessage,
+} from '../server/sockets/index.ts';
 import { isTracked } from '../server/subscriptions/index.ts';
 import type { V11Core } from './handler.ts';
 

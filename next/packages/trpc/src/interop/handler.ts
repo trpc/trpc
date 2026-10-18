@@ -45,11 +45,13 @@ import {
   type inferRouterContext,
   type inferRouterServices,
 } from '../server/procedures/index.ts';
-import { fromWebSocketLike } from '../server/socket-session.ts';
-import type { WebSocketLike } from '../server/socket.ts';
+import {
+  fromWebSocketLike,
+  type WebSocketLike,
+  UpgradeServer,
+} from '../server/sockets/index.ts';
 import { isTracked } from '../server/subscriptions/index.ts';
 import { setHandlerContext } from '../server/handler-context.ts';
-import { UpgradeServer } from '../server/upgrade.ts';
 import {
   v11Shape,
   type V11ErrorFormatterOpts,

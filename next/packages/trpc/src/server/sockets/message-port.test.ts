@@ -9,11 +9,11 @@ import { createSerializer } from '@trpc12/trpc/serializer';
 import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
-import type { WorkerRouter } from './fixtures/worker-server.ts';
+import type { WorkerRouter } from '../fixtures/worker-server.ts';
 
 async function startWorker() {
   const worker = new Worker(
-    new URL('./fixtures/worker-server.ts', import.meta.url),
+    new URL('../fixtures/worker-server.ts', import.meta.url),
   );
   const link = experimental_messagePortLink({
     port: worker,

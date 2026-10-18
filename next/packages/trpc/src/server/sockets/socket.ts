@@ -1,4 +1,4 @@
-import { carriesBytes, encodeRecord } from '../internal/frames.ts';
+import { carriesBytes, encodeRecord } from '../../internal/frames.ts';
 import {
   Cause,
   Context,
@@ -16,29 +16,29 @@ import type { Socket } from 'effect/socket';
 import {
   HibernationSlot,
   type ParkedSubscription,
-} from '../internal/hibernation.ts';
+} from '../../internal/hibernation.ts';
 import {
   isTrpcError,
   toWireError,
   TrpcError,
   type AnyTrpcError,
-} from '../internal/error.ts';
+} from '../../internal/error.ts';
 import {
   PROTOCOL_VERSION,
   type ClientMessage,
   type ServerMessage,
-} from '../internal/protocol.ts';
-import type { ProcedureType } from '../internal/types.ts';
-import type { AnySerializer } from '../serializer/index.ts';
+} from '../../internal/protocol.ts';
+import type { ProcedureType } from '../../internal/types.ts';
+import type { AnySerializer } from '../../serializer/index.ts';
 import {
   emitEvents,
   type EventFrame,
   createResponseHandle,
   normalizeCause,
   unexpectedError,
-} from './execution/index.ts';
-import type { HandlerCore } from './core.ts';
-import { resolveProcedure, type AnyRouter } from './procedures/index.ts';
+} from '../execution/index.ts';
+import type { HandlerCore } from '../core.ts';
+import { resolveProcedure, type AnyRouter } from '../procedures/index.ts';
 import { runSocket, socketFrames } from './socket-session.ts';
 
 /** The span a socket call is a child of: the trace context in its message. */

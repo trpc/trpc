@@ -28,7 +28,7 @@ import {
   serveSocketConnection,
   SocketCore,
   type SocketCoreShape,
-} from '../server/socket.ts';
+} from '../server/sockets/index.ts';
 import { handlerContext } from '../server/handler-context.ts';
 
 /**

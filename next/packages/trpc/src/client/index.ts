@@ -99,7 +99,7 @@ export {
   type TrpcPromise,
   type TrpcSubscription,
 } from './types.ts';
-export type { MessagePortLike } from '../server/socket.ts';
+export type { MessagePortLike } from '../server/sockets/index.ts';
 export {
   ERROR_STATUS,
   isBuiltinCode,

@@ -20,7 +20,7 @@ import {
 } from './execution/index.ts';
 import type { CreateContextOpts, OnErrorOpts } from './fetch.ts';
 import type { ResponseHandle, AnyProcedure } from './procedures/index.ts';
-import type { Transport } from './socket.ts';
+import type { Transport } from './sockets/index.ts';
 
 /** @internal */
 export interface CoreOptions {
