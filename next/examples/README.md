@@ -6,7 +6,7 @@ Every example is a full app you can run: a server, a client that calls it, and o
 
 Three entry files at the example's root, beside its `README.md`. Other modules go wherever suits the example (`src/`, `packages/`).
 
-- **`server.ts`**: the router (or its import) and the handler. Exports `type AppRouter` and `listen(port = 0)`, which starts the server and resolves to `{ url, [Symbol.asyncDispose] }`: `url` is the tRPC endpoint (`http://127.0.0.1:<port>/trpc`), and disposing stops the server and releases the handler. Run directly (`if (import.meta.main)`), it listens on `PORT` (default 3000), prints the URL and serves until Ctrl-C.
+- **`server.ts`**: the router (or its import) and the handler. Exports `type AppRouter` (unless a package owns it, as in `monorepo/`) and `listen(port = 0)`, which starts the server and resolves to `{ url, [Symbol.asyncDispose] }`: `url` is the tRPC endpoint (`http://127.0.0.1:<port>/trpc`), and disposing stops the server and releases the handler. Run directly (`if (import.meta.main)`), it listens on `PORT` (default 3000), prints the URL and serves until Ctrl-C.
 - **`client.ts`**: exports `main(url)`, which makes the client, calls the server, logs what it gets and throws on a wrong result (`node:assert/strict`). Run directly, it calls `process.argv[2]` or `http://localhost:3000/trpc`.
 - **`start.ts`**: `await using server = await listen(); await main(server.url);`. A free port, no waiting on ports, and the process exits on its own once both are done.
 

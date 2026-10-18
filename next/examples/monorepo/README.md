@@ -13,6 +13,9 @@ packages/
 apps/
   web/               routerType<AppRouter>() over the whole API
   billing-widget/    a client typed from billing-contract alone
+server.ts            listen(): serves packages/server's handler
+client.ts            main(url): runs both apps against it
+start.ts             runs client.ts against server.ts
 ```
 
 - Every package is a TypeScript project (`composite`, `emitDeclarationOnly`) that references the packages it imports. `tsc -b` builds them in order, and a package that imports another reads that package's `dist/*.d.ts`, not its source. So `apps/web` loads five `.d.ts` files and never infers a procedure.
@@ -20,4 +23,4 @@ apps/
 - `apps/billing-widget` depends on `billing-contract` only. It can't import server code by accident, and it validates calls against the contract's schemas with `experimental_validationLink`.
 - Packages export their `src/*.ts` (Node runs TypeScript directly), so nothing needs bundling to run. Editors follow project references to source; set `disableSourceOfProjectReferenceRedirect` in an app's `tsconfig.json` to have the editor read declarations too, with `tsc -b --watch` running.
 
-Run it from `next/` with `pnpm example`, or here with `pnpm smoke` (`tsc -b`, then `smoke.ts` starts the server and runs both apps).
+`pnpm start` runs it, from source (Node runs the packages' TypeScript directly). `pnpm server` and `pnpm client` run the halves apart. `pnpm typecheck` is `tsc -b`, and `pnpm smoke` (what `pnpm example` from `next/` runs) is `tsc -b`, then `pnpm start`.

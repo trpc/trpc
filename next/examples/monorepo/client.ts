@@ -1,15 +1,10 @@
-/**
- * Starts the server and runs both apps against it. `pnpm smoke` builds
- * every package's declarations with `tsc -b` first.
- */
+/** Runs both apps against the server at `url`. */
 import { deepStrictEqual } from 'node:assert/strict';
 import { run as billingWidget } from '@acme/billing-widget';
-import { startServer } from '@acme/server';
 import { run as web } from '@acme/web';
 
-const server = await startServer(0);
-try {
-  const fromWeb = await web(server.url);
+export async function main(url: string) {
+  const fromWeb = await web(url);
   console.log('web:', fromWeb);
   deepStrictEqual(fromWeb, {
     post: 'Hello v12',
@@ -18,9 +13,10 @@ try {
     missing: '404',
   });
 
-  const fromWidget = await billingWidget(server.url);
+  const fromWidget = await billingWidget(url);
   console.log('billing-widget:', fromWidget);
   deepStrictEqual(fromWidget, { invoice: 'inv_1', paid: true });
-} finally {
-  await server.close();
 }
+
+if (import.meta.main)
+  await main(process.argv[2] ?? 'http://localhost:3000/trpc');

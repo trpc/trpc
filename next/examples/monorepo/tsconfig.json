@@ -7,7 +7,7 @@
     "noEmit": true,
     "rootDir": "."
   },
-  "include": ["smoke.ts"],
+  "include": ["server.ts", "client.ts", "start.ts"],
   "references": [
     { "path": "./packages/trpc" },
     { "path": "./packages/posts" },

@@ -4,7 +4,10 @@
   "type": "module",
   "scripts": {
     "typecheck": "tsc -b",
-    "smoke": "tsc -b && node smoke.ts"
+    "start": "node start.ts",
+    "server": "node server.ts",
+    "client": "node client.ts",
+    "smoke": "tsc -b && pnpm start"
   },
   "dependencies": {
     "@acme/billing-widget": "workspace:*",
