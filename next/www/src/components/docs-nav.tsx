@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { cn } from '@shared/ui/lib/utils';
 
 import { type DocsVersion, slugAt, useDocsVersion } from '~/content/docs.ts';
-import type { DocMeta } from '~/content/types.ts';
+import type { DocMeta, DocSection } from '~/content/types.ts';
 
 interface NavNode {
   readonly children: ReadonlyArray<NavNode>;
@@ -35,31 +35,78 @@ export function DocsNav(props: { readonly onNavigate?: () => void }) {
     version,
     useLocation({ select: (location) => location.pathname }),
   );
+  const currentSection = version.sections.findIndex((section) =>
+    section.docs.some((doc) => doc.slug === current),
+  );
   return (
     <nav
       aria-label={`Documentation, ${version.id}`}
-      className="grid gap-6 text-sm"
+      className="grid gap-1 text-sm"
     >
-      {version.sections.map((section) => (
-        <div key={section.title}>
-          {/* v11's sections are cased as trpc.io has them: "tRPC". */}
-          <h2
-            className={cn(
-              'mb-2 px-2 text-xs font-semibold text-muted-foreground',
-              version.id === 'v12' && 'tracking-wide uppercase',
-            )}
-          >
-            {section.title}
-          </h2>
-          <NavList
-            current={current}
-            nodes={navTree(section.docs)}
-            onNavigate={props.onNavigate}
-            version={version}
-          />
-        </div>
+      {version.sections.map((section, index) => (
+        <NavSection
+          current={current}
+          key={section.title}
+          // Off the docs pages, the first section stands in for the current one.
+          active={index === Math.max(currentSection, 0)}
+          onNavigate={props.onNavigate}
+          section={section}
+          version={version}
+        />
       ))}
     </nav>
+  );
+}
+
+/** A sidebar section, folded unless it holds the current page or is opened. */
+function NavSection(props: {
+  readonly active: boolean;
+  readonly current: string | undefined;
+  readonly onNavigate: (() => void) | undefined;
+  readonly section: DocSection;
+  readonly version: DocsVersion;
+}) {
+  const [open, setOpen] = useState(props.active);
+  useEffect(() => {
+    if (props.active) {
+      setOpen(true);
+    }
+  }, [props.active]);
+  const id = `nav-${props.version.id}-section-${props.section.title.toLowerCase().replaceAll(/\W+/g, '-')}`;
+  return (
+    <div>
+      <h2>
+        <button
+          aria-controls={id}
+          aria-expanded={open}
+          className={cn(
+            'flex w-full items-center justify-between gap-2 rounded-md px-2 py-1.5 text-left text-xs font-semibold text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground',
+            // v11's sections are cased as trpc.io has them: "tRPC".
+            props.version.id === 'v12' && 'tracking-wide uppercase',
+            props.active && 'text-foreground',
+          )}
+          onClick={() => setOpen(!open)}
+          type="button"
+        >
+          {props.section.title}
+          <ChevronRight
+            aria-hidden
+            className={cn(
+              'size-3.5 shrink-0 transition-transform',
+              open && 'rotate-90',
+            )}
+          />
+        </button>
+      </h2>
+      <div className={cn('mt-0.5 mb-3', !open && 'hidden')} id={id}>
+        <NavList
+          current={props.current}
+          nodes={navTree(props.section.docs)}
+          onNavigate={props.onNavigate}
+          version={props.version}
+        />
+      </div>
+    </div>
   );
 }
 
