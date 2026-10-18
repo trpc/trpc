@@ -192,6 +192,8 @@ export default defineConfig({
           },
         },
       },
+      // UI examples test with their own plugins and environment.
+      'examples/experimental/*/vite.config.ts',
       browserBuild('solid', 'packages/tanstack-solid-query/src/index.test.ts', [
         'solid-js',
         '@tanstack/solid-query',
