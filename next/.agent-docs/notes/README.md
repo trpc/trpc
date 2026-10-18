@@ -29,3 +29,4 @@ Agent-written working notes: research, spike results, benchmarks and anything wo
 | [Nested deferred values over SSE](./sse-nested-deferred.md)               | 19         | `sse-deferred/`             |
 | [Durable mid-stream resume](./durable-mid-stream-resume.md)               | 19         | `durable-resume/`           |
 | [Benchmarks against v11 and oRPC](./benchmarks.md)                        | all        | `tooling/bench/`            |
+| [MCP tools](./mcp-tools.md)                                               | 25         | `mcp/`                      |
