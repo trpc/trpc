@@ -92,6 +92,7 @@ export default defineConfig({
           'tooling/**',
           'test/**',
           'examples/effect/**',
+          'examples/effect-observability/**',
         ],
         rules: {
           'anti-slop-effect/no-manual-tag-comparison': 'error',
@@ -162,6 +163,7 @@ export default defineConfig({
             'tooling/**/*.test.ts',
             'www/build/**/*.test.ts',
             'www/src/**/*.test.ts',
+            'examples/*/*.test.ts',
           ],
           exclude: [
             '**/node_modules/**',

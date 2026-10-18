@@ -1,0 +1,29 @@
+{
+  "name": "@example/effect-observability",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "smoke": "node index.ts"
+  },
+  "dependencies": {
+    "@effect/opentelemetry": "4.0.2",
+    "@effect/platform-node": "4.0.2",
+    "@opentelemetry/api": "1.9.1",
+    "@opentelemetry/api-logs": "0.223.0",
+    "@opentelemetry/resources": "2.12.0",
+    "@opentelemetry/sdk-logs": "0.223.0",
+    "@opentelemetry/sdk-metrics": "2.12.0",
+    "@opentelemetry/sdk-trace-base": "2.12.0",
+    "@opentelemetry/sdk-trace-node": "2.12.0",
+    "@opentelemetry/semantic-conventions": "1.43.0",
+    "@trpc12/trpc": "workspace:*",
+    "effect": "4.0.2"
+  },
+  "devDependencies": {
+    "@effect/vitest": "4.0.2",
+    "@types/node": "^24.0.0",
+    "typescript": "^7.0.2",
+    "vite-plus": "1.1.0"
+  }
+}
