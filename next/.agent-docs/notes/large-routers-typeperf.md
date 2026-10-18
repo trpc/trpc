@@ -56,6 +56,8 @@ Environment: TypeScript 7.0.2 (`tsc` = tsgo), Node 24.21, 4-vCPU VM.
 
 `tsc -b` of the server packages: 2.73s → 2.40s → 1.93s. Check times under 0.2s are noise-level; instantiations are exact.
 
+With the closed client error union ([`closed-client-errors.md`](../decisions/closed-client-errors.md)), which landed after these runs, each call costs a little more: `apps/dts` 25,065, `apps/source` 861,482, `apps/dts-tanstack` 122,424; the server rows are unchanged.
+
 ### 5000 procedures (50 domains × 100; apps call 200), with both changes
 
 | Project             |   Types | Instantiations | Memory | Check |
