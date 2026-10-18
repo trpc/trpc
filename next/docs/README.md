@@ -95,7 +95,7 @@ Pages marked (hidden) are unlisted on the site until they're reviewed: out of it
   - [Subscriptions in TanStack Query](./integrations/tanstack-query/subscriptions.md): subscriptionOptions() for each framework's subscription primitive, shared between components, and liveOptions() and streamedOptions() in the query cache.
   - [Streamed mutations](./integrations/tanstack-query/streamed-mutations.md): A mutation that returns an async iterable fills in as it streams, with chunksOptions(), and stops on unmount or on demand; long jobs pair a mutation with a subscription.
   - [Hydration and offline mutations](./integrations/tanstack-query/hydration.md): hydrationOptions() sends the cache to the browser with the client's serializer, and persisted mutations resume with setMutationDefaults.
-  - [TanStack DB](./integrations/tanstack-query/tanstack-db.md): A TanStack DB query collection over a procedure's queryOptions(), with optimistic inserts that call mutations.
+  - [TanStack DB](./integrations/tanstack-query/tanstack-db.md) (hidden): A TanStack DB query collection over a procedure's queryOptions(), with optimistic inserts that call mutations.
 - [React and Next.js](./integrations/react.md): Which package to fetch with in React, and the pages for server components, Server Actions and route handlers.
   - [React Server Components](./integrations/rsc.md): Prefetch in server components, stream pending queries to the browser, and tag Next's data cache by query key.
   - [Server Actions](./integrations/server-actions.md): Turn procedures into React Server Actions that take typed input or FormData, with useActionState and optimistic updates.

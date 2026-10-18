@@ -4,6 +4,7 @@ description: A TanStack DB query collection over a procedure's queryOptions(), w
 section: Integrations
 parent: integrations/tanstack-query
 order: 12
+hidden: true
 ---
 
 A [query collection](https://tanstack.com/db/latest/docs/collections/query-collection) takes a query key and function, so `queryOptions()` plugs in without an adapter. Rows keep the serializer's types (a `Date` stays a `Date`), and the collection's handlers call mutations:

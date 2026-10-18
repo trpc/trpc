@@ -12,7 +12,7 @@ The core client works anywhere ([The client](../client/overview.md)). These page
 
 [TanStack Query](./tanstack-query.md) is the stable way to fetch in a UI: `@trpc12/tanstack-query` makes query, mutation and subscription options, and [`@trpc12/tanstack-react-query`](./tanstack-query/react.md) provides the client to React components.
 
-- Topics: [query keys and filters](./tanstack-query/keys.md), [subscriptions](./tanstack-query/subscriptions.md), [streamed mutations](./tanstack-query/streamed-mutations.md), [hydration and offline mutations](./tanstack-query/hydration.md) and [TanStack DB](./tanstack-query/tanstack-db.md).
+- Topics: [query keys and filters](./tanstack-query/keys.md), [subscriptions](./tanstack-query/subscriptions.md), [streamed mutations](./tanstack-query/streamed-mutations.md) and [hydration and offline mutations](./tanstack-query/hydration.md).
 
 ## React and Next.js
 
