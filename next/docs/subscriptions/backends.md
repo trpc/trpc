@@ -1,6 +1,6 @@
 ---
 title: Publisher backends
-description: Recipes for a Publisher on Redis streams, Postgres LISTEN/NOTIFY and Durable Objects.
+description: Recipes for a Publisher on Redis streams and Postgres LISTEN/NOTIFY.
 section: Subscriptions
 parent: subscriptions/publisher
 order: 1
@@ -270,49 +270,6 @@ const layer = Layer.effect(Posts)(pgPublisher<PostEvents>()).pipe(
   ),
 );
 ```
-
-## Cloudflare Durable Objects
-
-A Durable Object is one process that every request for its name reaches, so `Posts.memory()` is enough inside it. Route the endpoint to the object and serve the router there:
-
-```ts twoslash
-// ---cut-start---
-/// <reference types="@cloudflare/workers-types" />
-import { createFetchHandler, initTrpc, Publisher } from '@trpc12/trpc/server';
-import type { Post } from './server.ts';
-class Posts extends Publisher.Service<
-  Posts,
-  { created: Post; deleted: { id: string } }
->()('Posts') {}
-const t = initTrpc();
-const router = {
-  onCreated: t.procedure.subscription((opts) =>
-    Posts.subscribe('created', { lastEventId: opts.lastEventId }),
-  ),
-};
-interface Env {
-  POSTS_ROOM: DurableObjectNamespace<PostsRoom>;
-}
-// ---cut-end---
-import { DurableObject } from 'cloudflare:workers';
-
-export class PostsRoom extends DurableObject {
-  handler = createFetchHandler({
-    router,
-    layer: Posts.memory({ buffer: 100 }),
-  });
-  fetch(request: Request) {
-    return this.handler.fetch(request);
-  }
-}
-
-export default {
-  fetch: (request: Request, env: Env) =>
-    env.POSTS_ROOM.getByName('posts').fetch(request),
-} satisfies ExportedHandler<Env>;
-```
-
-Open SSE streams keep the object in memory; kept events are lost when it's evicted. To let it sleep between events, serve WebSockets with the [hibernation adapter](../adapters/durable-objects.md) and provide `hibernatingPublisher(Posts, { state: this.ctx })` from `@trpc12/trpc/cloudflare` instead of `Posts.memory()` ([subscriptions that hibernate](../adapters/durable-objects.md#subscriptions-that-hibernate)).
 
 ## Credits
 

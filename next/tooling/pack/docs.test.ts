@@ -30,6 +30,30 @@ const packages = await run(
   }),
 );
 
+/** The docs pages a README links on GitHub. */
+const linkedPages = (readme: string | undefined) =>
+  [
+    ...(readme ?? '').matchAll(
+      /\]\(https:\/\/github\.com\/trpc\/trpc\/blob\/v12\/next\/docs\/([^)#]+)/g,
+    ),
+  ].map(([, page]) => page!);
+
+/** Packages whose own docs page, the first their README links, is `hidden: true`; the packages page leaves them out too. */
+const hidden = await run(
+  Effect.gen(function* () {
+    const fs = yield* FileSystem.FileSystem;
+    const names = yield* Effect.filter(packages, (opts) => {
+      const page = linkedPages(opts.readme)[0];
+      if (page === undefined) return Effect.succeed(false);
+      return fs.readFileString(`${root}docs/${page}`).pipe(
+        Effect.map((text) => /^hidden: true$/m.test(text.split('\n---\n')[0]!)),
+        Effect.orElseSucceed(() => false),
+      );
+    });
+    return new Set(names.map((opts) => opts.name));
+  }),
+);
+
 const packagesPage = await run(
   Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem;
@@ -43,11 +67,7 @@ test.each(packages.map((opts) => [opts.name, opts] as const))(
     expect(opts.description, `${name} has no description`).toBeTruthy();
     expect(opts.readme, `${name} has no README.md`).toBeDefined();
     expect(opts.readme!.split('\n')[0]).toBe(`# \`${name}\``);
-    const pages = [
-      ...opts.readme!.matchAll(
-        /\]\(https:\/\/github\.com\/trpc\/trpc\/blob\/v12\/next\/docs\/([^)#]+)/g,
-      ),
-    ].map(([, page]) => page!);
+    const pages = linkedPages(opts.readme);
     expect(pages.length, `${name}'s README links no docs page`).toBeGreaterThan(
       0,
     );
@@ -64,9 +84,27 @@ test.each(packages.map((opts) => [opts.name, opts] as const))(
   },
 );
 
-test.each(packages.map((opts) => [opts.name] as const))(
-  '%s is listed in docs/packages.md',
-  (name) => {
-    expect(packagesPage).toContain(`\`${name}\``);
-  },
-);
+test.each(
+  packages
+    .filter((opts) => !hidden.has(opts.name))
+    .map((opts) => [opts.name] as const),
+)('%s is listed in docs/packages.md', (name) => {
+  expect(packagesPage).toContain(`\`${name}\``);
+});
+
+test('packages whose docs are all hidden are left out of docs/packages.md', () => {
+  expect([...hidden].sort()).toEqual([
+    '@trpc12/experimental-react',
+    '@trpc12/experimental-react-atom',
+    '@trpc12/nest',
+    '@trpc12/tanstack-angular-query',
+    '@trpc12/tanstack-lit-query',
+    '@trpc12/tanstack-preact-query',
+    '@trpc12/tanstack-solid-query',
+    '@trpc12/tanstack-svelte-query',
+    '@trpc12/tanstack-vue-query',
+  ]);
+  for (const name of hidden) {
+    expect(packagesPage).not.toContain(`\`${name}\``);
+  }
+});

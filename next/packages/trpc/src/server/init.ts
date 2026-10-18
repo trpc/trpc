@@ -177,7 +177,7 @@ export interface TrpcRoot<
    *
    * @example
    * ```ts
-   * const t = initTrpc().concat(openapi());
+   * const t = initTrpc().concat(experimental_openapi());
    * const appRouter = {
    *   admin: t.router({ meta: { route: { prefix: '/admin', tags: ['admin'] } } }, { users, ban }),
    * };
@@ -189,7 +189,7 @@ export interface TrpcRoot<
   ): TRoutes;
   /**
    * {@link lazy}, with router-level meta as `t.router()` takes. Under
-   * `openapi()`, a `route.prefix` lets the OpenAPI handler load the subtree
+   * `experimental_openapi()`, a `route.prefix` lets the OpenAPI handler load the subtree
    * on the first request under it instead of at startup.
    *
    * @example

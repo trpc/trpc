@@ -2,18 +2,20 @@ import { Schema } from 'effect';
 import { createTrpcClient, safe } from '@trpc12/trpc/client';
 import { toContract } from '@trpc12/trpc/contract';
 import {
-  createOpenApiHandler,
-  generateContractFromOpenApi,
-  generateOpenApi,
-  openApiLink,
-  openapi,
+  experimental_createOpenApiHandler,
+  experimental_generateContractFromOpenApi,
+  experimental_generateOpenApi,
+  experimental_openApiLink,
+  experimental_openapi,
   type OpenApiSource,
 } from '@trpc12/trpc/openapi';
 import { error, initTrpc, tracked } from '@trpc12/trpc/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { appContract } from '../fixtures/contract.ts';
 
-const t = initTrpc<{ ctx: {}; meta: { auth?: boolean } }>().concat(openapi());
+const t = initTrpc<{ ctx: {}; meta: { auth?: boolean } }>().concat(
+  experimental_openapi(),
+);
 const impl = t.implement(appContract);
 const router = impl.router({
   health: impl.health.query(() => 'ok' as const),
@@ -33,9 +35,11 @@ const router = impl.router({
   },
 });
 
-test('a @trpc12/trpc document round-trips into a contract openApiLink can call', async () => {
-  const doc = generateOpenApi(router, { info: { title: 'x', version: '1' } });
-  const source = generateContractFromOpenApi(doc, {
+test('a @trpc12/trpc document round-trips into a contract experimental_openApiLink can call', async () => {
+  const doc = experimental_generateOpenApi(router, {
+    info: { title: 'x', version: '1' },
+  });
+  const source = experimental_generateContractFromOpenApi(doc, {
     prefix: '/api',
     exportName: 'generated',
   });
@@ -50,11 +54,11 @@ test('a @trpc12/trpc document round-trips into a contract openApiLink can call',
     path: '/posts/{id}',
   });
 
-  const handler = createOpenApiHandler({ router });
+  const handler = experimental_createOpenApiHandler({ router });
   const client = createTrpcClient({
     router: json,
     links: [
-      openApiLink({
+      experimental_openApiLink({
         url: 'http://localhost',
         contract: json,
         fetch: (input, init) => handler.fetch(new Request(input, init)),
@@ -165,7 +169,7 @@ test('an OpenAPI 3.0 document: components, nullable, query parameters, status co
       },
     },
   };
-  const source = generateContractFromOpenApi(petstore, {
+  const source = experimental_generateContractFromOpenApi(petstore, {
     exportName: 'petstore',
   });
   await expect(source).toMatchFileSnapshot('./fixtures/generated/petstore.ts');
@@ -197,7 +201,7 @@ test('an OpenAPI 3.0 document: components, nullable, query parameters, status co
 
 test('two operations on one procedure path are rejected', () => {
   expect(() =>
-    generateContractFromOpenApi({
+    experimental_generateContractFromOpenApi({
       openapi: '3.1.0',
       paths: {
         '/a': { get: { operationId: 'x', responses: {} } },
@@ -305,7 +309,9 @@ test('recursive components, untyped and merged parameters, a prefix-only path an
       },
     },
   };
-  const source = generateContractFromOpenApi(doc, { prefix: '/api/' });
+  const source = experimental_generateContractFromOpenApi(doc, {
+    prefix: '/api/',
+  });
   await expect(source).toMatchFileSnapshot('./fixtures/generated/edges.ts');
 
   const mod = await import('./fixtures/generated/edges.ts');
@@ -330,7 +336,7 @@ test('recursive components, untyped and merged parameters, a prefix-only path an
     'notes.add': { method: 'POST', path: '/notes' },
   });
 
-  const s = initTrpc<{ ctx: {} }>().concat(openapi());
+  const s = initTrpc<{ ctx: {} }>().concat(experimental_openapi());
   const impl = s.implement(mod.contract);
   const server = impl.router({
     root: impl.root.query(() => undefined),
@@ -350,11 +356,11 @@ test('recursive components, untyped and merged parameters, a prefix-only path an
       })),
     },
   });
-  const handler = createOpenApiHandler({ router: server });
+  const handler = experimental_createOpenApiHandler({ router: server });
   const client = createTrpcClient({
     router: json,
     links: [
-      openApiLink({
+      experimental_openApiLink({
         url: 'http://localhost',
         contract: json,
         fetch: (input, init) => handler.fetch(new Request(input, init)),
@@ -381,7 +387,7 @@ test('recursive components, untyped and merged parameters, a prefix-only path an
 
 test('an operation cannot also be a namespace', () => {
   expect(() =>
-    generateContractFromOpenApi({
+    experimental_generateContractFromOpenApi({
       openapi: '3.1.0',
       paths: {
         '/a': { get: { operationId: 'a', responses: {} } },
@@ -389,7 +395,7 @@ test('an operation cannot also be a namespace', () => {
       },
     }),
   ).toThrow('"a.b" nests under the operation "a"');
-  expect(generateContractFromOpenApi({ openapi: '3.1.0' })).toContain(
-    'export const contract = {\n};',
-  );
+  expect(
+    experimental_generateContractFromOpenApi({ openapi: '3.1.0' }),
+  ).toContain('export const contract = {\n};');
 });

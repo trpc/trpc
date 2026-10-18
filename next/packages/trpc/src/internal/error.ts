@@ -35,7 +35,7 @@ export const ERROR_STATUS = {
   /**
    * Client-side only: a response the client couldn't read. It wasn't a tRPC
    * response (a proxy's HTML page), it didn't decode, or it failed
-   * `validationLink`'s check.
+   * `experimental_validationLink`'s check.
    */
   BAD_RESPONSE: 0,
   /** Client-side only: a link failed. */

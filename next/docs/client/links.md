@@ -35,26 +35,21 @@ An operation goes through the links in order and its results come back the other
 
 ## Terminating links
 
-| Link                            | Carries calls                                                                  |
-| ------------------------------- | ------------------------------------------------------------------------------ |
-| [`httpLink`](./links/http.md)   | Over HTTP: queries as `GET`, mutations as `POST`, subscriptions as SSE         |
-| [`wsLink`](./links/ws.md)       | Over one WebSocket                                                             |
-| [`localLink`](./links/local.md) | To a router in the same process                                                |
-| `experimental_socketLink`       | Over a raw TCP, TLS or Unix socket ([Raw sockets](../adapters/sockets.md))     |
-| `experimental_messagePortLink`  | To a worker or a `MessagePort` ([Message ports](../adapters/message-ports.md)) |
-| `openApiLink`                   | To each procedure's REST route ([Calling REST](../openapi/client.md))          |
+| Link                            | Carries calls                                                          |
+| ------------------------------- | ---------------------------------------------------------------------- |
+| [`httpLink`](./links/http.md)   | Over HTTP: queries as `GET`, mutations as `POST`, subscriptions as SSE |
+| [`wsLink`](./links/ws.md)       | Over one WebSocket                                                     |
+| [`localLink`](./links/local.md) | To a router in the same process                                        |
 
 ## Links in the middle
 
-| Link                                | Does                                                                                     |
-| ----------------------------------- | ---------------------------------------------------------------------------------------- |
-| [`splitLink`](./links/split.md)     | Picks one of two chains per call                                                         |
-| [`switchLink`](./links/switch.md)   | Picks one of several named chains, and a call can force one                              |
-| [`retryLink`](./links/retry.md)     | Retries failed calls                                                                     |
-| [`dedupeLink`](./links/dedupe.md)   | Shares identical queries in flight                                                       |
-| [`loggerLink`](./links/logger.md)   | Logs every operation, its results and its errors                                         |
-| [`validationLink`](./validation.md) | Checks inputs and results against a contract                                             |
-| `experimental_durableLink`          | Retries lost responses with the same call id ([Durable calls](../middleware/durable.md)) |
+| Link                              | Does                                                        |
+| --------------------------------- | ----------------------------------------------------------- |
+| [`splitLink`](./links/split.md)   | Picks one of two chains per call                            |
+| [`switchLink`](./links/switch.md) | Picks one of several named chains, and a call can force one |
+| [`retryLink`](./links/retry.md)   | Retries failed calls                                        |
+| [`dedupeLink`](./links/dedupe.md) | Shares identical queries in flight                          |
+| [`loggerLink`](./links/logger.md) | Logs every operation, its results and its errors            |
 
 ## Call options
 

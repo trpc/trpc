@@ -17,7 +17,7 @@ apps/
 
 - Every package is a TypeScript project (`composite`, `emitDeclarationOnly`) that references the packages it imports. `tsc -b` builds them in order, and a package that imports another reads that package's `dist/*.d.ts`, not its source. So `apps/web` loads five `.d.ts` files and never infers a procedure.
 - `packages/api` names `AppRouter` as `{ posts: PostsRouter; … }`. Inferred from the object instead, its declarations would copy every domain's procedures.
-- `apps/billing-widget` depends on `billing-contract` only. It can't import server code by accident, and it validates calls against the contract's schemas with `validationLink`.
+- `apps/billing-widget` depends on `billing-contract` only. It can't import server code by accident, and it validates calls against the contract's schemas with `experimental_validationLink`.
 - Packages export their `src/*.ts` (Node runs TypeScript directly), so nothing needs bundling to run. Editors follow project references to source; set `disableSourceOfProjectReferenceRedirect` in an app's `tsconfig.json` to have the editor read declarations too, with `tsc -b --watch` running.
 
 Run it from `next/` with `pnpm example`, or here with `pnpm smoke` (`tsc -b`, then `smoke.ts` starts the server and runs both apps).

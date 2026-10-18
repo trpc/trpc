@@ -1,8 +1,8 @@
 import { Effect } from 'effect';
 import { error, initTrpc, lazy } from '@trpc12/trpc/server';
-import { openapi } from '@trpc12/trpc/openapi';
+import { experimental_openapi } from '@trpc12/trpc/openapi';
 
-const t = initTrpc().concat(openapi());
+const t = initTrpc().concat(experimental_openapi());
 const get = (path: `/${string}`) => ({
   route: { method: 'GET' as const, path },
 });

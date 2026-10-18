@@ -3,6 +3,7 @@ title: NestJS
 description: Serve a contract from Nest controllers with @trpc12/nest.
 section: Integrations
 order: 5
+hidden: true
 ---
 
 `@trpc12/nest` serves a contract from Nest controllers. `@experimental_Implement(contract)` adds the Nest route for the contract's REST mapping; the method returns the procedure, so the controller's injected services reach the resolver through `this`. The package is experimental, so its values are named `experimental_*` until it's promoted.
@@ -16,12 +17,12 @@ order: 5
 // ---cut-start---
 import { Controller, Inject, Injectable, Module } from '@nestjs/common';
 import { contract } from '@trpc12/trpc/contract';
-import { openapi } from '@trpc12/trpc/openapi';
+import { experimental_openapi } from '@trpc12/trpc/openapi';
 import { initTrpc } from '@trpc12/trpc/server';
 import { Context, Layer } from 'effect';
 import { z } from 'zod';
 import { db, PostSchema, type User } from './server.ts';
-const c = contract.create().concat(openapi());
+const c = contract.create().concat(experimental_openapi());
 const appContract = {
   post: {
     byId: c
@@ -32,7 +33,9 @@ const appContract = {
       .query(),
   },
 };
-const t = initTrpc<{ ctx: { user: User | null } }>().concat(openapi());
+const t = initTrpc<{ ctx: { user: User | null } }>().concat(
+  experimental_openapi(),
+);
 @Injectable()
 class Posts {
   find(id: string) {

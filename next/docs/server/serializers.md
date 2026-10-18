@@ -40,7 +40,7 @@ const client = createTrpcClient({
 });
 ```
 
-`wsLink`, `experimental_messagePortLink`, `experimental_socketLink` and `localLink` take `serializer` the same way. With superjson or devalue, list the types the transformer rebuilds:
+`wsLink` and `localLink` take `serializer` the same way. With superjson or devalue, list the types the transformer rebuilds:
 
 ```ts twoslash
 // ---cut-start---
@@ -53,7 +53,7 @@ export const serializer = createSyncSerializer<
 // devalue: createSyncSerializer({ serialize: devalue.stringify, deserialize: devalue.parse })
 ```
 
-If the two ends disagree, calls fail with `UNSUPPORTED_PROTOCOL`, with a message naming both serializers. Over HTTP the handler names its serializer in the `trpc-serializer` response header and `httpLink` checks it, after the server ran the call. Socket links (`wsLink`, `experimental_messagePortLink`, `experimental_socketLink`) name theirs in the connection's `init` message: the server answers with its own and runs none of that connection's calls on a mismatch.
+If the two ends disagree, calls fail with `UNSUPPORTED_PROTOCOL`, with a message naming both serializers. Over HTTP the handler names its serializer in the `trpc-serializer` response header and `httpLink` checks it, after the server ran the call. `wsLink` names its own in the connection's `init` message: the server answers with its own and runs none of that connection's calls on a mismatch.
 
 ## Client types follow the link
 
@@ -94,8 +94,6 @@ const rich = await danson.getPost.query();
 A typed error's `data` goes through the same serializer: `new TrpcError({ code: 'EXPIRED', data: { at: new Date() } })` reaches a plain-JSON client as `data: { at: string }`.
 
 In-process callers (`createRouterClient`, `createTrpcRsc`, `localLink({ serializer: false })`) pass values by reference, so they keep native types whatever the serializer.
-
-To keep plain JSON on the wire and still get `Date`s from a contract's Effect Schemas, put `validationLink({ contract, output: 'json' })` before `httpLink`: it decodes results with the schemas' JSON codecs and types them as the schemas' types ([Validating on the client](../client/validation.md)).
 
 ## Files
 

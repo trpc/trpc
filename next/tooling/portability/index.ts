@@ -23,11 +23,11 @@ import {
 } from '@trpc12/trpc/contract';
 import { createEffectClient } from '@trpc12/trpc/effect';
 import {
-  createOpenApiHandler,
-  generateOpenApi,
-  openapi,
-  openApiLink,
-  openApiReference,
+  experimental_createOpenApiHandler,
+  experimental_generateOpenApi,
+  experimental_openapi,
+  experimental_openApiLink,
+  experimental_openApiReference,
 } from '@trpc12/trpc/openapi';
 import {
   createFetchHandler,
@@ -60,7 +60,7 @@ export const PostRepoLive = Layer.succeed(PostRepo, {
 export const t = initTrpc<{
   ctx: { user: User | null };
   meta: { scope?: string };
-}>().concat(openapi());
+}>().concat(experimental_openapi());
 
 export const publicProcedure = t.procedure;
 
@@ -195,7 +195,9 @@ export const typedEffectClient = createEffectClient({
   links: [traceLink, httpLink({ url: '/trpc' })],
 });
 
-const c = contract.create<{ meta: { scope?: string } }>().concat(openapi());
+const c = contract
+  .create<{ meta: { scope?: string } }>()
+  .concat(experimental_openapi());
 
 export const userContract = {
   me: c
@@ -233,24 +235,24 @@ export const contractClient = createTrpcClient({
   links: [httpLink({ url: '/trpc' })],
 });
 
-export const openApiHandler = createOpenApiHandler({
+export const openApiHandler = experimental_createOpenApiHandler({
   router: userRouter,
   createContext: () => ({ user: null }),
   middleware: [
-    openApiReference({
+    experimental_openApiReference({
       router: userRouter,
       specGenerateOptions: { info: { title: 'Users', version: '1.0.0' } },
     }),
   ],
 });
 
-export const openapiDocument = generateOpenApi(userRouter, {
+export const openapiDocument = experimental_generateOpenApi(userRouter, {
   info: { title: 'Users', version: '1.0.0' },
 });
 
 export const restClient = createTrpcClient({
   router: userContractJson,
-  links: [openApiLink({ url: '/', contract: userContractJson })],
+  links: [experimental_openApiLink({ url: '/', contract: userContractJson })],
 });
 
 export const caller = createRouterClient(appRouter, {

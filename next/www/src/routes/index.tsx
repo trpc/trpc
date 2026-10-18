@@ -32,7 +32,7 @@ import {
   SponsorButton,
   SupportedBy,
 } from '~/components/sponsors/supported-by.tsx';
-import { homeDocs } from '~/content/docs.ts';
+import { findDoc, homeDocs } from '~/content/docs.ts';
 import { useFlag } from '~/flags.ts';
 import {
   defaultHomeVersion,
@@ -286,8 +286,7 @@ const v12Features: ReadonlyArray<Feature> = [
     body: (
       <>
         <code>tracked()</code> events resume after a reconnect, over SSE or
-        WebSockets, fed by a <code>Publisher</code> backed by Redis, Postgres or
-        Durable Objects.
+        WebSockets, fed by a <code>Publisher</code> backed by Redis or Postgres.
       </>
     ),
     icon: <Radio />,
@@ -301,13 +300,13 @@ const v12Features: ReadonlyArray<Feature> = [
     title: 'OpenAPI from the same router',
   },
   {
-    body: 'Node, Bun, Deno, Cloudflare Workers and Durable Objects, AWS Lambda, Express, Fastify, Firebase, message ports and raw sockets.',
+    body: 'Node, Bun, Deno, Cloudflare Workers, AWS Lambda, Express and Fastify.',
     icon: <Globe />,
     slug: 'adapters/overview',
     title: 'Every runtime',
   },
   {
-    body: 'Query and mutation options for TanStack Query in React, Vue, Solid, Svelte, Angular, Preact and Lit; Server Actions and RSC helpers.',
+    body: 'Query, mutation and subscription options for TanStack Query in React; Server Actions and RSC helpers.',
     icon: <Blocks />,
     slug: 'integrations/tanstack-query',
     title: 'Framework integrations',
@@ -503,8 +502,13 @@ const featureCard =
   'grid h-full content-start gap-2 rounded-xl border bg-card p-5 [&_svg]:size-5';
 
 function Features(props: { readonly version: HomeVersion }) {
-  const features = props.version === 'v11' ? v11Features : v12Features;
-  const route = homeDocs[props.version].route;
+  const docs = homeDocs[props.version];
+  const route = docs.route;
+  // A card for a hidden page waits, like the page, until it's reviewed.
+  const features = (props.version === 'v11' ? v11Features : v12Features).filter(
+    (feature) =>
+      feature.slug === undefined || !findDoc(docs, feature.slug)?.hidden,
+  );
   return (
     <ul
       className={cn(

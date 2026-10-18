@@ -4,9 +4,11 @@ import { sections as v9Sections } from 'virtual:v9-docs-manifest';
 import { sections as v10Sections } from 'virtual:v10-docs-manifest';
 import { sections as v11Sections } from 'virtual:v11-docs-manifest';
 
+import { useFlag } from '~/flags.ts';
 import type { HomeVersion } from '~/home-version.ts';
 import { type CopiedVersion, v9, v10, v11, v12 } from '~/site.ts';
 
+import { listedSections } from './listed.ts';
 import type { Doc, DocMeta, DocSection } from './types.ts';
 
 /** One version's pages, and where the site serves them. */
@@ -35,7 +37,7 @@ function docsVersion(
   return {
     ...version,
     allDocs,
-    firstDoc: allDocs[0]?.slug ?? fallback,
+    firstDoc: allDocs.find((doc) => !doc.hidden)?.slug ?? fallback,
     load: async (slug) => {
       const load = pages[fileOf(slug)];
       if (!load) {
@@ -142,6 +144,32 @@ export function useDocsVersion() {
   return versionAt(useLocation({ select: (location) => location.pathname }));
 }
 
+const listedVersions = new WeakMap<DocsVersion, DocsVersion>();
+
+/**
+ * `version` without its hidden pages, as the sidebar, search and pagination
+ * list it. `findDoc` doesn't find a hidden page in it; look in `version`.
+ */
+export function withoutHidden(version: DocsVersion): DocsVersion {
+  const cached = listedVersions.get(version);
+  if (cached) {
+    return cached;
+  }
+  const sections = listedSections(version.sections);
+  const listed: DocsVersion = {
+    ...version,
+    allDocs: sections.flatMap((section) => section.docs),
+    sections,
+  };
+  listedVersions.set(version, listed);
+  return listed;
+}
+
+/** `version` as the reader browses it: its hidden pages only with the `hidden-docs` flag. */
+export function useListedDocs(version: DocsVersion) {
+  return useFlag('hidden-docs') ? version : withoutHidden(version);
+}
+
 export function findDoc(
   version: DocsVersion,
   slug: string,
@@ -179,8 +207,8 @@ export function neighbours(version: DocsVersion, slug: string) {
  * The page on the same topic in the version `to`. Between the copies, it's
  * the page at the same slug, as Docusaurus has it. A v12 page names its v11
  * page (`v11` frontmatter, or else the page at its slug), and a v11 page's
- * v12 page is the one at its slug or else the first that names it; the
- * older copies go by way of v11.
+ * v12 page is the one at its slug or else the first that names it, unless
+ * it's hidden; the older copies go by way of v11.
  */
 export function counterpart(
   from: DocsVersion,
@@ -199,10 +227,11 @@ export function counterpart(
   if (from.id !== 'v11') {
     return findDoc(v11Docs, slug) ? counterpart(v11Docs, slug, to) : undefined;
   }
-  const same = findDoc(v12Docs, slug);
+  const listed = withoutHidden(v12Docs);
+  const same = findDoc(listed, slug);
   return same?.v11 === slug
     ? same
-    : v12Docs.allDocs.find((doc) => doc.v11 === slug);
+    : listed.allDocs.find((doc) => doc.v11 === slug);
 }
 
 /** The slug of the page `pathname` shows in `version`, if it's a page. */

@@ -3,22 +3,25 @@ title: A contract from OpenAPI
 description: Generate a typed contract module from any OpenAPI 3.0 or 3.1 document.
 section: OpenAPI
 order: 4
+hidden: true
 ---
 
-`generateContractFromOpenApi(document, { prefix?, exportName?, patterns? })` turns an OpenAPI 3.0 or 3.1 document into the source of a `@trpc12/trpc/contract` module. Schemas are Effect Schemas, translated by Effect's `SchemaRepresentation`; each operation becomes a procedure with its `route` meta (under `.concat(openapi())`), so the contract works with `openApiLink` and `validationLink` against any REST API:
+`experimental_generateContractFromOpenApi(document, { prefix?, exportName?, patterns? })` turns an OpenAPI 3.0 or 3.1 document into the source of a `@trpc12/trpc/contract` module. Schemas are Effect Schemas, translated by Effect's `SchemaRepresentation`; each operation becomes a procedure with its `route` meta (under `.concat(experimental_openapi())`), so the contract works with `experimental_openApiLink` and `experimental_validationLink` against any REST API:
 
 ```ts twoslash
 // ---cut-start---
 import { writeFile } from 'node:fs/promises';
 // ---cut-end---
-import { generateContractFromOpenApi } from '@trpc12/trpc/openapi';
+import { experimental_generateContractFromOpenApi } from '@trpc12/trpc/openapi';
 
 const document = await (
   await fetch('https://petstore.example/openapi.json')
 ).json();
 await writeFile(
   'src/petstore.ts',
-  generateContractFromOpenApi(document, { exportName: 'petstore' }),
+  experimental_generateContractFromOpenApi(document, {
+    exportName: 'petstore',
+  }),
 );
 ```
 
@@ -26,7 +29,7 @@ await writeFile(
 // ---cut-start---
 import { Schema } from 'effect';
 import { contract as trpcContract } from '@trpc12/trpc/contract';
-import { openapi } from '@trpc12/trpc/openapi';
+import { experimental_openapi } from '@trpc12/trpc/openapi';
 // ---cut-end---
 // src/petstore.ts (generated)
 export const Pet = Schema.Struct({
@@ -39,7 +42,7 @@ export const PetsListInput = Schema.Struct({
 });
 export const PetsListOutput = Schema.Array(Pet);
 // ---cut-end---
-const c = trpcContract.create().concat(openapi());
+const c = trpcContract.create().concat(experimental_openapi());
 export const petstore = {
   pets: {
     list: c
@@ -55,7 +58,7 @@ export const petstore = {
 - `GET` is a query, a `text/event-stream` response a subscription, anything else a mutation. The first 2xx status becomes `successStatus`.
 - Path and query parameters merge with the JSON body into one input, like `inputStructure: 'compact'`.
 - Objects that don't mention `additionalProperties` become closed structs (extra keys are still ignored when decoding), except where `allOf` merges them.
-- Error responses in @trpc12/trpc's own shape (`code` and `data`) become `.errors()`, so a document from `generateOpenApi` round-trips with typed errors. Other APIs' errors stay unexpected errors.
+- Error responses in @trpc12/trpc's own shape (`code` and `data`) become `.errors()`, so a document from `experimental_generateOpenApi` round-trips with typed errors. Other APIs' errors stay unexpected errors.
 - `pattern`s are ignored unless `patterns: 'apply'`; only use that with documents you trust.
 
 ## Credits

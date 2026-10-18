@@ -47,7 +47,7 @@ Extensions chain, and `t.middleware` and `t.implement()` see what they add. `t.c
 
 ## Merging meta
 
-Meta keys a root doesn't declare are a type error, and a later `.meta()` replaces a key unless its root says how to merge it. An extension sets that for its own keys with `initTrpc({ mergeMeta })`, which is how OpenAPI's `openapi()` merges `route` key by key ([OpenAPI](../openapi/routes.md)). Contracts take extensions too, for their meta: `contract.create().concat(openapi())`.
+Meta keys a root doesn't declare are a type error, and a later `.meta()` replaces a key unless its root says how to merge it. An extension sets that for its own keys with `initTrpc({ mergeMeta })`. Contracts take extensions too, for their meta: `contract.create().concat(extension)`.
 
 ## Building integrations
 

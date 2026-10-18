@@ -1,7 +1,7 @@
 import { Effect, Schema } from 'effect';
 import { error, initTrpc, tracked, TrpcError } from '@trpc12/trpc/server';
 import { z } from 'zod';
-import { openapi } from '@trpc12/trpc/openapi';
+import { experimental_openapi } from '@trpc12/trpc/openapi';
 
 export interface Post {
   id: string;
@@ -25,7 +25,9 @@ class PostMissing extends TrpcError.Tagged('POST_NOT_FOUND', {
   data: Schema.Struct({ id: Schema.String }),
 }) {}
 
-const t = initTrpc<{ ctx: { user: string | null } }>().concat(openapi());
+const t = initTrpc<{ ctx: { user: string | null } }>().concat(
+  experimental_openapi(),
+);
 const posts = new Map<string, Post>();
 
 export const appRouter = {

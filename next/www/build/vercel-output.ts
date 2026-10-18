@@ -71,10 +71,40 @@ const acceptsMarkdown = [
 /** A v12 page, the only docs with markdown. Slugs nest: `/v12/docs/client/links`. */
 const docPath = `^${v12.basePath}/([\\w/-]+)`;
 
-/** `old`: the redirects that keep trpc.io's URLs working (`old-routes.ts`). */
+const robotsMeta = /<meta\b[^>]*\bname="robots"[^>]*>/;
+
+/** Whether a prerendered page asks search engines not to index it. */
+export const isNoindex = (html: string) =>
+  robotsMeta.exec(html)?.[0].includes('noindex') ?? false;
+
+const escapeRegExp = (text: string) =>
+  text.replaceAll(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/**
+ * `X-Robots-Tag: noindex` for the pages `paths` and their markdown, which
+ * has no `<meta>` of its own: the hidden docs pages.
+ */
+export const noindexRoutes = (
+  paths: ReadonlyArray<string>,
+): ReadonlyArray<VercelRoute> =>
+  paths.length === 0
+    ? []
+    : [
+        {
+          continue: true,
+          headers: { 'X-Robots-Tag': 'noindex' },
+          src: `^(?:${paths.map(escapeRegExp).join('|')})(?:\\.md)?$`,
+        },
+      ];
+
+/**
+ * `old`: the redirects that keep trpc.io's URLs working (`old-routes.ts`).
+ * `noindex`: the pages search engines shouldn't index.
+ */
 export const routes = (
   first: string,
   old: ReadonlyArray<VercelRoute> = [],
+  noindex: ReadonlyArray<string> = [],
 ): ReadonlyArray<VercelRoute> => [
   { headers: { Location: '/$1' }, src: '^/(.+)/$', status: 308 },
   { headers: { Location: '/$1' }, src: '^/(.+)\\.html$', status: 308 },
@@ -112,6 +142,7 @@ export const routes = (
     },
     src: '^/.*$',
   },
+  ...noindexRoutes(noindex),
   {
     continue: true,
     headers: {
@@ -190,10 +221,17 @@ export const writeVercelOutput = Effect.fn('writeVercelOutput')(function* (
   )).map((file) => file.split(path.sep).join('/'));
   const served = servedPaths(files);
   const old = oldRedirects({ redirects: trpcRedirects, served });
-  const allRoutes = routes(first, [
-    ...redirectRoutes(old.redirects),
-    ...onTrpcIoRoutes(site.url),
-  ]);
+  const noindex = yield* Effect.filter(
+    files.filter((file) => file.endsWith('/index.html')),
+    (file) =>
+      Effect.map(fs.readFileString(path.join(staticDir, file)), isNoindex),
+    { concurrency: 'unbounded' },
+  );
+  const allRoutes = routes(
+    first,
+    [...redirectRoutes(old.redirects), ...onTrpcIoRoutes(site.url)],
+    noindex.map((file) => `/${file.slice(0, -'/index.html'.length)}`),
+  );
   const missingAnchors = yield* Effect.filter(old.redirects, (redirect) => {
     const url = new URL(redirect.location, site.url);
     if (url.origin !== new URL(site.url).origin || url.hash === '') {

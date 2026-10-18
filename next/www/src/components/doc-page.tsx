@@ -4,6 +4,7 @@ import {
   ArrowRight,
   ChevronRight,
   ExternalLink,
+  EyeOff,
   Pencil,
 } from 'lucide-react';
 
@@ -25,6 +26,8 @@ import {
   type DocsVersion,
   findDoc,
   neighbours,
+  useListedDocs,
+  withoutHidden,
 } from '~/content/docs.ts';
 import type { Doc } from '~/content/types.ts';
 import { useFlag } from '~/flags.ts';
@@ -77,6 +80,7 @@ export function docHead(version: DocsVersion, slug: string) {
     article: { modified: meta.lastModified, section: meta.section },
     description,
     markdownPath: `${path}.md`,
+    noindex: meta.hidden === true,
     path,
     structuredData: [
       {
@@ -103,7 +107,7 @@ export function docHead(version: DocsVersion, slug: string) {
             '@type': 'ListItem',
             // A section has no page of its own; it opens with its first.
             item: absoluteUrl(
-              `${version.basePath}/${version.sections.find((section) => section.title === meta.section)?.docs[0]?.slug ?? meta.slug}`,
+              `${version.basePath}/${withoutHidden(version).sections.find((section) => section.title === meta.section)?.docs[0]?.slug ?? meta.slug}`,
             ),
             name: meta.section,
             position: 2,
@@ -137,15 +141,28 @@ export function DocPage(props: {
 }) {
   const doc = props.doc;
   const version = props.version;
-  const around = neighbours(version, doc.slug);
+  const listed = useListedDocs(version);
+  const around = neighbours(listed, doc.slug);
   const parents = ancestors(version, doc.slug);
-  const children = childrenOf(version, doc.slug);
+  const children = childrenOf(listed, doc.slug);
   const showPartners = useFlag('partners') && partners.length > 0;
 
   return (
     <div className="grid min-w-0 gap-10 py-8 xl:grid-cols-[minmax(0,1fr)_13rem]">
       <article className="min-w-0">
         <VersionBanner slug={doc.slug} version={version} />
+        {doc.hidden ? (
+          <p className="mb-6 flex items-start gap-2.5 rounded-lg border border-dashed px-4 py-3 text-sm text-pretty text-muted-foreground">
+            <EyeOff aria-hidden className="mt-0.5 size-4 shrink-0" />
+            <span>
+              <strong className="font-semibold text-foreground">
+                Hidden page.
+              </strong>{' '}
+              It waits for review: the sidebar, search and search engines leave
+              it out, and listed pages don't link to it.
+            </span>
+          </p>
+        ) : null}
         <header className="mb-8 grid gap-3 border-b pb-6">
           <nav aria-label="Breadcrumb">
             <ol className="flex flex-wrap items-center gap-x-1.5 text-sm font-semibold text-link">

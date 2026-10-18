@@ -47,7 +47,7 @@ const [post, err] = await safeClient.post.byId.query({ id: '1' });
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `NETWORK_ERROR`             | The request got no response.                                                                                                                           |
 | `CLIENT_CLOSED_REQUEST`     | The call's `signal` aborted it.                                                                                                                        |
-| `BAD_RESPONSE`              | The response wasn't a tRPC one (a proxy's HTML page), didn't decode, or failed [`validationLink`](./validation.md)'s check.                            |
+| `BAD_RESPONSE`              | The response wasn't a tRPC one (a proxy's HTML page) or didn't decode.                                                                                 |
 | `STREAM_INTERRUPTED`        | A stream stopped without an end or an error.                                                                                                           |
 | `CLIENT_ERROR`              | A link failed, or failed with a custom code it didn't declare.                                                                                         |
 | `INTERNAL_SERVER_ERROR`     | The server crashed, or threw a custom code it didn't declare. The message is masked in production.                                                     |

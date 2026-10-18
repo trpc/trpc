@@ -96,7 +96,7 @@ source.addEventListener('done', () => source.close());
 
 ## Over WebSockets
 
-`wsLink` runs subscriptions (and everything else) over one WebSocket; `switchLink` can send subscriptions there and the rest over HTTP ([Links](../client/links.md)). On Cloudflare, Durable Objects can [hibernate](../adapters/durable-objects.md#subscriptions-that-hibernate) between events.
+`wsLink` runs subscriptions (and everything else) over one WebSocket; `switchLink` can send subscriptions there and the rest over HTTP ([Links](../client/links.md)).
 
 ## Publishing events
 

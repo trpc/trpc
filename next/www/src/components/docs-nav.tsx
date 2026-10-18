@@ -1,10 +1,15 @@
 import { Link, useLocation } from '@tanstack/react-router';
-import { ChevronRight } from 'lucide-react';
+import { ChevronRight, EyeOff } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import { cn } from '@shared/ui/lib/utils';
 
-import { type DocsVersion, slugAt, useDocsVersion } from '~/content/docs.ts';
+import {
+  type DocsVersion,
+  slugAt,
+  useDocsVersion,
+  useListedDocs,
+} from '~/content/docs.ts';
 import type { DocMeta, DocSection } from '~/content/types.ts';
 
 interface NavNode {
@@ -30,9 +35,10 @@ function contains(node: NavNode, slug: string | undefined): boolean {
 }
 
 export function DocsNav(props: { readonly onNavigate?: () => void }) {
-  const version = useDocsVersion();
+  const reading = useDocsVersion();
+  const version = useListedDocs(reading);
   const current = slugAt(
-    version,
+    reading,
     useLocation({ select: (location) => location.pathname }),
   );
   const currentSection = version.sections.findIndex((section) =>
@@ -159,7 +165,7 @@ function NavItem(props: {
             className:
               'bg-brand/10 font-semibold text-link hover:bg-brand/15 hover:text-link',
           }}
-          className="block min-w-0 flex-1 rounded-md px-2 py-1.5 transition-colors"
+          className="flex min-w-0 flex-1 items-center gap-1.5 rounded-md px-2 py-1.5 transition-colors"
           inactiveProps={{
             className: cn(
               'text-muted-foreground hover:bg-accent/60 hover:text-foreground',
@@ -170,7 +176,16 @@ function NavItem(props: {
           params={{ _splat: doc.slug }}
           to={props.version.route}
         >
-          {doc.label ?? doc.title}
+          <span className={cn('min-w-0', doc.hidden && 'opacity-70')}>
+            {doc.label ?? doc.title}
+          </span>
+          {doc.hidden ? (
+            <EyeOff
+              aria-label="Hidden"
+              className="size-3 shrink-0 opacity-70"
+              role="img"
+            />
+          ) : null}
         </Link>
         {hasChildren ? (
           <button

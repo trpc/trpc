@@ -1,7 +1,7 @@
 /**
  * OpenAPI example: one router served over RPC (`/trpc`) and REST (`/api`),
  * an OpenAPI document generated from its types (inferred errors included),
- * served with a Scalar UI, then called with `fetch` and with `openApiLink`.
+ * served with a Scalar UI, then called with `fetch` and with `experimental_openApiLink`.
  * Run with `node index.ts`.
  */
 import { createServer } from 'node:http';
@@ -12,9 +12,9 @@ import { createTrpcClient, safe } from '@trpc12/trpc/client';
 import { toContract } from '@trpc12/trpc/contract';
 import { toHttpEffect } from '@trpc12/trpc/http';
 import {
-  createOpenApiHandler,
-  openApiLink,
-  openApiReference,
+  experimental_createOpenApiHandler,
+  experimental_openApiLink,
+  experimental_openApiReference,
 } from '@trpc12/trpc/openapi';
 import { experimental_generateOpenApiFromTypes } from '@trpc12/trpc/openapi/typescript';
 import { createFetchHandler } from '@trpc12/trpc/server';
@@ -41,10 +41,10 @@ const createContext = (opts: {
 }) => ({ user: opts.request.headers['x-user'] ?? null });
 
 const rpc = createFetchHandler({ router: appRouter, createContext });
-const rest = createOpenApiHandler({
+const rest = experimental_createOpenApiHandler({
   router: appRouter,
   createContext,
-  middleware: [openApiReference({ document })],
+  middleware: [experimental_openApiReference({ document })],
 });
 const rpcApp = toHttpEffect(rpc);
 const restApp = toHttpEffect(rest);
@@ -88,14 +88,18 @@ console.log('GET /api/openapi.json', spec.status);
 const contract = toContract(appRouter);
 const client = createTrpcClient({
   router: contract,
-  links: [openApiLink({ url, contract, headers: { 'x-user': 'ada' } })],
+  links: [
+    experimental_openApiLink({ url, contract, headers: { 'x-user': 'ada' } }),
+  ],
 });
 
-const post = await client.post.create.mutate({ title: 'From openApiLink' });
-console.log('openApiLink post.create', post.id, post.createdAt);
+const post = await client.post.create.mutate({
+  title: 'From experimental_openApiLink',
+});
+console.log('experimental_openApiLink post.create', post.id, post.createdAt);
 
 const [, err] = await safe(client.post.byId.query({ id: '404' }));
-console.log('openApiLink post.byId', err?.code);
+console.log('experimental_openApiLink post.byId', err?.code);
 if (err?.code !== 'NOT_FOUND') throw new Error('expected NOT_FOUND');
 
 await runtime.dispose();

@@ -25,17 +25,13 @@ const handler = createFetchHandler({ router, createContext, layer });
 
 Procedures are served under `endpoint`, `/trpc` by default.
 
-| Runtime                                 | Serve with                                       | WebSockets                      |
-| --------------------------------------- | ------------------------------------------------ | ------------------------------- |
-| [Node](./node.md)                       | `serve(handler)` on `NodeHttpServer`, or Express | yes                             |
-| [Bun](./bun.md)                         | `Bun.serve({ fetch: handler.fetch })`            | with `serve(handler)`           |
-| [Deno](./deno.md)                       | `Deno.serve`                                     | `handler.websocket`             |
-| [Workers, Next.js](./fetch.md)          | `handler.fetch`                                  | in a Durable Object             |
-| [AWS Lambda](./aws-lambda.md)           | `toLambdaHandler(handler)`                       | no                              |
-| [Durable Objects](./durable-objects.md) | `experimental_createHibernatingWebSockets`       | hibernating                     |
-| [Message ports](./message-ports.md)     | `handler.messagePort(port)`                      | n/a                             |
-| [Firebase](./firebase.md)               | `call()` in `onCall`                             | no                              |
-| [Raw sockets](./sockets.md)             | `serveSocket(handler)`                           | the WebSocket protocol over TCP |
+| Runtime                        | Serve with                                       | WebSockets            |
+| ------------------------------ | ------------------------------------------------ | --------------------- |
+| [Node](./node.md)              | `serve(handler)` on `NodeHttpServer`, or Express | yes                   |
+| [Bun](./bun.md)                | `Bun.serve({ fetch: handler.fetch })`            | with `serve(handler)` |
+| [Deno](./deno.md)              | `Deno.serve`                                     | `handler.websocket`   |
+| [Workers, Next.js](./fetch.md) | `handler.fetch`                                  | in a Durable Object   |
+| [AWS Lambda](./aws-lambda.md)  | `toLambdaHandler(handler)`                       | no                    |
 
 ## Middleware and CORS
 

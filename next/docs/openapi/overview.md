@@ -5,6 +5,7 @@ description: Serve the router over REST, document it as OpenAPI 3.1, call REST r
 section: OpenAPI
 order: 0
 v11: openapi
+hidden: true
 ---
 
 `@trpc12/trpc/openapi` puts the same router behind REST routes and an OpenAPI 3.1 document, so tools and clients that don't speak tRPC can call it. RPC and REST run side by side; neither changes the other.
@@ -14,14 +15,14 @@ v11: openapi
 import { db } from './server.ts';
 // ---cut-end---
 import {
-  createOpenApiHandler,
-  generateOpenApi,
-  openapi,
+  experimental_createOpenApiHandler,
+  experimental_generateOpenApi,
+  experimental_openapi,
 } from '@trpc12/trpc/openapi';
 import { initTrpc } from '@trpc12/trpc/server';
 import { z } from 'zod';
 
-const t = initTrpc().concat(openapi());
+const t = initTrpc().concat(experimental_openapi());
 
 const router = {
   post: {
@@ -32,8 +33,8 @@ const router = {
   },
 };
 
-const rest = createOpenApiHandler({ router });
-const doc = generateOpenApi(router, {
+const rest = experimental_createOpenApiHandler({ router });
+const doc = experimental_generateOpenApi(router, {
   info: { title: 'Blog', version: '1.0.0' },
 });
 ```
@@ -42,7 +43,7 @@ const doc = generateOpenApi(router, {
 
 - [REST routes](./routes.md): route meta, the handler, how inputs map to paths, queries and bodies, and outputs and errors.
 - [The document](./document.md): generate the document from the router's schemas, or from its types.
-- [Calling REST from the client](./client.md): `openApiLink` sends each call to its REST route, typed from a contract.
+- [Calling REST from the client](./client.md): `experimental_openApiLink` sends each call to its REST route, typed from a contract.
 - [A contract from OpenAPI](./from-document.md): generate a typed contract module from any OpenAPI 3.0 or 3.1 document, to call APIs that aren't tRPC.
 
 ## Credits

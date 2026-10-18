@@ -8,6 +8,11 @@ import { useSyncExternalStore } from 'react';
  * while navigating, and a URL without it has every flag off.
  */
 export const flags = {
+  'hidden-docs': {
+    description:
+      'Docs pages hidden until they are reviewed, back in the sidebar, search and pagination, marked hidden.',
+    label: 'Hidden docs',
+  },
   partners: {
     description:
       'Our biggest sponsors as partners: on the home page, under the hero and beside the docs.',

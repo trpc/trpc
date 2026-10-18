@@ -148,7 +148,7 @@ export interface LinkDecl {
   batches?: true;
   /**
    * The form results reach the caller in, for links that change it:
-   * `openApiLink` receives plain JSON (`JsonForm`). The first link in the
+   * `experimental_openApiLink` receives plain JSON (`JsonForm`). The first link in the
    * array that declares one wins, so a link in front can restore types.
    */
   form?: OutputForm;

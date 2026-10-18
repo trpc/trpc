@@ -11,14 +11,14 @@ import {
 import { toContract } from '@trpc12/trpc/contract';
 import { serve as serveHttp } from '@trpc12/trpc/http';
 import {
-  createOpenApiHandler,
-  generateOpenApi,
-  openapi,
+  experimental_createOpenApiHandler,
+  experimental_generateOpenApi,
+  experimental_openapi,
   type OpenApiErrorBody,
-  openApiLink,
-  openApiReference,
-  parseBracketNotation,
-  toBracketNotation,
+  experimental_openApiLink,
+  experimental_openApiReference,
+  experimental_parseBracketNotation,
+  experimental_toBracketNotation,
 } from '@trpc12/trpc/openapi';
 import {
   type AnyRouter,
@@ -34,7 +34,7 @@ import { appContract } from '../fixtures/contract.ts';
 interface Ctx {
   user: string | null;
 }
-const t = initTrpc<{ ctx: Ctx }>().concat(openapi());
+const t = initTrpc<{ ctx: Ctx }>().concat(experimental_openapi());
 
 class Clock extends Context.Service<Clock, { now: () => number }>()('Clock') {}
 
@@ -163,22 +163,22 @@ async function serve(opts: { expose?: boolean } = {}) {
     user: args.request.headers['x-user'] ?? null,
   });
   const rpc = createFetchHandler({ router, createContext, layer });
-  const openapi = createOpenApiHandler({
+  const openapi = experimental_createOpenApiHandler({
     router,
     createContext,
     layer,
     exposeUnexpectedErrors: opts.expose ?? true,
     middleware: [
-      openApiReference({
+      experimental_openApiReference({
         router,
         specGenerateOptions: { info: { title: 'Posts API', version: '1.0.0' } },
       }),
-      openApiReference({
+      experimental_openApiReference({
         path: '/api/swagger',
         specPath: '/api/swagger.json',
         docsProvider: 'swagger',
         document: () =>
-          generateOpenApi(router, {
+          experimental_generateOpenApi(router, {
             info: { title: 'Posts API', version: '1.0.0' },
           }),
       }),
@@ -377,7 +377,7 @@ test('the same router serves RPC and REST at once', async () => {
   });
 });
 
-test('openApiLink calls the REST endpoints from a JSON contract (18 (d))', async () => {
+test('experimental_openApiLink calls the REST endpoints from a JSON contract (18 (d))', async () => {
   await using s = await serve();
   const contract = JSON.parse(JSON.stringify(toContract(router))) as ReturnType<
     typeof toContract<typeof router>
@@ -386,7 +386,7 @@ test('openApiLink calls the REST endpoints from a JSON contract (18 (d))', async
   const client = createTrpcClient({
     router: contract,
     links: [
-      openApiLink({
+      experimental_openApiLink({
         url: s.origin,
         contract,
         headers: { 'x-user': 'ada' },
@@ -461,8 +461,8 @@ test('openApiLink calls the REST endpoints from a JSON contract (18 (d))', async
   ]);
 });
 
-test('generateOpenApi documents routes, params, bodies and errors (18 (c))', () => {
-  const doc = generateOpenApi(router, {
+test('experimental_generateOpenApi documents routes, params, bodies and errors (18 (c))', () => {
+  const doc = experimental_generateOpenApi(router, {
     info: { title: 'Posts API', version: '1.0.0' },
     servers: [{ url: 'https://api.example.com' }],
   });
@@ -577,7 +577,7 @@ test('generateOpenApi documents routes, params, bodies and errors (18 (c))', () 
 });
 
 test("target: 'rpc' documents the RPC endpoint with zero configuration (O-C)", () => {
-  const doc = generateOpenApi(router, {
+  const doc = experimental_generateOpenApi(router, {
     info: { title: 'RPC', version: '1.0.0' },
     target: 'rpc',
   });
@@ -603,7 +603,7 @@ test("target: 'rpc' documents the RPC endpoint with zero configuration (O-C)", (
 });
 
 test('a contract alone is enough to document an API', () => {
-  const doc = generateOpenApi(appContract, {
+  const doc = experimental_generateOpenApi(appContract, {
     info: { title: 'Contract', version: '1.0.0' },
   });
   expect(doc.paths['/api/posts/{id}']!['get']!.operationId).toBe('post.byId');
@@ -612,7 +612,7 @@ test('a contract alone is enough to document an API', () => {
   );
 });
 
-test('openApiReference middleware serves Scalar or Swagger UI and the document (18 (e), 21)', async () => {
+test('experimental_openApiReference middleware serves Scalar or Swagger UI and the document (18 (e), 21)', async () => {
   await using s = await serve();
   const html = await (await s.api('/docs')).text();
   expect(html).toContain('data-url="/api/openapi.json"');
@@ -634,7 +634,7 @@ test('openApiReference middleware serves Scalar or Swagger UI and the document (
 
 test('two procedures on the same route are rejected', () => {
   expect(() =>
-    createOpenApiHandler({
+    experimental_createOpenApiHandler({
       router: {
         a: t.procedure.meta({ route: { path: '/x/{id}' } }).query(() => 1),
         b: t.procedure.meta({ route: { path: '/x/{slug}' } }).query(() => 2),
@@ -650,17 +650,19 @@ test('bracket notation round-trips', () => {
     items: [{ id: '1' }, { id: '2' }],
     empty: '',
   };
-  expect(parseBracketNotation(toBracketNotation(value))).toEqual(value);
   expect(
-    parseBracketNotation(
+    experimental_parseBracketNotation(experimental_toBracketNotation(value)),
+  ).toEqual(value);
+  expect(
+    experimental_parseBracketNotation(
       new URLSearchParams('__proto__[x]=1&a[constructor]=2'),
     ),
   ).toEqual({});
 });
 
 test('an unvalidated output is documented by its schema input side', () => {
-  const t = initTrpc().concat(openapi());
-  const doc = generateOpenApi(
+  const t = initTrpc().concat(experimental_openapi());
+  const doc = experimental_generateOpenApi(
     {
       when: t.procedure
         .meta({ route: { method: 'GET', path: '/when' } })
@@ -681,7 +683,7 @@ test('an unvalidated output is documented by its schema input side', () => {
 });
 
 test('quiet subscriptions send keep-alive comments', async () => {
-  const handler = createOpenApiHandler({
+  const handler = experimental_createOpenApiHandler({
     router: {
       slow: t.procedure.subscription(async function* () {
         yield 'a';
@@ -701,7 +703,7 @@ test('quiet subscriptions send keep-alive comments', async () => {
 
 test('a cancelled subscription sends no keep-alives while it winds down', async () => {
   let closed = false;
-  const handler = createOpenApiHandler({
+  const handler = experimental_createOpenApiHandler({
     router: {
       slow: t.procedure.subscription(async function* () {
         try {
@@ -731,7 +733,7 @@ test('a cancelled subscription sends no keep-alives while it winds down', async 
 test('a subscription nobody reads waits instead of buffering its events', async () => {
   let yielded = 0;
   let closed = false;
-  const handler = createOpenApiHandler({
+  const handler = experimental_createOpenApiHandler({
     router: {
       firehose: t.procedure.subscription(async function* () {
         try {
@@ -753,7 +755,7 @@ test('a subscription nobody reads waits instead of buffering its events', async 
 });
 
 test('serve() runs one procedure with params the caller matched', async () => {
-  const handler = createOpenApiHandler({
+  const handler = experimental_createOpenApiHandler({
     router: {},
     createContext: () => ({ user: 'ada' }),
   });
@@ -800,7 +802,7 @@ test('.meta({ route: { spec } }) replaces or extends the generated operation', (
       .meta({ route: { path: '/extended' } })
       .query(() => 'extended'),
   } satisfies AnyRouter;
-  const doc = generateOpenApi(specRouter, {
+  const doc = experimental_generateOpenApi(specRouter, {
     info: { title: 'x', version: '1' },
   });
   expect(doc.paths['/api/me']!['get']).toMatchObject({
@@ -821,7 +823,7 @@ test('.meta({ route: { spec } }) replaces or extends the generated operation', (
     path: '/me',
   });
 
-  const rpc = generateOpenApi(specRouter, {
+  const rpc = experimental_generateOpenApi(specRouter, {
     info: { title: 'x', version: '1' },
     target: 'rpc',
   });

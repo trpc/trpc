@@ -3,6 +3,7 @@ title: Locks
 description: experimental_lock() runs calls with the same key one at a time, across instances.
 section: Middleware
 order: 3
+hidden: true
 ---
 
 `experimental_lock()` runs the rest of the call under a lock, so calls with the same key never overlap: the second waits for the first, and fails with `experimental_LockConflict` (`CONFLICT`, 409) if `timeout` (10 seconds) passes first. The resolver gets `ctx.lock.waited`.
@@ -49,7 +50,7 @@ The locker is an Effect service, `experimental_Locker`, provided as a layer:
 
 - `experimental_memoryLocker()` for one process.
 - `experimental_redisLocker()` over Effect's `Redis` for many. Any Redis Effect's `Redis.make({ send, subscribe })` can wrap works, Upstash's REST client included.
-- [`experimental_durableLocker()`](../adapters/durable-objects.md#locks) on Workers.
+- [`experimental_durableLocker()`](../adapters/cloudflare.md#locks) on Workers.
 
 Outside a procedure, take a lock with the service: `yield* (yield* experimental_Locker).acquire(key)` holds it until the surrounding `Effect.scoped` ends.
 

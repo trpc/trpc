@@ -61,8 +61,6 @@ t.procedure.input(z.object({ id: z.string() })).query((opts) =>
 );
 ```
 
-`.errors({ POST_NOT_FOUND: PostNotFound })` documents one in OpenAPI.
-
 ## Middleware that provides services
 
 `t.middleware.effect<{ provides: S }>()(fn)` writes a middleware whose `next()` is an `Effect`, so it can provide services:
@@ -84,7 +82,7 @@ const withUser = t.middleware.effect<{ provides: CurrentUser }>()((opts) =>
 
 Tracing is opt-in: put a tracer in the handler's `layer` (`@effect/opentelemetry`) and every call runs in an Effect span named `trpc.<path>`, with `rpc.system`, `rpc.method` and `trpc.type` attributes, plus `trpc.error.code` when it fails. Spans opened in middlewares and resolvers nest under it. Without a tracer, calls open no span, so requests don't pay for one.
 
-The span continues the request's trace: the `http.server` span on Effect HTTP servers, or the incoming `traceparent` header on `handler.fetch`, so a traced client and the server share one trace ([Client tracing](../client/tracing.md)). A WebSocket or MessagePort call continues the trace in its message's `trace` field, and starts its own trace without one.
+The span continues the request's trace: the `http.server` span on Effect HTTP servers, or the incoming `traceparent` header on `handler.fetch`, so a traced client and the server share one trace ([Client tracing](../client/tracing.md)). A WebSocket call continues the trace in its message's `trace` field, and starts its own trace without one.
 
 ## Work after the response
 

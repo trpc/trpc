@@ -13,7 +13,7 @@ import {
   toContract,
   type inferContract,
 } from '@trpc12/trpc/contract';
-import { openapi } from '@trpc12/trpc/openapi';
+import { experimental_openapi } from '@trpc12/trpc/openapi';
 import {
   error,
   initTrpc,
@@ -27,7 +27,9 @@ import { appContract, type AppContract } from '../fixtures/contract.ts';
 interface Ctx {
   user: string | null;
 }
-const t = initTrpc<{ ctx: Ctx; meta: { auth?: boolean } }>().concat(openapi());
+const t = initTrpc<{ ctx: Ctx; meta: { auth?: boolean } }>().concat(
+  experimental_openapi(),
+);
 interface Post {
   id: string;
   title: string;

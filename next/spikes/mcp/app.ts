@@ -1,4 +1,4 @@
-import { openapi } from '@trpc12/trpc/openapi';
+import { experimental_openapi } from '@trpc12/trpc/openapi';
 import { error, initTrpc, tracked } from '@trpc12/trpc/server';
 import { z } from 'zod';
 import { mcp } from './mcp.ts';
@@ -7,7 +7,7 @@ export interface Ctx {
   user: { name: string; admin: boolean } | null;
 }
 
-const t = initTrpc<{ ctx: Ctx }>().concat(openapi()).concat(mcp());
+const t = initTrpc<{ ctx: Ctx }>().concat(experimental_openapi()).concat(mcp());
 
 const authed = t.procedure.use((opts) =>
   opts.ctx.user

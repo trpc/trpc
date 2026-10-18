@@ -5,6 +5,7 @@ import { removeTwoslashNotations } from 'twoslash/fallback';
 import type { Connect, Plugin } from 'vite';
 import { parse as parseYaml } from 'yaml';
 
+import { listedSections } from '../src/content/listed.ts';
 import type { Doc, DocMeta, DocSection, Sample } from '../src/content/types.ts';
 import { stripCollapseMarkers } from './collapse.ts';
 import { ContentError, messageOf } from './content-error.ts';
@@ -64,6 +65,11 @@ const acceptsMarkdown = /\btext\/markdown\b/;
 
 const Frontmatter = Schema.Struct({
   description: Schema.String,
+  /**
+   * Built and served at its URL, but out of the sidebar, search, the sitemap
+   * and `llms.txt`, and `noindex` for search engines, until it's reviewed.
+   */
+  hidden: Schema.optional(Schema.Boolean),
   label: Schema.optional(Schema.String),
   order: Schema.Number,
   /** The page it nests under in the sidebar, by slug, in the same section. */
@@ -200,6 +206,7 @@ export const docPages = Effect.fn('docPages')(function* (dirs: PageDirs) {
     (source) =>
       Effect.map(lastModified(source.file), (date) => ({
         description: source.frontmatter.description,
+        hidden: source.frontmatter.hidden === true,
         lastModified: date,
         path: `${dirs.basePath}/${source.slug}`,
         section: source.frontmatter.section,
@@ -293,6 +300,33 @@ export function brokenLinks(
 }
 
 /**
+ * A listed page that leads to a hidden one, as one message each: a link to
+ * it, or nesting under it in the sidebar. Hidden pages may link anywhere.
+ */
+export function hiddenPageProblems(
+  pages: ReadonlyArray<{
+    readonly doc: Pick<DocMeta, 'hidden' | 'parent' | 'slug'>;
+    readonly links: ReadonlyArray<DocLink>;
+  }>,
+) {
+  const hidden = new Set(
+    pages.flatMap((page) => (page.doc.hidden ? [page.doc.slug] : [])),
+  );
+  return pages
+    .filter((page) => !page.doc.hidden)
+    .flatMap((page) => [
+      ...(page.doc.parent !== undefined && hidden.has(page.doc.parent)
+        ? [`${page.doc.slug}: nests under ${page.doc.parent}, which is hidden`]
+        : []),
+      ...[...new Set(page.links.map((link) => link.slug))]
+        .filter((slug) => hidden.has(slug))
+        .map(
+          (slug) => `${page.doc.slug}: links to ${slug}.md, which is hidden`,
+        ),
+    ]);
+}
+
+/**
  * Compiles the docs' `.md` pages at build time. Each page imports as a module
  * of pre-highlighted HTML (its own chunk, so the browser loads only the pages
  * it visits), and the manifest module (`virtual:docs-manifest`) lists every
@@ -300,7 +334,8 @@ export function brokenLinks(
  * gets `llms.txt` and each page's markdown at `<basePath>/<slug>.md`.
  *
  * The build fails on a page without valid frontmatter, a code block that
- * doesn't compile, and a link to a page or heading that doesn't exist.
+ * doesn't compile, a link to a page or heading that doesn't exist, and a
+ * listed page that leads to a hidden one.
  */
 export function docsContent(options: ContentOptions): Plugin {
   const samplesDir = options.samplesDir;
@@ -354,6 +389,7 @@ export function docsContent(options: ContentOptions): Plugin {
       doc: {
         description: source.frontmatter.description,
         headings: result.headings,
+        hidden: source.frontmatter.hidden,
         html: result.html,
         label: source.frontmatter.label,
         lastModified: yield* lastModified(source.file),
@@ -447,6 +483,12 @@ export function docsContent(options: ContentOptions): Plugin {
     if (broken.length > 0) {
       throw new Error(`Broken links in the docs:\n${broken.join('\n')}`);
     }
+    const leaks = hiddenPageProblems(pages.map((entry) => entry.page));
+    if (leaks.length > 0) {
+      throw new Error(
+        `Listed pages that lead to hidden ones (add \`hidden: true\` or drop the link):\n${leaks.join('\n')}`,
+      );
+    }
     const ordered = readingOrder(
       pages.map((entry) => ({
         order: entry.order,
@@ -465,6 +507,7 @@ export function docsContent(options: ContentOptions): Plugin {
           return {
             description: doc.description,
             headings: doc.headings,
+            hidden: doc.hidden,
             label: doc.label,
             lastModified: doc.lastModified,
             parent: doc.parent,
@@ -523,7 +566,7 @@ export function docsContent(options: ContentOptions): Plugin {
       'Every page is also markdown: add `.md` to its URL, or request it with `Accept: text/markdown`.',
       '',
     ];
-    for (const section of sections) {
+    for (const section of listedSections(sections)) {
       lines.push(`## ${section.title}`, '');
       const parents = new Map(
         section.docs.map((doc) => [doc.slug, doc.parent]),
@@ -551,7 +594,8 @@ export function docsContent(options: ContentOptions): Plugin {
   /**
    * Files for agents, by URL path: `llms.txt`, `llms-full.txt`, each page's
    * markdown at `<basePath>/<slug>.md`, `/index.md` (the home page's markdown,
-   * the same as `llms.txt`) and `/404.md`.
+   * the same as `llms.txt`) and `/404.md`. A hidden page has its markdown,
+   * but `llms.txt` and `llms-full.txt` leave it out.
    */
   async function agentFiles() {
     const sections = await manifest();
@@ -578,10 +622,12 @@ export function docsContent(options: ContentOptions): Plugin {
       '/llms-full.txt',
       [
         ...intro,
-        ...pages.map(
-          (entry) =>
-            `---\n\nSource: ${options.siteUrl}${basePath}/${entry.source.slug}\n\n${pageMarkdown(entry.source, entry.page)}`,
-        ),
+        ...pages
+          .filter((entry) => !entry.page.doc.hidden)
+          .map(
+            (entry) =>
+              `---\n\nSource: ${options.siteUrl}${basePath}/${entry.source.slug}\n\n${pageMarkdown(entry.source, entry.page)}`,
+          ),
       ].join('\n'),
     );
     for (const entry of pages) {

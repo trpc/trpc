@@ -4,26 +4,27 @@ description: Generate an OpenAPI 3.1 document from the router's schemas, or from
 section: OpenAPI
 order: 2
 v11: openapi
+hidden: true
 ---
 
 ```ts twoslash
 // ---cut-start---
 import { appRouter } from './server.ts';
 // ---cut-end---
-import { generateOpenApi } from '@trpc12/trpc/openapi';
+import { experimental_generateOpenApi } from '@trpc12/trpc/openapi';
 import { loadRouter } from '@trpc12/trpc/server';
 
-const doc = generateOpenApi(await loadRouter(appRouter), {
+const doc = experimental_generateOpenApi(await loadRouter(appRouter), {
   info: { title: 'API', version: '1.0.0' },
   servers: [{ url: 'https://api.example.com' }],
 });
 ```
 
-The document has schemas for input, output and each declared error. `filter({ path, procedure })` drops operations. `target: 'rpc'` describes the RPC endpoint instead of the REST routes. `generateOpenApi` throws on a lazy subtree that hasn't loaded, so pass the result of `loadRouter()`.
+The document has schemas for input, output and each declared error. `filter({ path, procedure })` drops operations. `target: 'rpc'` describes the RPC endpoint instead of the REST routes. `experimental_generateOpenApi` throws on a lazy subtree that hasn't loaded, so pass the result of `loadRouter()`.
 
 ## From the types
 
-`generateOpenApi` only sees runtime schemas. `experimental_generateOpenApiFromTypes` from `@trpc12/trpc/openapi/typescript` also reads the router's types with the TypeScript 7 compiler, so it documents:
+`experimental_generateOpenApi` only sees runtime schemas. `experimental_generateOpenApiFromTypes` from `@trpc12/trpc/openapi/typescript` also reads the router's types with the TypeScript 7 compiler, so it documents:
 
 - errors that are only inferred (returned with `error()`, failed or yielded in an Effect), never declared, with their status: a `TrpcError.Tagged` class's literal `status`, the built-in code's status, or `400`;
 - the input and output of procedures without static schemas (no `.output()`, or a ctx-callback input).
@@ -51,11 +52,11 @@ await fs.writeFile('openapi.json', JSON.stringify(doc, null, 2));
 
 // ---cut-start---
 // @filename: app.ts
-import { openApiReference, type OpenApiDocument } from '@trpc12/trpc/openapi';
+import { experimental_openApiReference, type OpenApiDocument } from '@trpc12/trpc/openapi';
 // ---cut-end---
 // server
 import doc from './openapi.json' with { type: 'json' };
-openApiReference({ document: doc as OpenApiDocument });
+experimental_openApiReference({ document: doc as OpenApiDocument });
 ```
 
 Where a procedure has a runtime schema, that schema wins, so the two generators agree. Types become JSON Schema the way `JSON.stringify` sends them:
@@ -72,4 +73,4 @@ An output declared with `.output(schema, { validate: false })` isn't validated. 
 
 ## Credits
 
-The generator follows [oRPC's OpenAPI specification](https://orpc.dev/docs/openapi/specification), and `openApiReference()` its [OpenAPI reference plugin](https://orpc.dev/docs/plugins/openapi-reference).
+The generator follows [oRPC's OpenAPI specification](https://orpc.dev/docs/openapi/specification), and `experimental_openApiReference()` its [OpenAPI reference plugin](https://orpc.dev/docs/plugins/openapi-reference).

@@ -13,7 +13,7 @@ import {
   experimental_durableLocker,
   experimental_durableLockObject,
   experimental_workersTracer,
-  hibernatingPublisher,
+  experimental_hibernatingPublisher,
 } from '@trpc12/trpc/cloudflare';
 import { Layer } from 'effect';
 import { createFetchHandler } from '@trpc12/trpc/server';
@@ -30,7 +30,10 @@ export class Room extends DurableObject<Env> {
   handler = createFetchHandler<typeof appRouter, { env: Env }>({
     router: appRouter,
     layer: Layer.mergeAll(
-      hibernatingPublisher(Messages, { state: this.ctx, buffer: 100 }),
+      experimental_hibernatingPublisher(Messages, {
+        state: this.ctx,
+        buffer: 100,
+      }),
       durableObjectPersistence(this.ctx.storage),
       experimental_durableLocker(this.env.LOCKS),
       experimental_workersTracer({

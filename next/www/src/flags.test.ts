@@ -15,6 +15,20 @@ describe('flagsIn', () => {
     expect(flagsIn('partners,partners')).toEqual(['partners']);
   });
 
+  it('lists several in the order flags declares them', () => {
+    expect(flagsIn('partners,hidden-docs')).toEqual([
+      'hidden-docs',
+      'partners',
+    ]);
+    expect(flagParamFor(['partners', 'hidden-docs'])).toBe(
+      'hidden-docs,partners',
+    );
+    expect(withFlag(['partners'], 'hidden-docs', true)).toEqual([
+      'hidden-docs',
+      'partners',
+    ]);
+  });
+
   it('has none without a string', () => {
     expect(flagsIn(undefined)).toEqual([]);
     expect(flagsIn('')).toEqual([]);

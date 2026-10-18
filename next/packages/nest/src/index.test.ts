@@ -18,7 +18,10 @@ import {
   contract,
   toContract,
 } from '@trpc12/trpc/contract';
-import { openapi, openApiLink } from '@trpc12/trpc/openapi';
+import {
+  experimental_openapi,
+  experimental_openApiLink,
+} from '@trpc12/trpc/openapi';
 import { initTrpc } from '@trpc12/trpc/server';
 import { expect, test } from 'vite-plus/test';
 import {
@@ -27,7 +30,7 @@ import {
   experimental_TrpcModule,
 } from './index.ts';
 
-const c = contract.create().concat(openapi());
+const c = contract.create().concat(experimental_openapi());
 const Post = Schema.Struct({ id: Schema.String, title: Schema.String });
 
 const appContract = {
@@ -69,7 +72,9 @@ class Counter extends Context.Service<
   { next: Effect.Effect<number> }
 >()('Counter') {}
 
-const t = initTrpc<{ ctx: { user: string | null } }>().concat(openapi());
+const t = initTrpc<{ ctx: { user: string | null } }>().concat(
+  experimental_openapi(),
+);
 const impl = t.implement(appContract);
 
 @Injectable()
@@ -280,12 +285,12 @@ test('subscriptions stream as server-sent events', async () => {
   expect(body).toContain('event: done');
 });
 
-test('openApiLink calls the Nest app with the contract', async () => {
+test('experimental_openApiLink calls the Nest app with the contract', async () => {
   await using app = await listen();
   const client = createTrpcClient({
     router: appContract,
     links: [
-      openApiLink({
+      experimental_openApiLink({
         url: app.url,
         prefix: '',
         contract: toContract(appContract),

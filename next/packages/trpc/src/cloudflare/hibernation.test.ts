@@ -1,9 +1,9 @@
 import { Effect, Redacted, Schema } from 'effect';
 import { TestClock } from 'effect/testing';
 import {
-  connectionToken,
+  experimental_connectionToken,
   experimental_createHibernatingWebSockets,
-  hibernatingPublisher,
+  experimental_hibernatingPublisher,
   type HibernatableWebSocket,
 } from '@trpc12/trpc/cloudflare';
 import { createFetchHandler, initTrpc, Publisher } from '@trpc12/trpc/server';
@@ -279,7 +279,7 @@ const room = (state: ReturnType<typeof fakeState>) => {
           Posts.subscribe('created', { lastEventId: opts.lastEventId }),
         ),
     },
-    layer: hibernatingPublisher(Posts, { state, buffer: 10 }),
+    layer: experimental_hibernatingPublisher(Posts, { state, buffer: 10 }),
   });
   return experimental_createHibernatingWebSockets(h, { state });
 };
@@ -412,10 +412,13 @@ test('an event the subscription rejects ends it with an error', async () => {
   expect(sub.deserializeAttachment()).not.toHaveProperty('subs');
 });
 
-const RoomToken = connectionToken(Schema.Struct({ user: Schema.String }), {
-  secret: 'test-secret',
-  ttlSeconds: 60,
-});
+const RoomToken = experimental_connectionToken(
+  Schema.Struct({ user: Schema.String }),
+  {
+    secret: 'test-secret',
+    ttlSeconds: 60,
+  },
+);
 
 class Notes extends Publisher.Service<
   Notes,
@@ -448,7 +451,7 @@ const notesRoom = (state: ReturnType<typeof fakeState>) =>
         Effect.runPromise(
           RoomToken.verify(opts.info.connectionParams?.['token']),
         ),
-      layer: hibernatingPublisher(Notes, { state, buffer: 10 }),
+      layer: experimental_hibernatingPublisher(Notes, { state, buffer: 10 }),
     }),
     { state },
   );
@@ -623,9 +626,12 @@ test('connection tokens fail with UNAUTHORIZED when missing, tampered with or ex
 
 test('a Redacted secret, the default ttl of an hour, and claims an older schema signed', async () => {
   const secret = Redacted.make('test-secret');
-  const V2 = connectionToken(Schema.Struct({ user: Schema.Number }), {
-    secret,
-  });
+  const V2 = experimental_connectionToken(
+    Schema.Struct({ user: Schema.Number }),
+    {
+      secret,
+    },
+  );
   const [verified, expired, oldClaims, malformed] = await Effect.runPromise(
     Effect.gen(function* () {
       const minted = yield* V2.sign({ user: 1 });

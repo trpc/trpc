@@ -26,7 +26,7 @@ const byId = t.procedure
 
 ## Declaring errors
 
-Declaring errors with `.errors()` is optional. It adds typed constructors, `data` schemas and entries in `generateOpenApi`'s document. It also types what inference can't see: errors thrown from helpers (a `throw` has no type) and contracts, which have no resolver. `experimental_generateOpenApiFromTypes` documents inferred errors without declarations ([The document](../openapi/document.md)).
+Declaring errors with `.errors()` is optional. It adds typed constructors and `data` schemas. It also types what inference can't see: errors thrown from helpers (a `throw` has no type) and contracts, which have no resolver.
 
 ```ts twoslash
 // ---cut-start---

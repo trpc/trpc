@@ -10,7 +10,11 @@ import { useNavigate } from '@tanstack/react-router';
 import { FileText, Hash, Search } from 'lucide-react';
 import { useState } from 'react';
 
-import { type DocsVersion, useDocsVersion, versions } from '~/content/docs.ts';
+import {
+  type DocsVersion,
+  useDocsVersion,
+  useListedDocs,
+} from '~/content/docs.ts';
 
 interface SearchEntry {
   readonly hash: string | undefined;
@@ -43,16 +47,27 @@ function entriesOf(version: DocsVersion): ReadonlyArray<SearchEntry> {
   ]);
 }
 
-/** Each version's pages and headings: search looks in the version being read. */
-const entriesByVersion = new Map(
-  versions.map((version) => [version.id, entriesOf(version)]),
-);
+/**
+ * Each version's pages and headings, by the version as listed (with or
+ * without its hidden pages): search looks in the version being read.
+ */
+const entriesByVersion = new WeakMap<DocsVersion, ReadonlyArray<SearchEntry>>();
+
+function entriesFor(version: DocsVersion) {
+  const cached = entriesByVersion.get(version);
+  if (cached) {
+    return cached;
+  }
+  const entries = entriesOf(version);
+  entriesByVersion.set(version, entries);
+  return entries;
+}
 
 function search(
   version: DocsVersion,
   query: string,
 ): ReadonlyArray<SearchEntry> {
-  const entries = entriesByVersion.get(version.id) ?? [];
+  const entries = entriesFor(version);
   const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
   if (terms.length === 0) {
     return entries.filter((entry) => entry.hash === undefined).slice(0, 8);
@@ -129,7 +144,7 @@ export function SearchButton() {
 
 function SearchPanel(props: { readonly onClose: () => void }) {
   const navigate = useNavigate();
-  const version = useDocsVersion();
+  const version = useListedDocs(useDocsVersion());
   const [query, setQuery] = useState('');
   const [active, setActive] = useState(0);
   const results = search(version, query);

@@ -39,7 +39,7 @@ const handler = createFetchHandler({
 
 `request` is Effect's `HttpServerRequest`: `headers` is a record of lowercase names, and on fetch runtimes `request.source` is the web `Request`. On Node the request is never converted to a web `Request` ([Node](../adapters/node.md)). The platform argument is described in [Fetch runtimes](../adapters/fetch.md#platform-arguments).
 
-WebSocket calls get their upgrade request, and MessagePort calls the request given to `handler.messagePort()`.
+WebSocket calls get their upgrade request.
 
 ## From middleware
 

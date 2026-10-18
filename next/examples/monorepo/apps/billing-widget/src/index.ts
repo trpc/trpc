@@ -6,7 +6,7 @@ import { billingContract, type BillingContract } from '@acme/billing-contract';
 import {
   createTrpcClient,
   httpLink,
-  validationLink,
+  experimental_validationLink,
 } from '@trpc12/trpc/client';
 
 // The api mounts billing under `billing`.
@@ -16,7 +16,7 @@ export async function run(url: string) {
   const client = createTrpcClient({
     router: contract,
     links: [
-      validationLink({ contract }),
+      experimental_validationLink({ contract }),
       httpLink({ url, headers: { authorization: 'ada' } }),
     ],
   });

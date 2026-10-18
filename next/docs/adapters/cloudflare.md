@@ -1,11 +1,55 @@
 ---
-title: Durable Objects
-description: Hibernating WebSockets, publishers, durable calls, locks, Workers Traces and connection tokens on Cloudflare Durable Objects.
+title: Cloudflare
+description: Everything in @trpc12/trpc/cloudflare. Durable Objects with hibernating WebSockets, publishers, durable calls, locks and connection tokens, plus Workers Traces.
 section: Adapters
 order: 7
+hidden: true
 ---
 
-`@trpc12/trpc/cloudflare` has what a router needs inside a Durable Object. The [`examples/cloudflare`](../../examples/cloudflare/src/index.ts) app uses all of it.
+`@trpc12/trpc/cloudflare` has what a router needs inside a Durable Object, and a tracer for Workers Traces. A Worker on its own serves `handler.fetch` ([Fetch](./fetch.md)). The [`examples/cloudflare`](../../examples/cloudflare/src/index.ts) app uses all of it.
+
+## Serving from a Durable Object
+
+A Durable Object is one process that every request for its name reaches, so `Posts.memory()` is enough inside it. Route the endpoint to the object and serve the router there:
+
+```ts twoslash
+// ---cut-start---
+/// <reference types="@cloudflare/workers-types" />
+import { createFetchHandler, initTrpc, Publisher } from '@trpc12/trpc/server';
+import type { Post } from './server.ts';
+class Posts extends Publisher.Service<
+  Posts,
+  { created: Post; deleted: { id: string } }
+>()('Posts') {}
+const t = initTrpc();
+const router = {
+  onCreated: t.procedure.subscription((opts) =>
+    Posts.subscribe('created', { lastEventId: opts.lastEventId }),
+  ),
+};
+interface Env {
+  POSTS_ROOM: DurableObjectNamespace<PostsRoom>;
+}
+// ---cut-end---
+import { DurableObject } from 'cloudflare:workers';
+
+export class PostsRoom extends DurableObject {
+  handler = createFetchHandler({
+    router,
+    layer: Posts.memory({ buffer: 100 }),
+  });
+  fetch(request: Request) {
+    return this.handler.fetch(request);
+  }
+}
+
+export default {
+  fetch: (request: Request, env: Env) =>
+    env.POSTS_ROOM.getByName('posts').fetch(request),
+} satisfies ExportedHandler<Env>;
+```
+
+Open SSE streams keep the object in memory; kept events are lost when it's evicted. To let it sleep between events, serve WebSockets with hibernation and provide `experimental_hibernatingPublisher(Posts, { state: this.ctx })` instead of `Posts.memory()` ([Subscriptions that hibernate](#subscriptions-that-hibernate)).
 
 ## Hibernating WebSockets
 
@@ -53,12 +97,12 @@ export class Room extends DurableObject<Env> {
 
 - When the object wakes, each socket's request URL, its `cookie` and `authorization` headers (`keepHeaders` to choose others) and its `connectionParams` are rebuilt from the socket's attachment, so `createContext` sees the same connection. The attachment has a 2 KB limit; past it, the headers are dropped with a `console.warn` (the connection stays). Browsers can't set WebSocket headers, so same-origin apps authenticate with cookies.
 - `wsLink`'s keep-alive pings are answered by the runtime (`setWebSocketAutoResponse`) without waking the object. The handler's `websocket.idleTimeoutMs` doesn't apply here: a timer would wake it.
-- A generator or `Stream` subscription keeps the object awake until it ends. Subscriptions to a `hibernatingPublisher` don't.
+- A generator or `Stream` subscription keeps the object awake until it ends. Subscriptions to an `experimental_hibernatingPublisher` don't.
 - Already created the `WebSocketPair` yourself? `sockets.accept(server, request, platform)` instead of `upgrade()`.
 
 ## Subscriptions that hibernate
 
-Provide the object's [publisher](../subscriptions/publisher.md) with `hibernatingPublisher(Posts, { state })`. A subscription that returns `Posts.subscribe(...)` over a hibernating socket is then kept in the socket's attachment (call id, channel, path) instead of a running fiber, and `Posts.publish()` sends each event straight to the matching sockets, validated by the subscription's `.output()`. The object sleeps between events.
+Provide the object's [publisher](../subscriptions/publisher.md) with `experimental_hibernatingPublisher(Posts, { state })`. A subscription that returns `Posts.subscribe(...)` over a hibernating socket is then kept in the socket's attachment (call id, channel, path) instead of a running fiber, and `Posts.publish()` sends each event straight to the matching sockets, validated by the subscription's `.output()`. The object sleeps between events.
 
 ```ts twoslash
 // ---cut-start---
@@ -72,7 +116,7 @@ const t = initTrpc();
 // ---cut-end---
 import {
   experimental_createHibernatingWebSockets,
-  hibernatingPublisher,
+  experimental_hibernatingPublisher,
 } from '@trpc12/trpc/cloudflare';
 
 class Posts extends Publisher.Service<Posts, { created: Post }>()('Posts') {}
@@ -91,7 +135,10 @@ const router = {
 export class Room extends DurableObject<Env> {
   handler = createFetchHandler({
     router,
-    layer: hibernatingPublisher(Posts, { state: this.ctx, buffer: 100 }),
+    layer: experimental_hibernatingPublisher(Posts, {
+      state: this.ctx,
+      buffer: 100,
+    }),
   });
   sockets = experimental_createHibernatingWebSockets(this.handler, {
     state: this.ctx,
@@ -108,13 +155,13 @@ export class Room extends DurableObject<Env> {
 
 ## Durable calls
 
-[`experimental_durable()`](../middleware/durable.md) needs Effect's `BackingPersistence`. In an object, back it with the object's storage, so kept results and streamed frames outlive an eviction: Effect's `KeyValueStore.makeStringOnly` over `ctx.storage`, under `Persistence.layerBackingKvs`. [`examples/cloudflare/src/storage.ts`](../../examples/cloudflare/src/storage.ts) has one, which the example merges with its publisher layer:
+`experimental_durable()` needs Effect's `BackingPersistence`. In an object, back it with the object's storage, so kept results and streamed frames outlive an eviction: Effect's `KeyValueStore.makeStringOnly` over `ctx.storage`, under `Persistence.layerBackingKvs`. [`examples/cloudflare/src/storage.ts`](../../examples/cloudflare/src/storage.ts) has one, which the example merges with its publisher layer:
 
 ```ts twoslash
 // ---cut-start---
 /// <reference types="@cloudflare/workers-types" />
 import { DurableObject } from 'cloudflare:workers';
-import { hibernatingPublisher } from '@trpc12/trpc/cloudflare';
+import { experimental_hibernatingPublisher } from '@trpc12/trpc/cloudflare';
 import { createFetchHandler, initTrpc, Publisher } from '@trpc12/trpc/server';
 import { Layer } from 'effect';
 import type { Persistence } from 'effect/persistence';
@@ -140,7 +187,10 @@ class Room extends DurableObject<Env> {
   handler = createFetchHandler({
     router,
     layer: Layer.mergeAll(
-      hibernatingPublisher(Messages, { state: this.ctx, buffer: 100 }),
+      experimental_hibernatingPublisher(Messages, {
+        state: this.ctx,
+        buffer: 100,
+      }),
       durableObjectPersistence(this.ctx.storage),
     ),
   });
@@ -150,7 +200,7 @@ class Room extends DurableObject<Env> {
 
 ## Locks
 
-`experimental_durableLocker(env.LOCKS)` is an [`experimental_lock()`](../middleware/lock.md) locker every Worker instance shares: one object per key. Each caller keeps a hibernatable WebSocket to the object while it holds or waits for the lock, so the object isn't billed meanwhile, waiters are told when it's their turn (nothing polls), and a crashed holder's lock goes when its socket drops. The object delegates to `experimental_durableLockObject(this.ctx)`:
+`experimental_durableLocker(env.LOCKS)` is an `experimental_lock()` locker every Worker instance shares: one object per key. Each caller keeps a hibernatable WebSocket to the object while it holds or waits for the lock, so the object isn't billed meanwhile, waiters are told when it's their turn (nothing polls), and a crashed holder's lock goes when its socket drops. The object delegates to `experimental_durableLockObject(this.ctx)`:
 
 ```ts twoslash
 // ---cut-start---
@@ -216,7 +266,7 @@ Workers spans have no events, so Effect's span events are dropped, and a `tracep
 
 ## Signed connection tokens
 
-The Worker in front of the object usually authenticates the user already. `connectionToken(schema, { secret })` lets it hand that over: a procedure on the Worker signs claims, the client sends the token as a connection param, and the object's `createContext` verifies it (HMAC-SHA256 with WebCrypto) instead of looking up the session again:
+The Worker in front of the object usually authenticates the user already. `experimental_connectionToken(schema, { secret })` lets it hand that over: a procedure on the Worker signs claims, the client sends the token as a connection param, and the object's `createContext` verifies it (HMAC-SHA256 with WebCrypto) instead of looking up the session again:
 
 ```ts twoslash
 // ---cut-start---
@@ -228,9 +278,9 @@ interface Env {
 }
 declare const env: Env;
 // ---cut-end---
-import { connectionToken } from '@trpc12/trpc/cloudflare';
+import { experimental_connectionToken } from '@trpc12/trpc/cloudflare';
 
-const RoomToken = connectionToken(
+const RoomToken = experimental_connectionToken(
   Schema.Struct({ room: Schema.String, user: Schema.String }),
   { secret: env.TOKEN_SECRET, ttlSeconds: 600 },
 );
@@ -257,7 +307,7 @@ const workerRouter = {
 export type WorkerRouter = typeof workerRouter;
 // @filename: room.ts
 import { DurableObject } from 'cloudflare:workers';
-import { hibernatingPublisher } from '@trpc12/trpc/cloudflare';
+import { experimental_hibernatingPublisher } from '@trpc12/trpc/cloudflare';
 import { createFetchHandler, initTrpc, Publisher } from '@trpc12/trpc/server';
 import { Effect } from 'effect';
 import { RoomToken } from './token.ts';
@@ -284,7 +334,7 @@ export class Room extends DurableObject<Env> {
       Effect.runPromise(
         RoomToken.verify(opts.info.connectionParams?.['token']),
       ),
-    layer: hibernatingPublisher(Notes, { state: this.ctx }),
+    layer: experimental_hibernatingPublisher(Notes, { state: this.ctx }),
   });
   // sockets, fetch and webSocketMessage as above
 }

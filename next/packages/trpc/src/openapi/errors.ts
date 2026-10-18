@@ -8,7 +8,7 @@ import {
 /**
  * The JSON body of an OpenAPI error response.
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
 export interface OpenApiErrorBody {
   /** Whether the error is part of the procedure's typed union. */

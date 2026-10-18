@@ -22,11 +22,11 @@ export {
   type WorkersTracing,
 } from './tracer.ts';
 export {
-  hibernatingPublisher,
+  experimental_hibernatingPublisher,
   type HibernatingPublisherOptions,
 } from './publisher.ts';
 export {
-  connectionToken,
+  experimental_connectionToken,
   type ConnectionToken,
   type ConnectionTokenOptions,
 } from './token.ts';

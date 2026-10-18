@@ -4,6 +4,7 @@ description: '@trpc12/tanstack-vue-query: a Vue plugin or provideTrpc() for the 
 section: Integrations
 parent: integrations/tanstack-query
 order: 3
+hidden: true
 ---
 
 `@trpc12/tanstack-vue-query` re-exports [`@trpc12/tanstack-query`](../tanstack-query.md) and adds an app plugin (or `provideTrpc()`) that provides a client and its helpers, and a `useSubscription` that returns refs.

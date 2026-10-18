@@ -37,7 +37,7 @@ type RouterForm<T> = '~router' extends keyof NonNullable<T>
 /**
  * The meta a router or lazy subtree takes: the root's meta keys whose type
  * names a router-level form with a type-only `'~router'` key, as the
- * `openapi()` extension's `route` does (`{ prefix?, tags? }`). Other keys
+ * `experimental_openapi()` extension's `route` does (`{ prefix?, tags? }`). Other keys
  * apply to procedures only.
  * @since 0.1.0
  * @stability stable
@@ -67,7 +67,7 @@ const META = '~meta';
  *
  * @example
  * ```ts
- * const t = initTrpc().concat(openapi());
+ * const t = initTrpc().concat(experimental_openapi());
  * const appRouter = {
  *   admin: t.router({ meta: { route: { prefix: '/admin', tags: ['admin'] } } }, { users, ban }),
  * };
@@ -292,11 +292,11 @@ export function resolveProcedure(
 
 /**
  * Loads every lazy subtree, for tools that need the whole router at once,
- * like `generateOpenApi` and `toContract`.
+ * like `experimental_generateOpenApi` and `toContract`.
  *
  * @example
  * ```ts
- * const doc = generateOpenApi(await loadRouter(appRouter), { info });
+ * const doc = experimental_generateOpenApi(await loadRouter(appRouter), { info });
  * ```
  * @since 0.1.0
  * @stability stable

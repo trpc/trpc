@@ -1,22 +1,16 @@
 ---
 title: TanStack Query
-description: Query, mutation and subscription options for every TanStack Query framework, from one package and an adapter per framework.
+description: Query, mutation and subscription options for TanStack Query, from one package and its React adapter.
 section: Integrations
 order: 1
 v11: client/tanstack-react-query
 ---
 
-`@trpc12/tanstack-query` turns a client into plain TanStack options objects (`queryOptions()`, `mutationOptions()`, keys and filters), so it works with every TanStack adapter. Each framework package re-exports it and adds a way to provide the client to components, and a subscription primitive:
+`@trpc12/tanstack-query` turns a client into plain TanStack options objects (`queryOptions()`, `mutationOptions()`, keys and filters), so it works with every TanStack adapter. `@trpc12/tanstack-react-query` re-exports it and adds a way to provide the client to components, and a subscription primitive:
 
-| Framework                              | Package                          | Provide the client                           | Subscribe                      |
-| -------------------------------------- | -------------------------------- | -------------------------------------------- | ------------------------------ |
-| [React](./tanstack-query/react.md)     | `@trpc12/tanstack-react-query`   | `<TrpcProvider>`, `useTrpc()`                | `useSubscription`              |
-| [Preact](./tanstack-query/preact.md)   | `@trpc12/tanstack-preact-query`  | `<TrpcProvider>`, `useTrpc()`                | `useSubscription`              |
-| [Vue](./tanstack-query/vue.md)         | `@trpc12/tanstack-vue-query`     | `TrpcPlugin` or `provideTrpc()`, `useTrpc()` | `useSubscription`              |
-| [Solid](./tanstack-query/solid.md)     | `@trpc12/tanstack-solid-query`   | `<TrpcProvider>`, `useTrpc()`                | `useSubscription`              |
-| [Svelte](./tanstack-query/svelte.md)   | `@trpc12/tanstack-svelte-query`  | `setTrpcContext()`, `useTrpc()`              | `createSubscription`           |
-| [Angular](./tanstack-query/angular.md) | `@trpc12/tanstack-angular-query` | `provideTrpc()`, `injectTrpc()`              | `injectSubscription`           |
-| [Lit](./tanstack-query/lit.md)         | `@trpc12/tanstack-lit-query`     | `<trpc-provider>`, `useTrpc(this)`           | `createSubscriptionController` |
+| Framework                          | Package                        | Provide the client            | Subscribe         |
+| ---------------------------------- | ------------------------------ | ----------------------------- | ----------------- |
+| [React](./tanstack-query/react.md) | `@trpc12/tanstack-react-query` | `<TrpcProvider>`, `useTrpc()` | `useSubscription` |
 
 Install the core with your framework's package and TanStack's adapter, for React:
 

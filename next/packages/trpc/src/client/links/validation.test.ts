@@ -3,7 +3,7 @@ import {
   createTrpcClient,
   httpLink,
   safe,
-  validationLink,
+  experimental_validationLink,
 } from '@trpc12/trpc/client';
 import {
   type AnyContractRouter,
@@ -11,9 +11,9 @@ import {
   toContract,
 } from '@trpc12/trpc/contract';
 import {
-  createOpenApiHandler,
-  openapi,
-  openApiLink,
+  experimental_createOpenApiHandler,
+  experimental_openapi,
+  experimental_openApiLink,
 } from '@trpc12/trpc/openapi';
 import { createUntypedClient } from '@trpc12/trpc/extend';
 import { type AnyRouter, initTrpc, stream, tracked } from '@trpc12/trpc/server';
@@ -27,7 +27,7 @@ const Post = Schema.Struct({
   at: Schema.Date,
 });
 
-const c = contract.create().concat(openapi());
+const c = contract.create().concat(experimental_openapi());
 const appContract = {
   post: {
     byId: c
@@ -39,7 +39,7 @@ const appContract = {
   },
 } satisfies AnyContractRouter;
 
-const t = initTrpc().concat(openapi());
+const t = initTrpc().concat(experimental_openapi());
 const at = new Date('2026-10-16T00:00:00.000Z');
 const impl = t.implement(appContract);
 const router = impl.router({
@@ -60,7 +60,7 @@ test('invalid inputs fail on the client with the server error shape, before any 
   const client = createTrpcClient({
     router: appContract,
     links: [
-      validationLink({ contract: appContract, output: 'json' }),
+      experimental_validationLink({ contract: appContract, output: 'json' }),
       httpLink({ url: http.url }),
     ],
   });
@@ -96,7 +96,7 @@ test('results that drift from the contract fail with BAD_RESPONSE', async () => 
   const client = createTrpcClient({
     router: appContract,
     links: [
-      validationLink({ contract: appContract }),
+      experimental_validationLink({ contract: appContract }),
       httpLink({ url: http.url }),
     ],
   });
@@ -114,8 +114,8 @@ test('results that drift from the contract fail with BAD_RESPONSE', async () => 
   }).rejects.toMatchObject({ code: 'BAD_RESPONSE' });
 });
 
-test("output: 'json' decodes openApiLink's plain JSON into the schema's types", async () => {
-  const openapi = createOpenApiHandler({ router });
+test("output: 'json' decodes experimental_openApiLink's plain JSON into the schema's types", async () => {
+  const openapi = experimental_createOpenApiHandler({ router });
   const json = toContract(appContract);
   const fetchVia = (input: RequestInfo | URL, init?: RequestInit) =>
     openapi.fetch(new Request(input, init));
@@ -123,7 +123,11 @@ test("output: 'json' decodes openApiLink's plain JSON into the schema's types", 
   const plain = createTrpcClient({
     router: json,
     links: [
-      openApiLink({ url: 'http://localhost', contract: json, fetch: fetchVia }),
+      experimental_openApiLink({
+        url: 'http://localhost',
+        contract: json,
+        fetch: fetchVia,
+      }),
     ],
   });
   const raw = await plain.post.byId.query({ id: '1' });
@@ -133,8 +137,12 @@ test("output: 'json' decodes openApiLink's plain JSON into the schema's types", 
   const decoded = createTrpcClient({
     router: json,
     links: [
-      validationLink({ contract: appContract, output: 'json' }),
-      openApiLink({ url: 'http://localhost', contract: json, fetch: fetchVia }),
+      experimental_validationLink({ contract: appContract, output: 'json' }),
+      experimental_openApiLink({
+        url: 'http://localhost',
+        contract: json,
+        fetch: fetchVia,
+      }),
     ],
   });
   const post = await decoded.post.byId.query({ id: '1' });
@@ -186,9 +194,9 @@ test('streamed outputs, unvalidated outputs, plain events, opt-outs and paths ou
       extra: p.procedure.query(() => 'not in the contract'),
     },
   });
-  const client = (opts: Parameters<typeof validationLink>[0]) =>
+  const client = (opts: Parameters<typeof experimental_validationLink>[0]) =>
     createUntypedClient({
-      links: [validationLink(opts), httpLink({ url: http.url })],
+      links: [experimental_validationLink(opts), httpLink({ url: http.url })],
     });
   const checked = client({ contract: contractOf });
   const collect = async (path: string) => {

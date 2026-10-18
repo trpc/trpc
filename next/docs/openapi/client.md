@@ -1,20 +1,21 @@
 ---
 title: Calling REST from the client
-description: openApiLink sends each call to its REST route, typed from a contract.
+description: experimental_openApiLink sends each call to its REST route, typed from a contract.
 section: OpenAPI
 order: 3
+hidden: true
 ---
 
-`openApiLink` sends each call to its REST route. It needs the routes, so it takes a contract; it never needs the router.
+`experimental_openApiLink` sends each call to its REST route. It needs the routes, so it takes a contract; it never needs the router.
 
 ```ts twoslash
 // ---cut-start---
 import { createTrpcClient } from '@trpc12/trpc/client';
-import { openapi } from '@trpc12/trpc/openapi';
+import { experimental_openapi } from '@trpc12/trpc/openapi';
 import { initTrpc } from '@trpc12/trpc/server';
 import { z } from 'zod';
 import { db, type Context } from './server.ts';
-const t = initTrpc<{ ctx: Context }>().concat(openapi());
+const t = initTrpc<{ ctx: Context }>().concat(experimental_openapi());
 const appRouter = {
   post: {
     byId: t.procedure
@@ -25,13 +26,13 @@ const appRouter = {
 };
 // ---cut-end---
 import { toContract } from '@trpc12/trpc/contract';
-import { openApiLink } from '@trpc12/trpc/openapi';
+import { experimental_openApiLink } from '@trpc12/trpc/openapi';
 
 const contract = toContract(appRouter); // or the JSON, shipped to the client
 const client = createTrpcClient({
   router: contract,
   links: [
-    openApiLink({
+    experimental_openApiLink({
       url: 'https://api.example.com',
       contract,
       headers: { 'x-user': 'ada' },
@@ -44,15 +45,15 @@ await client.post.byId.query({ id: '1' }); // GET https://api.example.com/api/po
 
 Declared errors come back as typed `TrpcError`s, as they do over RPC.
 
-REST responses are plain JSON, and the client types say so: a `createdAt: Date` output is a `string` through `openApiLink`. To get the types back, put `validationLink({ contract, output: 'json' })` in front: it decodes each result with the Effect Schema's JSON codec, and the client types results as the schemas' types again ([Validating on the client](../client/validation.md)):
+REST responses are plain JSON, and the client types say so: a `createdAt: Date` output is a `string` through `experimental_openApiLink`. To get the types back, put `experimental_validationLink({ contract, output: 'json' })` in front: it decodes each result with the Effect Schema's JSON codec, and the client types results as the schemas' types again ([Validating on the client](../client/validation.md)):
 
 ```ts
 links: [
-  validationLink({ contract: appContract, output: 'json' }),
-  openApiLink({ url, contract: toContract(appContract) }),
+  experimental_validationLink({ contract: appContract, output: 'json' }),
+  experimental_openApiLink({ url, contract: toContract(appContract) }),
 ];
 ```
 
 ## Credits
 
-`openApiLink` follows [oRPC's OpenAPI link](https://orpc.dev/docs/openapi/link).
+`experimental_openApiLink` follows [oRPC's OpenAPI link](https://orpc.dev/docs/openapi/link).

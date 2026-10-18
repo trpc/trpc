@@ -8,21 +8,12 @@ order: 2
 
 Everything server- and client-side is one package, `@trpc12/trpc`. The other packages fit it into a framework or a tool:
 
-| Package                                                                        | For                                                                    |
-| ------------------------------------------------------------------------------ | ---------------------------------------------------------------------- |
-| `@trpc12/trpc` ([entry points](#trpc12trpc-entry-points))                      | Routers, handlers, clients, links, middleware, adapters and OpenAPI    |
-| [`@trpc12/tanstack-query`](./integrations/tanstack-query.md)                   | TanStack Query options, keys and filters, for any framework            |
-| [`@trpc12/tanstack-react-query`](./integrations/tanstack-query/react.md)       | React: context, `useSubscription`, and server components in `/rsc`     |
-| [`@trpc12/tanstack-preact-query`](./integrations/tanstack-query/preact.md)     | Preact: context and `useSubscription`                                  |
-| [`@trpc12/tanstack-vue-query`](./integrations/tanstack-query/vue.md)           | Vue: an app plugin and `useSubscription`                               |
-| [`@trpc12/tanstack-solid-query`](./integrations/tanstack-query/solid.md)       | Solid: context and `useSubscription`                                   |
-| [`@trpc12/tanstack-svelte-query`](./integrations/tanstack-query/svelte.md)     | Svelte: context and `createSubscription`                               |
-| [`@trpc12/tanstack-angular-query`](./integrations/tanstack-query/angular.md)   | Angular: providers, injectors and `injectSubscription`                 |
-| [`@trpc12/tanstack-lit-query`](./integrations/tanstack-query/lit.md)           | Lit: a provider element and `createSubscriptionController`             |
-| [`@trpc12/experimental-react`](./integrations/experimental-react.md)           | React with `use()` and Suspense, without TanStack Query (experimental) |
-| [`@trpc12/experimental-react-atom`](./integrations/experimental-react-atom.md) | Queries, mutations and subscriptions as Effect atoms (experimental)    |
-| [`@trpc12/nest`](./integrations/nestjs.md)                                     | A contract served from NestJS controllers                              |
-| [`@trpc12/upgrade`](./migrations/from-v11/codemod.md)                          | The v11 to v12 codemod                                                 |
+| Package                                                                  | For                                                                |
+| ------------------------------------------------------------------------ | ------------------------------------------------------------------ |
+| `@trpc12/trpc` ([entry points](#trpc12trpc-entry-points))                | Routers, handlers, clients, links, middleware and adapters         |
+| [`@trpc12/tanstack-query`](./integrations/tanstack-query.md)             | TanStack Query options, keys and filters, for any framework        |
+| [`@trpc12/tanstack-react-query`](./integrations/tanstack-query/react.md) | React: context, `useSubscription`, and server components in `/rsc` |
+| [`@trpc12/upgrade`](./migrations/from-v11/codemod.md)                    | The v11 to v12 codemod                                             |
 
 The TanStack packages re-export `@trpc12/tanstack-query`, so an app installs one of them with TanStack's adapter for its framework.
 
@@ -30,27 +21,23 @@ The TanStack packages re-export `@trpc12/tanstack-query`, so an app installs one
 
 ## `@trpc12/trpc` entry points
 
-| Entry                             | For                                                                                                                                                       |
-| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@trpc12/trpc/server`             | `initTrpc`, routers, handlers, callers, `Publisher` ([The server](./server/overview.md))                                                                  |
-| `@trpc12/trpc/client`             | `createTrpcClient`, links, `safe` ([The client](./client/overview.md), [Links](./client/links.md))                                                        |
-| `@trpc12/trpc/middleware`         | `onStart`, `onSuccess`, `onError`, `onFinish`, `rateLimit`, `experimental_lock`, `experimental_durable` ([Built-in middleware](./middleware/overview.md)) |
-| `@trpc12/trpc/effect`             | `createEffectClient` ([The Effect client](./client/effect.md))                                                                                            |
-| `@trpc12/trpc/contract`           | contract-first routers, `toContract` ([Contract-first](./server/contract-first.md))                                                                       |
-| `@trpc12/trpc/serializer`         | `jsonSerializer`, danSON, `createSyncSerializer` ([Serializers](./server/serializers.md))                                                                 |
-| `@trpc12/trpc/http`               | `serve`, `toHttpEffect` on Effect's `HttpServer` ([Adapters](./adapters/overview.md))                                                                     |
-| `@trpc12/trpc/cloudflare`         | hibernating WebSockets, publisher and locks on Durable Objects; Workers Traces ([Durable Objects](./adapters/durable-objects.md))                         |
-| `@trpc12/trpc/aws-lambda`         | `toLambdaHandler` for API Gateway, ALB and Lambda@Edge ([AWS Lambda](./adapters/aws-lambda.md))                                                           |
-| `@trpc12/trpc/socket`             | `serveSocket` on Effect's `SocketServer` (TCP, TLS) ([Raw sockets](./adapters/sockets.md))                                                                |
-| `@trpc12/trpc/openapi`            | `createOpenApiHandler`, `generateOpenApi`, `openApiLink` ([OpenAPI](./openapi/overview.md))                                                               |
-| `@trpc12/trpc/openapi/typescript` | `experimental_generateOpenApiFromTypes`, a document from the router's types ([The document](./openapi/document.md))                                       |
-| `@trpc12/trpc/actions`            | `experimental_createAction`, `experimental_createCallable` ([Server Actions](./integrations/server-actions.md))                                           |
-| `@trpc12/trpc/interop`            | `createV11Handler`, `fromV11Link` for v11 code ([Serving v11 clients](./migrations/from-v11/serve-v11-clients.md))                                        |
-| `@trpc12/trpc/extend`             | building blocks for integrations ([Extensions](./server/extensions.md#building-integrations))                                                             |
+| Entry                     | For                                                                                                                |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `@trpc12/trpc/server`     | `initTrpc`, routers, handlers, callers, `Publisher` ([The server](./server/overview.md))                           |
+| `@trpc12/trpc/client`     | `createTrpcClient`, links, `safe` ([The client](./client/overview.md), [Links](./client/links.md))                 |
+| `@trpc12/trpc/middleware` | `onStart`, `onSuccess`, `onError`, `onFinish` ([Built-in middleware](./middleware/overview.md))                    |
+| `@trpc12/trpc/effect`     | `createEffectClient` ([The Effect client](./client/effect.md))                                                     |
+| `@trpc12/trpc/contract`   | contract-first routers, `toContract` ([Contract-first](./server/contract-first.md))                                |
+| `@trpc12/trpc/serializer` | `jsonSerializer`, danSON, `createSyncSerializer` ([Serializers](./server/serializers.md))                          |
+| `@trpc12/trpc/http`       | `serve`, `toHttpEffect` on Effect's `HttpServer` ([Adapters](./adapters/overview.md))                              |
+| `@trpc12/trpc/aws-lambda` | `toLambdaHandler` for API Gateway, ALB and Lambda@Edge ([AWS Lambda](./adapters/aws-lambda.md))                    |
+| `@trpc12/trpc/actions`    | `experimental_createAction`, `experimental_createCallable` ([Server Actions](./integrations/server-actions.md))    |
+| `@trpc12/trpc/interop`    | `createV11Handler`, `fromV11Link` for v11 code ([Serving v11 clients](./migrations/from-v11/serve-v11-clients.md)) |
+| `@trpc12/trpc/extend`     | building blocks for integrations ([Extensions](./server/extensions.md#building-integrations))                      |
 
 ## Stability
 
-An export whose name starts with `experimental_` (such as `experimental_durableLink`) may still change in a minor release, and so may every export of a package whose name starts with `experimental-` (such as `@trpc12/experimental-react`), whose exports have no prefix. When one becomes stable, it gets its name without the prefix, and the `experimental_` name stays as a deprecated alias until the next major. `npx @trpc12/upgrade` rewrites those imports.
+An export whose name starts with `experimental_` (such as `experimental_createAction`) may still change in a minor release, and so may every export of a package whose name starts with `experimental-`, whose exports have no prefix. When one becomes stable, it gets its name without the prefix, and the `experimental_` name stays as a deprecated alias until the next major. `npx @trpc12/upgrade` rewrites those imports.
 
 Every export's JSDoc carries `@stability` (`stable` or `experimental`) and `@since`. Until 12.0.0, prereleases promise nothing; `@stability` says how the export is planned to ship.
 

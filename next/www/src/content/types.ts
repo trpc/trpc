@@ -8,6 +8,11 @@ export interface DocHeading {
 export interface DocMeta {
   readonly description: string;
   readonly headings: ReadonlyArray<DocHeading>;
+  /**
+   * Out of the sidebar, search, pagination, the sitemap and `llms.txt`, and
+   * `noindex`, unless the `hidden-docs` flag is on; still served at its URL.
+   */
+  readonly hidden?: boolean | undefined;
   /** The page's name in the sidebar, where it's shorter than its title. */
   readonly label?: string | undefined;
   /** ISO date of the source file's last commit, when git knows it. */

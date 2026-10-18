@@ -25,7 +25,7 @@ import { createTestServer } from '../fixtures/server.ts';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
 import {
-  openapi,
+  experimental_openapi,
   type OpenApiMeta,
   type OperationSpec,
 } from '@trpc12/trpc/openapi';
@@ -33,7 +33,7 @@ import {
 interface Ctx {
   user: string | null;
 }
-const t = initTrpc<{ ctx: Ctx }>().concat(openapi());
+const t = initTrpc<{ ctx: Ctx }>().concat(experimental_openapi());
 
 class CurrentUser extends Context.Service<CurrentUser, { name: string }>()(
   'CurrentUser',
@@ -389,7 +389,7 @@ test('.output() types tracked() subscription events', async () => {
   numbers.subscription(wrongEvents);
 });
 
-test('route meta from openapi() merges by key, and spec functions compose', () => {
+test('route meta from experimental_openapi() merges by key, and spec functions compose', () => {
   const security = (op: OperationSpec) => ({
     ...op,
     security: [{ bearer: [] }],
@@ -414,7 +414,7 @@ test('route meta from openapi() merges by key, and spec functions compose', () =
     security: [{ bearer: [] }],
     summary: 'One post',
   });
-  // @ts-expect-error -- without openapi(), there is no route meta
+  // @ts-expect-error -- without experimental_openapi(), there is no route meta
   initTrpc().procedure.meta({ route: { path: '/x' } });
 });
 

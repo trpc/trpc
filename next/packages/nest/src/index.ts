@@ -50,9 +50,9 @@ import { mergeMap, type Observable } from 'rxjs';
 import { toContract } from '@trpc12/trpc/contract';
 import { toHttpEffect } from '@trpc12/trpc/http';
 import {
-  createOpenApiHandler,
-  resolveRoute,
-  toBracketNotation,
+  experimental_createOpenApiHandler,
+  experimental_resolveRoute,
+  experimental_toBracketNotation,
   type BaseOpenApiHandlerOptions,
   type HttpMethod,
   type OpenApiCall,
@@ -162,7 +162,7 @@ export class experimental_TrpcHost implements OnApplicationShutdown {
   constructor(
     @Inject(experimental_TRPC_MODULE_OPTIONS) options: TrpcModuleOptions,
   ) {
-    const handler = createOpenApiHandler({
+    const handler = experimental_createOpenApiHandler({
       ...options,
       router: {},
       prefix: '',
@@ -198,7 +198,7 @@ export class experimental_TrpcHost implements OnApplicationShutdown {
       req.body !== null
     ) {
       req.body = new URLSearchParams(
-        toBracketNotation(req.body) as Array<[string, string]>,
+        experimental_toBracketNotation(req.body) as Array<[string, string]>,
       ).toString();
     }
     this.#pending.set(req, { call, context });
@@ -280,11 +280,16 @@ const route = (
   descriptor: PropertyDescriptor,
   path: string,
   procedure: {
-    type: Parameters<typeof resolveRoute>[1];
+    type: Parameters<typeof experimental_resolveRoute>[1];
     route?: OpenApiCall['route'];
   },
 ) => {
-  const resolved = resolveRoute(path, procedure.type, procedure.route, '');
+  const resolved = experimental_resolveRoute(
+    path,
+    procedure.type,
+    procedure.route,
+    '',
+  );
   targets.set(descriptor.value as object, { path, route: procedure.route });
   applyDecorators(
     methodDecorators[resolved.method](nestPath(resolved.path)),
