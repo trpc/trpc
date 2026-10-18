@@ -33,6 +33,8 @@ Procedures are served under `endpoint`, `/trpc` by default.
 | [Workers, Next.js](./fetch.md) | `handler.fetch`                                  | in a Durable Object   |
 | [AWS Lambda](./aws-lambda.md)  | `toLambdaHandler(handler)`                       | no                    |
 
+The [`examples/runtime-matrix`](../../examples/runtime-matrix/README.md) app serves one router on each of these and runs the same calls against every one: batching, errors, files, streaming, SSE, CORS and WebSockets.
+
 ## Middleware and CORS
 
 Request-level concerns are Effect `HttpMiddleware` in the handler's `middleware` option, outermost first. They wrap `handler.fetch` and, under `serve()`/`toHttpEffect`, WebSocket upgrades too. Call-level concerns are root `t.use()` [middleware](../server/middleware.md).
