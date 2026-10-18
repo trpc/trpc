@@ -28,7 +28,7 @@ import {
 } from '~/content/docs.ts';
 import type { Doc } from '~/content/types.ts';
 import { useFlag } from '~/flags.ts';
-import { absoluteUrl, pageHead, trpcPageUrl } from '~/seo.ts';
+import { absoluteUrl, ogImageUrl, pageHead, trpcPageUrl } from '~/seo.ts';
 import { site } from '~/site.ts';
 import { partners } from '~/sponsors.ts';
 
@@ -74,6 +74,7 @@ export function docHead(version: DocsVersion, slug: string) {
     });
   }
   return pageHead({
+    article: { modified: meta.lastModified, section: meta.section },
     description,
     markdownPath: `${path}.md`,
     path,
@@ -83,6 +84,7 @@ export function docHead(version: DocsVersion, slug: string) {
         dateModified: meta.lastModified,
         description,
         headline: meta.title,
+        image: ogImageUrl(path),
         inLanguage: 'en',
         isPartOf: { '@type': 'WebSite', name: site.name, url: site.url },
         mainEntityOfPage: absoluteUrl(path),
@@ -97,7 +99,15 @@ export function docHead(version: DocsVersion, slug: string) {
             name: site.name,
             position: 1,
           },
-          { '@type': 'ListItem', name: meta.section, position: 2 },
+          {
+            '@type': 'ListItem',
+            // A section has no page of its own; it opens with its first.
+            item: absoluteUrl(
+              `${version.basePath}/${version.sections.find((section) => section.title === meta.section)?.docs[0]?.slug ?? meta.slug}`,
+            ),
+            name: meta.section,
+            position: 2,
+          },
           ...ancestors(version, meta.slug).map((parent, index) => ({
             '@type': 'ListItem',
             item: absoluteUrl(`${version.basePath}/${parent.slug}`),

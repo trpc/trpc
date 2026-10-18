@@ -19,7 +19,13 @@ import {
 } from '~/components/toc.tsx';
 import { findPost, postNeighbours, posts } from '~/content/blog.ts';
 import type { Post, PostAuthor, PostMeta } from '~/content/types.ts';
-import { absoluteUrl, pageHead, postDate, trpcPostUrl } from '~/seo.ts';
+import {
+  absoluteUrl,
+  ogImageUrl,
+  pageHead,
+  postDate,
+  trpcPostUrl,
+} from '~/seo.ts';
 import { blog, site } from '~/site.ts';
 
 function initialsOf(name: string) {
@@ -169,22 +175,34 @@ export function postHead(slug: string) {
   if (!post) {
     return { meta: [{ title: `Not found | ${site.name}` }] };
   }
+  const path = `/blog/${post.slug}`;
   return pageHead({
+    article: {
+      authors: post.authors.flatMap((author) =>
+        author.url === undefined ? [] : [author.url],
+      ),
+      published: post.date,
+    },
     canonical: trpcPostUrl(post.slug),
     description: post.description,
-    path: `/blog/${post.slug}`,
+    path,
     structuredData: [
       {
         '@type': 'BlogPosting',
         author: post.authors.map((author) => ({
           '@type': 'Person',
+          image: author.image,
           name: author.name,
           url: author.url,
         })),
         datePublished: post.date,
         description: post.description,
         headline: post.title,
+        image: ogImageUrl(path),
+        inLanguage: 'en',
         mainEntityOfPage: trpcPostUrl(post.slug),
+        publisher: { '@type': 'Organization', name: site.name, url: site.url },
+        url: trpcPostUrl(post.slug),
       },
     ],
     title: post.title,

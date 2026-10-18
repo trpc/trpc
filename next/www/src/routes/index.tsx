@@ -40,6 +40,13 @@ export const Route = createFileRoute('/')({
       path: '/',
       structuredData: [
         {
+          '@type': 'WebSite',
+          description: site.description,
+          inLanguage: 'en',
+          name: site.name,
+          url: `${site.url}/`,
+        },
+        {
           '@type': 'SoftwareSourceCode',
           codeRepository: site.github,
           description: site.description,
