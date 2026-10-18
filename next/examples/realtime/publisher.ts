@@ -119,12 +119,21 @@ export const redisPublisher = <TEvents extends PublisherEvents>(opts: {
 
 // --- recipe: Postgres -------------------------------------------------------
 
-/** The table `pgPublisher` keeps history in; ids order the events. */
+/**
+ * The table `pgPublisher` keeps history in; ids order the events. Servers
+ * starting together take turns: `if not exists` alone races on a new
+ * database.
+ */
 export const createEventsTable = Effect.gen(function* () {
   const sql = yield* PgClient.PgClient;
-  yield* sql`create table if not exists trpc_events (id bigserial primary key,
-    channel text not null, payload text not null,
-    created_at timestamptz not null default now())`;
+  yield* sql.withTransaction(
+    Effect.andThen(
+      sql`select pg_advisory_xact_lock(hashtext('trpc_events'))`,
+      sql`create table if not exists trpc_events (id bigserial primary key,
+        channel text not null, payload text not null,
+        created_at timestamptz not null default now())`,
+    ),
+  );
 });
 
 /**

@@ -97,8 +97,7 @@ const backends = {
     Layer.effect(Chat)(redisPublisher<ChatEvents>({ prefix: 'chat' })).pipe(
       Layer.provide(NodeRedis.layer({ url: redisUrl })),
     ),
-  // `create table if not exists` on start; with several servers starting at
-  // once, run it as a migration instead.
+  // Creates its table on start; in production, run that as a migration.
   postgres: () =>
     Layer.effect(Chat)(
       Effect.andThen(createEventsTable, pgPublisher<ChatEvents>()),
