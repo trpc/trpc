@@ -25,7 +25,8 @@ export default defineConfig({
       '**/dist/**',
       'spikes/**/generated/**',
       'packages/*/src/**/fixtures/generated/**',
-      'www/src/routeTree.gen.ts',
+      // TanStack Router writes these.
+      '**/src/routeTree.gen.ts',
       // `pnpm --filter @trpc12/www old-docs:copy` writes these.
       'www/v11/**',
       'www/v10/**',
@@ -43,7 +44,8 @@ export default defineConfig({
       '**/dist/**',
       'spikes/**/generated/**',
       'packages/*/src/**/fixtures/generated/**',
-      'www/src/routeTree.gen.ts',
+      // TanStack Router writes these.
+      '**/src/routeTree.gen.ts',
     ],
     options: {
       typeAware: true,
