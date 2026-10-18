@@ -73,7 +73,7 @@ User docs are Markdown in `docs/`, one short page per topic in a folder per side
 
 Custom rules are in `tooling/oxlint-plugin/` (see its `AGENTS.md`). Never write `eslint-disable` comments: fix the code, or scope the rule with an override in `vite.config.ts` and a comment saying why.
 
-Import cycles fail lint (`import/no-cycle`). `import type` edges don't count, since they're erased; break a runtime cycle by moving the shared code into a module both sides import.
+Folders under `packages/trpc/src/server/` are modules ([`decisions/server-modules.md`](./.agent-docs/decisions/server-modules.md)): import another module through its `index.ts`, and a module's own files directly (`trpc/module-boundaries`). Import cycles fail lint (`import/no-cycle`). `import type` edges don't count, since they're erased; break a runtime cycle by moving the shared code into a module both sides import.
 
 Effect code follows the `anti-slop-effect` rules. Build tagged values with `Data.taggedEnum` or tagged classes, not `{ _tag: … }` literals. Test them with `Predicate.isTagged`, `Option.isSome`/`isNone` or `Result.isFailure`, not by comparing `_tag`; recover with `Effect.catchReason`, not by branching on `err.reason._tag`. Use `Match` or a `Record` lookup instead of chained literal ternaries. In tests, assert with `expect(x).toSatisfy(Predicate.isTagged('X'))` or `toBeInstanceOf`, not `toMatchObject({ _tag })`.
 
