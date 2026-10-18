@@ -311,6 +311,76 @@ importers:
         specifier: ^7.0.2
         version: 7.0.2
 
+  examples/experimental/framework-matrix:
+    dependencies:
+      '@effect/platform-node':
+        specifier: 4.0.2
+        version: 4.0.2(effect@4.0.2)(redis@6.3.0(@opentelemetry/api@1.9.1))
+      '@shared/ui':
+        specifier: workspace:*
+        version: link:../../../shared/ui
+      '@tanstack/solid-query':
+        specifier: 5.104.1
+        version: 5.104.1(solid-js@1.9.17)
+      '@tanstack/svelte-query':
+        specifier: 6.3.1
+        version: 6.3.1(svelte@5.57.2)
+      '@tanstack/vue-query':
+        specifier: 5.104.1
+        version: 5.104.1(vue@3.5.43(typescript@7.0.2))
+      '@trpc12/tanstack-solid-query':
+        specifier: workspace:*
+        version: link:../../../packages/tanstack-solid-query
+      '@trpc12/tanstack-svelte-query':
+        specifier: workspace:*
+        version: link:../../../packages/tanstack-svelte-query
+      '@trpc12/tanstack-vue-query':
+        specifier: workspace:*
+        version: link:../../../packages/tanstack-vue-query
+      '@trpc12/trpc':
+        specifier: workspace:*
+        version: link:../../../packages/trpc
+      effect:
+        specifier: 4.0.2
+        version: 4.0.2
+      solid-js:
+        specifier: 1.9.17
+        version: 1.9.17
+      svelte:
+        specifier: 5.57.2
+        version: 5.57.2
+      vue:
+        specifier: 3.5.43
+        version: 3.5.43(typescript@7.0.2)
+      zod:
+        specifier: 4.6.5
+        version: 4.6.5
+    devDependencies:
+      '@sveltejs/vite-plugin-svelte':
+        specifier: 7.3.1
+        version: 7.3.1(@voidzero-dev/vite-plus-core@1.1.0(@types/node@24.19.1)(esbuild@0.28.2)(jiti@2.7.0)(typescript@7.0.2)(yaml@2.9.1))(svelte@5.57.2)
+      '@tailwindcss/vite':
+        specifier: 4.3.3
+        version: 4.3.3(@voidzero-dev/vite-plus-core@1.1.0(@types/node@24.19.1)(esbuild@0.28.2)(jiti@2.7.0)(typescript@7.0.2)(yaml@2.9.1))
+      '@types/node':
+        specifier: ^24.0.0
+        version: 24.19.1
+      happy-dom:
+        specifier: 20.14.6
+        version: 20.14.6
+      tailwindcss:
+        specifier: 4.3.3
+        version: 4.3.3
+      typescript:
+        specifier: ^7.0.2
+        version: 7.0.2
+      vite-plugin-solid:
+        specifier: 2.11.14
+        version: 2.11.14(@voidzero-dev/vite-plus-core@1.1.0(@types/node@24.19.1)(esbuild@0.28.2)(jiti@2.7.0)(typescript@7.0.2)(yaml@2.9.1))(solid-js@1.9.17)(supports-color@10.2.2)
+      vite-plus:
+        specifier: 1.1.0
+        version: 1.1.0(@opentelemetry/api@1.9.1)(@types/node@24.19.1)(@vitest/coverage-v8@5.0.3)(@vitest/ui@5.0.3)(esbuild@0.28.2)(happy-dom@20.14.6)(jiti@2.7.0)(svelte@5.57.2)(typescript@7.0.2)(yaml@2.9.1)
+
   examples/experimental/nest:
     dependencies:
       '@effect/platform-node':
@@ -16775,7 +16845,6 @@ snapshots:
       vitefu: 1.1.3(@voidzero-dev/vite-plus-core@1.1.0(@types/node@24.19.1)(esbuild@0.28.2)(jiti@2.7.0)(typescript@7.0.2)(yaml@2.9.1))
     transitivePeerDependencies:
       - supports-color
-    optional: true
 
   vite-plugin-solid@2.11.14(@voidzero-dev/vite-plus-core@1.1.0(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(typescript@7.0.2)(yaml@2.9.1))(solid-js@1.9.17)(supports-color@10.2.2):
     dependencies:
