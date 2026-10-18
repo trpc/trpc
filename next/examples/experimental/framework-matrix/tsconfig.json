@@ -12,7 +12,7 @@
     "verbatimModuleSyntax": true,
     "isolatedModules": true,
     "allowImportingTsExtensions": true,
-    "types": ["node", "vite/client"]
+    "types": ["node", "vite-plus/client"]
   },
   "include": ["*.ts", "src"]
 }
