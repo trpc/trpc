@@ -144,7 +144,7 @@ export function serializeSync(
     }
     if (isPlainObject(thing)) {
       const result = createObject<JsonValue>();
-      for (const key in thing) {
+      for (const key of Object.keys(thing)) {
         result[key] = toJson(thing[key], [result, key], [...path, key]);
       }
       return result;

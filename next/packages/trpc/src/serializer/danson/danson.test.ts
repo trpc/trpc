@@ -567,3 +567,24 @@ test('forged streams: bad or missing file bytes, bare refs, unreadable frames an
     });
   }
 });
+
+/** Adds an enumerable `Object.prototype` key until disposed. */
+const pollutePrototype = (key: string): Disposable => {
+  Object.defineProperty(Object.prototype, key, {
+    value: 'polluted',
+    enumerable: true,
+    configurable: true,
+    writable: true,
+  });
+  return {
+    [Symbol.dispose]: () => {
+      Reflect.deleteProperty(Object.prototype, key);
+    },
+  };
+};
+
+test('only own keys go on the wire, even with a polluted Object.prototype', () => {
+  using _polluted = pollutePrototype('injected');
+  const serializer = createSerializer();
+  expect(serializer.serialize({ a: 1 }).json).toEqual({ a: 1 });
+});
