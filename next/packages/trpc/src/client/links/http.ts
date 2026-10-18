@@ -303,17 +303,28 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
     }
   };
 
+  /**
+   * A tRPC error body, else a page from something in between (a proxy, a
+   * framework's JSON 404), whose status names the error.
+   */
   async function readError(res: Response): Promise<AnyTrpcError> {
     const text = await res.text();
+    let body: unknown;
+    let cause: unknown;
     try {
-      return fromWireError(serializer.deserialize(JSON.parse(text)));
-    } catch (cause) {
-      return new TrpcError({
-        code: codeOfStatus(res.status) ?? 'BAD_RESPONSE',
-        message: `Unexpected ${res.status} response`,
-        cause,
-      });
+      body = serializer.deserialize(JSON.parse(text));
+    } catch (err) {
+      cause = err;
     }
+    const error = (body as { error?: unknown } | null | undefined)?.error;
+    if (typeof error === 'object' && error !== null) {
+      return fromWireError(body);
+    }
+    return new TrpcError({
+      code: codeOfStatus(res.status) ?? 'BAD_RESPONSE',
+      message: `Unexpected ${res.status} response`,
+      cause: cause ?? body,
+    });
   }
 
   const streamType = opts.binary

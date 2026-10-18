@@ -77,13 +77,28 @@ test('fetch failures and pages that are not tRPC errors', async () => {
     message: 'Unexpected 302 response',
   });
 
+  // JSON that isn't an error body: a framework's own 404, say.
+  const [, fastify404] = await safe(
+    clientWith(async () =>
+      Response.json(
+        { message: 'Route POST:/trpc not found', error: 'Not Found' },
+        { status: 404 },
+      ),
+    ).echo.query(1),
+  );
+  expect(fastify404).toMatchObject({
+    code: 'NOT_FOUND',
+    message: 'Unexpected 404 response',
+    defined: false,
+  });
+
   const body = (json: unknown, status: number) =>
     clientWith(
       async () => new Response(JSON.stringify({ json }), { status }),
     ).echo.query(1);
   expect((await safe(body('oops', 500)))[1]).toMatchObject({
     code: 'INTERNAL_SERVER_ERROR',
-    message: 'INTERNAL_SERVER_ERROR',
+    message: 'Unexpected 500 response',
     defined: false,
   });
   expect(
