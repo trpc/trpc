@@ -1,6 +1,6 @@
 import { describe, expect, it } from '@effect/vitest';
 
-import { readingOrder } from './content.ts';
+import { hiddenPageProblems, readingOrder } from './content.ts';
 
 const page = (
   slug: string,
@@ -53,5 +53,59 @@ describe('readingOrder', () => {
     expect(() =>
       readingOrder([page('a', 1, 'b'), page('b', 1, 'a'), page('c', 1)]),
     ).toThrow('Pages whose parents form a cycle: a, b');
+  });
+});
+
+describe('hiddenPageProblems', () => {
+  const doc = (
+    slug: string,
+    options: {
+      readonly hidden?: boolean;
+      readonly links?: ReadonlyArray<string>;
+      readonly parent?: string;
+    } = {},
+  ) => ({
+    doc: { hidden: options.hidden, parent: options.parent, slug },
+    links: (options.links ?? []).map((link) => ({
+      hash: undefined,
+      slug: link,
+    })),
+  });
+
+  it('flags a listed page that links to a hidden one, once per page', () => {
+    expect(
+      hiddenPageProblems([
+        doc('server/overview', {
+          links: ['openapi/routes', 'openapi/routes', 'server/routers'],
+        }),
+        doc('server/routers'),
+        doc('openapi/routes', { hidden: true }),
+      ]),
+    ).toEqual(['server/overview: links to openapi/routes.md, which is hidden']);
+  });
+
+  it('flags a listed page nested under a hidden one', () => {
+    expect(
+      hiddenPageProblems([
+        doc('openapi/overview', { hidden: true }),
+        doc('openapi/routes', { parent: 'openapi/overview' }),
+      ]),
+    ).toEqual([
+      'openapi/routes: nests under openapi/overview, which is hidden',
+    ]);
+  });
+
+  it('lets hidden pages link and nest anywhere', () => {
+    expect(
+      hiddenPageProblems([
+        doc('openapi/overview', { hidden: true, links: ['server/routers'] }),
+        doc('openapi/routes', {
+          hidden: true,
+          links: ['openapi/overview'],
+          parent: 'openapi/overview',
+        }),
+        doc('server/routers'),
+      ]),
+    ).toEqual([]);
   });
 });

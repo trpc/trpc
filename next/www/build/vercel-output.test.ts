@@ -8,7 +8,7 @@ import {
   servedPaths,
   type TrpcRedirect,
 } from './old-routes.ts';
-import { firstDoc, writeVercelOutput } from './vercel-output.ts';
+import { firstDoc, isNoindex, writeVercelOutput } from './vercel-output.ts';
 
 const llmsTxt = [
   '# tRPC',
@@ -42,6 +42,9 @@ const setup = Effect.fn('setup')(function* (
     'favicon.ico': '',
     'v12/docs/client/links.md': '',
     'v12/docs/client/links/index.html': '',
+    'v12/docs/openapi/routes.md': '',
+    'v12/docs/openapi/routes/index.html':
+      '<head><meta content="noindex" name="robots"/></head>',
     'index.html': '',
     'index.md': '',
     'llms.txt': llms,
@@ -58,6 +61,17 @@ const setup = Effect.fn('setup')(function* (
     JSON.stringify(redirects),
   );
   return root;
+});
+
+describe('isNoindex', () => {
+  it('reads the robots meta tag', () => {
+    expect(isNoindex('<meta content="noindex" name="robots"/>')).toBe(true);
+    expect(isNoindex('<meta name="robots" content="noindex, nofollow">')).toBe(
+      true,
+    );
+    expect(isNoindex('<meta content="index" name="robots"/>')).toBe(false);
+    expect(isNoindex('<p>noindex</p>')).toBe(false);
+  });
 });
 
 describe('firstDoc', () => {
@@ -95,6 +109,13 @@ describe('writeVercelOutput', () => {
         'v12/docs/client/links/index.html': {
           contentType: 'text/html; charset=utf-8',
           path: 'v12/docs/client/links',
+        },
+        'v12/docs/openapi/routes.md': {
+          contentType: 'text/markdown; charset=utf-8',
+        },
+        'v12/docs/openapi/routes/index.html': {
+          contentType: 'text/html; charset=utf-8',
+          path: 'v12/docs/openapi/routes',
         },
         'index.md': { contentType: 'text/markdown; charset=utf-8' },
         'llms.txt': { contentType: 'text/plain; charset=utf-8' },
@@ -145,6 +166,18 @@ describe('writeVercelOutput', () => {
       // The copies have no markdown.
       expect(new RegExp(markdownRewrite.src).test('/docs/a')).toBe(false);
       expect(new RegExp(markdownRewrite.src).test('/v9/docs/a')).toBe(false);
+
+      // A hidden page, which says `noindex`, and its markdown.
+      const noindex = config.routes.filter(
+        (route: { headers?: Record<string, string> }) =>
+          route.headers?.['X-Robots-Tag'] === 'noindex',
+      );
+      expect(noindex).toHaveLength(1);
+      const hidden = new RegExp(noindex[0].src);
+      expect(hidden.test('/v12/docs/openapi/routes')).toBe(true);
+      expect(hidden.test('/v12/docs/openapi/routes.md')).toBe(true);
+      expect(hidden.test('/v12/docs/client/links')).toBe(false);
+      expect(hidden.test('/v12/docs/openapi/routes/more')).toBe(false);
     }).pipe(Effect.scoped, Effect.provide(NodeServices.layer)),
   );
 

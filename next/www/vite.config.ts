@@ -79,7 +79,7 @@ const docCard = (
 
 export default defineConfig({
   define: {
-    // Which flags' dev menu shows (`src/flags.ts`): not on production.
+    // The environment the Experiments menu names (`src/flags.ts`).
     'import.meta.env.VERCEL_ENV': JSON.stringify(
       process.env['VERCEL_ENV'] ?? '',
     ),
@@ -164,11 +164,14 @@ export default defineConfig({
         { path: '/', sitemap: { changefreq: 'weekly', priority: 1 } },
         ...pages.map((page) => ({
           path: page.path,
-          sitemap: {
-            changefreq: 'weekly' as const,
-            lastmod: page.lastModified,
-            priority: 0.8,
-          },
+          // A hidden page is `noindex` until it's reviewed.
+          sitemap: page.hidden
+            ? { exclude: true }
+            : {
+                changefreq: 'weekly' as const,
+                lastmod: page.lastModified,
+                priority: 0.8,
+              },
         })),
         // trpc.io is where the older versions' docs are found; each page's
         // canonical link points there.

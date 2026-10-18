@@ -32,7 +32,7 @@ import {
   SponsorButton,
   SupportedBy,
 } from '~/components/sponsors/supported-by.tsx';
-import { homeDocs } from '~/content/docs.ts';
+import { findDoc, homeDocs } from '~/content/docs.ts';
 import { useFlag } from '~/flags.ts';
 import {
   defaultHomeVersion,
@@ -503,8 +503,13 @@ const featureCard =
   'grid h-full content-start gap-2 rounded-xl border bg-card p-5 [&_svg]:size-5';
 
 function Features(props: { readonly version: HomeVersion }) {
-  const features = props.version === 'v11' ? v11Features : v12Features;
-  const route = homeDocs[props.version].route;
+  const docs = homeDocs[props.version];
+  const route = docs.route;
+  // A card for a hidden page waits, like the page, until it's reviewed.
+  const features = (props.version === 'v11' ? v11Features : v12Features).filter(
+    (feature) =>
+      feature.slug === undefined || !findDoc(docs, feature.slug)?.hidden,
+  );
   return (
     <ul
       className={cn(
