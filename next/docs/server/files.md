@@ -96,3 +96,5 @@ Those chunks are base64 in JSONL, SSE and WebSocket messages. `httpLink({ binary
 ## Serializers
 
 A root `File` or `Blob` output of an unbatched HTTP call is the response body, with any serializer. On a batching chain, plain JSON can't batch it, so such calls take `{ batch: false }` (a type error otherwise). Files anywhere else, and files in inputs, need danSON; the other serializers fail before sending ([Serializers](./serializers.md)).
+
+The [`examples/media-pipeline`](../../examples/media-pipeline/README.md) app uploads photos as multipart, returns files as response bodies and inside streamed outputs, and reads them as binary frames.

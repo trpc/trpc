@@ -94,6 +94,7 @@ export default defineConfig({
           'examples/effect/**',
           'examples/effect-observability/**',
           'examples/saas-api/**',
+          'examples/media-pipeline/**',
         ],
         rules: {
           'anti-slop-effect/no-manual-tag-comparison': 'error',

@@ -120,6 +120,8 @@ const decimal: CustomType<Decimal, string> = {
 export const serializer = createSerializer({ types: { Decimal: decimal } });
 ```
 
+The [`examples/media-pipeline`](../../examples/media-pipeline/README.md) app keeps a `Money` class this way, and with superjson's `registerCustom` on a second endpoint, in query URLs and outputs.
+
 ## Hydration
 
 `hydrationOptions({ client })` serializes TanStack Query data with the client's serializer (the first link that has one), so server-rendered data hydrates with the same types the client sees. Type the query context from the client, and it takes the links' form too:
