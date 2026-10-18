@@ -21,6 +21,8 @@ export const appRouter = {
 
 Merge routers with `mergeRouters(a, b)`. A key in both is a type error and a runtime error; object spread would silently keep the last.
 
+With thousands of procedures, split the router into packages and type apps from the server's built declarations: see [Large routers](./large-routers.md).
+
 For OpenAPI, `t.router({ meta }, routes)` groups routes under a prefix and tags without changing their types or RPC paths ([Groups](../openapi/routes.md#groups-and-lazy-subtrees)).
 
 ## Lazy subtrees

@@ -23,6 +23,7 @@ User docs for v12, kept in step with the code. The website in [`../www`](../www)
 - [Serializers](./server/serializers.md): Plain JSON by default; danSON or superjson-style serializers keep Dates, Maps and files, and client types follow.
 - [Contract-first](./server/contract-first.md): Describe procedures in a contract, implement them later, and type clients from the contract alone.
 - [Server-side calls](./server/server-side-calls.md): Call procedures in process with createRouterClient, call() and localLink.
+- [Large routers](./server/large-routers.md): Keep type-checking fast with thousands of procedures, by building the server's declarations and typing apps from them.
 
 ## Middleware
 
