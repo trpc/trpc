@@ -1,28 +1,19 @@
-import { spawn } from 'node:child_process';
-import { once } from 'node:events';
+/**
+ * Calls the Nest app with `fetch` and with `experimental_openApiLink`, built
+ * from the same contract. No decorators here, so Node runs it as is.
+ */
 import assert from 'node:assert/strict';
-import { createInterface } from 'node:readline';
 import { createTrpcClient, safe } from '@trpc12/trpc/client';
 import { toContract } from '@trpc12/trpc/contract';
 import { experimental_openApiLink } from '@trpc12/trpc/openapi';
 import { appContract } from './src/contract.ts';
 
-const server = spawn(process.execPath, ['dist/main.js'], {
-  env: { ...process.env, PORT: '0' },
-  stdio: ['ignore', 'pipe', 'inherit'],
-});
-try {
-  let url = '';
-  for await (const line of createInterface({ input: server.stdout })) {
-    url = /^listening on (\S+)/.exec(line)?.[1] ?? '';
-    if (url) break;
-  }
-  if (!url) throw new Error('the server exited before listening');
-
+export async function main(url: string) {
   const health = await fetch(`${url}/health`);
   assert.equal(await health.json(), 'ok');
 
   const res = await fetch(`${url}/posts/1`);
+  assert.equal(res.status, 200);
   console.log('GET /posts/1', res.status, await res.json());
 
   const anon = await fetch(`${url}/posts`, {
@@ -43,13 +34,10 @@ try {
       }),
     ],
   });
+  const before = await client.post.list.query();
   const created = await client.post.create.mutate({ title: 'From the client' });
-  assert.equal(created.id, '2');
-  assert.deepEqual(
-    (await client.post.list.query()).map((post) => post.title),
-    ['Served by Nest', 'From the client'],
-  );
-  const [, missing] = await safe(client.post.byId.query({ id: '9' }));
+  assert.deepEqual(await client.post.list.query(), [...before, created]);
+  const [, missing] = await safe(client.post.byId.query({ id: 'nope' }));
   assert.equal(missing?.code, 'NOT_FOUND');
   console.log(
     'experimental_openApiLink: created',
@@ -58,16 +46,17 @@ try {
     missing?.code,
   );
 
+  // AdminGuard is a Nest guard: it runs before the procedure.
   const [, forbidden] = await safe(client.admin.stats.query());
   assert.equal(forbidden?.code, 'FORBIDDEN');
   const stats = await fetch(`${url}/admin/stats`, {
     headers: { 'x-user': 'admin' },
   });
-  assert.deepEqual(await stats.json(), { posts: 2, requests: 1 });
-  console.log('AdminGuard: ada', forbidden?.code, '| admin', stats.status);
-} finally {
-  if (server.exitCode === null) {
-    server.kill();
-    await once(server, 'exit');
-  }
+  const body = (await stats.json()) as { posts: number; requests: number };
+  assert.equal(body.posts, before.length + 1);
+  console.log('AdminGuard: ada', forbidden?.code, '| admin', body);
+}
+
+if (import.meta.main) {
+  await main(process.argv[2] ?? 'http://localhost:3000');
 }
