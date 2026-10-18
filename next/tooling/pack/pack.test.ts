@@ -2,7 +2,12 @@ import { NodeServices } from '@effect/platform-node';
 import { Effect, FileSystem, Path } from 'effect';
 import { ChildProcess, ChildProcessSpawner } from 'effect/process';
 import { expect, test } from 'vite-plus/test';
-import { checkExports, importedPackages, type PackageJson } from './pack.ts';
+import {
+  checkExports,
+  importedPackages,
+  keepEntryPointImports,
+  type PackageJson,
+} from './pack.ts';
 
 const run = <A, E>(effect: Effect.Effect<A, E, NodeServices.NodeServices>) =>
   Effect.runPromise(Effect.provide(effect, NodeServices.layer));
@@ -65,8 +70,34 @@ test.each(entries)(
       }),
     );
     expect(types).not.toMatch(/^(import|export)\b.*from ['"][^'"]+\.ts['"]/m);
+    const entry = await run(
+      Effect.gen(function* () {
+        const fs = yield* FileSystem.FileSystem;
+        return yield* fs.readFileString(
+          `${dir}/${pkg.exports[subpath]!.types}`,
+        );
+      }),
+    );
+    expect(keepEntryPointImports(entry, types)).toBe(types);
   },
 );
+
+test('keepEntryPointImports puts back the empty type imports the build drops', () => {
+  const source = [
+    '/** @module */',
+    "import type {} from '@trpc12/trpc/internal';",
+    "export { initTrpc } from './init.ts';",
+  ].join('\n');
+  const built = "export { initTrpc } from './init.js';\n";
+  expect(keepEntryPointImports(source, built)).toBe(
+    `import type {} from '@trpc12/trpc/internal';\n${built}`,
+  );
+  const kept = keepEntryPointImports(source, built);
+  expect(keepEntryPointImports(source, kept)).toBe(kept);
+  expect(keepEntryPointImports("export { a } from './a.ts';", built)).toBe(
+    built,
+  );
+});
 
 test.each(packages.map((opts) => [opts.name, opts.dir, opts.pkg] as const))(
   '%s imports only its dependencies and peers',

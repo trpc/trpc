@@ -84,6 +84,26 @@ export const importedPackages = (source: string): ReadonlyArray<string> => {
   return [...names].sort();
 };
 
+const entryPointImport = /^import type \{\} from ['"][^'"]+['"];$/gm;
+
+/**
+ * Puts the `import type {} from '…'` lines of an entry's source back at the
+ * top of its built declarations. They load an entry point that declaration
+ * emit in users' packages names types through (TS2742, TS2883), and the
+ * declaration build drops them because they import no names.
+ */
+export const keepEntryPointImports = (
+  source: string,
+  declarations: string,
+): string => {
+  const missing = [...source.matchAll(entryPointImport)]
+    .map((match) => match[0])
+    .filter((line) => !declarations.includes(line));
+  return missing.length === 0
+    ? declarations
+    : `${missing.join('\n')}\n${declarations}`;
+};
+
 const pack = (extraArgs: ReadonlyArray<string>) =>
   Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem;
@@ -115,6 +135,16 @@ const pack = (extraArgs: ReadonlyArray<string>) =>
       ),
     );
     if (exitCode !== 0) return yield* new PackFailed({ exitCode });
+    for (const [subpath, entry] of Object.entries(pkg.exports)) {
+      const built = pkg.publishConfig?.exports?.[subpath]?.types;
+      if (built === undefined) continue;
+      const declarations = yield* fs.readFileString(built);
+      const kept = keepEntryPointImports(
+        yield* fs.readFileString(entry.types),
+        declarations,
+      );
+      if (kept !== declarations) yield* fs.writeFileString(built, kept);
+    }
   });
 
 if (import.meta.main) {
