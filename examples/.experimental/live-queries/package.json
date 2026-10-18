@@ -1,0 +1,26 @@
+{
+  "name": "examples-live-queries",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "vitest --watch false",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@tanstack/db": "0.15.0",
+    "@tanstack/query-core": "^5.90.20",
+    "@tanstack/query-db-collection": "^1.4.5",
+    "@trpc/client": "workspace:*",
+    "@trpc/server": "workspace:*",
+    "@trpc/tanstack-react-query": "workspace:*",
+    "zod": "^4.2.1"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.4",
+    "@types/ws": "^8.2.0",
+    "event-source-polyfill": "^1.0.31",
+    "typescript": "catalog:",
+    "vitest": "catalog:",
+    "ws": "catalog:"
+  }
+}

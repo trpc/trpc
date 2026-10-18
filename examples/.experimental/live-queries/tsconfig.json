@@ -1,0 +1,12 @@
+{
+  "extends": "../../../tsconfig.json",
+  "include": ["src", "vitest.config.ts"],
+  "compilerOptions": {
+    "rootDir": "../../..",
+    "skipLibCheck": true,
+    "lib": ["ES2023", "DOM", "DOM.Iterable", "ESNext.Disposable"],
+    "target": "ES2023",
+    "types": ["node", "vitest/globals"],
+    "noEmit": true
+  }
+}
