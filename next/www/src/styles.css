@@ -37,6 +37,7 @@ html {
 .prose a {
   text-underline-offset: 3px;
   text-decoration-color: color-mix(in oklch, currentColor 35%, transparent);
+  overflow-wrap: break-word;
 }
 
 .prose a:hover {
