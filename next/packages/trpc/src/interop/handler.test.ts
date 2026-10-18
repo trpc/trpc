@@ -110,6 +110,17 @@ const router = {
       stopped++;
     }
   }),
+  // Ends only when its signal aborts, as one waiting on `on(emitter, …, { signal })` does.
+  waiting: t.procedure.subscription(async function* (opts) {
+    try {
+      yield 0;
+      await new Promise((resolve) =>
+        opts.signal.addEventListener('abort', resolve),
+      );
+    } finally {
+      stopped++;
+    }
+  }),
   failing: t.procedure.subscription(async function* () {
     yield 1;
     throw error({ code: 'CONFLICT', message: 'Gone' });
@@ -379,9 +390,12 @@ const collect = (
     });
   });
 
-const firstThenStop = (client: ReturnType<typeof untyped>) =>
+const firstThenStop = (
+  client: ReturnType<typeof untyped>,
+  path: 'forever' | 'waiting' = 'forever',
+) =>
   new Promise<unknown>((resolve) => {
-    const sub = client.subscription('forever', undefined, {
+    const sub = client.subscription(path, undefined, {
       onData: (value) => {
         sub.unsubscribe();
         resolve(value);
@@ -419,6 +433,8 @@ test('httpSubscriptionLink: tracked events, lastEventId from the input, errors',
   const before = stopped;
   expect(await firstThenStop(client)).toBe(0);
   await expect.poll(() => stopped).toBe(before + 1);
+  expect(await firstThenStop(client, 'waiting')).toBe(0);
+  await expect.poll(() => stopped).toBe(before + 2);
 });
 
 test('wsLink: calls, subscriptions, stop and connectionParams', async () => {
@@ -454,6 +470,8 @@ test('wsLink: calls, subscriptions, stop and connectionParams', async () => {
     const before = stopped;
     await firstThenStop(client);
     await expect.poll(() => stopped).toBe(before + 1);
+    await firstThenStop(client, 'waiting');
+    await expect.poll(() => stopped).toBe(before + 2);
   } finally {
     await ws.close();
   }

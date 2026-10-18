@@ -637,10 +637,12 @@ export function createV11Handler<
                 : Stream.make(errorFrame(normalizeCause(cause))),
             ),
           );
+      // Abort inside the merge: interrupting the merge waits for this side's
+      // finalizers, which wait for a resolver that awaits its signal.
       const frames = Stream.concat(
         Stream.make(frame('connected', '{}')),
         events,
-      );
+      ).pipe(abortOnInterrupt(controller));
       const body =
         ssePingMs === false
           ? frames
@@ -654,19 +656,16 @@ export function createV11Handler<
             );
       const options = responseOptions(response.headers);
       const { headers } = options;
-      return HttpServerResponse.stream(
-        Stream.encodeText(body.pipe(abortOnInterrupt(controller))),
-        {
-          status: 200,
-          contentType: 'text/event-stream',
-          headers: {
-            ...headers,
-            'cache-control': 'no-cache, no-transform',
-            'x-accel-buffering': 'no',
-          },
-          ...(options.cookies ? { cookies: options.cookies } : {}),
+      return HttpServerResponse.stream(Stream.encodeText(body), {
+        status: 200,
+        contentType: 'text/event-stream',
+        headers: {
+          ...headers,
+          'cache-control': 'no-cache, no-transform',
+          'x-accel-buffering': 'no',
         },
-      );
+        ...(options.cookies ? { cookies: options.cookies } : {}),
+      });
     });
 
   const serve = (

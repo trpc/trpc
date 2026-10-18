@@ -97,7 +97,9 @@ function v11Session(
     const path = typeof params['path'] === 'string' ? params['path'] : '';
     const head = envelope(id, jsonrpc);
     const callParams = connectionParams;
+    // Aborted when `subscription.stop` or a closed socket interrupts the call.
     const controller = new AbortController();
+    const abort = Effect.sync(() => controller.abort());
     return Effect.gen(function* () {
       const procedure = yield* Effect.promise(async () =>
         resolveProcedure(core.router, path),
@@ -166,7 +168,13 @@ function v11Session(
       }
       send({ ...head, result: { type: 'started' } });
       yield* Stream.runForEach(
-        exit.value as Stream.Stream<unknown, AnyTrpcError>,
+        // Aborts before the stream's finalizers run: a resolver awaiting its
+        // signal returns only after it aborts.
+        (exit.value as Stream.Stream<unknown, AnyTrpcError>).pipe(
+          Stream.onExit((end) =>
+            Exit.hasInterrupts(end) ? abort : Effect.void,
+          ),
+        ),
         (event) =>
           Effect.sync(() =>
             send({
@@ -200,7 +208,7 @@ function v11Session(
               sendError(id, jsonrpc, normalizeCause(cause), path, method),
             ),
       ),
-      Effect.onInterrupt(() => Effect.sync(() => controller.abort())),
+      Effect.onInterrupt(() => abort),
     ) as Effect.Effect<void>;
   };
 
