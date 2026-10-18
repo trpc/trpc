@@ -1,0 +1,18 @@
+{
+  "name": "@example/worker-threads",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "smoke": "node index.ts"
+  },
+  "dependencies": {
+    "@trpc12/trpc": "workspace:*",
+    "effect": "4.0.2",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^7.0.2"
+  }
+}

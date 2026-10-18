@@ -333,6 +333,25 @@ importers:
         specifier: ^7.0.2
         version: 7.0.2
 
+  examples/experimental/worker-threads:
+    dependencies:
+      '@trpc12/trpc':
+        specifier: workspace:*
+        version: link:../../../packages/trpc
+      effect:
+        specifier: 4.0.2
+        version: 4.0.2
+      zod:
+        specifier: 4.6.5
+        version: 4.6.5
+    devDependencies:
+      '@types/node':
+        specifier: ^24.0.0
+        version: 24.19.1
+      typescript:
+        specifier: ^7.0.2
+        version: 7.0.2
+
   examples/minimal:
     dependencies:
       '@effect/platform-node':
