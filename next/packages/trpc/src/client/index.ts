@@ -55,20 +55,16 @@ export {
   type LoggerEvent,
   type RetryLinkOptions,
   type SplitLinkOptions,
-} from './links/basic.ts';
-export { httpLink, type HttpLinkOptions } from './links/http.ts';
-export {
+  httpLink,
+  type HttpLinkOptions,
   switchLink,
   type ReservedSwitchName,
   type SwitchLinkDecl,
   type SwitchLinkOptions,
-} from './links/switch.ts';
-export { localLink, type LocalLinkOptions } from './links/local.ts';
-export {
+  localLink,
+  type LocalLinkOptions,
   experimental_validationLink,
   type ValidationLinkOptions,
-} from './links/validation.ts';
-export {
   experimental_messagePortLink,
   experimental_socketLink,
   wsLink,
@@ -78,7 +74,7 @@ export {
   type SocketLink,
   type SocketLinkOptions,
   type WebSocketLinkOptions,
-} from './links/socket.ts';
+} from './links/index.ts';
 export {
   routerType,
   type BuiltinError,
