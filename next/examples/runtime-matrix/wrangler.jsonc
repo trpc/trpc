@@ -1,0 +1,9 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "trpc-runtime-matrix-example",
+  "main": "src/worker.ts",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat"],
+  // Local runs get a local namespace; `wrangler deploy` provisions one.
+  "kv_namespaces": [{ "binding": "VISITS" }],
+}

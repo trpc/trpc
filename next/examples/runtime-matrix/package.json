@@ -1,0 +1,29 @@
+{
+  "name": "@example/runtime-matrix",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.bun.json && tsc --noEmit -p tsconfig.deno.json && tsc --noEmit -p tsconfig.worker.json",
+    "smoke": "node smoke.ts",
+    "start:node": "node src/node.ts",
+    "start:bun": "bun src/bun-effect.ts",
+    "start:deno": "deno run --no-lock --allow-net --allow-env --allow-read src/deno.ts",
+    "start:lambda": "node src/function-url.ts streaming",
+    "dev:worker": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "dependencies": {
+    "@effect/platform-bun": "4.0.2",
+    "@effect/platform-node": "4.0.2",
+    "@trpc12/trpc": "workspace:*",
+    "effect": "4.0.2",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "5.20261014.1",
+    "@types/bun": "1.4.3",
+    "@types/node": "^24.0.0",
+    "typescript": "^7.0.2",
+    "wrangler": "4.151.0"
+  }
+}

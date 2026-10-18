@@ -706,6 +706,40 @@ importers:
         specifier: ^7.0.2
         version: 7.0.2
 
+  examples/runtime-matrix:
+    dependencies:
+      '@effect/platform-bun':
+        specifier: 4.0.2
+        version: 4.0.2(effect@4.0.2)
+      '@effect/platform-node':
+        specifier: 4.0.2
+        version: 4.0.2(effect@4.0.2)(redis@6.3.0(@opentelemetry/api@1.9.1))
+      '@trpc12/trpc':
+        specifier: workspace:*
+        version: link:../../packages/trpc
+      effect:
+        specifier: 4.0.2
+        version: 4.0.2
+      zod:
+        specifier: 4.6.5
+        version: 4.6.5
+    devDependencies:
+      '@cloudflare/workers-types':
+        specifier: 5.20261014.1
+        version: 5.20261014.1
+      '@types/bun':
+        specifier: 1.4.3
+        version: 1.4.3
+      '@types/node':
+        specifier: ^24.0.0
+        version: 24.19.1
+      typescript:
+        specifier: ^7.0.2
+        version: 7.0.2
+      wrangler:
+        specifier: 4.151.0
+        version: 4.151.0(@cloudflare/workers-types@5.20261014.1)(@types/node@24.19.1)
+
   examples/saas-api:
     dependencies:
       '@effect/platform-node':
@@ -13271,7 +13305,7 @@ snapshots:
   bun-types@1.4.3:
     dependencies:
       '@types/node': 24.19.1
-      undici-types: 7.24.6
+      undici-types: 8.9.0
 
   bundle-name@4.1.1:
     dependencies:
