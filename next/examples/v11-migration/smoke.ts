@@ -4,10 +4,12 @@
  */
 import { startServer } from './server/server.ts';
 import { run as serveV11Clients } from './stages/1-serve-v11-clients.ts';
+import { run as moveTheClient } from './stages/2-move-the-client.ts';
 
 const server = await startServer();
 try {
   await serveV11Clients(server.origin);
+  await moveTheClient(server.origin);
 } finally {
   await server.close();
 }
