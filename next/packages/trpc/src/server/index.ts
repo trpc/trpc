@@ -117,6 +117,8 @@ export type {
   InputValidationError,
   InputValidationErrorData,
   IssuePath,
+  SchemaInputErrorData,
+  SchemaValidationError,
   StandardIssue,
   StandardSchemaV1,
   ZodInputIssue,

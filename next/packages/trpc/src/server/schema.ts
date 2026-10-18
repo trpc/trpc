@@ -270,14 +270,38 @@ export interface InputValidationErrorData<TIssue = InputIssue> {
 }
 
 /**
- * Added to the error union of every procedure with an input, one per
- * `.input()` schema, with `TIssue` that schema's issues.
+ * An input validation error with `TIssue` issues.
  * @since 0.1.0
  * @stability stable
  */
 export type InputValidationError<TIssue = InputIssue> = TrpcError<
   'BAD_REQUEST',
   InputValidationErrorData<TIssue>
+>;
+
+/**
+ * {@link InputValidationErrorData} for input schema `S`. Its issues are
+ * worked out only when read, so a procedure's type (and its declarations)
+ * carries the schema rather than every issue the schema can report.
+ * @since 0.1.0
+ * @stability stable
+ */
+export interface SchemaInputErrorData<S> {
+  readonly issues: ReadonlyArray<inferInputIssue<S>>;
+  /** Type-only, as on {@link InputValidationErrorData}. */
+  readonly '~issues'?: true;
+}
+
+/**
+ * Added to the error union of every procedure with an input, one per
+ * `.input()` schema `S`. Assignable to
+ * `InputValidationError<inferInputIssue<S>>`.
+ * @since 0.1.0
+ * @stability stable
+ */
+export type SchemaValidationError<S> = TrpcError<
+  'BAD_REQUEST',
+  SchemaInputErrorData<S>
 >;
 
 /** Effect Schema classes and ArkType types are functions too. @internal */

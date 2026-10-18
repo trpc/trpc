@@ -31,10 +31,9 @@ import {
 import type {
   AnySchema,
   InOf,
-  inferInputIssue,
-  InputValidationError,
   OutOf,
   SchemaServices,
+  SchemaValidationError,
 } from './schema.ts';
 import type {
   EventOutput,
@@ -358,31 +357,6 @@ type ResolvedOutput<
 type ShortsFor<TDef extends BuilderDef, $Ret> = [TDef['shorts']] extends [never]
   ? unknown
   : ShortsCheck<TDef, ResolvedOutput<TDef, $Ret>>;
-
-/**
- * Part of inferred procedure types; exported so they stay nameable.
- * @since 0.1.0
- * @stability stable
- */
-export type BuildProcedure<
-  TDef extends BuilderDef,
-  TType extends ProcedureType,
-  TSplit extends Split,
-> = Procedure<{
-  type: TType;
-  ctx: TDef['ctx'];
-  meta: TDef['meta'];
-  input: Value<TDef['inputIn']>;
-  output: TDef['outputOut'] extends Unset
-    ? TSplit['output']
-    : TType extends 'subscription'
-      ? TSplit['output'] extends TrackedEnvelope<any>
-        ? TrackedEnvelope<EventOutput<TDef['outputOut']>>
-        : EventOutput<TDef['outputOut']>
-      : StreamedOutput<TDef['outputOut']>;
-  errors: TDef['errors'] | TSplit['errors'];
-  services: TDef['requires'] | Exclude<TSplit['services'], TDef['provided']>;
-}>;
 
 // --- ctx a middleware needs -------------------------------------------------------
 
@@ -767,6 +741,11 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
     >
   >;
 
+  // The terminals spell out their `Procedure` rather than use an alias:
+  // declaration emit prints an alias with its arguments (the builder state
+  // and input schemas), which every package reading the declarations then
+  // works out again; spelled out, it prints the resolved input and output.
+
   /**
    * A read. The resolver can return a value, a `Promise`, an `Effect`, or a
    * `TrpcError`. Outputs may contain `Promise`s and `AsyncIterable`s, which
@@ -784,7 +763,19 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
       OutputChecks<TDef, $Ret> &
       UnmappedCheck<SplitReturn<$Ret>['unmapped']> &
       ShortsFor<TDef, $Ret>,
-  ): BuildProcedure<TDef, 'query', SplitReturn<$Ret>>;
+  ): Procedure<{
+    type: 'query';
+    ctx: TDef['ctx'];
+    meta: TDef['meta'];
+    input: Value<TDef['inputIn']>;
+    output: TDef['outputOut'] extends Unset
+      ? SplitReturn<$Ret>['output']
+      : StreamedOutput<TDef['outputOut']>;
+    errors: TDef['errors'] | SplitReturn<$Ret>['errors'];
+    services:
+      | TDef['requires']
+      | Exclude<SplitReturn<$Ret>['services'], TDef['provided']>;
+  }>;
 
   /**
    * A write. Same resolver forms as `query`.
@@ -801,7 +792,19 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
       OutputChecks<TDef, $Ret> &
       UnmappedCheck<SplitReturn<$Ret>['unmapped']> &
       ShortsFor<TDef, $Ret>,
-  ): BuildProcedure<TDef, 'mutation', SplitReturn<$Ret>>;
+  ): Procedure<{
+    type: 'mutation';
+    ctx: TDef['ctx'];
+    meta: TDef['meta'];
+    input: Value<TDef['inputIn']>;
+    output: TDef['outputOut'] extends Unset
+      ? SplitReturn<$Ret>['output']
+      : StreamedOutput<TDef['outputOut']>;
+    errors: TDef['errors'] | SplitReturn<$Ret>['errors'];
+    services:
+      | TDef['requires']
+      | Exclude<SplitReturn<$Ret>['services'], TDef['provided']>;
+  }>;
 
   /**
    * A stream of events, over SSE (or a WebSocket). The resolver returns an
@@ -819,7 +822,21 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
     resolver: (
       opts: SubscriptionResolverOpts<TDef>,
     ) => $Ret & EventConstraint<TDef> & StrictErrors<$Ret>,
-  ): BuildProcedure<TDef, 'subscription', SplitStream<$Ret>>;
+  ): Procedure<{
+    type: 'subscription';
+    ctx: TDef['ctx'];
+    meta: TDef['meta'];
+    input: Value<TDef['inputIn']>;
+    output: TDef['outputOut'] extends Unset
+      ? SplitStream<$Ret>['output']
+      : SplitStream<$Ret>['output'] extends TrackedEnvelope<any>
+        ? TrackedEnvelope<EventOutput<TDef['outputOut']>>
+        : EventOutput<TDef['outputOut']>;
+    errors: TDef['errors'] | SplitStream<$Ret>['errors'];
+    services:
+      | TDef['requires']
+      | Exclude<SplitStream<$Ret>['services'], TDef['provided']>;
+  }>;
 }
 
 /**
@@ -837,7 +854,7 @@ export type InputDef<TDef extends BuilderDef, $S extends AnySchema> = {
   inputOut: Merge<TDef['inputOut'], OutOf<$S>>;
   outputIn: TDef['outputIn'];
   outputOut: TDef['outputOut'];
-  errors: TDef['errors'] | InputValidationError<inferInputIssue<$S>>;
+  errors: TDef['errors'] | SchemaValidationError<$S>;
   declared: TDef['declared'];
   shorts: TDef['shorts'];
   provided: TDef['provided'];

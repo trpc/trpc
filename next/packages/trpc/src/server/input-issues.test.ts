@@ -10,6 +10,8 @@ import {
   type EffectInputIssue,
   type inferInputIssue,
   type InputIssue,
+  type InputValidationError,
+  type SchemaValidationError,
   type StandardIssue,
   type StandardSchemaV1,
 } from '@trpc12/trpc/server';
@@ -307,5 +309,17 @@ test('inferInputIssue picks the shape by library', () => {
   type ChangedZod = StandardSchemaV1<string> & { readonly _zod: {} };
   expectTypeOf<inferInputIssue<ChangedZod>>().toEqualTypeOf<
     InputIssue<string>
+  >();
+});
+
+test('a procedure carries its input schema, and the issues resolve when read', () => {
+  const signup = t.procedure.input(Signup).mutation(() => 'ok');
+  type Errors = NonNullable<(typeof signup)['~trpc']['~types']>['errors'];
+  expectTypeOf<Errors>().toEqualTypeOf<SchemaValidationError<typeof Signup>>();
+  expectTypeOf<Errors>().toExtend<
+    InputValidationError<inferInputIssue<typeof Signup>>
+  >();
+  expectTypeOf<Errors['data']['issues'][number]>().toEqualTypeOf<
+    inferInputIssue<typeof Signup>
   >();
 });

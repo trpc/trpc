@@ -8,7 +8,6 @@
 export type {
   BuilderDef,
   BuilderInternals,
-  BuildProcedure,
   ConcatCheck,
   CurrentCtx,
   InputDef,

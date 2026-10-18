@@ -62,10 +62,9 @@ import type { BuilderDef, ProcedureBuilder } from '../server/builder.ts';
 import type {
   AnySchema,
   InOf,
-  inferInputIssue,
-  InputValidationError,
   OutOf,
   SchemaServices,
+  SchemaValidationError,
 } from '../server/schema.ts';
 import type {
   EventOutput,
@@ -239,7 +238,7 @@ export interface ContractBuilder<TDef extends ContractDef> {
       {
         inputIn: Merge<TDef['inputIn'], InOf<$S>>;
         inputOut: Merge<TDef['inputOut'], OutOf<$S>>;
-        errors: TDef['errors'] | InputValidationError<inferInputIssue<$S>>;
+        errors: TDef['errors'] | SchemaValidationError<$S>;
         requires: TDef['requires'] | SchemaServices<$S>;
       }
     >
