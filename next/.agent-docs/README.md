@@ -93,6 +93,7 @@ These are treated as given:
 | 21  | [Stability and JSDoc](./proposals/21-stability-and-jsdoc.md)                       | `@since`/`@stability` JSDoc + experimental entry points, no name prefixes, CI-enforced                                                                     |                 | 5   |
 | 22  | [Tooling, CI and repo](./proposals/22-tooling-ci-and-repo.md)                      | Vite+ (`vp`) toolchain, TS 7, `vp staged` precommit hook, one CI workflow, fresh layout                                                                    |                 | 5   |
 | 24  | [Error ownership](./proposals/24-error-ownership.md)                               | Closed client error union, exhaustive `matchError()`, TanStack error shells that subtract the failures they own (after result-rpc)                         |                 | 8   |
+| 25  | [MCP](./proposals/25-mcp.md)                                                       | `@trpc12/trpc/mcp`: opt-in procedures as MCP tools over stateless HTTP, schemas from `toContract()`, errors as `isError` results, no SDK dependency        |                 | 9   |
 
 ⚠️ marks proposals where some options would block a row in the [oRPC parity matrix](./reference/orpc-parity.md).
 
