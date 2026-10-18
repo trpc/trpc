@@ -1,10 +1,10 @@
 import { Cause, Effect, FiberSet, Queue, Stream } from 'effect';
-import { backpressure } from '../internal/effects.ts';
+import { backpressure } from '../../internal/effects.ts';
 import {
   isAsyncIterable,
   isPromiseLike,
   isPlainObject,
-} from '../serializer/danson/index.ts';
+} from '../../serializer/danson/index.ts';
 
 const PROMISE = 0;
 const ITERABLE = 1;

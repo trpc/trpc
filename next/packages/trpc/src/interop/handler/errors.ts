@@ -1,5 +1,5 @@
-import { statusOf, type AnyTrpcError } from '../internal/error.ts';
-import type { ProcedureType } from '../internal/types.ts';
+import { statusOf, type AnyTrpcError } from '../../internal/error.ts';
+import type { ProcedureType } from '../../internal/types.ts';
 
 /** v11's JSON-RPC numbers, by code. */
 const RPC_CODES: Record<string, number> = {

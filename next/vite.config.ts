@@ -130,6 +130,7 @@ export default defineConfig({
               roots: [
                 'packages/trpc/src/server',
                 'packages/trpc/src/serializer',
+                'packages/trpc/src/interop',
               ],
               ignore: ['fixtures'],
             },

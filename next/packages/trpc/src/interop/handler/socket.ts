@@ -1,21 +1,21 @@
 import { Cause, Effect, Exit, FiberMap, Stream } from 'effect';
 import type { HttpServerRequest } from 'effect/http';
 import type { Socket } from 'effect/socket';
-import { TrpcError, type AnyTrpcError } from '../internal/error.ts';
-import type { ProcedureType } from '../internal/types.ts';
+import { TrpcError, type AnyTrpcError } from '../../internal/error.ts';
+import type { ProcedureType } from '../../internal/types.ts';
 import {
   createResponseHandle,
   normalizeCause,
-} from '../server/execution/index.ts';
-import { resolveProcedure } from '../server/procedures/index.ts';
+} from '../../server/execution/index.ts';
+import { resolveProcedure } from '../../server/procedures/index.ts';
 import {
   runSocket,
   socketFrames,
   type SocketOutbox,
   type SocketSession,
   parseSocketMessage,
-} from '../server/sockets/index.ts';
-import { isTracked } from '../server/subscriptions/index.ts';
+} from '../../server/sockets/index.ts';
+import { isTracked } from '../../server/subscriptions/index.ts';
 import type { V11Core } from './handler.ts';
 
 type RequestId = number | string;

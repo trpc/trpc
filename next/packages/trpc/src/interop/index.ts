@@ -19,8 +19,9 @@ export {
   type V11HandlerOptions,
   type V11Transformer,
   type V11TransformerOption,
-} from './handler.ts';
-export type { V11ErrorFormatterOpts, V11ErrorShape } from './errors.ts';
+  type V11ErrorFormatterOpts,
+  type V11ErrorShape,
+} from './handler/index.ts';
 export {
   fromV11Link,
   type V11Link,
