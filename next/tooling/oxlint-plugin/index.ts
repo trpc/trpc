@@ -7,6 +7,7 @@ import { moduleBoundaries } from './module-boundaries.ts';
 import { noCustomTestTimeout } from './no-custom-test-timeout.ts';
 import { noMock } from './no-mock.ts';
 import { noOverzealousDestructuring } from './no-overzealous-destructuring.ts';
+import { noThrowInEffect } from './no-throw-in-effect.ts';
 import { typedObjects } from './typed-objects.ts';
 
 const plugin = eslintCompatPlugin({
@@ -19,6 +20,7 @@ const plugin = eslintCompatPlugin({
     'no-custom-test-timeout': noCustomTestTimeout,
     'no-mock': noMock,
     'no-overzealous-destructuring': noOverzealousDestructuring,
+    'no-throw-in-effect': noThrowInEffect,
     'typed-objects': typedObjects,
   },
 });
