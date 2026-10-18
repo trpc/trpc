@@ -54,7 +54,10 @@ export type Serialize<T> =
 type SerializeTuple<T extends unknown[]> = T extends []
   ? []
   : T extends [infer Head, ...infer Rest extends unknown[]]
-    ? [Head extends NonJsonPrimitive ? null : Serialize<Head>, ...SerializeTuple<Rest>]
+    ? [
+        Head extends NonJsonPrimitive ? null : Serialize<Head>,
+        ...SerializeTuple<Rest>,
+      ]
     : never;
 
 // prettier-ignore
