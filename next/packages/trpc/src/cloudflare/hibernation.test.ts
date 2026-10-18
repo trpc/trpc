@@ -441,7 +441,7 @@ test('a lazy subtree that fails to load after a wake ends its hibernated subscri
     onCreated: pt.procedure.subscription((opts) =>
       Posts.subscribe('created', { lastEventId: opts.lastEventId }),
     ),
-  };
+  } satisfies AnyRouter;
   const state = fakeState();
   const sockets = lazyRoom(state, async () => live);
   const sub = new FakeSocket();
