@@ -103,7 +103,14 @@ export function SiteHeader() {
         </nav>
         <div className="ml-auto flex items-center gap-1">
           <SearchButton />
-          <ExperimentsMenu />
+          {/* The experiments are v12's, so v11 readers don't see the menu. */}
+          {onHome ? (
+            <span data-home-panel="v12">
+              <ExperimentsMenu />
+            </span>
+          ) : linked === 'v12' ? (
+            <ExperimentsMenu />
+          ) : null}
           <a
             aria-label="tRPC on GitHub"
             className={cn(
