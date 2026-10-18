@@ -39,7 +39,17 @@ more information.
 
 We now support stopping subscriptions from the server, this means that you can now do things like this:
 
-```ts
+```ts twoslash
+// @types: node
+import EventEmitter, { on } from 'events';
+import { initTRPC } from '@trpc/server';
+
+const t = initTRPC.create();
+const router = t.router;
+const publicProcedure = t.procedure;
+
+const ee = new EventEmitter();
+// ---cut---
 const myRouter = router({
   sub: publicProcedure.subscription(async function* (opts) {
     for await (const data of on(ee, 'data', {
@@ -84,7 +94,12 @@ If you previously used `ProcedureOptions` from `@trpc/server`, you now need to u
 
 We now allow promises to be embedded in nested data when using the [`httpBatchStreamLink`](./client/links/httpBatchStreamLink.md), this means that you can now do things like this:
 
-```ts
+```ts twoslash
+import { initTRPC } from '@trpc/server';
+
+const t = initTRPC.create();
+const publicProcedure = t.procedure;
+// ---cut---
 const appRouter = t.router({
   embedPromise: publicProcedure.query(() => {
     async function slowThing() {
@@ -130,7 +145,7 @@ Added support for detecting and recovering from stale connections:
 
 On the server, you can configure a ping interval to keep the connection alive:
 
-```ts
+```ts twoslash
 import { initTRPC } from '@trpc/server';
 
 export const t = initTRPC.create({
@@ -187,7 +202,8 @@ SubscriptionProcedure<{
 
 If you need to infer the value you can use a helper like the below:
 
-```ts
+```ts twoslash
+// @target: esnext
 type inferAsyncIterableYield<TOutput> =
   TOutput extends AsyncGenerator<infer $Yield> ? $Yield : never;
 ```
@@ -294,7 +310,10 @@ You now set up data transformers in the `links`-array instead of when you initia
 
 Wherever you have a HTTP Link you have to add `transformer: superjson` if you use transformers:
 
-```ts
+```ts twoslash
+import { httpBatchLink } from '@trpc/client';
+import superjson from 'superjson';
+// ---cut---
 httpBatchLink({
   url: '/api/trpc',
   transformer: superjson, // <-- add this
@@ -322,7 +341,13 @@ See [SSR docs](./client/nextjs/pages-router/ssr.md)
 
 See [Routers](./server/routers.md#inline-sub-router)
 
-```ts
+```ts twoslash
+import { initTRPC } from '@trpc/server';
+
+const t = initTRPC.create();
+const router = t.router;
+const publicProcedure = t.procedure;
+// ---cut---
 const appRouter = router({
   // Shorthand plain object for creating a sub-router
   nested1: {

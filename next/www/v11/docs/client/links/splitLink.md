@@ -22,7 +22,15 @@ Let's say you're using `httpBatchLink` as the terminating link in your tRPC clie
 
 #### 1. Configure client / `utils/trpc.ts`
 
-```ts title="client/index.ts"
+```ts twoslash title="client/index.ts"
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
+
+// @filename: client.ts
+// ---cut---
 import {
   createTRPCClient,
   httpBatchLink,
@@ -55,7 +63,28 @@ const client = createTRPCClient<AppRouter>({
 
 #### 2. Perform request without batching
 
-```ts title="client.ts"
+```ts twoslash title="client.ts"
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({
+  posts: t.procedure.query(() => []),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: client.ts
+import { createTRPCClient, httpBatchLink, splitLink, httpLink } from '@trpc/client';
+import type { AppRouter } from './server';
+const proxy = createTRPCClient<AppRouter>({
+  links: [
+    splitLink({
+      condition(op) { return Boolean(op.context.skipBatch); },
+      true: httpLink({ url: 'http://localhost:3000' }),
+      false: httpBatchLink({ url: 'http://localhost:3000' }),
+    }),
+  ],
+});
+// ---cut---
 const postResult = proxy.posts.query(undefined, {
   context: {
     skipBatch: true,
@@ -65,7 +94,23 @@ const postResult = proxy.posts.query(undefined, {
 
 or:
 
-```tsx title="MyComponent.tsx"
+```tsx twoslash title="MyComponent.tsx"
+// @jsx: react-jsx
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({
+  posts: t.procedure.query(() => [{ id: 1, title: 'Hello' }]),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: trpc.ts
+import { createTRPCReact } from '@trpc/react-query';
+import type { AppRouter } from './server';
+export const trpc = createTRPCReact<AppRouter>();
+
+// @filename: MyComponent.tsx
+// ---cut---
 import { trpc } from './trpc';
 
 export function MyComponent() {
@@ -86,7 +131,11 @@ export function MyComponent() {
 
 The `splitLink` function takes an options object that has three fields: `condition`, `true`, and `false`.
 
-```ts
+```ts twoslash
+type AnyRouter = any;
+type Operation = any;
+type TRPCLink<T> = any;
+// ---cut---
 declare function splitLink<TRouter extends AnyRouter = AnyRouter>(opts: {
   condition: (op: Operation) => boolean;
   /**

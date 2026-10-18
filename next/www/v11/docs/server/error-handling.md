@@ -31,7 +31,7 @@ By default, tRPC includes `error.data.stack` only when [`isDev`](./routers.md#in
 `initTRPC.create()` sets `isDev` to `process.env.NODE_ENV !== 'production'` by default.
 If you need deterministic behavior across runtimes, override `isDev` manually.
 
-```ts title="server.ts"
+```ts twoslash title="server.ts"
 import { initTRPC } from '@trpc/server';
 
 const t = initTRPC.create({ isDev: false });
@@ -69,7 +69,9 @@ tRPC defines a list of error codes that each represent a different type of error
 
 tRPC exposes a helper function, `getHTTPStatusCodeFromError`, to help you extract the HTTP code from the error:
 
-```ts
+```ts twoslash
+import { TRPCError } from '@trpc/server';
+// ---cut---
 import { getHTTPStatusCodeFromError } from '@trpc/server/http';
 
 // Example error you might get if your input validation fails
@@ -95,7 +97,7 @@ tRPC provides an error subclass, `TRPCError`, which you can use to represent an 
 
 For example, throwing this error:
 
-```ts title="server.ts"
+```ts twoslash title="server.ts"
 import { initTRPC, TRPCError } from '@trpc/server';
 
 const t = initTRPC.create();
@@ -138,7 +140,14 @@ Results in the following response:
 
 All errors that occur in a procedure go through the `onError` method before being sent to the client. Here you can handle errors (To change errors see [error formatting](./error-formatting.md)).
 
-```ts title="server.ts"
+```ts twoslash title="server.ts"
+// @filename: router.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+
+// @filename: server.ts
+// ---cut---
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
 import { appRouter } from './router';
 
@@ -156,7 +165,9 @@ const server = createHTTPServer({
 
 The `onError` parameter is an object that contains all information about the error and the context it occurs in:
 
-```ts
+```ts twoslash
+import { TRPCError } from '@trpc/server';
+// ---cut---
 interface OnErrorOpts {
   error: TRPCError;
   type: 'query' | 'mutation' | 'subscription' | 'unknown';

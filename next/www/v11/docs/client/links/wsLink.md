@@ -12,7 +12,15 @@ order: 37
 
 To use `wsLink`, you need to pass it a `TRPCWebSocketClient`, which you can create with `createWSClient`:
 
-```ts title="client/index.ts"
+```ts twoslash title="client/index.ts"
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
+
+// @filename: client.ts
+// ---cut---
 import { createTRPCClient, createWSClient, wsLink } from '@trpc/client';
 import type { AppRouter } from './server';
 
@@ -33,7 +41,13 @@ const trpcClient = createTRPCClient<AppRouter>({
 
 The `wsLink` function requires a `TRPCWebSocketClient` to be passed, which can be configured with the fields defined in `WebSocketClientOptions`:
 
-```ts
+```ts twoslash
+type TRPCWebSocketClient = any;
+type DataTransformerOptions = any;
+type MaybePromise<T> = T | Promise<T>;
+type Encoder = any;
+declare function exponentialBackoff(attemptIndex: number): number;
+// ---cut---
 export interface WebSocketLinkOptions {
   client: TRPCWebSocketClient;
   /**

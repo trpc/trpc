@@ -13,7 +13,15 @@ By defining an input validator, tRPC can check that a procedure call is correct 
 
 To set up an input validator, use the `procedure.input()` method:
 
-```ts
+```ts twoslash
+// @target: esnext
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+
+const t = initTRPC.create();
+const publicProcedure = t.procedure;
+// ---cut---
+
 export const appRouter = t.router({
   hello: publicProcedure
     .input(
@@ -23,6 +31,7 @@ export const appRouter = t.router({
     )
     .query((opts) => {
       const name = opts.input.name;
+      //    ^?
       return {
         greeting: `Hello ${opts.input.name}`,
       };
@@ -36,11 +45,20 @@ export const appRouter = t.router({
 
 Input merging works by spreading object properties together. This means only **object types** can be chained — non-object types (like `z.string()`) cannot be merged. If two chained `.input()` calls define the same property, the later one takes precedence.
 
-```ts
+```ts twoslash
+// @target: esnext
+import { initTRPC, TRPCError } from '@trpc/server';
+import { z } from 'zod';
+
+export const t = initTRPC.create();
+
+// ---cut---
+
 const baseProcedure = t.procedure
   .input(z.object({ townName: z.string() }))
   .use((opts) => {
     const input = opts.input;
+    //    ^?
 
     console.log(`Handling request with user from: ${input.townName}`);
 
@@ -56,6 +74,7 @@ export const appRouter = t.router({
     )
     .query((opts) => {
       const input = opts.input;
+      //    ^?
       return {
         greeting: `Hello ${input.name}, my friend from ${input.townName}`,
       };
@@ -73,7 +92,11 @@ Validating outputs is not always as important as defining inputs, since tRPC giv
 > [!NOTE] Info
 > If output validation fails, the server will respond with an `INTERNAL_SERVER_ERROR`.
 
-```ts
+```ts twoslash
+// @target: esnext
+import { initTRPC } from '@trpc/server';
+// ---cut---
+
 import { z } from 'zod';
 
 export const t = initTRPC.create();
@@ -89,6 +112,7 @@ export const appRouter = t.router({
     .query((opts) => {
       return {
         greeting: 'hello world',
+        //^?
       };
     }),
 });
@@ -109,7 +133,7 @@ You can define a validator without any 3rd party dependencies, with a function.
 >
 > In most cases we recommend you use a [validation library](#library-integrations)
 
-```ts
+```ts twoslash
 import { initTRPC } from '@trpc/server';
 
 export const t = initTRPC.create();
@@ -132,6 +156,7 @@ export const appRouter = t.router({
     })
     .query((opts) => {
       const { input } = opts;
+      //      ^?
       return `hello ${input}`;
     }),
 });
@@ -147,7 +172,7 @@ tRPC works out of the box with a number of popular validation and parsing librar
 
 Zod is our default recommendation, it has a strong ecosystem which makes it a great choice to use in multiple parts of your codebase. If you have no opinion of your own and want a powerful library which won't limit future needs, Zod is a great choice.
 
-```ts
+```ts twoslash
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
@@ -168,6 +193,7 @@ export const appRouter = t.router({
       }),
     )
     .query(({ input }) => {
+      //      ^?
       return {
         greeting: `hello ${input.name}`,
       };
@@ -179,7 +205,7 @@ export type AppRouter = typeof appRouter;
 
 ### With [Yup](https://github.com/jquense/yup)
 
-```ts
+```ts twoslash
 import { initTRPC } from '@trpc/server';
 import * as yup from 'yup';
 
@@ -200,6 +226,7 @@ export const appRouter = t.router({
       }),
     )
     .query(({ input }) => {
+      //      ^?
       return {
         greeting: `hello ${input.name}`,
       };
@@ -211,7 +238,7 @@ export type AppRouter = typeof appRouter;
 
 ### With [Superstruct](https://github.com/ianstormtaylor/superstruct)
 
-```ts
+```ts twoslash
 import { initTRPC } from '@trpc/server';
 import { object, string } from 'superstruct';
 
@@ -224,6 +251,7 @@ export const appRouter = t.router({
     .input(object({ name: string() }))
     .output(object({ greeting: string() }))
     .query(({ input }) => {
+      //      ^?
       return {
         greeting: `hello ${input.name}`,
       };
@@ -235,7 +263,7 @@ export type AppRouter = typeof appRouter;
 
 ### With [scale-ts](https://github.com/paritytech/scale-ts)
 
-```ts
+```ts twoslash
 import { initTRPC } from '@trpc/server';
 import * as $ from 'scale-codec';
 
@@ -248,6 +276,7 @@ export const appRouter = t.router({
     .input($.object($.field('name', $.str)))
     .output($.object($.field('greeting', $.str)))
     .query(({ input }) => {
+      //      ^?
       return {
         greeting: `hello ${input.name}`,
       };
@@ -310,7 +339,7 @@ export type AppRouter = typeof appRouter;
 
 ### With [effect](https://effect.website/docs/schema/introduction/)
 
-```ts
+```ts twoslash
 import { initTRPC } from '@trpc/server';
 import { Schema } from 'effect';
 
@@ -323,6 +352,7 @@ export const appRouter = t.router({
     .input(Schema.standardSchemaV1(Schema.Struct({ name: Schema.String })))
     .output(Schema.standardSchemaV1(Schema.Struct({ greeting: Schema.String })))
     .query(({ input }) => {
+      //      ^?
       return {
         greeting: `hello ${input.name}`,
       };
@@ -334,7 +364,7 @@ export type AppRouter = typeof appRouter;
 
 ### With [Valibot](https://github.com/fabian-hiller/valibot)
 
-```ts
+```ts twoslash
 import { initTRPC } from '@trpc/server';
 import * as v from 'valibot';
 
@@ -347,6 +377,7 @@ export const appRouter = t.router({
     .input(v.object({ name: v.string() }))
     .output(v.object({ greeting: v.string() }))
     .query(({ input }) => {
+      //      ^?
       return {
         greeting: `hello ${input.name}`,
       };
@@ -358,7 +389,7 @@ export type AppRouter = typeof appRouter;
 
 ### With [Sury](https://github.com/DZakh/sury)
 
-```ts
+```ts twoslash
 import { initTRPC } from '@trpc/server';
 import * as S from 'sury';
 
@@ -371,6 +402,7 @@ export const appRouter = t.router({
     .input(S.schema({ name: S.string }))
     .output(S.schema({ greeting: S.string }))
     .query(({ input }) => {
+      //      ^?
       return {
         greeting: `hello ${input.name}`,
       };

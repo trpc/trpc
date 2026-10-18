@@ -21,7 +21,11 @@ It is often useful to access the types of your API within your clients. For this
 
 Let's assume we have this example router:
 
-```ts title="server.ts"
+```ts twoslash title="server.ts"
+// @module: esnext
+// @filename: server.ts
+// ---cut---
+
 import { initTRPC } from '@trpc/server';
 import { z } from "zod";
 
@@ -64,7 +68,52 @@ export type AppRouter = typeof appRouter;
 
 Using the helpers, we can infer the types of our router. The following example shows how to infer the types of the `post.create` procedure:
 
-```ts title="client.ts"
+```ts twoslash title="client.ts"
+// @module: esnext
+// @module: esnext
+// @filename: server.ts
+// ---cut---
+
+import { initTRPC } from '@trpc/server';
+import { z } from "zod";
+
+const t = initTRPC.create();
+
+const appRouter = t.router({
+  post: t.router({
+    list: t.procedure
+      .query(() => {
+        // imaginary db call
+        return [{ id: 1, title: 'tRPC is the best!' }];
+    }),
+    byId: t.procedure
+      .input(z.string())
+      .query((opts) => {
+        // imaginary db call
+        return { id: 1, title: 'tRPC is the best!' };
+    }),
+    create: t.procedure
+      .input(z.object({ title: z.string(), text: z.string(), }))
+      .mutation((opts) => {
+        // imaginary db call
+        return { id: 1, ...opts.input };
+    }),
+    onPostAdd: t.procedure
+      .input(z.object({ authorId: z.string() }))
+      .subscription(async function* ({ input }) {
+        // imaginary event source
+        yield {
+          id: 1,
+          title: 'tRPC is the best!',
+          authorId: input.authorId,
+        };
+    }),
+  }),
+});
+
+export type AppRouter = typeof appRouter;
+// @filename: client.ts
+// ---cut---
 import type { inferRouterInputs, inferRouterOutputs } from '@trpc/server';
 import type { AppRouter } from './server';
 
@@ -72,14 +121,61 @@ type RouterInput = inferRouterInputs<AppRouter>;
 type RouterOutput = inferRouterOutputs<AppRouter>;
 
 type PostCreateInput = RouterInput['post']['create'];
+//   ^?
 type PostCreateOutput = RouterOutput['post']['create'];
+//   ^?
 ```
 
 ## Inferring Individual Procedure Types
 
 If you already have access to a specific procedure on your router, you can infer its input or output directly:
 
-```ts title="client.ts"
+```ts twoslash title="client.ts"
+// @module: esnext
+// @module: esnext
+// @filename: server.ts
+// ---cut---
+
+import { initTRPC } from '@trpc/server';
+import { z } from "zod";
+
+const t = initTRPC.create();
+
+const appRouter = t.router({
+  post: t.router({
+    list: t.procedure
+      .query(() => {
+        // imaginary db call
+        return [{ id: 1, title: 'tRPC is the best!' }];
+    }),
+    byId: t.procedure
+      .input(z.string())
+      .query((opts) => {
+        // imaginary db call
+        return { id: 1, title: 'tRPC is the best!' };
+    }),
+    create: t.procedure
+      .input(z.object({ title: z.string(), text: z.string(), }))
+      .mutation((opts) => {
+        // imaginary db call
+        return { id: 1, ...opts.input };
+    }),
+    onPostAdd: t.procedure
+      .input(z.object({ authorId: z.string() }))
+      .subscription(async function* ({ input }) {
+        // imaginary event source
+        yield {
+          id: 1,
+          title: 'tRPC is the best!',
+          authorId: input.authorId,
+        };
+    }),
+  }),
+});
+
+export type AppRouter = typeof appRouter;
+// @filename: client.ts
+// ---cut---
 import type {
   inferProcedureInput,
   inferProcedureOutput,
@@ -87,12 +183,59 @@ import type {
 import type { AppRouter } from './server';
 
 type PostByIdInput = inferProcedureInput<AppRouter['post']['byId']>;
+//   ^?
 type PostByIdOutput = inferProcedureOutput<AppRouter['post']['byId']>;
+//   ^?
 ```
 
 For subscriptions, you can infer the subscription input and the emitted data type:
 
-```ts title="client.ts"
+```ts twoslash title="client.ts"
+// @module: esnext
+// @module: esnext
+// @filename: server.ts
+// ---cut---
+
+import { initTRPC } from '@trpc/server';
+import { z } from "zod";
+
+const t = initTRPC.create();
+
+const appRouter = t.router({
+  post: t.router({
+    list: t.procedure
+      .query(() => {
+        // imaginary db call
+        return [{ id: 1, title: 'tRPC is the best!' }];
+    }),
+    byId: t.procedure
+      .input(z.string())
+      .query((opts) => {
+        // imaginary db call
+        return { id: 1, title: 'tRPC is the best!' };
+    }),
+    create: t.procedure
+      .input(z.object({ title: z.string(), text: z.string(), }))
+      .mutation((opts) => {
+        // imaginary db call
+        return { id: 1, ...opts.input };
+    }),
+    onPostAdd: t.procedure
+      .input(z.object({ authorId: z.string() }))
+      .subscription(async function* ({ input }) {
+        // imaginary event source
+        yield {
+          id: 1,
+          title: 'tRPC is the best!',
+          authorId: input.authorId,
+        };
+    }),
+  }),
+});
+
+export type AppRouter = typeof appRouter;
+// @filename: client.ts
+// ---cut---
 import type {
   inferSubscriptionInput,
   inferSubscriptionOutput,
@@ -100,14 +243,74 @@ import type {
 import type { AppRouter } from './server';
 
 type OnPostAddInput = inferSubscriptionInput<AppRouter['post']['onPostAdd']>;
+//   ^?
 type OnPostAddOutput = inferSubscriptionOutput<AppRouter['post']['onPostAdd']>;
+//   ^?
 ```
 
 ## Infer `TRPCClientError` types
 
 It's also useful to infer the error type for your `AppRouter`
 
-```ts title="client.ts"
+```ts twoslash title="client.ts"
+// @module: esnext
+// @module: esnext
+// @filename: server.ts
+// ---cut---
+
+import { initTRPC } from '@trpc/server';
+import { z } from "zod";
+
+const t = initTRPC.create();
+
+const appRouter = t.router({
+  post: t.router({
+    list: t.procedure
+      .query(() => {
+        // imaginary db call
+        return [{ id: 1, title: 'tRPC is the best!' }];
+    }),
+    byId: t.procedure
+      .input(z.string())
+      .query((opts) => {
+        // imaginary db call
+        return { id: 1, title: 'tRPC is the best!' };
+    }),
+    create: t.procedure
+      .input(z.object({ title: z.string(), text: z.string(), }))
+      .mutation((opts) => {
+        // imaginary db call
+        return { id: 1, ...opts.input };
+    }),
+    onPostAdd: t.procedure
+      .input(z.object({ authorId: z.string() }))
+      .subscription(async function* ({ input }) {
+        // imaginary event source
+        yield {
+          id: 1,
+          title: 'tRPC is the best!',
+          authorId: input.authorId,
+        };
+    }),
+  }),
+});
+
+export type AppRouter = typeof appRouter;
+
+// @filename: trpc.ts
+import { createTRPCClient, httpBatchLink } from "@trpc/client";
+import type { AppRouter } from "./server";
+
+export const trpc = createTRPCClient<AppRouter>({
+  links: [
+    httpBatchLink({
+      url: "http://localhost:3000/api/trpc",
+    }),
+  ],
+});
+
+// @filename: client.ts
+// ---cut---
 import { TRPCClientError } from '@trpc/client';
 import type { AppRouter } from './server';
 import { trpc } from './trpc';
@@ -125,6 +328,7 @@ async function main() {
     if (isTRPCClientError(cause)) {
       // `cause` is now typed as your router's `TRPCClientError`
       console.log('data', cause.data);
+      //                        ^?
     } else {
       // [...]
     }

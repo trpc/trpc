@@ -12,7 +12,7 @@ Procedure metadata allows you to add an optional procedure specific `meta` prope
 
 ## Create router with typed metadata
 
-```tsx
+```tsx twoslash
 import { initTRPC } from '@trpc/server';
 
 type Context = { user: { name: string } | null };
@@ -30,7 +30,7 @@ export const appRouter = t.router({
 
 ## Example with per route authentication settings
 
-```tsx title="server.ts"
+```tsx twoslash title="server.ts"
 import { initTRPC, TRPCError } from '@trpc/server';
 
 type Context = { user: { name: string } | null };
@@ -68,7 +68,7 @@ export const appRouter = t.router({
 
 You can set default values for your meta type, and if you chain meta on top of a base procedure it will be shallow merged.
 
-```tsx
+```tsx twoslash
 import { initTRPC } from '@trpc/server';
 
 type Context = { user: { name: string } | null };

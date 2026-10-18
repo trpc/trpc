@@ -1,0 +1,53 @@
+{
+  "name": "@samples/v11",
+  "private": true,
+  "description": "The app the v11 docs' Twoslash blocks compile in, against tRPC v11 from npm (the canary of the `main` the docs were copied from), with what trpc.io's blocks import",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc"
+  },
+  "dependencies": {
+    "@fastify/websocket": "11.3.4",
+    "@remix-run/node": "2.17.5",
+    "@solidjs/start": "2.0.6",
+    "@tanstack/react-query": "5.104.1",
+    "@trpc/client": "11.21.1-canary.20.10e2ef98f",
+    "@trpc/next": "11.21.1-canary.20.10e2ef98f",
+    "@trpc/react-query": "11.21.1-canary.20.10e2ef98f",
+    "@trpc/server": "11.21.1-canary.20.10e2ef98f",
+    "@trpc/tanstack-react-query": "11.21.1-canary.20.10e2ef98f",
+    "arktype": "2.2.8",
+    "astro": "7.4.0",
+    "cors": "2.8.6",
+    "devalue": "5.9.2",
+    "effect": "3.22.2",
+    "event-source-polyfill": "1.0.31",
+    "express": "5.3.0",
+    "fastify": "5.12.7",
+    "next": "16.4.1",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "react-error-boundary": "6.1.6",
+    "runtypes": "7.0.5",
+    "scale-codec": "0.13.0",
+    "server-only": "0.0.1",
+    "superjson": "2.2.6",
+    "superstruct": "2.0.2",
+    "sury": "11.0.0",
+    "valibot": "1.5.0",
+    "ws": "8.22.0",
+    "yup": "1.7.1",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@types/aws-lambda": "8.10.164",
+    "@types/cors": "2.8.19",
+    "@types/event-source-polyfill": "1.0.5",
+    "@types/express": "5.0.6",
+    "@types/node": "26.6.4",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@types/ws": "8.18.2",
+    "typescript": "^7.0.2"
+  }
+}

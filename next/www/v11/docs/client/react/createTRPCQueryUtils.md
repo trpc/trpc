@@ -25,7 +25,33 @@ If you need access to the client directly, you can use the `client` object that 
 
 Now in our route loader, when we navigate the object `createTRPCQueryUtils` gives us and reach the `post.all` query, we'll get access to our query helpers!
 
-```tsx title="MyPage.tsx"
+```tsx twoslash title="MyPage.tsx"
+// @target: esnext
+// @filename: server.ts
+// ---cut---
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+
+const t = initTRPC.create();
+
+const appRouter = t.router({
+  post: t.router({
+    all: t.procedure.query(() => {
+      return {
+        posts: [
+          { id: 1, title: 'everlong' },
+          { id: 2, title: 'After Dark' },
+        ],
+      };
+    }),
+  }),
+});
+
+export type AppRouter = typeof appRouter;
+// @filename: MyPage.tsx
+declare function useLoaderData(): unknown;
+import React from 'react';
+// ---cut---
 import { QueryClient } from '@tanstack/react-query';
 import { createTRPCQueryUtils, createTRPCReact } from '@trpc/react-query';
 import type { AppRouter } from './server';

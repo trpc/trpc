@@ -25,7 +25,15 @@ Options are identical to [`httpBatchLink options`](./httpBatchLink.md#options), 
 
 You can import and add the `httpBatchStreamLink` to the `links` array as such:
 
-```ts title="client/index.ts"
+```ts twoslash title="client/index.ts"
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
+
+// @filename: client.ts
+// ---cut---
 import { createTRPCClient, httpBatchStreamLink } from '@trpc/client';
 import type { AppRouter } from './server';
 
@@ -40,7 +48,24 @@ const client = createTRPCClient<AppRouter>({
 
 After that, you can make use of batching by setting all your procedures in a `Promise.all`. The code below will produce exactly **one** HTTP request and on the server exactly **one** database query:
 
-```ts
+```ts twoslash
+// @target: esnext
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+const t = initTRPC.create();
+export const appRouter = t.router({
+  post: t.router({
+    byId: t.procedure.input(z.number()).query(({ input }) => ({ id: input, title: `Post ${input}` })),
+  }),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: client.ts
+import { createTRPCClient, httpBatchStreamLink } from '@trpc/client';
+import type { AppRouter } from './server';
+const trpc = createTRPCClient<AppRouter>({ links: [httpBatchStreamLink({ url: 'http://localhost:3000' })] });
+// ---cut---
 const somePosts = await Promise.all([
   trpc.post.byId.query(1),
   trpc.post.byId.query(2),
@@ -52,7 +77,15 @@ const somePosts = await Promise.all([
 
 When batching requests together, the behavior of a regular `httpBatchLink` is to wait for all requests to finish before sending the response. If you want to send responses as soon as they are ready, you can use `httpBatchStreamLink` instead. This is useful for long-running requests.
 
-```ts title="client/index.ts"
+```ts twoslash title="client/index.ts"
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
+
+// @filename: client.ts
+// ---cut---
 import { createTRPCClient, httpBatchStreamLink } from '@trpc/client';
 import type { AppRouter } from './server';
 
@@ -75,7 +108,36 @@ Compared to a regular `httpBatchLink`, a `httpBatchStreamLink` will:
 
 You can try this out on the homepage of tRPC.io: [https://trpc.io/?try=minimal#try-it-out](https://trpc.io/?try=minimal#try-it-out)
 
-```ts
+```ts twoslash
+// @target: esnext
+// @filename: trpc.ts
+import { initTRPC } from '@trpc/server';
+
+const t = initTRPC.create({});
+
+export const router = t.router;
+export const publicProcedure = t.procedure;
+
+// @filename: server.ts
+// ---cut---
+import { publicProcedure, router } from './trpc';
+
+const appRouter = router({
+  examples: {
+    iterable: publicProcedure.query(async function* () {
+      for (let i = 0; i < 3; i++) {
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        yield i;
+      }
+    }),
+  },
+});
+
+export type AppRouter = typeof appRouter;
+
+
+// @filename: client.ts
+// ---cut---
 import { createTRPCClient, httpBatchStreamLink } from '@trpc/client';
 import type { AppRouter } from './server';
 
@@ -87,9 +149,11 @@ const trpc = createTRPCClient<AppRouter>({
   ],
 });
 const iterable = await trpc.examples.iterable.query();
+//      ^?
 
 for await (const value of iterable) {
   console.log('Iterable:', value);
+  //                         ^?
 }
 ```
 
@@ -143,7 +207,7 @@ You can check out the source code for this link on [GitHub.](https://github.com/
 
 When setting up your root config, you can pass in a `jsonl` option to configure a ping option to keep the connection alive.
 
-```ts
+```ts twoslash
 import { initTRPC } from '@trpc/server';
 
 const t = initTRPC.create({

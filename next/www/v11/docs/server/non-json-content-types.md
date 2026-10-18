@@ -12,7 +12,11 @@ tRPC supports multiple content types as procedure inputs: JSON-serializable data
 
 By default, tRPC sends and receives JSON-serializable data. No extra configuration is needed — any input that can be serialized to JSON works out of the box with all links (`httpLink`, `httpBatchLink`, `httpBatchStreamLink`).
 
-```ts
+```ts twoslash
+// @target: esnext
+import { initTRPC } from '@trpc/server';
+// ---cut---
+
 import { z } from 'zod';
 
 export const t = initTRPC.create();
@@ -36,7 +40,15 @@ In addition to JSON, tRPC can use FormData, File, and other binary types as proc
 
 `httpLink` supports non-JSON content types out of the box — if you're only using this link, your existing setup should work immediately.
 
-```ts
+```ts twoslash
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
+
+// @filename: client.ts
+// ---cut---
 import { createTRPCClient, httpLink } from '@trpc/client';
 import type { AppRouter } from './server';
 
@@ -51,7 +63,15 @@ createTRPCClient<AppRouter>({
 
 However, not all links support these content types. If you're using `httpBatchLink` or `httpBatchStreamLink`, you will need to include a `splitLink` and route requests based on the content type.
 
-```ts
+```ts twoslash
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
+
+// @filename: client.ts
+// ---cut---
 import {
   createTRPCClient,
   httpBatchLink,
@@ -81,7 +101,16 @@ createTRPCClient<AppRouter>({
 If you are using `transformer` in your tRPC server, TypeScript requires that your tRPC client link defines `transformer` as well.
 Use this example as a base:
 
-```ts
+```ts twoslash
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+import superjson from 'superjson';
+const t = initTRPC.create({ transformer: superjson });
+export const appRouter = t.router({});
+export type AppRouter = typeof appRouter;
+
+// @filename: client.ts
+// ---cut---
 import {
   createTRPCClient,
   httpBatchLink,
@@ -122,7 +151,14 @@ createTRPCClient<AppRouter>({
 > When a request is handled by tRPC, it takes care of parsing the request body based on the `Content-Type` header of the request.  
 > If you encounter errors like `Failed to parse body as XXX`, make sure that your server (e.g., Express, Next.js) isn't parsing the request body before tRPC handles it.
 >
-> ```ts
+> ```ts twoslash
+> // @filename: router.ts
+> import { initTRPC } from '@trpc/server';
+> const t = initTRPC.create();
+> export const appRouter = t.router({});
+>
+> // @filename: app.ts
+> // ---cut---
 > // Example in express
 > import express from 'express';
 > import * as trpcExpress from '@trpc/server/adapters/express';
@@ -145,7 +181,11 @@ createTRPCClient<AppRouter>({
 
 FormData is natively supported, and for more advanced usage you could also combine this with a library like [zod-form-data](https://www.npmjs.com/package/zod-form-data) to validate inputs in a type-safe way.
 
-```ts
+```ts twoslash
+// @target: esnext
+import { initTRPC } from '@trpc/server';
+// ---cut---
+
 import { z } from 'zod';
 
 export const t = initTRPC.create();
@@ -154,6 +194,7 @@ const publicProcedure = t.procedure;
 export const appRouter = t.router({
   hello: publicProcedure.input(z.instanceof(FormData)).mutation((opts) => {
     const data = opts.input;
+    //    ^?
     return {
       greeting: `Hello ${data.get('name')}`,
     };
@@ -167,7 +208,11 @@ For a more advanced code sample you can see our [example project here](https://g
 
 tRPC converts many octet content types to a `ReadableStream` which can be consumed in a procedure. Currently these are `Blob` `Uint8Array` and `File`.
 
-```ts
+```ts twoslash
+// @target: esnext
+import { initTRPC } from '@trpc/server';
+// ---cut---
+
 import { octetInputParser } from '@trpc/server/http';
 
 export const t = initTRPC.create();
@@ -176,6 +221,7 @@ const publicProcedure = t.procedure;
 export const appRouter = t.router({
   upload: publicProcedure.input(octetInputParser).mutation((opts) => {
     const data = opts.input;
+    //    ^?
     return {
       valid: true,
     };

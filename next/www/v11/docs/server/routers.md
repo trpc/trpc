@@ -11,7 +11,9 @@ To begin building your tRPC-based API, you'll first need to define your router. 
 
 You should initialize tRPC **exactly once** per application. Multiple instances of tRPC will cause issues.
 
-```ts title="server/trpc.ts"
+```ts twoslash title="server/trpc.ts"
+// @filename: trpc.ts
+// ---cut---
 import { initTRPC } from '@trpc/server';
 
 // You can use any variable name you like.
@@ -30,7 +32,17 @@ Next, let's define a router with a procedure to use in our application. We have 
 
 In order for these endpoints to be exposed to the frontend, your [Adapter](./adapters.md) should be configured with your `appRouter` instance.
 
-```ts title="server/_app.ts"
+```ts twoslash title="server/_app.ts"
+// @filename: trpc.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+
+export const publicProcedure = t.procedure;
+export const router = t.router;
+
+// @filename: _app.ts
+import * as trpc from '@trpc/server';
+// ---cut---
 import { publicProcedure, router } from './trpc';
 
 const appRouter = router({
@@ -48,7 +60,18 @@ When you define an inline sub-router, you can represent your router as a plain o
 
 In the below example, `nested1` and `nested2` are equal:
 
-```ts title="server/_app.ts"
+```ts twoslash title="server/_app.ts"
+// @filename: trpc.ts
+import { initTRPC } from '@trpc/server';
+const t = initTRPC.create();
+
+
+export const middleware = t.middleware;
+export const publicProcedure = t.procedure;
+export const router = t.router;
+
+// @filename: _app.ts
+// ---cut---
 import * as trpc from '@trpc/server';
 import { publicProcedure, router } from './trpc';
 
@@ -76,7 +99,13 @@ When initializing your router, tRPC allows you to:
 
 You can use method chaining to customize your `t`-object on initialization. For example:
 
-```ts
+```ts twoslash
+import { initTRPC } from '@trpc/server';
+
+type Context = { userId: string };
+type Meta = { description: string };
+
+// ---cut---
 const t = initTRPC.context<Context>().meta<Meta>().create({
   /* [...] */
 });
@@ -84,7 +113,10 @@ const t = initTRPC.context<Context>().meta<Meta>().create({
 
 ### Runtime Configuration
 
-```ts
+```ts twoslash
+type DataTransformerOptions = any;
+type ErrorFormatter = any;
+// ---cut---
 interface RootConfig {
   /**
    * Use a data transformer

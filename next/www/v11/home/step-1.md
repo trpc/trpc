@@ -1,4 +1,8 @@
-```ts
+```ts twoslash
+import { initTRPC } from '@trpc/server';
+import z from 'zod';
+
+// ---cut---
 const t = initTRPC.create();
 
 const router = t.router;
@@ -9,6 +13,7 @@ const appRouter = router({
     .input(z.object({ name: z.string() }))
     .query((opts) => {
       const { input } = opts;
+      //      ^?
 
       return `Hello ${input.name}` as const;
   }),

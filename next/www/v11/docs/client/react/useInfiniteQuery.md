@@ -14,7 +14,14 @@ order: 59
 
 ## Example Procedure
 
-```tsx title="server/routers/_app.ts"
+```tsx twoslash title="server/routers/_app.ts"
+// @filename: server/routers/_app.ts
+declare const prisma: {
+  post: {
+    findMany: (opts: any) => Promise<{ myCursor: number }[]>;
+  };
+};
+// ---cut---
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
@@ -61,7 +68,35 @@ export const appRouter = t.router({
 
 ## Example React Component
 
-```tsx title="components/MyComponent.tsx"
+```tsx twoslash title="components/MyComponent.tsx"
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+const t = initTRPC.create();
+const appRouter = t.router({
+  infinitePosts: t.procedure
+    .input(z.object({
+      limit: z.number().min(1).max(100).nullish(),
+      cursor: z.number().nullish(),
+      direction: z.enum(['forward', 'backward']),
+    }))
+    .query(({ input }) => {
+      return {
+        items: [] as { id: string; title: string }[],
+        nextCursor: 1 as number | undefined,
+      };
+    }),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: utils/trpc.tsx
+import { createTRPCReact } from '@trpc/react-query';
+import type { AppRouter } from '../server';
+export const trpc = createTRPCReact<AppRouter>();
+
+// @filename: components/MyComponent.tsx
+import React from 'react';
+// ---cut---
 import { trpc } from '../utils/trpc';
 
 export function MyComponent() {
@@ -84,7 +119,42 @@ export function MyComponent() {
 
 This helper gets the currently cached data from an existing infinite query
 
-```tsx title="components/MyComponent.tsx"
+```tsx twoslash title="components/MyComponent.tsx"
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+const t = initTRPC.create();
+const appRouter = t.router({
+  infinitePosts: t.router({
+    list: t.procedure
+      .input(z.object({
+        limit: z.number().min(1).max(100).nullish(),
+        cursor: z.number().nullish(),
+        direction: z.enum(['forward', 'backward']).optional(),
+      }))
+      .query(({ input }) => {
+        return {
+          items: [] as { id: string; title: string; status: string }[],
+          nextCursor: 1 as number | undefined,
+        };
+      }),
+    add: t.procedure
+      .input(z.object({ title: z.string() }))
+      .mutation(({ input }) => {
+        return { id: '1', title: input.title };
+      }),
+  }),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: utils/trpc.tsx
+import { createTRPCReact } from '@trpc/react-query';
+import type { AppRouter } from '../server';
+export const trpc = createTRPCReact<AppRouter>();
+
+// @filename: components/MyComponent.tsx
+import React from 'react';
+// ---cut---
 import { trpc } from '../utils/trpc';
 
 export function MyComponent() {
@@ -104,7 +174,42 @@ export function MyComponent() {
 
 This helper allows you to update a query's cached data
 
-```tsx title="components/MyComponent.tsx"
+```tsx twoslash title="components/MyComponent.tsx"
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+const t = initTRPC.create();
+const appRouter = t.router({
+  infinitePosts: t.router({
+    list: t.procedure
+      .input(z.object({
+        limit: z.number().min(1).max(100).nullish(),
+        cursor: z.number().nullish(),
+        direction: z.enum(['forward', 'backward']).optional(),
+      }))
+      .query(({ input }) => {
+        return {
+          items: [] as { id: string; title: string; status: string }[],
+          nextCursor: 1 as number | undefined,
+        };
+      }),
+    delete: t.procedure
+      .input(z.object({ id: z.string() }))
+      .mutation(({ input }) => {
+        return { id: input.id };
+      }),
+  }),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: utils/trpc.tsx
+import { createTRPCReact } from '@trpc/react-query';
+import type { AppRouter } from '../server';
+export const trpc = createTRPCReact<AppRouter>();
+
+// @filename: components/MyComponent.tsx
+import React from 'react';
+// ---cut---
 import { trpc } from '../utils/trpc';
 
 export function MyComponent() {

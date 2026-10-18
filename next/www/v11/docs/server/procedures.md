@@ -17,7 +17,7 @@ Procedures in tRPC are very flexible primitives to create backend functions. The
 
 The `t` object you create during tRPC setup returns an initial `t.procedure` which all other procedures are built on:
 
-```ts
+```ts twoslash
 import { initTRPC } from '@trpc/server';
 import { z } from 'zod';
 
@@ -53,8 +53,111 @@ In the below code, we're using reusable base procedures to build common use-case
 
 > This is a simplified example; in practice you may want to use some combination of [Headers](../client/headers.md), [Context](./context.md), [Middleware](./middlewares.md), and [Metadata](./metadata.md), to [authenticate](https://en.wikipedia.org/wiki/Authentication) and [authorize](./authorization.md) your users.
 
-```ts
+```ts twoslash
+// @target: esnext
 import { initTRPC, TRPCError } from '@trpc/server';
+import { z } from 'zod';
+
+type Organization = {
+  id: string;
+  name: string;
+};
+type Membership = {
+  role: 'ADMIN' | 'MEMBER';
+  Organization: Organization;
+};
+type User = {
+  id: string;
+  memberships: Membership[];
+};
+type Context = {
+  /**
+   * User is nullable
+   */
+  user: User | null;
+};
+
+const t = initTRPC.context<Context>().create();
+
+export const publicProcedure = t.procedure;
+
+// procedure that asserts that the user is logged in
+export const authedProcedure = t.procedure.use(async function isAuthed(opts) {
+  const { ctx } = opts;
+  // `ctx.user` is nullable
+  if (!ctx.user) {
+    //     ^?
+    throw new TRPCError({ code: 'UNAUTHORIZED' });
+  }
+
+  return opts.next({
+    ctx: {
+      // ✅ user value is known to be non-null now
+      user: ctx.user,
+    },
+  });
+});
+
+// procedure that asserts a user is a member of a specific organization
+export const organizationProcedure = authedProcedure
+  .input(z.object({ organizationId: z.string() }))
+  .use(function isMemberOfOrganization(opts) {
+    const membership = opts.ctx.user.memberships.find(
+      (m) => m.Organization.id === opts.input.organizationId,
+    );
+    if (!membership) {
+      throw new TRPCError({
+        code: 'FORBIDDEN',
+      });
+    }
+    return opts.next({
+      ctx: {
+        Organization: membership.Organization,
+      },
+    });
+  });
+
+export const appRouter = t.router({
+  whoami: authedProcedure.query(async (opts) => {
+    // user is non-nullable here
+    const { ctx } = opts;
+    //      ^?
+    return ctx.user;
+  }),
+  addMember: organizationProcedure
+    .input(
+      z.object({
+        email: z.string().email(),
+      }),
+    )
+    .mutation((opts) => {
+      // ctx contains the non-nullable user & the organization being queried
+      const { ctx } = opts;
+      //       ^?
+
+      // input includes the validated email of the user being invited & the validated organizationId
+      const { input } = opts;
+      //       ^?
+
+      return '...';
+    }),
+});
+```
+
+## Inferring the options type of a "Base Procedure" {#inferProcedureBuilderResolverOptions}
+
+In addition to being able to [infer the input and output types](../client/vanilla/infer-types.md#inferring-input--output-types) of a procedure, you can also infer the options type of a specific procedure builder (or base procedure) using `inferProcedureBuilderResolverOptions`.
+
+This type helper is useful for declaring a type to a function's parameters. Like for example, separating the procedure's handler (main execution code) from its definition at the router, or for creating a helper function that works with multiple procedures.
+
+```ts twoslash
+// @target: esnext
+// ---cut---
+import {
+  inferProcedureBuilderResolverOptions,
+  initTRPC,
+  TRPCError,
+} from '@trpc/server';
 import { z } from 'zod';
 
 type Organization = {
@@ -95,6 +198,8 @@ export const authedProcedure = t.procedure.use(async function isAuthed(opts) {
     },
   });
 });
+// mock prisma
+let prisma = {} as any;
 
 // procedure that asserts a user is a member of a specific organization
 export const organizationProcedure = authedProcedure
@@ -115,37 +220,7 @@ export const organizationProcedure = authedProcedure
     });
   });
 
-export const appRouter = t.router({
-  whoami: authedProcedure.query(async (opts) => {
-    // user is non-nullable here
-    const { ctx } = opts;
-    return ctx.user;
-  }),
-  addMember: organizationProcedure
-    .input(
-      z.object({
-        email: z.string().email(),
-      }),
-    )
-    .mutation((opts) => {
-      // ctx contains the non-nullable user & the organization being queried
-      const { ctx } = opts;
-
-      // input includes the validated email of the user being invited & the validated organizationId
-      const { input } = opts;
-
-      return '...';
-    }),
-});
-```
-
-## Inferring the options type of a "Base Procedure" {#inferProcedureBuilderResolverOptions}
-
-In addition to being able to [infer the input and output types](../client/vanilla/infer-types.md#inferring-input--output-types) of a procedure, you can also infer the options type of a specific procedure builder (or base procedure) using `inferProcedureBuilderResolverOptions`.
-
-This type helper is useful for declaring a type to a function's parameters. Like for example, separating the procedure's handler (main execution code) from its definition at the router, or for creating a helper function that works with multiple procedures.
-
-```ts
+// ---cut---
 async function getMembersOfOrganization(
   opts: inferProcedureBuilderResolverOptions<typeof organizationProcedure>,
 ) {

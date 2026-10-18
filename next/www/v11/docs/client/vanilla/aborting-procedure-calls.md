@@ -8,7 +8,19 @@ order: 47
 
 tRPC supports the standard `AbortController`/`AbortSignal` API for aborting procedures. All you have to do is pass an `AbortSignal` to the query or mutation options, and call the `AbortController` instance's `abort` method if you need to cancel the request.
 
-```ts title="utils.ts"
+```ts twoslash title="utils.ts"
+// @target: esnext
+// @filename: server.ts
+import { initTRPC } from '@trpc/server';
+import { z } from 'zod';
+const t = initTRPC.create();
+const appRouter = t.router({
+  userById: t.procedure.input(z.string()).query(({ input }) => ({ id: input, name: 'Bilbo' })),
+});
+export type AppRouter = typeof appRouter;
+
+// @filename: client.ts
+// ---cut---
 import { createTRPCClient, httpBatchLink } from '@trpc/client';
 import type { AppRouter } from './server';
 
