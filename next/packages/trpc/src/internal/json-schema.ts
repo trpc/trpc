@@ -1,5 +1,5 @@
 import { Schema } from 'effect';
-import type { AnySchema } from '../server/schema.ts';
+import type { AnySchema } from '../server/validation/index.ts';
 
 /**
  * A JSON Schema (draft 2020-12, which OpenAPI 3.1 uses).

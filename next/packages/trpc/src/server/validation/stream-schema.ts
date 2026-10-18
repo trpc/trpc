@@ -1,5 +1,5 @@
 import type { Stream } from 'effect';
-import type { IsAny } from '../internal/types.ts';
+import type { IsAny } from '../../internal/types.ts';
 import type { AnySchema, InOf, OutOf, SchemaServices } from './schema.ts';
 
 /**

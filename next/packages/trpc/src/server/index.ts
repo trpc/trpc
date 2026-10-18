@@ -109,27 +109,25 @@ export {
   type inferRouterOutputs,
   type inferRouterServices,
 } from './router.ts';
-export type {
-  AnySchema,
-  EffectInputIssue,
-  inferInputIssue,
-  InputIssue,
-  InputValidationError,
-  InputValidationErrorData,
-  IssuePath,
-  SchemaInputErrorData,
-  SchemaValidationError,
-  StandardIssue,
-  StandardSchemaV1,
-  ZodInputIssue,
-  ZodInputIssues,
-} from './schema.ts';
 export {
+  type AnySchema,
+  type EffectInputIssue,
+  type inferInputIssue,
+  type InputIssue,
+  type InputValidationError,
+  type InputValidationErrorData,
+  type IssuePath,
+  type SchemaInputErrorData,
+  type SchemaValidationError,
+  type StandardIssue,
+  type StandardSchemaV1,
+  type ZodInputIssue,
+  type ZodInputIssues,
   stream,
   type OutputSchema,
   type StreamOutput,
   type StreamSchema,
-} from './stream-schema.ts';
+} from './validation/index.ts';
 export { tracked, type TrackedEnvelope } from './tracked.ts';
 export {
   makeMemoryPublisher,

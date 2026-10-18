@@ -1,6 +1,6 @@
 import { Data } from 'effect';
 import type * as Cause from 'effect/Cause';
-import type { AnySchema, OutOf } from '../server/schema.ts';
+import type { AnySchema, OutOf } from '../server/validation/index.ts';
 
 /**
  * Built-in error codes and their default HTTP status.

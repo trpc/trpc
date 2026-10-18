@@ -1,8 +1,7 @@
 import type { Context } from 'effect';
 import type { AnyTrpcError } from '../internal/error.ts';
 import type { IsAny, ProcedureType } from '../internal/types.ts';
-import type { AnySchema } from './schema.ts';
-import type { OutputSchema } from './stream-schema.ts';
+import type { AnySchema, OutputSchema } from './validation/index.ts';
 
 /**
  * A declared error (07 A): its status, default message and `data` schema.

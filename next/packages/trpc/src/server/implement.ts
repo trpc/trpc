@@ -33,7 +33,7 @@ import {
   type AnyProcedure,
   type Procedure,
 } from './procedure.ts';
-import type { EventOutput, ResultOf } from './stream-schema.ts';
+import type { EventOutput, ResultOf } from './validation/index.ts';
 import type { TrackedEnvelope } from './tracked.ts';
 
 /** A contract procedure's def, read by index (see `ProcedureDefOf`). */

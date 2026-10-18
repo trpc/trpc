@@ -8,8 +8,8 @@ import {
   validate,
   type AnySchema,
   type InputValidationErrorData,
-} from '../../server/schema.ts';
-import { isStreamSchema } from '../../server/stream-schema.ts';
+  isStreamSchema,
+} from '../../server/validation/index.ts';
 import { link, type TrpcLink } from '../link.ts';
 
 /**

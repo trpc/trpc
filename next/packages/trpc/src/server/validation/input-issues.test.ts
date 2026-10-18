@@ -15,7 +15,7 @@ import {
   type StandardIssue,
   type StandardSchemaV1,
 } from '@trpc12/trpc/server';
-import { createTestServer } from '../fixtures/server.ts';
+import { createTestServer } from '../../fixtures/server.ts';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
 

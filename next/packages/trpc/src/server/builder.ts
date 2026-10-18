@@ -34,8 +34,6 @@ import type {
   OutOf,
   SchemaServices,
   SchemaValidationError,
-} from './schema.ts';
-import type {
   EventOutput,
   OutputIn,
   OutputOut,
@@ -44,7 +42,7 @@ import type {
   ResultOf,
   StreamedOutput,
   StreamOutput,
-} from './stream-schema.ts';
+} from './validation/index.ts';
 import type { TrackedEnvelope } from './tracked.ts';
 
 /**

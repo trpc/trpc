@@ -6,7 +6,7 @@ import {
   SchemaIssue,
   type SchemaAST,
 } from 'effect';
-import { TrpcError } from '../internal/error.ts';
+import { TrpcError } from '../../internal/error.ts';
 
 /**
  * A [Standard Schema](https://standardschema.dev) issue.

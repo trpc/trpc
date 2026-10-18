@@ -31,12 +31,10 @@ import {
   validate,
   validateThen,
   type AnySchema,
-} from './schema.ts';
-import {
   isStreamSchema,
   type OutputSchema,
   type StreamSchema,
-} from './stream-schema.ts';
+} from './validation/index.ts';
 import { isTracked, tracked } from './tracked.ts';
 
 const unexpectedErrors = new WeakSet<AnyTrpcError>();

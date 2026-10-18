@@ -68,15 +68,13 @@ import type {
   OutOf,
   SchemaServices,
   SchemaValidationError,
-} from '../server/schema.ts';
-import type {
   EventOutput,
   OutputIn,
   OutputOut,
   OutputSchema,
   OutputServices,
   StreamedOutput,
-} from '../server/stream-schema.ts';
+} from '../server/validation/index.ts';
 import type { TrackedEnvelope } from '../server/tracked.ts';
 import type { Unlazy } from '../server/router.ts';
 
