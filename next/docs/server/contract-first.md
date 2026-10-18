@@ -89,4 +89,4 @@ const client = createTrpcClient({
 
 ## Credits
 
-Contracts and `t.implement()` follow [oRPC](https://orpc.dev)'s contract-first support.
+[Zodios](https://www.zodios.org), by [ecyrbe](https://github.com/ecyrbe), pioneered schema-first APIs in TypeScript, with one definition of every endpoint for the client and the server, and [ts-rest](https://ts-rest.com), by [Oliver Butler](https://github.com/oliverbutler), made the contract a router that the server implements. v12's contracts and `t.implement()` follow [oRPC](https://orpc.dev)'s take on them.

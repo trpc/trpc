@@ -190,21 +190,18 @@ const credits: ReadonlyArray<Credit> = [
   {
     body: (
       <>
-        oRPC&apos;s feature table is the bar v12 measures itself against, and
-        many of v12&apos;s designs started as oRPC&apos;s: contract-first
-        procedures, OpenAPI from the same router, declared errors with{' '}
-        <code>safe()</code> result tuples, lifecycle hooks, rate limits, locks
-        and hibernating Durable Objects.
+        Zodios pioneered schema-first APIs in TypeScript: one definition of
+        every endpoint, with zod schemas, types and validates both the client
+        and the server that implements it.
       </>
     ),
     by: (
       <>
-        by <a href="https://github.com/dinwwwh">Định Lê</a> and{' '}
-        <a href="https://github.com/middleapi">middleapi</a>
+        by <a href="https://github.com/ecyrbe">ecyrbe</a>
       </>
     ),
-    name: 'oRPC',
-    url: 'https://orpc.dev',
+    name: 'Zodios',
+    url: 'https://www.zodios.org',
   },
   {
     body: (
@@ -223,6 +220,41 @@ const credits: ReadonlyArray<Credit> = [
     ),
     name: 'trpc-openapi',
     url: 'https://github.com/trpc/trpc-openapi',
+  },
+  {
+    body: (
+      <>
+        ts-rest put a contract at the heart of the API: a router of routes that
+        the server implements, the client calls and OpenAPI documents. oRPC
+        credits it for its contract-first design.
+      </>
+    ),
+    by: (
+      <>
+        by <a href="https://github.com/oliverbutler">Oliver Butler</a>
+      </>
+    ),
+    name: 'ts-rest',
+    url: 'https://ts-rest.com',
+  },
+  {
+    body: (
+      <>
+        oRPC&apos;s feature table is the bar v12 measures itself against, and
+        many of v12&apos;s designs follow oRPC&apos;s: contracts with{' '}
+        <code>implement()</code>, OpenAPI from the same router, declared errors
+        with <code>safe()</code> result tuples, lifecycle hooks, rate limits,
+        locks and hibernating Durable Objects.
+      </>
+    ),
+    by: (
+      <>
+        by <a href="https://github.com/dinwwwh">Định Lê</a> and{' '}
+        <a href="https://github.com/middleapi">middleapi</a>
+      </>
+    ),
+    name: 'oRPC',
+    url: 'https://orpc.dev',
   },
 ];
 
@@ -436,7 +468,8 @@ function HomePage() {
           <HashLink id="credits">Credits</HashLink>
         </h2>
         <p className="mb-8 max-w-2xl text-muted-foreground">
-          v12 builds on projects that got there first.
+          v12 builds on projects that got there first, listed in the order they
+          came.
         </p>
         <ul className="grid gap-4 md:grid-cols-2">
           {credits.map((credit) => (
