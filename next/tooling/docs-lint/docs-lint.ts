@@ -37,12 +37,15 @@ const languages: Record<string, Extension> = {
   javascript: 'js',
   jsx: 'jsx',
 };
-const filenameMarker = /^[ \t]*\/\/ @filename:[ \t]*\S+?\.(tsx?|jsx?)\b/;
+/** A twoslash file; its extension decides whether it's linted (`openapi.json` isn't). */
+const filenameMarker = /^[ \t]*\/\/ @filename:[ \t]*\S*?\.(\w+)[ \t]*$/;
 
 interface OpenBlock {
   readonly fence: string;
-  /** Undefined in a fence of another language. */
+  /** Undefined in a fence of another language, or a file of another type. */
   readonly extension: Extension | undefined;
+  /** Whether the fence is code, whose twoslash files split it. */
+  readonly code: boolean;
   readonly line: number;
   readonly lines: ReadonlyArray<string>;
 }
@@ -70,6 +73,7 @@ export const codeBlocks = (markdown: string): ReadonlyArray<CodeBlock> => {
         open = {
           fence: fence[1]!,
           extension: languages[fence[2]!],
+          code: languages[fence[2]!] !== undefined,
           line: index + 2,
           lines: [],
         };
@@ -87,7 +91,7 @@ export const codeBlocks = (markdown: string): ReadonlyArray<CodeBlock> => {
       open = undefined;
       continue;
     }
-    const file = open.extension ? filenameMarker.exec(text) : null;
+    const file = open.code ? filenameMarker.exec(text) : null;
     if (file) {
       keep(open);
       open = {

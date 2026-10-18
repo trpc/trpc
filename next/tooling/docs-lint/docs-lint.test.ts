@@ -50,6 +50,26 @@ test('codeBlocks splits a twoslash block at each // @filename:', () => {
   ]);
 });
 
+test('codeBlocks skips a twoslash file that is not code', () => {
+  const blocks = codeBlocks(
+    [
+      '```ts twoslash',
+      '// @filename: openapi.json',
+      '{ "openapi": "3.1.0" }',
+      '// @filename: scripts/openapi.ts',
+      'const a = 1;',
+      '```',
+    ].join('\n'),
+  );
+  expect(blocks).toEqual([
+    {
+      line: 4,
+      extension: 'ts',
+      code: '// @filename: scripts/openapi.ts\nconst a = 1;',
+    },
+  ]);
+});
+
 test('markdownPaths maps a block file back to its page', () => {
   expect(markdownPaths('docs/server/effect.md.3.ts:48:22: error')).toBe(
     'docs/server/effect.md:48:22: error',
