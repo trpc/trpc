@@ -123,6 +123,7 @@ Some recommendations depend on measurements. These are run as throwaway spikes, 
 - **Commits:** YOLO semantic commits straight to `v12` (`feat(server): …`, `docs(agent-docs): …`). No PRs for now.
 - **Precommit hook** formats, lints and runs related tests on staged files (22).
 - **Publishing:** none for now. Packages use the `@trpc12/trpc` name and `@trpc12/*` scope, and examples consume linked local packages.
+- **Versioning:** Changesets, one version per package; a bump also releases every package that depends on the bumped one ([`decisions/versioning.md`](./decisions/versioning.md)).
 
 ## 6. Phases
 

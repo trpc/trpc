@@ -4,5 +4,6 @@
 - Releases on the preview line create **no git tags** and **no GitHub Releases** on trpc/trpc.
 - Why: keeps trpc/trpc's tag list and Releases page for v11 while the preview churns.
 - Lost: per-version git refs and GitHub release notes for the preview. Changelogs, if any, live elsewhere.
-- Open: there's no release workflow yet ([`npm-names.md`](./npm-names.md)). Whatever ships vNext must publish without git tags or GitHub Releases (lerna-lite: `--no-git-tag-version` or `--no-push`; changesets: `--no-git-tag`; no `gh release create`). This stops applying at `12.0.0`. The v11 `release.yml` on `main` keeps tagging `v11.x.y`.
-- Lives in: the future vNext release workflow (not yet).
+- (agent) Releases use Changesets ([`versioning.md`](./versioning.md)): `privatePackages.tag: false` in `.changeset/config.json`, and publishing runs `changeset publish --no-git-tag`, with no `gh release create`. This stops applying at `12.0.0`. The v11 `release.yml` on `main` keeps tagging `v11.x.y`.
+- Open: there's no release workflow yet ([`versioning.md`](./versioning.md)).
+- Lives in: `next/.changeset/config.json`; the future vNext release workflow.
