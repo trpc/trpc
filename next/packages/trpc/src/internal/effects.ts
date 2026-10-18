@@ -1,20 +1,9 @@
 /**
- * Leaner takes on Effect helpers the client runs on. Each original carries
- * code these uses never reach (a concurrent mode, a logger, a latch), and
- * that code lands in every client bundle.
+ * Effect helpers the client's streams share.
  *
  * @internal
  */
-import {
-  Cause,
-  Channel,
-  Effect,
-  Exit,
-  Fiber,
-  Pull,
-  Scope,
-  Stream,
-} from 'effect';
+import { Effect, Stream } from 'effect';
 
 /**
  * `Stream.callback` options for a producer that must keep pace with its
@@ -23,72 +12,33 @@ import {
  */
 export const backpressure = { bufferSize: 16, strategy: 'suspend' } as const;
 
-const done: IteratorReturnResult<undefined> = { done: true, value: undefined };
-
 /**
- * `Stream.toAsyncIterable`, also ending quietly when `signal` aborts. A
- * failure while closing after the stream failed is dropped, not logged.
+ * `Stream.toAsyncIterable`, also ending quietly when `signal` aborts: the
+ * iterator returns, which interrupts a pending `next()` and closes the
+ * stream without starting it.
  * @internal
  */
 export function toAsyncIterable<A, E>(
   stream: Stream.Stream<A, E>,
   signal?: AbortSignal,
 ): AsyncIterable<A> {
+  if (!signal) return Stream.toAsyncIterable(stream);
   return {
     [Symbol.asyncIterator]() {
-      const scope = Scope.makeUnsafe();
-      let pull: Pull.Pull<ReadonlyArray<A>, E, void> | undefined;
-      let buffer: Iterator<A> | undefined;
-      let fiber:
-        | Fiber.Fiber<ReadonlyArray<A>, E | Cause.Done<void>>
-        | undefined;
-      let closed: Promise<IteratorResult<A>> | undefined;
-      const onAbort = () => void close(Exit.void);
-      const close = (exit: Exit.Exit<unknown, unknown>) => {
-        signal?.removeEventListener('abort', onAbort);
-        return (closed ??= Effect.runPromise(
-          Effect.as(
-            Effect.andThen(
-              fiber ? Fiber.interrupt(fiber) : Effect.void,
-              Scope.close(scope, exit),
-            ),
-            done,
-          ),
-        ));
-      };
-      if (signal?.aborted) void close(Exit.void);
-      else signal?.addEventListener('abort', onAbort, { once: true });
+      const release = () => signal.removeEventListener('abort', onAbort);
+      const iterator = Stream.toAsyncIterable(
+        Stream.ensuring(stream, Effect.sync(release)),
+      )[Symbol.asyncIterator]() as Required<AsyncIterator<A>>;
+      const onAbort = () => void iterator.return();
+      if (signal.aborted) onAbort();
+      else signal.addEventListener('abort', onAbort, { once: true });
       return {
-        async next() {
-          if (closed) return closed;
-          if (buffer) {
-            const next = buffer.next();
-            if (!next.done) return next;
-            buffer = undefined;
-          }
-          const current = (fiber = Effect.runFork(
-            pull ??
-              Effect.flatMap(
-                Channel.toPullScoped(Stream.toChannel(stream), scope),
-                (first) => (pull = first),
-              ),
-          ));
-          const exit = await Effect.runPromise(Fiber.await(current));
-          if (fiber === current) fiber = undefined;
-          if (Exit.isSuccess(exit)) {
-            buffer = exit.value[Symbol.iterator]();
-            return buffer.next();
-          }
-          if (Pull.isDoneCause(exit.cause)) return close(Exit.void);
-          if (closed && Cause.hasInterruptsOnly(exit.cause)) return closed;
-          await close(exit).catch(() => {});
-          throw Cause.squash(exit.cause);
+        next: () => iterator.next(),
+        return: () => {
+          release();
+          return iterator.return();
         },
-        return: () => close(Exit.void),
-        async throw(error: unknown) {
-          await close(Exit.die(error)).catch(() => {});
-          throw error;
-        },
+        throw: (error: unknown) => iterator.throw(error),
       };
     },
   };
