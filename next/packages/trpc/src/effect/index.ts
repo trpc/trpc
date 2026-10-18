@@ -52,8 +52,8 @@ import type {
 import type { ClientValue } from '../internal/types.ts';
 import type {
   AnyProcedure,
-  Procedure,
   ProcedureDef,
+  ProcedureDefOf,
 } from '../server/procedure.ts';
 import type { Unlazy } from '../server/router.ts';
 
@@ -68,17 +68,23 @@ export type DecorateEffectProcedure<
   P,
   TContext extends object = {},
   TLinks extends ChainTypes = {},
+> = P extends AnyProcedure
+  ? DecorateEffectDef<ProcedureDefOf<P>, TContext, TLinks>
+  : never;
+
+type DecorateEffectDef<
+  D extends ProcedureDef,
+  TContext extends object,
+  TLinks extends ChainTypes,
 > =
-  P extends Procedure<infer D>
-    ? Carries<D['type'], TLinks> extends false
-      ? {}
-      : DecorateEffectCarried<
-          D,
-          TContext,
-          TLinks,
-          TLinks extends { errors: infer E } ? E : never
-        >
-    : never;
+  Carries<D['type'], TLinks> extends false
+    ? {}
+    : DecorateEffectCarried<
+        D,
+        TContext,
+        TLinks,
+        TLinks extends { errors: infer E } ? E : never
+      >;
 
 type DecorateEffectCarried<
   D extends ProcedureDef,

@@ -1,6 +1,6 @@
 import type { Context } from 'effect';
 import type { AnyTrpcError } from '../internal/error.ts';
-import type { ProcedureType } from '../internal/types.ts';
+import type { IsAny, ProcedureType } from '../internal/types.ts';
 import type { AnySchema } from './schema.ts';
 import type { OutputSchema } from './stream-schema.ts';
 
@@ -127,8 +127,19 @@ export interface Procedure<TDef extends ProcedureDef> {
  */
 export type AnyProcedure = Procedure<any>;
 
-/** @internal */
-export type ProcedureDefOf<P> = P extends Procedure<infer D> ? D : never;
+/**
+ * A procedure's def, read by index rather than inferred from
+ * `Procedure<infer D>`: an inferred `D` is checked against `ProcedureDef`,
+ * which resolves every field (input issues included), about 7× the cost on
+ * a whole-router read. `any` reads as `ProcedureDef`, as inference gave.
+ * @internal
+ */
+export type ProcedureDefOf<P> =
+  IsAny<P> extends true
+    ? ProcedureDef
+    : P extends AnyProcedure
+      ? NonNullable<P['~trpc']['~types']>
+      : never;
 
 /**
  * What the client sends to a procedure.

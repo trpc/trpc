@@ -32,10 +32,12 @@ import {
   mergeMeta,
   type AnyProcedure,
   type Procedure,
-  type ProcedureDefOf,
 } from './procedure.ts';
 import type { EventOutput, ResultOf } from './stream-schema.ts';
 import type { TrackedEnvelope } from './tracked.ts';
+
+/** A contract procedure's def, read by index (see `ProcedureDefOf`). */
+type ContractDefOf<T extends AnyProcedure> = NonNullable<T['~trpc']['~types']>;
 
 /**
  * The builder state of an implementer leaf: the root's ctx and meta, the
@@ -113,12 +115,12 @@ export type ImplementedProcedure<
   TContract extends AnyProcedure,
   TServices,
 > = Procedure<{
-  type: ProcedureDefOf<TContract>['type'];
+  type: ContractDefOf<TContract>['type'];
   ctx: TDef['ctx'];
   meta: TDef['meta'];
-  input: ProcedureDefOf<TContract>['input'];
-  output: ProcedureDefOf<TContract>['output'];
-  errors: ProcedureDefOf<TContract>['errors'];
+  input: ContractDefOf<TContract>['input'];
+  output: ContractDefOf<TContract>['output'];
+  errors: ContractDefOf<TContract>['errors'];
   services: TDef['requires'] | Exclude<TServices, TDef['provided']>;
 }>;
 
@@ -142,7 +144,7 @@ type Terminals<TDef extends BuilderDef, TContract extends AnyProcedure> = {
     resolver: (
       opts: SubscriptionResolverOpts<TDef>,
     ) => $Ret &
-      EventsConstraint<TDef, ProcedureDefOf<TContract>['contract']['tracked']> &
+      EventsConstraint<TDef, ContractDefOf<TContract>['contract']['tracked']> &
       StrictErrors<$Ret> &
       UndeclaredCheck<TDef, SplitStream<$Ret>['errors']>,
   ) => ImplementedProcedure<TDef, TContract, SplitStream<$Ret>['services']>;
@@ -253,7 +255,7 @@ export type ProcedureImplementer<
   TDef extends BuilderDef,
   TContract extends AnyProcedure,
 > = ImplementerMethods<TDef, TContract> &
-  Pick<Terminals<TDef, TContract>, ProcedureDefOf<TContract>['type']>;
+  Pick<Terminals<TDef, TContract>, ContractDefOf<TContract>['type']>;
 
 /**
  * The mirror tree `t.implement(contract)` returns.
@@ -265,7 +267,7 @@ export type Implementer<
   TContract,
 > = TContract extends AnyProcedure
   ? ProcedureImplementer<
-      ImplementerDef<TRoot, ProcedureDefOf<TContract>['contract']>,
+      ImplementerDef<TRoot, ContractDefOf<TContract>['contract']>,
       TContract
     >
   : { readonly [K in keyof TContract]: Implementer<TRoot, TContract[K]> };
@@ -278,12 +280,12 @@ export type Implementer<
  */
 export type ImplementedRouter<TContract> = TContract extends AnyProcedure
   ? Procedure<{
-      type: ProcedureDefOf<TContract>['type'];
+      type: ContractDefOf<TContract>['type'];
       ctx: any;
       meta: any;
-      input: ProcedureDefOf<TContract>['input'];
-      output: ProcedureDefOf<TContract>['output'];
-      errors: ProcedureDefOf<TContract>['errors'];
+      input: ContractDefOf<TContract>['input'];
+      output: ContractDefOf<TContract>['output'];
+      errors: ContractDefOf<TContract>['errors'];
       services: any;
     }>
   : { readonly [K in keyof TContract]: ImplementedRouter<TContract[K]> };
@@ -366,7 +368,7 @@ type LeafPaths<
   $Err,
   P extends string = '',
 > = TContract extends AnyProcedure
-  ? [$Err] extends [ProcedureDefOf<TContract>['contract']['errors']]
+  ? [$Err] extends [ContractDefOf<TContract>['contract']['errors']]
     ? never
     : P
   : {
@@ -482,7 +484,7 @@ export interface ImplementerRoot<
 }
 
 type ContractMeta<TContract> = TContract extends AnyProcedure
-  ? ProcedureDefOf<TContract>['meta']
+  ? ContractDefOf<TContract>['meta']
   : { [K in keyof TContract]: ContractMeta<TContract[K]> }[keyof TContract];
 
 type MetaMismatch<TMeta, TContractMeta> = TContractMeta extends object

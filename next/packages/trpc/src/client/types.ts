@@ -11,8 +11,8 @@ import type {
 } from '../internal/types.ts';
 import type {
   AnyProcedure,
-  Procedure,
   ProcedureDef,
+  ProcedureDefOf,
 } from '../server/procedure.ts';
 import type { Unlazy } from '../server/router.ts';
 import type {
@@ -215,12 +215,19 @@ export type DecorateProcedure<
   TContext extends object = {},
   TForm extends OutputForm | undefined = undefined,
   TLinks extends ChainTypes = {},
+> = P extends AnyProcedure
+  ? DecorateDef<ProcedureDefOf<P>, TContext, TForm, TLinks>
+  : never;
+
+type DecorateDef<
+  D extends ProcedureDef,
+  TContext extends object,
+  TForm extends OutputForm | undefined,
+  TLinks extends ChainTypes,
 > =
-  P extends Procedure<infer D>
-    ? Carries<D['type'], TLinks> extends false
-      ? {}
-      : DecorateCarried<D, TContext, TForm, TLinks>
-    : never;
+  Carries<D['type'], TLinks> extends false
+    ? {}
+    : DecorateCarried<D, TContext, TForm, TLinks>;
 
 type DecorateCarried<
   D extends ProcedureDef,

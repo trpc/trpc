@@ -1,4 +1,5 @@
 import type {
+  IsAny,
   Simplify,
   TypeError,
   UnionToIntersection,
@@ -332,11 +333,13 @@ export type inferRouterInputs<R> = RouterMap<R, 'input'>;
  */
 export type inferRouterOutputs<R> = RouterMap<R, 'output'>;
 
-type AllDefs<R> = R extends AnyProcedure
-  ? ProcedureDefOf<R>
-  : { [K in keyof R]: AllDefs<Unlazy<R[K]>> }[keyof R];
+/** One field of every procedure's def; an untyped (`any`) subtree adds none. */
 type DefField<R, F extends keyof ProcedureDef> =
-  AllDefs<R> extends infer D ? (D extends ProcedureDef ? D[F] : never) : never;
+  IsAny<R> extends true
+    ? never
+    : R extends AnyProcedure
+      ? ProcedureDefOf<R>[F]
+      : { [K in keyof R]: DefField<Unlazy<R[K]>, F> }[keyof R];
 
 /**
  * The union of every procedure's typed errors.
