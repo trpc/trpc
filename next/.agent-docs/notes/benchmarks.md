@@ -54,7 +54,7 @@ Bundle size, minified / gzip (`pnpm bench bundle`):
   - JSON-safe outputs skip the framing conditionals; link batching read once per chain.
   - **Split:** the client half (3,000 typed calls) checks faster than oRPC's (about 0.41s vs 0.45s). The router half is the gap: 498k instantiations vs 311k, about 166 per procedure vs 104. The resolver checks (unmapped Effect failures, output, `ok()` short-circuits) cost about 40 per procedure and the inferred `Procedure` type about 12; cheaper spellings tried so far (`NoInfer`, pre-filters, nested checks) were all slower.
   - **Memory:** a v12 project with no procedures already takes 100 MB vs oRPC's 35 MB: that's parsing Effect's declarations (188 files). Importing Effect by subpath would save about 12 MB.
-- **Bundle size:** the client went from 35.0 to 30.5 kB gzipped, then 28.9 kB once the Promise client stopped bundling the client span ([Budgets](#budgets)): `sideEffects: false`, base64 with `btoa`/`atob`, trace headers and the client span without `effect/http`, lean sequential `forEach` and stream-to-iterable helpers. It's still 3.2× oRPC's: the Effect APIs the client runs on are about 20 kB gzipped on their own (`Effect.runPromise` alone is 7.5 kB), tRPC's own code about 12 kB ([`effect-client-bundle-size.md`](./effect-client-bundle-size.md)). Server bundles aren't a goal.
+- **Bundle size:** the client went from 35.0 to 30.5 kB gzipped, then 28.9 kB once the Promise client stopped bundling the client span ([Budgets](#budgets)): `sideEffects: false`, and copies of Effect APIs since swapped back for the APIs (33.2 kB, [`effect-apis-over-hand-rolled.md`](../decisions/effect-apis-over-hand-rolled.md)). It's still 3.2× oRPC's: the Effect APIs the client runs on are about 20 kB gzipped on their own (`Effect.runPromise` alone is 7.5 kB), tRPC's own code about 12 kB ([`effect-client-bundle-size.md`](./effect-client-bundle-size.md)). Server bundles aren't a goal.
 - Clinic profiles and the WebSocket and OpenAPI throughput rows of oRPC's table aren't measured yet.
 
 ## Budgets
@@ -63,10 +63,12 @@ Bundle size, minified / gzip (`pnpm bench bundle`):
 
 | client                                      |    gzip | ceiling (CI) | target |
 | ------------------------------------------- | ------: | -----------: | -----: |
-| minimal JSON (`httpLink`)                   | 25.9 kB |      26.0 kB |  18 kB |
-| full (`retryLink`, `httpLink`, danSON, SSE) | 29.3 kB |      29.4 kB |  25 kB |
+| minimal JSON (`httpLink`)                   | 29.3 kB |      29.4 kB |  18 kB |
+| full (`retryLink`, `httpLink`, danSON, SSE) | 33.2 kB |      33.4 kB |  25 kB |
 
 - **Raised, 2026-10-18:** fixes since the first cut added about 210 B gzipped to each client (minimal, full): streamed responses waiting for a slow client (3ba9cb525, +13 B, +33 B), the closed error union with `matchError()` (9be0d7e07, +90 B, +95 B), `httpLink` reading a JSON page that isn't an error body by its status (ad6d133c0, +26 B, +29 B; this one crossed the ceilings) and sync serializers failing on a nested `File` (6ef675ed1, +85 B, +82 B). They're behaviour the client needs, not bloat, so the ceilings moved to today's sizes plus the same 0.1 kB of room: 25,898 B and 29,304 B measured.
+
+- **Raised again, 2026-10-18:** the human: "reimplementing effect internals seems dumb no matter the reason, so get rid of that, that's the wrong optimisation". The client's copies of `Effect.forEach`, `Stream.toAsyncIterable`, `Stream.toReadableStream` and `Base64` are the Effect APIs again, adding 3,295 B to the minimal client and 3,860 B to the full one (per change in [`effect-apis-over-hand-rolled.md`](../decisions/effect-apis-over-hand-rolled.md)). The ceilings moved to today's sizes plus 0.1 kB: 29,254 B and 33,248 B measured.
 
 - **Cut so far:** the Promise client runs its links with `runLinks`. `runOperation`'s tracer check and client span never ran there (Promise clients run on Effect's native tracer), but they were bundled: `Tracer`, `Scope` spans and `encoding/Hex`, 1.7 kB gzipped on each client.
 - **The floor of links on Effect**, same bundler and gzip:
