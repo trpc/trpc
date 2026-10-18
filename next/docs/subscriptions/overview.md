@@ -83,7 +83,7 @@ While a subscription is quiet, the handler sends a `: ping` comment every 15 sec
 
 ## Reading with EventSource
 
-The stream is standard SSE, so a browser `EventSource` (or `curl`) can read a subscription without the client. Input goes in the query string as `httpLink` sends it (`/trpc/onPost?input={"channel":"news"}`, URL-encoded). Each `message` event's `data` is a serialized value. An `EventSource` reconnects with `Last-Event-ID` by itself, so close it on the `done` event, or it reconnects when the stream ends. Failures arrive as `error` events with `data`:
+The stream is standard SSE, so a browser `EventSource` (or `curl`) can read a subscription without the client. Input goes in the query string as `httpLink` sends it (`/trpc/onPost?input={"channel":"news"}`, URL-encoded). Each `message` event's `data` is a serialized value: for a `tracked()` event, its `{ id, data }`, with the id also in `event.lastEventId`. An `EventSource` reconnects with `Last-Event-ID` by itself, so close it on the `done` event, or it reconnects when the stream ends. Failures arrive as `error` events with `data`:
 
 ```ts twoslash
 // ---cut-start---
@@ -93,6 +93,8 @@ const source = new EventSource('/trpc/onPost');
 source.onmessage = (event) => render(JSON.parse(event.data));
 source.addEventListener('done', () => source.close());
 ```
+
+The [`examples/realtime`](../../examples/realtime/index.ts) app reads a room this way, next to `wsLink` clients, and both resume after the server restarts.
 
 ## Over WebSockets
 
