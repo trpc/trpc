@@ -7,7 +7,6 @@ import {
   runLinks,
   type AnyLink,
   type Operation,
-  type OperationStream,
   type TrpcLink,
   chainSerializer,
   chainSwitchNames,
@@ -15,7 +14,7 @@ import {
   withSerializer,
 } from '../link.ts';
 import type { RouterPaths } from '../types.ts';
-import { withResume, type Resume } from './resume.ts';
+import { retrying, withResume, type Retries } from './resume.ts';
 
 /** @internal */
 export type Chain = AnyLink | ReadonlyArray<AnyLink>;
@@ -253,19 +252,16 @@ export function retryLink(opts: RetryLinkOptions = {}): TrpcLink {
   const retries = opts.retries ?? 3;
   const delayMs = opts.delayMs ?? ((attempt: number) => 2 ** attempt * 100);
   const shouldRetry = opts.retry ?? defaultRetry;
-  return link((args) => {
-    const attempt = (n: number): OperationStream =>
-      Stream.catch(args.next(args.op), (error) =>
-        n < retries && shouldRetry({ op: args.op, error, attempt: n + 1 })
-          ? Stream.unwrap(
-              Effect.sleep(delayMs(n + 1, error)).pipe(
-                Effect.as(attempt(n + 1)),
-              ),
-            )
-          : Stream.fail(error),
-      );
-    return attempt(0);
-  });
+  return link((args) =>
+    retrying(
+      {
+        retries,
+        delayMs,
+        retry: (error, attempt) => shouldRetry({ op: args.op, error, attempt }),
+      },
+      () => args.next(args.op),
+    ),
+  );
 }
 
 /**
@@ -335,21 +331,11 @@ export function experimental_durableLink(
     const callId = op.context.callId ?? crypto.randomUUID();
     const headers = new Headers(op.context.headers);
     headers.set(HEADER.callId, callId);
-    const resume: Resume = { retries, delayMs, lost: lostResponse };
+    const resume: Retries = { retries, delayMs, retry: lostResponse };
     const sent: Operation = {
       ...op,
       context: withResume({ ...op.context, headers, batch: false }, resume),
     };
-    const attempt = (n: number): OperationStream =>
-      Stream.catch(args.next(sent), (error) =>
-        n < retries && lostResponse(error)
-          ? Stream.unwrap(
-              Effect.sleep(delayMs(n + 1, error)).pipe(
-                Effect.as(attempt(n + 1)),
-              ),
-            )
-          : Stream.fail(error),
-      );
-    return attempt(0);
+    return retrying(resume, () => args.next(sent));
   });
 }
