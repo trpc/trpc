@@ -1,8 +1,9 @@
 ---
 title: "Set up with Next.js App Router"
-label: "Setup"
+label: "App Router"
 description: ""
-section: "Next.js Integration › App Router"
+section: "Client Usage"
+parent: "client/nextjs"
 order: 69
 ---
 

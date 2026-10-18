@@ -1,8 +1,8 @@
 ---
 title: "tRPC Client"
-label: "Overview"
+label: "Vanilla Client"
 description: ""
-section: "Vanilla Client"
+section: "Client Usage"
 order: 43
 ---
 

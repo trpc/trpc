@@ -2,7 +2,8 @@
 title: "Set up with React Server Components"
 label: "Server Components"
 description: ""
-section: "React Query Integration (Classic)"
+section: "Client Usage"
+parent: "client/react"
 order: 55
 ---
 

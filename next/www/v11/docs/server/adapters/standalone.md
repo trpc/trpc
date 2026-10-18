@@ -2,7 +2,8 @@
 title: "Standalone Adapter"
 label: "Standalone"
 description: ""
-section: "Adapters"
+section: "Backend Usage"
+parent: "server/adapters"
 order: 14
 ---
 

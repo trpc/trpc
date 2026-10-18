@@ -25,6 +25,8 @@ export interface V11Page {
   readonly label: string | undefined;
   /** Position in the sidebar, from 0. */
   readonly order: number;
+  /** The slug of the page it nests under in the sidebar. */
+  readonly parent: string | undefined;
   readonly section: string;
   /** Path under `/docs` on trpc.io, and under `/v11/docs` here. */
   readonly slug: string;
@@ -886,6 +888,9 @@ export function convertPage(page: V11Page, docs: V11Docs): ConvertedPage {
       : [`label: ${yamlString(page.label)}`]),
     `description: ${yamlString(page.description)}`,
     `section: ${yamlString(page.section)}`,
+    ...(page.parent === undefined
+      ? []
+      : [`parent: ${yamlString(page.parent)}`]),
     `order: ${page.order}`,
     '---',
   ];
@@ -951,57 +956,75 @@ export type SidebarItem =
       readonly type: string;
     };
 
-/** Where each doc of the sidebar sits: its section, and its order. */
+/** Where each doc of the sidebar sits: its section, the doc it nests under, and its order. */
 export interface SidebarEntry {
   readonly id: string;
   readonly label: string | undefined;
   readonly order: number;
+  /** The id of the doc it nests under, if any. */
+  readonly parent: string | undefined;
   readonly section: string;
 }
 
+const docId = (item: SidebarItem) =>
+  typeof item === 'string' ? item : item.type === 'doc' ? item.id : undefined;
+
 /**
- * Flattens the sidebar's nested categories into sections, in order: a
- * category's own docs are a section, named after it, and each nested
- * category another one. Below the second level, a section's name has its
- * parent's: "Next.js Integration › App Router".
+ * The sidebar's docs in order. A top-level category is a section. A nested
+ * category opens with its overview doc, which takes the category's label
+ * and nests the category's other items: "Links" is `client/links/overview`,
+ * with `httpLink` and the rest under it. A nested category that doesn't
+ * open with a doc puts its items where it stands.
  */
 export function sidebarSections(items: ReadonlyArray<SidebarItem>) {
   const sections: Array<string> = [];
   const entries: Array<SidebarEntry> = [];
+  const add = (
+    id: string,
+    label: string | undefined,
+    section: string,
+    parent: string | undefined,
+  ) => {
+    if (!sections.includes(section)) {
+      sections.push(section);
+    }
+    entries.push({ id, label, order: entries.length, parent, section });
+  };
   const walk = (
     children: ReadonlyArray<SidebarItem>,
-    section: string,
-    depth: number,
+    section: string | undefined,
+    parent: string | undefined,
   ) => {
     for (const item of children) {
-      const id = typeof item === 'string' ? item : item.id;
-      if (
-        id !== undefined &&
-        (typeof item === 'string' || item.type === 'doc')
-      ) {
-        if (!sections.includes(section)) {
-          sections.push(section);
-        }
-        entries.push({
+      const id = docId(item);
+      if (id !== undefined) {
+        add(
           id,
-          label: typeof item === 'string' ? undefined : item.label,
-          order: entries.length,
-          section,
-        });
+          typeof item === 'string' ? undefined : item.label,
+          section ?? '',
+          parent,
+        );
       } else if (
         typeof item !== 'string' &&
         item.type === 'category' &&
         item.items
       ) {
         const label = item.label ?? '';
-        walk(
-          item.items,
-          depth >= 2 ? `${section} › ${label}` : label,
-          depth + 1,
-        );
+        if (section === undefined) {
+          walk(item.items, label, undefined);
+          continue;
+        }
+        const [first, ...rest] = item.items;
+        const overview = first === undefined ? undefined : docId(first);
+        if (overview === undefined) {
+          walk(item.items, section, parent);
+        } else {
+          add(overview, label, section, parent);
+          walk(rest, section, overview);
+        }
       }
     }
   };
-  walk(items, '', 0);
+  walk(items, undefined, undefined);
   return { entries, sections };
 }

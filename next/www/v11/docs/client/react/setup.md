@@ -2,7 +2,8 @@
 title: "Set up the React Query Integration"
 label: "Setup"
 description: "How to use and setup tRPC in React"
-section: "React Query Integration (Classic)"
+section: "Client Usage"
+parent: "client/react"
 order: 54
 ---
 

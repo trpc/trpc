@@ -1,7 +1,8 @@
 ---
 title: "Local Link"
 description: "A link for direct procedure calls without HTTP overhead"
-section: "Links"
+section: "Client Usage"
+parent: "client/links"
 order: 36
 ---
 

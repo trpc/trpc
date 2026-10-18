@@ -2,7 +2,8 @@
 title: "Server-Side Rendering"
 label: "Server-Side Rendering (SSR)"
 description: ""
-section: "Next.js Integration › Pages Router"
+section: "Client Usage"
+parent: "client/nextjs/pages-router/setup"
 order: 72
 ---
 

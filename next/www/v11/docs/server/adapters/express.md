@@ -2,7 +2,8 @@
 title: "Express Adapter"
 label: "Express"
 description: ""
-section: "Adapters"
+section: "Backend Usage"
+parent: "server/adapters"
 order: 15
 ---
 

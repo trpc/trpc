@@ -2,7 +2,8 @@
 title: "Set up a tRPC Client"
 label: "Setup"
 description: ""
-section: "Vanilla Client"
+section: "Client Usage"
+parent: "client/vanilla"
 order: 44
 ---
 

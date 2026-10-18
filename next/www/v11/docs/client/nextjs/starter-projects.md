@@ -1,7 +1,8 @@
 ---
 title: "Starter Projects"
 description: ""
-section: "Next.js Integration"
+section: "Client Usage"
+parent: "client/nextjs"
 order: 76
 ---
 

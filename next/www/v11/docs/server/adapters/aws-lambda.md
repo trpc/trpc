@@ -2,7 +2,8 @@
 title: "AWS Lambda + API Gateway Adapter"
 label: "AWS Lambda + API Gateway"
 description: ""
-section: "Adapters"
+section: "Backend Usage"
+parent: "server/adapters"
 order: 18
 ---
 

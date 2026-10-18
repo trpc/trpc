@@ -2,7 +2,8 @@
 title: "Static Site Generation"
 label: "Static Site Generation (SSG)"
 description: ""
-section: "Next.js Integration › Pages Router"
+section: "Client Usage"
+parent: "client/nextjs/pages-router/setup"
 order: 73
 ---
 

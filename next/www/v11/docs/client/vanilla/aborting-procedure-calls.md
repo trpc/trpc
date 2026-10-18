@@ -1,7 +1,8 @@
 ---
 title: "Aborting Procedure Calls"
 description: ""
-section: "Vanilla Client"
+section: "Client Usage"
+parent: "client/vanilla"
 order: 47
 ---
 

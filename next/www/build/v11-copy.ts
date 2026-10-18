@@ -173,7 +173,7 @@ const readV11Docs = Effect.fn('readV11Docs')(function* (www: string) {
       `/docs/v${match[1]}${doc.slug === '' ? '' : `/${doc.slug}`}`,
     );
   }
-  const byId = new Map<string, Omit<V11Page, 'order' | 'section'>>();
+  const byId = new Map<string, Omit<V11Page, 'order' | 'parent' | 'section'>>();
   for (const [name, contents] of files) {
     const doc = /^docs\/(.+)\.mdx?$/.exec(name)?.[1];
     if (doc === undefined) {
@@ -197,10 +197,18 @@ const readV11Docs = Effect.fn('readV11Docs')(function* (www: string) {
         message: `The sidebar lists ${entry.id}, which isn't a doc`,
       });
     }
+    const parent =
+      entry.parent === undefined ? undefined : byId.get(entry.parent);
+    if (entry.parent !== undefined && !parent) {
+      return yield* new V11CopyError({
+        message: `The sidebar nests ${entry.id} under ${entry.parent}, which isn't a doc`,
+      });
+    }
     pages.push({
       ...doc,
       label: entry.label ?? doc.label,
       order: entry.order,
+      parent: parent?.slug,
       section: entry.section,
     });
   }

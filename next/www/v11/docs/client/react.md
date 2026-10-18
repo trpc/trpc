@@ -1,8 +1,7 @@
 ---
 title: "React Query Integration (Classic)"
-label: "Overview"
 description: "React Query Integration"
-section: "React Query Integration (Classic)"
+section: "Client Usage"
 order: 53
 ---
 

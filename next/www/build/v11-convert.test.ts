@@ -21,6 +21,7 @@ const page = (
   file,
   label: undefined,
   order: 0,
+  parent: undefined,
   section: 'Backend Usage',
   slug,
   title: slug,
@@ -439,7 +440,7 @@ describe('dropMissingAnchors', () => {
 });
 
 describe('sidebarSections', () => {
-  it('flattens nested categories into sections, in order', () => {
+  it('makes top-level categories sections and nests the rest under their overview', () => {
     expect(
       sidebarSections([
         {
@@ -452,16 +453,25 @@ describe('sidebarSections', () => {
         },
         {
           items: [
-            'client/nextjs/overview',
             {
               items: [
+                'client/nextjs/overview',
                 {
-                  items: ['client/nextjs/app-router/setup'],
+                  items: [
+                    'client/nextjs/app-router/setup',
+                    'client/nextjs/app-router/actions',
+                  ],
                   label: 'App Router',
                   type: 'category',
                 },
+                'client/nextjs/starter-projects',
               ],
               label: 'Next.js',
+              type: 'category',
+            },
+            {
+              items: [{ type: 'link' }, 'client/headers'],
+              label: 'Without an overview',
               type: 'category',
             },
           ],
@@ -476,28 +486,53 @@ describe('sidebarSections', () => {
           id: 'main/introduction',
           label: undefined,
           order: 0,
+          parent: undefined,
           section: 'tRPC',
         },
         {
           id: 'main/quickstart',
           label: 'Quickstart',
           order: 1,
+          parent: undefined,
           section: 'tRPC',
         },
         {
           id: 'client/nextjs/overview',
-          label: undefined,
+          label: 'Next.js',
           order: 2,
+          parent: undefined,
           section: 'Client',
         },
         {
           id: 'client/nextjs/app-router/setup',
-          label: undefined,
+          label: 'App Router',
           order: 3,
-          section: 'Next.js › App Router',
+          parent: 'client/nextjs/overview',
+          section: 'Client',
+        },
+        {
+          id: 'client/nextjs/app-router/actions',
+          label: undefined,
+          order: 4,
+          parent: 'client/nextjs/app-router/setup',
+          section: 'Client',
+        },
+        {
+          id: 'client/nextjs/starter-projects',
+          label: undefined,
+          order: 5,
+          parent: 'client/nextjs/overview',
+          section: 'Client',
+        },
+        {
+          id: 'client/headers',
+          label: undefined,
+          order: 6,
+          parent: undefined,
+          section: 'Client',
         },
       ],
-      sections: ['tRPC', 'Client', 'Next.js › App Router'],
+      sections: ['tRPC', 'Client'],
     });
   });
 });

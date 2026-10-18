@@ -2,7 +2,8 @@
 title: "Set up with React Server Components"
 label: "Server Components"
 description: ""
-section: "TanStack React Query (⭐️)"
+section: "Client Usage"
+parent: "client/tanstack-react-query"
 order: 52
 ---
 

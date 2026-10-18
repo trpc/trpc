@@ -2,7 +2,8 @@
 title: "Migrating from the classic React Client"
 label: "Migrating"
 description: "Migrating from the classic React Client"
-section: "TanStack React Query (⭐️)"
+section: "Client Usage"
+parent: "client/tanstack-react-query"
 order: 51
 ---
 

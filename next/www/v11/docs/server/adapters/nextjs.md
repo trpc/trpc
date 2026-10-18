@@ -2,7 +2,8 @@
 title: "Next.js Adapter"
 label: "Next.js"
 description: ""
-section: "Adapters"
+section: "Backend Usage"
+parent: "server/adapters"
 order: 17
 ---
 

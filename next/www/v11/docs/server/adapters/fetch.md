@@ -2,7 +2,8 @@
 title: "Fetch / Edge Runtimes Adapter"
 label: "Fetch / Edge Runtimes"
 description: ""
-section: "Adapters"
+section: "Backend Usage"
+parent: "server/adapters"
 order: 19
 ---
 

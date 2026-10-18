@@ -1,7 +1,8 @@
 ---
 title: "Aborting Procedure Calls"
 description: ""
-section: "Next.js Integration › Pages Router"
+section: "Client Usage"
+parent: "client/nextjs/pages-router/setup"
 order: 75
 ---
 

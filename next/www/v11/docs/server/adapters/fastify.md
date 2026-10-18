@@ -2,7 +2,8 @@
 title: "Fastify Adapter"
 label: "Fastify"
 description: ""
-section: "Adapters"
+section: "Backend Usage"
+parent: "server/adapters"
 order: 16
 ---
 

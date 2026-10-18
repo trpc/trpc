@@ -1,7 +1,8 @@
 ---
 title: "Server Actions"
 description: ""
-section: "Next.js Integration › App Router"
+section: "Client Usage"
+parent: "client/nextjs/app-router-setup"
 order: 70
 ---
 

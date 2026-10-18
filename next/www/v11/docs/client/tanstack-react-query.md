@@ -1,8 +1,8 @@
 ---
 title: "TanStack React Query"
-label: "Overview"
+label: "TanStack React Query (⭐️)"
 description: "TanStack React Query integration for tRPC"
-section: "TanStack React Query (⭐️)"
+section: "Client Usage"
 order: 48
 ---
 

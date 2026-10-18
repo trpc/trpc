@@ -1,7 +1,8 @@
 ---
 title: "Error Handling"
 description: ""
-section: "Vanilla Client"
+section: "Client Usage"
+parent: "client/vanilla"
 order: 46
 ---
 

@@ -1,7 +1,8 @@
 ---
 title: "Inferring Types"
 description: ""
-section: "Vanilla Client"
+section: "Client Usage"
+parent: "client/vanilla"
 order: 45
 ---
 

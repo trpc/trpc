@@ -1,8 +1,8 @@
 ---
 title: "Links Overview"
-label: "Overview"
+label: "Links"
 description: ""
-section: "Links"
+section: "Client Usage"
 order: 31
 ---
 

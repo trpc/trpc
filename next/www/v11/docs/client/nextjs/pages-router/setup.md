@@ -1,8 +1,9 @@
 ---
 title: "Set up with Next.js Pages Router"
-label: "Setup"
+label: "Pages Router"
 description: ""
-section: "Next.js Integration › Pages Router"
+section: "Client Usage"
+parent: "client/nextjs"
 order: 71
 ---
 

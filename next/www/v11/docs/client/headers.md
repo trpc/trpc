@@ -1,7 +1,8 @@
 ---
 title: "Headers"
 description: ""
-section: "Links"
+section: "Client Usage"
+parent: "client/links"
 order: 41
 ---
 

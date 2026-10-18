@@ -2,7 +2,8 @@
 title: "useUtils"
 label: "useUtils()"
 description: ""
-section: "React Query Integration (Classic)"
+section: "Client Usage"
+parent: "client/react"
 order: 61
 ---
 

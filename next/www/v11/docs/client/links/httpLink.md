@@ -1,7 +1,8 @@
 ---
 title: "HTTP Link"
 description: ""
-section: "Links"
+section: "Client Usage"
+parent: "client/links"
 order: 32
 ---
 

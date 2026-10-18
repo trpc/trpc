@@ -1,7 +1,8 @@
 ---
 title: "useSubscription()"
 description: ""
-section: "React Query Integration (Classic)"
+section: "Client Usage"
+parent: "client/react"
 order: 60
 ---
 

@@ -2,7 +2,8 @@
 title: "Send cookies cross-origin"
 label: "CORS & Cookies"
 description: ""
-section: "Links"
+section: "Client Usage"
+parent: "client/links"
 order: 42
 ---
 

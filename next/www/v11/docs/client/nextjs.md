@@ -1,8 +1,7 @@
 ---
 title: "Next.js Integration"
-label: "Overview"
 description: ""
-section: "Next.js Integration"
+section: "Client Usage"
 order: 68
 ---
 

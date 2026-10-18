@@ -2,7 +2,8 @@
 title: "TanStack React Query"
 label: "Setup"
 description: "TanStack React Query setup"
-section: "TanStack React Query (⭐️)"
+section: "Client Usage"
+parent: "client/tanstack-react-query"
 order: 49
 ---
 
