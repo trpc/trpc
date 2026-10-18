@@ -9,6 +9,7 @@ import {
   Schedule,
   Stream,
 } from 'effect';
+import { Base64 } from 'effect/encoding';
 import { HttpServerRequest } from 'effect/http';
 import { Persistence } from 'effect/persistence';
 import {
@@ -130,7 +131,7 @@ const fingerprint = (
       'SHA-256',
       new TextEncoder().encode(json),
     );
-    return btoa(String.fromCharCode(...new Uint8Array(digest)));
+    return Base64.encode(new Uint8Array(digest));
   });
 
 const conflict = () =>
