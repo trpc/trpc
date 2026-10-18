@@ -41,7 +41,6 @@ The TanStack packages re-export `@trpc12/tanstack-query`, so an app installs one
 | `@trpc12/trpc/http`       | `serve`, `toHttpEffect` on Effect's `HttpServer` ([Adapters](./adapters/overview.md))                                             |
 | `@trpc12/trpc/cloudflare` | hibernating WebSockets, publisher and locks on Durable Objects; Workers Traces ([Durable Objects](./adapters/durable-objects.md)) |
 | `@trpc12/trpc/aws-lambda` | `toLambdaHandler` for API Gateway, ALB and Lambda@Edge ([AWS Lambda](./adapters/aws-lambda.md))                                   |
-| `@trpc12/trpc/socket`     | `serveSocket` on Effect's `SocketServer` (TCP, TLS) ([Raw sockets](./adapters/sockets.md))                                        |
 | `@trpc12/trpc/actions`    | `experimental_createAction`, `experimental_createCallable` ([Server Actions](./integrations/server-actions.md))                   |
 | `@trpc12/trpc/interop`    | `createV11Handler`, `fromV11Link` for v11 code ([Serving v11 clients](./migrations/from-v11/serve-v11-clients.md))                |
 | `@trpc12/trpc/extend`     | building blocks for integrations ([Extensions](./server/extensions.md#building-integrations))                                     |

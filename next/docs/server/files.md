@@ -42,7 +42,7 @@ await client.setCover.mutate({ postId: '1', cover: file });
 
 The handler only takes a multipart body with the `trpc-version` header, which `httpLink` sends and a cross-site form can't, so a form on another site can't run your mutations (other `POST` bodies must be `application/json` for the same reason).
 
-`wsLink` and `experimental_messagePortLink` don't send files; the call fails with a `BAD_REQUEST`. For large uploads, use presigned URLs.
+`wsLink` doesn't send files; the call fails with a `BAD_REQUEST`. For large uploads, use presigned URLs.
 
 ## Files in outputs
 
@@ -91,7 +91,7 @@ const report = await client.report.query({ id }); // File
 
 ## Binary frames
 
-Those chunks are base64 in JSONL, SSE and WebSocket messages. `httpLink({ binary: true })` asks for binary frames instead (`application/vnd.trpc.frames`: the same lines, length-prefixed, with the bytes unencoded), a third smaller; servers answer with JSONL to clients that don't ask. `wsLink({ binary: true })` gets each chunk of bytes as a binary message, except from hibernating Durable Object sockets, which stay text. `experimental_messagePortLink` and `localLink` always pass the bytes as they are.
+Those chunks are base64 in JSONL, SSE and WebSocket messages. `httpLink({ binary: true })` asks for binary frames instead (`application/vnd.trpc.frames`: the same lines, length-prefixed, with the bytes unencoded), a third smaller; servers answer with JSONL to clients that don't ask. `wsLink({ binary: true })` gets each chunk of bytes as a binary message, except from hibernating Durable Object sockets, which stay text. `localLink` always passes the bytes as they are.
 
 ## Serializers
 

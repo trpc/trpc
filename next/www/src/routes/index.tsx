@@ -301,7 +301,7 @@ const v12Features: ReadonlyArray<Feature> = [
     title: 'OpenAPI from the same router',
   },
   {
-    body: 'Node, Bun, Deno, Cloudflare Workers and Durable Objects, AWS Lambda, Express, Fastify, Firebase, message ports and raw sockets.',
+    body: 'Node, Bun, Deno, Cloudflare Workers and Durable Objects, AWS Lambda, Express and Fastify.',
     icon: <Globe />,
     slug: 'adapters/overview',
     title: 'Every runtime',

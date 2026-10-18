@@ -35,13 +35,11 @@ An operation goes through the links in order and its results come back the other
 
 ## Terminating links
 
-| Link                            | Carries calls                                                                  |
-| ------------------------------- | ------------------------------------------------------------------------------ |
-| [`httpLink`](./links/http.md)   | Over HTTP: queries as `GET`, mutations as `POST`, subscriptions as SSE         |
-| [`wsLink`](./links/ws.md)       | Over one WebSocket                                                             |
-| [`localLink`](./links/local.md) | To a router in the same process                                                |
-| `experimental_socketLink`       | Over a raw TCP, TLS or Unix socket ([Raw sockets](../adapters/sockets.md))     |
-| `experimental_messagePortLink`  | To a worker or a `MessagePort` ([Message ports](../adapters/message-ports.md)) |
+| Link                            | Carries calls                                                          |
+| ------------------------------- | ---------------------------------------------------------------------- |
+| [`httpLink`](./links/http.md)   | Over HTTP: queries as `GET`, mutations as `POST`, subscriptions as SSE |
+| [`wsLink`](./links/ws.md)       | Over one WebSocket                                                     |
+| [`localLink`](./links/local.md) | To a router in the same process                                        |
 
 ## Links in the middle
 

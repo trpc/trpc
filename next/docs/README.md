@@ -76,9 +76,9 @@ Pages marked (hidden) are unlisted on the site until they're reviewed: out of it
 - [Fetch runtimes](./adapters/fetch.md): Cloudflare Workers, Next.js route handlers and other fetch runtimes take handler.fetch as it is.
 - [AWS Lambda](./adapters/aws-lambda.md): toLambdaHandler for API Gateway, ALB, function URLs and Lambda@Edge, with response streaming.
 - [Durable Objects](./adapters/durable-objects.md): Hibernating WebSockets, publishers, durable calls, locks, Workers Traces and connection tokens on Cloudflare Durable Objects.
-- [Message ports](./adapters/message-ports.md): Serve calls over a MessagePort, a web Worker or a worker_threads port.
-- [Firebase](./adapters/firebase.md): Call procedures from Firebase callable functions and map their errors to HttpsError.
-- [Raw sockets](./adapters/sockets.md): serveSocket serves the router over TCP, TLS or Unix sockets, with experimental_socketLink on the client.
+- [Message ports](./adapters/message-ports.md) (hidden): Serve calls over a MessagePort, a web Worker or a worker_threads port.
+- [Firebase](./adapters/firebase.md) (hidden): Call procedures from Firebase callable functions and map their errors to HttpsError.
+- [Raw sockets](./adapters/sockets.md) (hidden): serveSocket serves the router over TCP, TLS or Unix sockets, with experimental_socketLink on the client.
 
 ## Integrations
 
