@@ -31,3 +31,4 @@ Agent-written working notes: research, spike results, benchmarks and anything wo
 | [Benchmarks against v11 and oRPC](./benchmarks.md)                        | all        | `tooling/bench/`            |
 | [MCP tools](./mcp-tools.md)                                               | 25         | `mcp/`                      |
 | [Live queries and TanStack DB](./live-queries.md)                         | 26         | `live-queries/`             |
+| [Large routers typeperf](./large-routers-typeperf.md)                     | 01, 08, 16 | `big-routers/`              |

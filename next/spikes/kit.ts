@@ -6,6 +6,7 @@ import { NodeRuntime, NodeServices } from '@effect/platform-node';
 import {
   Console,
   Data,
+  Duration,
   Effect,
   FileSystem,
   Path,
@@ -50,6 +51,35 @@ export class TscFailed extends Data.TaggedError('TscFailed')<{
 
 const tsc = new URL('./node_modules/.bin/tsc', import.meta.url).pathname;
 
+/** Runs `tsc` with `args`; its stdout, or `TscFailed` on a nonzero exit. */
+const runTsc = (
+  tsconfig: string,
+  args: ReadonlyArray<string>,
+): Effect.Effect<
+  string,
+  TscFailed | PlatformError.PlatformError,
+  ChildProcessSpawner.ChildProcessSpawner
+> =>
+  Effect.scoped(
+    Effect.gen(function* () {
+      const spawner = yield* ChildProcessSpawner.ChildProcessSpawner;
+      const handle = yield* spawner.spawn(ChildProcess.make(tsc, [...args]));
+      const [output, exitCode] = yield* Effect.all(
+        [Stream.mkString(Stream.decodeText(handle.stdout)), handle.exitCode],
+        { concurrency: 2 },
+      );
+      if (exitCode !== 0) return yield* new TscFailed({ tsconfig, output });
+      return output;
+    }),
+  );
+
+/** `tsc -b` on a project and its references: the build's wall time in seconds. */
+export const tscBuild = (tsconfig: string) =>
+  Effect.map(
+    Effect.timed(runTsc(tsconfig, ['-b', tsconfig, '--force'])),
+    ([duration]) => Duration.toMillis(duration) / 1000,
+  );
+
 /** `tsc --extendedDiagnostics --singleThreaded` on a project: its numbers by name (`Instantiations`, `Check time`, …). */
 export const tscDiagnostics = (
   tsconfig: string,
@@ -58,29 +88,21 @@ export const tscDiagnostics = (
   TscFailed | PlatformError.PlatformError,
   ChildProcessSpawner.ChildProcessSpawner
 > =>
-  Effect.scoped(
-    Effect.gen(function* () {
-      const spawner = yield* ChildProcessSpawner.ChildProcessSpawner;
-      const handle = yield* spawner.spawn(
-        ChildProcess.make(tsc, [
-          '-p',
-          tsconfig,
-          '--extendedDiagnostics',
-          '--singleThreaded',
-        ]),
-      );
-      const [output, exitCode] = yield* Effect.all(
-        [Stream.mkString(Stream.decodeText(handle.stdout)), handle.exitCode],
-        { concurrency: 2 },
-      );
-      if (exitCode !== 0) return yield* new TscFailed({ tsconfig, output });
+  Effect.map(
+    runTsc(tsconfig, [
+      '-p',
+      tsconfig,
+      '--extendedDiagnostics',
+      '--singleThreaded',
+    ]),
+    (output) => {
       const numbers: Record<string, number> = {};
       for (const line of output.split('\n')) {
         const m = /^([A-Za-z ]+):\s+([\d.]+)/.exec(line.trim());
         if (m) numbers[m[1]!.trim()] = Number(m[2]);
       }
       return numbers;
-    }),
+    },
   );
 
 /** Medians of `runs` diagnostics of one project, by name. */
