@@ -20,7 +20,7 @@ export const topSponsors = sponsors
   .toSorted((a, b) => b.weight - a.weight)
   .slice(0, 5);
 
-export const sponsorUrl = 'https://github.com/sponsors/KATT';
+export const sponsorUrl = 'https://github.com/sponsors/trpc';
 
 /** `sponsor`'s GitHub avatar, `size` pixels square. */
 export function avatarUrl(sponsor: Sponsor, size: number) {
