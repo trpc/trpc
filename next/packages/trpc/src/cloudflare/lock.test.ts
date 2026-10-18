@@ -30,7 +30,7 @@ class ServerEnd implements HibernatableWebSocket {
   onClose: (() => void) | undefined;
   #attachment: unknown = null;
   send(data: string) {
-    if (this.readyState === OPEN) this.peer.emit('message', data);
+    if (this.readyState === OPEN) this.peer.emit('message', { data });
   }
   close(_code?: number, _reason?: string) {
     if (this.readyState !== OPEN) throw new TypeError('WebSocket is closed');
@@ -49,20 +49,24 @@ class ClientEnd implements DurableLockSocket {
   readyState = OPEN;
   accepted = false;
   peer!: ServerEnd;
-  #listeners = new Map<string, Array<() => void>>();
+  #listeners = new Map<string, Set<(event: object) => void>>();
   accept() {
     this.accepted = true;
   }
-  addEventListener(type: string, fn: () => void) {
-    this.#listeners.set(type, [...(this.#listeners.get(type) ?? []), fn]);
+  addEventListener(type: string, fn: (event: object) => void) {
+    this.#listeners.set(type, (this.#listeners.get(type) ?? new Set()).add(fn));
   }
-  emit(type: string, _data?: string) {
-    for (const fn of this.#listeners.get(type) ?? []) fn();
+  removeEventListener(type: string, fn: (event: object) => void) {
+    this.#listeners.get(type)?.delete(fn);
   }
+  emit(type: string, event: object) {
+    for (const fn of this.#listeners.get(type) ?? []) fn(event);
+  }
+  send(_data: string | Uint8Array) {}
   drop() {
     if (this.readyState !== OPEN) return;
     this.readyState = CLOSED;
-    this.emit('close');
+    this.emit('close', { code: 1011 });
   }
   close() {
     if (this.readyState !== OPEN) return;

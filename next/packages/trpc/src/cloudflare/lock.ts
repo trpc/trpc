@@ -1,4 +1,5 @@
-import { Deferred, Duration, Effect, Layer, Option } from 'effect';
+import { Duration, Effect, Layer, Option } from 'effect';
+import { Socket } from 'effect/socket';
 import {
   experimental_Locker,
   experimental_LockTimeout,
@@ -108,15 +109,12 @@ export function experimental_durableLockObject(
 
 /**
  * The client end of a lock's WebSocket, as a Durable Object stub's
- * `fetch` returns it.
+ * `fetch` returns it: a `WebSocket` that is `accept()`ed before use.
  * @since 0.1.0
  * @stability experimental
  */
-export interface DurableLockSocket {
-  readonly readyState: number;
+export interface DurableLockSocket extends Socket.WebSocketLike {
   accept(): void;
-  addEventListener(type: 'message' | 'close' | 'error', fn: () => void): void;
-  close(code?: number, reason?: string): void;
 }
 
 /**
@@ -184,38 +182,29 @@ export function experimental_durableLocker(
             new Error(`The lock object answered ${response.status}`),
           );
         }
-        const granted = Deferred.makeUnsafe<void>();
-        const lost = () =>
-          Deferred.doneUnsafe(
-            granted,
-            Effect.die(new Error('The lock object closed the socket')),
-          );
         socket.accept();
-        socket.addEventListener('message', () =>
-          Deferred.doneUnsafe(granted, Effect.void),
+        const lost = () =>
+          Effect.die(new Error('The lock object closed the socket'));
+        const effectSocket = yield* Socket.fromWebSocket(
+          Effect.succeed(socket),
         );
-        socket.addEventListener('close', lost);
-        socket.addEventListener('error', lost);
-        yield* Effect.addFinalizer(() =>
-          Effect.sync(() => {
-            if (socket.readyState === OPEN) socket.close(1000, 'released');
-          }),
-        );
+        const reader = yield* Effect.catch(effectSocket.reader, lost);
+        const writer = yield* effectSocket.writer;
+        const close = (reason: string) =>
+          Effect.ignore(writer.write(new Socket.CloseEvent(1000, reason)));
+        yield* Effect.addFinalizer(() => close('released'));
         const waited = !response.headers.has(ACQUIRED);
         if (waited) {
-          const got = yield* Effect.timeoutOption(
-            Deferred.await(granted),
+          const granted = yield* Effect.timeoutOption(
+            Effect.catch(reader.pull, lost),
             timeout,
           );
-          if (Option.isNone(got)) {
+          if (Option.isNone(granted)) {
             return yield* new experimental_LockTimeout({ key });
           }
         }
         yield* Effect.forkScoped(
-          Effect.andThen(
-            Effect.sleep(ttl),
-            Effect.sync(() => socket.close(1000, 'expired')),
-          ),
+          Effect.andThen(Effect.sleep(ttl), close('expired')),
         );
         return { waited };
       }),
