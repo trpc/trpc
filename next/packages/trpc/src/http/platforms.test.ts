@@ -157,5 +157,7 @@ test('platform values reach createContext, typed by the handler (docs/adapters/f
     worker.websocket({} as WebSocketLike, { request: new Request('http://x') });
     // a handler without a platform type takes the request alone, as Next's route types expect
     expectTypeOf(handler.fetch).parameters.toEqualTypeOf<[request: Request]>();
+    // a standard WebSocket, as Deno.upgradeWebSocket returns it
+    handler.websocket({} as WebSocket, { request: new Request('http://x') });
   });
 });

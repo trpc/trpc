@@ -64,7 +64,7 @@ const traceParent = (trace: unknown): Tracer.AnySpan | undefined =>
  */
 export interface WebSocketLike {
   readonly readyState: number;
-  send(data: string | Uint8Array): void;
+  send(data: string | Uint8Array<ArrayBuffer>): void;
   close(code?: number, reason?: string): void;
   addEventListener(type: string, listener: (event: any) => void): void;
   removeEventListener(type: string, listener: (event: any) => void): void;
