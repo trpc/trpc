@@ -252,6 +252,12 @@ html {
   display: none;
 }
 
+/* A `^?` type ties the hover popup's z-index and comes later in the page, so
+   it would cover the type of a name hovered above it. */
+.twoslash .twoslash-query-line .twoslash-popup-container {
+  z-index: 9;
+}
+
 .twoslash .twoslash-popup-docs {
   max-width: 36rem;
   white-space: normal;
