@@ -101,7 +101,11 @@ test("HydrationBoundary keeps Next's digest errors, which Next needs to see, and
 });
 
 test('/rsc exports the data-cache tag helpers, for server components and Server Actions', () => {
-  const rsc = createTrpcRsc({ router: appRouter, serializer });
+  const rsc = createTrpcRsc({
+    router: appRouter,
+    serializer,
+    ctx: { locale: null },
+  });
   const key = rsc.trpc.post.byId.queryKey({ input: { id: '1' } });
   expect(cacheTags(key)).toEqual([
     'trpc',
