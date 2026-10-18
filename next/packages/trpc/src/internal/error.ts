@@ -32,6 +32,12 @@ export const ERROR_STATUS = {
   GATEWAY_TIMEOUT: 504,
   /** Client-side only: the request never got a response. */
   NETWORK_ERROR: 0,
+  /**
+   * Client-side only: a response the client couldn't read. It wasn't a tRPC
+   * response (a proxy's HTML page), it didn't decode, or it failed
+   * `validationLink`'s check.
+   */
+  BAD_RESPONSE: 0,
   /** Client-side only: a link failed. */
   CLIENT_ERROR: 0,
   /** Client-side only: a stream stopped without an end or an error. */
@@ -44,6 +50,15 @@ export const ERROR_STATUS = {
  * @stability stable
  */
 export type BuiltinErrorCode = keyof typeof ERROR_STATUS;
+
+/**
+ * Whether `code` is a {@link BuiltinErrorCode}.
+ * @since 0.1.0
+ * @stability stable
+ */
+export function isBuiltinCode(code: string): code is BuiltinErrorCode {
+  return Object.hasOwn(ERROR_STATUS, code);
+}
 
 /**
  * Options for {@link TrpcError} and {@link error}.
@@ -72,8 +87,9 @@ const YieldableBase: new (args: {
  *
  * Return it (or `yield*` it in an Effect) from a resolver or middleware and
  * it becomes part of the procedure's typed error union, `defined: true` on
- * the client. Anything thrown is `defined: false`. Thrown values that are not
- * a `TrpcError` become `INTERNAL_SERVER_ERROR`, and their message is masked in
+ * the client. Anything thrown is `defined: false`, with a built-in code and
+ * no `data`: a thrown `TrpcError` with a custom code, and any other thrown
+ * value, become `INTERNAL_SERVER_ERROR`, and their message is masked in
  * production.
  *
  * @example
@@ -87,7 +103,11 @@ const YieldableBase: new (args: {
  *   });
  *
  * const [post, err] = await safe(client.byId.query({ id: '1' }));
- * if (err?.defined && err.code === 'NOT_FOUND') err.data.id; // typed
+ * if (err) {
+ *   if (err.defined && err.code === 'NOT_FOUND') return `No post ${err.data.id}`;
+ *   return err.message;
+ * }
+ * post.title; // no `undefined` once the error is handled
  * ```
  * @since 0.1.0
  * @stability stable
@@ -329,10 +349,12 @@ export function codeOfStatus(status: number): BuiltinErrorCode | undefined {
 
 /**
  * Whether `err` stands for the server failing or no response (a 5xx or a
- * client-side code), which links may retry.
+ * client-side code), which links may retry. A `BAD_RESPONSE` arrived, and
+ * reading it again would fail the same way.
  * @internal
  */
 export function serverFailure(err: AnyTrpcError): boolean {
+  if (err.code === 'BAD_RESPONSE') return false;
   const status = statusOf(err);
   return status === 0 || status >= 500;
 }
@@ -403,6 +425,26 @@ export function withDefined<E extends AnyTrpcError>(
 }
 
 /**
+ * `err` as clients type it. Defined errors stay as they are. Anything else
+ * keeps a built-in code but not its `data`, which no schema checked; a
+ * custom code becomes `fallback`, with `err` as the cause.
+ * @internal
+ */
+export function toBuiltinError(
+  err: AnyTrpcError,
+  fallback: BuiltinErrorCode,
+): AnyTrpcError {
+  if (err.defined || (err.data === undefined && isBuiltinCode(err.code))) {
+    return err;
+  }
+  return new TrpcError({
+    code: isBuiltinCode(err.code) ? err.code : fallback,
+    message: err.message,
+    cause: err,
+  });
+}
+
+/**
  * The JSON shape of an error on the wire.
  * @since 0.1.0
  * @stability stable
@@ -430,7 +472,9 @@ const isRecord = (v: unknown): v is Record<string, unknown> =>
   typeof v === 'object' && v !== null;
 
 /**
- * Rebuilds a {@link TrpcError} from a deserialized error body.
+ * Rebuilds a {@link TrpcError} from a deserialized error body. An undefined
+ * error with a custom code (a server that doesn't mask them) becomes
+ * `INTERNAL_SERVER_ERROR`.
  * @since 0.1.0
  * @stability stable
  */
@@ -438,12 +482,15 @@ export function fromWireError(body: unknown): TrpcError {
   const inner = isRecord(body) && isRecord(body['error']) ? body['error'] : {};
   const code =
     typeof inner['code'] === 'string' ? inner['code'] : 'INTERNAL_SERVER_ERROR';
-  return new TrpcError({
-    code,
-    message: typeof inner['message'] === 'string' ? inner['message'] : code,
-    data: inner['data'],
-    defined: inner['defined'] === true,
-  });
+  return toBuiltinError(
+    new TrpcError({
+      code,
+      message: typeof inner['message'] === 'string' ? inner['message'] : code,
+      data: inner['data'],
+      defined: inner['defined'] === true,
+    }),
+    'INTERNAL_SERVER_ERROR',
+  ) as TrpcError;
 }
 
 /**

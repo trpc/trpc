@@ -1,6 +1,7 @@
 import { Cause, Effect, Option, Stream, Tracer } from 'effect';
 import {
   isTrpcError,
+  toBuiltinError,
   TrpcError,
   type AnyTrpcError,
 } from '../internal/error.ts';
@@ -197,9 +198,13 @@ export type DeclContext<TDecl> = TDecl extends { context: infer C }
     : {}
   : {};
 
-/** Turns anything a link threw into a client error. @internal */
+/**
+ * Turns anything a link threw into a client error: a defined error, or a
+ * built-in one with no `data`. An undeclared custom code is `CLIENT_ERROR`.
+ * @internal
+ */
 export function toClientError(cause: unknown): AnyTrpcError {
-  if (isTrpcError(cause)) return cause;
+  if (isTrpcError(cause)) return toBuiltinError(cause, 'CLIENT_ERROR');
   return new TrpcError({
     code: 'CLIENT_ERROR',
     message: cause instanceof Error ? cause.message : String(cause),
@@ -369,7 +374,8 @@ export function runOperation(
 }
 
 /**
- * Runs an operation through a link chain.
+ * Runs an operation through a link chain. It fails with the errors clients
+ * type: defined ones, and built-in ones with no `data` ({@link toClientError}).
  * @since 0.1.0
  * @stability stable
  */
@@ -391,5 +397,5 @@ export function runLinks(
       }
       return Stream.suspend(() => current({ op: o, next: at(i + 1) }));
     };
-  return at(0)(op);
+  return Stream.catch(at(0)(op), (err) => Stream.fail(toClientError(err)));
 }

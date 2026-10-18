@@ -9,6 +9,7 @@ import { HttpServer } from 'effect/http';
 import {
   createTrpcClient,
   httpLink,
+  matchError,
   safe,
   routerType,
 } from '@trpc12/trpc/client';
@@ -101,9 +102,13 @@ const created = await client.post.create.mutate({ title: 'Typed errors' });
 console.log('post.create:', created);
 
 const [, err] = await safe(client.post.byId.query({ id: '404' }));
-if (err?.defined && err.code === 'NOT_FOUND') {
-  console.log('post.byId failed: no post', err.data.id);
-}
+if (!err) throw new Error('expected NOT_FOUND');
+const reason = matchError(err, {
+  NOT_FOUND: (e) => `no post ${e.data.id}`,
+  BAD_REQUEST: (e) => `invalid input: ${e.data.issues.length} issues`,
+  builtin: (e) => `${e.code}: ${e.message}`,
+});
+console.log('post.byId failed:', reason);
 
 for await (const event of client.post.all.subscribe()) {
   console.log('post.all event', event.id, event.data.title);

@@ -531,3 +531,39 @@ test('what a link fails, dies or ends with becomes a client error', async () => 
     message: 'The last link must send the request (e.g. httpLink)',
   });
 });
+
+test('errors a link makes outside the union get a built-in code and no data', async () => {
+  const failing = (err: TrpcError) =>
+    createTrpcClient({
+      router: routerType<typeof router>(),
+      links: [link(() => Stream.fail(err))],
+    });
+  const [, custom] = await safe(
+    failing(
+      new TrpcError({ code: 'QUOTA_HIT', message: 'Slow down' }),
+    ).whoami.query(),
+  );
+  expect(custom).toMatchObject({
+    code: 'CLIENT_ERROR',
+    message: 'Slow down',
+    defined: false,
+    cause: { code: 'QUOTA_HIT' },
+  });
+  const withData = failing(
+    new TrpcError({ code: 'TOO_MANY_REQUESTS', data: { retryAfter: 5 } }),
+  );
+  const [, limited] = await safe(withData.whoami.query());
+  expect(limited).toMatchObject({ code: 'TOO_MANY_REQUESTS', defined: false });
+  expect(limited?.data).toBeUndefined();
+  await expect(async () => {
+    for await (const _ of withData.ticks.subscribe()) void _;
+  }).rejects.toMatchObject({ code: 'TOO_MANY_REQUESTS', data: undefined });
+
+  const declared = failing(error({ code: 'QUOTA_HIT', data: { left: 0 } }));
+  const [, kept] = await safe(declared.whoami.query());
+  expect(kept).toMatchObject({
+    code: 'QUOTA_HIT',
+    defined: true,
+    data: { left: 0 },
+  });
+});

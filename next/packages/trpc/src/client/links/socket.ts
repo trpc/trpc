@@ -34,7 +34,7 @@ import {
   type LinkDecl,
   type TrpcLink,
 } from '../link.ts';
-import { makeDeferredDecoder, parseError, serializeInput } from './events.ts';
+import { makeDeferredDecoder, badResponse, serializeInput } from './events.ts';
 
 /** One open connection. @internal */
 interface SocketConnection {
@@ -152,7 +152,7 @@ function makeSocketLink(
     try {
       return fromWireError(serializer.deserialize(message.body as never));
     } catch (cause) {
-      return parseError('Invalid error message')(cause);
+      return badResponse('Invalid error message')(cause);
     }
   };
 
@@ -409,7 +409,7 @@ function makeSocketLink(
                   .pipe(
                     Effect.flatMap((value) => {
                       const settle = value.pipe(
-                        Effect.mapError(parseError('Invalid result')),
+                        Effect.mapError(badResponse('Invalid result')),
                         Effect.exit,
                         Effect.flatMap((exit) => Deferred.done(result, exit)),
                       );
@@ -458,7 +458,7 @@ function makeSocketLink(
                   Effect.map((value) => {
                     Queue.offerUnsafe(
                       queue,
-                      Effect.mapError(value, parseError('Invalid event')),
+                      Effect.mapError(value, badResponse('Invalid event')),
                     );
                     return false;
                   }),

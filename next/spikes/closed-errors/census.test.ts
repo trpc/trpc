@@ -134,18 +134,18 @@ const census = async (closed: boolean) => {
   return rows;
 };
 
-test('what a call fails with today, over httpLink', async () => {
+test('what a call fails with, over httpLink', async () => {
   expect(await census(false)).toEqual({
     'returned NOT_FOUND': 'NOT_FOUND (defined)',
     'thrown Error': 'INTERNAL_SERVER_ERROR',
-    'thrown custom code': 'OUT_OF_STOCK',
+    'thrown custom code': 'INTERNAL_SERVER_ERROR',
     'thrown built-in code': 'CONFLICT',
     'procedure the server lacks': 'NOT_FOUND',
     'fetch rejects': 'NETWORK_ERROR',
     aborted: 'CLIENT_CLOSED_REQUEST',
     'proxy 401': 'UNAUTHORIZED',
     'proxy 502': 'BAD_GATEWAY',
-    'proxy 520': 'PARSE_ERROR',
+    'proxy 520': 'BAD_RESPONSE',
     'older server version': 'UNSUPPORTED_PROTOCOL',
   });
 });
@@ -157,7 +157,7 @@ test('closedLink leaves only defined errors and built-in codes', async () => {
   expect(codes.every((code) => code in ERROR_STATUS)).toBe(true);
 });
 
-test('matchError dispatches defined codes by name and the rest to unexpected', async () => {
+test('matchError dispatches defined codes by name and the rest to builtin', async () => {
   await using app = setup({ closed: true });
   const describe = async (call: Promise<unknown> & { '~error'?: unknown }) => {
     const result = await safeClosed(
@@ -167,7 +167,7 @@ test('matchError dispatches defined codes by name and the rest to unexpected', a
       ? matchError(result.error, {
           NOT_FOUND: (err) => `no post ${err.data.id}`,
           BAD_REQUEST: (err) => `bad input: ${err.message}`,
-          unexpected: (err) => `unexpected ${err.code}`,
+          builtin: (err) => `builtin ${err.code}`,
         })
       : 'ok';
   };
@@ -175,7 +175,7 @@ test('matchError dispatches defined codes by name and the rest to unexpected', a
     'no post 7',
   );
   expect(await describe(app.client.outOfStock.query())).toBe(
-    'unexpected INTERNAL_SERVER_ERROR',
+    'builtin INTERNAL_SERVER_ERROR',
   );
-  expect(await describe(app.client.added.query())).toBe('unexpected NOT_FOUND');
+  expect(await describe(app.client.added.query())).toBe('builtin NOT_FOUND');
 });

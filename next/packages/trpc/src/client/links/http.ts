@@ -38,7 +38,7 @@ import {
 } from '../link.ts';
 import {
   makeDeferredDecoder,
-  parseError,
+  badResponse,
   serializeInput,
   type DeferredDecoder,
 } from './events.ts';
@@ -309,7 +309,7 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
       return fromWireError(serializer.deserialize(JSON.parse(text)));
     } catch (cause) {
       return new TrpcError({
-        code: codeOfStatus(res.status) ?? 'PARSE_ERROR',
+        code: codeOfStatus(res.status) ?? 'BAD_RESPONSE',
         message: `Unexpected ${res.status} response`,
         cause,
       });
@@ -390,10 +390,9 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
                     if (!res.ok) throw await readError(res);
                     const type = res.headers.get('content-type') ?? '';
                     if (!streamed(type) || !res.body) {
-                      throw new TrpcError({
-                        code: 'PARSE_ERROR',
-                        message: 'A resumed call answered without frames',
-                      });
+                      throw badResponse(
+                        'A resumed call answered without frames',
+                      )();
                     }
                     return readStream(type, res.body) as Stream.Stream<
                       Frame,
@@ -552,7 +551,7 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
             try {
               error = fromWireError(serializer.deserialize(line.body as never));
             } catch (cause) {
-              error = parseError('Invalid error message')(cause);
+              error = badResponse('Invalid error message')(cause);
             }
             item.reject(error);
             Queue.endUnsafe(queue);
@@ -621,10 +620,7 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
             Stream.runForEach((line) => onLine(line as BatchLine, res.headers)),
           );
           rejectRest(
-            new TrpcError({
-              code: 'PARSE_ERROR',
-              message: 'The batch response ended without a result',
-            }),
+            badResponse('The batch response ended without a result')(),
           );
         }).pipe(
           Effect.catchCause((cause) =>
@@ -745,7 +741,7 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
                 Effect.map((value) => {
                   Queue.offerUnsafe(
                     queue,
-                    Effect.mapError(value, parseError('Invalid event')),
+                    Effect.mapError(value, badResponse('Invalid event')),
                   );
                   return false;
                 }),

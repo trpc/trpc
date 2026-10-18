@@ -32,11 +32,11 @@ export function serializeInput(
   }
 }
 
-/** @internal */
-export const parseError =
+/** A response the client couldn't decode. @internal */
+export const badResponse =
   (message: string) =>
-  (cause: unknown): TrpcError =>
-    new TrpcError({ code: 'PARSE_ERROR', message, cause });
+  (cause?: unknown): TrpcError =>
+    new TrpcError({ code: 'BAD_RESPONSE', message, cause });
 
 type FrameQueue = Queue.Queue<Frame, Cause.Done>;
 

@@ -125,7 +125,8 @@ test('errors: v12 errors reach the v11 link, v11 errors keep their code', async 
   await expect(client.whoami.query()).rejects.toMatchObject({
     code: 'UNAUTHORIZED',
     message: 'No token',
-    data: { code: 'UNAUTHORIZED', httpStatus: 401 },
+    data: undefined,
+    cause: { data: { code: 'UNAUTHORIZED', httpStatus: 401 } },
   });
 });
 

@@ -185,7 +185,7 @@ export function openApiLink(
       return fromOpenApiError(JSON.parse(text), res.status);
     } catch (cause) {
       return new TrpcError({
-        code: codeOfStatus(res.status) ?? 'PARSE_ERROR',
+        code: codeOfStatus(res.status) ?? 'BAD_RESPONSE',
         message: `Unexpected ${res.status} response`,
         cause,
       });

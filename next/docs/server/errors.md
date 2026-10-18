@@ -49,22 +49,31 @@ const byId = t.procedure
 
 ## On the client
 
-On the client, `error.defined` is true for errors in the union, whether returned, failed or declared (narrow on `code` next). It is false for anything else: undeclared thrown errors, network failures, aborts. Unexpected errors' messages are masked unless `NODE_ENV` is `development` or `test`, or `exposeUnexpectedErrors: true`. There is no `errorFormatter`.
+On the client, the errors in the union are `defined: true`, with their `data`, whether they were returned, failed or declared. Anything else arrives as a built-in error (`defined: false`), and it never has `data`:
+
+- An undeclared thrown error with a built-in code (`throw new TrpcError({ code: 'CONFLICT', data })`) keeps its code and loses its `data`.
+- An undeclared thrown error with a custom code, or a crash, is an `INTERNAL_SERVER_ERROR`. Its message is masked unless `NODE_ENV` is `development` or `test`, or `exposeUnexpectedErrors: true`.
+
+So the client's union only has codes it can handle, and `onError` still sees the original error. Declare a thrown error (or return it) to give it a custom code or `data` on the client. There is no `errorFormatter`.
 
 ```ts twoslash
 // ---cut-start---
 import { client } from './client.ts';
 // ---cut-end---
-import { safe } from '@trpc12/trpc/client';
+import { matchError, safe } from '@trpc12/trpc/client';
 
 const [post, err] = await safe(client.post.byId.query({ id: '1' }));
-if (err?.defined && err.code === 'NOT_FOUND') {
-  console.log(err.data);
-  //              ^?
+if (err) {
+  matchError(err, {
+    NOT_FOUND: (e) => console.log(e.data),
+    //                              ^?
+    BAD_REQUEST: (e) => console.log(e.data.issues),
+    builtin: (e) => console.log(e.code),
+  });
 }
 ```
 
-See [Errors without try/catch](../client/errors.md) for `safe()` and `createSafeClient()`.
+See [Errors without try/catch](../client/errors.md) for `safe()`, `matchError()` and the built-in codes.
 
 ## Codes and statuses
 

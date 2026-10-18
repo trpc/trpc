@@ -70,10 +70,10 @@ test('fetch failures and pages that are not tRPC errors', async () => {
     message: 'Unexpected 502 response',
   });
   const [, teapot] = await safe(page(418).echo.query(1));
-  expect(teapot).toMatchObject({ code: 'PARSE_ERROR' });
+  expect(teapot).toMatchObject({ code: 'BAD_RESPONSE' });
   const [, moved] = await safe(page(302).echo.query(1));
   expect(moved).toMatchObject({
-    code: 'PARSE_ERROR',
+    code: 'BAD_RESPONSE',
     message: 'Unexpected 302 response',
   });
 
@@ -92,6 +92,35 @@ test('fetch failures and pages that are not tRPC errors', async () => {
     code: 'INTERNAL_SERVER_ERROR',
     message: 'INTERNAL_SERVER_ERROR',
   });
+
+  // A server that leaks undeclared custom codes and their data.
+  const leaked = body(
+    {
+      error: {
+        code: 'LEGACY_BILLING_TIMEOUT',
+        message: 'billing down',
+        data: { host: '10.0.0.7' },
+        defined: false,
+      },
+    },
+    400,
+  );
+  const [, folded] = await safe(leaked);
+  expect(folded).toMatchObject({
+    code: 'INTERNAL_SERVER_ERROR',
+    message: 'billing down',
+    defined: false,
+    cause: { code: 'LEGACY_BILLING_TIMEOUT' },
+  });
+  expect(folded?.data).toBeUndefined();
+  const [, conflict] = await safe(
+    body(
+      { error: { code: 'CONFLICT', message: 'taken', data: { a: 1 } } },
+      409,
+    ),
+  );
+  expect(conflict).toMatchObject({ code: 'CONFLICT', message: 'taken' });
+  expect(conflict?.data).toBeUndefined();
 
   const empty = clientWith(async () => new Response(null, { status: 200 }));
   expect(await empty.echo.query(1)).toBeUndefined();
@@ -175,7 +204,7 @@ test('a batch response that ends early, or names calls it was not sent, fails th
   ]);
   expect(first).toBe('first');
   expect(second).toMatchObject({
-    code: 'PARSE_ERROR',
+    code: 'BAD_RESPONSE',
     message: 'The batch response ended without a result',
   });
 });
@@ -357,7 +386,7 @@ test('forged batch lines with unreadable bodies fail their calls alone; broken s
   ]);
   expect(result?.code).toBe('NETWORK_ERROR');
   expect(error).toMatchObject({
-    code: 'PARSE_ERROR',
+    code: 'BAD_RESPONSE',
     message: 'Invalid error message',
   });
 

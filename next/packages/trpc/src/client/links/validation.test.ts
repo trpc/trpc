@@ -80,7 +80,7 @@ test('invalid inputs fail on the client with the server error shape, before any 
   expect(events).toEqual([{ id: '1', data: { id: '1', title: 'One', at } }]);
 });
 
-test('results that drift from the contract fail with PARSE_ERROR', async () => {
+test('results that drift from the contract fail with BAD_RESPONSE', async () => {
   await using http = await createTestServer({
     router: {
       post: {
@@ -101,12 +101,17 @@ test('results that drift from the contract fail with PARSE_ERROR', async () => {
     ],
   });
   const [, err] = await safe(client.post.byId.query({ id: '1' }));
-  expect(err).toMatchObject({ code: 'PARSE_ERROR', defined: false });
-  expect(err?.message).toContain('Response validation failed');
+  if (!err) throw new Error('expected an error');
+  expect(err).toMatchObject({ code: 'BAD_RESPONSE', defined: false });
+  expect(err.message).toContain('Response validation failed');
+  expect(err.data).toBeUndefined();
+  expect((err.cause as { issues: unknown[] }).issues).toContainEqual(
+    expect.objectContaining({ path: ['id'] }),
+  );
 
   await expect(async () => {
     for await (const _ of client.post.feed.subscribe()) void _;
-  }).rejects.toMatchObject({ code: 'PARSE_ERROR' });
+  }).rejects.toMatchObject({ code: 'BAD_RESPONSE' });
 });
 
 test("output: 'json' decodes openApiLink's plain JSON into the schema's types", async () => {
@@ -206,8 +211,8 @@ test('streamed outputs, unvalidated outputs, plain events, opt-outs and paths ou
   const read: string[] = [];
   for await (const token of tokens) read.push(token);
   expect(read).toEqual(['a', 'b']);
-  expect(await collect('numbers')).toEqual([1, 'PARSE_ERROR']);
-  expect(await collect('plain')).toEqual([1, 'PARSE_ERROR']);
+  expect(await collect('numbers')).toEqual([1, 'BAD_RESPONSE']);
+  expect(await collect('plain')).toEqual([1, 'BAD_RESPONSE']);
   expect(
     await checked.request({ type: 'query', path: 'trusted', input: undefined }),
   ).toEqual({ n: 'not a number' });

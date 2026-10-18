@@ -97,8 +97,9 @@ const steps: ReadonlyArray<Step> = [
           so no server code ships to the browser. Hover a name to see its type.
         </p>
         <p>
-          <code>safe()</code> turns a call into a result tuple, with the
-          procedure&apos;s defined errors narrowed by <code>code</code>.
+          <code>safe()</code> turns a call into a result tuple whose error lists
+          every way it can fail. <code>matchError()</code> makes you handle each
+          of the procedure&apos;s errors.
         </p>
       </>
     ),

@@ -52,24 +52,30 @@ export type DefinedError<E, F extends OutputForm = DansonForm> =
     : never;
 
 /**
- * Anything outside the typed union: thrown errors, masked internal errors,
- * network failures (`NETWORK_ERROR`) and aborts (`CLIENT_CLOSED_REQUEST`).
+ * An error from outside the procedure's typed union, one member per
+ * built-in code: network failures (`NETWORK_ERROR`), aborts
+ * (`CLIENT_CLOSED_REQUEST`), unreadable responses (`BAD_RESPONSE`), crashes
+ * (`INTERNAL_SERVER_ERROR`, masked in production), thrown built-in codes
+ * and a proxy's statuses (`UNAUTHORIZED`, `BAD_GATEWAY`). It never has
+ * `data`. Pass a code to name one: `BuiltinError<'NETWORK_ERROR'>`.
  * @since 0.1.0
  * @stability stable
  */
-export type UnexpectedError = TrpcError<
-  BuiltinErrorCode | (string & {}),
-  unknown
-> & { readonly defined: false };
+export type BuiltinError<TCode extends BuiltinErrorCode = BuiltinErrorCode> =
+  TCode extends BuiltinErrorCode
+    ? TrpcError<TCode, undefined> & { readonly defined: false }
+    : never;
 
 /**
- * What a call can fail with. Narrow with `error.defined` first, then `code`.
+ * What a call can fail with: the procedure's defined errors and the
+ * built-in ones. Every member has a literal `code`, so `switch (err.code)`
+ * narrows it; `err.defined` tells a defined `NOT_FOUND` from a built-in one.
  * @since 0.1.0
  * @stability stable
  */
 export type ClientError<E, F extends OutputForm = DansonForm> =
   | DefinedError<E, F>
-  | UnexpectedError;
+  | BuiltinError;
 
 /** A call's errors: the procedure's in the result form, the links' as made. */
 type CallError<D extends ProcedureDef, F extends OutputForm, TLinkErrors> =

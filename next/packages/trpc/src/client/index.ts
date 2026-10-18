@@ -21,7 +21,9 @@ export {
   createSafeClient,
   createTrpcClient,
   getClientSerializer,
+  matchError,
   safe,
+  type ErrorHandlers,
   type SafeClient,
   type SafeResult,
   type TrpcClientOptions,
@@ -79,6 +81,7 @@ export {
 } from './links/socket.ts';
 export {
   routerType,
+  type BuiltinError,
   type CallOptions,
   type ClientError,
   type ClientTypes,
@@ -95,11 +98,11 @@ export {
   type TrpcClient,
   type TrpcPromise,
   type TrpcSubscription,
-  type UnexpectedError,
 } from './types.ts';
 export type { MessagePortLike } from '../server/socket.ts';
 export {
   ERROR_STATUS,
+  isBuiltinCode,
   isDefinedError,
   isTrpcError,
   TrpcError,

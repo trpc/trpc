@@ -31,13 +31,14 @@ export interface ValidationLinkOptions {
   output?: boolean | 'json';
 }
 
+/** The issues are the cause: errors outside the procedure's union carry no `data`. */
 const outputMismatch = (
   issues: InputValidationErrorData['issues'],
-): TrpcError<'PARSE_ERROR'> =>
+): TrpcError<'BAD_RESPONSE'> =>
   new TrpcError({
-    code: 'PARSE_ERROR',
+    code: 'BAD_RESPONSE',
     message: `Response validation failed: ${issues.map((i) => i.message).join('; ')}`,
-    data: { issues },
+    cause: { issues },
   });
 
 const definitionAt = (
@@ -84,7 +85,7 @@ const isEnvelope = (value: unknown): value is { id: string; data: unknown } =>
 /**
  * Validates calls against a contract's schemas on the client: inputs before
  * they are sent (failing with the same `BAD_REQUEST` the server would), and
- * results and subscription events after they arrive (`PARSE_ERROR`). Results
+ * results and subscription events after they arrive (`BAD_RESPONSE`). Results
  * are checked against the output's type side, so Effect Schema
  * transformations don't run twice. Inputs from functions (context-aware) and
  * streamed (`stream()`) outputs are not checked. Paths the contract doesn't

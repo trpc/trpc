@@ -425,7 +425,7 @@ test('a resume that fails, then answers without frames, fails what was still ope
   const feed = await client.feed.mutate();
   const [, error] = await safe(settle(feed));
   expect(error).toMatchObject({
-    code: 'PARSE_ERROR',
+    code: 'BAD_RESPONSE',
     message: 'A resumed call answered without frames',
   });
   expect(sent).toEqual([null, '3', '3']);

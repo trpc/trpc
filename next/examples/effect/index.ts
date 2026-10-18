@@ -131,11 +131,9 @@ const program = Effect.gen(function* () {
 
   const missing = yield* client.post.byId.query({ id: '404' }).pipe(
     Effect.as('found'),
-    // `defined` separates the typed error from an untyped one with the same code.
+    // A custom code is always the procedure's own error, with its `data`.
     Effect.catchTag('POST_NOT_FOUND', (err) =>
-      err.defined
-        ? Effect.succeed(`no post ${err.data.id} (${err.code})`)
-        : Effect.fail(err),
+      Effect.succeed(`no post ${err.data.id} (${err.code})`),
     ),
   );
   yield* Effect.log('post.byId', missing);

@@ -43,10 +43,10 @@ describe('a claim of one boundary code, with no unexpected claim', () => {
     >();
   });
 
-  test("subtracts nothing from today's open union", () => {
+  test('subtracts it from the client union, which is closed already', () => {
     type Left = Remaining<RenameError, 'NETWORK_ERROR', false>;
-    expectTypeOf<Extract<Left, { defined: false }>>().toEqualTypeOf<
-      Extract<RenameError, { defined: false }>
+    expectTypeOf<CodeOf<Extract<Left, { defined: false }>>>().toEqualTypeOf<
+      Exclude<BuiltinErrorCode, 'NETWORK_ERROR'>
     >();
   });
 });

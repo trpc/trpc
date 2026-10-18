@@ -1,6 +1,10 @@
 import { Effect, Exit } from 'effect';
 import { toAsyncIterable } from '../internal/effects.ts';
-import { frameworkError } from '../internal/error.ts';
+import {
+  frameworkError,
+  hasDigest,
+  type AnyTrpcError,
+} from '../internal/error.ts';
 import type { ProcedureType } from '../internal/types.ts';
 import type { AnySerializer } from '../serializer/index.ts';
 import {
@@ -261,7 +265,8 @@ export function getClientSerializer(client: object): AnySerializer | undefined {
 
 /**
  * The result of `safe()`: a `[data, error]` tuple that also has `data` and
- * `error` properties (07 Q7.3).
+ * `error` properties (07 Q7.3). Check `error` first: once it's handled,
+ * `data` is `T` (also when `T` itself allows `undefined`).
  * @since 0.1.0
  * @stability stable
  */
@@ -276,12 +281,17 @@ export type SafeResult<T, E> =
     });
 
 /**
- * Awaits a call without throwing.
+ * Awaits a call without throwing. A framework's control-flow error (Next's
+ * `redirect()`, which an in-process call rethrows) still throws.
  *
  * @example
  * ```ts
- * const [post, error] = await safe(client.post.byId.query({ id }));
- * if (error?.defined && error.code === 'NOT_FOUND') error.data.id; // typed
+ * const [post, err] = await safe(client.post.byId.query({ id }));
+ * if (err) {
+ *   if (err.defined && err.code === 'NOT_FOUND') return `No post ${err.data.id}`;
+ *   return err.message;
+ * }
+ * post.title;
  *
  * const { data, error } = await safe(client.post.create.mutate(input));
  * ```
@@ -298,6 +308,7 @@ export async function safe<T, E = unknown>(
       error: undefined,
     });
   } catch (cause) {
+    if (hasDigest(cause)) throw cause;
     const error = cause as E;
     return Object.assign([undefined, error] as [undefined, E], {
       data: undefined,
@@ -342,4 +353,68 @@ export function createSafeClient<TClient extends object>(
     const result = target(...args);
     return method === 'query' || method === 'mutate' ? safe(result) : result;
   });
+}
+
+type DefinedOf<E> = Extract<E, { readonly defined: true }>;
+type BuiltinOf<E> = Exclude<E, { readonly defined: true }>;
+type CodeOf<E> = E extends { readonly code: infer C extends string }
+  ? C
+  : never;
+
+/**
+ * The handlers {@link matchError} takes for errors `E`: one per defined
+ * code, each getting that error, and `builtin` for the built-in errors,
+ * which `switch (err.code)` narrows further. `builtin` is required while
+ * any built-in error is left in `E`, and a type error once none is.
+ * @since 0.1.0
+ * @stability stable
+ */
+export type ErrorHandlers<E> = {
+  readonly [C in CodeOf<DefinedOf<E>>]: (
+    err: Extract<DefinedOf<E>, { readonly code: C }>,
+  ) => unknown;
+} & ([BuiltinOf<E>] extends [never]
+  ? { readonly builtin?: never }
+  : { readonly builtin: (err: BuiltinOf<E>) => unknown });
+
+type HandlerResult<H> = {
+  [K in keyof H]-?: H[K] extends (err: never) => infer R ? R : never;
+}[keyof H];
+
+/**
+ * Handles every error a call can fail with, or fails to compile: each
+ * defined code needs its handler, and `builtin` takes the rest. Returns
+ * what the handler returns.
+ *
+ * @example
+ * ```ts
+ * const [post, err] = await safe(client.post.create.mutate({ title }));
+ * if (err) {
+ *   return matchError(err, {
+ *     BAD_REQUEST: (e) => e.data.issues.map((issue) => issue.message),
+ *     TITLE_TAKEN: (e) => [`"${e.data.title}" is taken`],
+ *     builtin: (e) =>
+ *       e.code === 'NETWORK_ERROR' ? ['You are offline'] : [e.message],
+ *   });
+ * }
+ * ```
+ * @since 0.1.0
+ * @stability stable
+ */
+export function matchError<
+  E extends AnyTrpcError,
+  H extends ErrorHandlers<E> & {
+    readonly [K in keyof H]: K extends keyof ErrorHandlers<E> ? unknown : never;
+  },
+>(err: E, handlers: H): HandlerResult<H> {
+  const table = handlers as unknown as Record<
+    string,
+    ((err: E) => HandlerResult<H>) | undefined
+  >;
+  const handler =
+    (err.defined && Object.hasOwn(table, err.code)
+      ? table[err.code]
+      : undefined) ?? table['builtin'];
+  if (!handler) throw err;
+  return handler(err);
 }

@@ -110,6 +110,7 @@ export type AppRouter = typeof appRouter;
 import {
   createTrpcClient,
   httpLink,
+  matchError,
   routerType,
   safe,
 } from '@trpc12/trpc/client';
@@ -123,13 +124,20 @@ const client = createTrpcClient({
 const post = await client.post.byId.query({ id: '1' });
 //    ^?
 const [created, err] = await safe(client.post.create.mutate({ title: '' }));
-if (err?.defined && err.code === 'BAD_REQUEST') {
-  err.data.issues;
-  //       ^?
+if (err) {
+  matchError(err, {
+    BAD_REQUEST: (e) => e.data.issues,
+    //                         ^?
+    builtin: (e) => e.message,
+  });
+} else {
+  created.id;
 }
 ```
 
 `routerType<AppRouter>()` types the client from the router type alone, and the client also types what its links read (see [The client](./client/overview.md)).
+
+`safe()` resolves to `[data, error]` instead of throwing. Once `error` is handled, `data` is the output. `matchError()` takes a handler for each of the procedure's errors and one for the built-in ones (network failures, aborts, crashes), and leaving one out is a type error ([Errors without try/catch](./client/errors.md)).
 
 ## Naming
 

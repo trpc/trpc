@@ -7,7 +7,7 @@ parent: client/links
 order: 9
 ---
 
-Clients ship no schemas by default. To check calls against a contract in the browser, add `validationLink`: inputs are validated before anything is sent (the same `BAD_REQUEST` the server returns, so forms can show its issues), and results and subscription events are checked when they arrive (`PARSE_ERROR` when the server drifted from the contract):
+Clients ship no schemas by default. To check calls against a contract in the browser, add `validationLink`: inputs are validated before anything is sent (the same `BAD_REQUEST` the server returns, so forms can show its issues), and results and subscription events are checked when they arrive (`BAD_RESPONSE` when the server drifted from the contract, with the issues on its `cause`):
 
 ```ts twoslash
 // ---cut-start---

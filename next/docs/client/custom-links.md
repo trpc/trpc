@@ -29,7 +29,7 @@ Links receive the fields in `op.context`. `signal` and `lastEventId` are reserve
 
 ## Errors and unsupported types
 
-A link can also declare the errors it fails calls with, and the operation types it can't carry. Declared errors join every call's typed union (`defined: true`). Procedures of an unsupported type lose their method:
+A link can also declare the errors it fails calls with, and the operation types it can't carry. Declared errors join every call's typed union (`defined: true`). An error a link didn't declare reaches callers as a built-in one: a custom code becomes `CLIENT_ERROR`, and a built-in code loses its `data`. Procedures of an unsupported type lose their method:
 
 ```ts
 class RateLimited extends TrpcError.Tagged('RATE_LIMITED', {
@@ -48,7 +48,7 @@ const client = createTrpcClient({
   links: [rateLimit, restOnly, httpLink({ url })],
 });
 const [, err] = await safe(client.post.create.mutate(input));
-if (err?.defined && err.code === 'RATE_LIMITED') retryIn(err.data.retryAfter);
+if (err?.code === 'RATE_LIMITED') retryIn(err.data.retryAfter); // a custom code is always defined
 client.onPost.subscribe; // type error: no link carries subscriptions
 ```
 

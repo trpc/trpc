@@ -5,22 +5,20 @@ import {
   safe,
   TrpcError,
   type AnyTrpcError,
-  type BuiltinErrorCode,
+  type BuiltinError,
   type SafeResult,
-  type UnexpectedError,
 } from '@trpc12/trpc/client';
 
-/**
- * One `defined: false` error per built-in code: everything a call can fail
- * with outside its procedure's union, once off-list codes are folded into
- * `INTERNAL_SERVER_ERROR` ({@link closedLink}).
- */
-export type BoundaryError = {
-  [C in BuiltinErrorCode]: TrpcError<C, unknown> & { readonly defined: false };
-}[BuiltinErrorCode];
+export { matchError } from '@trpc12/trpc/client';
 
-/** A call's error with the open `UnexpectedError` bucket replaced by {@link BoundaryError}. */
-export type Closed<E> = Exclude<E, UnexpectedError> | BoundaryError;
+/**
+ * One `defined: false` error per built-in code. Shipped as `BuiltinError`
+ * in `@trpc12/trpc/client`, with `data: undefined`.
+ */
+export type BoundaryError = BuiltinError;
+
+/** The client's union is closed now, so this changes nothing. */
+export type Closed<E> = E;
 
 /** The error a call's promise carries for `safe()`. */
 export type ErrorOf<P> = P extends { readonly '~error'?: infer E } ? E : never;
@@ -37,48 +35,12 @@ export const close = (err: AnyTrpcError): AnyTrpcError =>
         cause: err,
       });
 
-/** Makes the runtime match {@link Closed}: put it first in `links`. */
+/** What the spike put first in `links`. The server and `runLinks` do it now. */
 export const closedLink = () =>
   link(({ op, next }) => next(op).pipe(Stream.mapError(close)));
 
-/** `safe()` typed with the closed union. Needs {@link closedLink} in the chain. */
+/** `safe()` typed with the closed union. */
 export const safeClosed = <P extends PromiseLike<unknown>>(
   promise: P,
 ): Promise<SafeResult<Awaited<P>, Closed<ErrorOf<P>>>> =>
   safe(promise) as Promise<SafeResult<Awaited<P>, Closed<ErrorOf<P>>>>;
-
-type DefinedOf<E> = Extract<E, { readonly defined: true }>;
-type UndefinedOf<E> = Exclude<E, { readonly defined: true }>;
-type CodeOf<E> = E extends { readonly code: infer C extends string }
-  ? C
-  : never;
-
-/**
- * A handler per defined code, all required, plus `unexpected` for the
- * `defined: false` rest. `unexpected` is gone once nothing undefined is
- * left (a shell above owns it).
- */
-export type ErrorHandlers<E, R> = {
-  [C in CodeOf<DefinedOf<E>>]: (
-    err: Extract<DefinedOf<E>, { readonly code: C }>,
-  ) => R;
-} & ([UndefinedOf<E>] extends [never]
-  ? { unexpected?: never }
-  : { unexpected: (err: UndefinedOf<E>) => R });
-
-type HandlerResult<H> = {
-  [K in keyof H]-?: H[K] extends (err: never) => infer R ? R : never;
-}[keyof H];
-
-export function matchError<
-  E extends AnyTrpcError,
-  H extends ErrorHandlers<E, unknown>,
->(err: E, handlers: H): HandlerResult<H> {
-  const table = handlers as Record<
-    string,
-    ((err: E) => HandlerResult<H>) | undefined
-  >;
-  const handler = err.defined ? table[err.code] : table['unexpected'];
-  if (!handler) throw err;
-  return handler(err);
-}

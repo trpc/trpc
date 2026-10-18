@@ -407,7 +407,7 @@ test('openApiLink reads every kind of response body', async () => {
 
   const [, teapot] = await safe(client.raw.query({ kind: 'teapot' }));
   expect(teapot).toMatchObject({
-    code: 'PARSE_ERROR',
+    code: 'BAD_RESPONSE',
     message: 'Unexpected 418 response',
   });
   const [, busy] = await safe(client.raw.query({ kind: 'busy' }));

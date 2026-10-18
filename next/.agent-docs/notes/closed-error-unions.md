@@ -4,6 +4,8 @@
 
 Code: `next/spikes/closed-errors/`; run with `pnpm test` from `next/`. `effect` 4.0.2.
 
+The lean below shipped ([closed-client-errors](../decisions/closed-client-errors.md)): the spike now checks the shipped union, and `matchError`'s catch-all is `builtin`. The census and findings describe the code before it.
+
 ```ts
 const client = createTrpcClient({
   router: routerType<AppRouter>(),

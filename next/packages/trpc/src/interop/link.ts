@@ -8,6 +8,7 @@ import {
 } from '../client/link.ts';
 import {
   isTrpcError,
+  toBuiltinError,
   TrpcError,
   type AnyTrpcError,
 } from '../internal/error.ts';
@@ -115,17 +116,22 @@ const toV11Operation = (op: Operation): V11Operation => ({
   signal: op.signal ?? null,
 });
 
-/** v11 errors are `TRPCClientError`s, with the code in `data.code`. */
+/**
+ * v11 errors are `TRPCClientError`s, with the code in `data.code`. The
+ * v12 error is `defined: false`, so v11's `data` stays on the cause.
+ */
 const fromV11Error = (error: unknown): AnyTrpcError => {
   if (isTrpcError(error)) return error;
   const code = (error as { data?: { code?: unknown } } | undefined)?.data?.code;
   if (typeof code !== 'string') return toClientError(error);
-  return new TrpcError({
-    code,
-    message: error instanceof Error ? error.message : code,
-    data: (error as { data?: unknown }).data,
-    cause: error,
-  });
+  return toBuiltinError(
+    new TrpcError({
+      code,
+      message: error instanceof Error ? error.message : code,
+      cause: error,
+    }),
+    'INTERNAL_SERVER_ERROR',
+  );
 };
 
 /**

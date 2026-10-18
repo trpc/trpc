@@ -67,7 +67,7 @@ await client.post.byId.query(
 
 ## Errors
 
-A call rejects with the procedure's typed errors (`defined: true`, narrowed by `code`) or an unexpected one. `safe()` returns a result tuple instead of throwing ([Errors without try/catch](./errors.md)).
+A call rejects with one of the procedure's errors (`defined: true`, with its `data`) or a built-in one (`defined: false`: `NETWORK_ERROR`, `CLIENT_CLOSED_REQUEST`, `INTERNAL_SERVER_ERROR`, …). The error's type lists them all, so a `switch` on `code` narrows it. `safe()` returns a result tuple instead of throwing, and `matchError()` checks that each error is handled ([Errors without try/catch](./errors.md)).
 
 ## Other clients
 

@@ -9,9 +9,11 @@ import {
 } from 'effect';
 import { HttpServerResponse } from 'effect/http';
 import {
+  isBuiltinCode,
   isTrpcError,
   statusOf,
   taggedSpec,
+  toBuiltinError,
   TrpcError,
   withDefined,
   withStatusHint,
@@ -67,26 +69,37 @@ export const isUnexpectedError = (err: AnyTrpcError): boolean =>
   unexpectedErrors.has(err);
 
 /**
+ * A thrown `TrpcError` that no declaration covers: `defined: false`, so
+ * clients only ever see built-in codes and no `data` outside the union. A
+ * custom code is unexpected, like any other thrown value, and so masked.
+ */
+const undeclared = (err: AnyTrpcError): AnyTrpcError => {
+  if (!isBuiltinCode(err.code)) return unexpectedError(err);
+  return toBuiltinError(withDefined(err, false), 'INTERNAL_SERVER_ERROR');
+};
+
+/**
  * The one error a failed call surfaces. Failures in the error channel are
  * typed (`defined`) errors. Defects are thrown values: a thrown `TrpcError`
- * keeps its code but is `defined: false` (unless it came from a declared
- * error's constructor), anything else is unexpected.
+ * with a built-in code keeps it but is `defined: false` and loses its
+ * `data` (unless it came from a declared error's constructor), anything
+ * else is unexpected.
  * @since 0.1.0
  * @stability stable
  */
 export function normalizeCause(cause: Cause.Cause<unknown>): AnyTrpcError {
   for (const reason of cause.reasons) {
     if (Cause.isFailReason(reason)) {
-      return isTrpcError(reason.error)
-        ? reason.error
-        : unexpectedError(reason.error);
+      if (!isTrpcError(reason.error)) return unexpectedError(reason.error);
+      return reason.error.defined ? reason.error : undeclared(reason.error);
     }
   }
   for (const reason of cause.reasons) {
     if (Cause.isDieReason(reason)) {
-      return isTrpcError(reason.defect)
-        ? withDefined(reason.defect, isDeclaredError(reason.defect))
-        : unexpectedError(reason.defect);
+      if (!isTrpcError(reason.defect)) return unexpectedError(reason.defect);
+      return isDeclaredError(reason.defect)
+        ? withDefined(reason.defect, true)
+        : undeclared(reason.defect);
     }
   }
   return new TrpcError({
