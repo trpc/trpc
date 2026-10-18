@@ -286,7 +286,7 @@ const v12Features: ReadonlyArray<Feature> = [
     body: (
       <>
         <code>tracked()</code> events resume after a reconnect, over SSE or
-        WebSockets, fed by a <code>Publisher</code> backed by Redis or Postgres.
+        WebSockets.
       </>
     ),
     icon: <Radio />,

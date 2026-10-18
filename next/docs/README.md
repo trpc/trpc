@@ -54,8 +54,8 @@ Pages marked (hidden) are unlisted on the site until they're reviewed: out of it
 ## Subscriptions
 
 - [Subscriptions](./subscriptions/overview.md): Streams of events over SSE or WebSockets, with tracked() ids so reconnects resume.
-- [Publisher](./subscriptions/publisher.md): Typed publish/subscribe as an Effect service, with a channel per audience and resumable events.
-  - [Publisher backends](./subscriptions/backends.md): Recipes for a Publisher on Redis streams and Postgres LISTEN/NOTIFY.
+- [Publisher](./subscriptions/publisher.md) (hidden): Typed publish/subscribe as an Effect service, with a channel per audience and resumable events.
+  - [Publisher backends](./subscriptions/backends.md) (hidden): Recipes for a Publisher on Redis streams and Postgres LISTEN/NOTIFY.
 
 ## Contracts and OpenAPI (hidden)
 

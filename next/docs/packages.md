@@ -23,7 +23,7 @@ The TanStack packages re-export `@trpc12/tanstack-query`, so an app installs one
 
 | Entry                     | For                                                                                                                |
 | ------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| `@trpc12/trpc/server`     | `initTrpc`, routers, handlers, callers, `Publisher` ([The server](./server/overview.md))                           |
+| `@trpc12/trpc/server`     | `initTrpc`, routers, handlers, callers ([The server](./server/overview.md))                                        |
 | `@trpc12/trpc/client`     | `createTrpcClient`, links, `safe` ([The client](./client/overview.md), [Links](./client/links.md))                 |
 | `@trpc12/trpc/middleware` | `onStart`, `onSuccess`, `onError`, `onFinish` ([Built-in middleware](./middleware/overview.md))                    |
 | `@trpc12/trpc/effect`     | `createEffectClient` ([The Effect client](./client/effect.md))                                                     |

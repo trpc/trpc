@@ -135,4 +135,4 @@ const progress = useSubscription(
 );
 ```
 
-Unsubscribing stops watching, not the job. Keep jobs in a [Publisher](../../subscriptions/publisher.md) so any instance can stream them.
+Unsubscribing stops watching, not the job.

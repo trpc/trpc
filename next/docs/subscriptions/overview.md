@@ -97,7 +97,3 @@ source.addEventListener('done', () => source.close());
 ## Over WebSockets
 
 `wsLink` runs subscriptions (and everything else) over one WebSocket; `switchLink` can send subscriptions there and the rest over HTTP ([Links](../client/links.md)).
-
-## Publishing events
-
-To publish from mutations to subscribers, across processes and with resumable ids, use a [`Publisher`](./publisher.md).
