@@ -1,5 +1,5 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": { "types": ["bun"] },
-  "include": ["src/bun.ts", "src/bun-effect.ts"]
+  "include": ["bun/server.ts", "bun/effect-server.ts"]
 }

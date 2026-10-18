@@ -1,13 +1,13 @@
 /**
  * A stateless Cloudflare Worker: `handler.fetch` as the Worker's `fetch`,
  * with visits kept in Workers KV. WebSockets on Workers need a Durable
- * Object; `examples/cloudflare` has one. `pnpm dev:worker` runs it locally.
+ * Object; `examples/cloudflare` has one. `pnpm server:workers` runs it with `wrangler dev`.
  */
 /// <reference types="@cloudflare/workers-types" />
 import { env } from 'cloudflare:workers';
 import { Effect, Layer } from 'effect';
 import { createFetchHandler } from '@trpc12/trpc/server';
-import { handlerOptions, Visits } from './router.ts';
+import { handlerOptions, Visits } from '../src/router.ts';
 
 interface Env {
   VISITS: KVNamespace;

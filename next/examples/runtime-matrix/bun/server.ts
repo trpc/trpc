@@ -1,10 +1,11 @@
 /**
  * Bun: `Bun.serve` takes `handler.fetch` as it is. Bun's server WebSockets
- * aren't web-standard, so this one serves HTTP and SSE only; `bun-effect.ts`
- * adds WebSockets. `PORT=3000 bun src/bun.ts`.
+ * aren't web-standard, so this one serves HTTP and SSE only;
+ * `effect-server.ts` adds WebSockets. `pnpm server:bun` serves on `PORT`
+ * (default 3000).
  */
 import { createFetchHandler } from '@trpc12/trpc/server';
-import { handlerOptions, Visits } from './router.ts';
+import { handlerOptions, Visits } from '../src/router.ts';
 
 const handler = createFetchHandler({
   ...handlerOptions,

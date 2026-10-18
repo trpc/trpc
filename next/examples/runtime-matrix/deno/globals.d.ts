@@ -1,5 +1,5 @@
 /**
- * The few Deno APIs `deno.ts` uses, so `tsc` type-checks it without Deno
+ * The few Deno APIs `server.ts` uses, so `tsc` type-checks it without Deno
  * installed. Deno's own declarations (`deno check`) are the full ones.
  */
 declare global {

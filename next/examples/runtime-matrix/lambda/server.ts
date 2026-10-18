@@ -1,7 +1,7 @@
 /**
  * AWS Lambda: `main` for API Gateway, ALB and function URLs, and
  * `streaming` for function URLs with `InvokeMode: RESPONSE_STREAM`. Deploy
- * this file as is; `function-url.ts` runs it locally.
+ * this file as is; `function-url.ts` serves it locally.
  */
 import {
   toLambdaHandler,
@@ -9,7 +9,7 @@ import {
   type LambdaPlatform,
 } from '@trpc12/trpc/aws-lambda';
 import { createFetchHandler } from '@trpc12/trpc/server';
-import { handlerOptions, Visits, type AppRouter } from './router.ts';
+import { handlerOptions, Visits, type AppRouter } from '../src/router.ts';
 
 const handler = createFetchHandler<AppRouter, LambdaPlatform>({
   ...handlerOptions,

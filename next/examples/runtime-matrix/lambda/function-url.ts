@@ -1,10 +1,11 @@
 /**
  * A local stand-in for a Lambda function URL: each HTTP request becomes a
- * payload 2.0 event for `lambda.ts`, and the result goes back the way a
- * function URL sends it. With `streaming`, it reads the streaming handler's
+ * payload 2.0 event for `server.ts`, and the result goes back the way a
+ * function URL sends it. In `streaming` mode, it reads the streaming handler's
  * prelude (status and headers, then eight null bytes) and forwards the body
  * as it's written, as `InvokeMode: RESPONSE_STREAM` does.
- * `PORT=3000 node src/function-url.ts [buffered|streaming]`.
+ * `pnpm server:lambda` serves on `PORT` (default 3000), streaming; pass
+ * `buffered` to `node lambda/function-url.ts` for the buffered handler.
  */
 import { randomUUID } from 'node:crypto';
 import {
@@ -12,15 +13,16 @@ import {
   type IncomingMessage,
   type ServerResponse,
 } from 'node:http';
+import type { AddressInfo } from 'node:net';
 import type {
   LambdaContext,
   LambdaResponseStream,
   LambdaV2Event,
   LambdaV2Result,
 } from '@trpc12/trpc/aws-lambda';
-import { main, streaming } from './lambda.ts';
+import { main, streaming } from './server.ts';
 
-const mode = process.argv[2] === 'streaming' ? 'streaming' : 'buffered';
+export type Mode = 'buffered' | 'streaming';
 
 async function toEvent(req: IncomingMessage): Promise<LambdaV2Event> {
   const chunks: Buffer[] = [];
@@ -87,26 +89,40 @@ function responseStream(res: ServerResponse): LambdaResponseStream {
   };
 }
 
-const server = createServer((req, res) => {
-  void (async () => {
-    const event = await toEvent(req);
-    if (mode === 'streaming') {
-      return streaming(event, responseStream(res), context());
-    }
-    const result = (await main(event, context())) as LambdaV2Result;
-    res.writeHead(result.statusCode, {
-      ...result.headers,
-      'set-cookie': result.cookies,
-    });
-    res.end(
-      result.isBase64Encoded ? Buffer.from(result.body, 'base64') : result.body,
-    );
-  })();
-});
+export async function listen(mode: Mode, port = 0) {
+  const server = createServer((req, res) => {
+    void (async () => {
+      const event = await toEvent(req);
+      if (mode === 'streaming') {
+        return streaming(event, responseStream(res), context());
+      }
+      const result = (await main(event, context())) as LambdaV2Result;
+      res.writeHead(result.statusCode, {
+        ...result.headers,
+        'set-cookie': result.cookies,
+      });
+      res.end(
+        result.isBase64Encoded
+          ? Buffer.from(result.body, 'base64')
+          : result.body,
+      );
+    })();
+  });
+  await new Promise<void>((resolve) =>
+    server.listen(port, '127.0.0.1', resolve),
+  );
+  const address = server.address() as AddressInfo;
+  return {
+    url: `http://127.0.0.1:${address.port}/trpc`,
+    async [Symbol.asyncDispose]() {
+      server.closeAllConnections();
+      await new Promise((resolve) => server.close(resolve));
+    },
+  };
+}
 
-server.listen(Number(process.env['PORT'] ?? 3000), '127.0.0.1', () => {
-  const address = server.address();
-  const port = typeof address === 'object' && address ? address.port : 0;
-  console.log(`listening on http://127.0.0.1:${port}/trpc (${mode})`);
-});
-process.on('SIGTERM', () => server.close());
+if (import.meta.main) {
+  const mode = process.argv[2] === 'buffered' ? 'buffered' : 'streaming';
+  const server = await listen(mode, Number(process.env['PORT'] ?? 3000));
+  console.log(`listening on ${server.url} (${mode})`);
+}

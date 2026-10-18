@@ -1,10 +1,10 @@
 /**
  * Deno: `Deno.serve` takes `handler.fetch`, and Deno's web-standard
  * `WebSocket` goes to `handler.websocket`.
- * `PORT=3000 deno run --no-lock --allow-net --allow-env --allow-read src/deno.ts`.
+ * `pnpm server:deno` serves on `PORT` (default 3000).
  */
 import { createFetchHandler } from '@trpc12/trpc/server';
-import { allowedOrigin, handlerOptions, Visits } from './router.ts';
+import { allowedOrigin, handlerOptions, Visits } from '../src/router.ts';
 
 const handler = createFetchHandler({
   ...handlerOptions,

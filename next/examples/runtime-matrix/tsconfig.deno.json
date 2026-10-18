@@ -1,5 +1,5 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": { "types": [] },
-  "include": ["src/deno.ts", "src/deno-globals.d.ts"]
+  "include": ["deno/server.ts", "deno/globals.d.ts"]
 }

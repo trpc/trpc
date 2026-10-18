@@ -13,11 +13,13 @@
     "types": ["node"]
   },
   "include": [
-    "src/router.ts",
-    "src/node.ts",
-    "src/lambda.ts",
-    "src/function-url.ts",
-    "checks.ts",
-    "smoke.ts"
+    "server.ts",
+    "client.ts",
+    "start.ts",
+    "src",
+    "lambda",
+    "bun/start.ts",
+    "deno/start.ts",
+    "workers/start.ts"
   ]
 }
