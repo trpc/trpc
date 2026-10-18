@@ -8,15 +8,13 @@ order: 2
 
 Everything server- and client-side is one package, `@trpc12/trpc`. The other packages fit it into a framework or a tool:
 
-| Package                                                                        | For                                                                    |
-| ------------------------------------------------------------------------------ | ---------------------------------------------------------------------- |
-| `@trpc12/trpc` ([entry points](#trpc12trpc-entry-points))                      | Routers, handlers, clients, links, middleware and adapters             |
-| [`@trpc12/tanstack-query`](./integrations/tanstack-query.md)                   | TanStack Query options, keys and filters, for any framework            |
-| [`@trpc12/tanstack-react-query`](./integrations/tanstack-query/react.md)       | React: context, `useSubscription`, and server components in `/rsc`     |
-| [`@trpc12/experimental-react`](./integrations/experimental-react.md)           | React with `use()` and Suspense, without TanStack Query (experimental) |
-| [`@trpc12/experimental-react-atom`](./integrations/experimental-react-atom.md) | Queries, mutations and subscriptions as Effect atoms (experimental)    |
-| [`@trpc12/nest`](./integrations/nestjs.md)                                     | A contract served from NestJS controllers                              |
-| [`@trpc12/upgrade`](./migrations/from-v11/codemod.md)                          | The v11 to v12 codemod                                                 |
+| Package                                                                  | For                                                                |
+| ------------------------------------------------------------------------ | ------------------------------------------------------------------ |
+| `@trpc12/trpc` ([entry points](#trpc12trpc-entry-points))                | Routers, handlers, clients, links, middleware and adapters         |
+| [`@trpc12/tanstack-query`](./integrations/tanstack-query.md)             | TanStack Query options, keys and filters, for any framework        |
+| [`@trpc12/tanstack-react-query`](./integrations/tanstack-query/react.md) | React: context, `useSubscription`, and server components in `/rsc` |
+| [`@trpc12/nest`](./integrations/nestjs.md)                               | A contract served from NestJS controllers                          |
+| [`@trpc12/upgrade`](./migrations/from-v11/codemod.md)                    | The v11 to v12 codemod                                             |
 
 The TanStack packages re-export `@trpc12/tanstack-query`, so an app installs one of them with TanStack's adapter for its framework.
 
@@ -40,7 +38,7 @@ The TanStack packages re-export `@trpc12/tanstack-query`, so an app installs one
 
 ## Stability
 
-An export whose name starts with `experimental_` (such as `experimental_createAction`) may still change in a minor release, and so may every export of a package whose name starts with `experimental-` (such as `@trpc12/experimental-react`), whose exports have no prefix. When one becomes stable, it gets its name without the prefix, and the `experimental_` name stays as a deprecated alias until the next major. `npx @trpc12/upgrade` rewrites those imports.
+An export whose name starts with `experimental_` (such as `experimental_createAction`) may still change in a minor release, and so may every export of a package whose name starts with `experimental-`, whose exports have no prefix. When one becomes stable, it gets its name without the prefix, and the `experimental_` name stays as a deprecated alias until the next major. `npx @trpc12/upgrade` rewrites those imports.
 
 Every export's JSDoc carries `@stability` (`stable` or `experimental`) and `@since`. Until 12.0.0, prereleases promise nothing; `@stability` says how the export is planned to ship.
 

@@ -16,12 +16,10 @@ The core client works anywhere ([The client](../client/overview.md)). These page
 
 ## React and Next.js
 
-[React and Next.js](./react.md) compares the ways to fetch in React, and covers the server side:
+[React and Next.js](./react.md) covers fetching in React and the server side:
 
 - [React Server Components](./rsc.md): prefetch in server components, stream pending queries to the browser, and tag Next's data cache by query key.
 - [Server Actions](./server-actions.md): procedures as Server Actions that take typed input or `FormData`.
-- [React without TanStack Query](./experimental-react.md): render-as-you-fetch with `use()` and Suspense, where cache features are links. Experimental.
-- [React atoms](./experimental-react-atom.md): query, mutation and subscription atoms on Effect Atom. Experimental.
 
 ## Libraries
 

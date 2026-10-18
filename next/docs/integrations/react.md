@@ -1,22 +1,12 @@
 ---
 title: React and Next.js
-description: Which package to fetch with in React, and the pages for server components, Server Actions and route handlers.
+description: Fetching in React, and the pages for server components, Server Actions and route handlers.
 section: Integrations
 order: 2
 v11: client/nextjs
 ---
 
-React has three ways to fetch, and the server side of an RSC app has three more pieces. Pick one way to fetch; the server pieces work with any of them.
-
-## Fetching in components
-
-| Package                                                           | Model                                                                                    | Stability    |
-| ----------------------------------------------------------------- | ---------------------------------------------------------------------------------------- | ------------ |
-| [`@trpc12/tanstack-react-query`](./tanstack-query/react.md)       | TanStack Query's options, cache and devtools, with `useTrpc()` and `useSubscription`     | stable       |
-| [`@trpc12/experimental-react`](./experimental-react.md)           | Loaders start queries and components read them with `use()`; cache features are links    | experimental |
-| [`@trpc12/experimental-react-atom`](./experimental-react-atom.md) | Queries, mutations and subscriptions as Effect atoms, typed with each procedure's errors | experimental |
-
-Start with TanStack Query unless you already use Effect Atom, or want Suspense without a query cache.
+React fetches with [`@trpc12/tanstack-react-query`](./tanstack-query/react.md): TanStack Query's options, cache and devtools, with `useTrpc()` and `useSubscription`. The server side of an RSC app has three more pieces.
 
 ## On the server
 
