@@ -9,7 +9,7 @@ order: 5
 `@trpc12/tanstack-svelte-query` re-exports [`@trpc12/tanstack-query`](../tanstack-query.md) and adds context helpers for a client and its helpers, and a `createSubscription` whose fields follow `$state`. It's for Svelte 5 and `@tanstack/svelte-query` 6.
 
 ```package-install
-@trpc12/trpc @trpc12/tanstack-svelte-query @tanstack/svelte-query
+@trpc12/trpc effect @trpc12/tanstack-svelte-query @tanstack/svelte-query
 ```
 
 ## Provide the client

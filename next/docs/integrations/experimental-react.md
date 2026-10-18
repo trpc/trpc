@@ -11,7 +11,7 @@ order: 3
 The whole package is experimental: the package name says so, every export is `@stability experimental`, and the API may change in any release. For a stable React integration, use [TanStack Query](./tanstack-query/react.md); [React and Next.js](./react.md) compares the three.
 
 ```package-install
-@trpc12/trpc @trpc12/experimental-react effect
+@trpc12/trpc effect @trpc12/experimental-react
 ```
 
 ```tsx twoslash

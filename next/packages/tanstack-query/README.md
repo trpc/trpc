@@ -3,7 +3,7 @@
 Turns a tRPC client into plain TanStack Query options (`queryOptions()`, `infiniteOptions()`, `mutationOptions()`, subscription options), keys and filters, so it works with every TanStack adapter. Apps usually install the package for their framework, which re-exports this one: `@trpc12/tanstack-react-query`, `-preact-`, `-vue-`, `-solid-`, `-svelte-`, `-angular-` or `-lit-query`.
 
 ```sh
-pnpm add @trpc12/trpc @trpc12/tanstack-query @tanstack/query-core
+pnpm add @trpc12/trpc effect @trpc12/tanstack-query @tanstack/query-core
 ```
 
 ```ts

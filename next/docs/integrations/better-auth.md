@@ -8,7 +8,7 @@ order: 4
 [Better Auth](https://better-auth.com/) reads the session from the request's headers. It needs no adapter package:
 
 ```package-install
-@trpc12/trpc better-auth
+@trpc12/trpc effect better-auth
 ```
 
 Put the headers in the ctx, then a [middleware](../server/middleware.md) turns the session into `ctx.user`:

@@ -9,7 +9,7 @@ order: 3
 `@trpc12/tanstack-vue-query` re-exports [`@trpc12/tanstack-query`](../tanstack-query.md) and adds an app plugin (or `provideTrpc()`) that provides a client and its helpers, and a `useSubscription` that returns refs.
 
 ```package-install
-@trpc12/trpc @trpc12/tanstack-vue-query @tanstack/vue-query
+@trpc12/trpc effect @trpc12/tanstack-vue-query @tanstack/vue-query
 ```
 
 ## Provide the client

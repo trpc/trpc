@@ -3,7 +3,7 @@
 Re-exports [`@trpc12/tanstack-query`](https://github.com/trpc/trpc/tree/v12/next/packages/tanstack-query) and adds an app plugin (or `provideTrpc()`) for the client and its helpers, and `useSubscription`.
 
 ```sh
-pnpm add @trpc12/trpc @trpc12/tanstack-vue-query @tanstack/vue-query
+pnpm add @trpc12/trpc effect @trpc12/tanstack-vue-query @tanstack/vue-query
 ```
 
 ```ts

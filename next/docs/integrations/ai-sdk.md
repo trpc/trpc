@@ -8,7 +8,7 @@ order: 3
 [AI SDK](https://ai-sdk.dev/) (v7) streams chat responses as a `ReadableStream` of UI message chunks. A procedure returns that stream as it is, and the client gets a `ReadableStream` back, which is what `useChat`'s transport returns. This needs no adapter package, and it's tested against the real library in `test/integration/`.
 
 ```package-install
-@trpc12/trpc ai @ai-sdk/react
+@trpc12/trpc effect ai @ai-sdk/react
 ```
 
 ```ts twoslash

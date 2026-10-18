@@ -346,7 +346,8 @@ function HomePage() {
             </div>
             <p className="flex flex-wrap items-center gap-x-3 gap-y-1.5 font-mono text-sm text-muted-foreground">
               <span>
-                <span className="select-none">$ </span>pnpm add @trpc12/trpc zod
+                <span className="select-none">$ </span>pnpm add @trpc12/trpc
+                effect
               </span>
               <span
                 className="code-unpublished static! font-sans"

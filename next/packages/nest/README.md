@@ -3,7 +3,7 @@
 Serves contract-first procedures from NestJS controllers: `@experimental_Implement(contract)` routes a controller method by the contract's REST mapping, and the procedure it returns runs on `@trpc12/trpc/openapi`'s handler, so the controller's injected services reach the resolver through `this`.
 
 ```sh
-pnpm add @trpc12/trpc @trpc12/nest @nestjs/common @nestjs/core @effect/platform-node effect rxjs
+pnpm add @trpc12/trpc effect @trpc12/nest @nestjs/common @nestjs/core @effect/platform-node rxjs
 ```
 
 ```ts

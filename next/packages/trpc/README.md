@@ -3,8 +3,10 @@
 The core of tRPC v12, in one package split into entry points. Write procedures on the server, serve them with one handler on any runtime, and call them from a client typed by the router.
 
 ```sh
-pnpm add @trpc12/trpc zod
+pnpm add @trpc12/trpc effect
 ```
+
+`effect` is a peer dependency, so the app and `@trpc12/trpc` share one copy; code that uses Promises never imports it. `.input()` takes any Standard Schema (zod, Valibot, ArkType, …) or an Effect Schema: the example uses zod (`pnpm add zod`).
 
 ```ts
 // server.ts

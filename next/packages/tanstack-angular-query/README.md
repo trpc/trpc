@@ -3,7 +3,7 @@
 Re-exports [`@trpc12/tanstack-query`](https://github.com/trpc/trpc/tree/v12/next/packages/tanstack-query) and adds `provideTrpc()` and injectors for the client and its helpers, and `injectSubscription`.
 
 ```sh
-pnpm add @trpc12/trpc @trpc12/tanstack-angular-query @tanstack/angular-query-experimental
+pnpm add @trpc12/trpc effect @trpc12/tanstack-angular-query @tanstack/angular-query-experimental
 ```
 
 ```ts

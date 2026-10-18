@@ -9,7 +9,7 @@ order: 4
 `@trpc12/experimental-react-atom` is modeled on Effect's `AtomRpc`. Each query is an atom of its `AsyncResult`, typed with the procedure's errors; the same call returns the same atom. Like [`@trpc12/experimental-react`](./experimental-react.md), the whole package is experimental.
 
 ```package-install
-@trpc12/trpc @trpc12/experimental-react-atom @effect/atom-react effect
+@trpc12/trpc effect @trpc12/experimental-react-atom @effect/atom-react
 ```
 
 ```tsx twoslash

@@ -26,6 +26,8 @@ Everything server- and client-side is one package, `@trpc12/trpc`. The other pac
 
 The TanStack packages re-export `@trpc12/tanstack-query`, so an app installs one of them with TanStack's adapter for its framework.
 
+`effect` is a peer dependency of `@trpc12/trpc`, so every install adds both, and the app's own Effect code shares the same copy. No schema library is a dependency: `.input()` takes zod, Valibot, ArkType or any other Standard Schema, or an Effect Schema ([Input and output](./server/procedures.md#input-and-output)).
+
 ## `@trpc12/trpc` entry points
 
 | Entry                             | For                                                                                                                                                       |

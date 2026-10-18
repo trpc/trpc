@@ -9,7 +9,7 @@ order: 7
 `@trpc12/tanstack-lit-query` re-exports [`@trpc12/tanstack-query`](../tanstack-query.md) and adds a provider element and `@lit/context` consumers for a client and its helpers, and a `createSubscriptionController`. Without a provider, `createTrpcQueryUtils({ client })` works in Lit too.
 
 ```package-install
-@trpc12/trpc @trpc12/tanstack-lit-query @tanstack/lit-query @lit/context
+@trpc12/trpc effect @trpc12/tanstack-lit-query @tanstack/lit-query @lit/context
 ```
 
 ## Provide the client

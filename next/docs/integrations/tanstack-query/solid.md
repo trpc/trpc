@@ -9,7 +9,7 @@ order: 4
 `@trpc12/tanstack-solid-query` re-exports [`@trpc12/tanstack-query`](../tanstack-query.md) and adds a context for a client and its helpers, and a `useSubscription` whose fields are reactive.
 
 ```package-install
-@trpc12/trpc @trpc12/tanstack-solid-query @tanstack/solid-query
+@trpc12/trpc effect @trpc12/tanstack-solid-query @tanstack/solid-query
 ```
 
 ## Provide the client

@@ -21,7 +21,7 @@ v11: client/tanstack-react-query
 Install the core with your framework's package and TanStack's adapter, for React:
 
 ```package-install
-@trpc12/trpc @trpc12/tanstack-react-query @tanstack/react-query
+@trpc12/trpc effect @trpc12/tanstack-react-query @tanstack/react-query
 ```
 
 ## The helpers

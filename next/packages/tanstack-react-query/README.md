@@ -3,7 +3,7 @@
 Re-exports [`@trpc12/tanstack-query`](https://github.com/trpc/trpc/tree/v12/next/packages/tanstack-query) and adds a context for the client and its helpers, `useSubscription`, and server-component helpers in `/rsc`.
 
 ```sh
-pnpm add @trpc12/trpc @trpc12/tanstack-react-query @tanstack/react-query
+pnpm add @trpc12/trpc effect @trpc12/tanstack-react-query @tanstack/react-query
 ```
 
 ```tsx

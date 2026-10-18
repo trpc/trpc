@@ -10,7 +10,7 @@ v11: client/tanstack-react-query/setup
 `@trpc12/tanstack-react-query` re-exports [`@trpc12/tanstack-query`](../tanstack-query.md) and adds a context for a client and its helpers, a `useSubscription` hook, and server-component helpers in `@trpc12/tanstack-react-query/rsc`.
 
 ```package-install
-@trpc12/trpc @trpc12/tanstack-react-query @tanstack/react-query
+@trpc12/trpc effect @trpc12/tanstack-react-query @tanstack/react-query
 ```
 
 ## A client for the whole app

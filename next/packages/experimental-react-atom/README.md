@@ -3,7 +3,7 @@
 Queries, mutations and subscriptions as Effect atoms (`effect/reactivity`), read in React with `@effect/atom-react`, modeled on Effect's `AtomRpc`. The whole package is experimental, as its name says: every export may change in any release.
 
 ```sh
-pnpm add @trpc12/trpc @trpc12/experimental-react-atom @effect/atom-react effect
+pnpm add @trpc12/trpc effect @trpc12/experimental-react-atom @effect/atom-react
 ```
 
 ```tsx

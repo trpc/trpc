@@ -9,7 +9,7 @@ order: 2
 `@trpc12/tanstack-preact-query` re-exports [`@trpc12/tanstack-query`](../tanstack-query.md) and adds a context for a client and its helpers, and a `useSubscription` hook. It works as the [React](./react.md) package does, with Preact's hooks.
 
 ```package-install
-@trpc12/trpc @trpc12/tanstack-preact-query @tanstack/preact-query
+@trpc12/trpc effect @trpc12/tanstack-preact-query @tanstack/preact-query
 ```
 
 ## Provide the client

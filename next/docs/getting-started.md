@@ -9,7 +9,15 @@ v11: quickstart
 A router is a plain object of procedures. A handler serves it; a client calls it with the router's type.
 
 ```package-install
-@trpc12/trpc zod
+@trpc12/trpc effect
+```
+
+`effect` is a peer dependency, so your app and `@trpc12/trpc` share one copy; code that uses Promises never imports it ([Packages](./packages.md)).
+
+`.input()` takes any Standard Schema (zod, Valibot, ArkType, …) or an Effect Schema ([Input and output](./server/procedures.md#input-and-output)). This page uses zod:
+
+```package-install
+zod
 ```
 
 ## Define a router
