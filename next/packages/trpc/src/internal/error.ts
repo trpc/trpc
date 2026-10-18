@@ -141,19 +141,6 @@ export interface BuiltinErrorClass<TCode extends BuiltinErrorCode> {
   readonly code: TCode;
 }
 
-const builtinClass = <TCode extends BuiltinErrorCode>(
-  base: typeof TrpcError,
-  code: TCode,
-): BuiltinErrorClass<TCode> => {
-  class Builtin extends base<TCode, undefined> {
-    static readonly code = code;
-    constructor(opts?: TaggedErrorOptions) {
-      super({ code, message: opts?.message, cause: opts?.cause });
-    }
-  }
-  return Builtin;
-};
-
 /**
  * Options for {@link TrpcError} and {@link error}.
  * @since 0.1.0
@@ -229,98 +216,55 @@ export class TrpcError<
   }
 
   /** `PARSE_ERROR`: the server couldn't parse the request. */
-  static readonly ParseError: BuiltinErrorClass<'PARSE_ERROR'> = builtinClass(
-    this,
-    'PARSE_ERROR',
-  );
+  declare static readonly ParseError: BuiltinErrorClass<'PARSE_ERROR'>;
   /** `BAD_REQUEST`. */
-  static readonly BadRequest: BuiltinErrorClass<'BAD_REQUEST'> = builtinClass(
-    this,
-    'BAD_REQUEST',
-  );
+  declare static readonly BadRequest: BuiltinErrorClass<'BAD_REQUEST'>;
   /** `UNSUPPORTED_PROTOCOL`: a request in a protocol the server doesn't speak. */
-  static readonly UnsupportedProtocol: BuiltinErrorClass<'UNSUPPORTED_PROTOCOL'> =
-    builtinClass(this, 'UNSUPPORTED_PROTOCOL');
+  declare static readonly UnsupportedProtocol: BuiltinErrorClass<'UNSUPPORTED_PROTOCOL'>;
   /** `UNAUTHORIZED`. */
-  static readonly Unauthorized: BuiltinErrorClass<'UNAUTHORIZED'> =
-    builtinClass(this, 'UNAUTHORIZED');
+  declare static readonly Unauthorized: BuiltinErrorClass<'UNAUTHORIZED'>;
   /** `PAYMENT_REQUIRED`. */
-  static readonly PaymentRequired: BuiltinErrorClass<'PAYMENT_REQUIRED'> =
-    builtinClass(this, 'PAYMENT_REQUIRED');
+  declare static readonly PaymentRequired: BuiltinErrorClass<'PAYMENT_REQUIRED'>;
   /** `FORBIDDEN`. */
-  static readonly Forbidden: BuiltinErrorClass<'FORBIDDEN'> = builtinClass(
-    this,
-    'FORBIDDEN',
-  );
+  declare static readonly Forbidden: BuiltinErrorClass<'FORBIDDEN'>;
   /** `NOT_FOUND`, also what a call to a procedure the server lacks gets. */
-  static readonly NotFound: BuiltinErrorClass<'NOT_FOUND'> = builtinClass(
-    this,
-    'NOT_FOUND',
-  );
+  declare static readonly NotFound: BuiltinErrorClass<'NOT_FOUND'>;
   /** `METHOD_NOT_SUPPORTED`: the wrong HTTP method for the procedure. */
-  static readonly MethodNotSupported: BuiltinErrorClass<'METHOD_NOT_SUPPORTED'> =
-    builtinClass(this, 'METHOD_NOT_SUPPORTED');
+  declare static readonly MethodNotSupported: BuiltinErrorClass<'METHOD_NOT_SUPPORTED'>;
   /** `TIMEOUT`. */
-  static readonly Timeout: BuiltinErrorClass<'TIMEOUT'> = builtinClass(
-    this,
-    'TIMEOUT',
-  );
+  declare static readonly Timeout: BuiltinErrorClass<'TIMEOUT'>;
   /** `CONFLICT`. */
-  static readonly Conflict: BuiltinErrorClass<'CONFLICT'> = builtinClass(
-    this,
-    'CONFLICT',
-  );
+  declare static readonly Conflict: BuiltinErrorClass<'CONFLICT'>;
   /** `PRECONDITION_FAILED`. */
-  static readonly PreconditionFailed: BuiltinErrorClass<'PRECONDITION_FAILED'> =
-    builtinClass(this, 'PRECONDITION_FAILED');
+  declare static readonly PreconditionFailed: BuiltinErrorClass<'PRECONDITION_FAILED'>;
   /** `PAYLOAD_TOO_LARGE`: a body over the handler's `maxBodySize`. */
-  static readonly PayloadTooLarge: BuiltinErrorClass<'PAYLOAD_TOO_LARGE'> =
-    builtinClass(this, 'PAYLOAD_TOO_LARGE');
+  declare static readonly PayloadTooLarge: BuiltinErrorClass<'PAYLOAD_TOO_LARGE'>;
   /** `UNSUPPORTED_MEDIA_TYPE`: a body in a content type the server can't read. */
-  static readonly UnsupportedMediaType: BuiltinErrorClass<'UNSUPPORTED_MEDIA_TYPE'> =
-    builtinClass(this, 'UNSUPPORTED_MEDIA_TYPE');
+  declare static readonly UnsupportedMediaType: BuiltinErrorClass<'UNSUPPORTED_MEDIA_TYPE'>;
   /** `UNPROCESSABLE_CONTENT`. */
-  static readonly UnprocessableContent: BuiltinErrorClass<'UNPROCESSABLE_CONTENT'> =
-    builtinClass(this, 'UNPROCESSABLE_CONTENT');
+  declare static readonly UnprocessableContent: BuiltinErrorClass<'UNPROCESSABLE_CONTENT'>;
   /** `TOO_MANY_REQUESTS`. */
-  static readonly TooManyRequests: BuiltinErrorClass<'TOO_MANY_REQUESTS'> =
-    builtinClass(this, 'TOO_MANY_REQUESTS');
+  declare static readonly TooManyRequests: BuiltinErrorClass<'TOO_MANY_REQUESTS'>;
   /** `CLIENT_CLOSED_REQUEST`: the call's `signal` aborted it. */
-  static readonly ClientClosedRequest: BuiltinErrorClass<'CLIENT_CLOSED_REQUEST'> =
-    builtinClass(this, 'CLIENT_CLOSED_REQUEST');
+  declare static readonly ClientClosedRequest: BuiltinErrorClass<'CLIENT_CLOSED_REQUEST'>;
   /** `INTERNAL_SERVER_ERROR`: a crash, masked in production. */
-  static readonly InternalServerError: BuiltinErrorClass<'INTERNAL_SERVER_ERROR'> =
-    builtinClass(this, 'INTERNAL_SERVER_ERROR');
+  declare static readonly InternalServerError: BuiltinErrorClass<'INTERNAL_SERVER_ERROR'>;
   /** `NOT_IMPLEMENTED`. */
-  static readonly NotImplemented: BuiltinErrorClass<'NOT_IMPLEMENTED'> =
-    builtinClass(this, 'NOT_IMPLEMENTED');
+  declare static readonly NotImplemented: BuiltinErrorClass<'NOT_IMPLEMENTED'>;
   /** `BAD_GATEWAY`. */
-  static readonly BadGateway: BuiltinErrorClass<'BAD_GATEWAY'> = builtinClass(
-    this,
-    'BAD_GATEWAY',
-  );
+  declare static readonly BadGateway: BuiltinErrorClass<'BAD_GATEWAY'>;
   /** `SERVICE_UNAVAILABLE`. */
-  static readonly ServiceUnavailable: BuiltinErrorClass<'SERVICE_UNAVAILABLE'> =
-    builtinClass(this, 'SERVICE_UNAVAILABLE');
+  declare static readonly ServiceUnavailable: BuiltinErrorClass<'SERVICE_UNAVAILABLE'>;
   /** `GATEWAY_TIMEOUT`. */
-  static readonly GatewayTimeout: BuiltinErrorClass<'GATEWAY_TIMEOUT'> =
-    builtinClass(this, 'GATEWAY_TIMEOUT');
+  declare static readonly GatewayTimeout: BuiltinErrorClass<'GATEWAY_TIMEOUT'>;
   /** `NETWORK_ERROR`, client-side: the request got no response. */
-  static readonly NetworkError: BuiltinErrorClass<'NETWORK_ERROR'> =
-    builtinClass(this, 'NETWORK_ERROR');
+  declare static readonly NetworkError: BuiltinErrorClass<'NETWORK_ERROR'>;
   /** `BAD_RESPONSE`, client-side: a response the client couldn't read. */
-  static readonly BadResponse: BuiltinErrorClass<'BAD_RESPONSE'> = builtinClass(
-    this,
-    'BAD_RESPONSE',
-  );
+  declare static readonly BadResponse: BuiltinErrorClass<'BAD_RESPONSE'>;
   /** `CLIENT_ERROR`, client-side: a link failed. */
-  static readonly ClientError: BuiltinErrorClass<'CLIENT_ERROR'> = builtinClass(
-    this,
-    'CLIENT_ERROR',
-  );
+  declare static readonly ClientError: BuiltinErrorClass<'CLIENT_ERROR'>;
   /** `STREAM_INTERRUPTED`, client-side: a stream stopped without an end. */
-  static readonly StreamInterrupted: BuiltinErrorClass<'STREAM_INTERRUPTED'> =
-    builtinClass(this, 'STREAM_INTERRUPTED');
+  declare static readonly StreamInterrupted: BuiltinErrorClass<'STREAM_INTERRUPTED'>;
 
   /**
    * A public error class: yield or throw it and it reaches the client as a
@@ -374,6 +318,22 @@ export class TrpcError<
     }
     return Tagged as unknown as TaggedErrorClass<TCode, TSchema, TStatus>;
   }
+}
+
+// Named from the code (`PAYLOAD_TOO_LARGE` is `PayloadTooLarge`) so clients
+// don't ship 25 names.
+for (const code of Object.keys(ERROR_STATUS) as BuiltinErrorCode[]) {
+  (TrpcError as unknown as Record<string, unknown>)[
+    code.replace(
+      /_?(\w)([A-Z]*)/g,
+      (_, first: string, rest: string) => first + rest.toLowerCase(),
+    )
+  ] = class extends TrpcError<BuiltinErrorCode, undefined> {
+    static readonly code = code;
+    constructor(opts?: TaggedErrorOptions) {
+      super({ ...opts, code });
+    }
+  };
 }
 
 const TAGGED: unique symbol = Symbol.for('@trpc12/trpc/TaggedError');
@@ -688,7 +648,14 @@ export function fromWireError(body: unknown): TrpcError {
  */
 export const streamErrors = {
   streamFailed: (cause: unknown): CodeError<'INTERNAL_SERVER_ERROR'> =>
-    new TrpcError.InternalServerError({ message: 'Stream failed', cause }),
+    new TrpcError({
+      code: 'INTERNAL_SERVER_ERROR',
+      message: 'Stream failed',
+      cause,
+    }),
   streamInterrupted: (): CodeError<'STREAM_INTERRUPTED'> =>
-    new TrpcError.StreamInterrupted({ message: 'Stream interrupted' }),
+    new TrpcError({
+      code: 'STREAM_INTERRUPTED',
+      message: 'Stream interrupted',
+    }),
 };

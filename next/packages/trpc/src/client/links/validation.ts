@@ -38,7 +38,8 @@ export interface ValidationLinkOptions {
 const outputMismatch = (
   issues: InputValidationErrorData['issues'],
 ): TrpcError<'BAD_RESPONSE'> =>
-  new TrpcError.BadResponse({
+  new TrpcError({
+    code: 'BAD_RESPONSE',
     message: `Response validation failed: ${issues.map((i) => i.message).join('; ')}`,
     cause: { issues },
   });

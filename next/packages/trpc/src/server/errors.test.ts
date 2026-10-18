@@ -418,6 +418,37 @@ test('every built-in code has a category and a class', () => {
       typeof value === 'function' && 'code' in value,
   );
   expect(classes.map((c) => c.code).sort()).toEqual([...codes].sort());
+  expect(
+    Object.keys(TrpcError).filter(
+      (key) => /^[A-Z]/.test(key) && key !== 'Tagged',
+    ),
+  ).toEqual([
+    'ParseError',
+    'BadRequest',
+    'UnsupportedProtocol',
+    'Unauthorized',
+    'PaymentRequired',
+    'Forbidden',
+    'NotFound',
+    'MethodNotSupported',
+    'Timeout',
+    'Conflict',
+    'PreconditionFailed',
+    'PayloadTooLarge',
+    'UnsupportedMediaType',
+    'UnprocessableContent',
+    'TooManyRequests',
+    'ClientClosedRequest',
+    'InternalServerError',
+    'NotImplemented',
+    'BadGateway',
+    'ServiceUnavailable',
+    'GatewayTimeout',
+    'NetworkError',
+    'BadResponse',
+    'ClientError',
+    'StreamInterrupted',
+  ]);
   const err = new TrpcError.PayloadTooLarge({ message: 'Too big' });
   expect(err).toBeInstanceOf(TrpcError);
   expect(err._tag).toBe('PAYLOAD_TOO_LARGE');

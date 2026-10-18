@@ -92,14 +92,16 @@ export function localLink<TRouter extends AnyRouter>(
           const procedure = yield* resolveProcedureEffect(opts.router, op.path);
           if (!procedure) {
             return yield* Effect.fail(
-              new TrpcError.NotFound({
+              new TrpcError({
+                code: 'NOT_FOUND',
                 message: `No procedure at path "${op.path}"`,
               }),
             );
           }
           if (procedure['~trpc'].type !== op.type) {
             return yield* Effect.fail(
-              new TrpcError.MethodNotSupported({
+              new TrpcError({
+                code: 'METHOD_NOT_SUPPORTED',
                 message: `"${op.path}" is a ${procedure['~trpc'].type}, not a ${op.type}`,
               }),
             );

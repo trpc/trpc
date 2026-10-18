@@ -24,7 +24,8 @@ export function serializeInput(
   try {
     return serializer.serialize(input, opts);
   } catch (cause) {
-    throw new TrpcError.BadRequest({
+    throw new TrpcError({
+      code: 'BAD_REQUEST',
       message: cause instanceof Error ? cause.message : 'Invalid input',
       cause,
     });
@@ -35,7 +36,7 @@ export function serializeInput(
 export const badResponse =
   (message: string) =>
   (cause?: unknown): TrpcError =>
-    new TrpcError.BadResponse({ message, cause });
+    new TrpcError({ code: 'BAD_RESPONSE', message, cause });
 
 type FrameQueue = Queue.Queue<Frame, Cause.Done>;
 
