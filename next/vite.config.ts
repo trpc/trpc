@@ -99,6 +99,7 @@ export default defineConfig({
           'examples/media-pipeline/**',
         ],
         rules: {
+          'anti-slop-effect/no-manual-effect-error-tag': 'error',
           'anti-slop-effect/no-manual-tag-comparison': 'error',
           'anti-slop-effect/no-manual-tagged-construction': 'error',
           'anti-slop-effect/prefer-effect-match': 'error',
