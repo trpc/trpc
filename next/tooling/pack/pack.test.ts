@@ -2,7 +2,7 @@ import { NodeServices } from '@effect/platform-node';
 import { Effect, FileSystem, Path } from 'effect';
 import { ChildProcess, ChildProcessSpawner } from 'effect/process';
 import { expect, test } from 'vite-plus/test';
-import { checkExports, type PackageJson } from './pack.ts';
+import { checkExports, importedPackages, type PackageJson } from './pack.ts';
 
 const run = <A, E>(effect: Effect.Effect<A, E, NodeServices.NodeServices>) =>
   Effect.runPromise(Effect.provide(effect, NodeServices.layer));
@@ -20,7 +20,8 @@ const packages = await run(
         (text) => ({
           name,
           dir: path.join(dir, name),
-          pkg: JSON.parse(text) as Required<PackageJson>,
+          pkg: JSON.parse(text) as PackageJson &
+            Required<Pick<PackageJson, 'publishConfig'>>,
         }),
       ),
     );
@@ -66,6 +67,63 @@ test.each(entries)(
     expect(types).not.toMatch(/^(import|export)\b.*from ['"][^'"]+\.ts['"]/m);
   },
 );
+
+test.each(packages.map((opts) => [opts.name, opts.dir, opts.pkg] as const))(
+  '%s imports only its dependencies and peers',
+  async (_name, dir, pkg) => {
+    const built = await run(
+      Effect.gen(function* () {
+        const fs = yield* FileSystem.FileSystem;
+        const path = yield* Path.Path;
+        const dist = path.join(dir, 'dist');
+        const files = (yield* fs.readDirectory(dist, {
+          recursive: true,
+        })).filter((file) => /\.(?:js|d\.ts)$/.test(file));
+        const sources = yield* Effect.forEach(files, (file) =>
+          fs.readFileString(path.join(dist, file)),
+        );
+        return {
+          imported: [...new Set(sources.flatMap(importedPackages))],
+          inlined: files.filter((file) => file.includes('node_modules')),
+        };
+      }),
+    );
+    // The build inlines an undeclared package into `dist/node_modules`
+    // instead of importing it.
+    expect(built.inlined).toEqual([]);
+    const declared = new Set([
+      pkg.name,
+      ...Object.keys(pkg.dependencies ?? {}),
+      ...Object.keys(pkg.peerDependencies ?? {}),
+    ]);
+    const undeclared = built.imported.filter(
+      (name) => !declared.has(name) && !/^(?:node|cloudflare):/.test(name),
+    );
+    expect(undeclared).toEqual([]);
+  },
+);
+
+test('importedPackages reads imports, not comments', () => {
+  const source = [
+    "import { Effect } from 'effect';",
+    'import {',
+    '  a,',
+    "} from '@scope/pkg/sub';",
+    "export * from './local.js';",
+    "import 'server-only';",
+    "type T = import('typescript').Node;",
+    '/**',
+    " * import { z } from 'zod';",
+    ' */',
+    'const s = \'from "superjson"\';',
+  ].join('\n');
+  expect(importedPackages(source)).toEqual([
+    '@scope/pkg',
+    'effect',
+    'server-only',
+    'typescript',
+  ]);
+});
 
 test.each(packages.map((opts) => [opts.name, opts.pkg] as const))(
   '%s publishes publicly under @trpc12',

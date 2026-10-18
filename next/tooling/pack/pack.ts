@@ -15,6 +15,8 @@ type Entry = Readonly<Record<string, string>> & {
 };
 export interface PackageJson {
   readonly name: string;
+  readonly dependencies?: Record<string, string>;
+  readonly peerDependencies?: Record<string, string>;
   readonly exports: Record<string, Entry>;
   readonly publishConfig?: {
     readonly access?: string;
@@ -62,6 +64,25 @@ export const checkExports = (
       }
     }
   });
+
+const importSpecifier =
+  /^\s*(?:import|export)\b[^;'"]*?\bfrom\s*['"]([^'"]+)['"]|^\s*import\s*['"]([^'"]+)['"]|\bimport\(\s*['"]([^'"]+)['"]\s*\)/gm;
+
+/**
+ * The packages a built `.js` or `.d.ts` file imports: bare specifiers cut to
+ * their package name, skipping relative paths and imports in block comments
+ * (JSDoc examples).
+ */
+export const importedPackages = (source: string): ReadonlyArray<string> => {
+  const code = source.replaceAll(/\/\*[\s\S]*?\*\//g, '');
+  const names = new Set<string>();
+  for (const match of code.matchAll(importSpecifier)) {
+    const specifier = match[1] ?? match[2] ?? match[3] ?? '';
+    const name = /^(?:@[^/]+\/)?[^/]+/.exec(specifier)?.[0];
+    if (name !== undefined && !specifier.startsWith('.')) names.add(name);
+  }
+  return [...names].sort();
+};
 
 const pack = (extraArgs: ReadonlyArray<string>) =>
   Effect.gen(function* () {
