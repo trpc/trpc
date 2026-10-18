@@ -1,7 +1,8 @@
 /**
  * The migrated server: the v12 router serves v12 clients on `/rpc` and the
  * apps still on `@trpc/client` 11 on `/trpc`, the endpoint they were built
- * with, until they update.
+ * with, until they update. `listen()` resolves to the v11 endpoint's URL;
+ * v12 clients call `/rpc` beside it.
  */
 import { createServer } from 'node:http';
 import { NodeHttpServer } from '@effect/platform-node';
@@ -11,9 +12,11 @@ import { toHttpEffect } from '@trpc12/trpc/http';
 import { createV11Handler } from '@trpc12/trpc/interop';
 import { createFetchHandler, type AnyTrpcError } from '@trpc12/trpc/server';
 import superjson from 'superjson';
-import { createContext } from './context.ts';
-import { appRouter } from './router.ts';
-import { serializer } from './serializer.ts';
+import { createContext } from './server/context.ts';
+import { appRouter } from './server/router.ts';
+
+export type { AppRouter } from './server/router.ts';
+import { serializer } from './server/serializer.ts';
 
 /** A failed input's issue messages, as the v11 errorFormatter sent them. */
 const issueMessages = (error: AnyTrpcError): string[] | null => {
@@ -23,7 +26,7 @@ const issueMessages = (error: AnyTrpcError): string[] | null => {
     : null;
 };
 
-export async function startServer(port = 0) {
+export async function listen(port = 0) {
   const legacy = createV11Handler({
     router: appRouter,
     createContext,
@@ -62,11 +65,19 @@ export async function startServer(port = 0) {
     HttpServer.addressFormattedWith((address) => Effect.succeed(address)),
   );
   return {
-    origin,
-    async close() {
+    url: `${origin}/trpc`,
+    async [Symbol.asyncDispose]() {
       await runtime.dispose();
       await legacy.dispose();
       await handler.dispose();
     },
   };
+}
+
+if (import.meta.main) {
+  const server = await listen(Number(process.env['PORT'] ?? 3000));
+  console.log(
+    `v11 clients: ${server.url}, v12 clients: ${new URL('/rpc', server.url).href}`,
+  );
+  process.once('SIGINT', () => void server[Symbol.asyncDispose]());
 }

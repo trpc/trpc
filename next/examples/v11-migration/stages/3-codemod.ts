@@ -8,8 +8,12 @@ import { execFileSync } from 'node:child_process';
 import { cpSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const bin = join(import.meta.dirname, '../node_modules/.bin/trpc12-upgrade');
+/** The `trpc12-upgrade` bin's source: Node runs the workspace's TypeScript, so it needs no build. */
+const bin = fileURLToPath(
+  new URL('bin.ts', import.meta.resolve('@trpc12/upgrade')),
+);
 const files = [
   'client/app.tsx',
   'client/client.ts',
@@ -25,11 +29,12 @@ const files = [
 const steps = [
   'app/client/app.tsx:20:47 TrpcProvider takes client only; the queryClient goes to QueryClientProvider',
   'app/client/app.tsx:31:49 queryOptions(input, opts) is queryOptions({ input, ...opts }) in v12',
-  'app/client/client.ts:23:53 createSyncSerializer<…>(transformer): list the types it rebuilds, docs/server/serializers.md',
-  'app/client/client.ts:26:11 createSyncSerializer<…>(transformer): list the types it rebuilds, docs/server/serializers.md',
-  'app/client/client.ts:36:20 createWSClient: pass its options to wsLink({ url })',
-  'app/client/client.ts:41:22 wsLink({ url, connectionParams }) replaces createWSClient + wsLink({ client })',
-  'app/client/client.ts:41:40 createSyncSerializer<…>(transformer): list the types it rebuilds, docs/server/serializers.md',
+  'app/client/client.ts:27:11 createSyncSerializer<…>(transformer): list the types it rebuilds, docs/server/serializers.md',
+  'app/client/client.ts:28:11 EventSource: httpLink streams SSE over fetch; use headers or init',
+  'app/client/client.ts:32:11 createSyncSerializer<…>(transformer): list the types it rebuilds, docs/server/serializers.md',
+  'app/client/client.ts:42:20 createWSClient: pass its options to wsLink({ url })',
+  'app/client/client.ts:47:22 wsLink({ url, connectionParams }) replaces createWSClient + wsLink({ client })',
+  'app/client/client.ts:47:40 createSyncSerializer<…>(transformer): list the types it rebuilds, docs/server/serializers.md',
   'app/client/links.ts:1:15 TRPCLink: stays on @trpc/client; keep the link with fromV11Link(link) from @trpc12/trpc/interop, or rewrite it with link() as an Effect Stream function',
   'app/client/links.ts:2:1 observable(): subscriptions return an async generator or an Effect Stream; a v11 link keeps it under fromV11Link',
   'app/client/queries.ts:9:16 createTrpcQueryUtils({ client }): the queryClient goes to QueryClientProvider',
@@ -49,7 +54,10 @@ export function run() {
       recursive: true,
     });
     const upgrade = (...args: string[]) =>
-      execFileSync(bin, ['app', ...args], { cwd: dir, encoding: 'utf8' })
+      execFileSync(process.execPath, [bin, 'app', ...args], {
+        cwd: dir,
+        encoding: 'utf8',
+      })
         .trimEnd()
         .split('\n');
     const read = (file: string) => readFileSync(join(dir, 'app', file), 'utf8');
@@ -67,12 +75,12 @@ export function run() {
       dry.filter((line) => /^app\/\S+:\d+:\d+ /.test(line)),
       steps,
     );
-    strictEqual(dry.at(-1), '7 file(s) to upgrade, 17 step(s) by hand');
+    strictEqual(dry.at(-1), '7 file(s) to upgrade, 18 step(s) by hand');
     for (const file of files) strictEqual(read(file), before.get(file));
 
     strictEqual(
       upgrade('--write').at(-1),
-      '7 file(s) upgraded, 17 step(s) by hand',
+      '7 file(s) upgraded, 18 step(s) by hand',
     );
 
     const server = read('server/trpc.ts');

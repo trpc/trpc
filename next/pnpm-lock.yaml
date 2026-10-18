@@ -769,6 +769,9 @@ importers:
       effect:
         specifier: 4.0.2
         version: 4.0.2
+      eventsource:
+        specifier: 3.0.7
+        version: 3.0.7
       react:
         specifier: 19.3.0
         version: 19.3.0

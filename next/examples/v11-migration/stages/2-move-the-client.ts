@@ -8,8 +8,7 @@ import { makeClient } from '../client/client.ts';
 import { makeQueries } from '../client/queries.ts';
 import type { CallLog } from '../v11/client/links.ts';
 
-export async function run(origin: string) {
-  const url = `${origin}/rpc`;
+export async function run(url: string) {
   const log: CallLog[] = [];
   const client = makeClient({ url, token: 'ada', log });
 

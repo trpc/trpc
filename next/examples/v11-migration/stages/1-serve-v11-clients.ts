@@ -21,8 +21,7 @@ const failure = (promise: Promise<unknown>) =>
     },
   );
 
-export async function run(origin: string) {
-  const url = `${origin}/trpc`;
+export async function run(url: string) {
   const log: CallLog[] = [];
   const client = makeClient({ url, token: 'ada', log });
 

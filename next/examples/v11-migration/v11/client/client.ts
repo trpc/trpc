@@ -6,6 +6,7 @@ import {
   splitLink,
   wsLink,
 } from '@trpc/client';
+import { EventSource } from 'eventsource';
 import superjson from 'superjson';
 import type { AppRouter } from '../server/router.ts';
 import { callLogLink, type CallLog } from './links.ts';
@@ -20,7 +21,12 @@ export function makeClient(opts: {
       callLogLink(opts.log),
       splitLink({
         condition: (op) => op.type === 'subscription',
-        true: httpSubscriptionLink({ url: opts.url, transformer: superjson }),
+        // Node has no global EventSource without --experimental-eventsource.
+        true: httpSubscriptionLink({
+          url: opts.url,
+          transformer: superjson,
+          EventSource,
+        }),
         false: httpBatchLink({
           url: opts.url,
           transformer: superjson,
