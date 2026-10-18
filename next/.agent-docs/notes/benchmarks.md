@@ -63,8 +63,10 @@ Bundle size, minified / gzip (`pnpm bench bundle`):
 
 | client                                      |    gzip | ceiling (CI) | target |
 | ------------------------------------------- | ------: | -----------: | -----: |
-| minimal JSON (`httpLink`)                   | 25.7 kB |      25.8 kB |  18 kB |
-| full (`retryLink`, `httpLink`, danSON, SSE) | 29.1 kB |      29.2 kB |  25 kB |
+| minimal JSON (`httpLink`)                   | 25.9 kB |      26.0 kB |  18 kB |
+| full (`retryLink`, `httpLink`, danSON, SSE) | 29.3 kB |      29.4 kB |  25 kB |
+
+- **Raised, 2026-10-18:** fixes since the first cut added about 210 B gzipped to each client (minimal, full): streamed responses waiting for a slow client (3ba9cb525, +13 B, +33 B), the closed error union with `matchError()` (9be0d7e07, +90 B, +95 B), `httpLink` reading a JSON page that isn't an error body by its status (ad6d133c0, +26 B, +29 B; this one crossed the ceilings) and sync serializers failing on a nested `File` (6ef675ed1, +85 B, +82 B). They're behaviour the client needs, not bloat, so the ceilings moved to today's sizes plus the same 0.1 kB of room: 25,898 B and 29,304 B measured.
 
 - **Cut so far:** the Promise client runs its links with `runLinks`. `runOperation`'s tracer check and client span never ran there (Promise clients run on Effect's native tracer), but they were bundled: `Tracer`, `Scope` spans and `encoding/Hex`, 1.7 kB gzipped on each client.
 - **The floor of links on Effect**, same bundler and gzip:
