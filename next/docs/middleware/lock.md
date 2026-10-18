@@ -3,6 +3,7 @@ title: Locks
 description: experimental_lock() runs calls with the same key one at a time, across instances.
 section: Middleware
 order: 3
+hidden: true
 ---
 
 `experimental_lock()` runs the rest of the call under a lock, so calls with the same key never overlap: the second waits for the first, and fails with `experimental_LockConflict` (`CONFLICT`, 409) if `timeout` (10 seconds) passes first. The resolver gets `ctx.lock.waited`.

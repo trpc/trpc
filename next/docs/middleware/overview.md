@@ -1,7 +1,7 @@
 ---
 title: Built-in middleware
 label: Overview
-description: The middleware in @trpc12/trpc/middleware, for logging, rate limits, locks and durable calls, and how to apply it.
+description: The middleware in @trpc12/trpc/middleware, for logs and metrics, and how to apply it.
 section: Middleware
 order: 0
 ---
@@ -19,11 +19,8 @@ const logged = t.procedure.use(
 );
 ```
 
-| Middleware                        | Does                                                                                                                             | Needs on the handler                                                |
-| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
-| [Lifecycle hooks](./lifecycle.md) | `onStart`, `onSuccess`, `onError` and `onFinish` run code around each call, for logs and metrics                                 | nothing                                                             |
-| [Rate limiting](./rate-limit.md)  | `rateLimit()` fails calls past a limit per key, and sets the `RateLimit` headers                                                 | a `RateLimiter` layer, in memory or Redis                           |
-| [Locks](./lock.md)                | `experimental_lock()` runs calls with the same key one at a time, across instances                                               | an `experimental_Locker` layer, in memory, Redis or Durable Objects |
-| [Durable calls](./durable.md)     | `experimental_durable()` keeps a call's result, so a client that lost the response gets it instead of running the mutation twice | a `BackingPersistence` layer                                        |
+| Middleware                        | Does                                                                                             | Needs on the handler |
+| --------------------------------- | ------------------------------------------------------------------------------------------------ | -------------------- |
+| [Lifecycle hooks](./lifecycle.md) | `onStart`, `onSuccess`, `onError` and `onFinish` run code around each call, for logs and metrics | nothing              |
 
 To add middleware, context, meta and errors to every procedure of an app from a package, see [Extensions](../server/extensions.md).

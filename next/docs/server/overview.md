@@ -18,7 +18,7 @@ docs/src/server.ts
 - [Procedures](./procedures.md): queries, mutations and subscriptions, with validated input and output.
 - [Routers](./routers.md): objects of procedures, merged and split into lazy subtrees.
 - [Context](./context.md): what every call gets as `ctx`, from the request or from middleware.
-- [Middleware](./middleware.md): base procedures that add to the context, replace the input or stop a call. [Built-in middleware](../middleware/overview.md) covers rate limits, locks and durable calls.
+- [Middleware](./middleware.md): base procedures that add to the context, replace the input or stop a call. [Built-in middleware](../middleware/overview.md) covers lifecycle hooks.
 
 ## What a procedure returns
 

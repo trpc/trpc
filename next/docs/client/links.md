@@ -45,15 +45,14 @@ An operation goes through the links in order and its results come back the other
 
 ## Links in the middle
 
-| Link                                | Does                                                                                     |
-| ----------------------------------- | ---------------------------------------------------------------------------------------- |
-| [`splitLink`](./links/split.md)     | Picks one of two chains per call                                                         |
-| [`switchLink`](./links/switch.md)   | Picks one of several named chains, and a call can force one                              |
-| [`retryLink`](./links/retry.md)     | Retries failed calls                                                                     |
-| [`dedupeLink`](./links/dedupe.md)   | Shares identical queries in flight                                                       |
-| [`loggerLink`](./links/logger.md)   | Logs every operation, its results and its errors                                         |
-| [`validationLink`](./validation.md) | Checks inputs and results against a contract                                             |
-| `experimental_durableLink`          | Retries lost responses with the same call id ([Durable calls](../middleware/durable.md)) |
+| Link                                | Does                                                        |
+| ----------------------------------- | ----------------------------------------------------------- |
+| [`splitLink`](./links/split.md)     | Picks one of two chains per call                            |
+| [`switchLink`](./links/switch.md)   | Picks one of several named chains, and a call can force one |
+| [`retryLink`](./links/retry.md)     | Retries failed calls                                        |
+| [`dedupeLink`](./links/dedupe.md)   | Shares identical queries in flight                          |
+| [`loggerLink`](./links/logger.md)   | Logs every operation, its results and its errors            |
+| [`validationLink`](./validation.md) | Checks inputs and results against a contract                |
 
 ## Call options
 

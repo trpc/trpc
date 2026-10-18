@@ -34,7 +34,7 @@ Put it before the terminating link, and after [`dedupeLink`](./dedupe.md), so a 
 
 ## Waiting out a rate limit
 
-`delayMs` gets the error, so a retry can wait as long as the server asks. A [rate limit](../../middleware/rate-limit.md) fails with `TOO_MANY_REQUESTS` and `data.retryAfter` in milliseconds. Links see every error untyped, so `data` is `any` here:
+`delayMs` gets the error, so a retry can wait as long as the server asks. A server that rate-limits can fail with `TOO_MANY_REQUESTS` and the wait in `data.retryAfter`, in milliseconds. Links see every error untyped, so `data` is `any` here:
 
 ```ts twoslash
 // ---cut-start---

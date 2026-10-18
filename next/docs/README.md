@@ -29,11 +29,11 @@ Pages marked (hidden) are unlisted on the site until they're reviewed: out of it
 
 ## Middleware
 
-- [Built-in middleware](./middleware/overview.md): The middleware in @trpc12/trpc/middleware, for logging, rate limits, locks and durable calls, and how to apply it.
+- [Built-in middleware](./middleware/overview.md): The middleware in @trpc12/trpc/middleware, for logs and metrics, and how to apply it.
 - [Lifecycle hooks](./middleware/lifecycle.md): onStart, onSuccess, onError and onFinish, for logging and metrics.
-- [Rate limiting](./middleware/rate-limit.md): rateLimit() counts calls with Effect's RateLimiter, in memory or in Redis, and sets the RateLimit headers.
-- [Locks](./middleware/lock.md): experimental_lock() runs calls with the same key one at a time, across instances.
-- [Durable calls](./middleware/durable.md): experimental_durable() keeps a call's result, so a client that lost the response gets it instead of running the mutation twice.
+- [Rate limiting](./middleware/rate-limit.md) (hidden): rateLimit() counts calls with Effect's RateLimiter, in memory or in Redis, and sets the RateLimit headers.
+- [Locks](./middleware/lock.md) (hidden): experimental_lock() runs calls with the same key one at a time, across instances.
+- [Durable calls](./middleware/durable.md) (hidden): experimental_durable() keeps a call's result, so a client that lost the response gets it instead of running the mutation twice.
 
 ## Client
 

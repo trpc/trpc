@@ -97,6 +97,6 @@ const withDb = middleware<{ ctx: { db?: Db } }>()(async (opts) =>
 
 ## Built-in middleware
 
-`@trpc12/trpc/middleware` has ordinary middleware for common jobs: lifecycle hooks, `rateLimit()`, `experimental_lock()` and `experimental_durable()` ([Built-in middleware](../middleware/overview.md)).
+`@trpc12/trpc/middleware` has ordinary middleware for common jobs, such as lifecycle hooks ([Built-in middleware](../middleware/overview.md)).
 
 To add middleware, ctx, meta and errors to every procedure of an app from a package, see [Extensions](./extensions.md).

@@ -108,7 +108,7 @@ export class Room extends DurableObject<Env> {
 
 ## Durable calls
 
-[`experimental_durable()`](../middleware/durable.md) needs Effect's `BackingPersistence`. In an object, back it with the object's storage, so kept results and streamed frames outlive an eviction: Effect's `KeyValueStore.makeStringOnly` over `ctx.storage`, under `Persistence.layerBackingKvs`. [`examples/cloudflare/src/storage.ts`](../../examples/cloudflare/src/storage.ts) has one, which the example merges with its publisher layer:
+`experimental_durable()` needs Effect's `BackingPersistence`. In an object, back it with the object's storage, so kept results and streamed frames outlive an eviction: Effect's `KeyValueStore.makeStringOnly` over `ctx.storage`, under `Persistence.layerBackingKvs`. [`examples/cloudflare/src/storage.ts`](../../examples/cloudflare/src/storage.ts) has one, which the example merges with its publisher layer:
 
 ```ts twoslash
 // ---cut-start---
@@ -150,7 +150,7 @@ class Room extends DurableObject<Env> {
 
 ## Locks
 
-`experimental_durableLocker(env.LOCKS)` is an [`experimental_lock()`](../middleware/lock.md) locker every Worker instance shares: one object per key. Each caller keeps a hibernatable WebSocket to the object while it holds or waits for the lock, so the object isn't billed meanwhile, waiters are told when it's their turn (nothing polls), and a crashed holder's lock goes when its socket drops. The object delegates to `experimental_durableLockObject(this.ctx)`:
+`experimental_durableLocker(env.LOCKS)` is an `experimental_lock()` locker every Worker instance shares: one object per key. Each caller keeps a hibernatable WebSocket to the object while it holds or waits for the lock, so the object isn't billed meanwhile, waiters are told when it's their turn (nothing polls), and a crashed holder's lock goes when its socket drops. The object delegates to `experimental_durableLockObject(this.ctx)`:
 
 ```ts twoslash
 // ---cut-start---
