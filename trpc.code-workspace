@@ -3,7 +3,7 @@
   // `vite.config.ts`) only from a workspace folder's root.
   "folders": [
     { "name": "next", "path": "next" },
-    { "name": "root (v11)", "path": "." }
+    { "name": "root (v11)", "path": "." },
   ],
   "settings": {
     "editor.defaultFormatter": "oxc.oxc-vscode",
@@ -19,7 +19,7 @@
     "editor.formatOnSave": true,
     "editor.formatOnSaveMode": "file",
     "editor.codeActionsOnSave": {
-      "source.fixAll.oxc": "explicit"
+      "source.fixAll.oxc": "explicit",
     },
     "eslint.enable": false,
     "prettier.enable": false,
@@ -27,10 +27,10 @@
     "js/ts.preferences.autoImportFileExcludePatterns": ["**/.repos/**"],
     "files.exclude": {
       "next": true,
-      "**/.repos": true
+      "**/.repos": true,
     },
     "files.watcherExclude": {
-      "**/.repos/**": true
+      "**/.repos/**": true,
     },
     "search.exclude": {
       "next": true,
@@ -40,20 +40,20 @@
       "www/v9/**": true,
       "www/v10/**": true,
       "www/v11/**": true,
-      "www/blog/**": true
-    }
+      "www/blog/**": true,
+    },
   },
   "extensions": {
     "recommendations": [
       "VoidZero.vite-plus-extension-pack",
       "TypeScriptTeam.native-preview",
       "orta.vscode-twoslash-queries",
-      "yoavbls.pretty-ts-errors"
+      "yoavbls.pretty-ts-errors",
     ],
     "unwantedRecommendations": [
       "dbaeumer.vscode-eslint",
       "esbenp.prettier-vscode",
-      "biomejs.biome"
-    ]
-  }
+      "biomejs.biome",
+    ],
+  },
 }
