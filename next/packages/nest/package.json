@@ -2,6 +2,7 @@
   "name": "@trpc12/nest",
   "version": "0.1.0",
   "private": true,
+  "description": "Serve a tRPC contract from NestJS controllers, with injected services reaching the resolvers.",
   "files": [
     "dist"
   ],

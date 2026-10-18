@@ -2,6 +2,7 @@
   "name": "@trpc12/tanstack-svelte-query",
   "version": "0.1.0",
   "private": true,
+  "description": "tRPC for TanStack Svelte Query: context helpers for the client and its helpers, and createSubscription.",
   "files": [
     "dist"
   ],

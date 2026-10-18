@@ -1,0 +1,70 @@
+# `@trpc12/trpc`
+
+The core of tRPC v12, in one package split into entry points. Write procedures on the server, serve them with one handler on any runtime, and call them from a client typed by the router.
+
+```sh
+pnpm add @trpc12/trpc zod
+```
+
+```ts
+// server.ts
+import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
+import { z } from 'zod';
+
+const t = initTrpc();
+
+export const appRouter = {
+  greet: t.procedure
+    .input(z.object({ name: z.string() }))
+    .query((opts) => `Hello, ${opts.input.name}`),
+};
+export type AppRouter = typeof appRouter;
+
+export const handler = createFetchHandler({ router: appRouter });
+// handler.fetch(request) on any fetch runtime
+
+// client.ts
+import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import type { AppRouter } from './server.ts';
+
+const client = createTrpcClient({
+  router: routerType<AppRouter>(),
+  links: [httpLink({ url: 'http://localhost:3000/trpc' })],
+});
+const greeting = await client.greet.query({ name: 'tRPC' }); // string
+```
+
+## Entry points
+
+| Entry                             | For                                                 |
+| --------------------------------- | --------------------------------------------------- |
+| `@trpc12/trpc/server`             | `initTrpc`, routers, handlers, callers, `Publisher` |
+| `@trpc12/trpc/client`             | `createTrpcClient`, links, `safe`                   |
+| `@trpc12/trpc/middleware`         | lifecycle hooks, `rateLimit`, locks, durable calls  |
+| `@trpc12/trpc/effect`             | `createEffectClient`                                |
+| `@trpc12/trpc/contract`           | contract-first routers, `toContract`                |
+| `@trpc12/trpc/serializer`         | `jsonSerializer`, danSON, `createSyncSerializer`    |
+| `@trpc12/trpc/http`               | `serve`, `toHttpEffect` on Effect's `HttpServer`    |
+| `@trpc12/trpc/cloudflare`         | Durable Objects and Workers Traces                  |
+| `@trpc12/trpc/aws-lambda`         | `toLambdaHandler`                                   |
+| `@trpc12/trpc/socket`             | `serveSocket` over TCP, TLS or Unix sockets         |
+| `@trpc12/trpc/openapi`            | REST routes, OpenAPI documents, `openApiLink`       |
+| `@trpc12/trpc/openapi/typescript` | an OpenAPI document from the router's types         |
+| `@trpc12/trpc/actions`            | procedures as React Server Actions                  |
+| `@trpc12/trpc/interop`            | `createV11Handler`, `fromV11Link` for v11 code      |
+| `@trpc12/trpc/extend`             | building blocks for integrations                    |
+
+Each one's docs are listed in [Packages and stability](https://github.com/trpc/trpc/blob/v12/next/docs/packages.md#trpc12trpc-entry-points).
+
+## Docs
+
+- [Getting started](https://github.com/trpc/trpc/blob/v12/next/docs/getting-started.md)
+- [The server](https://github.com/trpc/trpc/blob/v12/next/docs/server/overview.md)
+- [The client](https://github.com/trpc/trpc/blob/v12/next/docs/client/overview.md)
+- [Links](https://github.com/trpc/trpc/blob/v12/next/docs/client/links.md)
+- [Subscriptions](https://github.com/trpc/trpc/blob/v12/next/docs/subscriptions/overview.md)
+- [Adapters](https://github.com/trpc/trpc/blob/v12/next/docs/adapters/overview.md)
+- [OpenAPI](https://github.com/trpc/trpc/blob/v12/next/docs/openapi/overview.md)
+- [Packages and stability](https://github.com/trpc/trpc/blob/v12/next/docs/packages.md)
+
+Part of the tRPC v12 preview: until 12.0.0, releases follow semver on `0.x`, and each export's `@stability` says how it is planned to ship ([Stability](https://github.com/trpc/trpc/blob/v12/next/docs/packages.md#stability)).

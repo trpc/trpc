@@ -2,6 +2,7 @@
   "name": "@trpc12/tanstack-query",
   "version": "0.1.0",
   "private": true,
+  "description": "TanStack Query options, keys and filters for tRPC procedures, for every TanStack Query framework.",
   "files": [
     "dist"
   ],

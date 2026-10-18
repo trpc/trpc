@@ -2,6 +2,7 @@
   "name": "@trpc12/upgrade",
   "version": "0.1.0",
   "private": true,
+  "description": "The codemod from tRPC v11 to v12: rewrites imports, names, links and transformers, and lists what is left.",
   "bin": {
     "trpc12-upgrade": "./dist/bin.js"
   },

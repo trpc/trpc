@@ -2,6 +2,7 @@
   "name": "@trpc12/trpc",
   "version": "0.1.0",
   "private": true,
+  "description": "End-to-end typesafe APIs: routers, handlers for every runtime, a typed client and its links, middleware, subscriptions and OpenAPI, in one package.",
   "files": [
     "dist"
   ],

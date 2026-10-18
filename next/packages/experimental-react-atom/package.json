@@ -2,6 +2,7 @@
   "name": "@trpc12/experimental-react-atom",
   "version": "0.1.0",
   "private": true,
+  "description": "Experimental: tRPC queries, mutations and subscriptions as Effect atoms, typed with each procedure's errors.",
   "files": [
     "dist"
   ],

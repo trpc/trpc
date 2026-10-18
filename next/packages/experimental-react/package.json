@@ -2,6 +2,7 @@
   "name": "@trpc12/experimental-react",
   "version": "0.1.0",
   "private": true,
+  "description": "Experimental: tRPC in React with use() and Suspense, without TanStack Query; caching, refetching and retries are links.",
   "files": [
     "dist"
   ],

@@ -2,6 +2,7 @@
   "name": "@trpc12/tanstack-angular-query",
   "version": "0.1.0",
   "private": true,
+  "description": "tRPC for TanStack Angular Query: provideTrpc() and injectors for the client and its helpers, and injectSubscription.",
   "files": [
     "dist"
   ],

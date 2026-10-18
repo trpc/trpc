@@ -2,6 +2,7 @@
   "name": "@trpc12/tanstack-vue-query",
   "version": "0.1.0",
   "private": true,
+  "description": "tRPC for TanStack Vue Query: an app plugin (or provideTrpc()) for the client and its helpers, and useSubscription.",
   "files": [
     "dist"
   ],

@@ -2,6 +2,7 @@
   "name": "@trpc12/tanstack-react-query",
   "version": "0.1.0",
   "private": true,
+  "description": "tRPC for TanStack React Query: a context for the client and its helpers, useSubscription, and server-component helpers in /rsc.",
   "files": [
     "dist"
   ],

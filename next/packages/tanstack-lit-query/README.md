@@ -1,0 +1,32 @@
+# `@trpc12/tanstack-lit-query`
+
+Re-exports [`@trpc12/tanstack-query`](https://github.com/trpc/trpc/tree/v12/next/packages/tanstack-query) and adds a provider element and `@lit/context` consumers for the client and its helpers, and `createSubscriptionController`.
+
+```sh
+pnpm add @trpc12/trpc @trpc12/tanstack-lit-query @tanstack/lit-query @lit/context
+```
+
+```ts
+import { createTrpcContext } from '@trpc12/tanstack-lit-query';
+
+export const { TrpcProvider, useTrpc } = createTrpcContext<typeof makeClient>();
+customElements.define('trpc-provider', TrpcProvider);
+
+class PostView extends LitElement {
+  static properties = { postId: {} };
+  trpc = useTrpc(this);
+  post = createQueryController(this, () =>
+    this.trpc.post.byId.queryOptions({ input: { id: this.postId } }),
+  );
+  render() {
+    return html`<h1>${this.post().data?.title}</h1>`;
+  }
+}
+```
+
+## Docs
+
+- [Lit](https://github.com/trpc/trpc/blob/v12/next/docs/integrations/tanstack-query/lit.md)
+- [TanStack Query](https://github.com/trpc/trpc/blob/v12/next/docs/integrations/tanstack-query.md)
+
+Part of the tRPC v12 preview: until 12.0.0, releases follow semver on `0.x`, and each export's `@stability` says how it is planned to ship ([Stability](https://github.com/trpc/trpc/blob/v12/next/docs/packages.md#stability)).

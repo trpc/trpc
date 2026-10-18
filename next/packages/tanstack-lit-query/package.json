@@ -2,6 +2,7 @@
   "name": "@trpc12/tanstack-lit-query",
   "version": "0.1.0",
   "private": true,
+  "description": "tRPC for TanStack Lit Query: a provider element and @lit/context consumers for the client and its helpers, and createSubscriptionController.",
   "files": [
     "dist"
   ],

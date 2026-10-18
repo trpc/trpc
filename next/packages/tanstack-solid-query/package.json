@@ -2,6 +2,7 @@
   "name": "@trpc12/tanstack-solid-query",
   "version": "0.1.0",
   "private": true,
+  "description": "tRPC for TanStack Solid Query: a context for the client and its helpers, and useSubscription.",
   "files": [
     "dist"
   ],
