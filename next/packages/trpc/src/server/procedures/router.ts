@@ -292,7 +292,7 @@ export function resolveProcedure(
 
 /**
  * Loads every lazy subtree, for tools that need the whole router at once,
- * like `experimental_generateOpenApi` and `toContract`.
+ * like `experimental_generateOpenApi` and `experimental_toContract`.
  *
  * @example
  * ```ts

@@ -8,7 +8,7 @@ import {
   routerType,
   safe,
 } from '@trpc12/trpc/client';
-import { toContract } from '@trpc12/trpc/contract';
+import { experimental_toContract } from '@trpc12/trpc/contract';
 import { serve as serveHttp } from '@trpc12/trpc/http';
 import {
   experimental_createOpenApiHandler,
@@ -379,9 +379,9 @@ test('the same router serves RPC and REST at once', async () => {
 
 test('experimental_openApiLink calls the REST endpoints from a JSON contract (18 (d))', async () => {
   await using s = await serve();
-  const contract = JSON.parse(JSON.stringify(toContract(router))) as ReturnType<
-    typeof toContract<typeof router>
-  >;
+  const contract = JSON.parse(
+    JSON.stringify(experimental_toContract(router)),
+  ) as ReturnType<typeof experimental_toContract<typeof router>>;
   const requests: string[] = [];
   const client = createTrpcClient({
     router: contract,
@@ -819,7 +819,7 @@ test('.meta({ route: { spec } }) replaces or extends the generated operation', (
     summary: 'Base',
     deprecated: true,
   });
-  expect(toContract(specRouter).procedures['me']?.route).toEqual({
+  expect(experimental_toContract(specRouter).procedures['me']?.route).toEqual({
     path: '/me',
   });
 

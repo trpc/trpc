@@ -12,7 +12,7 @@
   - Q25.8: dates and other non-JSON values are described and decoded in their JSON form by the shared generator, fixing OpenAPI too.
   - Q25.9: tools only; resources, prompts and an MCP client link later.
 - Why: one router serves RPC, REST and agents with no schema restated. The spike ([mcp-tools](../notes/mcp-tools.md)) found:
-  - `toContract()`'s schemas and `route` descriptions are enough for tools;
+  - `experimental_toContract()`'s schemas and `route` descriptions are enough for tools;
   - the official SDK client and the MCP Inspector call the tools with middleware, validation and declared errors applied.
 - Lost: following MCP's spec through the SDK for free; progress and server-to-client requests; zero-configuration publishing.
 - Open: awaiting the human's answers to proposal 25. Nothing in `packages/` has changed.

@@ -65,7 +65,7 @@ const me = authed
   .query((opts) => opts.ctx.user);
 ```
 
-`spec` only changes the document (`target: 'openapi'`); `toContract()` leaves it out.
+`spec` only changes the document (`target: 'openapi'`); `experimental_toContract()` leaves it out.
 
 ## The handler
 
@@ -178,14 +178,14 @@ The handler loads unprefixed lazy subtrees at startup, and a prefixed one on the
 
 ```ts twoslash
 // ---cut-start---
-import { toContract } from '@trpc12/trpc/contract';
+import { experimental_toContract } from '@trpc12/trpc/contract';
 import { experimental_createOpenApiHandler } from '@trpc12/trpc/openapi';
 import { initTrpc, loadRouter } from '@trpc12/trpc/server';
 const t = initTrpc();
 const appRouter = { health: t.procedure.query(() => 'ok') };
 // ---cut-end---
 // build step
-const contract = toContract(await loadRouter(appRouter));
+const contract = experimental_toContract(await loadRouter(appRouter));
 
 // server
 experimental_createOpenApiHandler({ router: appRouter, contract });

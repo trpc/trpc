@@ -2,14 +2,16 @@
  * Contract-first APIs (`@trpc12/trpc/contract`, 09). A contract describes
  * procedures (input, output, errors, route) without resolvers. Share it with
  * clients and other teams, implement it on the server with
- * `t.implement(contract)`, or derive one from a router with `toContract()`.
+ * `t.implement(contract)`, or derive one from a router with
+ * `experimental_toContract()`. Experimental: names and shapes may change in any
+ * release.
  *
  * @example
  * ```ts
  * // @acme/contract: depends on @trpc12/trpc/contract and a schema library only
- * import { contract } from '@trpc12/trpc/contract';
+ * import { experimental_contract } from '@trpc12/trpc/contract';
  *
- * const c = contract.create();
+ * const c = experimental_contract.create();
  * export const appContract = {
  *   post: {
  *     byId: c
@@ -85,7 +87,7 @@ export type { JsonSchema } from '../internal/json-schema.ts';
 /**
  * A contract builder's state.
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
 export interface ContractDef {
   meta: object;
@@ -105,7 +107,7 @@ export interface ContractDef {
 /**
  * The initial contract builder state.
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
 export interface ContractRootDef<TMeta extends object> {
   meta: TMeta;
@@ -122,7 +124,7 @@ export interface ContractRootDef<TMeta extends object> {
 /**
  * Part of inferred contract types; exported so they stay nameable.
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
 export type ContractWith<
   TDef extends ContractDef,
@@ -134,7 +136,7 @@ export type ContractWith<
 /**
  * What clients receive from a contract procedure.
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
 export type ContractOutput<
   TDef extends ContractDef,
@@ -151,7 +153,7 @@ export type ContractOutput<
  * The definition of a contract procedure: a {@link ProcedureDef} with the
  * contract's builder state under `contract`, which `t.implement()` reads.
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
 export interface ContractProcedureDef<
   TType extends ProcedureType,
@@ -171,7 +173,7 @@ export interface ContractProcedureDef<
  * A procedure without a resolver (09). Clients accept it like any procedure;
  * a handler answers it with `NOT_IMPLEMENTED` until it's implemented.
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
 export type ContractProcedure<
   TType extends ProcedureType,
@@ -181,7 +183,7 @@ export type ContractProcedure<
 /**
  * Any contract procedure.
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
 export type AnyContractProcedure = Procedure<
   ProcedureDef & { contract: ContractDef }
@@ -190,7 +192,7 @@ export type AnyContractProcedure = Procedure<
 /**
  * A contract: a plain object of contract procedures and nested contracts.
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
 export interface AnyContractRouter {
   readonly [key: string]: AnyContractProcedure | AnyContractRouter;
@@ -199,7 +201,7 @@ export interface AnyContractRouter {
 /**
  * Options for a contract subscription.
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
 export interface ContractSubscriptionOptions<TTracked extends boolean> {
   /**
@@ -216,7 +218,7 @@ export interface ContractSubscriptionOptions<TTracked extends boolean> {
  *
  * @example
  * ```ts
- * const c = contract.create<{ meta: Meta }>().concat(experimental_openapi());
+ * const c = experimental_contract.create<{ meta: Meta }>().concat(experimental_openapi());
  * export const byId = c
  *   .meta({ route: { method: 'GET', path: '/posts/{id}' } })
  *   .input(z.object({ id: z.string() }))
@@ -224,7 +226,7 @@ export interface ContractSubscriptionOptions<TTracked extends boolean> {
  *   .query();
  * ```
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
 export interface ContractBuilder<TDef extends ContractDef> {
   readonly '~trpc': ContractInternals & { readonly '~types'?: TDef };
@@ -295,7 +297,7 @@ export interface ContractBuilder<TDef extends ContractDef> {
    *
    * @example
    * ```ts
-   * const c = contract.create().concat(experimental_openapi());
+   * const c = experimental_contract.create().concat(experimental_openapi());
    * ```
    */
   concat<$Ext extends BuilderDef>(
@@ -320,7 +322,7 @@ export interface ContractBuilder<TDef extends ContractDef> {
 /**
  * The runtime state of a contract builder.
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
 export interface ContractInternals {
   readonly steps: ReadonlyArray<Step>;
@@ -367,9 +369,9 @@ function createContractBuilder(
 }
 
 /**
- * The type-level config of `contract.create`.
+ * The type-level config of `experimental_contract.create`.
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
 export interface ContractConfig {
   /** The shape of procedure meta. */
@@ -379,15 +381,15 @@ export interface ContractConfig {
 /**
  * Entry point for contract builders.
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
-export const contract = {
+export const experimental_contract = {
   /**
    * A contract builder for a meta type.
    *
    * @example
    * ```ts
-   * const c = contract.create<{ meta: { auth?: boolean } }>();
+   * const c = experimental_contract.create<{ meta: { auth?: boolean } }>();
    * export const health = c.output(z.literal('ok')).query();
    * ```
    */
@@ -406,9 +408,9 @@ export const contract = {
 /**
  * Whether `value` is a procedure without a resolver.
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
-export function isContractProcedure(
+export function experimental_isContractProcedure(
   value: unknown,
 ): value is AnyContractProcedure {
   return isProcedure(value) && value['~trpc'].resolver === undefined;
@@ -425,7 +427,7 @@ export function isContractProcedure(
  * createTrpcClient({ router: routerType<AppContract>(), links: [httpLink({ url })] });
  * ```
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
 export type inferContract<TRouter> = TRouter extends AnyProcedure
   ? Procedure<{
@@ -442,7 +444,7 @@ export type inferContract<TRouter> = TRouter extends AnyProcedure
 /**
  * One procedure of a {@link ContractJson}.
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
 export interface ProcedureJson {
   readonly type: ProcedureType;
@@ -468,7 +470,7 @@ export interface ProcedureJson {
  * Schemas by path. It carries the router's client type, so
  * `createTrpcClient({ router: contractJSON })` is typed.
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
 export interface ContractJson<TRouter = unknown> extends RouterType<
   inferContract<TRouter>
@@ -484,7 +486,7 @@ export interface ContractJson<TRouter = unknown> extends RouterType<
  *
  * @example
  * ```ts
- * export const appContract = toContract(appRouter);
+ * export const appContract = experimental_toContract(appRouter);
  * await fs.writeFile('contract.json', JSON.stringify(appContract));
  *
  * const client = createTrpcClient({
@@ -493,9 +495,9 @@ export interface ContractJson<TRouter = unknown> extends RouterType<
  * });
  * ```
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
-export function toContract<TRouter extends object>(
+export function experimental_toContract<TRouter extends object>(
   router: TRouter,
 ): ContractJson<TRouter> {
   const procedures: Record<string, ProcedureJson> = {};

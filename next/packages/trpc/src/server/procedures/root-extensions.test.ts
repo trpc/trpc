@@ -5,7 +5,7 @@ import {
   safe,
   routerType,
 } from '@trpc12/trpc/client';
-import { contract } from '@trpc12/trpc/contract';
+import { experimental_contract } from '@trpc12/trpc/contract';
 import { createRouterClient, error, initTrpc } from '@trpc12/trpc/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
@@ -130,7 +130,7 @@ test('extensions are checked against the root', () => {
 });
 
 test('implement() on an extended root runs the extension', async () => {
-  const c = contract.create();
+  const c = experimental_contract.create();
   const impl = initTrpc<{ ctx: { ip: string } }>()
     .concat(rateLimit({ max: 1 }))
     .implement({ ping: c.input(z.string()).query() });

@@ -25,10 +25,10 @@ const appRouter = {
   },
 };
 // ---cut-end---
-import { toContract } from '@trpc12/trpc/contract';
+import { experimental_toContract } from '@trpc12/trpc/contract';
 import { experimental_openApiLink } from '@trpc12/trpc/openapi';
 
-const contract = toContract(appRouter); // or the JSON, shipped to the client
+const contract = experimental_toContract(appRouter); // or the JSON, shipped to the client
 const client = createTrpcClient({
   router: contract,
   links: [
@@ -50,7 +50,10 @@ REST responses are plain JSON, and the client types say so: a `createdAt: Date` 
 ```ts
 links: [
   experimental_validationLink({ contract: appContract, output: 'json' }),
-  experimental_openApiLink({ url, contract: toContract(appContract) }),
+  experimental_openApiLink({
+    url,
+    contract: experimental_toContract(appContract),
+  }),
 ];
 ```
 

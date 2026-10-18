@@ -7,8 +7,8 @@ import {
 } from '@trpc12/trpc/client';
 import {
   type AnyContractRouter,
-  contract,
-  toContract,
+  experimental_contract,
+  experimental_toContract,
 } from '@trpc12/trpc/contract';
 import {
   experimental_createOpenApiHandler,
@@ -27,7 +27,7 @@ const Post = Schema.Struct({
   at: Schema.Date,
 });
 
-const c = contract.create().concat(experimental_openapi());
+const c = experimental_contract.create().concat(experimental_openapi());
 const appContract = {
   post: {
     byId: c
@@ -116,7 +116,7 @@ test('results that drift from the contract fail with BAD_RESPONSE', async () => 
 
 test("output: 'json' decodes experimental_openApiLink's plain JSON into the schema's types", async () => {
   const openapi = experimental_createOpenApiHandler({ router });
-  const json = toContract(appContract);
+  const json = experimental_toContract(appContract);
   const fetchVia = (input: RequestInfo | URL, init?: RequestInit) =>
     openapi.fetch(new Request(input, init));
 

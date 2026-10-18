@@ -35,7 +35,7 @@ export interface Route {
    * The generated OpenAPI operation, overridden: an object replaces it, a
    * function gets it and returns the new one. Functions compose across
    * `.meta({ route })` calls, so a base procedure can add `security` and a leaf
-   * still extends it. Documentation only; not sent by `toContract()`.
+   * still extends it. Documentation only; not sent by `experimental_toContract()`.
    */
   readonly spec?: OperationSpec | ((operation: OperationSpec) => OperationSpec);
   /** Type only: `route` on a router, {@link RouteGroup}. */

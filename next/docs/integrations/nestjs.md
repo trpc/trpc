@@ -16,13 +16,13 @@ hidden: true
 // @experimentalDecorators: true
 // ---cut-start---
 import { Controller, Inject, Injectable, Module } from '@nestjs/common';
-import { contract } from '@trpc12/trpc/contract';
+import { experimental_contract } from '@trpc12/trpc/contract';
 import { experimental_openapi } from '@trpc12/trpc/openapi';
 import { initTrpc } from '@trpc12/trpc/server';
 import { Context, Layer } from 'effect';
 import { z } from 'zod';
 import { db, PostSchema, type User } from './server.ts';
-const c = contract.create().concat(experimental_openapi());
+const c = experimental_contract.create().concat(experimental_openapi());
 const appContract = {
   post: {
     byId: c

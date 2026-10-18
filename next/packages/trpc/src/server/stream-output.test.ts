@@ -5,7 +5,10 @@ import {
   TrpcError,
   routerType,
 } from '@trpc12/trpc/client';
-import { type AnyContractRouter, contract } from '@trpc12/trpc/contract';
+import {
+  type AnyContractRouter,
+  experimental_contract,
+} from '@trpc12/trpc/contract';
 import { initTrpc, stream, tracked } from '@trpc12/trpc/server';
 import { createTestServer } from '../fixtures/server.ts';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
@@ -150,7 +153,7 @@ test('subscriptions validate each event with .output(Event) or .output(stream(Ev
 });
 
 test('contracts take stream() outputs', async () => {
-  const c = contract.create();
+  const c = experimental_contract.create();
   const appContract = {
     chat: c.output(stream(Token, Summary)).mutation(),
   } satisfies AnyContractRouter;

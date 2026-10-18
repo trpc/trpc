@@ -9,7 +9,7 @@ import { NodeHttpServer } from '@effect/platform-node';
 import { Effect, Layer, ManagedRuntime } from 'effect';
 import { HttpServer, HttpServerRequest } from 'effect/http';
 import { createTrpcClient, safe } from '@trpc12/trpc/client';
-import { toContract } from '@trpc12/trpc/contract';
+import { experimental_toContract } from '@trpc12/trpc/contract';
 import { toHttpEffect } from '@trpc12/trpc/http';
 import {
   experimental_createOpenApiHandler,
@@ -85,7 +85,7 @@ console.log('GET /api/openapi.json', spec.status);
 
 // --- REST with the typed client ------------------------------------------------------
 
-const contract = toContract(appRouter);
+const contract = experimental_toContract(appRouter);
 const client = createTrpcClient({
   router: contract,
   links: [

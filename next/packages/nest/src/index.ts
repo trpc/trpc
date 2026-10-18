@@ -47,7 +47,7 @@ import {
 import { Effect, Exit, Scope, type Layer } from 'effect';
 import { HttpServerRequest } from 'effect/http';
 import { mergeMap, type Observable } from 'rxjs';
-import { toContract } from '@trpc12/trpc/contract';
+import { experimental_toContract } from '@trpc12/trpc/contract';
 import { toHttpEffect } from '@trpc12/trpc/http';
 import {
   experimental_createOpenApiHandler,
@@ -325,7 +325,9 @@ export function experimental_Implement(
   return (target, propertyKey, descriptor) => {
     const name = String(propertyKey);
     if (isProcedure(contract)) {
-      const def = toContract({ [name]: contract }).procedures[name]!;
+      const def = experimental_toContract({ [name]: contract }).procedures[
+        name
+      ]!;
       if (!def.route?.path) {
         throw new Error(
           `@experimental_Implement on ${name}(): a contract leaf needs a route path, .meta({ route: { path } }); or implement the router above it for default paths`,
@@ -335,7 +337,9 @@ export function experimental_Implement(
       return;
     }
     const original = descriptor.value as (...args: unknown[]) => unknown;
-    for (const [path, def] of Object.entries(toContract(contract).procedures)) {
+    for (const [path, def] of Object.entries(
+      experimental_toContract(contract).procedures,
+    )) {
       const key = `${name}.${path}`;
       const method = {
         async [key](this: unknown, ...args: unknown[]) {

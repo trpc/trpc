@@ -104,7 +104,7 @@ export interface BaseOpenApiHandlerOptions<TRouter extends AnyRouter> {
     pingMs?: number | false;
   };
   /**
-   * The routes, from `toContract(await loadRouter(appRouter))` at build
+   * The routes, from `experimental_toContract(await loadRouter(appRouter))` at build
    * time. Lazy subtrees then load on their first request, whatever their
    * `route.prefix` (08 Q8.4).
    */

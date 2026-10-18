@@ -8,9 +8,9 @@ import {
 } from '@trpc12/trpc/client';
 import {
   type AnyContractRouter,
-  contract,
-  isContractProcedure,
-  toContract,
+  experimental_contract,
+  experimental_isContractProcedure,
+  experimental_toContract,
   type inferContract,
 } from '@trpc12/trpc/contract';
 import { experimental_openapi } from '@trpc12/trpc/openapi';
@@ -221,24 +221,26 @@ test('impl.router() checks completeness at the type level and at runtime', () =>
   );
 });
 
-test('a contract cannot concat an extension with middleware, and isContractProcedure() tells contract leaves from procedures', () => {
+test('a contract cannot concat an extension with middleware, and experimental_isContractProcedure() tells contract leaves from procedures', () => {
   const withMiddleware = initTrpc().procedure.use((opts) => opts.next());
-  expect(() => contract.create().concat(withMiddleware)).toThrow(
+  expect(() => experimental_contract.create().concat(withMiddleware)).toThrow(
     /the extension has middleware or inputs/,
   );
 
-  expect(isContractProcedure(appContract.health)).toBe(true);
-  expect(isContractProcedure(impl.health.query(() => 'ok' as const))).toBe(
-    false,
-  );
-  expect(isContractProcedure(appContract.post)).toBe(false);
-  expect(isContractProcedure(null)).toBe(false);
+  expect(experimental_isContractProcedure(appContract.health)).toBe(true);
+  expect(
+    experimental_isContractProcedure(impl.health.query(() => 'ok' as const)),
+  ).toBe(false);
+  expect(experimental_isContractProcedure(appContract.post)).toBe(false);
+  expect(experimental_isContractProcedure(null)).toBe(false);
 });
 
 test('impl.use() and impl.provide() run for every procedure of the contract', async () => {
-  const c = contract.create<{ meta: { auth?: boolean } }>().errors({
-    UNAUTHORIZED: {},
-  });
+  const c = experimental_contract
+    .create<{ meta: { auth?: boolean } }>()
+    .errors({
+      UNAUTHORIZED: {},
+    });
   const adminContract = {
     stats: c.output(Schema.Number).query(),
     users: { ban: c.input(Schema.String).output(Schema.String).mutation() },
@@ -293,7 +295,9 @@ test('impl.use() and impl.provide() run for every procedure of the contract', as
 });
 
 test('t.implement() checks the contract meta against the root meta', () => {
-  const c = contract.create<{ meta: { auth?: boolean; scope: string } }>();
+  const c = experimental_contract.create<{
+    meta: { auth?: boolean; scope: string };
+  }>();
   const scoped = {
     ping: c.meta({ scope: 'x' }).query(),
   } satisfies AnyContractRouter;
@@ -335,8 +339,8 @@ test('inferContract strips server types; clients from it match', () => {
   expectTypeOf<TrpcClient<AppContract>>().toExtend<TrpcClient<FromRouter>>();
 });
 
-test('toContract() emits a JSON contract that types clients (Q9.4)', async () => {
-  const json = toContract(appRouter);
+test('experimental_toContract() emits a JSON contract that types clients (Q9.4)', async () => {
+  const json = experimental_toContract(appRouter);
   expect(JSON.parse(JSON.stringify(json))).toEqual(json);
   expect(json.procedures['post.byId']).toEqual({
     type: 'query',
@@ -384,8 +388,8 @@ test('toContract() emits a JSON contract that types clients (Q9.4)', async () =>
   expect(post.id).toBe('1');
 });
 
-test('toContract() describes Effect Schemas and chained inputs', () => {
-  const procedures = toContract({
+test('experimental_toContract() describes Effect Schemas and chained inputs', () => {
+  const procedures = experimental_toContract({
     search: t.procedure
       .input(Schema.Struct({ q: Schema.String }))
       .input(Schema.Struct({ limit: Schema.optional(Schema.NumberFromString) }))

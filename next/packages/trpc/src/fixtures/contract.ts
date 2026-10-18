@@ -1,8 +1,8 @@
-import { contract } from '@trpc12/trpc/contract';
+import { experimental_contract } from '@trpc12/trpc/contract';
 import { z } from 'zod';
 import { experimental_openapi } from '@trpc12/trpc/openapi';
 
-const c = contract
+const c = experimental_contract
   .create<{ meta: { auth?: boolean } }>()
   .concat(experimental_openapi());
 

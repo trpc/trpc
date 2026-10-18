@@ -1,6 +1,6 @@
 import { Schema } from 'effect';
 import { createTrpcClient, safe } from '@trpc12/trpc/client';
-import { toContract } from '@trpc12/trpc/contract';
+import { experimental_toContract } from '@trpc12/trpc/contract';
 import {
   experimental_createOpenApiHandler,
   experimental_generateContractFromOpenApi,
@@ -48,7 +48,7 @@ test('a @trpc12/trpc document round-trips into a contract experimental_openApiLi
   );
 
   const mod = await import('./fixtures/generated/app-contract.ts');
-  const json = toContract(mod.generated);
+  const json = experimental_toContract(mod.generated);
   expect(json.procedures['post.byId']?.route).toEqual({
     method: 'GET',
     path: '/posts/{id}',
@@ -178,7 +178,7 @@ test('an OpenAPI 3.0 document: components, nullable, query parameters, status co
   expect(
     Schema.decodeUnknownSync(mod.Pet)({ id: 1, name: 'Rex', tag: null }),
   ).toEqual({ id: 1, name: 'Rex', tag: null });
-  const json = toContract(mod.petstore);
+  const json = experimental_toContract(mod.petstore);
   expect(
     Object.fromEntries(
       Object.entries(json.procedures).map(([path, p]) => [
@@ -325,7 +325,7 @@ test('recursive components, untyped and merged parameters, a prefix-only path an
     Schema.decodeUnknownSync(mod.Tree)({ value: 'a', children: [{}] }),
   ).toThrow('Missing key');
 
-  const json = toContract(mod.contract);
+  const json = experimental_toContract(mod.contract);
   expect(
     Object.fromEntries(
       Object.entries(json.procedures).map(([path, p]) => [path, p.route]),

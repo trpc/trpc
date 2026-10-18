@@ -1,7 +1,7 @@
 import { Effect, Stream } from 'effect';
 import { HttpServerResponse } from 'effect/http';
 import { createTrpcClient, routerType, safe } from '@trpc12/trpc/client';
-import { toContract } from '@trpc12/trpc/contract';
+import { experimental_toContract } from '@trpc12/trpc/contract';
 import {
   experimental_createOpenApiHandler,
   experimental_openapi,
@@ -292,7 +292,7 @@ test('cancelling a stream, or aborting a request, interrupts the procedure', asy
 });
 
 test('a contract route the router lacks is 404', async () => {
-  const contract = toContract({
+  const contract = experimental_toContract({
     ...router,
     extra: t.procedure.query(() => 'never served'),
   });
@@ -368,7 +368,7 @@ test('fetch(request, platform) hands the platform to createContext', async () =>
 
 function linked(fetch?: typeof globalThis.fetch) {
   const handler = make();
-  const contract = toContract(router);
+  const contract = experimental_toContract(router);
   const requests: Request[] = [];
   const client = createTrpcClient({
     router: routerType<typeof router & { missing: typeof router.who }>(),

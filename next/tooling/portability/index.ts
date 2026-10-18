@@ -17,8 +17,8 @@ import {
   wsLink,
 } from '@trpc12/trpc/client';
 import {
-  contract,
-  toContract,
+  experimental_contract,
+  experimental_toContract,
   type inferContract,
 } from '@trpc12/trpc/contract';
 import { createEffectClient } from '@trpc12/trpc/effect';
@@ -195,7 +195,7 @@ export const typedEffectClient = createEffectClient({
   links: [traceLink, httpLink({ url: '/trpc' })],
 });
 
-const c = contract
+const c = experimental_contract
   .create<{ meta: { scope?: string } }>()
   .concat(experimental_openapi());
 
@@ -228,7 +228,7 @@ export const userRouter = userImpl.router({
 });
 
 export type UserContract = inferContract<typeof userRouter>;
-export const userContractJson = toContract(userRouter);
+export const userContractJson = experimental_toContract(userRouter);
 
 export const contractClient = createTrpcClient({
   router: userContract,

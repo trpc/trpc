@@ -15,8 +15,8 @@ import { Context, Effect, Layer, Schema } from 'effect';
 import { createTrpcClient, safe } from '@trpc12/trpc/client';
 import {
   type AnyContractRouter,
-  contract,
-  toContract,
+  experimental_contract,
+  experimental_toContract,
 } from '@trpc12/trpc/contract';
 import {
   experimental_openapi,
@@ -30,7 +30,7 @@ import {
   experimental_TrpcModule,
 } from './index.ts';
 
-const c = contract.create().concat(experimental_openapi());
+const c = experimental_contract.create().concat(experimental_openapi());
 const Post = Schema.Struct({ id: Schema.String, title: Schema.String });
 
 const appContract = {
@@ -293,7 +293,7 @@ test('experimental_openApiLink calls the Nest app with the contract', async () =
       experimental_openApiLink({
         url: app.url,
         prefix: '',
-        contract: toContract(appContract),
+        contract: experimental_toContract(appContract),
       }),
     ],
   });

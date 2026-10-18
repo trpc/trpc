@@ -16,9 +16,11 @@ type Meta = { auth?: boolean };
 const ById = z.object({ id: z.string() });
 const NewPost = z.object({ title: z.string().min(1) });
 // ---cut-end---
-import { contract } from '@trpc12/trpc/contract';
+import { experimental_contract } from '@trpc12/trpc/contract';
 
-const c = contract.create<{ meta: Meta }>().errors({ UNAUTHORIZED: {} });
+const c = experimental_contract
+  .create<{ meta: Meta }>()
+  .errors({ UNAUTHORIZED: {} });
 
 export const appContract = {
   post: {
@@ -63,14 +65,16 @@ import {
   httpLink,
   experimental_validationLink,
 } from '@trpc12/trpc/client';
-import { contract } from '@trpc12/trpc/contract';
+import { experimental_contract } from '@trpc12/trpc/contract';
 import { z } from 'zod';
 import { PostSchema as Post } from './server.ts';
 type Meta = { auth?: boolean };
 const ById = z.object({ id: z.string() });
 const NewPost = z.object({ title: z.string().min(1) });
 declare const url: string;
-const c = contract.create<{ meta: Meta }>().errors({ UNAUTHORIZED: {} });
+const c = experimental_contract
+  .create<{ meta: Meta }>()
+  .errors({ UNAUTHORIZED: {} });
 const appContract = {
   post: {
     byId: c.input(ById).output(Post).errors({ NOT_FOUND: {} }).query(),
@@ -89,7 +93,7 @@ const client = createTrpcClient({
 
 ## From a router or a document
 
-`toContract(router)` derives the contract of an existing router, for the OpenAPI handler and build steps ([Lazy subtrees](./routers.md#lazy-subtrees)). To start from an OpenAPI document instead, see [A contract from OpenAPI](../openapi/from-document.md).
+`experimental_toContract(router)` derives the contract of an existing router, for the OpenAPI handler and build steps ([Lazy subtrees](./routers.md#lazy-subtrees)). To start from an OpenAPI document instead, see [A contract from OpenAPI](../openapi/from-document.md).
 
 ## Credits
 

@@ -1,5 +1,5 @@
 import { createTrpcClient } from '@trpc12/trpc/client';
-import { toContract } from '@trpc12/trpc/contract';
+import { experimental_toContract } from '@trpc12/trpc/contract';
 import {
   experimental_createOpenApiHandler,
   experimental_openapi,
@@ -148,7 +148,7 @@ test('experimental_openApiLink sends nulls, dates and lists of objects in bracke
     links: [
       experimental_openApiLink({
         url: 'http://localhost',
-        contract: toContract(r),
+        contract: experimental_toContract(r),
         fetch: (url, init) => {
           const request = new Request(url, init);
           urls.push(decodeURIComponent(request.url));

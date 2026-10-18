@@ -27,7 +27,7 @@ import {
 export interface OpenApiLinkOptions {
   /** The server's origin (and any base path), without the handler prefix. */
   url: string | URL;
-  /** Methods and paths for each procedure: from `toContract()`. */
+  /** Methods and paths for each procedure: from `experimental_toContract()`. */
   contract: ContractJson<any>;
   /**
    * The handler's prefix.
@@ -81,7 +81,7 @@ const hasBlob = (value: unknown): boolean =>
  *
  * @example
  * ```ts
- * import contract from './contract.json' with { type: 'json' }; // toContract(appRouter)
+ * import contract from './contract.json' with { type: 'json' }; // experimental_toContract(appRouter)
  *
  * const client = createTrpcClient({
  *   router: routerType<AppRouter>(),

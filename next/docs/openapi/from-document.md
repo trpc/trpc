@@ -28,7 +28,7 @@ await writeFile(
 ```ts twoslash
 // ---cut-start---
 import { Schema } from 'effect';
-import { contract as trpcContract } from '@trpc12/trpc/contract';
+import { experimental_contract as trpcContract } from '@trpc12/trpc/contract';
 import { experimental_openapi } from '@trpc12/trpc/openapi';
 // ---cut-end---
 // src/petstore.ts (generated)

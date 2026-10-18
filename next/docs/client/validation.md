@@ -16,10 +16,10 @@ import {
   httpLink,
   experimental_validationLink,
 } from '@trpc12/trpc/client';
-import { contract } from '@trpc12/trpc/contract';
+import { experimental_contract } from '@trpc12/trpc/contract';
 import { z } from 'zod';
 import { PostSchema } from './server.ts';
-const c = contract.create();
+const c = experimental_contract.create();
 const appContract = {
   post: {
     byId: c

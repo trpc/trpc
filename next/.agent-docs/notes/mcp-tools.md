@@ -26,7 +26,7 @@ const mcpHandler = createMcpHandler({
 ## What works
 
 - **A root extension, like `experimental_openapi()`.** `mcp()` adds the `mcp` meta key: `true`, `false`, or `{ name?, title?, description?, annotations? }`, merged key by key across `.meta()` calls. `.meta({ mcp })` without the extension is a type error (`UndeclaredMeta`), as for `route` (`mcp.test-d.ts`).
-- **Schemas come from `toContract()`.** Tool `inputSchema` and `outputSchema` are the JSON Schemas the OpenAPI generator already makes through Standard JSON Schema, so zod's `.describe()` reaches the model as the property's `description`. Nothing in the spike converts schemas.
+- **Schemas come from `experimental_toContract()`.** Tool `inputSchema` and `outputSchema` are the JSON Schemas the OpenAPI generator already makes through Standard JSON Schema, so zod's `.describe()` reaches the model as the property's `description`. Nothing in the spike converts schemas.
 - **MCP's shape constraints are met by wrapping.** MCP needs `type: 'object'` at the top of both schemas:
   - an object input or output is used as it is (`allOf` from chained inputs gets `type: 'object'` added);
   - a non-object input travels as `{ input }`, a non-object output as `structuredContent: { result }`;

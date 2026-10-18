@@ -1,5 +1,5 @@
 import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
-import { toContract } from '@trpc12/trpc/contract';
+import { experimental_toContract } from '@trpc12/trpc/contract';
 import { getProcedure } from '@trpc12/trpc/extend';
 import {
   experimental_createOpenApiHandler,
@@ -124,7 +124,7 @@ test('tools that need the whole router ask for loadRouter()', async () => {
   ).toThrow(
     /"reports" is lazy and hasn't loaded: pass `await loadRouter\(router\)`/,
   );
-  const contract = toContract(await loadRouter(app.router));
+  const contract = experimental_toContract(await loadRouter(app.router));
   expect(contract.procedures['admin.users']!.route).toMatchObject({
     path: '/admin/users',
     tags: ['admin'],
@@ -148,7 +148,9 @@ test('the OpenAPI handler loads a prefixed lazy subtree on a request under it', 
 });
 
 test('with a contract, the OpenAPI handler loads lazy subtrees only when called', async () => {
-  const contract = toContract(await loadRouter(makeRouter().router));
+  const contract = experimental_toContract(
+    await loadRouter(makeRouter().router),
+  );
   const app = makeRouter();
   const handler = experimental_createOpenApiHandler({
     router: app.router,

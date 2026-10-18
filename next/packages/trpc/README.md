@@ -44,7 +44,7 @@ const greeting = await client.greet.query({ name: 'tRPC' }); // string
 | `@trpc12/trpc/client`             | `createTrpcClient`, links, `safe`                          |
 | `@trpc12/trpc/middleware`         | lifecycle hooks, `rateLimit`, locks, durable calls         |
 | `@trpc12/trpc/effect`             | `createEffectClient`                                       |
-| `@trpc12/trpc/contract`           | contract-first routers, `toContract`                       |
+| `@trpc12/trpc/contract`           | contract-first routers, `experimental_toContract`          |
 | `@trpc12/trpc/serializer`         | `jsonSerializer`, danSON, `createSyncSerializer`           |
 | `@trpc12/trpc/http`               | `serve`, `toHttpEffect` on Effect's `HttpServer`           |
 | `@trpc12/trpc/cloudflare`         | Durable Objects and Workers Traces                         |

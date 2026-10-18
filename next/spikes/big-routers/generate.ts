@@ -272,10 +272,10 @@ export type D${d}Router = typeof d${d}Router;
 
     write(
       `packages/d${d}-contract/src/index.ts`,
-      `import { contract } from '@trpc12/trpc/contract';
+      `import { experimental_contract } from '@trpc12/trpc/contract';
 import { z } from 'zod';
 
-const c = contract.create();
+const c = experimental_contract.create();
 
 export const d${d}Contract = {
 ${Array.from(

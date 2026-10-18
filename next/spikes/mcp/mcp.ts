@@ -4,7 +4,7 @@
  * - `mcp()` is a root extension, like `experimental_openapi()`: it adds the `mcp` meta key
  *   (`.meta({ mcp: { description, annotations } })`), merged key by key.
  * - `describeTools(router)` turns procedures into MCP tool descriptors, with
- *   JSON Schemas from `toContract()` (Standard JSON Schema, the OpenAPI
+ *   JSON Schemas from `experimental_toContract()` (Standard JSON Schema, the OpenAPI
  *   generator's path), so nothing here converts schemas itself.
  * - `createMcpHandler({ router })` serves MCP's Streamable HTTP transport,
  *   stateless: one JSON-RPC request per POST, answered with JSON. No
@@ -16,7 +16,10 @@
  * with the official `@modelcontextprotocol/sdk` client.
  */
 import { Data, Effect, Option, Result } from 'effect';
-import { toContract, type JsonSchema } from '@trpc12/trpc/contract';
+import {
+  experimental_toContract,
+  type JsonSchema,
+} from '@trpc12/trpc/contract';
 import {
   call,
   initTrpc,
@@ -178,7 +181,7 @@ interface RouteLike {
 }
 
 function describe(router: object, opts: DescribeToolsOptions = {}): Entry[] {
-  const contract = toContract(router);
+  const contract = experimental_toContract(router);
   const include = opts.include ?? 'meta';
   const separator = opts.separator ?? '_';
   const entries: Entry[] = [];
