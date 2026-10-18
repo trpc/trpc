@@ -11,7 +11,7 @@ export interface Message {
   text: string;
 }
 
-/** A room's messages. In a Durable Object, `hibernatingPublisher` provides it. */
+/** A room's messages. In a Durable Object, `experimental_hibernatingPublisher` provides it. */
 export class Messages extends Publisher.Service<
   Messages,
   { message: Message }

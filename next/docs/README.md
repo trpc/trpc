@@ -57,7 +57,7 @@ Pages marked (hidden) are unlisted on the site until they're reviewed: out of it
 
 - [Subscriptions](./subscriptions/overview.md): Streams of events over SSE or WebSockets, with tracked() ids so reconnects resume.
 - [Publisher](./subscriptions/publisher.md): Typed publish/subscribe as an Effect service, with a channel per audience and resumable events.
-  - [Publisher backends](./subscriptions/backends.md): Recipes for a Publisher on Redis streams, Postgres LISTEN/NOTIFY and Durable Objects.
+  - [Publisher backends](./subscriptions/backends.md): Recipes for a Publisher on Redis streams and Postgres LISTEN/NOTIFY.
 
 ## OpenAPI (hidden)
 
@@ -75,7 +75,7 @@ Pages marked (hidden) are unlisted on the site until they're reviewed: out of it
 - [Deno](./adapters/deno.md): Deno.serve with handler.fetch, and handler.websocket for upgrades.
 - [Fetch runtimes](./adapters/fetch.md): Cloudflare Workers, Next.js route handlers and other fetch runtimes take handler.fetch as it is.
 - [AWS Lambda](./adapters/aws-lambda.md): toLambdaHandler for API Gateway, ALB, function URLs and Lambda@Edge, with response streaming.
-- [Durable Objects](./adapters/durable-objects.md): Hibernating WebSockets, publishers, durable calls, locks, Workers Traces and connection tokens on Cloudflare Durable Objects.
+- [Cloudflare](./adapters/cloudflare.md) (hidden): Everything in @trpc12/trpc/cloudflare. Durable Objects with hibernating WebSockets, publishers, durable calls, locks and connection tokens, plus Workers Traces.
 - [Message ports](./adapters/message-ports.md) (hidden): Serve calls over a MessagePort, a web Worker or a worker_threads port.
 - [Firebase](./adapters/firebase.md) (hidden): Call procedures from Firebase callable functions and map their errors to HttpsError.
 - [Raw sockets](./adapters/sockets.md) (hidden): serveSocket serves the router over TCP, TLS or Unix sockets, with experimental_socketLink on the client.

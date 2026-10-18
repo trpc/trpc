@@ -71,4 +71,4 @@ import { toHttpEffect } from '@trpc12/trpc/http';
 const fetch = HttpEffect.toWebHandler(toHttpEffect(handler));
 ```
 
-WebSockets on Workers go through a Durable Object: see [Durable Objects](./durable-objects.md).
+WebSockets on Workers go through a Durable Object.

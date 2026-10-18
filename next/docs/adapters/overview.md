@@ -25,14 +25,13 @@ const handler = createFetchHandler({ router, createContext, layer });
 
 Procedures are served under `endpoint`, `/trpc` by default.
 
-| Runtime                                 | Serve with                                       | WebSockets            |
-| --------------------------------------- | ------------------------------------------------ | --------------------- |
-| [Node](./node.md)                       | `serve(handler)` on `NodeHttpServer`, or Express | yes                   |
-| [Bun](./bun.md)                         | `Bun.serve({ fetch: handler.fetch })`            | with `serve(handler)` |
-| [Deno](./deno.md)                       | `Deno.serve`                                     | `handler.websocket`   |
-| [Workers, Next.js](./fetch.md)          | `handler.fetch`                                  | in a Durable Object   |
-| [AWS Lambda](./aws-lambda.md)           | `toLambdaHandler(handler)`                       | no                    |
-| [Durable Objects](./durable-objects.md) | `experimental_createHibernatingWebSockets`       | hibernating           |
+| Runtime                        | Serve with                                       | WebSockets            |
+| ------------------------------ | ------------------------------------------------ | --------------------- |
+| [Node](./node.md)              | `serve(handler)` on `NodeHttpServer`, or Express | yes                   |
+| [Bun](./bun.md)                | `Bun.serve({ fetch: handler.fetch })`            | with `serve(handler)` |
+| [Deno](./deno.md)              | `Deno.serve`                                     | `handler.websocket`   |
+| [Workers, Next.js](./fetch.md) | `handler.fetch`                                  | in a Durable Object   |
+| [AWS Lambda](./aws-lambda.md)  | `toLambdaHandler(handler)`                       | no                    |
 
 ## Middleware and CORS
 

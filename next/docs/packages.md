@@ -30,20 +30,19 @@ The TanStack packages re-export `@trpc12/tanstack-query`, so an app installs one
 
 ## `@trpc12/trpc` entry points
 
-| Entry                     | For                                                                                                                               |
-| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| `@trpc12/trpc/server`     | `initTrpc`, routers, handlers, callers, `Publisher` ([The server](./server/overview.md))                                          |
-| `@trpc12/trpc/client`     | `createTrpcClient`, links, `safe` ([The client](./client/overview.md), [Links](./client/links.md))                                |
-| `@trpc12/trpc/middleware` | `onStart`, `onSuccess`, `onError`, `onFinish` ([Built-in middleware](./middleware/overview.md))                                   |
-| `@trpc12/trpc/effect`     | `createEffectClient` ([The Effect client](./client/effect.md))                                                                    |
-| `@trpc12/trpc/contract`   | contract-first routers, `toContract` ([Contract-first](./server/contract-first.md))                                               |
-| `@trpc12/trpc/serializer` | `jsonSerializer`, danSON, `createSyncSerializer` ([Serializers](./server/serializers.md))                                         |
-| `@trpc12/trpc/http`       | `serve`, `toHttpEffect` on Effect's `HttpServer` ([Adapters](./adapters/overview.md))                                             |
-| `@trpc12/trpc/cloudflare` | hibernating WebSockets, publisher and locks on Durable Objects; Workers Traces ([Durable Objects](./adapters/durable-objects.md)) |
-| `@trpc12/trpc/aws-lambda` | `toLambdaHandler` for API Gateway, ALB and Lambda@Edge ([AWS Lambda](./adapters/aws-lambda.md))                                   |
-| `@trpc12/trpc/actions`    | `experimental_createAction`, `experimental_createCallable` ([Server Actions](./integrations/server-actions.md))                   |
-| `@trpc12/trpc/interop`    | `createV11Handler`, `fromV11Link` for v11 code ([Serving v11 clients](./migrations/from-v11/serve-v11-clients.md))                |
-| `@trpc12/trpc/extend`     | building blocks for integrations ([Extensions](./server/extensions.md#building-integrations))                                     |
+| Entry                     | For                                                                                                                |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `@trpc12/trpc/server`     | `initTrpc`, routers, handlers, callers, `Publisher` ([The server](./server/overview.md))                           |
+| `@trpc12/trpc/client`     | `createTrpcClient`, links, `safe` ([The client](./client/overview.md), [Links](./client/links.md))                 |
+| `@trpc12/trpc/middleware` | `onStart`, `onSuccess`, `onError`, `onFinish` ([Built-in middleware](./middleware/overview.md))                    |
+| `@trpc12/trpc/effect`     | `createEffectClient` ([The Effect client](./client/effect.md))                                                     |
+| `@trpc12/trpc/contract`   | contract-first routers, `toContract` ([Contract-first](./server/contract-first.md))                                |
+| `@trpc12/trpc/serializer` | `jsonSerializer`, danSON, `createSyncSerializer` ([Serializers](./server/serializers.md))                          |
+| `@trpc12/trpc/http`       | `serve`, `toHttpEffect` on Effect's `HttpServer` ([Adapters](./adapters/overview.md))                              |
+| `@trpc12/trpc/aws-lambda` | `toLambdaHandler` for API Gateway, ALB and Lambda@Edge ([AWS Lambda](./adapters/aws-lambda.md))                    |
+| `@trpc12/trpc/actions`    | `experimental_createAction`, `experimental_createCallable` ([Server Actions](./integrations/server-actions.md))    |
+| `@trpc12/trpc/interop`    | `createV11Handler`, `fromV11Link` for v11 code ([Serving v11 clients](./migrations/from-v11/serve-v11-clients.md)) |
+| `@trpc12/trpc/extend`     | building blocks for integrations ([Extensions](./server/extensions.md#building-integrations))                      |
 
 ## Stability
 

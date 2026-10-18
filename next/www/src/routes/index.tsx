@@ -286,8 +286,7 @@ const v12Features: ReadonlyArray<Feature> = [
     body: (
       <>
         <code>tracked()</code> events resume after a reconnect, over SSE or
-        WebSockets, fed by a <code>Publisher</code> backed by Redis, Postgres or
-        Durable Objects.
+        WebSockets, fed by a <code>Publisher</code> backed by Redis or Postgres.
       </>
     ),
     icon: <Radio />,
@@ -301,7 +300,7 @@ const v12Features: ReadonlyArray<Feature> = [
     title: 'OpenAPI from the same router',
   },
   {
-    body: 'Node, Bun, Deno, Cloudflare Workers and Durable Objects, AWS Lambda, Express and Fastify.',
+    body: 'Node, Bun, Deno, Cloudflare Workers, AWS Lambda, Express and Fastify.',
     icon: <Globe />,
     slug: 'adapters/overview',
     title: 'Every runtime',

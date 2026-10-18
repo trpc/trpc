@@ -11,7 +11,7 @@ import { deliveries, type HibernationState } from './hibernation.ts';
 
 /**
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
 export interface HibernatingPublisherOptions {
   /** The Durable Object's `ctx`, the same one `experimental_createHibernatingWebSockets` gets. */
@@ -40,15 +40,15 @@ export interface HibernatingPublisherOptions {
  * export class Room extends DurableObject<Env> {
  *   handler = createFetchHandler({
  *     router,
- *     layer: hibernatingPublisher(Posts, { state: this.ctx, buffer: 100 }),
+ *     layer: experimental_hibernatingPublisher(Posts, { state: this.ctx, buffer: 100 }),
  *   });
  *   sockets = experimental_createHibernatingWebSockets(this.handler, { state: this.ctx });
  * }
  * ```
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
-export function hibernatingPublisher<
+export function experimental_hibernatingPublisher<
   Self,
   Key extends string,
   TEvents extends PublisherEvents,

@@ -46,7 +46,7 @@ export interface HibernatableWebSocket {
 export interface HibernationState {
   acceptWebSocket(socket: never, tags?: string[]): void;
   setWebSocketAutoResponse?(pair?: unknown): void;
-  /** The object's accepted sockets. `hibernatingPublisher` sends events to them. */
+  /** The object's accepted sockets. `experimental_hibernatingPublisher` sends events to them. */
   getWebSockets?(tag?: string): HibernatableWebSocket[];
 }
 
@@ -157,7 +157,7 @@ type Deliver = (
 ) => Promise<void>;
 
 /**
- * The adapter serving each Durable Object, for `hibernatingPublisher`. The
+ * The adapter serving each Durable Object, for `experimental_hibernatingPublisher`. The
  * latest one wins: a woken instance replaces the evicted one.
  * @internal
  */
@@ -175,7 +175,7 @@ const requestOf = (attachment: Attachment) =>
  * socket's attachment and are rebuilt when the object wakes. Keep-alive
  * pings are answered without waking it.
  *
- * Subscriptions to a `hibernatingPublisher` are kept in the attachment
+ * Subscriptions to an `experimental_hibernatingPublisher` are kept in the attachment
  * too, and its events are sent straight to the sockets, so the object
  * sleeps between them. Other subscriptions keep it awake until they end.
  *

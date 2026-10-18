@@ -50,7 +50,7 @@ The locker is an Effect service, `experimental_Locker`, provided as a layer:
 
 - `experimental_memoryLocker()` for one process.
 - `experimental_redisLocker()` over Effect's `Redis` for many. Any Redis Effect's `Redis.make({ send, subscribe })` can wrap works, Upstash's REST client included.
-- [`experimental_durableLocker()`](../adapters/durable-objects.md#locks) on Workers.
+- [`experimental_durableLocker()`](../adapters/cloudflare.md#locks) on Workers.
 
 Outside a procedure, take a lock with the service: `yield* (yield* experimental_Locker).acquire(key)` holds it until the surrounding `Effect.scoped` ends.
 

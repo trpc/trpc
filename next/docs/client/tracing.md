@@ -17,5 +17,3 @@ await Effect.runPromise(program.pipe(Effect.provide(NodeSdk.layer(otel))));
 ```
 
 With no tracer (the Promise client, or Effect's default), calls open no span and send no headers or `trace` fields, so they cost nothing and simple requests stay free of CORS preflights. `Effect.provideService(Tracer.DisablePropagation, true)` keeps the spans and drops the headers.
-
-On Cloudflare, see [Workers Traces](../adapters/durable-objects.md#workers-traces).

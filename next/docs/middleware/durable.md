@@ -46,4 +46,4 @@ For work a client should follow across sessions, start it in a mutation that ret
 
 Over WebSockets there are no per-call headers; key the call from its input with `` key: ({ input, path }) => `${path}:${input.requestId}` ``. The resolver's `signal` still aborts when the client leaves, so don't hand it to work that should finish.
 
-On Durable Objects, [durable calls](../adapters/durable-objects.md#durable-calls) keep results in the object's storage.
+On Durable Objects, [durable calls](../adapters/cloudflare.md#durable-calls) keep results in the object's storage.

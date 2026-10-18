@@ -3,13 +3,13 @@ import { Base64Url } from 'effect/encoding';
 import { TrpcError } from '../internal/error.ts';
 
 /**
- * Options for {@link connectionToken}.
+ * Options for {@link experimental_connectionToken}.
  * @example
  * ```ts
- * connectionToken(RoomClaims, { secret: env.TOKEN_SECRET, ttlSeconds: 600 });
+ * experimental_connectionToken(RoomClaims, { secret: env.TOKEN_SECRET, ttlSeconds: 600 });
  * ```
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
 export interface ConnectionTokenOptions {
   /** The HMAC-SHA256 key, shared by the code that signs and the object that verifies. */
@@ -22,14 +22,14 @@ export interface ConnectionTokenOptions {
 }
 
 /**
- * Signs and verifies one kind of token. Made by {@link connectionToken}.
+ * Signs and verifies one kind of token. Made by {@link experimental_connectionToken}.
  * @example
  * ```ts
  * const token = yield* RoomToken.sign({ room: '42', tags: ['user:1'] });
  * const claims = yield* RoomToken.verify(token);
  * ```
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
 export interface ConnectionToken<A> {
   /** A token with `claims` that expires after `ttlSeconds`. */
@@ -56,7 +56,7 @@ const unauthorized = (message: string) =>
  *
  * @example
  * ```ts
- * const RoomToken = connectionToken(
+ * const RoomToken = experimental_connectionToken(
  *   Schema.Struct({ room: Schema.String, tags: Schema.Array(Schema.String) }),
  *   { secret: env.TOKEN_SECRET },
  * );
@@ -69,9 +69,9 @@ const unauthorized = (message: string) =>
  *   Effect.runPromise(RoomToken.verify(info.connectionParams?.['token'])),
  * ```
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
-export function connectionToken<S extends Schema.Codec<any, any>>(
+export function experimental_connectionToken<S extends Schema.Codec<any, any>>(
   schema: S,
   opts: ConnectionTokenOptions,
 ): ConnectionToken<S['Type']> {

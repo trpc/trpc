@@ -91,7 +91,7 @@ const report = await client.report.query({ id }); // File
 
 ## Binary frames
 
-Those chunks are base64 in JSONL, SSE and WebSocket messages. `httpLink({ binary: true })` asks for binary frames instead (`application/vnd.trpc.frames`: the same lines, length-prefixed, with the bytes unencoded), a third smaller; servers answer with JSONL to clients that don't ask. `wsLink({ binary: true })` gets each chunk of bytes as a binary message, except from hibernating Durable Object sockets, which stay text. `localLink` always passes the bytes as they are.
+Those chunks are base64 in JSONL, SSE and WebSocket messages. `httpLink({ binary: true })` asks for binary frames instead (`application/vnd.trpc.frames`: the same lines, length-prefixed, with the bytes unencoded), a third smaller; servers answer with JSONL to clients that don't ask. `wsLink({ binary: true })` gets each chunk of bytes as a binary message. `localLink` always passes the bytes as they are.
 
 ## Serializers
 
