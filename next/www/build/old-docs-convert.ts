@@ -151,6 +151,8 @@ export function redirected(
 export interface ConvertedPage {
   /** Static files the page shows, by path under `www/`: `static/img/x.svg`. */
   readonly images: ReadonlyArray<string>;
+  /** The partials and components it inlines, by path under `www/`. */
+  readonly inlined: ReadonlyArray<string>;
   readonly markdown: string;
   /** What couldn't be converted, one message each. */
   readonly problems: ReadonlyArray<string>;
@@ -631,6 +633,7 @@ interface PageContext {
   /** The file being converted: the page, or a partial it includes. */
   readonly file: string;
   readonly images: Set<string>;
+  readonly inlined: Set<string>;
   /** The page the result renders on, which its links are relative to. */
   readonly page: LinkingPage;
   readonly problems: Array<string>;
@@ -903,6 +906,7 @@ function expandComponent(
     if (!context.docs.files.has(source)) {
       return problem(`${source} isn't there`);
     }
+    context.inlined.add(source);
     context.partials.push(source);
     return `\n\uE001${context.partials.length - 1}\uE001\n`;
   }
@@ -912,9 +916,13 @@ function expandComponent(
       attributes.size === 0 && component !== undefined
         ? inlineComponent(component)
         : undefined;
-    return html === undefined
-      ? problem('only components without props that return static JSX inline')
-      : `\n${html}\n`;
+    if (html === undefined) {
+      return problem(
+        'only components without props that return static JSX inline',
+      );
+    }
+    context.inlined.add(`${source}.tsx`);
+    return `\n${html}\n`;
   }
   return problem(`no conversion for ${source}`);
 }
@@ -1236,12 +1244,25 @@ function convertFile(
   ) => ReadonlyArray<string>,
 ): ConvertedPage {
   const images = new Set<string>();
+  const inlined = new Set<string>();
   const problems: Array<string> = [];
   const source = docs.files.get(file);
   if (source === undefined) {
-    return { images: [], markdown: '', problems: [`${file} isn't there`] };
+    return {
+      images: [],
+      inlined: [],
+      markdown: '',
+      problems: [`${file} isn't there`],
+    };
   }
-  const body = convertBody(source, { docs, file, images, page, problems });
+  const body = convertBody(source, {
+    docs,
+    file,
+    images,
+    inlined,
+    page,
+    problems,
+  });
   const lines = squeezeBlankLines(body.split('\n'));
   while (lines[0]?.trim() === '') {
     lines.shift();
@@ -1254,6 +1275,7 @@ function convertFile(
   const frontmatter = ['---', ...frontmatterOf(lines, problems), '---'];
   return {
     images: [...images].toSorted(),
+    inlined: [...inlined].toSorted(),
     markdown: `${[...frontmatter, '', ...lines].join('\n').trimEnd()}\n`,
     problems,
   };

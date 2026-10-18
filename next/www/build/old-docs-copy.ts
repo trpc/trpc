@@ -3,18 +3,27 @@
  * v10 and v9 in `versioned_docs/`) into `<version>/docs` as pages of this
  * site, in each version's sidebar sections and order, and its blog's posts
  * into `blog/`. The copies are committed and nobody edits them: after the
- * docs or the blog change, run `pnpm --filter @trpc12/www old-docs:copy`
- * again.
+ * docs or the blog change (a merge of `main`), run
+ * `pnpm --filter @trpc12/www old-docs:copy` again. `old-docs:check` (CI)
+ * fails when the committed copies aren't what the copy writes.
  *
  * The pages are converted by `old-docs-convert.ts`. The copy fails on
  * anything it can't convert, and drops the `#hash` of links to headings
  * that don't exist, which Docusaurus only warns about and this site's build
  * rejects.
+ *
+ * Every file git has under `docs/`, `versioned_docs/` and `blog/` is either
+ * copied or in `notCopied`, saying why; the copy fails on any other. It
+ * writes where each file went to `old-docs.json`. It reads only the files
+ * git lists (tracked, or untracked and not ignored), so a local build's
+ * output, like the generated API reference, stays out, and two runs over
+ * the same tree write the same bytes.
  */
 import { stripTypeScriptTypes } from 'node:module';
 import { fileURLToPath } from 'node:url';
 import { NodeRuntime, NodeServices } from '@effect/platform-node';
 import { Console, Data, Effect, FileSystem, Path, Schema } from 'effect';
+import { Command, Flag } from 'effect/cli';
 import { ChildProcess, ChildProcessSpawner } from 'effect/process';
 import { parse as parseYaml } from 'yaml';
 
@@ -156,6 +165,141 @@ const failWith = (message: string) => (cause: unknown) =>
     message: `${message}: ${cause instanceof Error ? cause.message : String(cause)}`,
   });
 
+/** The trees whose every file the copy accounts for. */
+const contentDirs = ['docs', 'versioned_docs', 'blog'] as const;
+
+/**
+ * The files in `contentDirs` the copy leaves out on purpose, and why. A doc
+ * no sidebar lists is still served by trpc.io, so leaving one out takes an
+ * entry here: links to it go to trpc.io.
+ */
+export const notCopied: Readonly<Record<string, string>> = {
+  'blog/authors.yml':
+    "The posts' authors, written into each post's frontmatter",
+  'docs/.gitignore':
+    'Ignores the generated API reference, which links to trpc.io',
+  'docs/landing-intro/Step1.md':
+    "trpc.io's home page shows it (`src/components/QuickIntro.tsx`); no sidebar lists it",
+  'docs/landing-intro/Step2.md':
+    "trpc.io's home page shows it (`src/components/QuickIntro.tsx`); no sidebar lists it",
+  'docs/landing-intro/Step3.md':
+    "trpc.io's home page shows it (`src/components/QuickIntro.tsx`); no sidebar lists it",
+  'docs/test-sub.md': 'A Twoslash test page no sidebar lists',
+  'versioned_docs/version-10.x/.gitignore':
+    'Ignores the generated API reference, which links to trpc.io',
+  'versioned_docs/version-10.x/landing-intro/Step1.md':
+    "v10's copy of the home page's intro, which nothing shows; no sidebar lists it",
+  'versioned_docs/version-10.x/landing-intro/Step2.md':
+    "v10's copy of the home page's intro, which nothing shows; no sidebar lists it",
+  'versioned_docs/version-10.x/landing-intro/Step3.md':
+    "v10's copy of the home page's intro, which nothing shows; no sidebar lists it",
+};
+
+/** Where `old-docs.json` says each file went: the files written from it, or why none are. */
+export type Manifest = Readonly<Record<string, ReadonlyArray<string> | string>>;
+
+/**
+ * Accounts for every file in `sources` (`contentDirs`' files): the files
+ * `written` from it, by path under the site, or its reason in `notCopied`.
+ * A file written from outside them (an image, a component) is listed too.
+ */
+export function manifestOf(opts: {
+  readonly sources: ReadonlyArray<string>;
+  readonly written: ReadonlyArray<readonly [from: string, to: string]>;
+  readonly notCopied: Readonly<Record<string, string>>;
+}) {
+  const outputs = new Map<string, Set<string>>();
+  for (const [from, to] of opts.written) {
+    outputs.set(from, (outputs.get(from) ?? new Set()).add(to));
+  }
+  const sources = new Set(opts.sources);
+  const problems: Array<string> = [];
+  const entries = new Map<string, ReadonlyArray<string> | string>();
+  for (const source of sources) {
+    const written = outputs.get(source);
+    const reason = opts.notCopied[source];
+    if (written && reason !== undefined) {
+      problems.push(`${source} is copied: take it out of \`notCopied\``);
+    } else if (written) {
+      entries.set(source, [...written].toSorted());
+    } else if (reason !== undefined) {
+      entries.set(source, reason);
+    } else if (isPartial(source)) {
+      entries.set(source, 'A partial no page includes');
+    } else {
+      const kind = source.startsWith('blog/')
+        ? "isn't a post the copy reads (`blog/<yyyy-mm-dd>-<slug>.mdx`)"
+        : /\.mdx?$/.test(source)
+          ? 'is in no sidebar'
+          : "isn't a page";
+      problems.push(
+        `${source} ${kind}: copy it, or say why not in \`notCopied\` in www/build/old-docs-copy.ts`,
+      );
+    }
+  }
+  for (const [from, written] of outputs) {
+    if (!sources.has(from)) {
+      entries.set(from, [...written].toSorted());
+    }
+  }
+  for (const source of Object.keys(opts.notCopied)) {
+    if (!sources.has(source)) {
+      problems.push(`${source} isn't there: take it out of \`notCopied\``);
+    }
+  }
+  // `toSorted()` compares code units, which, unlike `localeCompare`, don't
+  // depend on the machine's locale.
+  const manifest: Manifest = Object.fromEntries(
+    [...entries.keys()]
+      .toSorted()
+      .map((file) => [file, entries.get(file) ?? ''] as const),
+  );
+  return { manifest, problems };
+}
+
+/**
+ * The files under `dirs` in `www` that git lists, tracked or untracked but
+ * not ignored, and that are on disk, as `/`-separated paths from `www`.
+ */
+const sourceFiles = Effect.fn('sourceFiles')(function* (
+  www: string,
+  dirs: ReadonlyArray<string>,
+) {
+  const fs = yield* FileSystem.FileSystem;
+  const path = yield* Path.Path;
+  const spawner = yield* ChildProcessSpawner.ChildProcessSpawner;
+  const listing = yield* spawner
+    .string(
+      ChildProcess.make(
+        'git',
+        [
+          'ls-files',
+          '--cached',
+          '--others',
+          '--exclude-standard',
+          '-z',
+          '--',
+          ...dirs,
+        ],
+        { cwd: www },
+      ),
+    )
+    .pipe(Effect.mapError(failWith('git ls-files')));
+  const names = [
+    ...new Set(listing.split('\0').filter((name) => name !== '')),
+  ].toSorted();
+  if (names.length === 0) {
+    return yield* new OldDocsCopyError({
+      message: `git lists no files under ${dirs.join(', ')} in ${www}`,
+    });
+  }
+  return yield* Effect.filter(
+    names,
+    (name) => fs.exists(path.join(www, name)),
+    { concurrency: 'unbounded' },
+  );
+});
+
 /** The YAML in `contents`, failing as `name`'s. */
 const yamlOf = (name: string, contents: string) =>
   Effect.try({
@@ -296,24 +440,6 @@ const readSidebar = Effect.fn('readSidebar')(function* (file: string) {
   return config.default.docs;
 });
 
-/** Every file under `dir` matching `pattern`, as `/`-separated paths from `www`. */
-const listFiles = Effect.fn('listFiles')(function* (
-  www: string,
-  dir: string,
-  patterns: ReadonlyArray<string>,
-) {
-  const fs = yield* FileSystem.FileSystem;
-  const path = yield* Path.Path;
-  const root = path.join(www, dir);
-  const names = yield* Effect.forEach(patterns, (pattern) =>
-    fs.glob(pattern, { root }),
-  );
-  return names
-    .flat()
-    .map((name) => `${dir}/${name.split(path.sep).join('/')}`)
-    .toSorted();
-});
-
 /** A doc, as the copy reads it before placing it in the sidebar. */
 type Doc = Omit<CopiedPage, 'order' | 'parent' | 'section'>;
 
@@ -426,13 +552,22 @@ const readVersion = Effect.fn('readVersion')(function* (
 const readDocs = Effect.fn('readDocs')(function* (www: string) {
   const fs = yield* FileSystem.FileSystem;
   const path = yield* Path.Path;
-  const names = [
-    ...(yield* listFiles(www, 'docs', ['**/*.md', '**/*.mdx'])),
-    ...(yield* listFiles(www, 'versioned_docs', ['**/*.md', '**/*.mdx'])),
-    ...(yield* listFiles(www, 'unversioned', ['*.mdx'])),
-    ...(yield* listFiles(www, 'src/components', ['*.tsx'])),
-    ...(yield* listFiles(www, 'blog', ['*.md', '*.mdx', 'authors.yml'])),
-  ];
+  const listed = yield* sourceFiles(www, [
+    ...contentDirs,
+    'unversioned',
+    'src/components',
+  ]);
+  const contentFiles = listed.filter((name) =>
+    contentDirs.some((dir) => name.startsWith(`${dir}/`)),
+  );
+  const names = listed.filter((name) =>
+    [
+      /^(?:docs|versioned_docs)\/.+\.mdx?$/,
+      /^unversioned\/[^/]+\.mdx$/,
+      /^src\/components\/[^/]+\.tsx$/,
+      /^blog\/(?:[^/]+\.mdx?|authors\.yml)$/,
+    ].some((pattern) => pattern.test(name)),
+  );
   const files = new Map(
     yield* Effect.forEach(
       names,
@@ -484,6 +619,7 @@ const readDocs = Effect.fn('readDocs')(function* (www: string) {
       releases,
       unlisted: new Map(versions.flatMap((read) => [...read.unlisted])),
     },
+    contentFiles,
     versions,
   };
 });
@@ -504,6 +640,9 @@ A copy of [trpc.io's blog](../../../www/blog), which [trpc.io](https://trpc.io/b
 
 Don't edit these files: \`www/build/old-docs-copy.ts\` writes them. Change the posts in the repo root's \`www/blog\`, then run \`pnpm --filter @trpc12/www old-docs:copy\`.
 `;
+
+/** Where each file under `contentDirs` went, under `CopyDirs.to`. */
+const manifestFile = 'old-docs.json';
 
 export interface CopyDirs {
   /** trpc.io's site: the repo root's `www`. */
@@ -548,6 +687,7 @@ export const copyOldDocs = Effect.fn('copyOldDocs')(function* (dirs: CopyDirs) {
     const result = convertPost(post, docs);
     return {
       images: result.images,
+      inlined: result.inlined,
       post,
       problems: result.problems,
       ...dropMissingAnchors(
@@ -563,47 +703,100 @@ export const copyOldDocs = Effect.fn('copyOldDocs')(function* (dirs: CopyDirs) {
       message: `The blog has what the copy can't convert:\n${postProblems.join('\n')}`,
     });
   }
+  /** `to`, `/`-separated from `dirs.to`, as `old-docs.json` names it. */
+  const sitePath = (to: string) =>
+    path.relative(dirs.to, to).split(path.sep).join('/');
+  const versions = read.versions.map((entry) => {
+    const own = pages.filter((page) => page.page.version === entry.version.id);
+    const imagesDir = path.join(dirs.images, entry.version.id, 'img');
+    const images = [
+      ...new Set([
+        ...own.flatMap((page) => page.images),
+        ...(entry.version.id === 'v11'
+          ? posts.flatMap((post) => post.images)
+          : []),
+      ]),
+    ].map((image) => ({
+      from: image,
+      to: path.join(imagesDir, path.basename(image)),
+    }));
+    return {
+      ...entry,
+      docsDir: path.join(dirs.to, entry.version.id, 'docs'),
+      images,
+      imagesDir,
+      own,
+    };
+  });
+  const blogDir = path.join(dirs.to, 'blog');
+  /** Each written file and the page, post or image it's a copy of. */
+  const copies: Array<readonly [from: string, to: string]> = [];
+  /** Each partial or component, and the file it's inlined into. */
+  const inlined: Array<readonly [from: string, to: string]> = [];
+  for (const entry of versions) {
+    for (const page of entry.own) {
+      const to = sitePath(path.join(entry.docsDir, `${page.page.slug}.md`));
+      copies.push([page.page.file, to]);
+      inlined.push(...page.inlined.map((file) => [file, to] as const));
+    }
+    copies.push(
+      ...entry.images.map((image) => [image.from, sitePath(image.to)] as const),
+    );
+  }
+  for (const post of posts) {
+    const to = sitePath(path.join(blogDir, `${post.post.slug}.md`));
+    copies.push([post.post.file, to]);
+    inlined.push(...post.inlined.map((file) => [file, to] as const));
+  }
+  const accounted = manifestOf({
+    notCopied,
+    sources: read.contentFiles,
+    // A generated index has no file in `www/`.
+    written: [...copies, ...inlined].filter(
+      ([from]) => !from.startsWith('generated/'),
+    ),
+  });
+  const copiedFrom = new Map<string, Array<string>>();
+  for (const [from, to] of copies) {
+    copiedFrom.set(to, [...(copiedFrom.get(to) ?? []), from]);
+  }
+  const collisions = [...copiedFrom]
+    .filter(([, from]) => from.length > 1)
+    .map(([to, from]) => `${from.join(' and ')} would both be ${to}`);
+  const unaccounted = [...accounted.problems, ...collisions];
+  if (unaccounted.length > 0) {
+    return yield* new OldDocsCopyError({
+      message: `The copy doesn't account for every file:\n${unaccounted.join('\n')}`,
+    });
+  }
   const report: Array<string> = [];
-  for (const { sections, version } of read.versions) {
-    const own = pages.filter((entry) => entry.page.version === version.id);
-    const versionDir = path.join(dirs.to, version.id);
-    const docsDir = path.join(versionDir, 'docs');
-    const imagesDir = path.join(dirs.images, version.id, 'img');
-    yield* fs.remove(docsDir, { force: true, recursive: true });
-    yield* fs.remove(imagesDir, { force: true, recursive: true });
-    yield* fs.makeDirectory(imagesDir, { recursive: true });
-    yield* Effect.forEach(own, (entry) => {
-      const file = path.join(docsDir, `${entry.page.slug}.md`);
+  for (const entry of versions) {
+    const versionDir = path.join(dirs.to, entry.version.id);
+    yield* fs.remove(entry.docsDir, { force: true, recursive: true });
+    yield* fs.remove(entry.imagesDir, { force: true, recursive: true });
+    yield* fs.makeDirectory(entry.imagesDir, { recursive: true });
+    yield* Effect.forEach(entry.own, (page) => {
+      const file = path.join(entry.docsDir, `${page.page.slug}.md`);
       return Effect.andThen(
         fs.makeDirectory(path.dirname(file), { recursive: true }),
-        fs.writeFileString(file, entry.markdown),
+        fs.writeFileString(file, page.markdown),
       );
     });
     yield* fs.writeFileString(
-      path.join(docsDir, 'README.md'),
-      readme(version, sources[version.id].dir),
+      path.join(entry.docsDir, 'README.md'),
+      readme(entry.version, sources[entry.version.id].dir),
     );
     yield* fs.writeFileString(
       path.join(versionDir, 'sections.json'),
-      `${JSON.stringify(sections, null, 2)}\n`,
+      `${JSON.stringify(entry.sections, null, 2)}\n`,
     );
-    const images = [
-      ...new Set([
-        ...own.flatMap((entry) => entry.images),
-        ...(version.id === 'v11' ? posts.flatMap((entry) => entry.images) : []),
-      ]),
-    ];
-    yield* Effect.forEach(images, (image) =>
-      fs.copyFile(
-        path.join(dirs.from, image),
-        path.join(imagesDir, path.basename(image)),
-      ),
+    yield* Effect.forEach(entry.images, (image) =>
+      fs.copyFile(path.join(dirs.from, image.from), image.to),
     );
     report.push(
-      `Copied ${own.length} ${version.id} pages in ${sections.length} sections, and ${images.length} images.`,
+      `Copied ${entry.own.length} ${entry.version.id} pages in ${entry.sections.length} sections, and ${entry.images.length} images.`,
     );
   }
-  const blogDir = path.join(dirs.to, 'blog');
   yield* fs.remove(blogDir, { force: true, recursive: true });
   yield* fs.makeDirectory(blogDir, { recursive: true });
   yield* Effect.forEach(posts, (entry) =>
@@ -613,27 +806,157 @@ export const copyOldDocs = Effect.fn('copyOldDocs')(function* (dirs: CopyDirs) {
     ),
   );
   yield* fs.writeFileString(path.join(blogDir, 'README.md'), blogReadme);
-  report.push(`Copied ${posts.length} blog posts.`);
+  yield* fs.writeFileString(
+    path.join(dirs.to, manifestFile),
+    `${JSON.stringify(accounted.manifest, null, 2)}\n`,
+  );
+  report.push(
+    `Copied ${posts.length} blog posts.`,
+    `Accounted for ${Object.keys(accounted.manifest).length} files in ${manifestFile}.`,
+  );
   const dropped = [...pages, ...posts].flatMap((entry) => entry.dropped);
-  yield* Console.log(
-    [
-      ...report,
-      ...(dropped.length > 0
-        ? [
-            `Dropped the #hash of ${dropped.length} links to headings that don't exist:`,
-            ...dropped.map((link) => `  ${link}`),
-          ]
-        : []),
-    ].join('\n'),
+  return [
+    ...report,
+    ...(dropped.length > 0
+      ? [
+          `Dropped the #hash of ${dropped.length} links to headings that don't exist:`,
+          ...dropped.map((link) => `  ${link}`),
+        ]
+      : []),
+  ].join('\n');
+});
+
+/** What the copy replaces under `dirs`: each a dir or a file. */
+function outputsOf(dirs: CopyDirs, path: Path.Path) {
+  return [
+    ...copiedVersions.flatMap((version) => [
+      path.join(dirs.to, version.id, 'docs'),
+      path.join(dirs.to, version.id, 'sections.json'),
+      path.join(dirs.images, version.id, 'img'),
+    ]),
+    path.join(dirs.to, 'blog'),
+    path.join(dirs.to, manifestFile),
+  ];
+}
+
+/** The files at `root`, by path from it (`''` when it's a file), or none when it isn't there. */
+const filesAt = Effect.fn('filesAt')(function* (root: string) {
+  const fs = yield* FileSystem.FileSystem;
+  const path = yield* Path.Path;
+  if (!(yield* fs.exists(root))) {
+    return [];
+  }
+  if ((yield* fs.stat(root)).type !== 'Directory') {
+    return [''];
+  }
+  const names = yield* fs.readDirectory(root, { recursive: true });
+  return yield* Effect.filter(names.toSorted(), (name) =>
+    Effect.map(fs.stat(path.join(root, name)), (info) => info.type === 'File'),
   );
 });
+
+const sameBytes = (a: Uint8Array, b: Uint8Array) =>
+  a.length === b.length && a.every((byte, index) => byte === b[index]);
+
+/** How the copy's files under `committed` differ from the fresh ones under `fresh`, by path from `committed.to`. */
+const differencesOf = Effect.fn('differencesOf')(function* (
+  fresh: CopyDirs,
+  committed: CopyDirs,
+) {
+  const fs = yield* FileSystem.FileSystem;
+  const path = yield* Path.Path;
+  const pairs = outputsOf(committed, path).map(
+    (output, index) => [output, outputsOf(fresh, path)[index] ?? ''] as const,
+  );
+  const differences: Array<string> = [];
+  for (const [committedRoot, freshRoot] of pairs) {
+    const want = new Set(yield* filesAt(freshRoot));
+    const have = new Set(yield* filesAt(committedRoot));
+    const name = (file: string) =>
+      path.relative(committed.to, path.join(committedRoot, file));
+    for (const file of want) {
+      if (!have.has(file)) {
+        differences.push(
+          `${name(file)}: the copy writes it, and it isn't there`,
+        );
+        continue;
+      }
+      const same = sameBytes(
+        yield* fs.readFile(path.join(freshRoot, file)),
+        yield* fs.readFile(path.join(committedRoot, file)),
+      );
+      if (!same) {
+        differences.push(`${name(file)}: the copy writes something else`);
+      }
+    }
+    for (const file of have) {
+      if (!want.has(file)) {
+        differences.push(`${name(file)}: the copy doesn't write it`);
+      }
+    }
+  }
+  return differences.toSorted();
+});
+
+/**
+ * Copies into a scratch dir and compares the result with the copies under
+ * `dirs`, failing on any file that differs, is missing or is left over.
+ */
+export const checkOldDocs = Effect.fn('checkOldDocs')(function* (
+  dirs: CopyDirs,
+) {
+  const fs = yield* FileSystem.FileSystem;
+  const path = yield* Path.Path;
+  const scratch = yield* fs.makeTempDirectoryScoped({ prefix: 'old-docs-' });
+  const fresh: CopyDirs = {
+    from: dirs.from,
+    images: path.join(scratch, path.relative(dirs.to, dirs.images)),
+    to: scratch,
+  };
+  yield* copyOldDocs(fresh);
+  const differences = yield* differencesOf(fresh, dirs);
+  if (differences.length > 0) {
+    return yield* new OldDocsCopyError({
+      message: [
+        `The copies in ${dirs.to} aren't what the copy writes from ${dirs.from}:`,
+        ...differences.map((difference) => `  ${difference}`),
+        'Run `pnpm --filter @trpc12/www old-docs:copy` and commit what it writes.',
+      ].join('\n'),
+    });
+  }
+  return `The copies are what the copy writes from ${dirs.from}.`;
+}, Effect.scoped);
 
 if (import.meta.main) {
   const here = (relative: string) =>
     fileURLToPath(new URL(relative, import.meta.url));
-  copyOldDocs({
+  const dirs: CopyDirs = {
     from: here('../../../www'),
     images: here('../public'),
     to: here('..'),
-  }).pipe(Effect.provide(NodeServices.layer), NodeRuntime.runMain);
+  };
+  const command = Command.make(
+    'old-docs-copy',
+    {
+      check: Flag.Boolean('check').pipe(
+        Flag.withDescription(
+          'Fail when the committed copies differ from what the copy writes, writing nothing',
+        ),
+        Flag.withDefault(false),
+      ),
+    },
+    (opts) =>
+      Effect.flatMap(
+        opts.check ? checkOldDocs(dirs) : copyOldDocs(dirs),
+        Console.log,
+      ),
+  ).pipe(
+    Command.withDescription(
+      "Copy trpc.io's v11, v10 and v9 docs and its blog into the site",
+    ),
+  );
+  Command.run(command, { version: '0.0.0' }).pipe(
+    Effect.provide(NodeServices.layer),
+    NodeRuntime.runMain,
+  );
 }

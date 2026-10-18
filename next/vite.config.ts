@@ -31,6 +31,7 @@ export default defineConfig({
       'www/v10/**',
       'www/v9/**',
       'www/blog/**',
+      'www/old-docs.json',
     ],
   },
   lint: {

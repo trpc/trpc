@@ -439,6 +439,10 @@ describe('convertPage', () => {
       },
     );
     expect(converted.problems).toEqual([]);
+    expect(converted.inlined).toEqual([
+      'docs/partials/_intro.mdx',
+      'src/components/Logo.tsx',
+    ]);
     expect(converted.body).toBe(
       [
         'See [routers](./routers.md).',
@@ -538,6 +542,7 @@ describe('convertPost', () => {
       ),
     ).toEqual({
       images: [],
+      inlined: [],
       markdown: [
         '---',
         'title: "Announcing tRPC v11"',

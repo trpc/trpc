@@ -9,7 +9,8 @@
     "dev": "vp dev --port 3012",
     "start": "vp preview --port 3012",
     "typecheck": "tsc",
-    "old-docs:copy": "node build/old-docs-copy.ts"
+    "old-docs:copy": "node build/old-docs-copy.ts",
+    "old-docs:check": "node build/old-docs-copy.ts --check"
   },
   "dependencies": {
     "@shared/ui": "workspace:*",
