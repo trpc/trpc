@@ -8,4 +8,6 @@ Two servers share one Redis, for durable calls and for locks:
 
 Kept results use Effect's `Persistence.layerBackingRedis`; both stores share one `NodeRedis.layer`. See [Durable calls](../../../docs/middleware/durable.md) and [Locks](../../../docs/middleware/lock.md). Everything here is `experimental_*` and may change in any release; the Cloudflare example covers the Durable Object flavour.
 
-Needs Redis at `REDIS_URL` (default `redis://127.0.0.1:6379`), as in CI. Run it from `next/` with `pnpm example`, or here with `pnpm smoke`.
+`server.ts` has the router and `listen()`. `client.ts` runs the three scenarios: `main(url, other)` sends the second payment and the resumed report to `other`. `start.ts` starts two servers in one process, so they also share the in-memory `db` that stands in for the app's database.
+
+Needs Redis at `REDIS_URL` (default `redis://127.0.0.1:6379`), as in CI. `pnpm start` runs it. To run the halves apart, start one or more `pnpm server` (each with its own `PORT`) and run `pnpm client <url> [other url]`. With separate processes, use one server: each process has its own `db`. The [examples README](../../README.md) has the layout.
