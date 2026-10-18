@@ -86,3 +86,7 @@ const client = createTrpcClient({
 ## From a router or a document
 
 `toContract(router)` derives the contract of an existing router, for the OpenAPI handler and build steps ([Lazy subtrees](./routers.md#lazy-subtrees)). To start from an OpenAPI document instead, see [A contract from OpenAPI](../openapi/from-document.md).
+
+## Credits
+
+Contracts and `t.implement()` follow [oRPC](https://orpc.dev)'s contract-first support.

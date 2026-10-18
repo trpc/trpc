@@ -20,6 +20,9 @@ export function SiteFooter() {
           <a className="hover:text-foreground" href="https://trpc.io">
             v11 docs
           </a>
+          <Link className="hover:text-foreground" hash="credits" to="/">
+            Credits
+          </Link>
           <a className="hover:text-foreground" href="/llms.txt">
             llms.txt
           </a>

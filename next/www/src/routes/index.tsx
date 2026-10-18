@@ -179,6 +179,53 @@ const features: ReadonlyArray<Feature> = [
   },
 ];
 
+interface Credit {
+  readonly body: ReactNode;
+  readonly by: ReactNode;
+  readonly name: string;
+  readonly url: string;
+}
+
+const credits: ReadonlyArray<Credit> = [
+  {
+    body: (
+      <>
+        oRPC&apos;s feature table is the bar v12 measures itself against, and
+        many of v12&apos;s designs started as oRPC&apos;s: contract-first
+        procedures, OpenAPI from the same router, declared errors with{' '}
+        <code>safe()</code> result tuples, lifecycle hooks, rate limits, locks
+        and hibernating Durable Objects.
+      </>
+    ),
+    by: (
+      <>
+        by <a href="https://github.com/dinwwwh">Định Lê</a> and{' '}
+        <a href="https://github.com/middleapi">middleapi</a>
+      </>
+    ),
+    name: 'oRPC',
+    url: 'https://orpc.dev',
+  },
+  {
+    body: (
+      <>
+        trpc-openapi brought REST routes and OpenAPI documents to tRPC routers,
+        declared in procedure meta, which v12&apos;s <code>route</code> meta
+        carries on.{' '}
+        <a href="https://github.com/mcampa/trpc-to-openapi">trpc-to-openapi</a>,
+        by Mario Campa, maintains it for v11.
+      </>
+    ),
+    by: (
+      <>
+        by <a href="https://github.com/jlalmes">James Berry</a>
+      </>
+    ),
+    name: 'trpc-openapi',
+    url: 'https://github.com/trpc/trpc-openapi',
+  },
+];
+
 function HashLink(props: {
   readonly children: ReactNode;
   readonly id: string;
@@ -373,6 +420,40 @@ function HomePage() {
                   {feature.body}
                 </span>
               </Link>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      <section
+        aria-labelledby="credits"
+        className="mx-auto max-w-7xl border-t px-4 py-16 sm:px-6"
+      >
+        <h2
+          className="mb-2 text-2xl font-bold tracking-tight sm:text-3xl"
+          id="credits"
+        >
+          <HashLink id="credits">Credits</HashLink>
+        </h2>
+        <p className="mb-8 max-w-2xl text-muted-foreground">
+          v12 builds on projects that got there first.
+        </p>
+        <ul className="grid gap-4 md:grid-cols-2">
+          {credits.map((credit) => (
+            <li
+              className="grid content-start gap-2 rounded-xl border bg-card p-5 text-sm text-muted-foreground [&_a]:font-medium [&_a]:text-link [&_a]:underline-offset-4 [&_a:hover]:underline [&_code]:font-mono [&_code]:text-[0.9em] [&_code]:text-foreground"
+              key={credit.name}
+            >
+              <p className="flex flex-wrap items-baseline gap-x-2">
+                <a
+                  className="text-base font-semibold text-foreground!"
+                  href={credit.url}
+                >
+                  {credit.name}
+                </a>
+                <span>{credit.by}</span>
+              </p>
+              <p>{credit.body}</p>
             </li>
           ))}
         </ul>
