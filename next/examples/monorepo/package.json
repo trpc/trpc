@@ -1,0 +1,18 @@
+{
+  "name": "@example/monorepo",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc -b",
+    "smoke": "tsc -b && node smoke.ts"
+  },
+  "dependencies": {
+    "@acme/billing-widget": "workspace:*",
+    "@acme/server": "workspace:*",
+    "@acme/web": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^7.0.2"
+  }
+}

@@ -1,0 +1,16 @@
+{
+  "name": "@acme/web",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@trpc12/trpc": "workspace:*",
+    "effect": "4.0.2"
+  },
+  "devDependencies": {
+    "@acme/api": "workspace:*",
+    "@types/node": "^24.0.0"
+  }
+}

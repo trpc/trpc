@@ -1,0 +1,16 @@
+{
+  "name": "@acme/api",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@acme/billing": "workspace:*",
+    "@acme/posts": "workspace:*",
+    "@acme/users": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0"
+  }
+}

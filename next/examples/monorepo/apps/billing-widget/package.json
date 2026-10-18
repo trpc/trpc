@@ -1,0 +1,16 @@
+{
+  "name": "@acme/billing-widget",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@acme/billing-contract": "workspace:*",
+    "@trpc12/trpc": "workspace:*",
+    "effect": "4.0.2"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0"
+  }
+}

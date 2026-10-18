@@ -256,6 +256,169 @@ importers:
         specifier: ^7.0.2
         version: 7.0.2
 
+  examples/monorepo:
+    dependencies:
+      '@acme/billing-widget':
+        specifier: workspace:*
+        version: link:apps/billing-widget
+      '@acme/server':
+        specifier: workspace:*
+        version: link:packages/server
+      '@acme/web':
+        specifier: workspace:*
+        version: link:apps/web
+    devDependencies:
+      '@types/node':
+        specifier: ^24.0.0
+        version: 24.19.1
+      typescript:
+        specifier: ^7.0.2
+        version: 7.0.2
+
+  examples/monorepo/apps/billing-widget:
+    dependencies:
+      '@acme/billing-contract':
+        specifier: workspace:*
+        version: link:../../packages/billing-contract
+      '@trpc12/trpc':
+        specifier: workspace:*
+        version: link:../../../../packages/trpc
+      effect:
+        specifier: 4.0.2
+        version: 4.0.2
+    devDependencies:
+      '@types/node':
+        specifier: ^24.0.0
+        version: 24.19.1
+
+  examples/monorepo/apps/web:
+    dependencies:
+      '@trpc12/trpc':
+        specifier: workspace:*
+        version: link:../../../../packages/trpc
+      effect:
+        specifier: 4.0.2
+        version: 4.0.2
+    devDependencies:
+      '@acme/api':
+        specifier: workspace:*
+        version: link:../../packages/api
+      '@types/node':
+        specifier: ^24.0.0
+        version: 24.19.1
+
+  examples/monorepo/packages/api:
+    dependencies:
+      '@acme/billing':
+        specifier: workspace:*
+        version: link:../billing
+      '@acme/posts':
+        specifier: workspace:*
+        version: link:../posts
+      '@acme/users':
+        specifier: workspace:*
+        version: link:../users
+    devDependencies:
+      '@types/node':
+        specifier: ^24.0.0
+        version: 24.19.1
+
+  examples/monorepo/packages/billing:
+    dependencies:
+      '@acme/billing-contract':
+        specifier: workspace:*
+        version: link:../billing-contract
+      '@acme/trpc':
+        specifier: workspace:*
+        version: link:../trpc
+      '@trpc12/trpc':
+        specifier: workspace:*
+        version: link:../../../../packages/trpc
+      zod:
+        specifier: 4.6.5
+        version: 4.6.5
+    devDependencies:
+      '@types/node':
+        specifier: ^24.0.0
+        version: 24.19.1
+
+  examples/monorepo/packages/billing-contract:
+    dependencies:
+      '@trpc12/trpc':
+        specifier: workspace:*
+        version: link:../../../../packages/trpc
+      zod:
+        specifier: 4.6.5
+        version: 4.6.5
+    devDependencies:
+      '@types/node':
+        specifier: ^24.0.0
+        version: 24.19.1
+
+  examples/monorepo/packages/posts:
+    dependencies:
+      '@acme/trpc':
+        specifier: workspace:*
+        version: link:../trpc
+      '@trpc12/trpc':
+        specifier: workspace:*
+        version: link:../../../../packages/trpc
+      zod:
+        specifier: 4.6.5
+        version: 4.6.5
+    devDependencies:
+      '@types/node':
+        specifier: ^24.0.0
+        version: 24.19.1
+
+  examples/monorepo/packages/server:
+    dependencies:
+      '@acme/api':
+        specifier: workspace:*
+        version: link:../api
+      '@effect/platform-node':
+        specifier: 4.0.2
+        version: 4.0.2(effect@4.0.2)(redis@6.3.0)
+      '@trpc12/trpc':
+        specifier: workspace:*
+        version: link:../../../../packages/trpc
+      effect:
+        specifier: 4.0.2
+        version: 4.0.2
+    devDependencies:
+      '@types/node':
+        specifier: ^24.0.0
+        version: 24.19.1
+
+  examples/monorepo/packages/trpc:
+    dependencies:
+      '@trpc12/trpc':
+        specifier: workspace:*
+        version: link:../../../../packages/trpc
+      effect:
+        specifier: 4.0.2
+        version: 4.0.2
+    devDependencies:
+      '@types/node':
+        specifier: ^24.0.0
+        version: 24.19.1
+
+  examples/monorepo/packages/users:
+    dependencies:
+      '@acme/trpc':
+        specifier: workspace:*
+        version: link:../trpc
+      '@trpc12/trpc':
+        specifier: workspace:*
+        version: link:../../../../packages/trpc
+      zod:
+        specifier: 4.6.5
+        version: 4.6.5
+    devDependencies:
+      '@types/node':
+        specifier: ^24.0.0
+        version: 24.19.1
+
   examples/next-app:
     dependencies:
       '@tanstack/react-query':

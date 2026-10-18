@@ -1,0 +1,17 @@
+{
+  "name": "@acme/server",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@acme/api": "workspace:*",
+    "@effect/platform-node": "4.0.2",
+    "@trpc12/trpc": "workspace:*",
+    "effect": "4.0.2"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0"
+  }
+}

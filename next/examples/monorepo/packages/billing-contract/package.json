@@ -1,0 +1,15 @@
+{
+  "name": "@acme/billing-contract",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@trpc12/trpc": "workspace:*",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0"
+  }
+}

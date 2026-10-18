@@ -1,6 +1,8 @@
 packages:
   - 'packages/*'
   - 'examples/*'
+  - 'examples/monorepo/packages/*'
+  - 'examples/monorepo/apps/*'
   - 'test/*'
   - 'spikes'
   - 'shared/*'

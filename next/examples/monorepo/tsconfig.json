@@ -1,0 +1,21 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "composite": false,
+    "emitDeclarationOnly": false,
+    "noEmit": true,
+    "rootDir": "."
+  },
+  "include": ["smoke.ts"],
+  "references": [
+    { "path": "./packages/trpc" },
+    { "path": "./packages/posts" },
+    { "path": "./packages/users" },
+    { "path": "./packages/billing-contract" },
+    { "path": "./packages/billing" },
+    { "path": "./packages/api" },
+    { "path": "./packages/server" },
+    { "path": "./apps/web" },
+    { "path": "./apps/billing-widget" }
+  ]
+}
