@@ -446,20 +446,20 @@ importers:
         specifier: ^7.0.2
         version: 7.0.2
 
-  examples/experimental/react-without-tanstack:
+  examples/experimental/react-atom:
     dependencies:
       '@effect/atom-react':
         specifier: 4.0.2
         version: 4.0.2(effect@4.0.2)(react@19.3.0)(scheduler@0.27.0)
-      '@effect/platform-node':
-        specifier: 4.0.2
-        version: 4.0.2(effect@4.0.2)(redis@6.3.0(@opentelemetry/api@1.9.1))
       '@shared/ui':
         specifier: workspace:*
         version: link:../../../shared/ui
-      '@trpc12/experimental-react':
-        specifier: workspace:*
-        version: link:../../../packages/experimental-react
+      '@tanstack/react-router':
+        specifier: 1.170.42
+        version: 1.170.42(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      '@tanstack/react-start':
+        specifier: 1.168.61
+        version: 1.168.61(@voidzero-dev/vite-plus-core@1.1.0(@types/node@24.19.1)(esbuild@0.28.2)(jiti@2.7.0)(typescript@7.0.2)(yaml@2.9.1))(esbuild@0.28.2)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(rolldown@1.2.13)(supports-color@10.2.2)(vite-plugin-solid@2.11.14(@voidzero-dev/vite-plus-core@1.1.0(@types/node@24.19.1)(esbuild@0.28.2)(jiti@2.7.0)(typescript@7.0.2)(yaml@2.9.1))(solid-js@1.9.17)(supports-color@10.2.2))
       '@trpc12/experimental-react-atom':
         specifier: workspace:*
         version: link:../../../packages/experimental-react-atom
@@ -494,9 +494,67 @@ importers:
       '@vitejs/plugin-react':
         specifier: 6.1.2
         version: 6.1.2(@voidzero-dev/vite-plus-core@1.1.0(@types/node@24.19.1)(esbuild@0.28.2)(jiti@2.7.0)(typescript@7.0.2)(yaml@2.9.1))
-      happy-dom:
-        specifier: 20.14.6
-        version: 20.14.6
+      playwright-core:
+        specifier: 1.64.1
+        version: 1.64.1
+      tailwindcss:
+        specifier: 4.3.3
+        version: 4.3.3
+      typescript:
+        specifier: ^7.0.2
+        version: 7.0.2
+      vite-plus:
+        specifier: 1.1.0
+        version: 1.1.0(@opentelemetry/api@1.9.1)(@types/node@24.19.1)(@vitest/coverage-v8@5.0.3)(@vitest/ui@5.0.3)(esbuild@0.28.2)(happy-dom@20.14.6)(jiti@2.7.0)(svelte@5.57.2)(typescript@7.0.2)(yaml@2.9.1)
+
+  examples/experimental/react-suspense:
+    dependencies:
+      '@shared/ui':
+        specifier: workspace:*
+        version: link:../../../shared/ui
+      '@tanstack/react-router':
+        specifier: 1.170.42
+        version: 1.170.42(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      '@tanstack/react-start':
+        specifier: 1.168.61
+        version: 1.168.61(@voidzero-dev/vite-plus-core@1.1.0(@types/node@24.19.1)(esbuild@0.28.2)(jiti@2.7.0)(typescript@7.0.2)(yaml@2.9.1))(esbuild@0.28.2)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(rolldown@1.2.13)(supports-color@10.2.2)(vite-plugin-solid@2.11.14(@voidzero-dev/vite-plus-core@1.1.0(@types/node@24.19.1)(esbuild@0.28.2)(jiti@2.7.0)(typescript@7.0.2)(yaml@2.9.1))(solid-js@1.9.17)(supports-color@10.2.2))
+      '@trpc12/experimental-react':
+        specifier: workspace:*
+        version: link:../../../packages/experimental-react
+      '@trpc12/trpc':
+        specifier: workspace:*
+        version: link:../../../packages/trpc
+      effect:
+        specifier: 4.0.2
+        version: 4.0.2
+      react:
+        specifier: 19.3.0
+        version: 19.3.0
+      react-dom:
+        specifier: 19.3.0
+        version: 19.3.0(react@19.3.0)
+      zod:
+        specifier: 4.6.5
+        version: 4.6.5
+    devDependencies:
+      '@tailwindcss/vite':
+        specifier: 4.3.3
+        version: 4.3.3(@voidzero-dev/vite-plus-core@1.1.0(@types/node@24.19.1)(esbuild@0.28.2)(jiti@2.7.0)(typescript@7.0.2)(yaml@2.9.1))
+      '@types/node':
+        specifier: ^24.0.0
+        version: 24.19.1
+      '@types/react':
+        specifier: 19.3.0
+        version: 19.3.0
+      '@types/react-dom':
+        specifier: 19.3.0
+        version: 19.3.0(@types/react@19.3.0)
+      '@vitejs/plugin-react':
+        specifier: 6.1.2
+        version: 6.1.2(@voidzero-dev/vite-plus-core@1.1.0(@types/node@24.19.1)(esbuild@0.28.2)(jiti@2.7.0)(typescript@7.0.2)(yaml@2.9.1))
+      playwright-core:
+        specifier: 1.64.1
+        version: 1.64.1
       tailwindcss:
         specifier: 4.3.3
         version: 4.3.3
@@ -12110,7 +12168,6 @@ snapshots:
       - vite
       - vite-plugin-solid
       - webpack
-    optional: true
 
   '@tanstack/react-start-rsc@0.1.60(@voidzero-dev/vite-plus-core@1.1.0(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(typescript@7.0.2)(yaml@2.9.1))(esbuild@0.28.2)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(rolldown@1.2.13)(supports-color@10.2.2)(vite-plugin-solid@2.11.14(@voidzero-dev/vite-plus-core@1.1.0(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(typescript@7.0.2)(yaml@2.9.1))(solid-js@1.9.17)(supports-color@10.2.2))':
     dependencies:
@@ -12176,7 +12233,6 @@ snapshots:
       - unloader
       - vite-plugin-solid
       - webpack
-    optional: true
 
   '@tanstack/react-start@1.168.61(@voidzero-dev/vite-plus-core@1.1.0(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(typescript@7.0.2)(yaml@2.9.1))(esbuild@0.28.2)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(rolldown@1.2.13)(supports-color@10.2.2)(vite-plugin-solid@2.11.14(@voidzero-dev/vite-plus-core@1.1.0(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(typescript@7.0.2)(yaml@2.9.1))(solid-js@1.9.17)(supports-color@10.2.2))':
     dependencies:
@@ -12258,7 +12314,6 @@ snapshots:
       - rollup
       - supports-color
       - unloader
-    optional: true
 
   '@tanstack/router-plugin@1.168.43(@tanstack/react-router@1.170.42(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(@voidzero-dev/vite-plus-core@1.1.0(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(typescript@7.0.2)(yaml@2.9.1))(esbuild@0.28.2)(rolldown@1.2.13)(supports-color@10.2.2)(vite-plugin-solid@2.11.14(@voidzero-dev/vite-plus-core@1.1.0(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(typescript@7.0.2)(yaml@2.9.1))(solid-js@1.9.17)(supports-color@10.2.2))':
     dependencies:
@@ -12350,7 +12405,6 @@ snapshots:
       - unloader
       - vite-plugin-solid
       - webpack
-    optional: true
 
   '@tanstack/start-plugin-core@1.171.50(@tanstack/react-router@1.170.42(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(@voidzero-dev/vite-plus-core@1.1.0(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(typescript@7.0.2)(yaml@2.9.1))(esbuild@0.28.2)(rolldown@1.2.13)(supports-color@10.2.2)(vite-plugin-solid@2.11.14(@voidzero-dev/vite-plus-core@1.1.0(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(typescript@7.0.2)(yaml@2.9.1))(solid-js@1.9.17)(supports-color@10.2.2))':
     dependencies:
@@ -16719,7 +16773,6 @@ snapshots:
       esbuild: 0.28.2
       rolldown: 1.2.13
       vite: '@voidzero-dev/vite-plus-core@1.1.0(@types/node@24.19.1)(esbuild@0.28.2)(jiti@2.7.0)(typescript@7.0.2)(yaml@2.9.1)'
-    optional: true
 
   unplugin@3.4.0(@voidzero-dev/vite-plus-core@1.1.0(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(typescript@7.0.2)(yaml@2.9.1))(esbuild@0.28.2)(rolldown@1.2.13):
     dependencies:

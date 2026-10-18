@@ -1,16 +1,15 @@
-# React without TanStack Query (experimental)
+# React `use()` and Suspense on TanStack Start (experimental)
 
-One router read with both experimental React integrations, in a Vite page styled with `@shared/ui` and Tailwind:
+`@trpc12/experimental-react` without TanStack Query, in a TanStack Start app styled with `@shared/ui` and Tailwind. The route's loader starts `post.list`, the component reads its promise with `use(useQuery(promise))` under `Suspense`, and adding a post refetches the list through `invalidateOnMutationLink`. See [React without TanStack Query](../../../docs/integrations/experimental-react.md); for the same page with Effect atoms, see [`react-atom`](../react-atom/README.md).
 
-- **`@trpc12/experimental-react`**: a loader (`loadPage()` in `src/trpc.ts`) starts `post.list`, and the card reads the promise with `use(useQuery(promise))` under `Suspense`. `standardLinks()` adds the cache, and after `mutate()` `invalidateOnMutationLink` refetches the list on screen. `useQueryState()` shows a fetching badge. See [React without TanStack Query](../../../docs/integrations/experimental-react.md).
-- **`@trpc12/experimental-react-atom`**: `useAtomSuspense()` reads a query atom, a mutation atom with `reactivityKeys: ['posts']` refetches it, and a subscription atom shows the server's clock. See [React atoms](../../../docs/integrations/experimental-react-atom.md).
+It's a framework app, so it keeps TanStack Start's layout instead of the [examples layout](../../README.md):
 
-Dates cross the wire with danSON on both ends. Both packages are experimental; `httpLink`, `createSerializer()` and the server are stable.
+- `src/server/router.ts`: the router (`post.list`, `post.add`).
+- `src/routes/api/trpc.$.ts`: a server route that hands `/api/trpc/*` to `createFetchHandler()`.
+- `src/trpc.ts`: `makeTrpc()`, with `standardLinks()` and a link chosen by `createIsomorphicFn()`: `localLink` on the server, so a server render calls the router in process, and `httpLink` to `/api/trpc` in the browser. Start leaves the router out of the browser bundle.
+- `src/router.tsx`: `getRouter()` makes a client per request on the server and one per tab in the browser, and passes it to routes as context. Its `dehydrate` and `hydrate` options carry the client's cache with the HTML.
+- `src/routes/__root.tsx`, `src/routes/index.tsx`: the document and the page.
 
-The files follow the [examples layout](../../README.md):
+On the server the loader waits for `post.list`, so the HTML has the posts and the dehydrated cache has the result; the browser renders from it without a request. In the browser the loader only starts the query. The component calls `trpc.post.list.query()` again rather than taking the loader's promise, since `useQuery()` needs the client's own promise and a loader's data is serialized; the same call returns the same promise. Dates cross the wire and the dehydrated cache with danSON.
 
-- `server.ts`: the router, `listen()`, and `trpcMiddleware()`, which Vite's dev and preview servers mount at `/trpc` (`vite.config.ts`).
-- `client.ts`: both clients outside React, as a loader or a server render uses them: `query()`, `setData()`, `getData()` and `dehydrate()`, then atoms in an `AtomRegistry`.
-- `src/App.tsx`: the page. `src/App.test.tsx` renders it in happy-dom against `listen()`, adds a post from each card and waits for the clock; `pnpm test` from `next/` runs it.
-
-`pnpm start` runs the server and client; `pnpm dev` serves the page at <http://localhost:5173>. `pnpm smoke` builds the page first.
+`pnpm dev` serves the app at <http://localhost:5173>; `pnpm build` then `pnpm start` serves the build. `pnpm smoke` builds it, serves it with Vite's preview server and drives it in headless Chrome (`CHROME_PATH`, or an installed Chrome): the HTML has the posts, hydration makes no request, adding a post calls `post.add` then `post.list` once, and a reload renders the new post.

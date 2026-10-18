@@ -71,7 +71,8 @@ jobs:
       - uses: denoland/setup-deno@v2
         with:
           deno-version: 2.9.7
-      # examples/react-spa drives the runner's preinstalled Google Chrome.
+      # examples/react-spa and the experimental React apps drive the runner's
+      # preinstalled Google Chrome.
       - run: pnpm example
         env:
           REDIS_URL: redis://127.0.0.1:6379
