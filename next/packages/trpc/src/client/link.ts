@@ -1,4 +1,5 @@
 import { Cause, Effect, Option, Stream, Tracer } from 'effect';
+import { HttpTraceContext } from 'effect/http';
 import {
   isTrpcError,
   toBuiltinError,
@@ -324,18 +325,6 @@ export function chainSwitchNames(links: ReadonlyArray<AnyLink>): Set<string> {
   return names;
 }
 
-/** `HttpTraceContext.toHeaders`, as a plain record. */
-const traceHeaders = (span: Tracer.Span): Record<string, string> => {
-  const sampled = span.sampled ? '1' : '0';
-  const parent = Option.isSome(span.parent)
-    ? `-${span.parent.value.spanId}`
-    : '';
-  return {
-    b3: `${span.traceId}-${span.spanId}-${sampled}${parent}`,
-    traceparent: `00-${span.traceId}-${span.spanId}-0${sampled}`,
-  };
-};
-
 /**
  * Runs `op` through `links`; when a tracer is installed, in a `trpc.<path>`
  * client span, with the span's trace context on `op.trace`. Without one
@@ -362,7 +351,9 @@ export function runOperation(
         },
       });
       const disabled = yield* Tracer.DisablePropagation;
-      const traced = disabled ? op : { ...op, trace: traceHeaders(span) };
+      const traced = disabled
+        ? op
+        : { ...op, trace: { ...HttpTraceContext.toHeaders(span) } };
       return runLinks(links, traced).pipe(
         Stream.tapError((err) =>
           Effect.sync(() => span.attribute('trpc.error.code', err.code)),
