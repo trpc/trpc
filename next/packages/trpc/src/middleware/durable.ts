@@ -36,7 +36,7 @@ import {
   type ReqCtx,
   type ReqInput,
   type ReqMeta,
-} from '../server/middleware.ts';
+} from '../server/procedures/index.ts';
 
 /**
  * Options for {@link experimental_durable}.

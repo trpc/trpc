@@ -22,4 +22,4 @@
 - (agent) A later `.output()` replaces an earlier one, including one a plugin set before `.concat()`: `t.procedure.concat(plugin).output(B)` validates and types with `B` only. Inputs merge; outputs don't. v11 threw "Duplicate key output" at runtime.
 - Open (human): should outputs merge like inputs (validate both, intersect the types), so a plugin can require fields every result has (v11 issue #5787)? Or should a second `.output()` be a type error, so a plugin's output isn't dropped silently? Today's last-wins is the simplest to type; merging needs object schemas on both sides.
 - (agent) `.route()` (04 (g)) held REST metadata (method, path, status, summary, tags, `inputStructure`, `outputStructure`). Since 2026-10-16 it is the `route` meta key of the `experimental_openapi()` extension ([`root-extensions.md`](./root-extensions.md)). The RPC endpoint ignores it; OpenAPI reads it.
-- Lives in: `packages/trpc/src/server/builder.ts`, `procedure.ts`, `execute.ts`, `tracked.ts`.
+- Lives in: `packages/trpc/src/server/procedures/builder.ts`, `procedure.ts`, `execute.ts`, `tracked.ts`.

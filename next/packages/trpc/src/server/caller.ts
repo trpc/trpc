@@ -5,12 +5,13 @@ import { routerType, type TrpcClient } from '../client/types.ts';
 import { frameworkError } from '../internal/error.ts';
 import type { DansonForm, MaybePromise } from '../internal/types.ts';
 import { callProcedure, normalizeCause } from './execute.ts';
-import type { Procedure, ProcedureDef } from './procedure.ts';
 import type {
+  Procedure,
+  ProcedureDef,
   AnyRouter,
   inferRouterContext,
   inferRouterServices,
-} from './router.ts';
+} from './procedures/index.ts';
 
 type CtxOption<TCtx> = {} extends TCtx
   ? { ctx?: TCtx | (() => MaybePromise<TCtx>) }

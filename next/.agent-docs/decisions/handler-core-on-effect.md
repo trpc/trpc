@@ -8,4 +8,4 @@
 - Why: one way to run a call and one place the services are built, with the runtime's memoization instead of a hand-rolled cache.
 - Lost: nothing users see.
 - Open: dropping `run` and `makeContext` from `HandlerCore` once the OpenAPI handler doesn't await them.
-- Lives in: `packages/trpc/src/server/core.ts` (`createHandlerCore`); tests in `packages/trpc/src/server/core.test.ts` (the layer built once by concurrent first calls) and `src/server/procedures.test.ts` (a layer that can't be built).
+- Lives in: `packages/trpc/src/server/core.ts` (`createHandlerCore`); tests in `packages/trpc/src/server/core.test.ts` (the layer built once by concurrent first calls) and `src/server/procedures/procedures.test.ts` (a layer that can't be built).

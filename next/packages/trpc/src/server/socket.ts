@@ -37,7 +37,7 @@ import {
   unexpectedError,
 } from './execute.ts';
 import type { HandlerCore } from './core.ts';
-import { resolveProcedure, type AnyRouter } from './router.ts';
+import { resolveProcedure, type AnyRouter } from './procedures/index.ts';
 import { runSocket, socketFrames } from './socket-session.ts';
 
 /** The span a socket call is a child of: the trace context in its message. */

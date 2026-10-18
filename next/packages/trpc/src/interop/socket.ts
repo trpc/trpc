@@ -4,7 +4,7 @@ import type { Socket } from 'effect/socket';
 import { TrpcError, type AnyTrpcError } from '../internal/error.ts';
 import type { ProcedureType } from '../internal/types.ts';
 import { createResponseHandle, normalizeCause } from '../server/execute.ts';
-import { resolveProcedure } from '../server/router.ts';
+import { resolveProcedure } from '../server/procedures/index.ts';
 import {
   runSocket,
   socketFrames,

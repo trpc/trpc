@@ -54,8 +54,8 @@ import type {
   AnyProcedure,
   ProcedureDef,
   ProcedureDefOf,
-} from '../server/procedure.ts';
-import type { Unlazy } from '../server/router.ts';
+  Unlazy,
+} from '../server/procedures/index.ts';
 
 export { link };
 

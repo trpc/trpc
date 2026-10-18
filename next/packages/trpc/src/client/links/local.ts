@@ -21,7 +21,7 @@ import {
   resolveProcedure,
   type AnyRouter,
   type inferRouterContext,
-} from '../../server/router.ts';
+} from '../../server/procedures/index.ts';
 import { link, withSerializer, type TrpcLink } from '../link.ts';
 
 /**

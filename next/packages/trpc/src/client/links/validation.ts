@@ -1,7 +1,10 @@
 import { Effect, Schema, Stream } from 'effect';
 import { TrpcError } from '../../internal/error.ts';
 import type { DansonForm } from '../../internal/types.ts';
-import type { ProcedureInternals, Step } from '../../server/procedure.ts';
+import type {
+  ProcedureInternals,
+  Step,
+} from '../../server/procedures/index.ts';
 import {
   inputError,
   isSchema,

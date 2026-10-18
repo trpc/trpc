@@ -20,7 +20,7 @@ import {
   type ReqCtx,
   type ReqInput,
   type ReqMeta,
-} from '../server/middleware.ts';
+} from '../server/procedures/index.ts';
 
 /**
  * How long a lock may be held and waited for. A holder that outlives `ttl`

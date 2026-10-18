@@ -38,7 +38,7 @@ import type {
   AnyProcedure,
   Procedure,
   ProcedureDef,
-} from '../server/procedure.ts';
+} from '../server/procedures/index.ts';
 
 /**
  * `'safe'` returns `safe()`'s `[data, error]` / `{ data, error }` result;

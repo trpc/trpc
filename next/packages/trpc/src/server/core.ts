@@ -19,8 +19,7 @@ import {
   unexpectedError,
 } from './execute.ts';
 import type { CreateContextOpts, OnErrorOpts } from './fetch.ts';
-import type { ResponseHandle } from './middleware.ts';
-import type { AnyProcedure } from './procedure.ts';
+import type { ResponseHandle, AnyProcedure } from './procedures/index.ts';
 import type { Transport } from './socket.ts';
 
 /** @internal */

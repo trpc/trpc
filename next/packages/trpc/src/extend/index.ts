@@ -35,7 +35,7 @@ export {
   getProcedure,
   resolveProcedure,
   routerMetaOf,
-} from '../server/router.ts';
+} from '../server/procedures/index.ts';
 export {
   fromWireError,
   toWireError,

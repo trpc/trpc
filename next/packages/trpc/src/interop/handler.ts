@@ -38,13 +38,13 @@ import {
   type PlatformArgs,
   type PlatformField,
 } from '../server/fetch.ts';
-import type { AnyProcedure } from '../server/procedure.ts';
 import {
+  type AnyProcedure,
   resolveProcedure,
   type AnyRouter,
   type inferRouterContext,
   type inferRouterServices,
-} from '../server/router.ts';
+} from '../server/procedures/index.ts';
 import { fromWebSocketLike } from '../server/socket-session.ts';
 import type { WebSocketLike } from '../server/socket.ts';
 import { isTracked } from '../server/subscriptions/index.ts';

@@ -7,7 +7,10 @@ import {
 } from '../internal/describe.ts';
 import { ERROR_STATUS } from '../internal/error.ts';
 import { toJsonSchema, type JsonSchema } from '../internal/json-schema.ts';
-import type { AnyProcedure, ProcedureInternals } from '../server/procedure.ts';
+import type {
+  AnyProcedure,
+  ProcedureInternals,
+} from '../server/procedures/index.ts';
 import { propertySchema } from './coerce.ts';
 import {
   normalizePrefix,

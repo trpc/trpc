@@ -7,7 +7,7 @@
  */
 import type { Stream } from 'effect';
 import type { Chunk, Frame } from '../serializer/stream.ts';
-import type { ResponseHandle } from './middleware.ts';
+import type { ResponseHandle } from './procedures/index.ts';
 
 /** @internal */
 export interface FrameSink {

@@ -1,13 +1,13 @@
 import type { Context, Effect, Stream } from 'effect';
-import type { AnyContractRouter, ContractDef } from '../contract/index.ts';
-import type { AnyTrpcError } from '../internal/error.ts';
+import type { AnyContractRouter, ContractDef } from '../../contract/index.ts';
+import type { AnyTrpcError } from '../../internal/error.ts';
 import type {
   MaybePromise,
   Overwrite,
   TypeError,
   Unset,
   Value,
-} from '../internal/types.ts';
+} from '../../internal/types.ts';
 import {
   createBuilder,
   type BuilderDef,
@@ -33,8 +33,8 @@ import {
   type AnyProcedure,
   type Procedure,
 } from './procedure.ts';
-import type { EventOutput, ResultOf } from './validation/index.ts';
-import type { TrackedEnvelope } from './subscriptions/index.ts';
+import type { EventOutput, ResultOf } from '../validation/index.ts';
+import type { TrackedEnvelope } from '../subscriptions/index.ts';
 
 /** A contract procedure's def, read by index (see `ProcedureDefOf`). */
 type ContractDefOf<T extends AnyProcedure> = NonNullable<T['~trpc']['~types']>;

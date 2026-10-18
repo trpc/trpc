@@ -13,7 +13,7 @@ import {
   unexpectedError,
 } from '../server/execute.ts';
 import type { FetchHandler, PlatformArgs } from '../server/fetch.ts';
-import { resolveProcedure } from '../server/router.ts';
+import { resolveProcedure } from '../server/procedures/index.ts';
 import {
   connectionReceiver,
   frameMessage,

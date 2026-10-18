@@ -2,14 +2,14 @@ import { Duration, Effect, Schema } from 'effect';
 import { RateLimiter } from 'effect/persistence';
 import { TrpcError, type TaggedErrorClass } from '../internal/error.ts';
 import type { Unset } from '../internal/types.ts';
-import type {
-  EffectMiddleware,
-  MiddlewareRequirements,
-  ReqCtx,
-  ReqInput,
-  ReqMeta,
-} from '../server/middleware.ts';
-import { makeEffectMiddleware } from '../server/middleware.ts';
+import {
+  type EffectMiddleware,
+  type MiddlewareRequirements,
+  type ReqCtx,
+  type ReqInput,
+  type ReqMeta,
+  makeEffectMiddleware,
+} from '../server/procedures/index.ts';
 
 type RateLimitedData = Schema.Struct<{
   readonly limit: Schema.Number;

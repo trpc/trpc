@@ -1,5 +1,5 @@
 import { Context, Effect } from 'effect';
-import type { ResponseHandle } from './middleware.ts';
+import type { ResponseHandle } from './procedures/index.ts';
 
 /**
  * The call's response headers and status, for Effect code: the same handle

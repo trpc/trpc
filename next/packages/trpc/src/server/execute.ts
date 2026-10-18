@@ -21,9 +21,13 @@ import {
 } from '../internal/error.ts';
 import { errorConstructors, isDeclaredError } from './declared.ts';
 import { frameSinks } from './frame-sink.ts';
-import type { MiddlewareOpts, ResponseHandle } from './middleware.ts';
+import type {
+  MiddlewareOpts,
+  ResponseHandle,
+  AnyProcedure,
+  ProcedureInternals,
+} from './procedures/index.ts';
 import { Response as ResponseKey } from './response.ts';
-import type { AnyProcedure, ProcedureInternals } from './procedure.ts';
 import {
   inputError,
   isSchema,

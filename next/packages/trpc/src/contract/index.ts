@@ -48,8 +48,9 @@ import type {
   Unset,
   Value,
 } from '../internal/types.ts';
-import type { DeclaredErrors, ErrorMapInput } from '../server/builder.ts';
 import {
+  type DeclaredErrors,
+  type ErrorMapInput,
   isProcedure,
   mergeMeta,
   type AnyProcedure,
@@ -59,9 +60,11 @@ import {
   type ProcedureDef,
   type ProcedureDefOf,
   type Step,
-} from '../server/procedure.ts';
+  type BuilderDef,
+  type ProcedureBuilder,
+  type Unlazy,
+} from '../server/procedures/index.ts';
 import { routeOf, type Route } from '../openapi/routes.ts';
-import type { BuilderDef, ProcedureBuilder } from '../server/builder.ts';
 import type {
   AnySchema,
   InOf,
@@ -76,7 +79,6 @@ import type {
   StreamedOutput,
 } from '../server/validation/index.ts';
 import type { TrackedEnvelope } from '../server/subscriptions/index.ts';
-import type { Unlazy } from '../server/router.ts';
 
 export type { JsonSchema } from '../internal/json-schema.ts';
 

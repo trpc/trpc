@@ -1,5 +1,8 @@
-import type { ProcedureBuilder } from '../server/builder.ts';
-import { initTrpc, type RootDef } from '../server/init.ts';
+import {
+  type ProcedureBuilder,
+  initTrpc,
+  type RootDef,
+} from '../server/procedures/index.ts';
 import { mergeRoute, type OpenApiMeta } from './routes.ts';
 
 /**

@@ -1,11 +1,11 @@
 import type { Effect } from 'effect';
-import type { AnyTrpcError } from '../internal/error.ts';
+import type { AnyTrpcError } from '../../internal/error.ts';
 import type {
   MaybePromise,
   ProcedureType,
   TypeError,
   Unset,
-} from '../internal/types.ts';
+} from '../../internal/types.ts';
 
 /**
  * Sets response headers and status (04 (d) R-A). Inside a batch, headers from

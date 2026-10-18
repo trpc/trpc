@@ -1,5 +1,5 @@
-import type { AnyContractRouter } from '../contract/index.ts';
-import type { AnyTrpcError } from '../internal/error.ts';
+import type { AnyContractRouter } from '../../contract/index.ts';
+import type { AnyTrpcError } from '../../internal/error.ts';
 import type {
   Merge,
   Missing,
@@ -7,7 +7,7 @@ import type {
   Simplify,
   TypeError,
   Unset,
-} from '../internal/types.ts';
+} from '../../internal/types.ts';
 import {
   createBuilder,
   type AnyProcedureBuilder,
@@ -22,7 +22,7 @@ import {
   type ImplementResult,
 } from './implement.ts';
 import { mergeMeta, type MetaMerge } from './procedure.ts';
-import type { Response } from './response.ts';
+import type { Response } from '../response.ts';
 import {
   lazyWith,
   router,

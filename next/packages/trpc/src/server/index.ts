@@ -38,30 +38,24 @@ export {
   type RootOptions,
   type TrpcRoot,
   type RootConcatCheck,
-} from './init.ts';
-export type {
-  AnyProcedureBuilder,
-  DeclaredErrors,
-  ErrorConstructorOpts,
-  ErrorConstructors,
-  ErrorMapInput,
-  InputOpts,
-  ProcedureBuilder,
-  ProvideOpts,
-  ResolverOpts,
-  SubscriptionResolverOpts,
-} from './builder.ts';
-export type {
-  EveryLeafDeclares,
-  ImplementedRouter,
-  Implementer,
-  ImplementerRoot,
-  ImplementMetaCheck,
-  ImplementRouter,
-  ImplementResult,
-  ProcedureImplementer,
-} from './implement.ts';
-export {
+  type AnyProcedureBuilder,
+  type DeclaredErrors,
+  type ErrorConstructorOpts,
+  type ErrorConstructors,
+  type ErrorMapInput,
+  type InputOpts,
+  type ProcedureBuilder,
+  type ProvideOpts,
+  type ResolverOpts,
+  type SubscriptionResolverOpts,
+  type EveryLeafDeclares,
+  type ImplementedRouter,
+  type Implementer,
+  type ImplementerRoot,
+  type ImplementMetaCheck,
+  type ImplementRouter,
+  type ImplementResult,
+  type ProcedureImplementer,
   middleware,
   ok,
   type EffectMiddleware,
@@ -76,9 +70,6 @@ export {
   type NextInput,
   type OkResult,
   type ResponseHandle,
-} from './middleware.ts';
-export { Response, type ResponseService } from './response.ts';
-export {
   isProcedure,
   type AnyProcedure,
   type ErrorMap,
@@ -90,8 +81,6 @@ export {
   type ProcedureDef,
   type ProcedureInternals,
   type MetaMerge,
-} from './procedure.ts';
-export {
   isLazy,
   lazy,
   loadRouter,
@@ -108,7 +97,8 @@ export {
   type inferRouterInputs,
   type inferRouterOutputs,
   type inferRouterServices,
-} from './router.ts';
+} from './procedures/index.ts';
+export { Response, type ResponseService } from './response.ts';
 export {
   type AnySchema,
   type EffectInputIssue,

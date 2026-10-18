@@ -1,5 +1,5 @@
 import { Match, type Context, type Effect, type Stream } from 'effect';
-import type { AnyTrpcError, TrpcError } from '../internal/error.ts';
+import type { AnyTrpcError, TrpcError } from '../../internal/error.ts';
 import type {
   IsAny,
   MaybePromise,
@@ -12,7 +12,7 @@ import type {
   UndeclaredMeta,
   Unset,
   Value,
-} from '../internal/types.ts';
+} from '../../internal/types.ts';
 import {
   isEffectMiddleware,
   type EffectMiddleware,
@@ -42,8 +42,8 @@ import type {
   ResultOf,
   StreamedOutput,
   StreamOutput,
-} from './validation/index.ts';
-import type { TrackedEnvelope } from './subscriptions/index.ts';
+} from '../validation/index.ts';
+import type { TrackedEnvelope } from '../subscriptions/index.ts';
 
 /**
  * The builder's state: one mapped bag (03 G-A).

@@ -30,7 +30,7 @@ import {
 } from 'typescript/unstable/sync';
 import { ERROR_STATUS } from '../internal/error.ts';
 import type { JsonSchema } from '../internal/json-schema.ts';
-import { loadRouter } from '../server/router.ts';
+import { loadRouter } from '../server/procedures/index.ts';
 import {
   generateDocument,
   type GenerateOpenApiOptions,

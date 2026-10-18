@@ -54,13 +54,13 @@ import {
 } from './execute.ts';
 import { emitEvents } from './events.ts';
 import { frameSinks, type FrameSink } from './frame-sink.ts';
-import type { AnyProcedure } from './procedure.ts';
 import {
+  type AnyProcedure,
   resolveProcedure,
   type AnyRouter,
   type inferRouterContext,
   type inferRouterServices,
-} from './router.ts';
+} from './procedures/index.ts';
 import { httpParts } from './routes.ts';
 import { fromWebSocketLike } from './socket-session.ts';
 import {

@@ -41,13 +41,13 @@ import {
   type OnErrorOpts,
   type PlatformArgs,
 } from '../server/fetch.ts';
-import type { AnyProcedure } from '../server/procedure.ts';
 import {
+  type AnyProcedure,
   resolveProcedure,
   type AnyRouter,
   type inferRouterContext,
   type inferRouterServices,
-} from '../server/router.ts';
+} from '../server/procedures/index.ts';
 import { isTracked } from '../server/subscriptions/index.ts';
 import { experimental_parseBracketNotation } from './bracket.ts';
 import { experimental_coerceBySchema, propertySchema } from './coerce.ts';

@@ -17,22 +17,18 @@ export type {
   SplitStream,
   StrictErrors,
   With,
-} from '../server/builder.ts';
-export type {
   ExactRouter,
   ImplementedProcedure,
   ImplementerDef,
   ImplementerMethods,
   UndeclaredCheck,
-} from '../server/implement.ts';
-export type {
   EffectBodyCheck,
   EffectMiddlewareFactory,
   ReqCtx,
   ReqInput,
   ReqMeta,
-} from '../server/middleware.ts';
-export type { Step } from '../server/procedure.ts';
-export type { LazyDef } from '../server/router.ts';
+  Step,
+  LazyDef,
+} from '../server/procedures/index.ts';
 export type { DeclContext } from '../client/link.ts';
 export type { Unset } from './types.ts';

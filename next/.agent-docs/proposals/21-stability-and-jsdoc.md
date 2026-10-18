@@ -123,7 +123,7 @@ The [brief](../decisions/brief.md) asks for two things:
     */
 
    /** @internal */
-   export type { AnyProcedure } from '../server/procedure.ts';
+   export type { AnyProcedure } from '../server/procedures/index.ts';
    ```
 
 4. Deprecations carry `@deprecated <replacement>` and are removed in the next major. **vNext starts with zero deprecated aliases.**

@@ -5,7 +5,7 @@ import {
   type HttpMiddleware,
 } from 'effect/http';
 import type { MaybePromise } from '../internal/types.ts';
-import { loadRouter } from '../server/router.ts';
+import { loadRouter } from '../server/procedures/index.ts';
 import {
   experimental_generateOpenApi,
   type GenerateOpenApiOptions,

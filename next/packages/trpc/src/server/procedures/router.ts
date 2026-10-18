@@ -3,7 +3,7 @@ import type {
   Simplify,
   TypeError,
   UnionToIntersection,
-} from '../internal/types.ts';
+} from '../../internal/types.ts';
 import {
   isProcedure,
   type AnyProcedure,

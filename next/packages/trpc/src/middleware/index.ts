@@ -27,5 +27,10 @@ export {
   type experimental_LockOptions,
   type experimental_RedisLockerOptions,
 } from './lock.ts';
-export { onError, onFinish, onStart, onSuccess } from '../server/middleware.ts';
+export {
+  onError,
+  onFinish,
+  onStart,
+  onSuccess,
+} from '../server/procedures/index.ts';
 export { RateLimited, rateLimit, type RateLimitOptions } from './ratelimit.ts';

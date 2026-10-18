@@ -9,4 +9,4 @@
 - (agent, Q6.6 M-A, service-providing in v1) Effect middleware: `t.middleware.effect<{ provides?: S }>()(fn)`, or standalone `middleware.effect<{ ctx?, meta?, input?, provides? }>()(fn)`. `next()` returns an `Effect` that requires `provides`, so a body that forgets to provide them doesn't compile. The body's failures join the error union; its requirements join the procedure's services, minus `provides`.
 - (agent) `.provide(Service, (opts) => value | Effect)` stays for the common one-service case.
 - (agent) `onStart`, `onSuccess`, `onError` and `onFinish` are middleware factories, not hook options. They nest like any middleware, so an `onFinish` added first observes everything after it.
-- Lives in: `packages/trpc/src/server/middleware.ts`, `src/middleware/index.ts`.
+- Lives in: `packages/trpc/src/server/procedures/middleware.ts`, `src/middleware/index.ts`.

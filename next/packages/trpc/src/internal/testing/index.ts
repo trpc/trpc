@@ -32,7 +32,7 @@ import {
   type FetchHandler,
   type FetchHandlerOptions,
 } from '../../server/fetch.ts';
-import type { AnyRouter } from '../../server/router.ts';
+import type { AnyRouter } from '../../server/procedures/index.ts';
 
 /**
  * Options for {@link TestServer.layer}.
