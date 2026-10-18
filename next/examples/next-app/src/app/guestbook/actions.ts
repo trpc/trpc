@@ -9,14 +9,12 @@ const action = experimental_createAction();
 const signEntry = action(appRouter.guestbook.sign);
 
 /**
- * `useActionState`'s action. React sends its return value to the browser as
- * plain objects and arrays: the safe result would lose its `data` and `error`
- * fields and the `TrpcError` its class, so this returns its own state.
+ * `useActionState`'s action. `updateTag` only works in a Server Action, not
+ * in the procedure, which the route handler serves too.
  */
 export async function sign(_previous: unknown, form: FormData) {
-  const [entry, error] = await signEntry(form);
-  if (error) return { error: { code: error.code, message: error.message } };
+  const result = await signEntry(form);
   // Read-your-own-writes: the refreshed page waits for the new list.
-  updateTag(revalidationTag(trpc.guestbook.pathKey()));
-  return { entry };
+  if (!result.error) updateTag(revalidationTag(trpc.guestbook.pathKey()));
+  return result;
 }

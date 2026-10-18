@@ -17,7 +17,7 @@ src/app/guestbook/          a Server Action form over a cached, tagged list
 
 Notes:
 
-- Server Actions are `experimental_*`. The action wraps the procedure to revalidate after a write and returns plain objects: React sends an action's result to the browser as plain objects and arrays, so the safe result's `data` and `error` fields and `TrpcError`'s class don't arrive.
+- Server Actions are `experimental_*`. `sign` calls the action, then `updateTag` after a write: `updateTag` only works in a Server Action, and the procedure is served by the route handler too. The action's `{ data }` / `{ error }` result is plain objects, so it reaches the browser as the form's state unchanged.
 - `cacheTags` and `revalidationTag` come from `@trpc12/tanstack-react-query/rsc` in server code: the package root imports React's client hooks.
 - A write through the route handler doesn't revalidate the data cache; the smoke checks that the page keeps its cached list until the action revalidates it.
 
