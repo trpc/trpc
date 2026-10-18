@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router';
 
 import { buttonVariants } from '@shared/ui/components/button';
-import { v12Docs } from '~/content/docs.ts';
+import { v11Docs } from '~/content/docs.ts';
 import { cn } from '@shared/ui/lib/utils';
 
 export function NotFound() {
@@ -17,8 +17,8 @@ export function NotFound() {
       <div className="flex gap-2">
         <Link
           className={cn(buttonVariants())}
-          params={{ _splat: v12Docs.firstDoc }}
-          to="/docs/$"
+          params={{ _splat: v11Docs.firstDoc }}
+          to={v11Docs.route}
         >
           Read the docs
         </Link>

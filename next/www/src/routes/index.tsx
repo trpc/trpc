@@ -1,15 +1,22 @@
 import { createFileRoute, Link } from '@tanstack/react-router';
 import {
   ArrowRight,
+  BadgeCheck,
+  BatteryFull,
   Blocks,
+  Briefcase,
   Cable,
   FileJson,
   Globe,
   History,
+  Lock,
   Radio,
   ShieldCheck,
   Sparkles,
+  Sprout,
+  Terminal,
   Workflow,
+  Zap,
 } from 'lucide-react';
 import type { ReactNode } from 'react';
 import call from 'sample:home/src/client.ts#call';
@@ -18,19 +25,32 @@ import procedure from 'sample:home/src/server.ts#procedure';
 import serve from 'sample:home/src/server.ts#serve';
 
 import { DocBody } from '~/components/doc-body.tsx';
+import { HomeVersionBar } from '~/components/home-version-bar.tsx';
 import { PartnerCards } from '~/components/sponsors/partners.tsx';
 import { SponsorCloud } from '~/components/sponsors/sponsor-cloud.tsx';
 import {
   SponsorButton,
   SupportedBy,
 } from '~/components/sponsors/supported-by.tsx';
+import { homeDocs } from '~/content/docs.ts';
 import { useFlag } from '~/flags.ts';
+import {
+  defaultHomeVersion,
+  type HomeVersion,
+  homeVersionOf,
+  homeVersions,
+  syncHomeVersionAttribute,
+  validateHomeSearch,
+} from '~/home-version.ts';
 import { partners } from '~/sponsors.ts';
 import { Badge } from '@shared/ui/components/badge';
 import { buttonVariants } from '@shared/ui/components/button';
 import { cn } from '@shared/ui/lib/utils';
 import { pageHead } from '~/seo.ts';
 import { site } from '~/site.ts';
+import v11Define from '../../v11/home/step-1.md';
+import v11Serve from '../../v11/home/step-2.md';
+import v11Call from '../../v11/home/step-3.md';
 
 export const Route = createFileRoute('/')({
   head: () =>
@@ -57,18 +77,94 @@ export const Route = createFileRoute('/')({
       ],
     }),
   component: HomePage,
+  validateSearch: validateHomeSearch,
 });
 
 interface Step {
   readonly body: ReactNode;
   readonly code: string;
   readonly guide: string;
-  readonly id: string;
+  /** Each version's steps share their ids; the shown one has them. */
+  readonly id: 'call' | 'define' | 'serve';
   readonly slug: string;
   readonly title: string;
 }
 
-const steps: ReadonlyArray<Step> = [
+/** trpc.io's home page's intro (`www/src/components/QuickIntro.tsx`). */
+const v11Steps: ReadonlyArray<Step> = [
+  {
+    body: (
+      <>
+        <p>
+          The first step to creating a tRPC API is to define your procedures.
+        </p>
+        <p>
+          Procedures are the functions we will use to build your backend.
+          They&apos;re <i>composable</i> and can be queries, mutations, or
+          subscriptions. Routers contain multiple procedures.
+        </p>
+        <p>
+          In this procedure, we use a{' '}
+          <a href="https://github.com/colinhacks/zod">Zod</a> validator to
+          ensure the input from the client has exactly the shape that our
+          procedure expects. We will also return a simple text string from the
+          query.
+        </p>
+        <p>
+          At the end of the file, we export the type of the router so we can use
+          it in our frontend code in just a few moments.
+        </p>
+      </>
+    ),
+    code: v11Define.html,
+    guide: 'Define procedures',
+    id: 'define',
+    slug: 'server/procedures',
+    title: 'Define your procedures',
+  },
+  {
+    body: (
+      <>
+        <p>
+          Next, we create our HTTP server using our <code>appRouter</code>. We
+          now have a tRPC server running!
+        </p>
+        <p>
+          tRPC has many adapters so it can meet you where you are. Next.js,
+          Express, the Fetch API (Astro, Remix, SvelteKit, Cloudflare Workers,
+          etc.), Fastify, AWS Lambda, or a vanilla Node HTTP server.
+        </p>
+      </>
+    ),
+    code: v11Serve.html,
+    guide: 'Adapters',
+    id: 'serve',
+    slug: 'server/adapters',
+    title: 'Create your HTTP server',
+  },
+  {
+    body: (
+      <>
+        <p>
+          Now that we have the server running, we can create a client and start
+          querying data.
+        </p>
+        <p>
+          We pass the <code>AppRouter</code> type when creating the client to
+          give us TypeScript autocompletion and Intellisense that matches the
+          backend API without requiring any code generation!
+        </p>
+      </>
+    ),
+    code: v11Call.html,
+    guide: 'The vanilla client',
+    id: 'call',
+    slug: 'client/vanilla',
+    title: 'Connect your client and start querying!',
+  },
+];
+
+const v12Steps: ReadonlyArray<Step> = [
   {
     body: (
       <>
@@ -126,14 +222,54 @@ const steps: ReadonlyArray<Step> = [
   },
 ];
 
+const stepsOf = {
+  v11: v11Steps,
+  v12: v12Steps,
+} as const satisfies Record<HomeVersion, ReadonlyArray<Step>>;
+
 interface Feature {
   readonly body: ReactNode;
   readonly icon: ReactNode;
-  readonly slug: string;
+  /** The page it links to, if it does: trpc.io's v11 features don't. */
+  readonly slug?: string;
   readonly title: string;
 }
 
-const features: ReadonlyArray<Feature> = [
+/** trpc.io's home page's features (`www/src/components/Features.tsx`). */
+const v11Features: ReadonlyArray<Feature> = [
+  {
+    body: 'Made a server side change? TypeScript will warn you of errors on your client before you even save the file!',
+    icon: <Lock />,
+    title: 'Automatic typesafety',
+  },
+  {
+    body: 'tRPC has no build or compile steps, meaning no code generation, runtime bloat or build step.',
+    icon: <Zap />,
+    title: 'Snappy DX',
+  },
+  {
+    body: "Compatible with all JavaScript frameworks and runtimes. It's easy to add to your existing projects.",
+    icon: <Briefcase />,
+    title: 'Framework agnostic',
+  },
+  {
+    body: "Using tRPC is like using an SDK for your API's server code, giving you confidence in your endpoints.",
+    icon: <Terminal />,
+    title: 'Autocompletion',
+  },
+  {
+    body: 'tRPC has zero dependencies and a tiny client-side footprint making it lightweight.',
+    icon: <Sprout />,
+    title: 'Light bundle size',
+  },
+  {
+    body: 'We provide adapters for React, Next.js, Express, Fastify, AWS Lambda, Solid, Svelte, and more.',
+    icon: <BatteryFull />,
+    title: 'Batteries included',
+  },
+];
+
+const v12Features: ReadonlyArray<Feature> = [
   {
     body: 'Procedures can return an Effect, and the client can be one. Middleware, services and errors compose with the rest of your Effect app.',
     icon: <Workflow />,
@@ -297,8 +433,201 @@ function HashLink(props: {
 const docLink =
   'inline-flex items-center gap-1 font-medium text-link underline-offset-4 hover:underline';
 
+const proseCode =
+  '[&_code]:font-mono [&_code]:text-[0.9em] [&_code]:text-foreground';
+
+/** One version's part of the page; the CSS shows the version picked (`[data-home-panel]`). */
+function Panel(props: {
+  readonly children: ReactNode;
+  readonly version: HomeVersion;
+}) {
+  return <div data-home-panel={props.version}>{props.children}</div>;
+}
+
+function TypeScript() {
+  return (
+    <span className="text-foreground underline decoration-rose-500 decoration-wavy decoration-from-font underline-offset-2">
+      TypeScript
+    </span>
+  );
+}
+
+function HeroText(props: { readonly version: HomeVersion }) {
+  const docs = homeDocs[props.version];
+  const primary = cn(
+    buttonVariants({ size: 'lg' }),
+    'font-bold shadow-lg shadow-brand/25',
+  );
+  const secondary = cn(buttonVariants({ size: 'lg', variant: 'outline' }));
+  if (props.version === 'v11') {
+    return (
+      <>
+        <p className="max-w-xl text-lg text-pretty text-muted-foreground">
+          Experience the full power of <TypeScript /> inference to boost
+          productivity for your full-stack application.
+        </p>
+        <div className="flex flex-wrap gap-3">
+          <Link
+            className={primary}
+            params={{ _splat: 'quickstart' }}
+            to={docs.route}
+          >
+            Quickstart <ArrowRight />
+          </Link>
+          <Link
+            className={secondary}
+            params={{ _splat: docs.firstDoc }}
+            to={docs.route}
+          >
+            Read the docs
+          </Link>
+        </div>
+        <p className="font-mono text-sm text-muted-foreground">
+          <span className="select-none">$ </span>pnpm add @trpc/server
+          @trpc/client
+        </p>
+      </>
+    );
+  }
+  return (
+    <>
+      <p className="max-w-xl text-lg text-pretty text-muted-foreground">
+        Experience the full power of <TypeScript /> inference: write procedures
+        on the server and call them from the client with their types. No schemas
+        to generate, no code to sync. v12 is rebuilt on{' '}
+        <a
+          className="font-medium text-foreground underline underline-offset-4"
+          href="https://effect.website"
+        >
+          Effect
+        </a>
+        , and you don&apos;t have to use it.
+      </p>
+      <div className="flex flex-wrap gap-3">
+        <Link
+          className={primary}
+          params={{ _splat: 'getting-started' }}
+          to={docs.route}
+        >
+          Get started <ArrowRight />
+        </Link>
+        <Link
+          className={secondary}
+          params={{ _splat: 'migrations/from-v11' }}
+          to={docs.route}
+        >
+          Migrating from v11
+        </Link>
+      </div>
+      <p className="flex flex-wrap items-center gap-x-3 gap-y-1.5 font-mono text-sm text-muted-foreground">
+        <span>
+          <span className="select-none">$ </span>pnpm add @trpc12/trpc effect
+        </span>
+        <span
+          className="code-unpublished static! font-sans"
+          title="The @trpc12 packages aren’t published until tRPC v12 is released"
+        >
+          Not on npm yet
+        </span>
+      </p>
+    </>
+  );
+}
+
+function Steps(props: { readonly version: HomeVersion }) {
+  const route = homeDocs[props.version].route;
+  return (
+    <ol className="grid gap-16">
+      {stepsOf[props.version].map((step, index) => (
+        <li
+          className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] lg:gap-12"
+          data-step-id={step.id}
+          id={props.version === defaultHomeVersion ? step.id : undefined}
+          key={step.id}
+        >
+          <div className="grid content-start gap-4 lg:sticky lg:top-32">
+            <h3 className="flex items-center gap-3 text-xl font-bold tracking-tight">
+              <span
+                aria-hidden="true"
+                className="grid size-7 shrink-0 place-items-center rounded-full bg-primary text-sm text-primary-foreground"
+              >
+                {index + 1}
+              </span>
+              <HashLink id={step.id}>{step.title}</HashLink>
+            </h3>
+            <div
+              className={cn(
+                'grid gap-3 text-muted-foreground [&_a]:font-medium [&_a]:text-link [&_a]:underline-offset-4 [&_a:hover]:underline',
+                proseCode,
+              )}
+            >
+              {step.body}
+            </div>
+            <Link
+              className={`${docLink} w-fit text-sm`}
+              params={{ _splat: step.slug }}
+              to={route}
+            >
+              {step.guide} <ArrowRight className="inline size-4" />
+            </Link>
+          </div>
+          <DocBody className="min-w-0 [&_.code-block]:my-0!" html={step.code} />
+        </li>
+      ))}
+    </ol>
+  );
+}
+
+const featureCard =
+  'grid h-full content-start gap-2 rounded-xl border bg-card p-5 [&_svg]:size-5';
+
+function Features(props: { readonly version: HomeVersion }) {
+  const features = props.version === 'v11' ? v11Features : v12Features;
+  const route = homeDocs[props.version].route;
+  return (
+    <ul
+      className={cn(
+        'grid gap-4 sm:grid-cols-2',
+        props.version === 'v11' ? 'lg:grid-cols-3' : 'lg:grid-cols-4',
+      )}
+    >
+      {features.map((feature) => {
+        const content = (
+          <>
+            <span className="text-primary">{feature.icon}</span>
+            <span className="font-semibold">{feature.title}</span>
+            <span className={cn('text-sm text-muted-foreground', proseCode)}>
+              {feature.body}
+            </span>
+          </>
+        );
+        return (
+          <li key={feature.title}>
+            {feature.slug === undefined ? (
+              <div className={featureCard}>{content}</div>
+            ) : (
+              <Link
+                className={cn(
+                  featureCard,
+                  'transition-colors hover:border-primary/40 hover:bg-accent/50',
+                )}
+                params={{ _splat: feature.slug }}
+                to={route}
+              >
+                {content}
+              </Link>
+            )}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
 function HomePage() {
   const showPartners = useFlag('partners') && partners.length > 0;
+  // Client navigations (and hydration); first paint uses homeVersionScript.
+  syncHomeVersionAttribute(homeVersionOf(Route.useSearch()));
   return (
     <main>
       {/* `clip`, unlike `hidden`, keeps the sticky column sticky. */}
@@ -313,9 +642,16 @@ function HomePage() {
         />
         <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-start gap-12 px-4 py-16 sm:px-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] lg:py-24">
           <div className="grid gap-6 lg:sticky lg:top-28">
-            <Badge className="w-fit" variant="outline">
-              <Sparkles /> v12 preview
-            </Badge>
+            <Panel version="v11">
+              <Badge className="w-fit" variant="outline">
+                <BadgeCheck /> v11 · stable
+              </Badge>
+            </Panel>
+            <Panel version="v12">
+              <Badge className="w-fit" variant="outline">
+                <Sparkles /> v12 preview
+              </Badge>
+            </Panel>
             <h1 className="grid gap-3 font-extrabold tracking-tight text-balance">
               <span className="text-4xl sm:text-5xl lg:text-6xl">
                 {site.tagline[0]}
@@ -324,62 +660,32 @@ function HomePage() {
                 {site.tagline[1]}
               </span>
             </h1>
-            <p className="max-w-xl text-lg text-pretty text-muted-foreground">
-              Experience the full power of{' '}
-              <span className="text-foreground underline decoration-rose-500 decoration-wavy decoration-from-font underline-offset-2">
-                TypeScript
-              </span>{' '}
-              inference: write procedures on the server and call them from the
-              client with their types. No schemas to generate, no code to sync.
-              v12 is rebuilt on{' '}
-              <a
-                className="font-medium text-foreground underline underline-offset-4"
-                href="https://effect.website"
-              >
-                Effect
-              </a>
-              , and you don&apos;t have to use it.
-            </p>
-            <div className="flex flex-wrap gap-3">
-              <Link
-                className={cn(
-                  buttonVariants({ size: 'lg' }),
-                  'font-bold shadow-lg shadow-brand/25',
-                )}
-                params={{ _splat: 'getting-started' }}
-                to="/docs/$"
-              >
-                Get started <ArrowRight />
-              </Link>
-              <Link
-                className={cn(
-                  buttonVariants({ size: 'lg', variant: 'outline' }),
-                )}
-                params={{ _splat: 'migrations/from-v11' }}
-                to="/docs/$"
-              >
-                Migrating from v11
-              </Link>
-            </div>
-            <p className="flex flex-wrap items-center gap-x-3 gap-y-1.5 font-mono text-sm text-muted-foreground">
-              <span>
-                <span className="select-none">$ </span>pnpm add @trpc12/trpc
-                effect
-              </span>
-              <span
-                className="code-unpublished static! font-sans"
-                title="The @trpc12 packages aren’t published until tRPC v12 is released"
-              >
-                Not on npm yet
-              </span>
-            </p>
+            {homeVersions.map((version) => (
+              <Panel key={version} version={version}>
+                <HeroText version={version} />
+              </Panel>
+            ))}
             <SupportedBy />
           </div>
-          <div className="grid min-w-0 grid-cols-1 gap-3">
-            <DocBody
-              className="min-w-0 [&_.code-block]:my-0! [&_.code-block]:shadow-[0_-24px_300px_0_rgb(57_140_203/0.15)]"
-              html={hero.html}
-            />
+          {/* pt-14 is the room the version pill docks in, above the code.
+              Every version ships in the HTML; CSS and homeVersionScript pick. */}
+          <div
+            className="relative grid min-w-0 grid-cols-1 gap-3 pt-14"
+            id="hero-code"
+          >
+            <HomeVersionBar />
+            <Panel version="v11">
+              <DocBody
+                className="min-w-0 [&_.code-block]:my-0! [&_.code-block]:shadow-[0_-24px_300px_0_rgb(57_140_203/0.15)]"
+                html={v11Call.html}
+              />
+            </Panel>
+            <Panel version="v12">
+              <DocBody
+                className="min-w-0 [&_.code-block]:my-0! [&_.code-block]:shadow-[0_-24px_300px_0_rgb(57_140_203/0.15)]"
+                html={hero.html}
+              />
+            </Panel>
             <p className="text-sm text-muted-foreground">
               The client of the router{' '}
               <a className={docLink} href="#define">
@@ -401,45 +707,22 @@ function HomePage() {
         >
           <HashLink id="how-it-works">How it works</HashLink>
         </h2>
-        <p className="mb-12 max-w-2xl text-muted-foreground">
-          Three files&apos; worth of code, compiled when this site builds: the
-          types you hover are the ones your editor shows.
-        </p>
-        <ol className="grid gap-16">
-          {steps.map((step, index) => (
-            <li
-              className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)] lg:gap-12"
-              id={step.id}
-              key={step.id}
-            >
-              <div className="grid content-start gap-4 lg:sticky lg:top-24">
-                <h3 className="flex items-center gap-3 text-xl font-bold tracking-tight">
-                  <span
-                    aria-hidden="true"
-                    className="grid size-7 shrink-0 place-items-center rounded-full bg-primary text-sm text-primary-foreground"
-                  >
-                    {index + 1}
-                  </span>
-                  <HashLink id={step.id}>{step.title}</HashLink>
-                </h3>
-                <div className="grid gap-3 text-muted-foreground [&_code]:font-mono [&_code]:text-[0.9em] [&_code]:text-foreground">
-                  {step.body}
-                </div>
-                <Link
-                  className={`${docLink} w-fit text-sm`}
-                  params={{ _splat: step.slug }}
-                  to="/docs/$"
-                >
-                  {step.guide} <ArrowRight className="inline size-4" />
-                </Link>
-              </div>
-              <DocBody
-                className="min-w-0 [&_.code-block]:my-0!"
-                html={step.code}
-              />
-            </li>
-          ))}
-        </ol>
+        {/* Every version in the static HTML. The steps' shared ids are on
+            the shown panel only (homeVersionScript, applyHomeVersion). */}
+        <Panel version="v11">
+          <p className="mb-12 max-w-2xl text-muted-foreground">
+            It&apos;s quick and easy to get started with tRPC to build a
+            typesafe API.
+          </p>
+          <Steps version="v11" />
+        </Panel>
+        <Panel version="v12">
+          <p className="mb-12 max-w-2xl text-muted-foreground">
+            Three files&apos; worth of code, compiled when this site builds: the
+            types you hover are the ones your editor shows.
+          </p>
+          <Steps version="v12" />
+        </Panel>
       </section>
 
       <section
@@ -450,30 +733,24 @@ function HomePage() {
           className="mb-2 text-2xl font-bold tracking-tight sm:text-3xl"
           id="features"
         >
-          <HashLink id="features">What&apos;s in v12</HashLink>
+          <HashLink id="features">
+            <span data-home-panel="v11">Features</span>
+            <span data-home-panel="v12">What&apos;s in v12</span>
+          </HashLink>
         </h2>
-        <p className="mb-8 max-w-2xl text-muted-foreground">
-          One package,{' '}
-          <code className="font-mono text-[0.9em]">@trpc12/trpc</code>, with an
-          entry point per job and nothing to install twice.
-        </p>
-        <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {features.map((feature) => (
-            <li key={feature.slug}>
-              <Link
-                className="grid h-full content-start gap-2 rounded-xl border bg-card p-5 transition-colors hover:border-primary/40 hover:bg-accent/50 [&_svg]:size-5"
-                params={{ _splat: feature.slug }}
-                to="/docs/$"
-              >
-                <span className="text-primary">{feature.icon}</span>
-                <span className="font-semibold">{feature.title}</span>
-                <span className="text-sm text-muted-foreground [&_code]:font-mono [&_code]:text-[0.9em] [&_code]:text-foreground">
-                  {feature.body}
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
+        <Panel version="v11">
+          <div className="mt-8">
+            <Features version="v11" />
+          </div>
+        </Panel>
+        <Panel version="v12">
+          <p className="mb-8 max-w-2xl text-muted-foreground">
+            One package,{' '}
+            <code className="font-mono text-[0.9em]">@trpc12/trpc</code>, with
+            an entry point per job and nothing to install twice.
+          </p>
+          <Features version="v12" />
+        </Panel>
       </section>
 
       <section

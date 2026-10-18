@@ -17,6 +17,7 @@ import {
   UnpublishedCopyWarning,
 } from '~/components/unpublished.tsx';
 import { type FlagSearch, validateFlagSearch } from '~/flags.ts';
+import { homeVersionScript } from '~/home-version.ts';
 import { blog, site } from '~/site.ts';
 import appCss from '~/styles.css?url';
 
@@ -63,7 +64,7 @@ export const Route = createRootRoute({
       },
       { content: site.name, name: 'application-name' },
     ],
-    scripts: [{ children: themeScript }],
+    scripts: [{ children: themeScript }, { children: homeVersionScript }],
   }),
   component: Outlet,
   // Every navigation keeps `?flags=`, so the flags stay on page to page.

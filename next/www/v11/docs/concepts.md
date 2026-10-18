@@ -40,7 +40,7 @@ Below are some terms that are used frequently in the tRPC ecosystem. We'll be us
       <tbody>
         <tr>
           <td>
-            <a href="/v11/docs/server/procedures">
+            <a href="/docs/server/procedures">
               <strong class="text-green-600 dark:text-green-400">
                 Procedure&nbsp;↗
               </strong>
@@ -87,7 +87,7 @@ Below are some terms that are used frequently in the tRPC ecosystem. We'll be us
         </tr>
         <tr>
           <td>
-            <a href="/v11/docs/server/subscriptions">
+            <a href="/docs/server/subscriptions">
               <strong class="text-teal-700 dark:text-teal-400">
                 Subscription&nbsp;↗
               </strong>
@@ -103,7 +103,7 @@ Below are some terms that are used frequently in the tRPC ecosystem. We'll be us
         </tr>
         <tr>
           <td>
-            <a href="/v11/docs/server/routers">
+            <a href="/docs/server/routers">
               <strong class="text-blue-700 dark:text-blue-400">
                 Router&nbsp;↗
               </strong>
@@ -119,7 +119,7 @@ Below are some terms that are used frequently in the tRPC ecosystem. We'll be us
         </tr>
         <tr>
           <td>
-            <a href="/v11/docs/server/context">
+            <a href="/docs/server/context">
               <strong class="text-violet-700 dark:text-violet-400">
                 Context&nbsp;↗
               </strong>
@@ -136,7 +136,7 @@ Below are some terms that are used frequently in the tRPC ecosystem. We'll be us
         </tr>
         <tr>
           <td>
-            <a href="/v11/docs/server/middlewares">
+            <a href="/docs/server/middlewares">
               <strong class="text-blue-600 dark:text-blue-400">
                 Middleware&nbsp;↗
               </strong>
@@ -156,7 +156,7 @@ Below are some terms that are used frequently in the tRPC ecosystem. We'll be us
         </tr>
         <tr>
           <td>
-            <a href="/v11/docs/server/procedures">
+            <a href="/docs/server/procedures">
               <strong class="text-blue-600 dark:text-blue-400">
                 Validation&nbsp;↗
               </strong>

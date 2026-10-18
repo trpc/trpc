@@ -10,6 +10,7 @@ import { Link, useLocation } from '@tanstack/react-router';
 import { Check, ChevronDown, ExternalLink } from 'lucide-react';
 
 import {
+  type DocsVersion,
   slugAt,
   switchedSlug,
   useDocsVersion,
@@ -22,8 +23,12 @@ import { v11 } from '~/site.ts';
  * on a page goes to the page on its topic in the other version, if there is
  * one.
  */
-export function VersionSwitcher() {
-  const current = useDocsVersion();
+export function VersionSwitcher(props: {
+  /** The version to show, where the path doesn't say: the home page's. */
+  readonly version?: DocsVersion | undefined;
+}) {
+  const atPath = useDocsVersion();
+  const current = props.version ?? atPath;
   const pathname = useLocation({ select: (location) => location.pathname });
   const slug = slugAt(current, pathname);
   const trpcVersion = current.copied ?? v11;

@@ -8,7 +8,7 @@
 - (agent) The cache lives in `www/node_modules/.cache/twoslash`, one file per block, keyed by the block, its compiler options, the app files it read and the lockfile. CI restores it in the `www` job of `next.yml`.
 - Why: compiled examples are the only docs that stay right through a rewrite this large; keeping Markdown as the source keeps the GitHub reading and the agents' workflow ("update docs with each change") as they were.
 - Lost: MDX and React components inside pages (a page is Markdown only); typechecking the blocks that stay plain `ts`; a generated API reference.
-- (agent) Since 2026-10-17 the site also serves a copy of the v11 docs at `/v11/docs`, with a version switcher and a banner on every page linking each page to its counterpart ([`old-docs-copy.md`](./old-docs-copy.md)).
+- (agent) Since 2026-10-17 the site also serves a copy of the v11 docs, with a version switcher and a banner on every page linking each page to its counterpart ([`old-docs-copy.md`](./old-docs-copy.md)). Since 2026-10-18 the v11 copy is at `/docs`, what the site opens with, and these pages are at `/v12/docs` ([`docs-v11-by-default.md`](./docs-v11-by-default.md)).
 - (agent) Every page has a social card (`og:image`), rendered in the build ([`og-images.md`](./og-images.md)).
 - (agent) The home page credits the projects v12 builds on: Zodios, trpc-openapi, ts-rest and oRPC ([`docs-credits.md`](./docs-credits.md)).
 - Open: the Vercel project and the domain (`site.url` is `https://v12.trpc.io`, unclaimed); the repo side is ready ([`docs-website-on-vercel.md`](./docs-website-on-vercel.md)); full-text search (the dialog matches titles, descriptions and headings).

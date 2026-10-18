@@ -1,8 +1,9 @@
-import { Link } from '@tanstack/react-router';
+import { Link, useLocation } from '@tanstack/react-router';
 
 import { buttonVariants } from '@shared/ui/components/button';
-import { v12Docs } from '~/content/docs.ts';
+import { homeDocs, useDocsVersion, v11Docs, v12Docs } from '~/content/docs.ts';
 import { cn } from '@shared/ui/lib/utils';
+import { type HomeVersion, homeVersions } from '~/home-version.ts';
 import { site } from '~/site.ts';
 
 import { ExperimentsMenu } from './experiments-menu.tsx';
@@ -15,14 +16,45 @@ import { VersionSwitcher } from './version-switcher.tsx';
 
 const navLink = buttonVariants({ size: 'sm', variant: 'ghost' });
 
-const links = [
-  { label: 'Docs', slug: v12Docs.firstDoc },
-  { label: 'Client', slug: 'client/overview' },
-  { label: 'Adapters', slug: 'adapters/overview' },
-  { label: 'Migrating from v11', slug: 'migrations/from-v11' },
-] as const;
+/** v11's are trpc.io's navbar links; the older versions' pages get them too. */
+const linksOf = {
+  v11: [
+    { label: 'Docs', slug: v11Docs.firstDoc },
+    { label: 'Quickstart', slug: 'quickstart' },
+    { label: 'Using Next.js', slug: 'client/nextjs' },
+  ],
+  v12: [
+    { label: 'Docs', slug: v12Docs.firstDoc },
+    { label: 'Client', slug: 'client/overview' },
+    { label: 'Adapters', slug: 'adapters/overview' },
+    { label: 'Migrating from v11', slug: 'migrations/from-v11' },
+  ],
+} as const;
+
+function DocsLinks(props: { readonly version: HomeVersion }) {
+  const route = homeDocs[props.version].route;
+  return linksOf[props.version].map((link) => (
+    <Link
+      activeOptions={{ exact: true }}
+      activeProps={{ className: 'text-foreground' }}
+      className={navLink}
+      inactiveProps={{ className: 'text-muted-foreground' }}
+      key={link.label}
+      params={{ _splat: link.slug }}
+      to={route}
+    >
+      {link.label}
+    </Link>
+  ));
+}
 
 export function SiteHeader() {
+  const version = useDocsVersion();
+  // The home page shows either version, so the header has both, and the
+  // home page's CSS picks (`[data-home-panel]`).
+  const onHome =
+    useLocation({ select: (location) => location.pathname }) === '/';
+  const linked: HomeVersion = version.id === 'v12' ? 'v12' : 'v11';
   return (
     <header
       className="sticky top-0 z-40 border-b bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70"
@@ -38,24 +70,28 @@ export function SiteHeader() {
           <Logo />
           {site.name}
         </Link>
-        <VersionSwitcher />
+        {onHome ? (
+          homeVersions.map((home) => (
+            <span data-home-panel={home} key={home}>
+              <VersionSwitcher version={homeDocs[home]} />
+            </span>
+          ))
+        ) : (
+          <VersionSwitcher />
+        )}
         <nav
           aria-label="Main"
           className="ml-3 hidden items-center gap-1 text-sm md:flex"
         >
-          {links.map((link) => (
-            <Link
-              activeOptions={{ exact: true }}
-              activeProps={{ className: 'text-foreground' }}
-              className={navLink}
-              inactiveProps={{ className: 'text-muted-foreground' }}
-              key={link.label}
-              params={{ _splat: link.slug }}
-              to="/docs/$"
-            >
-              {link.label}
-            </Link>
-          ))}
+          {onHome ? (
+            homeVersions.map((home) => (
+              <span data-home-panel={home} key={home}>
+                <DocsLinks version={home} />
+              </span>
+            ))
+          ) : (
+            <DocsLinks version={linked} />
+          )}
           <Link
             activeProps={{ className: 'text-foreground' }}
             className={navLink}

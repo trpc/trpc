@@ -14,10 +14,10 @@ const pngSize = (png: Uint8Array) => {
 describe('ogImagePath', () => {
   it('mirrors the page path under /og', () => {
     expect(ogImagePath('/')).toBe('/og/index.png');
-    expect(ogImagePath('/docs/client/links')).toBe('/og/docs/client/links.png');
-    expect(ogImagePath('/v11/docs/quickstart')).toBe(
-      '/og/v11/docs/quickstart.png',
+    expect(ogImagePath('/v12/docs/client/links')).toBe(
+      '/og/v12/docs/client/links.png',
     );
+    expect(ogImagePath('/docs/quickstart')).toBe('/og/docs/quickstart.png');
   });
 });
 
@@ -32,9 +32,11 @@ describe('plainText', () => {
 
 describe('displayUrl', () => {
   it('splits the host from the path', () => {
-    expect(displayUrl('https://v12.trpc.io/docs/server/procedures')).toEqual({
+    expect(
+      displayUrl('https://v12.trpc.io/v12/docs/server/procedures'),
+    ).toEqual({
       host: 'v12.trpc.io',
-      path: '/docs/server/procedures',
+      path: '/v12/docs/server/procedures',
     });
     expect(displayUrl('https://v12.trpc.io')).toEqual({
       host: 'v12.trpc.io',
@@ -51,15 +53,15 @@ describe('makeOgRenderer', () => {
         OgCard.Home({ path: '/' }),
         OgCard.Doc({
           description: 'Queries, mutations and subscriptions.',
-          path: '/docs/server/procedures',
+          path: '/v12/docs/server/procedures',
           section: 'Server',
           title: 'Procedures',
-          url: 'https://v12.trpc.io/docs/server/procedures',
+          url: 'https://v12.trpc.io/v12/docs/server/procedures',
           version: 'v12',
         }),
         OgCard.Doc({
           description: '',
-          path: '/v11/docs/client/tanstack-react-query',
+          path: '/docs/client/tanstack-react-query',
           section: 'TanStack React Query (⭐️)',
           title: 'Set up the React Query Integration',
           url: 'https://trpc.io/docs/client/tanstack-react-query',

@@ -3,8 +3,8 @@
  * copied to `trpc-io-redirects.json` by `old-docs-copy.ts`), the pages it
  * serves (`/docs/…` for v11, `/docs/v10/…`, `/docs/v9/…`, `/blog/…`) and the
  * few it has that this site doesn't copy. Each old URL redirects once, to
- * where trpc.io sent it, as this site serves it: a v12 page at the same
- * slug, or else the copied page of its version. `build/vercel-output.ts`
+ * where trpc.io sent it, as this site serves it: the copied page of its
+ * version, which for v11 is at trpc.io's path. `build/vercel-output.ts`
  * writes the routes and fails the build on an old URL that lands nowhere.
  */
 import { copiedVersions, v11 } from '../src/site.ts';
@@ -113,23 +113,21 @@ const byTrpcPath = copiedVersions.toSorted(
 
 /**
  * Where this site serves what trpc.io serves at `target`, or `undefined`
- * when it doesn't. A v11 page is the v12 page at its slug, if there is one,
- * or else its copy; sending it to the copy isn't permanent, since a v12 page
- * may take the slug.
+ * when it doesn't: the copied page of its version (`/docs/v10/x` is
+ * `/v10/docs/x`; v11's `/docs/x` is itself), a post, an image's copy, or a
+ * URL off the site.
  */
 export function siteLocation(
   target: string,
   served: ReadonlySet<string>,
-  /** Whether the URL asked for v11 by name (`/docs/v11/…`), so v12's page won't do. */
-  v11Only = false,
-): { readonly location: string; readonly permanent: boolean } | undefined {
+): string | undefined {
   if (external(target)) {
-    return { location: target, permanent: true };
+    return target;
   }
   const image = /^\/img\/([^/]+)$/.exec(target)?.[1];
   if (image !== undefined) {
     const copy = `${v11.imagePath}/${image}`;
-    return served.has(copy) ? { location: copy, permanent: true } : undefined;
+    return served.has(copy) ? copy : undefined;
   }
   for (const version of byTrpcPath) {
     if (
@@ -139,15 +137,10 @@ export function siteLocation(
       continue;
     }
     const slug = target.slice(version.trpcPath.length + 1) || version.firstDoc;
-    if (version.id === v11.id && !v11Only && served.has(`/docs/${slug}`)) {
-      return { location: `/docs/${slug}`, permanent: true };
-    }
     const copy = `${version.basePath}/${slug}`;
-    return served.has(copy)
-      ? { location: copy, permanent: version.id !== v11.id }
-      : undefined;
+    return served.has(copy) ? copy : undefined;
   }
-  return served.has(target) ? { location: target, permanent: true } : undefined;
+  return served.has(target) ? target : undefined;
 }
 
 /**
@@ -205,7 +198,7 @@ export function trpcPages(served: ReadonlySet<string>): ReadonlyArray<string> {
       ? [`${version.trpcPath}/${pathname.slice(version.basePath.length + 1)}`]
       : [];
   });
-  // `/docs` is this site's own docs.
+  // `/docs`, v11's, is at trpc.io's path, and `routes` redirects it.
   const indexes = copiedVersions
     .filter(
       (version) =>
@@ -296,21 +289,17 @@ export function oldRedirects(opts: {
       continue;
     }
     const followed = follow(source, redirects);
-    const site = siteLocation(
-      followed.target,
-      opts.served,
-      /^\/docs\/v11(?:\/|$)/.test(source),
-    );
-    if (!site) {
+    const location = siteLocation(followed.target, opts.served);
+    if (location === undefined) {
       problems.push(
         `${source}: trpc.io sends it to ${followed.target}, which this site doesn't serve`,
       );
       continue;
     }
     found.push({
-      location: `${site.location}${followed.hash}`,
+      location: `${location}${followed.hash}`,
       source,
-      status: followed.permanent && site.permanent ? 308 : 307,
+      status: followed.permanent ? 308 : 307,
     });
   }
   for (const [source, location] of Object.entries(retiredPages)) {

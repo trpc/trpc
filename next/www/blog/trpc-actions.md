@@ -40,7 +40,7 @@ customize the way that the procedure is called when it's invoked as a function. 
 to make it compatible with Next.js. This adapter will handle cases where the server action is wrapped in `useActionState` on the client,
 which [changes the call signature of the server action](https://react.dev/reference/react/useActionState#my-action-can-no-longer-read-the-submitted-form-data).
 
-We'll also be using a `span` property as [metadata](/v11/docs/server/metadata), since there is no ordinary path like when you use a router (`user.byId` for example). You can use the span property to differentiate procedures, for example during logging or observability.
+We'll also be using a `span` property as [metadata](/docs/server/metadata), since there is no ordinary path like when you use a router (`user.byId` for example). You can use the span property to differentiate procedures, for example during logging or observability.
 
 ```ts title="server/trpc.ts"
 import { initTRPC, TRPCError } from '@trpc/server';
@@ -59,7 +59,7 @@ const serverActionProcedure = t.procedure.experimental_caller(
 );
 ```
 
-Next, we'll add some [context](/v11/docs/server/context). Since we wont be hosting a router using a regular HTTP adapter, we won't have any context injected through the `createContext`
+Next, we'll add some [context](/docs/server/context). Since we wont be hosting a router using a regular HTTP adapter, we won't have any context injected through the `createContext`
 method on the adapter. Instead, we'll use a middleware to inject our context. In this example, let's retrieve the current user from the session, and inject it into the context.
 
 ```ts title="server/trpc.ts"

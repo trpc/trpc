@@ -93,7 +93,7 @@ If strict mode is too harsh, you'll at least want to enable `strictNullChecks`:
 
 Initialize your tRPC backend in `src/server/trpc.ts` using the `initTRPC` function, and create your first router. We're going to make a simple "hello world" router and procedure here - but for deeper information on creating your tRPC API you should refer to:
 
-- the [Quickstart guide](../../quickstart.md) and [Backend usage docs](/v11/docs/server/overview) for tRPC information
+- the [Quickstart guide](../../quickstart.md) and [Backend usage docs](/docs/server/overview) for tRPC information
 - the [Next.js Adapter docs](../../server/adapters/nextjs.md) for mounting tRPC within your Next.js server.
 
 <details>

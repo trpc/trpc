@@ -17,6 +17,7 @@ import {
 import { useState } from 'react';
 
 import { absoluteUrl } from '~/seo.ts';
+import { v12 } from '~/site.ts';
 
 interface PageLink {
   readonly external: boolean;
@@ -31,7 +32,7 @@ interface PageLink {
  * button, so they're in a menu there.
  */
 export function PageActions(props: { readonly slug: string }) {
-  const markdownPath = `/docs/${props.slug}.md`;
+  const markdownPath = `${v12.basePath}/${props.slug}.md`;
   const prompt = `Read ${absoluteUrl(markdownPath)} so I can ask questions about it.`;
   const [status, setStatus] = useState<'Copied' | 'Copy failed' | 'Copy page'>(
     'Copy page',

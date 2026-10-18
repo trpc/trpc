@@ -16,12 +16,18 @@ export const site = {
 } as const;
 
 /**
+ * The v12 docs, rendered from `next/docs`. v11 is the stable release, so it
+ * has `/docs` while v12 is experimental.
+ */
+export const v12 = { basePath: '/v12/docs' } as const;
+
+/**
  * A version of the docs trpc.io serves, copied as it was
  * (`build/old-docs-copy.ts`).
  */
 export interface CopiedVersion {
-  /** Where the copy serves it. */
-  readonly basePath: `/${string}/docs`;
+  /** Where the copy serves it: v11, the stable release, at `/docs`, as trpc.io does. */
+  readonly basePath: '/docs' | `/${string}/docs`;
   /** The page trpc.io serves at `trpcPath` itself, the first in its sidebar. */
   readonly firstDoc: string;
   readonly id: 'v9' | 'v10' | 'v11';
@@ -35,9 +41,9 @@ export interface CopiedVersion {
   readonly url: string;
 }
 
-/** The v11 docs, which trpc.io serves at `/docs`. */
+/** The v11 docs, which trpc.io serves at `/docs`, and so does the copy. */
 export const v11 = {
-  basePath: '/v11/docs',
+  basePath: '/docs',
   firstDoc: 'introduction',
   id: 'v11',
   imagePath: '/v11/img',

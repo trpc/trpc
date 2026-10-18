@@ -17,12 +17,12 @@ import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
 import { Route as DocsIndexRouteImport } from './routes/docs.index'
 import { Route as DocsSplatRouteImport } from './routes/docs.$'
 import { Route as V10DocsRouteImport } from './routes/v10.docs'
-import { Route as V11DocsRouteImport } from './routes/v11.docs'
+import { Route as V12DocsRouteImport } from './routes/v12.docs'
 import { Route as V9DocsRouteImport } from './routes/v9.docs'
 import { Route as V10DocsIndexRouteImport } from './routes/v10.docs.index'
 import { Route as V10DocsSplatRouteImport } from './routes/v10.docs.$'
-import { Route as V11DocsIndexRouteImport } from './routes/v11.docs.index'
-import { Route as V11DocsSplatRouteImport } from './routes/v11.docs.$'
+import { Route as V12DocsIndexRouteImport } from './routes/v12.docs.index'
+import { Route as V12DocsSplatRouteImport } from './routes/v12.docs.$'
 import { Route as V9DocsIndexRouteImport } from './routes/v9.docs.index'
 import { Route as V9DocsSplatRouteImport } from './routes/v9.docs.$'
 
@@ -66,9 +66,9 @@ const V10DocsRoute = V10DocsRouteImport.update({
   path: '/v10/docs',
   getParentRoute: () => rootRouteImport,
 } as any)
-const V11DocsRoute = V11DocsRouteImport.update({
-  id: '/v11/docs',
-  path: '/v11/docs',
+const V12DocsRoute = V12DocsRouteImport.update({
+  id: '/v12/docs',
+  path: '/v12/docs',
   getParentRoute: () => rootRouteImport,
 } as any)
 const V9DocsRoute = V9DocsRouteImport.update({
@@ -86,15 +86,15 @@ const V10DocsSplatRoute = V10DocsSplatRouteImport.update({
   path: '/$',
   getParentRoute: () => V10DocsRoute,
 } as any)
-const V11DocsIndexRoute = V11DocsIndexRouteImport.update({
+const V12DocsIndexRoute = V12DocsIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => V11DocsRoute,
+  getParentRoute: () => V12DocsRoute,
 } as any)
-const V11DocsSplatRoute = V11DocsSplatRouteImport.update({
+const V12DocsSplatRoute = V12DocsSplatRouteImport.update({
   id: '/$',
   path: '/$',
-  getParentRoute: () => V11DocsRoute,
+  getParentRoute: () => V12DocsRoute,
 } as any)
 const V9DocsIndexRoute = V9DocsIndexRouteImport.update({
   id: '/',
@@ -114,15 +114,15 @@ export interface FileRoutesByFullPath {
   '/blog/$slug': typeof BlogSlugRoute
   '/docs/$': typeof DocsSplatRoute
   '/v10/docs': typeof V10DocsRouteWithChildren
-  '/v11/docs': typeof V11DocsRouteWithChildren
+  '/v12/docs': typeof V12DocsRouteWithChildren
   '/v9/docs': typeof V9DocsRouteWithChildren
   '/blog/': typeof BlogIndexRoute
   '/docs/': typeof DocsIndexRoute
   '/v10/docs/$': typeof V10DocsSplatRoute
-  '/v11/docs/$': typeof V11DocsSplatRoute
+  '/v12/docs/$': typeof V12DocsSplatRoute
   '/v9/docs/$': typeof V9DocsSplatRoute
   '/v10/docs/': typeof V10DocsIndexRoute
-  '/v11/docs/': typeof V11DocsIndexRoute
+  '/v12/docs/': typeof V12DocsIndexRoute
   '/v9/docs/': typeof V9DocsIndexRoute
 }
 export interface FileRoutesByTo {
@@ -133,10 +133,10 @@ export interface FileRoutesByTo {
   '/blog': typeof BlogIndexRoute
   '/docs': typeof DocsIndexRoute
   '/v10/docs/$': typeof V10DocsSplatRoute
-  '/v11/docs/$': typeof V11DocsSplatRoute
+  '/v12/docs/$': typeof V12DocsSplatRoute
   '/v9/docs/$': typeof V9DocsSplatRoute
   '/v10/docs': typeof V10DocsIndexRoute
-  '/v11/docs': typeof V11DocsIndexRoute
+  '/v12/docs': typeof V12DocsIndexRoute
   '/v9/docs': typeof V9DocsIndexRoute
 }
 export interface FileRoutesById {
@@ -147,15 +147,15 @@ export interface FileRoutesById {
   '/blog/$slug': typeof BlogSlugRoute
   '/docs/$': typeof DocsSplatRoute
   '/v10/docs': typeof V10DocsRouteWithChildren
-  '/v11/docs': typeof V11DocsRouteWithChildren
+  '/v12/docs': typeof V12DocsRouteWithChildren
   '/v9/docs': typeof V9DocsRouteWithChildren
   '/blog/': typeof BlogIndexRoute
   '/docs/': typeof DocsIndexRoute
   '/v10/docs/$': typeof V10DocsSplatRoute
-  '/v11/docs/$': typeof V11DocsSplatRoute
+  '/v12/docs/$': typeof V12DocsSplatRoute
   '/v9/docs/$': typeof V9DocsSplatRoute
   '/v10/docs/': typeof V10DocsIndexRoute
-  '/v11/docs/': typeof V11DocsIndexRoute
+  '/v12/docs/': typeof V12DocsIndexRoute
   '/v9/docs/': typeof V9DocsIndexRoute
 }
 export interface FileRouteTypes {
@@ -167,15 +167,15 @@ export interface FileRouteTypes {
     | '/blog/$slug'
     | '/docs/$'
     | '/v10/docs'
-    | '/v11/docs'
+    | '/v12/docs'
     | '/v9/docs'
     | '/blog/'
     | '/docs/'
     | '/v10/docs/$'
-    | '/v11/docs/$'
+    | '/v12/docs/$'
     | '/v9/docs/$'
     | '/v10/docs/'
-    | '/v11/docs/'
+    | '/v12/docs/'
     | '/v9/docs/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -186,10 +186,10 @@ export interface FileRouteTypes {
     | '/blog'
     | '/docs'
     | '/v10/docs/$'
-    | '/v11/docs/$'
+    | '/v12/docs/$'
     | '/v9/docs/$'
     | '/v10/docs'
-    | '/v11/docs'
+    | '/v12/docs'
     | '/v9/docs'
   id:
     | '__root__'
@@ -199,15 +199,15 @@ export interface FileRouteTypes {
     | '/blog/$slug'
     | '/docs/$'
     | '/v10/docs'
-    | '/v11/docs'
+    | '/v12/docs'
     | '/v9/docs'
     | '/blog/'
     | '/docs/'
     | '/v10/docs/$'
-    | '/v11/docs/$'
+    | '/v12/docs/$'
     | '/v9/docs/$'
     | '/v10/docs/'
-    | '/v11/docs/'
+    | '/v12/docs/'
     | '/v9/docs/'
   fileRoutesById: FileRoutesById
 }
@@ -217,7 +217,7 @@ export interface RootRouteChildren {
   DocsRoute: typeof DocsRouteWithChildren
   BlogSlugRoute: typeof BlogSlugRoute
   V10DocsRoute: typeof V10DocsRouteWithChildren
-  V11DocsRoute: typeof V11DocsRouteWithChildren
+  V12DocsRoute: typeof V12DocsRouteWithChildren
   V9DocsRoute: typeof V9DocsRouteWithChildren
   BlogIndexRoute: typeof BlogIndexRoute
 }
@@ -280,11 +280,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof V10DocsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/v11/docs': {
-      id: '/v11/docs'
-      path: '/v11/docs'
-      fullPath: '/v11/docs'
-      preLoaderRoute: typeof V11DocsRouteImport
+    '/v12/docs': {
+      id: '/v12/docs'
+      path: '/v12/docs'
+      fullPath: '/v12/docs'
+      preLoaderRoute: typeof V12DocsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/v9/docs': {
@@ -308,19 +308,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof V10DocsSplatRouteImport
       parentRoute: typeof V10DocsRoute
     }
-    '/v11/docs/': {
-      id: '/v11/docs/'
+    '/v12/docs/': {
+      id: '/v12/docs/'
       path: '/'
-      fullPath: '/v11/docs/'
-      preLoaderRoute: typeof V11DocsIndexRouteImport
-      parentRoute: typeof V11DocsRoute
+      fullPath: '/v12/docs/'
+      preLoaderRoute: typeof V12DocsIndexRouteImport
+      parentRoute: typeof V12DocsRoute
     }
-    '/v11/docs/$': {
-      id: '/v11/docs/$'
+    '/v12/docs/$': {
+      id: '/v12/docs/$'
       path: '/$'
-      fullPath: '/v11/docs/$'
-      preLoaderRoute: typeof V11DocsSplatRouteImport
-      parentRoute: typeof V11DocsRoute
+      fullPath: '/v12/docs/$'
+      preLoaderRoute: typeof V12DocsSplatRouteImport
+      parentRoute: typeof V12DocsRoute
     }
     '/v9/docs/': {
       id: '/v9/docs/'
@@ -364,18 +364,18 @@ const V10DocsRouteChildren: V10DocsRouteChildren = {
 const V10DocsRouteWithChildren =
   V10DocsRoute._addFileChildren(V10DocsRouteChildren)
 
-interface V11DocsRouteChildren {
-  V11DocsSplatRoute: typeof V11DocsSplatRoute
-  V11DocsIndexRoute: typeof V11DocsIndexRoute
+interface V12DocsRouteChildren {
+  V12DocsSplatRoute: typeof V12DocsSplatRoute
+  V12DocsIndexRoute: typeof V12DocsIndexRoute
 }
 
-const V11DocsRouteChildren: V11DocsRouteChildren = {
-  V11DocsSplatRoute: V11DocsSplatRoute,
-  V11DocsIndexRoute: V11DocsIndexRoute,
+const V12DocsRouteChildren: V12DocsRouteChildren = {
+  V12DocsSplatRoute: V12DocsSplatRoute,
+  V12DocsIndexRoute: V12DocsIndexRoute,
 }
 
-const V11DocsRouteWithChildren =
-  V11DocsRoute._addFileChildren(V11DocsRouteChildren)
+const V12DocsRouteWithChildren =
+  V12DocsRoute._addFileChildren(V12DocsRouteChildren)
 
 interface V9DocsRouteChildren {
   V9DocsSplatRoute: typeof V9DocsSplatRoute
@@ -396,7 +396,7 @@ const rootRouteChildren: RootRouteChildren = {
   DocsRoute: DocsRouteWithChildren,
   BlogSlugRoute: BlogSlugRoute,
   V10DocsRoute: V10DocsRouteWithChildren,
-  V11DocsRoute: V11DocsRouteWithChildren,
+  V12DocsRoute: V12DocsRouteWithChildren,
   V9DocsRoute: V9DocsRouteWithChildren,
   BlogIndexRoute: BlogIndexRoute,
 }

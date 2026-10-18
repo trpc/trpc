@@ -6,6 +6,34 @@ html {
   scroll-padding-top: 4.5rem;
 }
 
+/* The home page: the site header (3.5rem) and the version pill under it. */
+html:has(#hero-code) {
+  scroll-padding-top: 7rem;
+}
+
+/*
+ * The home page's versions: every version ships in the static HTML; a
+ * blocking script sets data-home-version from ?version= before paint so v12
+ * never flashes the prerendered v11 panels.
+ */
+[data-home-panel] {
+  display: none;
+}
+
+:root:not([data-home-version]) [data-home-panel='v11'],
+[data-home-version='v11'] [data-home-panel='v11'],
+[data-home-version='v12'] [data-home-panel='v12'] {
+  display: contents;
+}
+
+:root:not([data-home-version]) [data-home-version-link='v11'].home-version-link,
+[data-home-version='v11'] [data-home-version-link='v11'].home-version-link,
+[data-home-version='v12'] [data-home-version-link='v12'].home-version-link {
+  background-color: var(--foreground);
+  color: var(--background);
+  font-weight: 500;
+}
+
 /* In-page links glide to their heading. The router scrolls `instant`ly
    (`scrollRestorationBehavior`), so a new page starts at the top. */
 @media (prefers-reduced-motion: no-preference) {

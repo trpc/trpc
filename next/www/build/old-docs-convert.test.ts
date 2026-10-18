@@ -355,7 +355,7 @@ describe('convertPage', () => {
         '[v10](/v10/docs/server/routers), [awesome](../community/awesome-trpc.md#list),',
         '[old](https://trpc.io/docs/further/old), [chat](https://trpc.io/discord),',
         '[blog](/blog/announcing-trpc-v11) and [npm](https://npmjs.com).',
-        '<a href="/v11/docs/client/links">Links</a>',
+        '<a href="/docs/client/links">Links</a>',
         '![Diagram](/v11/img/links-diagram.svg)',
         '<img src="/v11/img/split-link-diagram.svg" />',
         '',
@@ -377,8 +377,8 @@ describe('convertPage', () => {
     expect(converted.problems).toEqual([]);
     expect(converted.body).toBe(
       [
-        '[routers](./routers.md), [procedures](/v11/docs/server/procedures),',
-        '[v11 routers](/v11/docs/server/routers), [apps](../example-apps.md),',
+        '[routers](./routers.md), [procedures](/docs/server/procedures),',
+        '[v11 routers](/docs/server/routers), [apps](../example-apps.md),',
         '![Diagram](/v10/img/links-diagram.svg)',
         '',
       ].join('\n'),
@@ -553,7 +553,7 @@ describe('convertPost', () => {
         'discussion: 6622',
         '---',
         '',
-        'Today, we are _finally_ shipping [v11](/v11/docs/introduction)',
+        'Today, we are _finally_ shipping [v11](/docs/introduction)',
         'with `@trpc/server`!',
         '',
         '## Upgrading',
@@ -574,7 +574,7 @@ describe('convertPost', () => {
     expect(converted.problems).toEqual([]);
     expect(converted.markdown.replace(/^---\n[\s\S]*?\n---\n\n/, '')).toBe(
       [
-        'See [routers](/v11/docs/server/routers), [v10](/v10/docs/server/routers),',
+        'See [routers](/docs/server/routers), [v10](/v10/docs/server/routers),',
         '[the post](/blog/announcing-trpc-v11#upgrading),',
         'and [the old one](/blog/announcing-trpc-v11).',
         '',
@@ -858,7 +858,7 @@ describe('dropMissingAnchors', () => {
         '```',
         '[e](../client/links.md#gone)',
         '[f](/v9/docs/nextjs#hooks) [g](/v9/docs/nextjs#gone)',
-        '<a href="/v11/docs/client/links#gone">h</a>',
+        '<a href="/docs/client/links#gone">h</a>',
       ].join('\n'),
       { slug: 'server/procedures', version: 'v11' },
       anchors,
@@ -872,14 +872,14 @@ describe('dropMissingAnchors', () => {
         '```',
         '[e](../client/links.md)',
         '[f](/v9/docs/nextjs#hooks) [g](/v9/docs/nextjs)',
-        '<a href="/v11/docs/client/links">h</a>',
+        '<a href="/docs/client/links">h</a>',
       ].join('\n'),
     );
     expect(result.dropped).toEqual([
       'v11 server/procedures: ./routers.md#gone',
       'v11 server/procedures: ../client/links.md#gone',
       'v11 server/procedures: /v9/docs/nextjs#gone',
-      'v11 server/procedures: /v11/docs/client/links#gone',
+      'v11 server/procedures: /docs/client/links#gone',
     ]);
   });
 });

@@ -14,11 +14,11 @@ Since our last major version release in November 2022, the tRPC community has se
 - [A Discord community](https://trpc.io/discord) with over 5,000 members
 - [700k+ weekly npm downloads](https://www.npmjs.com/package/@trpc/server)
 - [100s of contributors](https://github.com/trpc/trpc/graphs/contributors)
-- [An _awesome_ ecosystem of extensions, examples, and content](/v11/docs/community/awesome-trpc)
+- [An _awesome_ ecosystem of extensions, examples, and content](/docs/community/awesome-trpc)
 
 With the launch of tRPC v11, we're excited to share that v11 is already being used in production by many large TypeScript projects thanks to its stable evolution on our `@next` channel
 
-For new projects, you can get up and running with an [example application](/v11/docs/community/awesome-trpc#-starting-points-example-projects-etc) to learn about tRPC v11. For projects still on tRPC v10, [visit the v11 migration guide](/v11/docs/migrate-from-v10-to-v11).
+For new projects, you can get up and running with an [example application](/docs/community/awesome-trpc#-starting-points-example-projects-etc) to learn about tRPC v11. For projects still on tRPC v10, [visit the v11 migration guide](/docs/migrate-from-v10-to-v11).
 
 ## Overview of changes
 
@@ -34,7 +34,7 @@ When [TanStack Query v5](https://tanstack.com/blog/announcing-tanstack-query-v5)
 
 ### FormData / Non-JSON Content Types support
 
-One of our most requested features is the ability to send and receive more than simply JSON data. With tRPC v11, you can now send and receive data in a variety of [non-json content types](/v11/docs/server/non-json-content-types), `FormData`, and binary types such as `Blob`, `File` and `Uint8Array`. You can find an example of how to use these content types [here](https://github.com/trpc/trpc/tree/next/examples/minimal-content-types)
+One of our most requested features is the ability to send and receive more than simply JSON data. With tRPC v11, you can now send and receive data in a variety of [non-json content types](/docs/server/non-json-content-types), `FormData`, and binary types such as `Blob`, `File` and `Uint8Array`. You can find an example of how to use these content types [here](https://github.com/trpc/trpc/tree/next/examples/minimal-content-types)
 
 ```ts
 import { publicProcedure, router } from './trpc';
@@ -57,13 +57,13 @@ const appRouter = router({
 
 While you have been able to use tRPC with Next.js App Router from day 1, by either:
 
-- using a server-centric approach using async/await with either [`createCaller`](/v11/docs/server/server-side-calls) or [`createTRPCClient`](/v11/docs/client/vanilla),
-- or a client-centric approach using the [React Query integration](/v11/docs/client/react) and client-side hooks,
+- using a server-centric approach using async/await with either [`createCaller`](/docs/server/server-side-calls) or [`createTRPCClient`](/docs/client/vanilla),
+- or a client-centric approach using the [React Query integration](/docs/client/react) and client-side hooks,
 
 The bridge in between has been a bit rough around the edges. Revalidation patterns are mixed when having to maintain different data fetching patterns, resulting in a less than ideal developer experience which does not live up to tRPC's standards.
 
 To fix this, we've improved support for React Server Components (RSC) and added prefetch helpers to make it easier to utilize the power of RSCs running exclusively on the server, in combination with the highly dynamic client-side cache of React Query.
-You can now start executing a procedure on the server in a RSC, pick up the pending promise on the client, and automatically hydrate the React Query cache clientside. This enables you to build highly dynamic applications without suffering from server-client waterfalls. You can read more in our [Server Components documentation](/v11/docs/client/react/server-components).
+You can now start executing a procedure on the server in a RSC, pick up the pending promise on the client, and automatically hydrate the React Query cache clientside. This enables you to build highly dynamic applications without suffering from server-client waterfalls. You can read more in our [Server Components documentation](/docs/client/react/server-components).
 
 In addition to these new prefetch patterns, we've added experimental support for server functions. You can read more about this in [our blog post](/blog/trpc-actions). We plan to keep iterating on this feature as server functions become a more established pattern in the ecosystem.
 
@@ -71,7 +71,7 @@ We have also worked with the [TanStack team to help design the APIs for their se
 
 ### Streaming Responses from Queries and Mutations
 
-We've introduced [httpBatchStreamLink](/v11/docs/client/links/httpBatchStreamLink), which allows you to stream responses from queries. This is helpful when working with large datasets or where you need to process data in real-time and dispatch to the frontend as you go. This is not a replacement for subscriptions, but is another option in your toolbelt.
+We've introduced [httpBatchStreamLink](/docs/client/links/httpBatchStreamLink), which allows you to stream responses from queries. This is helpful when working with large datasets or where you need to process data in real-time and dispatch to the frontend as you go. This is not a replacement for subscriptions, but is another option in your toolbelt.
 
 ```ts
 import { publicProcedure, router } from './trpc';
@@ -110,7 +110,7 @@ for await (const value of iterable) {
 
 ### Shorthand Router Definitions
 
-We've introduced a new shorthand syntax for defining your router to simplify the process of defining your routes. [Docs](/v11/docs/server/routers#inline-sub-router)
+We've introduced a new shorthand syntax for defining your router to simplify the process of defining your routes. [Docs](/docs/server/routers#inline-sub-router)
 
 ```ts
 const appRouter = router({
@@ -127,9 +127,9 @@ const appRouter = router({
 
 ### Subscriptions: Server-Sent Events and other Improvements
 
-- tRPC v11 introduces a new way to handle subscriptions using [Server-Sent Events (SSE)](/v11/docs/server/subscriptions#websockets-or-server-sent-events). This is a great way to handle real-time updates in your application without the need for more complex WebSockets. We recommend using this in the first instance going forward.
-- We've added support for JavaScript [generators in subscriptions](/v11/docs/server/subscriptions#cleanup-of-side-effects). This allows you to write more complex subscription handlers which can yield multiple values over time, and clean up when finished, in a very JS-native way.
-- Subscriptions now support [Output validators](/v11/docs/server/subscriptions#output-validation), improving the type-safety of your subscription handlers.
+- tRPC v11 introduces a new way to handle subscriptions using [Server-Sent Events (SSE)](/docs/server/subscriptions#websockets-or-server-sent-events). This is a great way to handle real-time updates in your application without the need for more complex WebSockets. We recommend using this in the first instance going forward.
+- We've added support for JavaScript [generators in subscriptions](/docs/server/subscriptions#cleanup-of-side-effects). This allows you to write more complex subscription handlers which can yield multiple values over time, and clean up when finished, in a very JS-native way.
+- Subscriptions now support [Output validators](/docs/server/subscriptions#output-validation), improving the type-safety of your subscription handlers.
 
 ### Goodbye v9 `.interop()`-mode
 
@@ -137,7 +137,7 @@ In tRPC v10, we introduced the `.interop()`-mode to provide a smooth migration p
 
 ## Migrating to v11
 
-If you're currently using tRPC v10, you can follow the [migration guide](/v11/docs/migrate-from-v10-to-v11) to upgrade to v11. The migration guide covers all the breaking changes and new features in v11.
+If you're currently using tRPC v10, you can follow the [migration guide](/docs/migrate-from-v10-to-v11) to upgrade to v11. The migration guide covers all the breaking changes and new features in v11.
 
 ## Thank you!
 

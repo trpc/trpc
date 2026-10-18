@@ -1,4 +1,4 @@
-import { Link } from '@tanstack/react-router';
+import { Link, useLocation } from '@tanstack/react-router';
 import { PackageX } from 'lucide-react';
 import { useEffect } from 'react';
 import { toast, Toaster } from 'sonner';
@@ -97,11 +97,22 @@ export function UnpublishedCopyWarning() {
   return <Toaster position="bottom-right" />;
 }
 
-/** Above the header everywhere but the older versions' docs, whose packages are on npm. */
+/** Above the header on v12's docs, and on the home page while it shows v12. */
 export function UnpublishedBanner() {
-  if (useDocsVersion().copied) {
-    return null;
+  const version = useDocsVersion();
+  const onHome =
+    useLocation({ select: (location) => location.pathname }) === '/';
+  if (onHome) {
+    return (
+      <div data-home-panel="v12">
+        <Banner />
+      </div>
+    );
   }
+  return version.id === 'v12' ? <Banner /> : null;
+}
+
+function Banner() {
   return (
     <div className="border-b border-[oklch(0.7_0.15_75/0.35)] bg-[oklch(0.7_0.15_75/0.1)] text-[oklch(0.4_0.1_75)] dark:text-[oklch(0.88_0.1_75)]">
       <p className="mx-auto flex max-w-7xl items-center justify-center gap-2 px-4 py-1.5 text-center text-xs text-pretty sm:px-6 sm:text-sm">

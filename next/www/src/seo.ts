@@ -29,7 +29,7 @@ export interface PageSeo {
   /** Where the page is maintained, if not here. */
   readonly canonical?: string;
   readonly description: string;
-  /** The page as markdown, for agents: `/docs/<slug>.md`. */
+  /** The page as markdown, for agents: `/v12/docs/<slug>.md`. */
   readonly markdownPath?: string;
   /** Path from the site root, starting with `/`. */
   readonly path: string;

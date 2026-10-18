@@ -15,8 +15,8 @@ const llmsTxt = [
   '',
   '## Getting started',
   '',
-  '- [Getting started](https://v12.trpc.io/docs/getting-started.md): A router.',
-  '- [Links](https://v12.trpc.io/docs/client/links.md): Links.',
+  '- [Getting started](https://v12.trpc.io/v12/docs/getting-started.md): A router.',
+  '- [Links](https://v12.trpc.io/v12/docs/client/links.md): Links.',
   '',
 ].join('\n');
 
@@ -39,14 +39,14 @@ const setup = Effect.fn('setup')(function* (
     'apple-touch-icon.png': '',
     'assets/app.js': '',
     'blog/index.html': '',
-    'docs/client/links.md': '',
-    'docs/client/links/index.html': '',
     'favicon.ico': '',
+    'v12/docs/client/links.md': '',
+    'v12/docs/client/links/index.html': '',
     'index.html': '',
     'index.md': '',
     'llms.txt': llms,
     'logo.svg': '',
-    'v11/docs/server/routers/index.html': '<h2 id="nesting">Nesting</h2>',
+    'docs/server/routers/index.html': '<h2 id="nesting">Nesting</h2>',
   };
   for (const [file, contents] of Object.entries(files)) {
     const target = path.join(root, 'dist/client', file);
@@ -78,7 +78,7 @@ describe('writeVercelOutput', () => {
 
       const output = path.join(root, '.vercel/output');
       expect(
-        yield* fs.exists(path.join(output, 'static/docs/client/links.md')),
+        yield* fs.exists(path.join(output, 'static/v12/docs/client/links.md')),
       ).toBe(true);
       const config = JSON.parse(
         yield* fs.readFileString(path.join(output, 'config.json')),
@@ -89,41 +89,61 @@ describe('writeVercelOutput', () => {
           contentType: 'text/html; charset=utf-8',
           path: 'blog',
         },
-        'docs/client/links.md': {
+        'v12/docs/client/links.md': {
           contentType: 'text/markdown; charset=utf-8',
         },
-        'docs/client/links/index.html': {
+        'v12/docs/client/links/index.html': {
           contentType: 'text/html; charset=utf-8',
-          path: 'docs/client/links',
+          path: 'v12/docs/client/links',
         },
         'index.md': { contentType: 'text/markdown; charset=utf-8' },
         'llms.txt': { contentType: 'text/plain; charset=utf-8' },
-        'v11/docs/server/routers/index.html': {
+        'docs/server/routers/index.html': {
           contentType: 'text/html; charset=utf-8',
-          path: 'v11/docs/server/routers',
+          path: 'docs/server/routers',
         },
       });
       expect(config.routes).toContainEqual({
-        headers: { Location: '/docs/getting-started' },
-        src: '^/docs$',
+        headers: { Location: '/v12/docs/getting-started' },
+        src: '^/v12/docs$',
         status: 307,
       });
-      for (const version of ['v11', 'v10', 'v9']) {
+      // v11, the stable release, has `/docs`.
+      for (const [basePath, src] of [
+        ['/docs', '^/docs$'],
+        ['/v10/docs', '^/v10/docs$'],
+        ['/v9/docs', '^/v9/docs$'],
+      ]) {
         expect(config.routes).toContainEqual({
-          headers: { Location: `/${version}/docs/introduction` },
-          src: `^/${version}/docs$`,
+          headers: { Location: `${basePath}/introduction` },
+          src,
           status: 307,
         });
       }
+      const moved = config.routes.find(
+        (route: { src: string; status?: number }) =>
+          route.status === 308 && route.src.includes('v11'),
+      );
+      expect(moved.headers.Location).toBe('/docs$1');
+      expect(
+        '/v11/docs/client/links'.replace(new RegExp(moved.src), '/docs$1'),
+      ).toBe('/docs/client/links');
+      expect('/v11/docs'.replace(new RegExp(moved.src), '/docs$1')).toBe(
+        '/docs',
+      );
 
       const markdownRewrite = config.routes.find(
-        (route: { dest?: string }) => route.dest === '/docs/$1.md',
+        (route: { dest?: string }) => route.dest === '/v12/docs/$1.md',
       );
-      const match = new RegExp(markdownRewrite.src).exec('/docs/client/links');
+      const match = new RegExp(markdownRewrite.src).exec(
+        '/v12/docs/client/links',
+      );
       expect(match?.[1]).toBe('client/links');
-      expect(new RegExp(markdownRewrite.src).test('/docs/a.md')).toBe(false);
+      expect(new RegExp(markdownRewrite.src).test('/v12/docs/a.md')).toBe(
+        false,
+      );
       // The copies have no markdown.
-      expect(new RegExp(markdownRewrite.src).test('/v11/docs/a')).toBe(false);
+      expect(new RegExp(markdownRewrite.src).test('/docs/a')).toBe(false);
       expect(new RegExp(markdownRewrite.src).test('/v9/docs/a')).toBe(false);
     }).pipe(Effect.scoped, Effect.provide(NodeServices.layer)),
   );
@@ -146,11 +166,13 @@ describe('writeVercelOutput', () => {
           })).map((file) => file.split(path.sep).join('/')),
         );
         expect(land(config.routes, served, '/docs/router').hops).toEqual([
-          '/v11/docs/server/routers#nesting',
+          '/docs/server/routers#nesting',
         ]);
-        expect(
-          land(config.routes, served, '/docs/server/routers').hops,
-        ).toEqual(['/v11/docs/server/routers']);
+        expect(land(config.routes, served, '/docs/server/routers')).toEqual({
+          hash: '',
+          hops: [],
+          landed: { kind: 'file', path: '/docs/server/routers' },
+        });
 
         const broken = yield* setup(llmsTxt, [
           { destination: '/docs/gone', permanent: true, source: '/docs/old' },
@@ -169,7 +191,7 @@ describe('writeVercelOutput', () => {
         ]);
         const headingError = yield* Effect.flip(writeVercelOutput(noHeading));
         expect(headingError.message).toContain(
-          "/docs/router: redirects to /v11/docs/server/routers#gone, a heading the page doesn't have",
+          "/docs/router: redirects to /docs/server/routers#gone, a heading the page doesn't have",
         );
       }).pipe(Effect.scoped, Effect.provide(NodeServices.layer)),
   );

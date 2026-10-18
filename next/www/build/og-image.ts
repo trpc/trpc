@@ -81,7 +81,7 @@ export const plainText = (text: string) =>
     .replaceAll(/\s+/g, ' ')
     .trim();
 
-/** `https://v12.trpc.io/docs/a` as `v12.trpc.io` and `/docs/a`. */
+/** `https://v12.trpc.io/v12/docs/a` as `v12.trpc.io` and `/v12/docs/a`. */
 export const displayUrl = (url: string) => {
   const parsed = new URL(url);
   return {

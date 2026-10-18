@@ -4,20 +4,21 @@ import { sections as v9Sections } from 'virtual:v9-docs-manifest';
 import { sections as v10Sections } from 'virtual:v10-docs-manifest';
 import { sections as v11Sections } from 'virtual:v11-docs-manifest';
 
-import { type CopiedVersion, v9, v10, v11 } from '~/site.ts';
+import type { HomeVersion } from '~/home-version.ts';
+import { type CopiedVersion, v9, v10, v11, v12 } from '~/site.ts';
 
 import type { Doc, DocMeta, DocSection } from './types.ts';
 
 /** One version's pages, and where the site serves them. */
 export interface DocsVersion {
   readonly allDocs: ReadonlyArray<DocMeta>;
-  readonly basePath: '/docs' | CopiedVersion['basePath'];
+  readonly basePath: typeof v12.basePath | CopiedVersion['basePath'];
   /** The version of trpc.io's docs this copies, for the older versions. */
   readonly copied: CopiedVersion | undefined;
   readonly firstDoc: string;
   readonly id: 'v12' | CopiedVersion['id'];
   /** The page route, for `<Link to>`. */
-  readonly route: '/docs/$' | '/v11/docs/$' | '/v10/docs/$' | '/v9/docs/$';
+  readonly route: '/v12/docs/$' | '/docs/$' | '/v10/docs/$' | '/v9/docs/$';
   readonly sections: ReadonlyArray<DocSection>;
   readonly status: 'experimental' | CopiedVersion['status'];
   /** A page, compiled at build time. */
@@ -62,7 +63,7 @@ function copiedDocs(
       status: copied.status,
     },
     pages,
-    (slug) => `../..${copied.basePath}/${slug}.md`,
+    (slug) => `../../${copied.id}/docs/${slug}.md`,
     copied.firstDoc,
   );
 }
@@ -71,10 +72,10 @@ function copiedDocs(
 // once per deploy and the CDN can cache it forever.
 export const v12Docs = docsVersion(
   {
-    basePath: '/docs',
+    basePath: v12.basePath,
     copied: undefined,
     id: 'v12',
-    route: '/docs/$',
+    route: '/v12/docs/$',
     sections: v12Sections,
     status: 'experimental',
   },
@@ -88,7 +89,7 @@ export const v12Docs = docsVersion(
 
 export const v11Docs = copiedDocs(
   v11,
-  '/v11/docs/$',
+  '/docs/$',
   v11Sections,
   import.meta.glob<{ default: Doc }>([
     '../../v11/docs/**/*.md',
@@ -119,15 +120,20 @@ export const v9Docs = copiedDocs(
 /** Newest first, as the version switcher lists them. */
 export const versions = [v12Docs, v11Docs, v10Docs, v9Docs] as const;
 
-/** The version whose pages `pathname` is among: v12 everywhere but the copies' `basePath`s. */
+/** The docs of each version the home page shows. */
+export const homeDocs = {
+  v11: v11Docs,
+  v12: v12Docs,
+} as const satisfies Record<HomeVersion, DocsVersion>;
+
+/** The version whose pages `pathname` is among, and v11, the stable release, off the docs. */
 export function versionAt(pathname: string): DocsVersion {
   return (
     versions.find(
       (version) =>
-        version.copied !== undefined &&
-        (pathname === version.basePath ||
-          pathname.startsWith(`${version.basePath}/`)),
-    ) ?? v12Docs
+        pathname === version.basePath ||
+        pathname.startsWith(`${version.basePath}/`),
+    ) ?? v11Docs
   );
 }
 

@@ -238,7 +238,7 @@ export const createTinyRPCClient = <TRouter extends AnyTRPCRouter>(
 
 Most notably here is that our path is `.`-separated instead of `/`. This allows us to have a single API handler on the server which will process all requests, and not one for each procedure. If you're using a framework with filebased routing such as Next.js, you might recognize the catchall `/api/trpc/[trpc].ts` file which will match all procedure paths.
 
-We also have a `TRPCResponse` type annotation on the `fetch`-request. This determines the JSONRPC-compliant response format that the server responds with. You can read more on that [here](/v11/docs/rpc). TL;DR, we get back either a `result` or an `error` object, which we can use to determine if the request was successful or not and do appropriate error handling if something went wrong.
+We also have a `TRPCResponse` type annotation on the `fetch`-request. This determines the JSONRPC-compliant response format that the server responds with. You can read more on that [here](/docs/rpc). TL;DR, we get back either a `result` or an `error` object, which we can use to determine if the request was successful or not and do appropriate error handling if something went wrong.
 
 And that's it! This is all the code you'll need to call your tRPC procedures on your client as if they were local functions. On the surface, it looks like we're just calling the `publicProcedure.query / mutation`'s resolver function via normal property accesses, but we're actually crossing a network boundary so we can use server-side libraries such as Prisma without leaking database credentials.
 

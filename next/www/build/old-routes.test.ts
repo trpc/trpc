@@ -53,21 +53,20 @@ const served = servedPaths([
   'blog/announcing-trpc-v11/index.html',
   'blog/index.html',
   'blog/rss.xml',
-  'docs/getting-started.md',
-  'docs/getting-started/index.html',
+  'docs/client/react/useQuery/index.html',
+  'docs/client/react/useUtils/index.html',
+  'docs/faq/index.html',
+  'docs/introduction/index.html',
+  'docs/server/adapters/index.html',
   'docs/server/routers/index.html',
   'favicon.ico',
   'index.html',
   'logo.svg',
   'v10/docs/introduction/index.html',
   'v10/docs/server/routers/index.html',
-  'v11/docs/client/react/useQuery/index.html',
-  'v11/docs/client/react/useUtils/index.html',
-  'v11/docs/faq/index.html',
-  'v11/docs/introduction/index.html',
-  'v11/docs/server/adapters/index.html',
-  'v11/docs/server/routers/index.html',
   'v11/img/links-diagram.svg',
+  'v12/docs/getting-started.md',
+  'v12/docs/getting-started/index.html',
 ]);
 
 describe('servedPaths', () => {
@@ -77,7 +76,7 @@ describe('servedPaths', () => {
         '/',
         '/blog',
         '/blog/rss.xml',
-        '/docs/getting-started',
+        '/v12/docs/getting-started',
       ]),
     );
     expect(served.has('/404.html')).toBe(false);
@@ -119,39 +118,28 @@ describe('follow', () => {
 });
 
 describe('siteLocation', () => {
-  it('is the v12 page at a v11 slug, or else its copy for now', () => {
-    expect(siteLocation('/docs/server/routers', served)).toEqual({
-      location: '/docs/server/routers',
-      permanent: true,
-    });
-    expect(siteLocation('/docs/faq', served)).toEqual({
-      location: '/v11/docs/faq',
-      permanent: false,
-    });
-    expect(siteLocation('/docs', served)).toEqual({
-      location: '/v11/docs/introduction',
-      permanent: false,
-    });
+  it("is v11's page at trpc.io's path, and its first page for `/docs`", () => {
+    expect(siteLocation('/docs/server/routers', served)).toBe(
+      '/docs/server/routers',
+    );
+    expect(siteLocation('/docs', served)).toBe('/docs/introduction');
   });
 
-  it('is the copy of an older version, for good', () => {
-    expect(siteLocation('/docs/v10/server/routers', served)).toEqual({
-      location: '/v10/docs/server/routers',
-      permanent: true,
-    });
-    expect(siteLocation('/docs/v10', served)?.location).toBe(
-      '/v10/docs/introduction',
+  it('is the copy of an older version', () => {
+    expect(siteLocation('/docs/v10/server/routers', served)).toBe(
+      '/v10/docs/server/routers',
     );
+    expect(siteLocation('/docs/v10', served)).toBe('/v10/docs/introduction');
   });
 
   it('is a post, an image or a URL off the site as they are', () => {
-    expect(siteLocation('/blog/announcing-trpc-v11', served)?.location).toBe(
+    expect(siteLocation('/blog/announcing-trpc-v11', served)).toBe(
       '/blog/announcing-trpc-v11',
     );
-    expect(siteLocation('/img/links-diagram.svg', served)?.location).toBe(
+    expect(siteLocation('/img/links-diagram.svg', served)).toBe(
       '/v11/img/links-diagram.svg',
     );
-    expect(siteLocation('https://discord.gg/abc', served)?.location).toBe(
+    expect(siteLocation('https://discord.gg/abc', served)).toBe(
       'https://discord.gg/abc',
     );
   });
@@ -175,7 +163,7 @@ describe('trpcPages', () => {
         '/img/links-diagram.svg',
       ]),
     );
-    // `/docs` is v12's; v9 has no pages here.
+    // `/docs` is v11's, served at trpc.io's path; v9 has no pages here.
     expect(trpcPages(served)).not.toContain('/docs');
     expect(trpcPages(served)).not.toContain('/docs/v9');
   });
@@ -194,9 +182,9 @@ describe('oldRedirects', () => {
       status: 308,
     });
     expect(bySource.get('/docs/invalidateQueries')).toEqual({
-      location: '/v11/docs/client/react/useUtils#invalidation',
+      location: '/docs/client/react/useUtils#invalidation',
       source: '/docs/invalidateQueries',
-      status: 307,
+      status: 308,
     });
     expect(bySource.get('/docs/v10/server/routers')?.location).toBe(
       '/v10/docs/server/routers',
@@ -206,14 +194,22 @@ describe('oldRedirects', () => {
       source: '/discord',
       status: 307,
     });
+    expect(bySource.get('/faq')).toEqual({
+      location: '/docs/faq',
+      source: '/faq',
+      status: 307,
+    });
   });
 
   it("answers a redirect's params for every page they reach", () => {
     expect(bySource.get('/docs/reactjs/useQuery')?.location).toBe(
-      '/v11/docs/client/react/useQuery',
+      '/docs/client/react/useQuery',
     );
-    expect(bySource.get('/docs/v11/faq')?.location).toBe('/v11/docs/faq');
-    expect(bySource.get('/docs/v11')?.location).toBe('/v11/docs/introduction');
+    expect(bySource.get('/docs/v11/faq')?.location).toBe('/docs/faq');
+    expect(bySource.get('/docs/v11/server/routers')?.location).toBe(
+      '/docs/server/routers',
+    );
+    expect(bySource.get('/docs/v11')?.location).toBe('/docs/introduction');
     expect(
       [...bySource.keys()].filter((source) =>
         source.startsWith('/docs/v11/v10'),
@@ -221,21 +217,15 @@ describe('oldRedirects', () => {
     ).toEqual([]);
   });
 
-  it('keeps a URL that names v11 on v11, where v12 has the slug too', () => {
-    expect(bySource.get('/docs/v11/server/routers')?.location).toBe(
-      '/v11/docs/server/routers',
-    );
-    expect(bySource.get('/docs/router')?.location).toBe('/docs/server/routers');
-  });
-
-  it("leaves the site's own pages alone", () => {
+  it("leaves the site's own pages alone, v11's among them", () => {
     expect(bySource.has('/docs/server/routers')).toBe(false);
+    expect(bySource.has('/docs/faq')).toBe(false);
     expect(bySource.has('/blog')).toBe(false);
   });
 
   it("fixes trpc.io's redirects to nowhere, and sends retired pages elsewhere", () => {
     expect(bySource.get('/docs/server/api-handler')?.location).toBe(
-      '/v11/docs/server/adapters',
+      '/docs/server/adapters',
     );
     expect(bySource.get('/blog/archive')?.location).toBe('/blog');
     expect(bySource.get('/img/favicon.ico')?.location).toBe('/favicon.ico');
@@ -298,14 +288,19 @@ describe('respond and land', () => {
   ]);
 
   it("answers as Vercel's routes do", () => {
-    expect(respond(all, served, '/docs/getting-started')).toEqual({
+    expect(respond(all, served, '/v12/docs/getting-started')).toEqual({
       kind: 'file',
-      path: '/docs/getting-started',
+      path: '/v12/docs/getting-started',
     });
     expect(respond(all, served, '/nope')).toEqual({ kind: 'missing' });
+    expect(respond(all, served, '/v12/docs')).toEqual({
+      kind: 'redirect',
+      location: '/v12/docs/getting-started',
+      status: 307,
+    });
     expect(respond(all, served, '/docs')).toEqual({
       kind: 'redirect',
-      location: '/docs/getting-started',
+      location: '/docs/introduction',
       status: 307,
     });
   });
@@ -318,8 +313,8 @@ describe('respond and land', () => {
     });
     expect(land(all, served, '/docs/invalidateQueries')).toEqual({
       hash: '#invalidation',
-      hops: ['/v11/docs/client/react/useUtils#invalidation'],
-      landed: { kind: 'file', path: '/v11/docs/client/react/useUtils' },
+      hops: ['/docs/client/react/useUtils#invalidation'],
+      landed: { kind: 'file', path: '/docs/client/react/useUtils' },
     });
   });
 

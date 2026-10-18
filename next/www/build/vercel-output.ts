@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url';
 import { NodeRuntime, NodeServices } from '@effect/platform-node';
 import { Data, Effect, FileSystem, Path, Schema } from 'effect';
 
-import { copiedVersions, site } from '../src/site.ts';
+import { copiedVersions, site, v12 } from '../src/site.ts';
 import {
   oldRedirects,
   onTrpcIoRoutes,
@@ -45,8 +45,9 @@ export const firstDoc = (llmsTxt: string): string | undefined =>
   /\]\([^)\s]*\/docs\/([\w/-]+)\.md\)/.exec(llmsTxt)?.[1];
 
 /**
- * Prerendering writes `/docs/client/links` as `docs/client/links/index.html`;
- * serve it at `/docs/client/links`, without a trailing slash. Markdown and
+ * Prerendering writes `/v12/docs/client/links` as
+ * `v12/docs/client/links/index.html`; serve it at `/v12/docs/client/links`,
+ * without a trailing slash. Markdown and
  * text files get a `charset`, so non-ASCII characters survive. `files` are
  * `/`-separated, relative to the static directory.
  */
@@ -67,8 +68,8 @@ const acceptsMarkdown = [
   { key: 'accept', type: 'header', value: '(.*)text/markdown(.*)' },
 ];
 
-/** Slugs nest: `/docs/client/links`. */
-const docPath = '^/docs/([\\w/-]+)';
+/** A v12 page, the only docs with markdown. Slugs nest: `/v12/docs/client/links`. */
+const docPath = `^${v12.basePath}/([\\w/-]+)`;
 
 /** `old`: the redirects that keep trpc.io's URLs working (`old-routes.ts`). */
 export const routes = (
@@ -77,7 +78,13 @@ export const routes = (
 ): ReadonlyArray<VercelRoute> => [
   { headers: { Location: '/$1' }, src: '^/(.+)/$', status: 308 },
   { headers: { Location: '/$1' }, src: '^/(.+)\\.html$', status: 308 },
-  { headers: { Location: `/docs/${first}` }, src: '^/docs$', status: 307 },
+  {
+    headers: { Location: `${v12.basePath}/${first}` },
+    src: `^${v12.basePath}$`,
+    status: 307,
+  },
+  // The v11 docs were at `/v11/docs` before they took `/docs`.
+  { headers: { Location: '/docs$1' }, src: '^/v11/docs(/.*)?$', status: 308 },
   ...copiedVersions.map((version) => ({
     headers: { Location: `${version.basePath}/${version.firstDoc}` },
     src: `^${version.basePath}$`,
@@ -116,18 +123,22 @@ export const routes = (
   {
     continue: true,
     headers: {
-      Link: '</docs/$1.md>; rel="alternate"; type="text/markdown"',
+      Link: `<${v12.basePath}/$1.md>; rel="alternate"; type="text/markdown"`,
       Vary: 'Accept',
     },
     src: `${docPath}$`,
   },
   {
     continue: true,
-    headers: { Link: `<${site.url}/docs/$1>; rel="canonical"` },
+    headers: { Link: `<${site.url}${v12.basePath}/$1>; rel="canonical"` },
     src: `${docPath}\\.md$`,
   },
   { dest: '/index.md', has: acceptsMarkdown, src: '^/$' },
-  { dest: '/docs/$1.md', has: acceptsMarkdown, src: `${docPath}$` },
+  {
+    dest: `${v12.basePath}/$1.md`,
+    has: acceptsMarkdown,
+    src: `${docPath}$`,
+  },
   { handle: 'filesystem' },
   { handle: 'error' },
   { dest: '/404.md', has: acceptsMarkdown, src: '^/.*$', status: 404 },

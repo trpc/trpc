@@ -17,6 +17,7 @@ import {
   copiedVersions,
   sections,
   site,
+  v12,
 } from './src/site.ts';
 import v9Sections from './v9/sections.json' with { type: 'json' };
 import v10Sections from './v10/sections.json' with { type: 'json' };
@@ -27,7 +28,7 @@ const samplesDir = new URL('samples', import.meta.url).pathname;
 // A copy of trpc.io's blog (`build/old-docs-copy.ts`), served at `/blog`.
 const blogDir = new URL('blog', import.meta.url).pathname;
 // Copies of the older versions' docs (`build/old-docs-copy.ts`), served at
-// `/v11/docs`, `/v10/docs` and `/v9/docs`.
+// `/docs` (v11, the stable release), `/v10/docs` and `/v9/docs`.
 const copiedSections = { v9: v9Sections, v10: v10Sections, v11: v11Sections };
 const copies = copiedVersions.map((version) => ({
   dir: new URL(`${version.id}/docs`, import.meta.url).pathname,
@@ -44,7 +45,7 @@ const lockfile = new URL('../pnpm-lock.yaml', import.meta.url).pathname;
 const faviconFile = new URL('public/favicon.svg', import.meta.url).pathname;
 const [pages, copiedPages, posts, favicon] = await Effect.runPromise(
   Effect.all([
-    docPages({ basePath: '/docs', contentDir, samplesDir }),
+    docPages({ basePath: v12.basePath, contentDir, samplesDir }),
     Effect.forEach(copies, (copy) =>
       Effect.map(
         docPages({
@@ -86,7 +87,7 @@ export default defineConfig({
   plugins: [
     docsContent({
       agentFiles: true,
-      basePath: '/docs',
+      basePath: v12.basePath,
       contentDir,
       manifestId: 'virtual:docs-manifest',
       samplesDir,
@@ -196,7 +197,7 @@ export default defineConfig({
         failOnError: true,
         filter: (page) => {
           const prerendered =
-            page.path !== '/docs' &&
+            page.path !== v12.basePath &&
             copiedVersions.every((version) => page.path !== version.basePath) &&
             // An index route (`/blog/`) is found with its slash, which the
             // host redirects away.
