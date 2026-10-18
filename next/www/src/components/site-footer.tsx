@@ -23,9 +23,6 @@ export function SiteFooter() {
           <Link className="hover:text-foreground" hash="sponsors" to="/">
             Sponsors
           </Link>
-          <Link className="hover:text-foreground" hash="credits" to="/">
-            Credits
-          </Link>
           <a className="hover:text-foreground" href="/llms.txt">
             llms.txt
           </a>
