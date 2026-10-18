@@ -53,7 +53,7 @@ import {
   unexpectedError,
 } from './execute.ts';
 import { emitEvents } from './events.ts';
-import { frameSinks, type FrameSink } from './frame-sink.ts';
+import { CurrentFrameSink, type FrameSink } from './frame-sink.ts';
 import {
   type AnyProcedure,
   resolveProcedure,
@@ -662,7 +662,6 @@ export function createFetchHandler<
     const response = createResponseHandle();
     const { headers } = response;
     const sink: FrameSink = {};
-    if (single) frameSinks.set(response, sink);
     const toResult = (exit: Exit.Exit<unknown, AnyTrpcError>): CallResult => {
       if (Exit.isFailure(exit)) {
         const err = normalizeCause(exit.cause);
@@ -734,6 +733,7 @@ export function createFetchHandler<
         response,
         allowResponse: single,
         parent,
+        services: single ? Context.make(CurrentFrameSink, sink) : undefined,
       }),
       toResult,
     );

@@ -1,13 +1,12 @@
 /**
  * How `experimental_durable()` hands a streamed output's frames to the HTTP
- * handler. The handler registers a sink for an unbatched call; other
+ * handler. The handler provides a sink to an unbatched call; other
  * transports don't, so streamed outputs aren't kept there.
  *
  * @internal
  */
-import type { Stream } from 'effect';
+import { Context, type Stream } from 'effect';
 import type { Chunk, Frame } from '../serializer/stream.ts';
-import type { ResponseHandle } from './procedures/index.ts';
 
 /** @internal */
 export interface FrameSink {
@@ -22,5 +21,8 @@ export interface FrameSink {
     | undefined;
 }
 
-/** @internal */
-export const frameSinks: WeakMap<ResponseHandle, FrameSink> = new WeakMap();
+/** The call's sink, when its transport keeps frames. @internal */
+export const CurrentFrameSink: Context.Reference<FrameSink | undefined> =
+  Context.Reference<FrameSink | undefined>('@trpc12/trpc/FrameSink', {
+    defaultValue: () => undefined,
+  });

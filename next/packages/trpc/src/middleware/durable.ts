@@ -27,7 +27,7 @@ import { danson } from '../serializer/danson.ts';
 import type { Serializer } from '../serializer/index.ts';
 import type { Chunk, Frame } from '../serializer/stream.ts';
 import type { SerializeReturn } from '../serializer/sync.ts';
-import { frameSinks, type FrameSink } from '../server/frame-sink.ts';
+import { CurrentFrameSink } from '../server/frame-sink.ts';
 import {
   makeEffectMiddleware,
   ok,
@@ -220,7 +220,7 @@ export function experimental_durable<TReq extends MiddlewareRequirements = {}>(
         claimTtl,
         streamPollInterval,
       });
-      const sink: FrameSink | undefined = frameSinks.get(opts.response);
+      const sink = yield* CurrentFrameSink;
       const input = yield* fingerprint(serializer, opts.input);
       let local = running.get(backing);
       if (!local) running.set(backing, (local = new Map()));

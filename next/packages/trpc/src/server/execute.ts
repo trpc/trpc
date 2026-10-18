@@ -20,7 +20,7 @@ import {
   type AnyTrpcError,
 } from '../internal/error.ts';
 import { errorConstructors, isDeclaredError } from './declared.ts';
-import { frameSinks } from './frame-sink.ts';
+import { CurrentFrameSink } from './frame-sink.ts';
 import type {
   MiddlewareOpts,
   ResponseHandle,
@@ -535,7 +535,9 @@ export function callProcedure(
       );
     }
     // Kept frames were validated when the first call streamed them.
-    if (frameSinks.get(response)?.replay) return Effect.succeed(value);
+    if (Context.get(services, CurrentFrameSink)?.replay) {
+      return Effect.succeed(value);
+    }
     const output = validated(def);
     if (type !== 'subscription' && output) {
       if (!isStreamSchema(output)) {
