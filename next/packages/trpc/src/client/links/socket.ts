@@ -689,7 +689,8 @@ export function wsLink(opts: WebSocketLinkOptions): SocketLink<any> {
         const socket = yield* Socket.fromWebSocket(
           Effect.acquireRelease(
             Effect.try({
-              try: () => (dialed = new Impl(opts.url)),
+              // Workers' WebSocket takes only a string.
+              try: () => (dialed = new Impl(String(opts.url))),
               catch: (cause) =>
                 new Socket.SocketError({
                   reason: new Socket.SocketOpenError({
