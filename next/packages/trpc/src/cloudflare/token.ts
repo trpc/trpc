@@ -1,6 +1,7 @@
 import { Clock, Effect, Redacted, Result, Schema } from 'effect';
 import { Base64Url } from 'effect/encoding';
 import { TrpcError } from '../internal/error.ts';
+import { failure, Reason, type ReasonOf } from '../internal/failure.ts';
 
 /**
  * Options for {@link connectionToken}.
@@ -43,8 +44,8 @@ export interface ConnectionToken<A> {
 
 const encoder = new TextEncoder();
 
-const unauthorized = (message: string) =>
-  new TrpcError({ code: 'UNAUTHORIZED', message });
+const unauthorized = (problem: ReasonOf<'InvalidConnectionToken'>['problem']) =>
+  failure(Reason.InvalidConnectionToken({ problem }));
 
 /**
  * Signed tokens for hibernating connections. A Worker that has already
@@ -110,7 +111,7 @@ export function connectionToken<S extends Schema.Codec<any, any>>(
   const verify = (token: unknown) =>
     Effect.gen(function* () {
       if (typeof token !== 'string') {
-        return yield* Effect.fail(unauthorized('Missing connection token'));
+        return yield* Effect.fail(unauthorized('missing'));
       }
       const [body, mac, ...rest] = token.split('.');
       const signature = mac === undefined ? undefined : Base64Url.decode(mac);
@@ -122,7 +123,7 @@ export function connectionToken<S extends Schema.Codec<any, any>>(
         signature === undefined ||
         Result.isFailure(signature)
       ) {
-        return yield* Effect.fail(unauthorized('Malformed connection token'));
+        return yield* Effect.fail(unauthorized('malformed'));
       }
       const k = yield* cryptoKey;
       const valid = yield* Effect.promise(() =>
@@ -134,7 +135,7 @@ export function connectionToken<S extends Schema.Codec<any, any>>(
         ),
       );
       if (!valid) {
-        return yield* Effect.fail(unauthorized('Invalid connection token'));
+        return yield* Effect.fail(unauthorized('invalid'));
       }
       const payload = JSON.parse(decoded.success) as {
         c?: unknown;
@@ -142,10 +143,10 @@ export function connectionToken<S extends Schema.Codec<any, any>>(
       };
       const now = yield* Clock.currentTimeMillis;
       if (typeof payload.exp !== 'number' || payload.exp <= now) {
-        return yield* Effect.fail(unauthorized('Expired connection token'));
+        return yield* Effect.fail(unauthorized('expired'));
       }
       return yield* Schema.decodeUnknownEffect(codec)(payload.c).pipe(
-        Effect.mapError(() => unauthorized('Invalid connection token claims')),
+        Effect.mapError(() => unauthorized('claims')),
       );
     });
 

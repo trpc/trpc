@@ -1,5 +1,10 @@
 import { Effect, Schema, Stream } from 'effect';
-import { TrpcError } from '../../internal/error.ts';
+import {
+  failure,
+  Reason,
+  type Failure,
+  type ReasonOf,
+} from '../../internal/failure.ts';
 import type { DansonForm } from '../../internal/types.ts';
 import type { ProcedureInternals, Step } from '../../server/procedure.ts';
 import {
@@ -34,12 +39,8 @@ export interface ValidationLinkOptions {
 /** The issues are the cause: errors outside the procedure's union carry no `data`. */
 const outputMismatch = (
   issues: InputValidationErrorData['issues'],
-): TrpcError<'BAD_RESPONSE'> =>
-  new TrpcError({
-    code: 'BAD_RESPONSE',
-    message: `Response validation failed: ${issues.map((i) => i.message).join('; ')}`,
-    cause: { issues },
-  });
+): Failure<ReasonOf<'ResponseValidationFailed'>> =>
+  failure(Reason.ResponseValidationFailed({ issues }), { issues });
 
 const definitionAt = (
   tree: object,

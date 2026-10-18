@@ -1,6 +1,7 @@
 import { Data } from 'effect';
 import type * as Cause from 'effect/Cause';
 import type { AnySchema, OutOf } from '../server/schema.ts';
+import type { TrpcErrorReason } from './failure.ts';
 
 /**
  * Built-in error codes and their default HTTP status.
@@ -77,6 +78,9 @@ export interface TrpcErrorOptions<TCode extends string, TData> {
   cause?: unknown;
 }
 
+/** The option key `failure()` sets a reason with; users can't. @internal */
+export const REASON: unique symbol = Symbol.for('@trpc12/trpc/ErrorReason');
+
 const YieldableBase: new (args: {
   message: string;
   cause?: unknown;
@@ -122,6 +126,12 @@ export class TrpcError<
   readonly code: TCode;
   readonly data: TData;
   readonly defined: boolean;
+  /**
+   * Why tRPC failed the call, when tRPC made the error
+   * (`Predicate.isTagged(err.reason, 'BodyTooLarge')`). Never sent across a
+   * wire.
+   */
+  declare readonly reason?: TrpcErrorReason;
 
   constructor(opts: TrpcErrorOptions<TCode, TData>) {
     super({
@@ -132,6 +142,8 @@ export class TrpcError<
     this.code = opts.code;
     this.data = opts.data as TData;
     this.defined = opts.defined ?? false;
+    const reason = (opts as { [REASON]?: TrpcErrorReason })[REASON];
+    if (reason !== undefined) this.reason = reason;
   }
 
   /**
@@ -419,10 +431,14 @@ export function withDefined<E extends AnyTrpcError>(
       data: err.data,
       defined,
       cause: err.cause,
+      ...reasonOption(err),
     }),
     statusOf(err),
   ) as E;
 }
+
+const reasonOption = (err: AnyTrpcError): { [REASON]?: TrpcErrorReason } =>
+  err.reason === undefined ? {} : { [REASON]: err.reason };
 
 /**
  * `err` as clients type it. Defined errors stay as they are. Anything else
@@ -441,6 +457,7 @@ export function toBuiltinError(
     code: isBuiltinCode(err.code) ? err.code : fallback,
     message: err.message,
     cause: err,
+    ...reasonOption(err),
   });
 }
 
@@ -492,22 +509,3 @@ export function fromWireError(body: unknown): TrpcError {
     'INTERNAL_SERVER_ERROR',
   ) as TrpcError;
 }
-
-/**
- * What a streamed value rejects with when its stream dies or ends early,
- * for `Serializer.deserializeStream`.
- * @internal
- */
-export const streamErrors = {
-  streamFailed: (cause: unknown): AnyTrpcError =>
-    new TrpcError({
-      code: 'INTERNAL_SERVER_ERROR',
-      message: 'Stream failed',
-      cause,
-    }),
-  streamInterrupted: (): AnyTrpcError =>
-    new TrpcError({
-      code: 'STREAM_INTERRUPTED',
-      message: 'Stream interrupted',
-    }),
-};

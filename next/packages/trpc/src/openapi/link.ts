@@ -1,12 +1,8 @@
 import { Effect, Stream } from 'effect';
 import type { Operation, OperationStream, TrpcLink } from '../client/link.ts';
 import type { ContractJson } from '../contract/index.ts';
-import {
-  codeOfStatus,
-  isTrpcError,
-  TrpcError,
-  type AnyTrpcError,
-} from '../internal/error.ts';
+import type { AnyTrpcError } from '../internal/error.ts';
+import { failure, fetchError, Reason } from '../internal/failure.ts';
 import { parseSse } from '../internal/protocol.ts';
 import type { JsonForm } from '../internal/types.ts';
 import { toBracketNotation } from './bracket.ts';
@@ -40,26 +36,6 @@ export interface OpenApiLinkOptions {
     | ((opts: { op: Operation }) => HeadersInit | Promise<HeadersInit>);
   fetch?: typeof globalThis.fetch;
 }
-
-const isAbort = (cause: unknown) =>
-  cause instanceof Error && cause.name === 'AbortError';
-
-const toError = (cause: unknown): AnyTrpcError =>
-  isTrpcError(cause)
-    ? cause
-    : new TrpcError(
-        isAbort(cause)
-          ? {
-              code: 'CLIENT_CLOSED_REQUEST',
-              message: 'The request was aborted',
-              cause,
-            }
-          : {
-              code: 'NETWORK_ERROR',
-              message: cause instanceof Error ? cause.message : 'Network error',
-              cause,
-            },
-      );
 
 const isPlainObject = (v: unknown): v is Record<string, unknown> =>
   typeof v === 'object' &&
@@ -104,10 +80,7 @@ export function openApiLink(
     if (!route) {
       const procedure = opts.contract.procedures[op.path];
       if (!procedure) {
-        throw new TrpcError({
-          code: 'NOT_FOUND',
-          message: `"${op.path}" is not in the contract`,
-        });
+        throw failure(Reason.NotInContract({ path: op.path }));
       }
       route = resolveRoute(op.path, procedure.type, procedure.route, prefix);
       routes.set(op.path, route);
@@ -184,11 +157,7 @@ export function openApiLink(
     try {
       return fromOpenApiError(JSON.parse(text), res.status);
     } catch (cause) {
-      return new TrpcError({
-        code: codeOfStatus(res.status) ?? 'BAD_RESPONSE',
-        message: `Unexpected ${res.status} response`,
-        cause,
-      });
+      return failure(Reason.UnexpectedStatus({ status: res.status }), cause);
     }
   }
 
@@ -232,7 +201,7 @@ export function openApiLink(
         Effect.tryPromise({
           try: async (signal) =>
             readResult(op, await request(op, linked(signal, op))),
-          catch: toError,
+          catch: fetchError,
         }),
       );
     }
@@ -241,7 +210,7 @@ export function openApiLink(
         const controller = new AbortController();
         return Stream.fromAsyncIterable(
           events(op, linked(controller.signal, op)),
-          toError,
+          fetchError,
         ).pipe(Stream.ensuring(Effect.sync(() => controller.abort())));
       }),
     );

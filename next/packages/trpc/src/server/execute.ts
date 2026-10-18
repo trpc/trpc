@@ -19,6 +19,7 @@ import {
   withStatusHint,
   type AnyTrpcError,
 } from '../internal/error.ts';
+import { failure, Reason } from '../internal/failure.ts';
 import { errorConstructors, isDeclaredError } from './declared.ts';
 import { frameSinks } from './frame-sink.ts';
 import type { MiddlewareOpts, ResponseHandle } from './middleware.ts';
@@ -55,11 +56,7 @@ const attempt = <A>(fn: () => A | PromiseLike<A>): Effect.Effect<A> =>
 
 /** Wraps a thrown non-`TrpcError` value. Its message is masked in production. @internal */
 export function unexpectedError(cause: unknown): AnyTrpcError {
-  const err = new TrpcError({
-    code: 'INTERNAL_SERVER_ERROR',
-    message: cause instanceof Error ? cause.message : 'Internal server error',
-    cause,
-  });
+  const err = failure(Reason.Unexpected(), cause);
   unexpectedErrors.add(err);
   return err;
 }
@@ -102,10 +99,7 @@ export function normalizeCause(cause: Cause.Cause<unknown>): AnyTrpcError {
         : undeclared(reason.defect);
     }
   }
-  return new TrpcError({
-    code: 'CLIENT_CLOSED_REQUEST',
-    message: 'The request was aborted',
-  });
+  return failure(Reason.Aborted());
 }
 
 const isPlainObject = (value: unknown): value is Record<string, unknown> =>
@@ -466,12 +460,7 @@ export function callProcedure(
   ): Out => {
     const resolver = def.resolver;
     if (!resolver) {
-      return Effect.fail(
-        new TrpcError({
-          code: 'NOT_IMPLEMENTED',
-          message: `"${path}" is a contract procedure without an implementation`,
-        }),
-      );
+      return Effect.fail(failure(Reason.NotImplemented({ path })));
     }
     let ret: unknown;
     try {
@@ -519,12 +508,7 @@ export function callProcedure(
       : finish(result, services);
     if (isResponseValue(value)) {
       if (!opts.allowResponse) {
-        return Effect.fail(
-          new TrpcError({
-            code: 'BAD_REQUEST',
-            message: `"${path}" returns a Response, which only an unbatched HTTP call can carry`,
-          }),
-        );
+        return Effect.fail(failure(Reason.ResponseNeedsHttp({ path })));
       }
       return Effect.succeed(
         HttpServerResponse.isHttpServerResponse(value)

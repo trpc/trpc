@@ -2,10 +2,9 @@ import { Context, Effect, ManagedRuntime, Stream, type Layer } from 'effect';
 import {
   fromWireError,
   isTrpcError,
-  streamErrors,
   toWireError,
-  TrpcError,
 } from '../../internal/error.ts';
+import { failure, Reason, streamErrors } from '../../internal/failure.ts';
 import type {
   DansonForm,
   FormOfSerializer,
@@ -94,18 +93,18 @@ export function localLink<TRouter extends AnyRouter>(
           );
           if (!procedure) {
             return yield* Effect.fail(
-              new TrpcError({
-                code: 'NOT_FOUND',
-                message: `No procedure at path "${op.path}"`,
-              }),
+              failure(Reason.ProcedureNotFound({ path: op.path })),
             );
           }
           if (procedure['~trpc'].type !== op.type) {
             return yield* Effect.fail(
-              new TrpcError({
-                code: 'METHOD_NOT_SUPPORTED',
-                message: `"${op.path}" is a ${procedure['~trpc'].type}, not a ${op.type}`,
-              }),
+              failure(
+                Reason.WrongProcedureType({
+                  path: op.path,
+                  type: procedure['~trpc'].type,
+                  expected: op.type,
+                }),
+              ),
             );
           }
           const context = yield* Effect.promise(getServices);

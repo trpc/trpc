@@ -1,12 +1,15 @@
 import { Cause, Effect, Option, Queue, Stream } from 'effect';
 import {
-  codeOfStatus,
   fromWireError,
   isTrpcError,
-  streamErrors,
-  TrpcError,
   type AnyTrpcError,
 } from '../../internal/error.ts';
+import {
+  failure,
+  fetchError,
+  Reason,
+  streamErrors,
+} from '../../internal/failure.ts';
 import {
   CONTENT_TYPE,
   HEADER,
@@ -38,7 +41,7 @@ import {
 } from '../link.ts';
 import {
   makeDeferredDecoder,
-  badResponse,
+  undecodable,
   serializeInput,
   type DeferredDecoder,
 } from './events.ts';
@@ -140,25 +143,6 @@ export type HttpLinkDecl<TOpts> = {
     ? { unsupported: 'subscription' }
     : {});
 
-const isAbort = (cause: unknown) =>
-  cause instanceof Error && cause.name === 'AbortError';
-
-function toHttpError(cause: unknown): AnyTrpcError {
-  if (isTrpcError(cause)) return cause;
-  if (isAbort(cause)) {
-    return new TrpcError({
-      code: 'CLIENT_CLOSED_REQUEST',
-      message: 'The request was aborted',
-      cause,
-    });
-  }
-  return new TrpcError({
-    code: 'NETWORK_ERROR',
-    message: cause instanceof Error ? cause.message : 'Network error',
-    cause,
-  });
-}
-
 /**
  * Calls batch together only when their `init`s are equal. `undefined` for
  * an `init` that can't be compared (it holds something JSON can't write).
@@ -215,10 +199,13 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
     const theirs = res.headers.get(HEADER.serializer);
     if (theirs !== null && theirs !== serializer.name) {
       await res.body?.cancel().catch(() => {});
-      throw new TrpcError({
-        code: 'UNSUPPORTED_PROTOCOL',
-        message: `The server uses the '${theirs}' serializer, but this httpLink uses '${serializer.name}'. Pass the same serializer to the handler and httpLink.`,
-      });
+      throw failure(
+        Reason.SerializerMismatch({
+          server: theirs,
+          client: serializer.name,
+          transport: 'httpLink',
+        }),
+      );
     }
     return res;
   };
@@ -308,11 +295,7 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
     try {
       return fromWireError(serializer.deserialize(JSON.parse(text)));
     } catch (cause) {
-      return new TrpcError({
-        code: codeOfStatus(res.status) ?? 'BAD_RESPONSE',
-        message: `Unexpected ${res.status} response`,
-        cause,
-      });
+      return failure(Reason.UnexpectedStatus({ status: res.status }), cause);
     }
   }
 
@@ -330,10 +313,10 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
       ? decodeRecords(
           Stream.fromReadableStream({
             evaluate: () => body,
-            onError: toHttpError,
+            onError: fetchError,
           }),
         )
-      : Stream.fromAsyncIterable(readLines(body), toHttpError).pipe(
+      : Stream.fromAsyncIterable(readLines(body), fetchError).pipe(
           Stream.map((line) => JSON.parse(line) as unknown),
         );
 
@@ -390,16 +373,14 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
                     if (!res.ok) throw await readError(res);
                     const type = res.headers.get('content-type') ?? '';
                     if (!streamed(type) || !res.body) {
-                      throw badResponse(
-                        'A resumed call answered without frames',
-                      )();
+                      throw failure(Reason.MissingFrames());
                     }
                     return readStream(type, res.body) as Stream.Stream<
                       Frame,
                       AnyTrpcError
                     >;
                   },
-                  catch: toHttpError,
+                  catch: fetchError,
                 }),
               ),
               Effect.match({
@@ -493,7 +474,7 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
           report(op, res.status, res.headers);
           return readResult(res, op);
         },
-        catch: toHttpError,
+        catch: fetchError,
       }),
     );
 
@@ -551,7 +532,7 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
             try {
               error = fromWireError(serializer.deserialize(line.body as never));
             } catch (cause) {
-              error = badResponse('Invalid error message')(cause);
+              error = undecodable('error')(cause);
             }
             item.reject(error);
             Queue.endUnsafe(queue);
@@ -567,7 +548,7 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
               Effect.matchCause({
                 onSuccess: item.resolve,
                 onFailure: (cause) =>
-                  item.reject(toHttpError(Cause.squash(cause))),
+                  item.reject(fetchError(Cause.squash(cause))),
               }),
               Effect.forkDetach,
             );
@@ -598,7 +579,7 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
                   },
                 ),
               ),
-            catch: toHttpError,
+            catch: fetchError,
           });
           if (!res.ok || !res.body) {
             const err = yield* Effect.promise(() => readError(res));
@@ -619,12 +600,10 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
           ).pipe(
             Stream.runForEach((line) => onLine(line as BatchLine, res.headers)),
           );
-          rejectRest(
-            badResponse('The batch response ended without a result')(),
-          );
+          rejectRest(failure(Reason.BatchEndedEarly()));
         }).pipe(
           Effect.catchCause((cause) =>
-            Effect.sync(() => rejectRest(toHttpError(Cause.squash(cause)))),
+            Effect.sync(() => rejectRest(fetchError(Cause.squash(cause)))),
           ),
           Effect.ensuring(
             Effect.sync(() => {
@@ -741,7 +720,7 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
                 Effect.map((value) => {
                   Queue.offerUnsafe(
                     queue,
-                    Effect.mapError(value, badResponse('Invalid event')),
+                    Effect.mapError(value, undecodable('event')),
                   );
                   return false;
                 }),
@@ -765,7 +744,7 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
             catch: (cause) => cause,
           }).pipe(
             Effect.catch((cause) =>
-              giveUp() ? Effect.fail(toHttpError(cause)) : Effect.succeed(null),
+              giveUp() ? Effect.fail(fetchError(cause)) : Effect.succeed(null),
             ),
           );
           if (!res) return false;
@@ -795,12 +774,7 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
           );
           if (ended) return true;
           if (giveUp()) {
-            return yield* Effect.fail(
-              new TrpcError({
-                code: 'NETWORK_ERROR',
-                message: 'The subscription connection was lost',
-              }),
-            );
+            return yield* Effect.fail(failure(Reason.SubscriptionLost()));
           }
           return false;
         });
@@ -834,12 +808,7 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
     (({ op }) => {
       if (op.type === 'subscription') {
         if (opts.subscriptions === false) {
-          return Stream.fail(
-            new TrpcError({
-              code: 'METHOD_NOT_SUPPORTED',
-              message: 'This httpLink has subscriptions turned off',
-            }),
-          );
+          return Stream.fail(failure(Reason.SubscriptionsDisabled()));
         }
         return subscription(op);
       }

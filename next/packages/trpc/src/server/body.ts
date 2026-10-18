@@ -1,6 +1,11 @@
 import { Effect, Stream } from 'effect';
 import { Cookies, type HttpServerRequest } from 'effect/http';
-import { TrpcError, type AnyTrpcError } from '../internal/error.ts';
+import {
+  failure,
+  Reason,
+  type Failure,
+  type ReasonOf,
+} from '../internal/failure.ts';
 import { isJsonContentType } from '../internal/protocol.ts';
 
 const encoder = new TextEncoder();
@@ -40,12 +45,8 @@ export const parsedBody = (
 };
 
 /** @internal */
-export const consumedError = (): AnyTrpcError =>
-  new TrpcError({
-    code: 'INTERNAL_SERVER_ERROR',
-    message:
-      'The request body was already read by another middleware. Mount tRPC before body parsers, or use one that sets req.body.',
-  });
+export const consumedError = (): Failure<ReasonOf<'BodyConsumed'>> =>
+  failure(Reason.BodyConsumed());
 
 /**
  * The body, at most `maxBodySize` bytes. Past it, the rest is drained, not
@@ -56,12 +57,12 @@ export const consumedError = (): AnyTrpcError =>
 export const readBytes = (
   request: HttpServerRequest.HttpServerRequest,
   maxBodySize: number,
-): Effect.Effect<Uint8Array, AnyTrpcError> =>
+): Effect.Effect<
+  Uint8Array,
+  Failure<ReasonOf<'BodyTooLarge' | 'BodyConsumed' | 'BodyUnreadable'>>
+> =>
   Effect.gen(function* () {
-    const tooLarge = new TrpcError({
-      code: 'PAYLOAD_TOO_LARGE',
-      message: 'Request body is too large',
-    });
+    const tooLarge = failure(Reason.BodyTooLarge({ limit: maxBodySize }));
     if (Number(request.headers['content-length'] ?? 0) > maxBodySize) {
       return yield* Effect.fail(tooLarge);
     }
@@ -81,14 +82,7 @@ export const readBytes = (
           if (size <= maxBodySize) chunks.push(chunk);
         }),
       ).pipe(
-        Effect.mapError(
-          (cause) =>
-            new TrpcError({
-              code: 'BAD_REQUEST',
-              message: 'Could not read the request body',
-              cause,
-            }),
-        ),
+        Effect.mapError((cause) => failure(Reason.BodyUnreadable(), cause)),
       );
     }
     if (size > maxBodySize) return yield* Effect.fail(tooLarge);

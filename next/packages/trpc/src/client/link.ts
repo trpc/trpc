@@ -2,9 +2,9 @@ import { Cause, Effect, Option, Stream, Tracer } from 'effect';
 import {
   isTrpcError,
   toBuiltinError,
-  TrpcError,
   type AnyTrpcError,
 } from '../internal/error.ts';
+import { failure, Reason } from '../internal/failure.ts';
 import type { OutputForm, ProcedureType } from '../internal/types.ts';
 import type { AnySerializer } from '../serializer/index.ts';
 
@@ -205,11 +205,7 @@ export type DeclContext<TDecl> = TDecl extends { context: infer C }
  */
 export function toClientError(cause: unknown): AnyTrpcError {
   if (isTrpcError(cause)) return toBuiltinError(cause, 'CLIENT_ERROR');
-  return new TrpcError({
-    code: 'CLIENT_ERROR',
-    message: cause instanceof Error ? cause.message : String(cause),
-    cause,
-  });
+  return failure(Reason.LinkFailed(), cause);
 }
 
 /**
@@ -225,10 +221,7 @@ export function clientErrorFromCause(
   for (const reason of cause.reasons) {
     if (Cause.isDieReason(reason)) return toClientError(reason.defect);
   }
-  return new TrpcError({
-    code: 'CLIENT_CLOSED_REQUEST',
-    message: 'The request was aborted',
-  });
+  return failure(Reason.Aborted());
 }
 
 /**
@@ -243,12 +236,7 @@ export const firstValue = (
     Effect.flatMap((value) =>
       Option.isSome(value)
         ? Effect.succeed(value.value)
-        : Effect.fail(
-            new TrpcError({
-              code: 'CLIENT_ERROR',
-              message: 'The link chain ended without a result',
-            }),
-          ),
+        : Effect.fail(failure(Reason.ChainEnded())),
     ),
   );
 
@@ -388,12 +376,7 @@ export function runLinks(
     (o: Operation): OperationStream => {
       const current = links[i];
       if (!current) {
-        return Stream.fail(
-          new TrpcError({
-            code: 'CLIENT_ERROR',
-            message: 'The last link must send the request (e.g. httpLink)',
-          }),
-        );
+        return Stream.fail(failure(Reason.NoTerminatingLink()));
       }
       return Stream.suspend(() => current({ op: o, next: at(i + 1) }));
     };

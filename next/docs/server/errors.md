@@ -101,6 +101,23 @@ Effect.catchTag('NOT_FOUND', () => Effect.succeed(null));
 
 A failure that isn't a `TrpcError` is a type error until it is mapped, so internals never reach clients. `TrpcError.Tagged` classes mark the errors clients may see ([Effect](./effect.md#errors-clients-may-see)).
 
+## tRPC's own failures
+
+When tRPC fails a call itself (a body it can't parse, a path with no procedure, a lost connection), the error's `reason` says which failure it was. Several share a code: a `PARSE_ERROR` is `InvalidJson`, `InvalidMultipart` or `UndecodableInput`, among others. The `TrpcErrorReason` type lists them all.
+
+A reason stays on the side that made the error. `onError` sees the server's; on the client, only errors a link made have one (`FetchFailed`, `SerializerMismatch`, …). Errors you make have none.
+
+```ts
+createFetchHandler({
+  router,
+  onError: (opts) => {
+    if (Predicate.isTagged(opts.error.reason, 'BodyTooLarge')) {
+      console.warn(`A body went over ${opts.error.reason.limit} bytes`);
+    }
+  },
+});
+```
+
 ## Credits
 
 Declared errors with `.errors()` follow [oRPC's typed errors](https://orpc.dev/docs/error-handling).

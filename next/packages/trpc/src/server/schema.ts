@@ -7,6 +7,12 @@ import {
   type SchemaAST,
 } from 'effect';
 import { TrpcError } from '../internal/error.ts';
+import {
+  failure,
+  Reason,
+  type Failure,
+  type ReasonOf,
+} from '../internal/failure.ts';
 
 /**
  * A [Standard Schema](https://standardschema.dev) issue.
@@ -504,11 +510,10 @@ export const inputError = (
 /** @internal */
 export const outputError = (
   issues: InputValidationErrorData['issues'],
-): TrpcError<'INTERNAL_SERVER_ERROR'> =>
-  new TrpcError({
-    code: 'INTERNAL_SERVER_ERROR',
-    message: 'Output validation failed',
-    cause: new Error(
+): Failure<ReasonOf<'InvalidOutput'>> =>
+  failure(
+    Reason.InvalidOutput(),
+    new Error(
       `Output validation failed: ${issues.map((i) => i.message).join('; ')}`,
     ),
-  });
+  );

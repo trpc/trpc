@@ -20,9 +20,9 @@ import {
   isTrpcError,
   statusOf,
   toWireError,
-  TrpcError,
   type AnyTrpcError,
 } from '../internal/error.ts';
+import { failure, Reason, type Failure } from '../internal/failure.ts';
 import {
   blobHeaders,
   CONTENT_TYPE,
@@ -338,8 +338,8 @@ export interface FetchHandler<TPlatform = undefined> {
 
 const decoder = new TextDecoder();
 
-const protocolError = (code: string, message: string) =>
-  new TrpcError({ code, message });
+const undecodableInput = (cause: unknown): Failure =>
+  failure(Reason.UndecodableInput(), cause);
 
 /** The `platform` of the request being handled. @internal */
 export const CurrentPlatform: Context.Reference<unknown> =
@@ -525,8 +525,7 @@ export function createFetchHandler<
   const parseJson = (text: string) =>
     Effect.try({
       try: () => (text === '' ? undefined : (JSON.parse(text) as unknown)),
-      catch: (cause) =>
-        new TrpcError({ code: 'PARSE_ERROR', message: 'Invalid JSON', cause }),
+      catch: (cause) => failure(Reason.InvalidJson(), cause),
     });
 
   const readBody = (request: HttpServerRequest.HttpServerRequest) =>
@@ -535,34 +534,29 @@ export function createFetchHandler<
         return yield* Effect.fail(consumedError());
       }
       if (!isJsonContentType(request.headers['content-type'] ?? null)) {
-        return yield* Effect.fail(
-          protocolError(
-            'UNSUPPORTED_MEDIA_TYPE',
-            'POST requests must have content-type: application/json',
-          ),
-        );
+        return yield* Effect.fail(failure(Reason.JsonContentTypeRequired()));
       }
       const bytes = yield* readBytes(request);
       return yield* parseJson(decoder.decode(bytes));
     });
 
-  const deserializeInput = (value: unknown, parts?: ReadonlyArray<Blob>) => {
-    if (value === undefined) return undefined;
-    try {
-      return serializer.deserialize(value as never, { input: true, parts });
-    } catch (cause) {
-      throw new TrpcError({
-        code: 'PARSE_ERROR',
-        message: cause instanceof Error ? cause.message : 'Invalid input',
-        cause,
-      });
-    }
-  };
+  const decodeInput = (value: unknown, parts?: ReadonlyArray<Blob>) =>
+    value === undefined
+      ? undefined
+      : serializer.deserialize(value as never, { input: true, parts });
   const deserialize = (value: unknown, parts?: ReadonlyArray<Blob>) =>
     Effect.try({
-      try: () => deserializeInput(value, parts),
-      catch: (cause) => cause as AnyTrpcError,
+      try: () => decodeInput(value, parts),
+      catch: undecodableInput,
     });
+  /** For the socket handler, which isn't on Effect yet. */
+  const deserializeInput = (value: unknown) => {
+    try {
+      return decodeInput(value);
+    } catch (cause) {
+      throw undecodableInput(cause);
+    }
+  };
 
   /** An `input` field with the serialized JSON, and parts `0`, `1`, … for its blobs. */
   const readMultipart = (request: HttpServerRequest.HttpServerRequest) =>
@@ -574,21 +568,11 @@ export function createFetchHandler<
             // Only multipart requests get here.
             headers: { 'content-type': request.headers['content-type']! },
           }).formData(),
-        catch: (cause) =>
-          new TrpcError({
-            code: 'PARSE_ERROR',
-            message: 'Invalid multipart body',
-            cause,
-          }),
+        catch: (cause) => failure(Reason.InvalidMultipart(), cause),
       });
       const field = form.get('input');
       if (typeof field !== 'string') {
-        return yield* Effect.fail(
-          protocolError(
-            'BAD_REQUEST',
-            'A multipart body needs an "input" field',
-          ),
-        );
+        return yield* Effect.fail(failure(Reason.MultipartWithoutInput()));
       }
       const value = yield* parseJson(field);
       const parts: Blob[] = [];
@@ -607,28 +591,17 @@ export function createFetchHandler<
   ): Effect.Effect<unknown, AnyTrpcError> => {
     if (request.method === 'GET') {
       if (search.length <= 1) return noInput;
-      try {
-        const value = fromInputSearch(search);
-        return value === undefined
-          ? noInput
-          : Effect.succeed(serializer.deserialize(value, { input: true }));
-      } catch (cause) {
-        return Effect.fail(
-          new TrpcError({
-            code: 'PARSE_ERROR',
-            message: cause instanceof Error ? cause.message : 'Invalid input',
-            cause,
-          }),
-        );
-      }
+      return Effect.try({
+        try: () => decodeInput(fromInputSearch(search)),
+        catch: undecodableInput,
+      });
     }
     if (isMultipartContentType(request.headers['content-type'] ?? null)) {
       // A cross-site form can send multipart without a preflight; it can't add a header.
       if (request.headers[HEADER.version] === undefined) {
         return Effect.fail(
-          protocolError(
-            'UNSUPPORTED_MEDIA_TYPE',
-            `multipart/form-data requests need the ${HEADER.version} header`,
+          failure(
+            Reason.MultipartWithoutVersionHeader({ header: HEADER.version }),
           ),
         );
       }
@@ -839,15 +812,11 @@ export function createFetchHandler<
     parent: Tracer.AnySpan | undefined,
   ): Effect.Effect<HttpServerResponse.HttpServerResponse, AnyTrpcError> => {
     if (!procedure) {
-      return Effect.fail(
-        protocolError('NOT_FOUND', `No procedure at path "${path}"`),
-      );
+      return Effect.fail(failure(Reason.ProcedureNotFound({ path })));
     }
     const type = procedure['~trpc'].type;
     if (type === 'mutation' && request.method !== 'POST') {
-      return Effect.fail(
-        protocolError('METHOD_NOT_SUPPORTED', 'Mutations must use POST'),
-      );
+      return Effect.fail(failure(Reason.MutationNeedsPost()));
     }
     if (
       request.method !== 'GET' &&
@@ -855,10 +824,7 @@ export function createFetchHandler<
       !((request.method as string) === 'QUERY' && type !== 'mutation')
     ) {
       return Effect.fail(
-        protocolError(
-          'METHOD_NOT_SUPPORTED',
-          `${request.method} is not supported`,
-        ),
+        failure(Reason.MethodNotSupported({ method: request.method })),
       );
     }
     const controller = new AbortController();
@@ -1052,27 +1018,18 @@ export function createFetchHandler<
   ): Effect.Effect<HttpServerResponse.HttpServerResponse, AnyTrpcError> =>
     Effect.gen(function* () {
       if (!batch) {
-        return yield* Effect.fail(
-          protocolError('BAD_REQUEST', 'Batching is not enabled'),
-        );
+        return yield* Effect.fail(failure(Reason.BatchingDisabled()));
       }
       if (request.method !== 'POST') {
-        return yield* Effect.fail(
-          protocolError('METHOD_NOT_SUPPORTED', 'Batches must use POST'),
-        );
+        return yield* Effect.fail(failure(Reason.BatchNeedsPost()));
       }
       const body = yield* readBody(request);
       if (!Array.isArray(body)) {
-        return yield* Effect.fail(
-          protocolError('BAD_REQUEST', 'A batch body must be an array'),
-        );
+        return yield* Effect.fail(failure(Reason.BatchNotArray()));
       }
       if (body.length > batch.maxItems) {
         return yield* Effect.fail(
-          protocolError(
-            'PAYLOAD_TOO_LARGE',
-            `A batch can have at most ${batch.maxItems} calls`,
-          ),
+          failure(Reason.BatchTooLarge({ maxItems: batch.maxItems })),
         );
       }
       const calls = yield* Effect.promise(() =>
@@ -1105,18 +1062,12 @@ export function createFetchHandler<
             Effect.gen(function* () {
               if (!call.procedure) {
                 return yield* Effect.fail(
-                  protocolError(
-                    'NOT_FOUND',
-                    `No procedure at path "${call.path}"`,
-                  ),
+                  failure(Reason.ProcedureNotFound({ path: call.path })),
                 );
               }
               if (call.procedure['~trpc'].type === 'subscription') {
                 return yield* Effect.fail(
-                  protocolError(
-                    'BAD_REQUEST',
-                    'Subscriptions cannot be batched',
-                  ),
+                  failure(Reason.SubscriptionInBatch()),
                 );
               }
               const input = yield* deserialize(call.input);
@@ -1194,14 +1145,16 @@ export function createFetchHandler<
     const version = request.headers[HEADER.version];
     if (version !== undefined && version !== PROTOCOL_VERSION) {
       return Effect.fail(
-        protocolError(
-          'UNSUPPORTED_PROTOCOL',
-          `Unsupported protocol version "${version}", expected "${PROTOCOL_VERSION}"`,
+        failure(
+          Reason.UnsupportedProtocolVersion({
+            version,
+            expected: PROTOCOL_VERSION,
+          }),
         ),
       );
     }
     if (pathname !== endpoint && !pathname.startsWith(under)) {
-      return Effect.fail(protocolError('NOT_FOUND', `Not found: ${pathname}`));
+      return Effect.fail(failure(Reason.RouteNotFound({ path: pathname })));
     }
     const rest = pathname.slice(under.length);
     const parent = parentSpanIn(request, context);

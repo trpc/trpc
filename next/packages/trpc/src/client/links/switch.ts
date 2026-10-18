@@ -1,5 +1,5 @@
 import { Stream } from 'effect';
-import { TrpcError } from '../../internal/error.ts';
+import { failure, Reason } from '../../internal/failure.ts';
 import {
   chainSerializer,
   chainSwitchNames,
@@ -145,12 +145,7 @@ export function switchLink<
     const key = typeof forced === 'string' ? forced : opts.pick(op as never);
     const chain = branches.get(key);
     if (!chain) {
-      return Stream.fail(
-        new TrpcError({
-          code: 'CLIENT_ERROR',
-          message: `switchLink "${name}" has no link "${key}"`,
-        }),
-      );
+      return Stream.fail(failure(Reason.UnknownSwitchCase({ name, key })));
     }
     return runLinks(chain, op);
   });

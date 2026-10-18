@@ -8,9 +8,9 @@ import {
 import {
   isTrpcError,
   toWireError,
-  TrpcError,
   type AnyTrpcError,
 } from '../internal/error.ts';
+import { failure, Reason } from '../internal/failure.ts';
 import {
   PROTOCOL_VERSION,
   type ClientMessage,
@@ -318,10 +318,7 @@ export function connectionReceiver(
   const receive = (raw: unknown) => {
     if (closed) return;
     if (!isRecord(raw) || typeof raw['type'] !== 'string') {
-      sendError(
-        null,
-        new TrpcError({ code: 'PARSE_ERROR', message: 'Invalid message' }),
-      );
+      sendError(null, failure(Reason.InvalidMessage()));
       return;
     }
     const message = raw as ClientMessage;
@@ -330,10 +327,12 @@ export function connectionReceiver(
         if (message.version !== PROTOCOL_VERSION) {
           sendError(
             null,
-            new TrpcError({
-              code: 'UNSUPPORTED_PROTOCOL',
-              message: `Unsupported protocol version "${String(message.version)}", expected "${PROTOCOL_VERSION}"`,
-            }),
+            failure(
+              Reason.UnsupportedProtocolVersion({
+                version: String(message.version),
+                expected: PROTOCOL_VERSION,
+              }),
+            ),
           );
           conn.close(1002, 'Unsupported protocol version');
           return;
@@ -362,23 +361,14 @@ export function connectionReceiver(
       case 'request': {
         if (refused) return;
         if (typeof message.id !== 'number' || calls.has(message.id)) {
-          sendError(
-            null,
-            new TrpcError({
-              code: 'BAD_REQUEST',
-              message: 'Each request needs a unique numeric id',
-            }),
-          );
+          sendError(null, failure(Reason.DuplicateRequestId()));
           return;
         }
         void handle(message);
         return;
       }
       default:
-        sendError(
-          null,
-          new TrpcError({ code: 'BAD_REQUEST', message: 'Unknown message' }),
-        );
+        sendError(null, failure(Reason.UnknownMessage()));
     }
   };
 
@@ -397,16 +387,16 @@ export function connectionReceiver(
       const procedure = await resolveProcedure(core.router, path);
       type = procedure?.['~trpc'].type;
       if (!procedure || !type) {
-        throw new TrpcError({
-          code: 'NOT_FOUND',
-          message: `No procedure at path "${path}"`,
-        });
+        throw failure(Reason.ProcedureNotFound({ path }));
       }
       if (type !== message.method) {
-        throw new TrpcError({
-          code: 'METHOD_NOT_SUPPORTED',
-          message: `"${path}" is a ${type}, not a ${String(message.method)}`,
-        });
+        throw failure(
+          Reason.WrongProcedureType({
+            path,
+            type,
+            expected: String(message.method),
+          }),
+        );
       }
       const input = core.deserializeInput(message.input);
       const ctx = await core.makeContext({

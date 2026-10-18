@@ -21,6 +21,7 @@ import {
   type AnyTrpcError,
   type WireError,
 } from '../internal/error.ts';
+import { failure, Reason } from '../internal/failure.ts';
 import { HEADER } from '../internal/protocol.ts';
 import type { Unset } from '../internal/types.ts';
 import { danson } from '../serializer/danson.ts';
@@ -129,11 +130,7 @@ const fingerprint = (
     return btoa(String.fromCharCode(...new Uint8Array(digest)));
   });
 
-const conflict = () =>
-  new TrpcError({
-    code: 'CONFLICT',
-    message: 'This call id was used with a different input',
-  });
+const conflict = () => failure(Reason.CallIdReused());
 
 /**
  * Keeps a query's or mutation's result, so a client that lost the response
@@ -198,17 +195,11 @@ export function experimental_durable<TReq extends MiddlewareRequirements = {}>(
         Option.isSome(request) ? request.value.headers[name] : undefined;
       const callId = header(HEADER.callId);
       if (callId !== undefined && !CALL_ID.test(callId)) {
-        return new TrpcError({
-          code: 'BAD_REQUEST',
-          message: `${HEADER.callId} must be 1 to 128 letters, digits, "_", "-", "." or ":"`,
-        });
+        return failure(Reason.InvalidCallId({ header: HEADER.callId }));
       }
       const resumeFrom = header(HEADER.resumeFrom);
       if (resumeFrom !== undefined && !RESUME_FROM.test(resumeFrom)) {
-        return new TrpcError({
-          code: 'BAD_REQUEST',
-          message: `${HEADER.resumeFrom} must be a frame count`,
-        });
+        return failure(Reason.InvalidResumeFrom({ header: HEADER.resumeFrom }));
       }
       const key = keyOf({ ...opts, callId });
       if (key === undefined) return yield* opts.next();
@@ -235,11 +226,7 @@ export function experimental_durable<TReq extends MiddlewareRequirements = {}>(
         }
         if (entry.state === 'streamed') {
           if (!sink) {
-            return new TrpcError({
-              code: 'BAD_REQUEST',
-              message:
-                'A streamed durable call resumes over unbatched HTTP only',
-            });
+            return failure(Reason.StreamedResumeNeedsHttp());
           }
           sink.replay = log.read(key, Number(resumeFrom ?? 0));
           return ok(undefined);

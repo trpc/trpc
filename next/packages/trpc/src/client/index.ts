@@ -114,4 +114,5 @@ export {
   type BuiltinErrorCode,
   type TrpcErrorOptions,
 } from '../internal/error.ts';
+export type { TrpcErrorReason } from '../internal/failure.ts';
 export type { Deserialized } from '../internal/types.ts';

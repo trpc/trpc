@@ -1,4 +1,4 @@
-import { TrpcError } from '../internal/error.ts';
+import { failure, Reason } from '../internal/failure.ts';
 import type { ProcedureType } from '../internal/types.ts';
 
 /**
@@ -199,11 +199,7 @@ export function compileRoute(
       try {
         params[name] = decodeURIComponent(raw);
       } catch (cause) {
-        throw new TrpcError({
-          code: 'BAD_REQUEST',
-          message: `Invalid URL encoding in path param "${name}"`,
-          cause,
-        });
+        throw failure(Reason.InvalidPathParam({ name }), cause);
       }
     });
     return params;

@@ -13,11 +13,8 @@ import {
   Stream,
 } from 'effect';
 import { Socket } from 'effect/socket';
-import {
-  fromWireError,
-  TrpcError,
-  type AnyTrpcError,
-} from '../../internal/error.ts';
+import { fromWireError, type AnyTrpcError } from '../../internal/error.ts';
+import { failure, Reason } from '../../internal/failure.ts';
 import {
   PROTOCOL_VERSION,
   type ClientMessage,
@@ -34,7 +31,7 @@ import {
   type LinkDecl,
   type TrpcLink,
 } from '../link.ts';
-import { makeDeferredDecoder, badResponse, serializeInput } from './events.ts';
+import { makeDeferredDecoder, serializeInput, undecodable } from './events.ts';
 
 /** One open connection. @internal */
 interface SocketConnection {
@@ -131,11 +128,7 @@ interface SocketTransport {
   binary?: boolean;
 }
 
-const lostError = () =>
-  new TrpcError({
-    code: 'NETWORK_ERROR',
-    message: 'The connection was lost',
-  });
+const lostError = () => failure(Reason.ConnectionLost());
 
 function makeSocketLink(
   transport: SocketTransport,
@@ -152,7 +145,7 @@ function makeSocketLink(
     try {
       return fromWireError(serializer.deserialize(message.body as never));
     } catch (cause) {
-      return badResponse('Invalid error message')(cause);
+      return undecodable('error')(cause);
     }
   };
 
@@ -163,10 +156,13 @@ function makeSocketLink(
     if (message.type === 'pong') return;
     if (message.type === 'init') {
       if (message.serializer === serializer.name) return;
-      const error = new TrpcError({
-        code: 'UNSUPPORTED_PROTOCOL',
-        message: `The server uses the '${message.serializer}' serializer, but this ${transport.name} uses '${serializer.name}'. Pass the same serializer to the handler and ${transport.name}.`,
-      });
+      const error = failure(
+        Reason.SerializerMismatch({
+          server: message.serializer,
+          client: serializer.name,
+          transport: transport.name,
+        }),
+      );
       conn.refused = error;
       for (const inbox of conn.calls.values())
         Queue.offerUnsafe(inbox, Signal.Fail({ error }));
@@ -409,7 +405,7 @@ function makeSocketLink(
                   .pipe(
                     Effect.flatMap((value) => {
                       const settle = value.pipe(
-                        Effect.mapError(badResponse('Invalid result')),
+                        Effect.mapError(undecodable('result')),
                         Effect.exit,
                         Effect.flatMap((exit) => Deferred.done(result, exit)),
                       );
@@ -458,7 +454,7 @@ function makeSocketLink(
                   Effect.map((value) => {
                     Queue.offerUnsafe(
                       queue,
-                      Effect.mapError(value, badResponse('Invalid event')),
+                      Effect.mapError(value, undecodable('event')),
                     );
                     return false;
                   }),
@@ -499,10 +495,7 @@ function makeSocketLink(
     Effect.runPromise(
       Effect.gen(function* () {
         const signal = Signal.Fail({
-          error: new TrpcError({
-            code: 'CLIENT_CLOSED_REQUEST',
-            message: 'The link was closed',
-          }),
+          error: failure(Reason.LinkClosed()),
         });
         closes++;
         for (const inbox of live) Queue.offerUnsafe(inbox, signal);

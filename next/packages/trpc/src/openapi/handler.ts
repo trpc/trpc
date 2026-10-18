@@ -12,12 +12,8 @@ import {
   scopedRoute,
   type FlatRoutes,
 } from '../internal/describe.ts';
-import {
-  isTrpcError,
-  statusOf,
-  TrpcError,
-  type AnyTrpcError,
-} from '../internal/error.ts';
+import { isTrpcError, statusOf, type AnyTrpcError } from '../internal/error.ts';
+import { failure, Reason } from '../internal/failure.ts';
 import { toAsyncIterable } from '../internal/effects.ts';
 import type { JsonSchema } from '../internal/json-schema.ts';
 import {
@@ -372,30 +368,15 @@ export function createOpenApiHandler<
     fromStrings: boolean;
   }> {
     const length = Number(request.headers.get('content-length') ?? 0);
-    if (length > maxBodySize) {
-      throw new TrpcError({
-        code: 'PAYLOAD_TOO_LARGE',
-        message: 'Request body is too large',
-      });
-    }
+    if (length > maxBodySize)
+      throw failure(Reason.BodyTooLarge({ limit: maxBodySize }));
     const type = request.headers.get('content-type');
     if (isForm(type)) {
-      const form = await readFormData(
-        request,
-        type,
-        maxBodySize,
-        () =>
-          new TrpcError({
-            code: 'PAYLOAD_TOO_LARGE',
-            message: 'Request body is too large',
-          }),
+      const form = await readFormData(request, type, maxBodySize, () =>
+        failure(Reason.BodyTooLarge({ limit: maxBodySize })),
       ).catch((cause: unknown) => {
-        if (cause instanceof TrpcError) throw cause;
-        throw new TrpcError({
-          code: 'PARSE_ERROR',
-          message: 'Invalid form body',
-          cause,
-        });
+        if (isTrpcError(cause)) throw cause;
+        throw failure(Reason.InvalidFormBody(), cause);
       });
       return {
         value: parseBracketNotation(
@@ -406,27 +387,16 @@ export function createOpenApiHandler<
     }
     const text = await request.text();
     if (encoder.encode(text).byteLength > maxBodySize) {
-      throw new TrpcError({
-        code: 'PAYLOAD_TOO_LARGE',
-        message: 'Request body is too large',
-      });
+      throw failure(Reason.BodyTooLarge({ limit: maxBodySize }));
     }
     if (text === '') return { value: undefined, fromStrings: false };
     if (!isJsonContentType(type)) {
-      throw new TrpcError({
-        code: 'UNSUPPORTED_MEDIA_TYPE',
-        message:
-          'Bodies must be application/json, application/x-www-form-urlencoded or multipart/form-data',
-      });
+      throw failure(Reason.UnsupportedBodyType());
     }
     try {
       return { value: JSON.parse(text), fromStrings: false };
     } catch (cause) {
-      throw new TrpcError({
-        code: 'PARSE_ERROR',
-        message: 'Invalid JSON',
-        cause,
-      });
+      throw failure(Reason.InvalidJson(), cause);
     }
   }
 
@@ -463,10 +433,7 @@ export function createOpenApiHandler<
     }
     if (!hasParams) return body.value;
     if (body.value !== undefined && !isPlainObject(body.value)) {
-      throw new TrpcError({
-        code: 'BAD_REQUEST',
-        message: 'A route with path params needs an object body',
-      });
+      throw failure(Reason.PathParamsNeedObjectBody());
     }
     return {
       ...(body.value as object | undefined),
@@ -568,10 +535,7 @@ export function createOpenApiHandler<
     const type = entry.type;
     const procedure = await entry.resolve();
     if (!procedure) {
-      throw new TrpcError({
-        code: 'NOT_FOUND',
-        message: `The contract's "${entry.path}" is not in the router`,
-      });
+      throw failure(Reason.ContractRouteMissing({ path: entry.path }));
     }
     const input = await readInput(request, url, entry, params);
     const controller = new AbortController();
@@ -665,13 +629,13 @@ export function createOpenApiHandler<
           return fail(err);
         }
       }
-      throw new TrpcError(
+      throw failure(
         allowed
-          ? {
-              code: 'METHOD_NOT_SUPPORTED',
-              message: `${request.method} is not supported for ${url.pathname}`,
-            }
-          : { code: 'NOT_FOUND', message: `Not found: ${url.pathname}` },
+          ? Reason.MethodNotSupported({
+              method: request.method,
+              path: url.pathname,
+            })
+          : Reason.RouteNotFound({ path: url.pathname }),
       );
     } catch (cause) {
       const err = isTrpcError(cause) ? cause : unexpectedError(cause);

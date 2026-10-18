@@ -1,9 +1,12 @@
 import { Cause, Effect, Fiber, Queue, Stream } from 'effect';
+import { fromWireError } from '../../internal/error.ts';
 import {
-  fromWireError,
+  failure,
+  Reason,
   streamErrors,
-  TrpcError,
-} from '../../internal/error.ts';
+  type Failure,
+  type ReasonOf,
+} from '../../internal/failure.ts';
 import type {
   Frame,
   SerializeOpts,
@@ -24,19 +27,15 @@ export function serializeInput(
   try {
     return serializer.serialize(input, opts);
   } catch (cause) {
-    throw new TrpcError({
-      code: 'BAD_REQUEST',
-      message: cause instanceof Error ? cause.message : 'Invalid input',
-      cause,
-    });
+    throw failure(Reason.UnserializableInput(), cause);
   }
 }
 
-/** A response the client couldn't decode. @internal */
-export const badResponse =
-  (message: string) =>
-  (cause?: unknown): TrpcError =>
-    new TrpcError({ code: 'BAD_RESPONSE', message, cause });
+/** A part of a response the client couldn't decode. @internal */
+export const undecodable =
+  (part: ReasonOf<'UndecodableResponse'>['part']) =>
+  (cause?: unknown): Failure =>
+    failure(Reason.UndecodableResponse({ part }), cause);
 
 type FrameQueue = Queue.Queue<Frame, Cause.Done>;
 
