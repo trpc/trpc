@@ -1,7 +1,13 @@
 import { Link, useLocation } from '@tanstack/react-router';
 
 import { buttonVariants } from '@shared/ui/components/button';
-import { homeDocs, useDocsVersion, v11Docs, v12Docs } from '~/content/docs.ts';
+import {
+  homeDocs,
+  useDocsVersion,
+  useHomeSearch,
+  v11Docs,
+  v12Docs,
+} from '~/content/docs.ts';
 import { cn } from '@shared/ui/lib/utils';
 import { type HomeVersion, homeVersions } from '~/home-version.ts';
 import { site } from '~/site.ts';
@@ -55,6 +61,7 @@ export function SiteHeader() {
   const onHome =
     useLocation({ select: (location) => location.pathname }) === '/';
   const linked: HomeVersion = version.id === 'v12' ? 'v12' : 'v11';
+  const homeSearch = useHomeSearch();
   return (
     <header
       className="sticky top-0 z-40 border-b bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70"
@@ -65,6 +72,7 @@ export function SiteHeader() {
         <Link
           aria-label={`${site.name} home`}
           className="mr-1.5 flex items-center gap-2 font-bold tracking-tight"
+          search={homeSearch}
           to="/"
         >
           <Logo />

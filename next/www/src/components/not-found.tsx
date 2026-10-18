@@ -1,10 +1,11 @@
 import { Link } from '@tanstack/react-router';
 
 import { buttonVariants } from '@shared/ui/components/button';
-import { v11Docs } from '~/content/docs.ts';
+import { useHomeSearch, v11Docs } from '~/content/docs.ts';
 import { cn } from '@shared/ui/lib/utils';
 
 export function NotFound() {
+  const homeSearch = useHomeSearch();
   return (
     <main className="mx-auto grid max-w-xl place-items-center content-start gap-4 px-6 py-24 text-center">
       <p className="font-mono text-sm text-muted-foreground">404</p>
@@ -22,7 +23,11 @@ export function NotFound() {
         >
           Read the docs
         </Link>
-        <Link className={cn(buttonVariants({ variant: 'outline' }))} to="/">
+        <Link
+          className={cn(buttonVariants({ variant: 'outline' }))}
+          search={homeSearch}
+          to="/"
+        >
           Home
         </Link>
       </div>

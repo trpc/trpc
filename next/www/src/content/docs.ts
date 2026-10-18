@@ -1,4 +1,4 @@
-import { notFound, useLocation } from '@tanstack/react-router';
+import { notFound, useLocation, useSearch } from '@tanstack/react-router';
 import { sections as v12Sections } from 'virtual:docs-manifest';
 import { sections as v9Sections } from 'virtual:v9-docs-manifest';
 import { sections as v10Sections } from 'virtual:v10-docs-manifest';
@@ -6,7 +6,12 @@ import { sections as v11Sections } from 'virtual:v11-docs-manifest';
 
 import type { ExperimentId } from '~/experiments.ts';
 import { useFlagsOn } from '~/flags.ts';
-import type { HomeVersion } from '~/home-version.ts';
+import {
+  type HomeSearch,
+  type HomeVersion,
+  homeVersionOf,
+  homeVersionSearch,
+} from '~/home-version.ts';
 import { type CopiedVersion, v9, v10, v11, v12 } from '~/site.ts';
 
 import { listedSections } from './listed.ts';
@@ -144,6 +149,24 @@ export function versionAt(pathname: string): DocsVersion {
 /** The version of the page the reader is on. */
 export function useDocsVersion() {
   return versionAt(useLocation({ select: (location) => location.pathname }));
+}
+
+/**
+ * The search for a link to the home page: `?version=v12` from v12's docs,
+ * so the home page shows the version the reader came from. On the home
+ * page, the version it shows; elsewhere, v11.
+ */
+export function useHomeSearch(): HomeSearch {
+  const onHome =
+    useLocation({ select: (location) => location.pathname }) === '/';
+  const shown = useSearch({
+    select: (search) => homeVersionOf({ version: search.version }),
+    strict: false,
+  });
+  const version = useDocsVersion();
+  return homeVersionSearch(
+    onHome ? shown : version.id === 'v12' ? 'v12' : 'v11',
+  );
 }
 
 const listedVersions = new WeakMap<DocsVersion, Map<string, DocsVersion>>();

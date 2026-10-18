@@ -1,8 +1,10 @@
 import { Link } from '@tanstack/react-router';
 
+import { useHomeSearch } from '~/content/docs.ts';
 import { site } from '~/site.ts';
 
 export function SiteFooter() {
+  const homeSearch = useHomeSearch();
   return (
     <footer className="border-t">
       <div className="mx-auto grid max-w-7xl gap-2 px-4 py-8 text-sm text-muted-foreground sm:px-6 md:flex md:items-center md:justify-between">
@@ -20,7 +22,12 @@ export function SiteFooter() {
           <a className="hover:text-foreground" href="https://trpc.io">
             v11 docs
           </a>
-          <Link className="hover:text-foreground" hash="sponsors" to="/">
+          <Link
+            className="hover:text-foreground"
+            hash="sponsors"
+            search={homeSearch}
+            to="/"
+          >
             Sponsors
           </Link>
           <a className="hover:text-foreground" href="/llms.txt">
