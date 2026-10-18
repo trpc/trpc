@@ -59,14 +59,14 @@ test('markdownPaths maps a block file back to its page', () => {
 
 test('lintDocs reports overzealous destructuring and unparseable blocks at their Markdown lines', async () => {
   const result = await Effect.runPromise(
-    lintDocs([page]).pipe(Effect.provide(NodeServices.layer)),
+    lintDocs([page], 'unix').pipe(Effect.provide(NodeServices.layer)),
   );
   expect(result.exitCode).toBe(1);
   const problems = [
     ...result.output.matchAll(
-      /fixtures\/page\.md:(\d+:\d+): error ?(trpc\([\w-]+\))?/g,
+      /^tooling\/docs-lint\/fixtures\/page\.md:(\d+:\d+): .* \[Error\/?(.*)\]$/gm,
     ),
-  ].map((match) => `${match[1]} ${match[2] ?? 'parse error'}`);
+  ].map((match) => `${match[1]} ${match[2] || 'parse error'}`);
   expect(problems.sort()).toEqual([
     '20:20 trpc(no-overzealous-destructuring)',
     '43:9 trpc(no-overzealous-destructuring)',

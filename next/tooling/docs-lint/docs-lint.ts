@@ -143,9 +143,13 @@ export interface DocsLintResult {
   readonly exitCode: number;
 }
 
-/** Lints the code blocks of `paths` (every page in `docs/` when empty). */
+/**
+ * Lints the code blocks of `paths` (every page in `docs/` when empty).
+ * Without a `format`, oxlint picks one for its environment.
+ */
 export const lintDocs = (
   paths: ReadonlyArray<string>,
+  format?: 'unix',
 ): Effect.Effect<
   DocsLintResult,
   DocsLintFailed | PlatformError,
@@ -179,10 +183,16 @@ export const lintDocs = (
       );
       const spawner = yield* ChildProcessSpawner.ChildProcessSpawner;
       const handle = yield* spawner.spawn(
-        ChildProcess.make(oxlint, ['-c', '.oxlintrc.json', '.'], {
-          cwd: dir,
-          stderr: 'inherit',
-        }),
+        ChildProcess.make(
+          oxlint,
+          [
+            '-c',
+            '.oxlintrc.json',
+            ...(format ? ['--format', format] : []),
+            '.',
+          ],
+          { cwd: dir, stderr: 'inherit' },
+        ),
       );
       const [output, exitCode] = yield* Effect.all(
         [Stream.mkString(Stream.decodeText(handle.stdout)), handle.exitCode],
