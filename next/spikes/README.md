@@ -25,3 +25,4 @@ Scripts are Effect programs on `kit.ts`: `writeFixture` writes a generated fixtu
 | `invalidation/`        | `pnpm test` (root)                                             | [invalidation-plugin](../.agent-docs/notes/invalidation-plugin.md)                   |
 | `sse-deferred/`        | `pnpm test` (root), `node sse-deferred/measure.ts [items]`     | [sse-nested-deferred](../.agent-docs/notes/sse-nested-deferred.md)                   |
 | `durable-resume/`      | `pnpm test` (root)                                             | [durable-mid-stream-resume](../.agent-docs/notes/durable-mid-stream-resume.md)       |
+| `closed-errors/`       | `pnpm test` (root)                                             | [closed-error-unions](../.agent-docs/notes/closed-error-unions.md)                   |
