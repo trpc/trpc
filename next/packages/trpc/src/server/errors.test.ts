@@ -8,8 +8,12 @@ import {
   safe,
   TrpcError,
   routerType,
+  ERROR_CATEGORY,
+  ERROR_STATUS,
   type BuiltinError,
+  type BuiltinErrorClass,
   type BuiltinErrorCode,
+  type CategoryCode,
 } from '@trpc12/trpc/client';
 import { error, initTrpc, type OnErrorOpts } from '@trpc12/trpc/server';
 import { createTestServer } from '../fixtures/server.ts';
@@ -351,6 +355,104 @@ test('matchError needs a handler per defined code, and builtin for the rest', as
   const unknownToTypes = newer as unknown as BuiltinError;
   expect(matchError(unknownToTypes, { builtin: (e) => e.code })).toBe('GONE');
   expect(() => matchError(unknownToTypes, {} as never)).toThrow(newer);
+});
+
+test('matchError takes a handler per category of built-in errors', async () => {
+  await using ctx = await setup();
+  const explain = async (id: string) => {
+    const [post, err] = await safe(ctx.client.post.byId.query({ id }));
+    if (!err) return post.title;
+    return matchError(err, {
+      NOT_FOUND: (e) => `no post ${e.data.id}`,
+      FORBIDDEN: () => 'forbidden',
+      BAD_REQUEST: (e) => `${e.data.issues.length} issues`,
+      rejected: (e) => {
+        expectTypeOf(e.code).toEqualTypeOf<CategoryCode<'rejected'>>();
+        return `rejected ${e.code}`;
+      },
+      unavailable: (e) =>
+        e.code === 'NETWORK_ERROR' ? 'offline' : `unavailable ${e.code}`,
+      failed: (e) => `failed ${e.code}`,
+      aborted: () => 'aborted',
+    });
+  };
+  expect(await explain('nope')).toBe('no post nope');
+
+  const [, crash] = await safe(ctx.client.crash.query());
+  const category = (err: BuiltinError) =>
+    matchError(err, {
+      rejected: () => 'rejected',
+      unavailable: () => 'unavailable',
+      failed: () => 'failed',
+      aborted: () => 'aborted',
+    });
+  expect(category(crash!)).toBe('failed');
+  expect(
+    matchError(crash!, { failed: () => 'failed', builtin: () => 'rest' }),
+  ).toBe('failed');
+  expect(
+    matchError(crash!, { aborted: () => 'aborted', builtin: () => 'rest' }),
+  ).toBe('rest');
+  // @ts-expect-error: `aborted` (and `builtin`) are missing
+  matchError(crash!, {
+    rejected: () => 1,
+    unavailable: () => 1,
+    failed: () => 1,
+  });
+
+  const offline = new TrpcError.NetworkError() as BuiltinError;
+  expect(category(offline)).toBe('unavailable');
+  const aborted = new TrpcError.ClientClosedRequest() as BuiltinError;
+  expect(category(aborted)).toBe('aborted');
+  const missingProcedure = new TrpcError.NotFound() as BuiltinError;
+  expect(category(missingProcedure)).toBe('rejected');
+});
+
+test('every built-in code has a category and a class', () => {
+  const codes = Object.keys(ERROR_STATUS);
+  expect(Object.keys(ERROR_CATEGORY).sort()).toEqual([...codes].sort());
+  expectTypeOf<keyof typeof ERROR_CATEGORY>().toEqualTypeOf<BuiltinErrorCode>();
+
+  const classes = Object.values(TrpcError).filter(
+    (value): value is BuiltinErrorClass<BuiltinErrorCode> =>
+      typeof value === 'function' && 'code' in value,
+  );
+  expect(classes.map((c) => c.code).sort()).toEqual([...codes].sort());
+  const err = new TrpcError.PayloadTooLarge({ message: 'Too big' });
+  expect(err).toBeInstanceOf(TrpcError);
+  expect(err._tag).toBe('PAYLOAD_TOO_LARGE');
+  expect(err).toMatchObject({
+    code: 'PAYLOAD_TOO_LARGE',
+    message: 'Too big',
+    defined: false,
+    data: undefined,
+  });
+  expectTypeOf(err).toExtend<TrpcError<'PAYLOAD_TOO_LARGE', undefined>>();
+  expect(new TrpcError.Unauthorized().message).toBe('UNAUTHORIZED');
+});
+
+test('a returned built-in class is a defined error, and catchTag narrows it', async () => {
+  const router = {
+    me: t.procedure.query((opts) =>
+      opts.signal.aborted ? 'ada' : new TrpcError.Unauthorized(),
+    ),
+    effect: t.procedure.query(() =>
+      Effect.gen(function* () {
+        return yield* new TrpcError.Conflict({ message: 'Taken' });
+      }).pipe(
+        Effect.catchTag('CONFLICT', (e) => Effect.succeed(`kept ${e.message}`)),
+      ),
+    ),
+  };
+  await using server = await createTestServer({ router });
+  const client = createTrpcClient({
+    router: routerType<typeof router>(),
+    links: [httpLink({ url: server.url })],
+  });
+  const [, err] = await safe(client.me.query());
+  expect(err).toMatchObject({ code: 'UNAUTHORIZED', defined: true });
+  if (err?.defined) expectTypeOf(err.code).toEqualTypeOf<'UNAUTHORIZED'>();
+  expect(await client.effect.query()).toBe('kept Taken');
 });
 
 test("safe() rethrows a framework's control-flow error", async () => {

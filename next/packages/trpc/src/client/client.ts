@@ -1,9 +1,13 @@
 import { Effect, Exit } from 'effect';
 import { toAsyncIterable } from '../internal/effects.ts';
 import {
+  ERROR_CATEGORY,
   frameworkError,
   hasDigest,
+  isBuiltinCode,
   type AnyTrpcError,
+  type CategoryCode,
+  type ErrorCategory,
 } from '../internal/error.ts';
 import type { ProcedureType } from '../internal/types.ts';
 import type { AnySerializer } from '../serializer/index.ts';
@@ -361,11 +365,27 @@ type CodeOf<E> = E extends { readonly code: infer C extends string }
   ? C
   : never;
 
+type CategoriesOf<E> = {
+  [K in ErrorCategory]: [
+    Extract<BuiltinOf<E>, { readonly code: CategoryCode<K> }>,
+  ] extends [never]
+    ? never
+    : K;
+}[ErrorCategory];
+
+type CategoryHandlers<E> = {
+  readonly [K in CategoriesOf<E>]: (
+    err: Extract<BuiltinOf<E>, { readonly code: CategoryCode<K> }>,
+  ) => unknown;
+};
+
 /**
  * The handlers {@link matchError} takes for errors `E`: one per defined
- * code, each getting that error, and `builtin` for the built-in errors,
- * which `switch (err.code)` narrows further. `builtin` is required while
- * any built-in error is left in `E`, and a type error once none is.
+ * code, each getting that error, and one per category of the built-in
+ * errors left (`rejected`, `unavailable`, `failed`, `aborted`, see
+ * `ERROR_CATEGORY`), each getting that category's codes. `builtin` takes the
+ * categories not listed; once no built-in error is left, both are type
+ * errors.
  * @since 0.1.0
  * @stability stable
  */
@@ -375,7 +395,15 @@ export type ErrorHandlers<E> = {
   ) => unknown;
 } & ([BuiltinOf<E>] extends [never]
   ? { readonly builtin?: never }
-  : { readonly builtin: (err: BuiltinOf<E>) => unknown });
+  :
+      | (CategoryHandlers<E> & { readonly builtin?: never })
+      | (Partial<CategoryHandlers<E>> & {
+          readonly builtin: (err: BuiltinOf<E>) => unknown;
+        }));
+
+type HandlerKey<E> =
+  | CodeOf<DefinedOf<E>>
+  | ([BuiltinOf<E>] extends [never] ? never : CategoriesOf<E> | 'builtin');
 
 type HandlerResult<H> = {
   [K in keyof H]-?: H[K] extends (err: never) => infer R ? R : never;
@@ -404,17 +432,24 @@ type HandlerResult<H> = {
 export function matchError<
   E extends AnyTrpcError,
   H extends ErrorHandlers<E> & {
-    readonly [K in keyof H]: K extends keyof ErrorHandlers<E> ? unknown : never;
+    readonly [K in keyof H]: K extends HandlerKey<E> ? unknown : never;
   },
 >(err: E, handlers: H): HandlerResult<H> {
   const table = handlers as unknown as Record<
     string,
     ((err: E) => HandlerResult<H>) | undefined
   >;
+  const category = isBuiltinCode(err.code)
+    ? ERROR_CATEGORY[err.code]
+    : undefined;
   const handler =
-    (err.defined && Object.hasOwn(table, err.code)
-      ? table[err.code]
-      : undefined) ?? table['builtin'];
+    (err.defined
+      ? Object.hasOwn(table, err.code)
+        ? table[err.code]
+        : undefined
+      : category && Object.hasOwn(table, category)
+        ? table[category]
+        : undefined) ?? table['builtin'];
   if (!handler) throw err;
   return handler(err);
 }

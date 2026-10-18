@@ -53,6 +53,15 @@ const [post, err] = await safeClient.post.byId.query({ id: '1' });
 | `INTERNAL_SERVER_ERROR`     | The server crashed, or threw a custom code it didn't declare. The message is masked in production.                                                     |
 | Any other code (`CONFLICT`) | The server threw it without declaring it, a proxy answered with its status (`401` is `UNAUTHORIZED`), or the server lacks the procedure (`NOT_FOUND`). |
 
+Built-in errors fall into four categories (`ERROR_CATEGORY` maps each code to one), since a call site usually does the same for every code in one:
+
+| Category      | Codes                                                                                                                                                             | Usually                     |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------- |
+| `rejected`    | Built-in 4xx codes (`UNAUTHORIZED`, `NOT_FOUND`, `BAD_REQUEST`, …), requests the server couldn't take (`PARSE_ERROR`, `PAYLOAD_TOO_LARGE`, …), and `CLIENT_ERROR` | Show the message, or reload |
+| `unavailable` | `NETWORK_ERROR`, `BAD_RESPONSE`, `STREAM_INTERRUPTED`, `TIMEOUT`, `TOO_MANY_REQUESTS`, `BAD_GATEWAY`, `SERVICE_UNAVAILABLE`, `GATEWAY_TIMEOUT`                    | Try again later             |
+| `failed`      | `INTERNAL_SERVER_ERROR`, `NOT_IMPLEMENTED`                                                                                                                        | Report it                   |
+| `aborted`     | `CLIENT_CLOSED_REQUEST`                                                                                                                                           | Ignore it                   |
+
 ## Switching on the code
 
 `switch (err.code)` narrows the error to the members with that code. A code can be in both groups: the server's `NOT_FOUND` for a missing post, and a built-in `NOT_FOUND` when the server doesn't have the procedure (a client deployed before its server). Until `err.defined` says which, `data` is the defined error's type or `undefined`:
@@ -82,7 +91,7 @@ async function title(id: string) {
 
 ## Handling every defined code
 
-`matchError(err, handlers)` takes a handler per defined code, each getting that error with its `data`, and `builtin` for the built-in errors, which a `switch` on `e.code` narrows further. It returns what the handler returns:
+`matchError(err, handlers)` takes a handler per defined code, each getting that error with its `data`, and one per category of built-in errors, each getting that category's codes, which a `switch` on `e.code` narrows further. It returns what the handler returns:
 
 ```ts twoslash
 // ---cut-start---
@@ -97,13 +106,18 @@ async function title(id: string) {
     return matchError(err, {
       NOT_FOUND: (e) => `No post ${e.data.id}`,
       BAD_REQUEST: (e) => e.data.issues[0]?.message ?? 'Invalid id',
-      builtin: (e) =>
-        e.code === 'NETWORK_ERROR' ? 'You are offline' : e.message,
+      rejected: (e) => e.message,
+      unavailable: (e) =>
+        e.code === 'NETWORK_ERROR' ? 'You are offline' : 'Try again later',
+      failed: () => 'Something went wrong',
+      aborted: () => 'Cancelled',
     });
   }
   return post.title;
 }
 ```
+
+`builtin` handles the categories you don't list, so `builtin: (e) => e.message` alone takes every built-in error.
 
 A handler missing for one of the procedure's codes, or left over for a code it no longer has, is a type error, so adding an error on the server shows every place that must handle it:
 
@@ -122,7 +136,7 @@ if (err) {
 }
 ```
 
-A built-in error with a defined code, like the `NOT_FOUND` of a procedure the server lacks, goes to `builtin`.
+A built-in error with a defined code, like the `NOT_FOUND` of a procedure the server lacks, goes to its category (`rejected`), or `builtin`.
 
 ## Checking a caught value
 

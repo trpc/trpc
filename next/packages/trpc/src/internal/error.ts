@@ -61,6 +61,90 @@ export function isBuiltinCode(code: string): code is BuiltinErrorCode {
 }
 
 /**
+ * The category of each built-in code, which `matchError()` handles as one:
+ *
+ * - `rejected`: the server refused the call: a built-in 4xx it threw, a
+ *   request it couldn't take, or a link's own failure.
+ * - `unavailable`: no usable answer came back; trying later may work.
+ * - `failed`: the server broke. The message is masked in production.
+ * - `aborted`: the call's `signal` stopped it.
+ *
+ * @since 0.1.0
+ * @stability stable
+ */
+export const ERROR_CATEGORY = {
+  PARSE_ERROR: 'rejected',
+  BAD_REQUEST: 'rejected',
+  UNSUPPORTED_PROTOCOL: 'rejected',
+  UNAUTHORIZED: 'rejected',
+  PAYMENT_REQUIRED: 'rejected',
+  FORBIDDEN: 'rejected',
+  NOT_FOUND: 'rejected',
+  METHOD_NOT_SUPPORTED: 'rejected',
+  TIMEOUT: 'unavailable',
+  CONFLICT: 'rejected',
+  PRECONDITION_FAILED: 'rejected',
+  PAYLOAD_TOO_LARGE: 'rejected',
+  UNSUPPORTED_MEDIA_TYPE: 'rejected',
+  UNPROCESSABLE_CONTENT: 'rejected',
+  TOO_MANY_REQUESTS: 'unavailable',
+  CLIENT_CLOSED_REQUEST: 'aborted',
+  INTERNAL_SERVER_ERROR: 'failed',
+  NOT_IMPLEMENTED: 'failed',
+  BAD_GATEWAY: 'unavailable',
+  SERVICE_UNAVAILABLE: 'unavailable',
+  GATEWAY_TIMEOUT: 'unavailable',
+  NETWORK_ERROR: 'unavailable',
+  BAD_RESPONSE: 'unavailable',
+  CLIENT_ERROR: 'rejected',
+  STREAM_INTERRUPTED: 'unavailable',
+} as const;
+
+/**
+ * A category of built-in errors: `rejected`, `unavailable`, `failed` or
+ * `aborted` ({@link ERROR_CATEGORY}).
+ * @since 0.1.0
+ * @stability stable
+ */
+export type ErrorCategory = (typeof ERROR_CATEGORY)[BuiltinErrorCode];
+
+/**
+ * The built-in codes in category `TCategory`.
+ * @since 0.1.0
+ * @stability stable
+ */
+export type CategoryCode<TCategory extends ErrorCategory> = {
+  [C in BuiltinErrorCode]: (typeof ERROR_CATEGORY)[C] extends TCategory
+    ? C
+    : never;
+}[BuiltinErrorCode];
+
+/**
+ * A class for a built-in code, like `TrpcError.NotFound`. Its instances are
+ * `TrpcError<TCode, undefined>`; `defined: false` until a resolver returns
+ * one.
+ * @since 0.1.0
+ * @stability stable
+ */
+export interface BuiltinErrorClass<TCode extends BuiltinErrorCode> {
+  new (opts?: TaggedErrorOptions): TrpcError<TCode, undefined>;
+  readonly code: TCode;
+}
+
+const builtinClass = <TCode extends BuiltinErrorCode>(
+  base: typeof TrpcError,
+  code: TCode,
+): BuiltinErrorClass<TCode> => {
+  class Builtin extends base<TCode, undefined> {
+    static readonly code = code;
+    constructor(opts?: TaggedErrorOptions) {
+      super({ code, message: opts?.message, cause: opts?.cause });
+    }
+  }
+  return Builtin;
+};
+
+/**
  * Options for {@link TrpcError} and {@link error}.
  * @since 0.1.0
  * @stability stable
@@ -133,6 +217,100 @@ export class TrpcError<
     this.data = opts.data as TData;
     this.defined = opts.defined ?? false;
   }
+
+  /** `PARSE_ERROR`: the server couldn't parse the request. */
+  static readonly ParseError: BuiltinErrorClass<'PARSE_ERROR'> = builtinClass(
+    this,
+    'PARSE_ERROR',
+  );
+  /** `BAD_REQUEST`. */
+  static readonly BadRequest: BuiltinErrorClass<'BAD_REQUEST'> = builtinClass(
+    this,
+    'BAD_REQUEST',
+  );
+  /** `UNSUPPORTED_PROTOCOL`: a request in a protocol the server doesn't speak. */
+  static readonly UnsupportedProtocol: BuiltinErrorClass<'UNSUPPORTED_PROTOCOL'> =
+    builtinClass(this, 'UNSUPPORTED_PROTOCOL');
+  /** `UNAUTHORIZED`. */
+  static readonly Unauthorized: BuiltinErrorClass<'UNAUTHORIZED'> =
+    builtinClass(this, 'UNAUTHORIZED');
+  /** `PAYMENT_REQUIRED`. */
+  static readonly PaymentRequired: BuiltinErrorClass<'PAYMENT_REQUIRED'> =
+    builtinClass(this, 'PAYMENT_REQUIRED');
+  /** `FORBIDDEN`. */
+  static readonly Forbidden: BuiltinErrorClass<'FORBIDDEN'> = builtinClass(
+    this,
+    'FORBIDDEN',
+  );
+  /** `NOT_FOUND`, also what a call to a procedure the server lacks gets. */
+  static readonly NotFound: BuiltinErrorClass<'NOT_FOUND'> = builtinClass(
+    this,
+    'NOT_FOUND',
+  );
+  /** `METHOD_NOT_SUPPORTED`: the wrong HTTP method for the procedure. */
+  static readonly MethodNotSupported: BuiltinErrorClass<'METHOD_NOT_SUPPORTED'> =
+    builtinClass(this, 'METHOD_NOT_SUPPORTED');
+  /** `TIMEOUT`. */
+  static readonly Timeout: BuiltinErrorClass<'TIMEOUT'> = builtinClass(
+    this,
+    'TIMEOUT',
+  );
+  /** `CONFLICT`. */
+  static readonly Conflict: BuiltinErrorClass<'CONFLICT'> = builtinClass(
+    this,
+    'CONFLICT',
+  );
+  /** `PRECONDITION_FAILED`. */
+  static readonly PreconditionFailed: BuiltinErrorClass<'PRECONDITION_FAILED'> =
+    builtinClass(this, 'PRECONDITION_FAILED');
+  /** `PAYLOAD_TOO_LARGE`: a body over the handler's `maxBodySize`. */
+  static readonly PayloadTooLarge: BuiltinErrorClass<'PAYLOAD_TOO_LARGE'> =
+    builtinClass(this, 'PAYLOAD_TOO_LARGE');
+  /** `UNSUPPORTED_MEDIA_TYPE`: a body in a content type the server can't read. */
+  static readonly UnsupportedMediaType: BuiltinErrorClass<'UNSUPPORTED_MEDIA_TYPE'> =
+    builtinClass(this, 'UNSUPPORTED_MEDIA_TYPE');
+  /** `UNPROCESSABLE_CONTENT`. */
+  static readonly UnprocessableContent: BuiltinErrorClass<'UNPROCESSABLE_CONTENT'> =
+    builtinClass(this, 'UNPROCESSABLE_CONTENT');
+  /** `TOO_MANY_REQUESTS`. */
+  static readonly TooManyRequests: BuiltinErrorClass<'TOO_MANY_REQUESTS'> =
+    builtinClass(this, 'TOO_MANY_REQUESTS');
+  /** `CLIENT_CLOSED_REQUEST`: the call's `signal` aborted it. */
+  static readonly ClientClosedRequest: BuiltinErrorClass<'CLIENT_CLOSED_REQUEST'> =
+    builtinClass(this, 'CLIENT_CLOSED_REQUEST');
+  /** `INTERNAL_SERVER_ERROR`: a crash, masked in production. */
+  static readonly InternalServerError: BuiltinErrorClass<'INTERNAL_SERVER_ERROR'> =
+    builtinClass(this, 'INTERNAL_SERVER_ERROR');
+  /** `NOT_IMPLEMENTED`. */
+  static readonly NotImplemented: BuiltinErrorClass<'NOT_IMPLEMENTED'> =
+    builtinClass(this, 'NOT_IMPLEMENTED');
+  /** `BAD_GATEWAY`. */
+  static readonly BadGateway: BuiltinErrorClass<'BAD_GATEWAY'> = builtinClass(
+    this,
+    'BAD_GATEWAY',
+  );
+  /** `SERVICE_UNAVAILABLE`. */
+  static readonly ServiceUnavailable: BuiltinErrorClass<'SERVICE_UNAVAILABLE'> =
+    builtinClass(this, 'SERVICE_UNAVAILABLE');
+  /** `GATEWAY_TIMEOUT`. */
+  static readonly GatewayTimeout: BuiltinErrorClass<'GATEWAY_TIMEOUT'> =
+    builtinClass(this, 'GATEWAY_TIMEOUT');
+  /** `NETWORK_ERROR`, client-side: the request got no response. */
+  static readonly NetworkError: BuiltinErrorClass<'NETWORK_ERROR'> =
+    builtinClass(this, 'NETWORK_ERROR');
+  /** `BAD_RESPONSE`, client-side: a response the client couldn't read. */
+  static readonly BadResponse: BuiltinErrorClass<'BAD_RESPONSE'> = builtinClass(
+    this,
+    'BAD_RESPONSE',
+  );
+  /** `CLIENT_ERROR`, client-side: a link failed. */
+  static readonly ClientError: BuiltinErrorClass<'CLIENT_ERROR'> = builtinClass(
+    this,
+    'CLIENT_ERROR',
+  );
+  /** `STREAM_INTERRUPTED`, client-side: a stream stopped without an end. */
+  static readonly StreamInterrupted: BuiltinErrorClass<'STREAM_INTERRUPTED'> =
+    builtinClass(this, 'STREAM_INTERRUPTED');
 
   /**
    * A public error class: yield or throw it and it reaches the client as a

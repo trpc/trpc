@@ -24,6 +24,19 @@ const byId = t.procedure
   );
 ```
 
+Every built-in code also has a class on `TrpcError`, `new TrpcError.NotFound()`, `new TrpcError.Unauthorized({ message })`, and so on (`PascalCase` of the code). Returned or yielded, it is inferred like `error({ code })`; tRPC builds its own errors (an oversized body, a missing procedure) with the same classes:
+
+```ts twoslash
+// ---cut-start---
+import { t } from './server.ts';
+// ---cut-end---
+import { TrpcError } from '@trpc12/trpc/server';
+
+const me = t.procedure.query(
+  (opts) => opts.ctx.user ?? new TrpcError.Unauthorized(),
+);
+```
+
 ## Declaring errors
 
 Declaring errors with `.errors()` is optional. It adds typed constructors and `data` schemas. It also types what inference can't see: errors thrown from helpers, since a `throw` has no type.
@@ -68,7 +81,7 @@ if (err) {
     NOT_FOUND: (e) => console.log(e.data),
     //                              ^?
     BAD_REQUEST: (e) => console.log(e.data.issues),
-    builtin: (e) => console.log(e.code),
+    builtin: (e) => console.log(e.code), // rejected, unavailable, failed, aborted
   });
 }
 ```
