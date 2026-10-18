@@ -1,10 +1,8 @@
-import { Effect, Exit, Stream } from 'effect';
+import { Effect, Stream } from 'effect';
 import { serverFailure, type AnyTrpcError } from '../../internal/error.ts';
 import { HEADER } from '../../internal/protocol.ts';
 import type { IsAny, ProcedureType } from '../../internal/types.ts';
-import { danson } from '../../serializer/danson.ts';
 import {
-  firstValue,
   link,
   runLinks,
   type AnyLink,
@@ -146,102 +144,6 @@ export function splitLink<
   setSwitchNames(split, [...chainSwitchNames(yes), ...chainSwitchNames(no)]);
   withSerializer(split, chainSerializer([...yes, ...no]));
   return split as TrpcLink<any, TRouter>;
-}
-
-/**
- * Options for {@link dedupeLink}.
- * @since 0.1.0
- * @stability stable
- */
-export interface DedupeLinkOptions {
-  /**
-   * The key identical queries share.
-   * @default the path and the serialized input
-   */
-  key?: (op: Operation) => string;
-}
-
-/**
- * What {@link dedupeLink} reads from `context`.
- * @since 0.1.0
- * @stability stable
- */
-export interface DedupeContext {
-  /** `false` sends this query on its own. */
-  dedupe?: boolean;
-}
-
-/** One deduped request and the callers still waiting on it. */
-interface InFlight {
-  promise: Promise<Exit.Exit<unknown, AnyTrpcError>>;
-  controller: AbortController;
-  refs: number;
-}
-
-/**
- * Shares one request between identical queries in flight at the same time.
- * Every caller gets the same result value, so a deferred `AsyncIterable`
- * in it is shared too: send such queries with `{ dedupe: false }`.
- * The request is aborted only when every caller has aborted.
- *
- * @example
- * ```ts
- * createTrpcClient({
- *   router: routerType<AppRouter>(),
- *   links: [dedupeLink(), httpLink({ url })],
- * });
- * ```
- * @since 0.1.0
- * @stability stable
- */
-export function dedupeLink(
-  opts: DedupeLinkOptions = {},
-): TrpcLink<{ context: DedupeContext }> {
-  const keyOf =
-    opts.key ??
-    ((op: Operation) =>
-      `${op.path}\n${op.input === undefined ? '' : JSON.stringify(danson.serialize(op.input))}`);
-  const inFlight = new Map<string, InFlight>();
-  return link<{ context: DedupeContext }>((args) => {
-    const { op } = args;
-    if (op.type !== 'query' || op.context.dedupe === false)
-      return args.next(op);
-    const key = keyOf(op);
-    return Stream.fromEffect(
-      Effect.callback<unknown, AnyTrpcError>((resume) => {
-        let entry = inFlight.get(key);
-        if (!entry) {
-          const controller = new AbortController();
-          const created: InFlight = {
-            controller,
-            refs: 0,
-            promise: Effect.runPromiseExit(
-              firstValue(args.next({ ...op, signal: controller.signal })),
-              { signal: controller.signal },
-            ).finally(() => {
-              if (inFlight.get(key) === created) inFlight.delete(key);
-            }),
-          };
-          entry = created;
-          inFlight.set(key, entry);
-        }
-        const shared = entry;
-        shared.refs++;
-        let settled = false;
-        void shared.promise.then((exit) => {
-          settled = true;
-          resume(exit);
-        });
-        return Effect.sync(() => {
-          if (settled) return;
-          if (--shared.refs === 0) {
-            if (inFlight.get(key) === shared) inFlight.delete(key);
-            shared.controller.abort();
-          }
-        });
-      }),
-    );
-  });
 }
 
 /**

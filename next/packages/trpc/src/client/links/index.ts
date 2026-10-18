@@ -6,21 +6,20 @@
  * @module
  */
 export {
-  dedupeLink,
   experimental_durableLink,
   loggerLink,
   retryLink,
   splitLink,
 } from './basic.ts';
 export type {
-  DedupeContext,
-  DedupeLinkOptions,
   DurableContext,
   DurableLinkOptions,
   LoggerEvent,
   RetryLinkOptions,
   SplitLinkOptions,
 } from './basic.ts';
+export { dedupeLink } from './dedupe.ts';
+export type { DedupeContext, DedupeLinkOptions } from './dedupe.ts';
 export { httpLink } from './http.ts';
 export type { HttpLinkOptions } from './http.ts';
 export { localLink } from './local.ts';

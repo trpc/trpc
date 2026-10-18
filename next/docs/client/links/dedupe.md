@@ -6,7 +6,7 @@ parent: client/links
 order: 6
 ---
 
-`dedupeLink()` shares identical queries in flight: a query with the same path and input as one still running gets that one's result instead of sending its own. Mutations and subscriptions always pass through.
+`dedupeLink()` shares identical queries in flight: a query with the same path, input and call options as one still running gets that one's result instead of sending its own. Mutations and subscriptions always pass through.
 
 ```ts twoslash
 // ---cut-start---
@@ -34,7 +34,11 @@ await client.post.byId.query({ id }, { dedupe: false });
 
 The two calls in `Promise.all` make one request. A caller that aborts leaves the others waiting, and the request is aborted only once every caller has.
 
-- `key(op)`: the key identical queries share, by default the path and the serialized input.
+- Inputs are compared deeply, so `{ a, b }` and `{ b, a }` are the same input. Plain objects, arrays, `Map`s, `Set`s, `Date`s and the other built-in types compare by content; a `File` or a class instance matches only itself.
+- Call options must be equal too: calls with different `headers` or `init` are sent apart. Every caller's `onResponse` is called, and one that throws fails only its own call.
+- Every caller gets the same result value, so don't change it, and don't change an input while its call is in flight.
+- A stream in the result, an `AsyncIterable` or a `ReadableStream`, is copied to each caller that starts reading it before anyone has read an item. A caller that starts later sends the query again and reads its own.
+- `key(op)` groups calls by a string of yours instead of comparing inputs; call options are still compared.
 - The `dedupe: false` call option sends that query on its own.
 
 Put it before [`retryLink`](./retry.md), so a retried query is still shared.
