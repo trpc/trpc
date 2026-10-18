@@ -3,7 +3,10 @@ import type { HttpServerRequest } from 'effect/http';
 import type { Socket } from 'effect/socket';
 import { TrpcError, type AnyTrpcError } from '../internal/error.ts';
 import type { ProcedureType } from '../internal/types.ts';
-import { createResponseHandle, normalizeCause } from '../server/execute.ts';
+import {
+  createResponseHandle,
+  normalizeCause,
+} from '../server/execution/index.ts';
 import { resolveProcedure } from '../server/procedures/index.ts';
 import {
   runSocket,

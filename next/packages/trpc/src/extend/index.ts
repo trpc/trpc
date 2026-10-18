@@ -30,7 +30,7 @@ export {
   callProcedure,
   normalizeCause,
   type CallOpts,
-} from '../server/execute.ts';
+} from '../server/execution/index.ts';
 export {
   getProcedure,
   resolveProcedure,

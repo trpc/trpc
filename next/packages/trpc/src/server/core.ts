@@ -17,7 +17,7 @@ import {
   callProcedure,
   isUnexpectedError,
   unexpectedError,
-} from './execute.ts';
+} from './execution/index.ts';
 import type { CreateContextOpts, OnErrorOpts } from './fetch.ts';
 import type { ResponseHandle, AnyProcedure } from './procedures/index.ts';
 import type { Transport } from './socket.ts';

@@ -16,7 +16,7 @@ import {
   callProcedure,
   normalizeCause,
   unexpectedError,
-} from '../../server/execute.ts';
+} from '../../server/execution/index.ts';
 import {
   resolveProcedure,
   type AnyRouter,

@@ -18,4 +18,4 @@
 - (agent) Clients map a non-tRPC HTTP response's status to a built-in code (`codeOfStatus`). `retryLink` and `durableLink` retry by code: a code whose built-in status is 5xx, or a network failure.
 - (agent) A batch line keeps its own `{ i, status, body }`: that is the HTTP status of one call in a `207`, not a field of the error.
 - Lost: a client can't read an error's HTTP status (`err.status`); it reads `code`. A custom code declared with a 5xx status isn't retried, since the client doesn't see the status. Socket and message-port calls never had a status; now the handlers alone decide it.
-- Lives in: `packages/trpc/src/internal/error.ts` (`statusOf`, `withStatusHint`, `codeOfStatus`, `serverFailure`), `src/server/declared.ts`, `src/server/fetch.ts`, `src/openapi/handler.ts`, `packages/trpc/src/server/errors.test.ts`, `packages/trpc/src/server/tagged-errors.test.ts`.
+- Lives in: `packages/trpc/src/internal/error.ts` (`statusOf`, `withStatusHint`, `codeOfStatus`, `serverFailure`), `src/server/execution/declared.ts`, `src/server/fetch.ts`, `src/openapi/handler.ts`, `packages/trpc/src/server/errors.test.ts`, `packages/trpc/src/server/tagged-errors.test.ts`.

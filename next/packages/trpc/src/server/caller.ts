@@ -4,7 +4,7 @@ import { localLink } from '../client/links/local.ts';
 import { routerType, type TrpcClient } from '../client/types.ts';
 import { frameworkError } from '../internal/error.ts';
 import type { DansonForm, MaybePromise } from '../internal/types.ts';
-import { callProcedure, normalizeCause } from './execute.ts';
+import { callProcedure, normalizeCause } from './execution/index.ts';
 import type {
   Procedure,
   ProcedureDef,

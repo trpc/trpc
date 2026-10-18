@@ -18,7 +18,7 @@ import {
   withDefined,
   withStatusHint,
   type AnyTrpcError,
-} from '../internal/error.ts';
+} from '../../internal/error.ts';
 import { errorConstructors, isDeclaredError } from './declared.ts';
 import { CurrentFrameSink } from './frame-sink.ts';
 import type {
@@ -26,7 +26,7 @@ import type {
   ResponseHandle,
   AnyProcedure,
   ProcedureInternals,
-} from './procedures/index.ts';
+} from '../procedures/index.ts';
 import { Response as ResponseKey } from './response.ts';
 import {
   inputError,
@@ -38,8 +38,8 @@ import {
   isStreamSchema,
   type OutputSchema,
   type StreamSchema,
-} from './validation/index.ts';
-import { isTracked, tracked } from './subscriptions/index.ts';
+} from '../validation/index.ts';
+import { isTracked, tracked } from '../subscriptions/index.ts';
 
 const unexpectedErrors = new WeakSet<AnyTrpcError>();
 

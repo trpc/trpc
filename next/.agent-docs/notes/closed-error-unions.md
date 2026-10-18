@@ -41,7 +41,7 @@ if (err)
 
 ## What works
 
-- **One source keeps the union open.** A thrown, undeclared `TrpcError` keeps its code (`normalizeCause` in `server/execute.ts`), so any string can reach the client. Everything else that is `defined: false` is a built-in code: client links make `NETWORK_ERROR`, `CLIENT_CLOSED_REQUEST`, `CLIENT_ERROR`, `STREAM_INTERRUPTED` and `PARSE_ERROR`, and `codeOfStatus` maps a foreign response's status to a built-in code.
+- **One source keeps the union open.** A thrown, undeclared `TrpcError` keeps its code (`normalizeCause` in `server/execution/execute.ts`), so any string can reach the client. Everything else that is `defined: false` is a built-in code: client links make `NETWORK_ERROR`, `CLIENT_CLOSED_REQUEST`, `CLIENT_ERROR`, `STREAM_INTERRUPTED` and `PARSE_ERROR`, and `codeOfStatus` maps a foreign response's status to a built-in code.
 - **`closedLink()` closes it with one rule.** A `defined: false` error whose code isn't built-in becomes `INTERNAL_SERVER_ERROR`, with the original as its `cause`. It's a `Stream.mapError` over the rest of the chain, and the census with it in front has only defined errors and built-in codes.
 - **`Closed<E>` is a type-only change:** `Exclude<E, UnexpectedError> | BoundaryError`, where `BoundaryError` is one `TrpcError<C, unknown> & { defined: false }` per `BuiltinErrorCode`. Defined members keep their codes and `data`.
 - **`matchError(err, handlers)`** requires one handler per defined code, plus `unexpected` while any `defined: false` member is left. Once the undefined part is owned above (a shell, [error-shells](./error-shells.md)), `unexpected` becomes a type error. The type tests check every case.

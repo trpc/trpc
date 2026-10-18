@@ -27,7 +27,7 @@ import { danson } from '../serializer/danson.ts';
 import type { Serializer } from '../serializer/index.ts';
 import type { Chunk, Frame } from '../serializer/stream.ts';
 import type { SerializeReturn } from '../serializer/sync.ts';
-import { CurrentFrameSink } from '../server/frame-sink.ts';
+import { CurrentFrameSink } from '../server/execution/index.ts';
 import {
   makeEffectMiddleware,
   ok,

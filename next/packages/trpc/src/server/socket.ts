@@ -30,12 +30,13 @@ import {
 } from '../internal/protocol.ts';
 import type { ProcedureType } from '../internal/types.ts';
 import type { AnySerializer } from '../serializer/index.ts';
-import { emitEvents, type EventFrame } from './events.ts';
 import {
+  emitEvents,
+  type EventFrame,
   createResponseHandle,
   normalizeCause,
   unexpectedError,
-} from './execute.ts';
+} from './execution/index.ts';
 import type { HandlerCore } from './core.ts';
 import { resolveProcedure, type AnyRouter } from './procedures/index.ts';
 import { runSocket, socketFrames } from './socket-session.ts';

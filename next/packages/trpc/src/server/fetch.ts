@@ -51,9 +51,10 @@ import {
   createResponseHandle,
   normalizeCause,
   unexpectedError,
-} from './execute.ts';
-import { emitEvents } from './events.ts';
-import { CurrentFrameSink, type FrameSink } from './frame-sink.ts';
+  emitEvents,
+  CurrentFrameSink,
+  type FrameSink,
+} from './execution/index.ts';
 import {
   type AnyProcedure,
   resolveProcedure,

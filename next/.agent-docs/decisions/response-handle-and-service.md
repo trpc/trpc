@@ -7,4 +7,4 @@
 - Why: Effect code reads its dependencies from services, matching [`internals-use-effect.md`](./internals-use-effect.md) and the `effect/http` core ([`http-core-on-effect-http.md`](./http-core-on-effect-http.md)); Promise code keeps the simple handle.
 - Lost: a return-value wrapper (`withResponse(value, …)`), which tests more easily but stops middleware from adding headers.
 - (agent) The root provides the service, so procedures using it don't add a layer requirement.
-- Lives in: `packages/trpc/src/server/response.ts`, `src/server/execute.ts`, `src/server/procedures/middleware.ts`; tests in `packages/trpc/src/http/core.test.ts`.
+- Lives in: `packages/trpc/src/server/execution/response.ts`, `src/server/execution/execute.ts`, `src/server/procedures/middleware.ts`; tests in `packages/trpc/src/http/core.test.ts`.

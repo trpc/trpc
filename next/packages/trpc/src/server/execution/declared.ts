@@ -1,5 +1,5 @@
-import { TrpcError, type AnyTrpcError } from '../internal/error.ts';
-import type { ErrorMap } from './procedures/index.ts';
+import { TrpcError, type AnyTrpcError } from '../../internal/error.ts';
+import type { ErrorMap } from '../procedures/index.ts';
 
 const declaredErrors = new WeakSet<AnyTrpcError>();
 

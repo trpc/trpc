@@ -10,4 +10,4 @@
 - (agent) A `stream()` output's OpenAPI document describes the item schema.
 - Why: the common subscription case stays short, the ambiguous cases are explicit, and return values get a schema.
 - Lost: one rule for every kind.
-- Lives in: `packages/trpc/src/server/validation/stream-schema.ts`, `src/server/execute.ts` (`validateItems`), `src/server/procedures/builder.ts` (`StreamOutputCheck`), `src/contract/index.ts`, `src/serializer/stream.ts` (return values); `packages/trpc/src/server/stream-output.test.ts`.
+- Lives in: `packages/trpc/src/server/validation/stream-schema.ts`, `src/server/execution/execute.ts` (`validateItems`), `src/server/procedures/builder.ts` (`StreamOutputCheck`), `src/contract/index.ts`, `src/serializer/stream.ts` (return values); `packages/trpc/src/server/execution/stream-output.test.ts`.

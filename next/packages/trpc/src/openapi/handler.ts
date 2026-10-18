@@ -32,7 +32,7 @@ import {
   createResponseHandle,
   normalizeCause,
   unexpectedError,
-} from '../server/execute.ts';
+} from '../server/execution/index.ts';
 import {
   CurrentPlatform,
   type ContextOption,

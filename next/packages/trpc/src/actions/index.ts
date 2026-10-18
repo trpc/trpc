@@ -33,7 +33,7 @@ import {
   callProcedure,
   isUnexpectedError,
   normalizeCause,
-} from '../server/execute.ts';
+} from '../server/execution/index.ts';
 import type {
   AnyProcedure,
   Procedure,

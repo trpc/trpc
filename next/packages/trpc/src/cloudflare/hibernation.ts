@@ -6,12 +6,12 @@ import {
   type AnyTrpcError,
 } from '../internal/error.ts';
 import type { ServerMessage } from '../internal/protocol.ts';
-import { emitEvents } from '../server/events.ts';
 import {
+  emitEvents,
   normalizeCause,
   procedureEvents,
   unexpectedError,
-} from '../server/execute.ts';
+} from '../server/execution/index.ts';
 import type { FetchHandler, PlatformArgs } from '../server/fetch.ts';
 import { resolveProcedure } from '../server/procedures/index.ts';
 import {

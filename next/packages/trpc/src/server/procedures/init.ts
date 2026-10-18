@@ -22,7 +22,7 @@ import {
   type ImplementResult,
 } from './implement.ts';
 import { mergeMeta, type MetaMerge } from './procedure.ts';
-import type { Response } from '../response.ts';
+import type { Response } from '../execution/index.ts';
 import {
   lazyWith,
   router,

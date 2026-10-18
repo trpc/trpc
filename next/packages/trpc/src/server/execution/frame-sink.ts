@@ -6,7 +6,7 @@
  * @internal
  */
 import { Context, type Stream } from 'effect';
-import type { Chunk, Frame } from '../serializer/stream.ts';
+import type { Chunk, Frame } from '../../serializer/stream.ts';
 
 /** @internal */
 export interface FrameSink {

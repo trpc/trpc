@@ -1,9 +1,9 @@
 import { Effect, Fiber, Stream } from 'effect';
-import { isTrpcError, type AnyTrpcError } from '../internal/error.ts';
-import type { AnySerializer } from '../serializer/index.ts';
-import type { Chunk } from '../serializer/stream.ts';
+import { isTrpcError, type AnyTrpcError } from '../../internal/error.ts';
+import type { AnySerializer } from '../../serializer/index.ts';
+import type { Chunk } from '../../serializer/stream.ts';
 import { unexpectedError } from './execute.ts';
-import { isTracked } from './subscriptions/index.ts';
+import { isTracked } from '../subscriptions/index.ts';
 
 /** @internal */
 export type EventFrame =
