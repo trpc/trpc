@@ -199,8 +199,7 @@ export function compileRoute(
       try {
         params[name] = decodeURIComponent(raw);
       } catch (cause) {
-        throw new TrpcError({
-          code: 'BAD_REQUEST',
+        throw new TrpcError.BadRequest({
           message: `Invalid URL encoding in path param "${name}"`,
           cause,
         });

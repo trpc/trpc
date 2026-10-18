@@ -120,6 +120,16 @@ export type CategoryCode<TCategory extends ErrorCategory> = {
 }[BuiltinErrorCode];
 
 /**
+ * Instances of the built-in classes for `TCode`, one member per code, so
+ * `Effect.catchTag` takes them one at a time:
+ * `CodeError<'PARSE_ERROR' | 'PAYLOAD_TOO_LARGE'>`.
+ * @since 0.1.0
+ * @stability stable
+ */
+export type CodeError<TCode extends BuiltinErrorCode> =
+  TCode extends BuiltinErrorCode ? TrpcError<TCode, undefined> : never;
+
+/**
  * A class for a built-in code, like `TrpcError.NotFound`. Its instances are
  * `TrpcError<TCode, undefined>`; `defined: false` until a resolver returns
  * one.
@@ -677,15 +687,8 @@ export function fromWireError(body: unknown): TrpcError {
  * @internal
  */
 export const streamErrors = {
-  streamFailed: (cause: unknown): AnyTrpcError =>
-    new TrpcError({
-      code: 'INTERNAL_SERVER_ERROR',
-      message: 'Stream failed',
-      cause,
-    }),
-  streamInterrupted: (): AnyTrpcError =>
-    new TrpcError({
-      code: 'STREAM_INTERRUPTED',
-      message: 'Stream interrupted',
-    }),
+  streamFailed: (cause: unknown): CodeError<'INTERNAL_SERVER_ERROR'> =>
+    new TrpcError.InternalServerError({ message: 'Stream failed', cause }),
+  streamInterrupted: (): CodeError<'STREAM_INTERRUPTED'> =>
+    new TrpcError.StreamInterrupted({ message: 'Stream interrupted' }),
 };

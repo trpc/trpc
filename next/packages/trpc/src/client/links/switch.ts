@@ -146,8 +146,7 @@ export function switchLink<
     const chain = branches.get(key);
     if (!chain) {
       return Stream.fail(
-        new TrpcError({
-          code: 'CLIENT_ERROR',
+        new TrpcError.ClientError({
           message: `switchLink "${name}" has no link "${key}"`,
         }),
       );

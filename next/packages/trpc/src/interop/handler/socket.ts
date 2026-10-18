@@ -107,8 +107,7 @@ function v11Session(
       const procedure = yield* resolveProcedureEffect(core.router, path);
       if (!procedure) {
         return yield* Effect.fail(
-          new TrpcError({
-            code: 'NOT_FOUND',
+          new TrpcError.NotFound({
             message: `No procedure found on path "${path}"`,
           }),
         );
@@ -116,8 +115,7 @@ function v11Session(
       const type = procedure['~trpc'].type;
       if (type !== method) {
         return yield* Effect.fail(
-          new TrpcError({
-            code: 'METHOD_NOT_SUPPORTED',
+          new TrpcError.MethodNotSupported({
             message: `"${path}" is a ${type}, not a ${method}`,
           }),
         );
@@ -128,11 +126,7 @@ function v11Session(
             ? undefined
             : (core.input.deserialize(params['input']) as unknown),
         catch: (cause) =>
-          new TrpcError({
-            code: 'PARSE_ERROR',
-            message: 'Invalid input',
-            cause,
-          }),
+          new TrpcError.ParseError({ message: 'Invalid input', cause }),
       });
       const lastEventId =
         typeof params['lastEventId'] === 'string'
@@ -218,7 +212,7 @@ function v11Session(
       sendError(
         null,
         undefined,
-        new TrpcError({ code: 'PARSE_ERROR', message: 'Invalid message' }),
+        new TrpcError.ParseError({ message: 'Invalid message' }),
       );
       return Effect.void;
     }
@@ -233,7 +227,7 @@ function v11Session(
       sendError(
         null,
         jsonrpc,
-        new TrpcError({ code: 'PARSE_ERROR', message: '`id` is required' }),
+        new TrpcError.ParseError({ message: '`id` is required' }),
       );
       return Effect.void;
     }
@@ -242,8 +236,7 @@ function v11Session(
       sendError(
         id,
         jsonrpc,
-        new TrpcError({
-          code: 'PARSE_ERROR',
+        new TrpcError.ParseError({
           message: `Unknown method "${String(method)}"`,
         }),
       );
@@ -253,7 +246,7 @@ function v11Session(
       sendError(
         id,
         jsonrpc,
-        new TrpcError({ code: 'BAD_REQUEST', message: `Duplicate id ${id}` }),
+        new TrpcError.BadRequest({ message: `Duplicate id ${id}` }),
       );
       return Effect.void;
     }
@@ -284,7 +277,7 @@ function v11Session(
           sendError(
             null,
             undefined,
-            new TrpcError({ code: 'PARSE_ERROR', message: 'Invalid JSON' }),
+            new TrpcError.ParseError({ message: 'Invalid JSON' }),
           );
           return Effect.void;
         }

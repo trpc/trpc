@@ -18,6 +18,7 @@ import {
   withDefined,
   withStatusHint,
   type AnyTrpcError,
+  type CodeError,
 } from '../../internal/error.ts';
 import { errorConstructors, isDeclaredError } from './declared.ts';
 import { CurrentFrameSink } from './frame-sink.ts';
@@ -56,9 +57,10 @@ const attempt = <A>(fn: () => A | PromiseLike<A>): Effect.Effect<A> =>
   });
 
 /** Wraps a thrown non-`TrpcError` value. Its message is masked in production. @internal */
-export function unexpectedError(cause: unknown): AnyTrpcError {
-  const err = new TrpcError({
-    code: 'INTERNAL_SERVER_ERROR',
+export function unexpectedError(
+  cause: unknown,
+): CodeError<'INTERNAL_SERVER_ERROR'> {
+  const err = new TrpcError.InternalServerError({
     message: cause instanceof Error ? cause.message : 'Internal server error',
     cause,
   });
@@ -104,8 +106,7 @@ export function normalizeCause(cause: Cause.Cause<unknown>): AnyTrpcError {
         : undeclared(reason.defect);
     }
   }
-  return new TrpcError({
-    code: 'CLIENT_CLOSED_REQUEST',
+  return new TrpcError.ClientClosedRequest({
     message: 'The request was aborted',
   });
 }
@@ -469,8 +470,7 @@ export function callProcedure(
     const resolver = def.resolver;
     if (!resolver) {
       return Effect.fail(
-        new TrpcError({
-          code: 'NOT_IMPLEMENTED',
+        new TrpcError.NotImplemented({
           message: `"${path}" is a contract procedure without an implementation`,
         }),
       );
@@ -522,8 +522,7 @@ export function callProcedure(
     if (isResponseValue(value)) {
       if (!opts.allowResponse) {
         return Effect.fail(
-          new TrpcError({
-            code: 'BAD_REQUEST',
+          new TrpcError.BadRequest({
             message: `"${path}" returns a Response, which only an unbatched HTTP call can carry`,
           }),
         );

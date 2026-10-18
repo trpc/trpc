@@ -44,7 +44,7 @@ export interface ConnectionToken<A> {
 const encoder = new TextEncoder();
 
 const unauthorized = (message: string) =>
-  new TrpcError({ code: 'UNAUTHORIZED', message });
+  new TrpcError.Unauthorized({ message });
 
 /**
  * Signed tokens for hibernating connections. A Worker that has already

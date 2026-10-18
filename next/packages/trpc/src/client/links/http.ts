@@ -146,14 +146,12 @@ const isAbort = (cause: unknown) =>
 function toHttpError(cause: unknown): AnyTrpcError {
   if (isTrpcError(cause)) return cause;
   if (isAbort(cause)) {
-    return new TrpcError({
-      code: 'CLIENT_CLOSED_REQUEST',
+    return new TrpcError.ClientClosedRequest({
       message: 'The request was aborted',
       cause,
     });
   }
-  return new TrpcError({
-    code: 'NETWORK_ERROR',
+  return new TrpcError.NetworkError({
     message: cause instanceof Error ? cause.message : 'Network error',
     cause,
   });
@@ -215,8 +213,7 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
     const theirs = res.headers.get(HEADER.serializer);
     if (theirs !== null && theirs !== serializer.name) {
       await res.body?.cancel().catch(() => {});
-      throw new TrpcError({
-        code: 'UNSUPPORTED_PROTOCOL',
+      throw new TrpcError.UnsupportedProtocol({
         message: `The server uses the '${theirs}' serializer, but this httpLink uses '${serializer.name}'. Pass the same serializer to the handler and httpLink.`,
       });
     }
@@ -807,8 +804,7 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
           if (ended) return true;
           if (giveUp()) {
             return yield* Effect.fail(
-              new TrpcError({
-                code: 'NETWORK_ERROR',
+              new TrpcError.NetworkError({
                 message: 'The subscription connection was lost',
               }),
             );
@@ -846,8 +842,7 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
       if (op.type === 'subscription') {
         if (opts.subscriptions === false) {
           return Stream.fail(
-            new TrpcError({
-              code: 'METHOD_NOT_SUPPORTED',
+            new TrpcError.MethodNotSupported({
               message: 'This httpLink has subscriptions turned off',
             }),
           );

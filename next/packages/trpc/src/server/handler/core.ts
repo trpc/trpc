@@ -149,8 +149,7 @@ export function createHandlerCore(opts: CoreOptions): HandlerCore {
         : noContext,
     publicError: (err) =>
       isUnexpectedError(err) && !expose
-        ? new TrpcError({
-            code: 'INTERNAL_SERVER_ERROR',
+        ? new TrpcError.InternalServerError({
             message: 'Internal server error',
           })
         : err,

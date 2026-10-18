@@ -44,22 +44,19 @@ export interface OpenApiLinkOptions {
 const isAbort = (cause: unknown) =>
   cause instanceof Error && cause.name === 'AbortError';
 
-const toError = (cause: unknown): AnyTrpcError =>
-  isTrpcError(cause)
-    ? cause
-    : new TrpcError(
-        isAbort(cause)
-          ? {
-              code: 'CLIENT_CLOSED_REQUEST',
-              message: 'The request was aborted',
-              cause,
-            }
-          : {
-              code: 'NETWORK_ERROR',
-              message: cause instanceof Error ? cause.message : 'Network error',
-              cause,
-            },
-      );
+const toError = (cause: unknown): AnyTrpcError => {
+  if (isTrpcError(cause)) return cause;
+  if (isAbort(cause)) {
+    return new TrpcError.ClientClosedRequest({
+      message: 'The request was aborted',
+      cause,
+    });
+  }
+  return new TrpcError.NetworkError({
+    message: cause instanceof Error ? cause.message : 'Network error',
+    cause,
+  });
+};
 
 const isPlainObject = (v: unknown): v is Record<string, unknown> =>
   typeof v === 'object' &&
@@ -104,8 +101,7 @@ export function experimental_openApiLink(
     if (!route) {
       const procedure = opts.contract.procedures[op.path];
       if (!procedure) {
-        throw new TrpcError({
-          code: 'NOT_FOUND',
+        throw new TrpcError.NotFound({
           message: `"${op.path}" is not in the contract`,
         });
       }

@@ -25,6 +25,7 @@ import {
   statusOf,
   TrpcError,
   type AnyTrpcError,
+  type CodeError,
 } from '../internal/error.ts';
 import { toAsyncIterable } from '../internal/effects.ts';
 import type { JsonSchema } from '../internal/json-schema.ts';
@@ -407,7 +408,16 @@ export function experimental_createOpenApiHandler<
 
   const readBody = (
     http: HttpServerRequest.HttpServerRequest,
-  ): Effect.Effect<Body, AnyTrpcError> =>
+  ): Effect.Effect<
+    Body,
+    CodeError<
+      | 'PARSE_ERROR'
+      | 'BAD_REQUEST'
+      | 'UNSUPPORTED_MEDIA_TYPE'
+      | 'PAYLOAD_TOO_LARGE'
+      | 'INTERNAL_SERVER_ERROR'
+    >
+  > =>
     Effect.gen(function* () {
       const bytes = yield* readBytes(http, maxBodySize);
       const type = http.headers['content-type'] ?? null;
@@ -421,8 +431,7 @@ export function experimental_createOpenApiHandler<
                     headers: { 'content-type': type },
                   }).formData(),
                 catch: (cause) =>
-                  new TrpcError({
-                    code: 'PARSE_ERROR',
+                  new TrpcError.ParseError({
                     message: 'Invalid form body',
                     cause,
                   }),
@@ -438,8 +447,7 @@ export function experimental_createOpenApiHandler<
       if (text === '') return noBody;
       if (!isJsonContentType(type)) {
         return yield* Effect.fail(
-          new TrpcError({
-            code: 'UNSUPPORTED_MEDIA_TYPE',
+          new TrpcError.UnsupportedMediaType({
             message:
               'Bodies must be application/json, application/x-www-form-urlencoded or multipart/form-data',
           }),
@@ -448,8 +456,7 @@ export function experimental_createOpenApiHandler<
       return yield* Effect.try({
         try: () => ({ value: JSON.parse(text) as unknown, fromStrings: false }),
         catch: (cause) =>
-          new TrpcError({
-            code: 'PARSE_ERROR',
+          new TrpcError.ParseError({
             message: 'Invalid JSON',
             cause,
           }),
@@ -506,8 +513,7 @@ export function experimental_createOpenApiHandler<
     }
     if (!hasParams) return body.value;
     if (body.value !== undefined && !isPlainObject(body.value)) {
-      throw new TrpcError({
-        code: 'BAD_REQUEST',
+      throw new TrpcError.BadRequest({
         message: 'A route with path params needs an object body',
       });
     }
@@ -613,8 +619,7 @@ export function experimental_createOpenApiHandler<
       const procedure = yield* entry.resolve();
       if (!procedure) {
         return yield* Effect.fail(
-          new TrpcError({
-            code: 'NOT_FOUND',
+          new TrpcError.NotFound({
             message: `The contract's "${entry.path}" is not in the router`,
           }),
         );
@@ -718,14 +723,11 @@ export function experimental_createOpenApiHandler<
         );
       }
       return yield* Effect.fail(
-        new TrpcError(
-          allowed
-            ? {
-                code: 'METHOD_NOT_SUPPORTED',
-                message: `${method} is not supported for ${url.pathname}`,
-              }
-            : { code: 'NOT_FOUND', message: `Not found: ${url.pathname}` },
-        ),
+        allowed
+          ? new TrpcError.MethodNotSupported({
+              message: `${method} is not supported for ${url.pathname}`,
+            })
+          : new TrpcError.NotFound({ message: `Not found: ${url.pathname}` }),
       );
     });
 

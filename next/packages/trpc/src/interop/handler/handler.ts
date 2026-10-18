@@ -10,6 +10,8 @@ import {
   statusOf,
   TrpcError,
   type AnyTrpcError,
+  type BuiltinErrorCode,
+  type CodeError,
 } from '../../internal/error.ts';
 import {
   hasMediaType,
@@ -224,15 +226,14 @@ type Outcome =
 const decoder = new TextDecoder();
 const identity: V11Transformer = { serialize: (v) => v, deserialize: (v) => v };
 
-const fail = (code: string, message: string) =>
-  Effect.fail(new TrpcError({ code, message }));
+const fail = <C extends BuiltinErrorCode>(code: C, message: string) =>
+  Effect.fail(new TrpcError({ code, message }) as CodeError<C>);
 
 const isRecord = (v: unknown): v is Record<string, unknown> =>
   typeof v === 'object' && v !== null;
 
 const streamOutputError = () =>
-  new TrpcError({
-    code: 'UNSUPPORTED_MEDIA_TYPE',
+  new TrpcError.UnsupportedMediaType({
     message:
       'Cannot use stream-like response in non-streaming request - use httpBatchStreamLink',
   });
@@ -268,7 +269,7 @@ const parseJson = (text: string) =>
   Effect.try({
     try: () => (text === '' ? undefined : (JSON.parse(text) as unknown)),
     catch: (cause) =>
-      new TrpcError({ code: 'PARSE_ERROR', message: 'Invalid JSON', cause }),
+      new TrpcError.ParseError({ message: 'Invalid JSON', cause }),
   });
 
 /** Aborted when the fiber handling the request is interrupted (the client left). */
@@ -468,8 +469,7 @@ export function createV11Handler<
               headers: { 'content-type': type ?? '' },
             }).formData(),
           catch: (cause) =>
-            new TrpcError({
-              code: 'PARSE_ERROR',
+            new TrpcError.ParseError({
               message: 'Invalid multipart body',
               cause,
             }),
@@ -490,8 +490,7 @@ export function createV11Handler<
       : Effect.try({
           try: () => input.deserialize(value) as unknown,
           catch: (cause) =>
-            new TrpcError({
-              code: 'BAD_REQUEST',
+            new TrpcError.BadRequest({
               message: cause instanceof Error ? cause.message : 'Invalid input',
               cause,
             }),
@@ -534,8 +533,7 @@ export function createV11Handler<
       if (!call.procedure) {
         return {
           ok: false,
-          error: new TrpcError({
-            code: 'NOT_FOUND',
+          error: new TrpcError.NotFound({
             message: `No procedure found on path "${call.path}"`,
           }),
         } as const;
@@ -543,8 +541,7 @@ export function createV11Handler<
       if (call.type === 'subscription') {
         return {
           ok: false,
-          error: new TrpcError({
-            code: 'BAD_REQUEST',
+          error: new TrpcError.BadRequest({
             message: 'Subscriptions cannot be batched',
           }),
         } as const;

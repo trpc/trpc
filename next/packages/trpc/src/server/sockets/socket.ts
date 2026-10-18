@@ -343,16 +343,14 @@ export const connectionReceiver = (
         type = kind;
         if (!procedure || !kind) {
           return yield* Effect.fail(
-            new TrpcError({
-              code: 'NOT_FOUND',
+            new TrpcError.NotFound({
               message: `No procedure at path "${path}"`,
             }),
           );
         }
         if (kind !== message.method) {
           return yield* Effect.fail(
-            new TrpcError({
-              code: 'METHOD_NOT_SUPPORTED',
+            new TrpcError.MethodNotSupported({
               message: `"${path}" is a ${kind}, not a ${String(message.method)}`,
             }),
           );
@@ -441,7 +439,7 @@ export const connectionReceiver = (
         if (!isRecord(raw) || typeof raw['type'] !== 'string') {
           sendError(
             null,
-            new TrpcError({ code: 'PARSE_ERROR', message: 'Invalid message' }),
+            new TrpcError.ParseError({ message: 'Invalid message' }),
           );
           return Effect.void;
         }
@@ -451,8 +449,7 @@ export const connectionReceiver = (
             if (message.version !== PROTOCOL_VERSION) {
               sendError(
                 null,
-                new TrpcError({
-                  code: 'UNSUPPORTED_PROTOCOL',
+                new TrpcError.UnsupportedProtocol({
                   message: `Unsupported protocol version "${String(message.version)}", expected "${PROTOCOL_VERSION}"`,
                 }),
               );
@@ -484,8 +481,7 @@ export const connectionReceiver = (
             ) {
               sendError(
                 null,
-                new TrpcError({
-                  code: 'BAD_REQUEST',
+                new TrpcError.BadRequest({
                   message: 'Each request needs a unique numeric id',
                 }),
               );
@@ -498,10 +494,7 @@ export const connectionReceiver = (
           default:
             sendError(
               null,
-              new TrpcError({
-                code: 'BAD_REQUEST',
-                message: 'Unknown message',
-              }),
+              new TrpcError.BadRequest({ message: 'Unknown message' }),
             );
             return Effect.void;
         }

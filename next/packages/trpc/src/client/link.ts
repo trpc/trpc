@@ -205,8 +205,7 @@ export type DeclContext<TDecl> = TDecl extends { context: infer C }
  */
 export function toClientError(cause: unknown): AnyTrpcError {
   if (isTrpcError(cause)) return toBuiltinError(cause, 'CLIENT_ERROR');
-  return new TrpcError({
-    code: 'CLIENT_ERROR',
+  return new TrpcError.ClientError({
     message: cause instanceof Error ? cause.message : String(cause),
     cause,
   });
@@ -225,8 +224,7 @@ export function clientErrorFromCause(
   for (const reason of cause.reasons) {
     if (Cause.isDieReason(reason)) return toClientError(reason.defect);
   }
-  return new TrpcError({
-    code: 'CLIENT_CLOSED_REQUEST',
+  return new TrpcError.ClientClosedRequest({
     message: 'The request was aborted',
   });
 }
@@ -244,8 +242,7 @@ export const firstValue = (
       Option.isSome(value)
         ? Effect.succeed(value.value)
         : Effect.fail(
-            new TrpcError({
-              code: 'CLIENT_ERROR',
+            new TrpcError.ClientError({
               message: 'The link chain ended without a result',
             }),
           ),
@@ -389,8 +386,7 @@ export function runLinks(
       const current = links[i];
       if (!current) {
         return Stream.fail(
-          new TrpcError({
-            code: 'CLIENT_ERROR',
+          new TrpcError.ClientError({
             message: 'The last link must send the request (e.g. httpLink)',
           }),
         );

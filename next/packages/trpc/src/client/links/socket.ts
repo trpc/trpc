@@ -135,10 +135,7 @@ interface SocketTransport {
 }
 
 const lostError = () =>
-  new TrpcError({
-    code: 'NETWORK_ERROR',
-    message: 'The connection was lost',
-  });
+  new TrpcError.NetworkError({ message: 'The connection was lost' });
 
 function makeSocketLink(
   transport: SocketTransport,
@@ -166,8 +163,7 @@ function makeSocketLink(
     if (message.type === 'pong') return;
     if (message.type === 'init') {
       if (message.serializer === serializer.name) return;
-      const error = new TrpcError({
-        code: 'UNSUPPORTED_PROTOCOL',
+      const error = new TrpcError.UnsupportedProtocol({
         message: `The server uses the '${message.serializer}' serializer, but this ${transport.name} uses '${serializer.name}'. Pass the same serializer to the handler and ${transport.name}.`,
       });
       conn.refused = error;
@@ -515,8 +511,7 @@ function makeSocketLink(
     Effect.runPromise(
       Effect.gen(function* () {
         const signal = Signal.Fail({
-          error: new TrpcError({
-            code: 'CLIENT_CLOSED_REQUEST',
+          error: new TrpcError.ClientClosedRequest({
             message: 'The link was closed',
           }),
         });

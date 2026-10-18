@@ -133,8 +133,7 @@ const fingerprint = (
   });
 
 const conflict = () =>
-  new TrpcError({
-    code: 'CONFLICT',
+  new TrpcError.Conflict({
     message: 'This call id was used with a different input',
   });
 
@@ -201,15 +200,13 @@ export function experimental_durable<TReq extends MiddlewareRequirements = {}>(
         Option.isSome(request) ? request.value.headers[name] : undefined;
       const callId = header(HEADER.callId);
       if (callId !== undefined && !CALL_ID.test(callId)) {
-        return new TrpcError({
-          code: 'BAD_REQUEST',
+        return new TrpcError.BadRequest({
           message: `${HEADER.callId} must be 1 to 128 letters, digits, "_", "-", "." or ":"`,
         });
       }
       const resumeFrom = header(HEADER.resumeFrom);
       if (resumeFrom !== undefined && !RESUME_FROM.test(resumeFrom)) {
-        return new TrpcError({
-          code: 'BAD_REQUEST',
+        return new TrpcError.BadRequest({
           message: `${HEADER.resumeFrom} must be a frame count`,
         });
       }
@@ -238,8 +235,7 @@ export function experimental_durable<TReq extends MiddlewareRequirements = {}>(
         }
         if (entry.state === 'streamed') {
           if (!sink) {
-            return new TrpcError({
-              code: 'BAD_REQUEST',
+            return new TrpcError.BadRequest({
               message:
                 'A streamed durable call resumes over unbatched HTTP only',
             });

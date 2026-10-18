@@ -529,8 +529,7 @@ export const inputError = (
 export const outputError = (
   issues: InputValidationErrorData['issues'],
 ): TrpcError<'INTERNAL_SERVER_ERROR'> =>
-  new TrpcError({
-    code: 'INTERNAL_SERVER_ERROR',
+  new TrpcError.InternalServerError({
     message: 'Output validation failed',
     cause: new Error(
       `Output validation failed: ${issues.map((i) => i.message).join('; ')}`,

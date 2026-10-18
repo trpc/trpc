@@ -22,6 +22,8 @@ import {
   toWireError,
   TrpcError,
   type AnyTrpcError,
+  type BuiltinErrorCode,
+  type CodeError,
 } from '../../internal/error.ts';
 import {
   blobHeaders,
@@ -358,8 +360,19 @@ export interface FetchHandler<TPlatform = undefined> {
 
 const decoder = new TextDecoder();
 
-const protocolError = (code: string, message: string) =>
-  new TrpcError({ code, message });
+const protocolError = <C extends BuiltinErrorCode>(
+  code: C,
+  message: string,
+): CodeError<C> => new TrpcError({ code, message }) as CodeError<C>;
+
+/** What reading a call's input can fail with. */
+type InputError = CodeError<
+  | 'PARSE_ERROR'
+  | 'BAD_REQUEST'
+  | 'UNSUPPORTED_MEDIA_TYPE'
+  | 'PAYLOAD_TOO_LARGE'
+  | 'INTERNAL_SERVER_ERROR'
+>;
 
 /** The `platform` of the request being handled. @internal */
 export const CurrentPlatform: Context.Reference<unknown> =
@@ -550,7 +563,7 @@ export function createFetchHandler<
     Effect.try({
       try: () => (text === '' ? undefined : (JSON.parse(text) as unknown)),
       catch: (cause) =>
-        new TrpcError({ code: 'PARSE_ERROR', message: 'Invalid JSON', cause }),
+        new TrpcError.ParseError({ message: 'Invalid JSON', cause }),
     });
 
   const readBody = (request: HttpServerRequest.HttpServerRequest) =>
@@ -575,8 +588,7 @@ export function createFetchHandler<
     try {
       return serializer.deserialize(value as never, { input: true, parts });
     } catch (cause) {
-      throw new TrpcError({
-        code: 'PARSE_ERROR',
+      throw new TrpcError.ParseError({
         message: cause instanceof Error ? cause.message : 'Invalid input',
         cause,
       });
@@ -585,7 +597,7 @@ export function createFetchHandler<
   const deserialize = (value: unknown, parts?: ReadonlyArray<Blob>) =>
     Effect.try({
       try: () => deserializeInput(value, parts),
-      catch: (cause) => cause as AnyTrpcError,
+      catch: (cause) => cause as CodeError<'PARSE_ERROR'>,
     });
 
   /** An `input` field with the serialized JSON, and parts `0`, `1`, … for its blobs. */
@@ -599,8 +611,7 @@ export function createFetchHandler<
             headers: { 'content-type': request.headers['content-type']! },
           }).formData(),
         catch: (cause) =>
-          new TrpcError({
-            code: 'PARSE_ERROR',
+          new TrpcError.ParseError({
             message: 'Invalid multipart body',
             cause,
           }),
@@ -628,7 +639,7 @@ export function createFetchHandler<
   const readInput = (
     request: HttpServerRequest.HttpServerRequest,
     search: string,
-  ): Effect.Effect<unknown, AnyTrpcError> => {
+  ): Effect.Effect<unknown, InputError> => {
     if (request.method === 'GET') {
       if (search.length <= 1) return noInput;
       try {
@@ -638,8 +649,7 @@ export function createFetchHandler<
           : Effect.succeed(serializer.deserialize(value, { input: true }));
       } catch (cause) {
         return Effect.fail(
-          new TrpcError({
-            code: 'PARSE_ERROR',
+          new TrpcError.ParseError({
             message: cause instanceof Error ? cause.message : 'Invalid input',
             cause,
           }),

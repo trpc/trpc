@@ -1,6 +1,6 @@
 import { Effect, Stream } from 'effect';
 import { Cookies, type HttpServerRequest } from 'effect/http';
-import { TrpcError, type AnyTrpcError } from '../../internal/error.ts';
+import { TrpcError, type CodeError } from '../../internal/error.ts';
 import { isJsonContentType } from '../../internal/protocol.ts';
 
 const encoder = new TextEncoder();
@@ -40,9 +40,8 @@ export const parsedBody = (
 };
 
 /** @internal */
-export const consumedError = (): AnyTrpcError =>
-  new TrpcError({
-    code: 'INTERNAL_SERVER_ERROR',
+export const consumedError = (): CodeError<'INTERNAL_SERVER_ERROR'> =>
+  new TrpcError.InternalServerError({
     message:
       'The request body was already read by another middleware. Mount tRPC before body parsers, or use one that sets req.body.',
   });
@@ -56,10 +55,12 @@ export const consumedError = (): AnyTrpcError =>
 export const readBytes = (
   request: HttpServerRequest.HttpServerRequest,
   maxBodySize: number,
-): Effect.Effect<Uint8Array, AnyTrpcError> =>
+): Effect.Effect<
+  Uint8Array,
+  CodeError<'PAYLOAD_TOO_LARGE' | 'BAD_REQUEST' | 'INTERNAL_SERVER_ERROR'>
+> =>
   Effect.gen(function* () {
-    const tooLarge = new TrpcError({
-      code: 'PAYLOAD_TOO_LARGE',
+    const tooLarge = new TrpcError.PayloadTooLarge({
       message: 'Request body is too large',
     });
     if (Number(request.headers['content-length'] ?? 0) > maxBodySize) {
@@ -83,8 +84,7 @@ export const readBytes = (
       ).pipe(
         Effect.mapError(
           (cause) =>
-            new TrpcError({
-              code: 'BAD_REQUEST',
+            new TrpcError.BadRequest({
               message: 'Could not read the request body',
               cause,
             }),

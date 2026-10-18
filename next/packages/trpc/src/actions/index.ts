@@ -258,10 +258,7 @@ function makeFactory<TMode extends ActionResultMode>(
       : Promise.resolve(Context.empty() as Context.Context<any>));
   const publicError = (err: AnyTrpcError): AnyTrpcError =>
     isUnexpectedError(err) && !expose
-      ? new TrpcError({
-          code: 'INTERNAL_SERVER_ERROR',
-          message: 'Internal server error',
-        })
+      ? new TrpcError.InternalServerError({ message: 'Internal server error' })
       : err;
 
   return (procedure: AnyProcedure) =>
