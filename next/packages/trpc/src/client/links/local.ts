@@ -70,12 +70,9 @@ export function localLink<TRouter extends AnyRouter>(
   const serializer =
     opts.serializer === false ? undefined : (opts.serializer ?? jsonSerializer);
   const layer = opts.layer as Layer.Layer<any, any, never> | undefined;
-  const runtime = layer ? ManagedRuntime.make(layer) : undefined;
-  let services: Promise<Context.Context<any>> | undefined;
-  const getServices = () =>
-    (services ??= runtime
-      ? runtime.context()
-      : Promise.resolve(Context.empty() as Context.Context<any>));
+  const services = layer
+    ? Effect.orDie(ManagedRuntime.make(layer).contextEffect)
+    : Effect.succeed(Context.empty() as Context.Context<any>);
   const roundtrip = (value: unknown, input?: boolean) => {
     if (!serializer) return value;
     const parts: Blob[] | undefined = input ? [] : undefined;
@@ -106,7 +103,7 @@ export function localLink<TRouter extends AnyRouter>(
               }),
             );
           }
-          const context = yield* Effect.promise(getServices);
+          const context = yield* services;
           const ctx = yield* Effect.promise(
             async () => (await opts.createContext?.()) ?? {},
           );
