@@ -28,3 +28,4 @@ Scripts are Effect programs on `kit.ts`: `writeFixture` writes a generated fixtu
 | `closed-errors/`       | `pnpm test` (root)                                             | [closed-error-unions](../.agent-docs/notes/closed-error-unions.md)                   |
 | `error-shells/`        | `pnpm test` (root)                                             | [error-shells](../.agent-docs/notes/error-shells.md)                                 |
 | `mcp/`                 | `pnpm test` (root), `node mcp/serve.ts [--port 3333]`          | [mcp-tools](../.agent-docs/notes/mcp-tools.md)                                       |
+| `live-queries/`        | `pnpm test` (root)                                             | [live-queries](../.agent-docs/notes/live-queries.md)                                 |

@@ -14,6 +14,7 @@
     "@effect/atom-react": "4.0.2",
     "@effect/platform-node": "4.0.2",
     "@modelcontextprotocol/sdk": "1.32.1",
+    "@tanstack/db": "0.15.0",
     "@tanstack/query-core": "5.90.20",
     "@tanstack/react-query": "5.104.1",
     "@tooling/tsconfig": "workspace:*",

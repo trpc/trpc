@@ -961,6 +961,9 @@ importers:
       '@modelcontextprotocol/sdk':
         specifier: 1.32.1
         version: 1.32.1(supports-color@10.2.2)(zod@4.6.5)
+      '@tanstack/db':
+        specifier: 0.15.0
+        version: 0.15.0(typescript@7.0.2)
       '@tanstack/query-core':
         specifier: 5.90.20
         version: 5.90.20

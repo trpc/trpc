@@ -30,3 +30,4 @@ Agent-written working notes: research, spike results, benchmarks and anything wo
 | [Durable mid-stream resume](./durable-mid-stream-resume.md)               | 19         | `durable-resume/`           |
 | [Benchmarks against v11 and oRPC](./benchmarks.md)                        | all        | `tooling/bench/`            |
 | [MCP tools](./mcp-tools.md)                                               | 25         | `mcp/`                      |
+| [Live queries and TanStack DB](./live-queries.md)                         | 26         | `live-queries/`             |
