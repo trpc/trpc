@@ -12,7 +12,11 @@ import {
   procedureEvents,
   unexpectedError,
 } from '../server/execution/index.ts';
-import type { FetchHandler, PlatformArgs } from '../server/fetch.ts';
+import {
+  type FetchHandler,
+  type PlatformArgs,
+  handlerContext,
+} from '../server/handler/index.ts';
 import { resolveProcedure } from '../server/procedures/index.ts';
 import {
   connectionReceiver,
@@ -22,7 +26,6 @@ import {
   type ConnectionReceiver,
   type SocketCoreShape,
 } from '../server/sockets/index.ts';
-import { handlerContext } from '../server/handler-context.ts';
 import {
   tracked,
   type TrackedEnvelope,

@@ -7,4 +7,4 @@
 - (agent) On sockets, `createContext` runs once per request message, with `info.transport` and `info.connectionParams`. A port without a request gets a placeholder `http://localhost/` request.
 - (agent, Q13.4; human: "Pick what you want for now") Plugins only handle requests and responses (CORS, body limits). They don't contribute typed context; middleware does that.
 - Serving on each runtime is [`platforms-through-effect-layers.md`](./platforms-through-effect-layers.md).
-- Lives in: `packages/trpc/src/server/fetch.ts`, `core.ts`, `socket.ts`.
+- Lives in: `packages/trpc/src/server/handler/fetch.ts`, `core.ts`, `socket.ts`.

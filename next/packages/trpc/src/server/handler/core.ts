@@ -11,16 +11,16 @@ import {
   isTrpcError,
   TrpcError,
   type AnyTrpcError,
-} from '../internal/error.ts';
-import type { MaybePromise, ProcedureType } from '../internal/types.ts';
+} from '../../internal/error.ts';
+import type { MaybePromise, ProcedureType } from '../../internal/types.ts';
 import {
   callProcedure,
   isUnexpectedError,
   unexpectedError,
-} from './execution/index.ts';
+} from '../execution/index.ts';
 import type { CreateContextOpts, OnErrorOpts } from './fetch.ts';
-import type { ResponseHandle, AnyProcedure } from './procedures/index.ts';
-import type { Transport } from './sockets/index.ts';
+import type { ResponseHandle, AnyProcedure } from '../procedures/index.ts';
+import type { Transport } from '../sockets/index.ts';
 
 /** @internal */
 export interface CoreOptions {

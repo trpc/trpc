@@ -29,7 +29,7 @@ import {
   SocketCore,
   type SocketCoreShape,
 } from '../server/sockets/index.ts';
-import { handlerContext } from '../server/handler-context.ts';
+import { handlerContext } from '../server/handler/index.ts';
 
 /**
  * Options for {@link serveSocket}.

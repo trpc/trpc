@@ -22,7 +22,7 @@ import {
   toWireError,
   TrpcError,
   type AnyTrpcError,
-} from '../internal/error.ts';
+} from '../../internal/error.ts';
 import {
   blobHeaders,
   CONTENT_TYPE,
@@ -34,12 +34,12 @@ import {
   SSE_EVENT,
   type BatchCall,
   type BatchLine,
-} from '../internal/protocol.ts';
-import type { MaybePromise, ProcedureType } from '../internal/types.ts';
-import { jsonSerializer, type AnySerializer } from '../serializer/index.ts';
-import { backpressure } from '../internal/effects.ts';
-import { accepts, encodeRecord } from '../internal/frames.ts';
-import type { Chunk, Frame } from '../serializer/stream.ts';
+} from '../../internal/protocol.ts';
+import type { MaybePromise, ProcedureType } from '../../internal/types.ts';
+import { jsonSerializer, type AnySerializer } from '../../serializer/index.ts';
+import { backpressure } from '../../internal/effects.ts';
+import { accepts, encodeRecord } from '../../internal/frames.ts';
+import type { Chunk, Frame } from '../../serializer/stream.ts';
 import {
   consumedError,
   parsedBody,
@@ -54,14 +54,14 @@ import {
   emitEvents,
   CurrentFrameSink,
   type FrameSink,
-} from './execution/index.ts';
+} from '../execution/index.ts';
 import {
   type AnyProcedure,
   resolveProcedure,
   type AnyRouter,
   type inferRouterContext,
   type inferRouterServices,
-} from './procedures/index.ts';
+} from '../procedures/index.ts';
 import { httpParts } from './routes.ts';
 import {
   fromWebSocketLike,
@@ -74,7 +74,7 @@ import {
   type WebSocketLike,
   UpgradeServer,
   type ServeSocket,
-} from './sockets/index.ts';
+} from '../sockets/index.ts';
 import { setHandlerContext } from './handler-context.ts';
 
 const encoder = new TextEncoder();

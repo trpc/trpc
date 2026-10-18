@@ -31,7 +31,7 @@ import {
   createFetchHandler,
   type FetchHandler,
   type FetchHandlerOptions,
-} from '../../server/fetch.ts';
+} from '../../server/handler/index.ts';
 import type { AnyRouter } from '../../server/procedures/index.ts';
 
 /**

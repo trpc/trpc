@@ -141,7 +141,7 @@ export {
   type OnErrorOpts,
   type PlatformArgs,
   type PlatformField,
-} from './fetch.ts';
+} from './handler/index.ts';
 export type {
   MessagePortLike,
   Transport,

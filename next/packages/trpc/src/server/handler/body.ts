@@ -1,7 +1,7 @@
 import { Effect, Stream } from 'effect';
 import { Cookies, type HttpServerRequest } from 'effect/http';
-import { TrpcError, type AnyTrpcError } from '../internal/error.ts';
-import { isJsonContentType } from '../internal/protocol.ts';
+import { TrpcError, type AnyTrpcError } from '../../internal/error.ts';
+import { isJsonContentType } from '../../internal/protocol.ts';
 
 const encoder = new TextEncoder();
 

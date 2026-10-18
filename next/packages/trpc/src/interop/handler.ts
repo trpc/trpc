@@ -20,14 +20,11 @@ import type { MaybePromise, ProcedureType } from '../internal/types.ts';
 import { experimental_parseBracketNotation } from '../openapi/bracket.ts';
 import { isAsyncIterable, isPromiseLike } from '../serializer/stream.ts';
 import { isPlainObject } from '../serializer/utils.ts';
-import { readBytes, responseOptions } from '../server/body.ts';
-import { createHandlerCore, type HandlerCore } from '../server/core.ts';
 import {
-  createResponseHandle,
-  normalizeCause,
-  unexpectedError,
-} from '../server/execution/index.ts';
-import {
+  readBytes,
+  responseOptions,
+  createHandlerCore,
+  type HandlerCore,
   CurrentPlatform,
   HttpApp,
   parentSpan,
@@ -37,7 +34,13 @@ import {
   type OnErrorOpts,
   type PlatformArgs,
   type PlatformField,
-} from '../server/fetch.ts';
+  setHandlerContext,
+} from '../server/handler/index.ts';
+import {
+  createResponseHandle,
+  normalizeCause,
+  unexpectedError,
+} from '../server/execution/index.ts';
 import {
   type AnyProcedure,
   resolveProcedure,
@@ -51,7 +54,6 @@ import {
   UpgradeServer,
 } from '../server/sockets/index.ts';
 import { isTracked } from '../server/subscriptions/index.ts';
-import { setHandlerContext } from '../server/handler-context.ts';
 import {
   v11Shape,
   type V11ErrorFormatterOpts,

@@ -27,20 +27,20 @@ import {
   readFormData,
 } from '../internal/protocol.ts';
 import type { MaybePromise, ProcedureType } from '../internal/types.ts';
-import { createHandlerCore } from '../server/core.ts';
 import {
-  createResponseHandle,
-  normalizeCause,
-  unexpectedError,
-} from '../server/execution/index.ts';
-import {
+  createHandlerCore,
   CurrentPlatform,
   type ContextOption,
   type CreateContextOpts,
   type LayerOption,
   type OnErrorOpts,
   type PlatformArgs,
-} from '../server/fetch.ts';
+} from '../server/handler/index.ts';
+import {
+  createResponseHandle,
+  normalizeCause,
+  unexpectedError,
+} from '../server/execution/index.ts';
 import {
   type AnyProcedure,
   resolveProcedure,

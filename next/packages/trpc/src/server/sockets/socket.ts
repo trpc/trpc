@@ -37,7 +37,7 @@ import {
   normalizeCause,
   unexpectedError,
 } from '../execution/index.ts';
-import type { HandlerCore } from '../core.ts';
+import type { HandlerCore } from '../handler/index.ts';
 import { resolveProcedure, type AnyRouter } from '../procedures/index.ts';
 import { runSocket, socketFrames } from './socket-session.ts';
 

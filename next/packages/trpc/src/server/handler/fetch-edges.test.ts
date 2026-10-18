@@ -5,7 +5,7 @@ import { jsonSerializer } from '@trpc12/trpc/serializer';
 import { createFetchHandler, error, initTrpc, lazy } from '@trpc12/trpc/server';
 import { expect, test } from 'vite-plus/test';
 import { z } from 'zod';
-import { createTestServer } from '../fixtures/server.ts';
+import { createTestServer } from '../../fixtures/server.ts';
 
 const t = initTrpc<{ ctx: { user: string } }>();
 

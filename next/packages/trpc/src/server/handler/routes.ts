@@ -1,7 +1,7 @@
 import type { Layer } from 'effect';
 import { Effect, type Context } from 'effect';
 import { HttpRouter, HttpServerRequest, HttpServerResponse } from 'effect/http';
-import { isUpgrade, upgradeTo, type ServeSocket } from './sockets/index.ts';
+import { isUpgrade, upgradeTo, type ServeSocket } from '../sockets/index.ts';
 
 type App = Effect.Effect<
   HttpServerResponse.HttpServerResponse,
