@@ -30,31 +30,49 @@ export function httpParts(opts: {
   readonly endpoint: string;
   /** Serves WebSocket upgrades to the endpoint. */
   readonly serveWebSocket: ServeSocket;
+  /**
+   * Upgrades a request that came through `fetch`, on runtimes whose
+   * upgrade is a function of the web `Request` (Deno's
+   * `upgradeWebSocket`). Without it, `fetch` serves no upgrades.
+   */
+  readonly upgradeWeb?:
+    | ((request: HttpServerRequest.HttpServerRequest) => App)
+    | undefined;
 }): HttpParts {
   const wrap = (app: App) =>
     opts.middleware.reduceRight<App>((inner, m) => m(inner), app);
   const { endpoint } = opts;
-  const route = wrap(
-    Effect.flatMap(HttpServerRequest.HttpServerRequest, (request) => {
-      if (!isUpgrade(request)) return opts.app;
-      const url = new URL(request.url, 'http://localhost');
-      if (url.pathname !== endpoint && url.pathname !== `${endpoint}/`) {
-        return Effect.succeed(HttpServerResponse.empty({ status: 404 }));
-      }
-      return Effect.as(
-        upgradeTo(request, (socket) => opts.serveWebSocket(socket, request)),
-        HttpServerResponse.empty(),
-      );
-    }),
+  /** The middleware wrap upgrades too, so `cors()` can refuse them. */
+  const upgrading = (
+    upgrade: (request: HttpServerRequest.HttpServerRequest) => App,
+  ) =>
+    wrap(
+      Effect.flatMap(HttpServerRequest.HttpServerRequest, (request) => {
+        if (!isUpgrade(request)) return opts.app;
+        const url = new URL(request.url, 'http://localhost');
+        if (url.pathname !== endpoint && url.pathname !== `${endpoint}/`) {
+          return Effect.succeed(HttpServerResponse.empty({ status: 404 }));
+        }
+        return upgrade(request);
+      }),
+    );
+  const route = upgrading((request) =>
+    Effect.as(
+      upgradeTo(request, (socket) => opts.serveWebSocket(socket, request)),
+      HttpServerResponse.empty(),
+    ),
   );
   // `/trpc/*` also matches `/trpc`.
   const routes =
     endpoint === '/'
       ? HttpRouter.add('*', '*', route)
       : HttpRouter.add('*', `${endpoint as `/${string}`}/*`, route);
-  // Fetch runtimes upgrade WebSockets themselves, through `handler.websocket`.
   const web = HttpRouter.toWebHandler(
-    HttpRouter.add('*', '*', wrap(opts.app)),
+    HttpRouter.add(
+      '*',
+      '*',
+      opts.upgradeWeb ? upgrading(opts.upgradeWeb) : wrap(opts.app),
+    ),
     { disableLogger: true },
   );
   return {

@@ -72,7 +72,7 @@ Pages marked (hidden) are unlisted on the site until they're reviewed: out of it
 - [Adapters](./adapters/overview.md): One handler serves HTTP, SSE and WebSockets on every runtime; pick the adapter for yours.
 - [Node](./adapters/node.md): Serve on Node with Effect's HttpServer, or mount the handler in Express, Fastify and node:http.
 - [Bun](./adapters/bun.md): Bun.serve takes handler.fetch; WebSockets run on Effect's Bun server.
-- [Deno](./adapters/deno.md): Deno.serve with handler.fetch, and handler.websocket for upgrades.
+- [Deno](./adapters/deno.md): Deno.serve with handler.fetch, which upgrades WebSockets with Deno.upgradeWebSocket.
 - [Fetch runtimes](./adapters/fetch.md): Cloudflare Workers, Next.js route handlers and other fetch runtimes take handler.fetch as it is.
 - [AWS Lambda](./adapters/aws-lambda.md): toLambdaHandler for API Gateway, ALB, function URLs and Lambda@Edge, with response streaming.
 - [Cloudflare](./adapters/cloudflare.md) (hidden): Everything in @trpc12/trpc/cloudflare. Durable Objects with hibernating WebSockets, publishers, durable calls, locks and connection tokens, plus Workers Traces.

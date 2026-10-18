@@ -94,7 +94,9 @@ export type CorsOptions = NonNullable<
  * also refuses WebSocket upgrades from origins it doesn't allow (403).
  * Browsers send cookies with cross-site WebSocket upgrades and CORS
  * doesn't cover them, so check the origin when you authenticate with
- * cookies. Upgrades without an `origin` (non-browser clients) pass.
+ * cookies. Upgrades without an `origin` (non-browser clients) pass. It sees
+ * upgrades under `serve()`/`toHttpEffect`, and through `handler.fetch` with
+ * `websocket.upgrade` (Deno); not sockets handed to `handler.websocket`.
  *
  * @example
  * ```ts

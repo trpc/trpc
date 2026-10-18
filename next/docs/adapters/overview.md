@@ -29,7 +29,7 @@ Procedures are served under `endpoint`, `/trpc` by default.
 | ------------------------------ | ------------------------------------------------ | --------------------- |
 | [Node](./node.md)              | `serve(handler)` on `NodeHttpServer`, or Express | yes                   |
 | [Bun](./bun.md)                | `Bun.serve({ fetch: handler.fetch })`            | with `serve(handler)` |
-| [Deno](./deno.md)              | `Deno.serve`                                     | `handler.websocket`   |
+| [Deno](./deno.md)              | `Deno.serve` on `handler.fetch`                  | `websocket.upgrade`   |
 | [Workers, Next.js](./fetch.md) | `handler.fetch`                                  | in a Durable Object   |
 | [AWS Lambda](./aws-lambda.md)  | `toLambdaHandler(handler)`                       | no                    |
 
@@ -37,7 +37,7 @@ The [`examples/runtime-matrix`](../../examples/runtime-matrix/README.md) app ser
 
 ## Middleware and CORS
 
-Request-level concerns are Effect `HttpMiddleware` in the handler's `middleware` option, outermost first. They wrap `handler.fetch` and, under `serve()`/`toHttpEffect`, WebSocket upgrades too. Call-level concerns are root `t.use()` [middleware](../server/middleware.md).
+Request-level concerns are Effect `HttpMiddleware` in the handler's `middleware` option, outermost first. They wrap `handler.fetch` and WebSocket upgrades too: under `serve()`/`toHttpEffect`, and through `handler.fetch` with `websocket.upgrade` (Deno). A socket you accept yourself and hand to `handler.websocket` skips them. Call-level concerns are root `t.use()` [middleware](../server/middleware.md).
 
 ```ts twoslash
 // ---cut-start---

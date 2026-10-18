@@ -611,3 +611,71 @@ test('handler.websocket serves a standard socket that opens after the call, and 
   );
   await handler.dispose();
 });
+
+test('with websocket.upgrade, handler.fetch upgrades through the middleware, so cors() refuses another origin with a 403', async () => {
+  const upgraded: Request[] = [];
+  const sockets: StandardSocket[] = [];
+  const handler = createFetchHandler<typeof router, string>({
+    router,
+    createContext: (opts) => ({
+      user: opts.platform,
+      transport: opts.info.transport,
+    }),
+    middleware: [cors({ allowedOrigins: ['https://app.example.com'] })],
+    websocket: {
+      upgrade: (request) => {
+        upgraded.push(request);
+        const socket = new StandardSocket();
+        sockets.push(socket);
+        return { socket, response: new Response(null, { status: 200 }) };
+      },
+    },
+  });
+  const upgrade = (path: string, origin?: string) =>
+    handler.fetch(
+      new Request(`http://localhost${path}`, {
+        headers: { upgrade: 'websocket', ...(origin ? { origin } : {}) },
+      }),
+      'deno',
+    );
+
+  expect((await upgrade('/trpc', 'https://evil.example.com')).status).toBe(403);
+  expect((await upgrade('/elsewhere')).status).toBe(404);
+  expect(upgraded).toHaveLength(0);
+
+  const accepted = await upgrade('/trpc', 'https://app.example.com');
+  expect(accepted.status).toBe(200);
+  expect(upgraded).toHaveLength(1);
+  const socket = sockets[0]!;
+  socket.open();
+  socket.receive({ type: 'init', version: '12' });
+  socket.receive({ id: 1, type: 'request', method: 'query', path: 'whoami' });
+  await vi.waitFor(() =>
+    expect(socket.sent).toContainEqual(
+      expect.objectContaining({
+        id: 1,
+        type: 'result',
+        body: { json: 'deno' },
+      }),
+    ),
+  );
+  socket.close();
+  await handler.dispose();
+});
+
+test('a websocket.upgrade that throws answers 400', async () => {
+  const handler = createFetchHandler({
+    router,
+    createContext: () => ({ user: null, transport: 'websocket' }),
+    websocket: {
+      upgrade: () => {
+        throw new TypeError('Invalid Header: missing sec-websocket-key');
+      },
+    },
+  });
+  const response = await handler.fetch(
+    new Request('http://localhost/trpc', { headers: { upgrade: 'websocket' } }),
+  );
+  expect(response.status).toBe(400);
+  await handler.dispose();
+});

@@ -246,6 +246,23 @@ export interface BaseHandlerOptions<TRouter extends AnyRouter> {
      * @default 60_000
      */
     idleTimeoutMs?: number | false;
+    /**
+     * Upgrades a WebSocket request that reaches `handler.fetch`, on runtimes
+     * that upgrade a web `Request` themselves: `Deno.upgradeWebSocket`. The
+     * upgrade runs inside `middleware`, so `cors()` refuses one from another
+     * origin with a `403` before the socket opens. Without it, upgrade
+     * requests to `fetch` are served as HTTP calls.
+     *
+     * @example
+     * ```ts
+     * const handler = createFetchHandler({ router, websocket: { upgrade: Deno.upgradeWebSocket } });
+     * Deno.serve((request) => handler.fetch(request));
+     * ```
+     */
+    upgrade?: (request: Request) => {
+      socket: WebSocketLike;
+      response: Response;
+    };
   };
 }
 
@@ -285,17 +302,15 @@ export interface FetchHandler<TPlatform = undefined> {
   ) => Promise<Response>;
   /**
    * Serves calls over an accepted WebSocket (10, 12). `request` is the
-   * upgrade request; `createContext` receives it.
+   * upgrade request; `createContext` receives it. The upgrade already
+   * happened, so `middleware` doesn't run: on Deno, prefer
+   * `websocket.upgrade`, which upgrades inside it.
    *
    * @example
    * ```ts
-   * // Deno
-   * Deno.serve((request) => {
-   *   if (request.headers.get('upgrade') !== 'websocket') return handler.fetch(request);
-   *   const { socket, response } = Deno.upgradeWebSocket(request);
-   *   handler.websocket(socket, { request });
-   *   return response;
-   * });
+   * const { socket, response } = Deno.upgradeWebSocket(request);
+   * handler.websocket(socket, { request });
+   * return response;
    * ```
    */
   websocket(
@@ -1227,8 +1242,43 @@ export function createFetchHandler<
       idleTimeoutMs,
     });
 
+  const upgrade = opts.websocket?.upgrade;
+  const upgradeWeb =
+    upgrade &&
+    ((request: HttpServerRequest.HttpServerRequest) =>
+      Effect.try(() => upgrade(request.source as Request)).pipe(
+        Effect.matchEffect({
+          onFailure: () =>
+            Effect.succeed(HttpServerResponse.empty({ status: 400 })),
+          onSuccess: (upgraded) =>
+            Effect.gen(function* () {
+              const platform = yield* CurrentPlatform;
+              yield* Effect.forkDetach(
+                Effect.flatMap(
+                  fromWebSocketLike(upgraded.socket),
+                  (effectSocket) =>
+                    serveSocketConnection(core, effectSocket, {
+                      request,
+                      platform,
+                      transport: 'websocket',
+                      idleTimeoutMs,
+                    }),
+                ),
+                { startImmediately: true },
+              );
+              return HttpServerResponse.raw(upgraded.response);
+            }),
+        }),
+      ));
+
   const middleware = opts.middleware ?? [];
-  const http = httpParts({ app, middleware, endpoint, serveWebSocket });
+  const http = httpParts({
+    app,
+    middleware,
+    endpoint,
+    serveWebSocket,
+    upgradeWeb,
+  });
 
   const handler: FetchHandler<unknown> = {
     websocket(socket, o) {
