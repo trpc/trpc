@@ -11,6 +11,8 @@ export const site = {
     'End-to-end typesafe APIs made easy.',
   ],
   url: 'https://v12.trpc.io',
+  /** The project's account on X, for `twitter:site`. */
+  x: '@trpcio',
 } as const;
 
 /**
@@ -73,6 +75,9 @@ export const copiedVersions = [v11, v10, v9] as const;
 export const blog = {
   description:
     'Releases, deep dives and lessons learned from building tRPC, by the people who maintain it.',
+  /** Its feeds (`build/feeds.ts`), where trpc.io has them. */
+  feeds: { atom: '/blog/atom.xml', rss: '/blog/rss.xml' },
+  title: 'tRPC Blog',
   /** Where trpc.io serves it. */
   url: 'https://trpc.io/blog',
 } as const;

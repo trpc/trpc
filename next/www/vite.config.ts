@@ -2,11 +2,13 @@ import { NodeServices } from '@effect/platform-node';
 import tailwindcss from '@tailwindcss/vite';
 import { tanstackStart } from '@tanstack/react-start/plugin/vite';
 import react from '@vitejs/plugin-react';
-import { Effect } from 'effect';
+import { Effect, FileSystem } from 'effect';
 import { defineConfig } from 'vite-plus';
 
 import { blogContent, blogPosts } from './build/blog-content.ts';
 import { docPages, docsContent } from './build/content.ts';
+import { blogFeeds } from './build/feeds.ts';
+import { siteIcons } from './build/icons.ts';
 import { OgCard, ogImages } from './build/og-image.ts';
 import { absoluteUrl, postDate, trpcPageUrl, trpcPostUrl } from './src/seo.ts';
 import {
@@ -39,7 +41,8 @@ const twoslashCacheDir = new URL(
   import.meta.url,
 ).pathname;
 const lockfile = new URL('../pnpm-lock.yaml', import.meta.url).pathname;
-const [pages, copiedPages, posts] = await Effect.runPromise(
+const faviconFile = new URL('public/favicon.svg', import.meta.url).pathname;
+const [pages, copiedPages, posts, favicon] = await Effect.runPromise(
   Effect.all([
     docPages({ basePath: '/docs', contentDir, samplesDir }),
     Effect.forEach(copies, (copy) =>
@@ -53,6 +56,10 @@ const [pages, copiedPages, posts] = await Effect.runPromise(
       ),
     ),
     blogPosts(blogDir),
+    Effect.gen(function* () {
+      const fs = yield* FileSystem.FileSystem;
+      return yield* fs.readFileString(faviconFile);
+    }),
   ]).pipe(Effect.provide(NodeServices.layer)),
 );
 const docCard = (
@@ -109,6 +116,8 @@ export default defineConfig({
       samplesDir,
       sourceUrl: `${site.github}/blob/main/www`,
     }),
+    blogFeeds({ posts }),
+    siteIcons({ svg: favicon }),
     ogImages({
       cards: [
         OgCard.Home({ path: '/' }),

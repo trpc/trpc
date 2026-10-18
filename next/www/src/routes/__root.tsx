@@ -17,15 +17,29 @@ import {
   UnpublishedCopyWarning,
 } from '~/components/unpublished.tsx';
 import { type FlagSearch, validateFlagSearch } from '~/flags.ts';
-import { site } from '~/site.ts';
+import { blog, site } from '~/site.ts';
 import appCss from '~/styles.css?url';
 
 export const Route = createRootRoute({
   head: () => ({
     links: [
       { href: appCss, rel: 'stylesheet' },
+      { href: '/favicon.ico', rel: 'icon', sizes: '16x16 32x32 48x48' },
       { href: '/favicon.svg', rel: 'icon', type: 'image/svg+xml' },
+      { href: '/apple-touch-icon.png', rel: 'apple-touch-icon' },
       { href: '/llms.txt', rel: 'alternate', type: 'text/plain' },
+      {
+        href: blog.feeds.rss,
+        rel: 'alternate',
+        title: `${blog.title} (RSS)`,
+        type: 'application/rss+xml',
+      },
+      {
+        href: blog.feeds.atom,
+        rel: 'alternate',
+        title: `${blog.title} (Atom)`,
+        type: 'application/atom+xml',
+      },
       {
         href: '/sitemap.xml',
         rel: 'sitemap',
