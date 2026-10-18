@@ -1,5 +1,6 @@
 ---
 title: The client
+label: Overview
 description: createTrpcClient types every call from the router's type, and the call options from its links.
 section: Client
 order: 1

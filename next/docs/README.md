@@ -9,6 +9,7 @@ User docs for v12, kept in step with the code. The website in [`../www`](../www)
 
 ## Server
 
+- [The server](./server/overview.md): How procedures, routers, context and the handler fit together, and where each page of this section comes in.
 - [Procedures](./server/procedures.md): Queries, mutations and subscriptions, with validated input and output.
 - [Routers](./server/routers.md): Plain objects of procedures, merged with mergeRouters and split with lazy().
 - [Middleware](./server/middleware.md): Base procedures that add to the context, replace the input or short-circuit a call.
@@ -25,6 +26,7 @@ User docs for v12, kept in step with the code. The website in [`../www`](../www)
 
 ## Middleware
 
+- [Built-in middleware](./middleware/overview.md): The middleware in @trpc12/trpc/middleware, for logging, rate limits, locks and durable calls, and how to apply it.
 - [Lifecycle hooks](./middleware/lifecycle.md): onStart, onSuccess, onError and onFinish, for logging and metrics.
 - [Rate limiting](./middleware/rate-limit.md): rateLimit() counts calls with Effect's RateLimiter, in memory or in Redis, and sets the RateLimit headers.
 - [Locks](./middleware/lock.md): experimental_lock() runs calls with the same key one at a time, across instances.
@@ -33,10 +35,18 @@ User docs for v12, kept in step with the code. The website in [`../www`](../www)
 ## Client
 
 - [The client](./client/overview.md): createTrpcClient types every call from the router's type, and the call options from its links.
-- [Links](./client/links.md): httpLink, wsLink, splitLink, switchLink and the other built-in links, and how calls travel over HTTP.
-- [Custom links](./client/custom-links.md): Write a link with link(), and declare the call options it reads, the errors it fails with and what it needs.
+- [Links](./client/links.md): A client's chain of links, the built-in ones, and the order they go in.
+  - [httpLink](./client/links/http.md): Queries as GET, mutations as POST and subscriptions as SSE, with batching, streamed outputs and files.
+  - [wsLink](./client/links/ws.md): Every call over one WebSocket, with connection params, keep-alive pings and reconnects that resume subscriptions.
+  - [splitLink](./client/links/split.md): Send each call down one of two chains, picked from its path, type or input.
+  - [switchLink](./client/links/switch.md): Pick one of several named chains per call, and let a call force one with a typed call option.
+  - [retryLink](./client/links/retry.md): Retry failed calls, by default queries that failed outside their typed errors, with backoff.
+  - [dedupeLink](./client/links/dedupe.md): Share one request between identical queries in flight.
+  - [loggerLink](./client/links/logger.md): Log every operation, its results and its errors, to the console or a function of your own.
+  - [localLink](./client/links/local.md): Call a router in the same process, through the client and its other links.
+  - [Validating on the client](./client/validation.md): validationLink checks inputs before sending and results when they arrive, against a contract.
+  - [Custom links](./client/custom-links.md): Write a link with link(), and declare the call options it reads, the errors it fails with and what it needs.
 - [Errors without try/catch](./client/errors.md): safe() and createSafeClient() return result tuples with typed, narrowable errors.
-- [Validating on the client](./client/validation.md): validationLink checks inputs before sending and results when they arrive, against a contract.
 - [The Effect client](./client/effect.md): createEffectClient returns an Effect per call and a Stream per subscription, with typed errors in the error channel.
 - [Tracing](./client/tracing.md): Client spans that propagate traceparent and b3, so client and server share one trace.
 
@@ -44,10 +54,11 @@ User docs for v12, kept in step with the code. The website in [`../www`](../www)
 
 - [Subscriptions](./subscriptions/overview.md): Streams of events over SSE or WebSockets, with tracked() ids so reconnects resume.
 - [Publisher](./subscriptions/publisher.md): Typed publish/subscribe as an Effect service, with a channel per audience and resumable events.
-- [Publisher backends](./subscriptions/backends.md): Recipes for a Publisher on Redis streams, Postgres LISTEN/NOTIFY and Durable Objects.
+  - [Publisher backends](./subscriptions/backends.md): Recipes for a Publisher on Redis streams, Postgres LISTEN/NOTIFY and Durable Objects.
 
 ## OpenAPI
 
+- [OpenAPI](./openapi/overview.md): Serve the router over REST, document it as OpenAPI 3.1, call REST routes from the client, and generate contracts from OpenAPI documents.
 - [REST routes](./openapi/routes.md): Serve the same router over REST: route meta, the handler, inputs, outputs and groups.
 - [The document](./openapi/document.md): Generate an OpenAPI 3.1 document from the router's schemas, or from its types.
 - [Calling REST from the client](./openapi/client.md): openApiLink sends each call to its REST route, typed from a contract.
@@ -68,6 +79,7 @@ User docs for v12, kept in step with the code. The website in [`../www`](../www)
 
 ## Integrations
 
+- [Integrations](./integrations/overview.md): Data fetching for every TanStack Query framework, React and Next.js, and the libraries tRPC works with.
 - [TanStack Query](./integrations/tanstack-query.md): Query and mutation options for every TanStack Query framework, with streamed mutations, subscriptions and hydration.
 - [Server Actions](./integrations/server-actions.md): Turn procedures into React Server Actions that take typed input or FormData, with useActionState and optimistic updates.
 - [React Server Components](./integrations/rsc.md): Prefetch in server components, stream pending queries to the browser, and tag Next's data cache by query key.

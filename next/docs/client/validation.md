@@ -1,8 +1,10 @@
 ---
 title: Validating on the client
+label: validationLink
 description: validationLink checks inputs before sending and results when they arrive, against a contract.
 section: Client
-order: 5
+parent: client/links
+order: 9
 ---
 
 Clients ship no schemas by default. To check calls against a contract in the browser, add `validationLink`: inputs are validated before anything is sent (the same `BAD_REQUEST` the server returns, so forms can show its issues), and results and subscription events are checked when they arrive (`PARSE_ERROR` when the server drifted from the contract):

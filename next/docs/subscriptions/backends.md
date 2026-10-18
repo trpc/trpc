@@ -2,7 +2,8 @@
 title: Publisher backends
 description: Recipes for a Publisher on Redis streams, Postgres LISTEN/NOTIFY and Durable Objects.
 section: Subscriptions
-order: 3
+parent: subscriptions/publisher
+order: 1
 ---
 
 No backend packages ship; these recipes are yours to copy and adapt. Both serialize events with danSON (so `Date`s survive) and share one helper that replays kept events after `lastEventId`, then follows live ones:

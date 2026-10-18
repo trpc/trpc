@@ -5,7 +5,7 @@ section: OpenAPI
 order: 1
 ---
 
-`@trpc12/trpc/openapi` serves the same router over REST, generates an OpenAPI 3.1 document from its schemas, and calls REST endpoints with the tRPC client. RPC and REST run side by side; neither changes the other.
+A procedure gets a REST route from its `route` meta, and `createOpenApiHandler` serves the routes next to the RPC handler ([OpenAPI](./overview.md)).
 
 ## Route meta
 

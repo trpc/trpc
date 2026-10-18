@@ -31,4 +31,4 @@ Past the limit it fails with `RateLimited` (`TOO_MANY_REQUESTS`, 429, `data: { l
 
 ## On the client
 
-`RateLimited` is a typed error, so the client narrows on its code. `retryLink({ retry, delayMs })` gets the error, so it can wait `error.data.retryAfter` ([Links](../client/links.md)).
+`RateLimited` is a typed error, so the client narrows on its code. `retryLink({ retry, delayMs })` gets the error, so it can wait `error.data.retryAfter` ([retryLink](../client/links/retry.md#waiting-out-a-rate-limit)).

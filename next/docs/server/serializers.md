@@ -103,7 +103,7 @@ A root `File` or `Blob` output of an unbatched HTTP call is the response body, w
 
 ## Query URLs
 
-Query inputs go in the URL as `?input=<JSON>`, with object keys sorted (array order is kept), so equal inputs make the same URL and hit the same HTTP cache entry. A serializer that makes refs (danSON's `$n` markers) adds `&refs=`. Long inputs fall back to `POST` ([Links](../client/links.md#query-urls)).
+Query inputs go in the URL as `?input=<JSON>`, with object keys sorted (array order is kept), so equal inputs make the same URL and hit the same HTTP cache entry. A serializer that makes refs (danSON's `$n` markers) adds `&refs=`. Long inputs fall back to `POST` ([Links](../client/links/http.md#query-urls)).
 
 ## Custom types with danSON
 

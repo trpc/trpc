@@ -1,5 +1,6 @@
 ---
 title: Subscriptions
+label: Overview
 description: Streams of events over SSE or WebSockets, with tracked() ids so reconnects resume.
 section: Subscriptions
 order: 1
