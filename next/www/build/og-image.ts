@@ -12,18 +12,18 @@ import satori, { type Font } from 'satori';
 import type { Plugin } from 'vite';
 
 import { ogImagePath, ogImageSize } from '../src/seo.ts';
-import { site } from '../src/site.ts';
+import { type CopiedVersion, site } from '../src/site.ts';
 
 export type OgCard = Data.TaggedEnum<{
   Doc: {
-    /** May be empty: most v11 pages have none. */
+    /** May be empty: most of the older versions' pages have none. */
     readonly description: string;
     readonly path: string;
     readonly section: string;
     readonly title: string;
     /** The page's canonical URL, which the card shows. */
     readonly url: string;
-    readonly version: 'v11' | 'v12';
+    readonly version: 'v12' | CopiedVersion['id'];
   };
   Home: { readonly path: string };
 }>;
@@ -50,9 +50,11 @@ const colors = {
 } as const;
 
 const versionLabels = {
+  v9: 'v9 · unmaintained',
+  v10: 'v10 · unmaintained',
   v11: 'v11 · stable',
   v12: 'v12 · experimental',
-} as const satisfies Record<'v11' | 'v12', string>;
+} as const satisfies Record<'v12' | CopiedVersion['id'], string>;
 
 interface Assets {
   readonly logo: string;

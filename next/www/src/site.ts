@@ -13,17 +13,61 @@ export const site = {
   url: 'https://v12.trpc.io',
 } as const;
 
-/** The v11 docs, copied from trpc.io as they were (`build/v11-copy.ts`). */
+/**
+ * A version of the docs trpc.io serves, copied as it was
+ * (`build/old-docs-copy.ts`).
+ */
+export interface CopiedVersion {
+  /** Where the copy serves it. */
+  readonly basePath: `/${string}/docs`;
+  /** The page trpc.io serves at `trpcPath` itself, the first in its sidebar. */
+  readonly firstDoc: string;
+  readonly id: 'v9' | 'v10' | 'v11';
+  /** Where the copy serves the images it shows. */
+  readonly imagePath: string;
+  /** As trpc.io's version banner has it. */
+  readonly status: 'stable' | 'unmaintained';
+  /** Where trpc.io serves it: `/docs/v10`. */
+  readonly trpcPath: string;
+  /** Where it's maintained. */
+  readonly url: string;
+}
+
+/** The v11 docs, which trpc.io serves at `/docs`. */
 export const v11 = {
-  /** Where the copy serves them. */
   basePath: '/v11/docs',
-  /** The page trpc.io serves at `/docs`, the first in its sidebar. */
   firstDoc: 'introduction',
-  /** Where the copy serves the images they show. */
+  id: 'v11',
   imagePath: '/v11/img',
-  /** Where they're maintained. */
+  status: 'stable',
+  trpcPath: '/docs',
   url: 'https://trpc.io',
-} as const;
+} as const satisfies CopiedVersion;
+
+/** The v10 docs, which trpc.io serves at `/docs/v10`. */
+export const v10 = {
+  basePath: '/v10/docs',
+  firstDoc: 'introduction',
+  id: 'v10',
+  imagePath: '/v10/img',
+  status: 'unmaintained',
+  trpcPath: '/docs/v10',
+  url: 'https://trpc.io',
+} as const satisfies CopiedVersion;
+
+/** The v9 docs, which trpc.io serves at `/docs/v9`. */
+export const v9 = {
+  basePath: '/v9/docs',
+  firstDoc: 'introduction',
+  id: 'v9',
+  imagePath: '/v9/img',
+  status: 'unmaintained',
+  trpcPath: '/docs/v9',
+  url: 'https://trpc.io',
+} as const satisfies CopiedVersion;
+
+/** Newest first, as the version switcher lists them. */
+export const copiedVersions = [v11, v10, v9] as const;
 
 /** Sidebar sections, in order. */
 export const sections = [

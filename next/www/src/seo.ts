@@ -1,4 +1,4 @@
-import { site, v11 } from './site.ts';
+import { type CopiedVersion, site } from './site.ts';
 
 type JsonValue =
   | boolean
@@ -32,9 +32,9 @@ export function absoluteUrl(path: string) {
   return new URL(path, site.url).href;
 }
 
-/** A v11 page on trpc.io, which serves the first page at `/docs`. */
-export function v11PageUrl(slug: string) {
-  return `${v11.url}/docs${slug === v11.firstDoc ? '' : `/${slug}`}`;
+/** A copied page on trpc.io, which serves each version's first page at its `trpcPath`. */
+export function trpcPageUrl(version: CopiedVersion, slug: string) {
+  return `${version.url}${version.trpcPath}${slug === version.firstDoc ? '' : `/${slug}`}`;
 }
 
 /** Where the build writes a page's social card (`build/og-image.ts`). */

@@ -7,20 +7,20 @@ import {
   v11Docs,
   v12Docs,
 } from '~/content/docs.ts';
-import { v11 } from '~/site.ts';
 
 const linkClass = 'font-medium text-link underline underline-offset-2';
 
 /**
  * Which version the page is of, as Docusaurus's version banner says it, with
- * a link to the page on its topic in the other version.
+ * a link to the page on its topic in the version to read instead.
  */
 export function VersionBanner(props: {
   readonly slug: string;
   readonly version: DocsVersion;
 }) {
-  const other = counterpart(props.version, props.slug);
-  if (props.version.id === 'v12') {
+  const copied = props.version.copied;
+  if (!copied) {
+    const other = counterpart(props.version, props.slug, v11Docs);
     return (
       <aside className="mb-6 flex gap-2.5 rounded-lg border border-brand/30 bg-brand/5 px-3.5 py-2.5 text-sm text-pretty">
         <FlaskConical className="mt-0.5 size-4 shrink-0 text-link" />
@@ -39,21 +39,31 @@ export function VersionBanner(props: {
       </aside>
     );
   }
+  const instead = copied.status === 'stable' ? v12Docs : v11Docs;
+  const other = counterpart(props.version, props.slug, instead);
   return (
     <aside className="mb-6 flex gap-2.5 rounded-lg border bg-muted/50 px-3.5 py-2.5 text-sm text-pretty">
       <History className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
       <p>
-        This is the documentation for tRPC v11, the stable release, as{' '}
-        <a className={linkClass} href={`${v11.url}/docs`}>
+        This is the documentation for tRPC {props.version.id},{' '}
+        {copied.status === 'stable'
+          ? 'the stable release'
+          : 'which is no longer actively maintained'}
+        , as{' '}
+        <a className={linkClass} href={`${copied.url}${copied.trpcPath}`}>
           trpc.io
         </a>{' '}
-        has it. For the experimental v12, see{' '}
+        has it. For{' '}
+        {copied.status === 'stable'
+          ? 'the experimental v12'
+          : 'the stable release'}
+        , see{' '}
         <Link
           className={linkClass}
-          params={{ _splat: other?.slug ?? v12Docs.firstDoc }}
-          to={v12Docs.route}
+          params={{ _splat: other?.slug ?? instead.firstDoc }}
+          to={instead.route}
         >
-          {other ? 'this page in v12' : 'the v12 docs'}
+          {other ? `this page in ${instead.id}` : `the ${instead.id} docs`}
         </Link>
         .
       </p>

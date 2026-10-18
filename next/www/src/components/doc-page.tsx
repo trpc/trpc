@@ -23,7 +23,7 @@ import {
   neighbours,
 } from '~/content/docs.ts';
 import type { Doc } from '~/content/types.ts';
-import { absoluteUrl, pageHead, v11PageUrl } from '~/seo.ts';
+import { absoluteUrl, pageHead, trpcPageUrl } from '~/seo.ts';
 import { site } from '~/site.ts';
 
 export function DocsLayout() {
@@ -48,8 +48,8 @@ export async function loadDocPage(version: DocsVersion, slug: string) {
 }
 
 /**
- * A page's `head()`. The v11 copy points search engines at trpc.io, where
- * the v11 docs live, and has no markdown for agents.
+ * A page's `head()`. The copies of the older versions point search engines
+ * at trpc.io, where those docs live, and have no markdown for agents.
  */
 export function docHead(version: DocsVersion, slug: string) {
   const meta = findDoc(version, slug);
@@ -58,12 +58,12 @@ export function docHead(version: DocsVersion, slug: string) {
   }
   const path = `${version.basePath}/${meta.slug}`;
   const description = meta.description || site.description;
-  if (version.id === 'v11') {
+  if (version.copied) {
     return pageHead({
-      canonical: v11PageUrl(meta.slug),
+      canonical: trpcPageUrl(version.copied, meta.slug),
       description,
       path,
-      title: `${meta.title} (v11)`,
+      title: `${meta.title} (${version.id})`,
       type: 'article',
     });
   }
@@ -197,16 +197,19 @@ export function DocPage(props: {
           </section>
         ) : null}
         <footer className="mt-12 grid gap-6 border-t pt-6">
-          {version.id === 'v12' ? (
+          {version.copied ? (
+            <a
+              className={footerLink}
+              href={trpcPageUrl(version.copied, doc.slug)}
+            >
+              <ExternalLink className="size-3.5" /> Read this page on trpc.io
+            </a>
+          ) : (
             <a
               className={footerLink}
               href={`${site.github}/edit/v12/next/docs/${doc.slug}.md`}
             >
               <Pencil className="size-3.5" /> Edit this page on GitHub
-            </a>
-          ) : (
-            <a className={footerLink} href={v11PageUrl(doc.slug)}>
-              <ExternalLink className="size-3.5" /> Read this page on trpc.io
             </a>
           )}
           <nav aria-label="Pagination" className="grid gap-3 sm:grid-cols-2">

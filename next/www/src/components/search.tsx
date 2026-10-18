@@ -176,9 +176,9 @@ function SearchPanel(props: { readonly onClose: () => void }) {
             }
           }}
           placeholder={
-            version.id === 'v12'
-              ? 'Search guides, APIs, options…'
-              : 'Search the v11 docs…'
+            version.copied
+              ? `Search the ${version.id} docs…`
+              : 'Search guides, APIs, options…'
           }
           role="combobox"
           value={query}

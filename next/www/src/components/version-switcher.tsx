@@ -26,6 +26,7 @@ export function VersionSwitcher() {
   const current = useDocsVersion();
   const pathname = useLocation({ select: (location) => location.pathname });
   const slug = slugAt(current, pathname);
+  const trpcVersion = current.copied ?? v11;
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
@@ -66,9 +67,15 @@ export function VersionSwitcher() {
         ))}
         <DropdownMenuSeparator />
         <DropdownMenuItem
-          render={<a href={`${v11.url}/docs`} rel="noopener" target="_blank" />}
+          render={
+            <a
+              href={`${trpcVersion.url}${trpcVersion.trpcPath}`}
+              rel="noopener"
+              target="_blank"
+            />
+          }
         >
-          v11 on trpc.io
+          {trpcVersion.id} on trpc.io
           <ExternalLink className="ml-auto" />
         </DropdownMenuItem>
       </DropdownMenuContent>

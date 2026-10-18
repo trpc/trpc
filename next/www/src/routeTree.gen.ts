@@ -14,9 +14,15 @@ import { Route as R404RouteImport } from './routes/404'
 import { Route as DocsRouteImport } from './routes/docs'
 import { Route as DocsIndexRouteImport } from './routes/docs.index'
 import { Route as DocsSplatRouteImport } from './routes/docs.$'
+import { Route as V10DocsRouteImport } from './routes/v10.docs'
 import { Route as V11DocsRouteImport } from './routes/v11.docs'
+import { Route as V9DocsRouteImport } from './routes/v9.docs'
+import { Route as V10DocsIndexRouteImport } from './routes/v10.docs.index'
+import { Route as V10DocsSplatRouteImport } from './routes/v10.docs.$'
 import { Route as V11DocsIndexRouteImport } from './routes/v11.docs.index'
 import { Route as V11DocsSplatRouteImport } from './routes/v11.docs.$'
+import { Route as V9DocsIndexRouteImport } from './routes/v9.docs.index'
+import { Route as V9DocsSplatRouteImport } from './routes/v9.docs.$'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -43,10 +49,30 @@ const DocsSplatRoute = DocsSplatRouteImport.update({
   path: '/$',
   getParentRoute: () => DocsRoute,
 } as any)
+const V10DocsRoute = V10DocsRouteImport.update({
+  id: '/v10/docs',
+  path: '/v10/docs',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const V11DocsRoute = V11DocsRouteImport.update({
   id: '/v11/docs',
   path: '/v11/docs',
   getParentRoute: () => rootRouteImport,
+} as any)
+const V9DocsRoute = V9DocsRouteImport.update({
+  id: '/v9/docs',
+  path: '/v9/docs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const V10DocsIndexRoute = V10DocsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => V10DocsRoute,
+} as any)
+const V10DocsSplatRoute = V10DocsSplatRouteImport.update({
+  id: '/$',
+  path: '/$',
+  getParentRoute: () => V10DocsRoute,
 } as any)
 const V11DocsIndexRoute = V11DocsIndexRouteImport.update({
   id: '/',
@@ -58,24 +84,44 @@ const V11DocsSplatRoute = V11DocsSplatRouteImport.update({
   path: '/$',
   getParentRoute: () => V11DocsRoute,
 } as any)
+const V9DocsIndexRoute = V9DocsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => V9DocsRoute,
+} as any)
+const V9DocsSplatRoute = V9DocsSplatRouteImport.update({
+  id: '/$',
+  path: '/$',
+  getParentRoute: () => V9DocsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/404': typeof R404Route
   '/docs': typeof DocsRouteWithChildren
   '/docs/$': typeof DocsSplatRoute
+  '/v10/docs': typeof V10DocsRouteWithChildren
   '/v11/docs': typeof V11DocsRouteWithChildren
+  '/v9/docs': typeof V9DocsRouteWithChildren
   '/docs/': typeof DocsIndexRoute
+  '/v10/docs/$': typeof V10DocsSplatRoute
   '/v11/docs/$': typeof V11DocsSplatRoute
+  '/v9/docs/$': typeof V9DocsSplatRoute
+  '/v10/docs/': typeof V10DocsIndexRoute
   '/v11/docs/': typeof V11DocsIndexRoute
+  '/v9/docs/': typeof V9DocsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/404': typeof R404Route
   '/docs/$': typeof DocsSplatRoute
   '/docs': typeof DocsIndexRoute
+  '/v10/docs/$': typeof V10DocsSplatRoute
   '/v11/docs/$': typeof V11DocsSplatRoute
+  '/v9/docs/$': typeof V9DocsSplatRoute
+  '/v10/docs': typeof V10DocsIndexRoute
   '/v11/docs': typeof V11DocsIndexRoute
+  '/v9/docs': typeof V9DocsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -83,10 +129,16 @@ export interface FileRoutesById {
   '/404': typeof R404Route
   '/docs': typeof DocsRouteWithChildren
   '/docs/$': typeof DocsSplatRoute
+  '/v10/docs': typeof V10DocsRouteWithChildren
   '/v11/docs': typeof V11DocsRouteWithChildren
+  '/v9/docs': typeof V9DocsRouteWithChildren
   '/docs/': typeof DocsIndexRoute
+  '/v10/docs/$': typeof V10DocsSplatRoute
   '/v11/docs/$': typeof V11DocsSplatRoute
+  '/v9/docs/$': typeof V9DocsSplatRoute
+  '/v10/docs/': typeof V10DocsIndexRoute
   '/v11/docs/': typeof V11DocsIndexRoute
+  '/v9/docs/': typeof V9DocsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -95,29 +147,53 @@ export interface FileRouteTypes {
     | '/404'
     | '/docs'
     | '/docs/$'
+    | '/v10/docs'
     | '/v11/docs'
+    | '/v9/docs'
     | '/docs/'
+    | '/v10/docs/$'
     | '/v11/docs/$'
+    | '/v9/docs/$'
+    | '/v10/docs/'
     | '/v11/docs/'
+    | '/v9/docs/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/404' | '/docs/$' | '/docs' | '/v11/docs/$' | '/v11/docs'
+  to:
+    | '/'
+    | '/404'
+    | '/docs/$'
+    | '/docs'
+    | '/v10/docs/$'
+    | '/v11/docs/$'
+    | '/v9/docs/$'
+    | '/v10/docs'
+    | '/v11/docs'
+    | '/v9/docs'
   id:
     | '__root__'
     | '/'
     | '/404'
     | '/docs'
     | '/docs/$'
+    | '/v10/docs'
     | '/v11/docs'
+    | '/v9/docs'
     | '/docs/'
+    | '/v10/docs/$'
     | '/v11/docs/$'
+    | '/v9/docs/$'
+    | '/v10/docs/'
     | '/v11/docs/'
+    | '/v9/docs/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   R404Route: typeof R404Route
   DocsRoute: typeof DocsRouteWithChildren
+  V10DocsRoute: typeof V10DocsRouteWithChildren
   V11DocsRoute: typeof V11DocsRouteWithChildren
+  V9DocsRoute: typeof V9DocsRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
@@ -157,12 +233,40 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DocsSplatRouteImport
       parentRoute: typeof DocsRoute
     }
+    '/v10/docs': {
+      id: '/v10/docs'
+      path: '/v10/docs'
+      fullPath: '/v10/docs'
+      preLoaderRoute: typeof V10DocsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/v11/docs': {
       id: '/v11/docs'
       path: '/v11/docs'
       fullPath: '/v11/docs'
       preLoaderRoute: typeof V11DocsRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/v9/docs': {
+      id: '/v9/docs'
+      path: '/v9/docs'
+      fullPath: '/v9/docs'
+      preLoaderRoute: typeof V9DocsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/v10/docs/': {
+      id: '/v10/docs/'
+      path: '/'
+      fullPath: '/v10/docs/'
+      preLoaderRoute: typeof V10DocsIndexRouteImport
+      parentRoute: typeof V10DocsRoute
+    }
+    '/v10/docs/$': {
+      id: '/v10/docs/$'
+      path: '/$'
+      fullPath: '/v10/docs/$'
+      preLoaderRoute: typeof V10DocsSplatRouteImport
+      parentRoute: typeof V10DocsRoute
     }
     '/v11/docs/': {
       id: '/v11/docs/'
@@ -177,6 +281,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/v11/docs/$'
       preLoaderRoute: typeof V11DocsSplatRouteImport
       parentRoute: typeof V11DocsRoute
+    }
+    '/v9/docs/': {
+      id: '/v9/docs/'
+      path: '/'
+      fullPath: '/v9/docs/'
+      preLoaderRoute: typeof V9DocsIndexRouteImport
+      parentRoute: typeof V9DocsRoute
+    }
+    '/v9/docs/$': {
+      id: '/v9/docs/$'
+      path: '/$'
+      fullPath: '/v9/docs/$'
+      preLoaderRoute: typeof V9DocsSplatRouteImport
+      parentRoute: typeof V9DocsRoute
     }
   }
 }
@@ -193,6 +311,19 @@ const DocsRouteChildren: DocsRouteChildren = {
 
 const DocsRouteWithChildren = DocsRoute._addFileChildren(DocsRouteChildren)
 
+interface V10DocsRouteChildren {
+  V10DocsSplatRoute: typeof V10DocsSplatRoute
+  V10DocsIndexRoute: typeof V10DocsIndexRoute
+}
+
+const V10DocsRouteChildren: V10DocsRouteChildren = {
+  V10DocsSplatRoute: V10DocsSplatRoute,
+  V10DocsIndexRoute: V10DocsIndexRoute,
+}
+
+const V10DocsRouteWithChildren =
+  V10DocsRoute._addFileChildren(V10DocsRouteChildren)
+
 interface V11DocsRouteChildren {
   V11DocsSplatRoute: typeof V11DocsSplatRoute
   V11DocsIndexRoute: typeof V11DocsIndexRoute
@@ -206,11 +337,26 @@ const V11DocsRouteChildren: V11DocsRouteChildren = {
 const V11DocsRouteWithChildren =
   V11DocsRoute._addFileChildren(V11DocsRouteChildren)
 
+interface V9DocsRouteChildren {
+  V9DocsSplatRoute: typeof V9DocsSplatRoute
+  V9DocsIndexRoute: typeof V9DocsIndexRoute
+}
+
+const V9DocsRouteChildren: V9DocsRouteChildren = {
+  V9DocsSplatRoute: V9DocsSplatRoute,
+  V9DocsIndexRoute: V9DocsIndexRoute,
+}
+
+const V9DocsRouteWithChildren =
+  V9DocsRoute._addFileChildren(V9DocsRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   R404Route: R404Route,
   DocsRoute: DocsRouteWithChildren,
+  V10DocsRoute: V10DocsRouteWithChildren,
   V11DocsRoute: V11DocsRouteWithChildren,
+  V9DocsRoute: V9DocsRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

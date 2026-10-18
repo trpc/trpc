@@ -1,11 +1,11 @@
-import { Link, useLocation } from '@tanstack/react-router';
+import { Link } from '@tanstack/react-router';
 import { PackageX } from 'lucide-react';
 import { useEffect } from 'react';
 import { toast, Toaster } from 'sonner';
 
 import { buttonVariants } from '@shared/ui/components/button';
 import { cn } from '@shared/ui/lib/utils';
-import { v11Docs } from '~/content/docs.ts';
+import { useDocsVersion, v11Docs } from '~/content/docs.ts';
 
 /** A package manager command that names a `@trpc12/` package. */
 const unpublishedCommand =
@@ -97,12 +97,9 @@ export function UnpublishedCopyWarning() {
   return <Toaster position="bottom-right" />;
 }
 
-/** Above the header everywhere but the v11 docs, whose packages are on npm. */
+/** Above the header everywhere but the older versions' docs, whose packages are on npm. */
 export function UnpublishedBanner() {
-  const v11 = useLocation({
-    select: (location) => location.pathname.startsWith('/v11'),
-  });
-  if (v11) {
+  if (useDocsVersion().copied) {
     return null;
   }
   return (

@@ -12,6 +12,20 @@ declare module 'virtual:v11-docs-manifest' {
   export const sections: ReadonlyArray<DocSection>;
 }
 
+declare module 'virtual:v10-docs-manifest' {
+  import type { DocSection } from '~/content/types.ts';
+
+  /** Every page of the v10 docs' copy (`v10/docs`), by sidebar section. */
+  export const sections: ReadonlyArray<DocSection>;
+}
+
+declare module 'virtual:v9-docs-manifest' {
+  import type { DocSection } from '~/content/types.ts';
+
+  /** Every page of the v9 docs' copy (`v9/docs`), by sidebar section. */
+  export const sections: ReadonlyArray<DocSection>;
+}
+
 declare module 'sample:*' {
   import type { Sample } from '~/content/types.ts';
 
