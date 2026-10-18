@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "smoke": "node --experimental-eventsource --disable-warning=UNDICI-ES smoke.ts"
+    "smoke": "pnpm --filter @trpc12/upgrade build && node --experimental-eventsource --disable-warning=UNDICI-ES smoke.ts"
   },
   "dependencies": {
     "@effect/platform-node": "4.0.2",

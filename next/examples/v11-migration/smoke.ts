@@ -5,6 +5,7 @@
 import { startServer } from './server/server.ts';
 import { run as serveV11Clients } from './stages/1-serve-v11-clients.ts';
 import { run as moveTheClient } from './stages/2-move-the-client.ts';
+import { run as codemod } from './stages/3-codemod.ts';
 
 const server = await startServer();
 try {
@@ -13,3 +14,4 @@ try {
 } finally {
   await server.close();
 }
+codemod();
