@@ -6,17 +6,17 @@
 
 `pnpm bench shapes [--procedures 1500] [--runs 3] [--only plain,errors]` (`next/tooling/bench/shapes.ts`; `pnpm build` first). For each shape it generates 1,500 procedures in files of 10 (half queries, half mutations, every field name unique so nothing is shared), a fetch handler over the router, and a client file per router file calling each procedure with its result annotated. Each project is checked with `tsc --extendedDiagnostics --singleThreaded` (TypeScript 7.0.2, v12 from its `.d.ts`, `skipLibCheck`), first the server half (routers and handler) and then everything. "Per procedure" subtracts an empty router.
 
-| shape           | each procedure                                                                                                                      |
-| --------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| `plain`         | `t.procedure.input(S).query((opts) => cond ? error({ code: 'NOT_FOUND' }) : { v })`                                                 |
-| `output`        | the same with `.output(S)`                                                                                                          |
-| `errors`        | `.input(S).errors({ NOT_FOUND: {}, CONFLICT: { data: S } })`, returning `opts.errors.NOT_FOUND()`                                   |
-| `errors+output` | both                                                                                                                                |
-| `middleware`    | `authed` (three `.use()`, one returning `UNAUTHORIZED`) plus an inline `.use((opts) => opts.next({ ctx: { … } }))`, then `.input()` |
-| `effect`        | `plain` with an `Effect.gen` resolver that `yield*`s the error                                                                      |
-| `effect services` | `effect` that also `yield*`s one of five services, every third after a `.provide()`; the handler takes their `layer`               |
-| `effect client` | `effect`, called through `createEffectClient` with `Effect.catchTag('NOT_FOUND', …)`                                                 |
-| `contract`      | `c.input(S).output(S).errors({ … }).query()` in a contract, implemented through `t.implement(contract)` and `impl.router()`         |
+| shape             | each procedure                                                                                                                      |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `plain`           | `t.procedure.input(S).query((opts) => cond ? error({ code: 'NOT_FOUND' }) : { v })`                                                 |
+| `output`          | the same with `.output(S)`                                                                                                          |
+| `errors`          | `.input(S).errors({ NOT_FOUND: {}, CONFLICT: { data: S } })`, returning `opts.errors.NOT_FOUND()`                                   |
+| `errors+output`   | both                                                                                                                                |
+| `middleware`      | `authed` (three `.use()`, one returning `UNAUTHORIZED`) plus an inline `.use((opts) => opts.next({ ctx: { … } }))`, then `.input()` |
+| `effect`          | `plain` with an `Effect.gen` resolver that `yield*`s the error                                                                      |
+| `effect services` | `effect` that also `yield*`s one of five services, every third after a `.provide()`; the handler takes their `layer`                |
+| `effect client`   | `effect`, called through `createEffectClient` with `Effect.catchTag('NOT_FOUND', …)`                                                |
+| `contract`        | `c.input(S).output(S).errors({ … }).query()` in a contract, implemented through `t.implement(contract)` and `impl.router()`         |
 
 Instantiations, types and memory are the same on every run. Check time moves by about 10% between sessions on this VM (v11's fixed number read 1.15s to 1.30s on the same day), so compare times within one table. Median of 5 runs (3 for `errors` and `effect`, which this work doesn't change).
 

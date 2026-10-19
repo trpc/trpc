@@ -92,9 +92,7 @@ import { Context, Effect } from 'effect';
 import { error } from '@trpc12/trpc/server';
 import { t, type User } from './server.ts';
 // ---cut-end---
-class CurrentUser extends Context.Service<CurrentUser, User>()(
-  'CurrentUser',
-) {}
+class CurrentUser extends Context.Service<CurrentUser, User>()('CurrentUser') {}
 
 const authed = t.procedure.provide(CurrentUser, (opts) =>
   opts.ctx.user
@@ -161,12 +159,12 @@ const create = inTx.mutation(() =>
 
 `inferRouterServices<typeof router>` is what every entry point's `layer` must provide; leaving one out is a type error that names it.
 
-| entry point                                          | the `layer` is built                                    |
-| ---------------------------------------------------- | ------------------------------------------------------- |
-| `createFetchHandler({ router, layer })`              | once, on the first call; `handler.dispose()` releases it |
-| `createRouterClient(router, { ctx, layer })`         | once per client, on its first call, and kept            |
-| `localLink({ router, layer })`                       | once per link, on its first call, and kept              |
-| `call(procedure, input, { ctx, layer })`             | for the call, and released after it                     |
+| entry point                                  | the `layer` is built                                     |
+| -------------------------------------------- | -------------------------------------------------------- |
+| `createFetchHandler({ router, layer })`      | once, on the first call; `handler.dispose()` releases it |
+| `createRouterClient(router, { ctx, layer })` | once per client, on its first call, and kept             |
+| `localLink({ router, layer })`               | once per link, on its first call, and kept               |
+| `call(procedure, input, { ctx, layer })`     | for the call, and released after it                      |
 
 Build long-lived resources (connection pools) into the handler's `layer`, not per `call()`.
 

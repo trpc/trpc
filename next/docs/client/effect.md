@@ -80,7 +80,9 @@ const client = createEffectClient({
   links: [httpLink({ url: 'http://localhost:3000/trpc' })],
 });
 
-const firstThree = client.ticks.subscribe().pipe(Stream.take(3), Stream.runCollect);
+const firstThree = client.ticks
+  .subscribe()
+  .pipe(Stream.take(3), Stream.runCollect);
 ```
 
 Call options are the Promise client's: what links read, `lastEventId` and `signal`. Interrupting already aborts, so a `signal` is only for aborting from outside Effect.
