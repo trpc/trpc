@@ -119,7 +119,7 @@ Each feature put back on top of all seven cuts (16.3 kB), which is what it would
 
 What the 16.3 kB holds: Effect 13.0 kB (the runtime and `Stream` core, 1.9 kB over the 11.1 kB floor) and tRPC 3.3 kB.
 
-`frames` and `streamed` have landed as `httpLink({ streams: experimental_httpStreams() })` ([`../decisions/http-streams-opt-in.md`](../decisions/http-streams-opt-in.md)), so their patches are gone from `patches.ts`. Built, the cut saves 0.66 kB alone (38.5 kB) and 1.56 kB after `sse` and `batch` (34.6 kB). With every other patch on top, the client is 16.5 kB; the 0.2 kB over the estimate is the `UNSUPPORTED_PROTOCOL` failure for a streamed answer the link can't read.
+`frames` and `streamed` have landed as `httpLink({ streams: experimental_httpStreams() })` ([`../decisions/http-streams-opt-in.md`](../decisions/http-streams-opt-in.md)), so their patches are gone from `patches.ts`. Built, the cut saves 0.68 kB alone (38.6 kB) and 1.56 kB after `sse` and `batch` (34.7 kB). With every other patch on top, the client is 16.6 kB; the 0.2 kB over the estimate is the `UNSUPPORTED_PROTOCOL` failure for a streamed answer the link can't read.
 
 The same cuts on the full client (43.3 kB) stack to 28.2 kB; raw `fetch` alone is −7.6 kB there too. `retryLink` and danSON already bring the streaming core, so the features' own cuts save less (`sse` −1.5, `batch` −1.4, `iterable` −2.0).
 
