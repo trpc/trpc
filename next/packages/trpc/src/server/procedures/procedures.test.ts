@@ -342,6 +342,65 @@ test('a middleware that only calls next() adds no errors', () => {
   t.procedure.use((opts) => (opts.ctx.user ? opts.next() : 1));
 });
 
+test('a typed output keeps literals in async resolvers and generators', () => {
+  const Status = z.object({ status: z.enum(['a', 'b']), n: z.number() });
+  const Event = z.object({ kind: z.enum(['x', 'y']) });
+  const status = t.procedure.output(Status);
+  const declared = status.errors({ NOT_FOUND: {} });
+
+  status.query(async () => ({ status: 'a', n: 1 }));
+  status.mutation(async (opts) => ({
+    status: 'b',
+    n: opts.ctx.user ? 1 : 0,
+  }));
+  status.query(async function (opts) {
+    if (opts.ctx.user) return { status: 'a', n: 1 };
+    return { status: 'b', n: 2 };
+  });
+  const branch = status.query(async (opts) =>
+    opts.ctx.user ? { status: 'a', n: 1 } : error({ code: 'NOT_FOUND' }),
+  );
+  expectTypeOf<
+    inferProcedureErrors<typeof branch>['code']
+  >().toEqualTypeOf<'NOT_FOUND'>();
+  declared.query(async (opts) =>
+    opts.ctx.user ? { status: 'a', n: 1 } : opts.errors.NOT_FOUND(),
+  );
+  t.procedure
+    .use(async (opts) =>
+      opts.ctx.user ? ok({ status: 'a', n: 1 }) : opts.next(),
+    )
+    .output(Status)
+    .query(async () => ({ status: 'b', n: 1 }));
+
+  t.procedure.output(Event).subscription(async function* () {
+    yield { kind: 'x' };
+  });
+  t.procedure.output(Event).subscription(async function* () {
+    yield tracked('1', { kind: 'y' });
+  });
+  t.procedure.output(stream(Event)).query(async function* () {
+    yield { kind: 'x' };
+  });
+
+  // @ts-expect-error -- 'c' is not a status
+  status.query(async () => ({ status: 'c', n: 1 }));
+  // @ts-expect-error -- 'z' is not a kind
+  t.procedure.output(Event).subscription(async function* () {
+    yield { kind: 'z' };
+  });
+  declared.query(async (opts) =>
+    // @ts-expect-error -- CONFLICT is not declared
+    opts.ctx.user ? { status: 'a', n: 1 } : error({ code: 'CONFLICT' }),
+  );
+  // @ts-expect-error -- a plain schema can't take a stream, even one that accepts any object
+  t.procedure.output(z.object({})).query(async function* () {
+    yield {};
+  });
+  // @ts-expect-error -- DbError is not a TrpcError, whatever the output
+  t.procedure.output(z.unknown()).query(() => findPost('1'));
+});
+
 test('lifecycle helpers observe the chain', async () => {
   await using ctx = await setup();
   events.length = 0;

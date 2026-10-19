@@ -1,4 +1,4 @@
-import type { Context, Effect, Stream } from 'effect';
+import type { Context, Effect } from 'effect';
 import type { AnyContractRouter, ContractDef } from '../../contract/index.ts';
 import type { AnyTrpcError } from '../../internal/error.ts';
 import type {
@@ -13,15 +13,17 @@ import {
   type BuilderDef,
   type BuilderInternals,
   type CurrentCtx,
-  type OutputConstraint,
   type ProvideOpts,
   type ResolverOpts,
+  type Returns,
   type ShortsCheck,
   type SplitReturn,
   type SplitStream,
   type StrictErrors,
   type SubscriptionResolverOpts,
+  type ValueOf,
   type With,
+  type Yields,
 } from './builder.ts';
 import type {
   EffectMiddleware,
@@ -77,28 +79,16 @@ export type UndeclaredCheck<TDef extends BuilderDef, $Errors> = [
       Exclude<$Errors, TDef['errors']>
     >;
 
+type EventOf<TDef extends BuilderDef, TTracked> = TTracked extends true
+  ? TrackedEnvelope<EventOutput<TDef['outputIn']>>
+  : EventOutput<TDef['outputIn']>;
+
 type EventsConstraint<
   TDef extends BuilderDef,
   TTracked,
 > = TDef['outputIn'] extends Unset
   ? unknown
-  : TTracked extends true
-    ?
-        | AsyncIterable<
-            TrackedEnvelope<EventOutput<TDef['outputIn']>>,
-            any,
-            any
-          >
-        | Stream.Stream<
-            TrackedEnvelope<EventOutput<TDef['outputIn']>>,
-            any,
-            any
-          >
-        | AnyTrpcError
-    :
-        | AsyncIterable<EventOutput<TDef['outputIn']>, any, any>
-        | Stream.Stream<EventOutput<TDef['outputIn']>, any, any>
-        | AnyTrpcError;
+  : Yields<EventOf<TDef, TTracked>, any>;
 
 /**
  * A procedure made from a contract leaf: the contract's client-facing types,
@@ -120,29 +110,75 @@ export type ImplementedProcedure<
   services: TDef['requires'] | Exclude<TServices, TDef['provided']>;
 }>;
 
-type Resolve<TDef extends BuilderDef, TContract extends AnyProcedure> = <$Ret>(
-  resolver: (
-    opts: ResolverOpts<TDef>,
-  ) => $Ret &
-    OutputConstraint<TDef, $Ret> &
-    StrictErrors<$Ret> &
-    UndeclaredCheck<TDef, SplitReturn<$Ret>['errors']> &
-    ShortsCheck<
-      TDef,
-      TDef['outputIn'] extends Unset ? unknown : ResultOf<TDef['outputIn']>
-    >,
+// The same split as the builder's terminals: see `Returns`.
+type ContractReturns<TDef extends BuilderDef> = TDef['outputIn'] extends Unset
+  ? unknown
+  : AsyncIterable<any, any, any> extends TDef['outputIn']
+    ? unknown
+    : ShortsCheck<TDef, ResultOf<TDef['outputIn']>> extends TypeError<any, any>
+      ? ShortsCheck<TDef, ResultOf<TDef['outputIn']>>
+      : Returns<ValueOf<TDef['outputIn']>, TDef['errors']>;
+
+type ContractYields<
+  TDef extends BuilderDef,
+  TTracked,
+> = TDef['outputIn'] extends Unset
+  ? unknown
+  : AsyncIterable<any, any, any> extends TDef['outputIn']
+    ? unknown
+    : Yields<EventOf<TDef, TTracked>, TDef['errors']>;
+
+type ResolveReturn<
+  TDef extends BuilderDef,
+  $Ret,
+> = TDef['outputIn'] extends Unset
+  ? $Ret &
+      StrictErrors<$Ret> &
+      UndeclaredCheck<TDef, SplitReturn<$Ret>['errors']>
+  : AsyncIterable<any, any, any> extends TDef['outputIn']
+    ? $Ret &
+        StrictErrors<$Ret> &
+        UndeclaredCheck<TDef, SplitReturn<$Ret>['errors']> &
+        ShortsCheck<TDef, ResultOf<TDef['outputIn']>>
+    : $Ret | ContractReturns<TDef>;
+
+type SubscribeReturn<
+  TDef extends BuilderDef,
+  TTracked,
+  $Ret,
+> = TDef['outputIn'] extends Unset
+  ? $Ret &
+      StrictErrors<$Ret> &
+      UndeclaredCheck<TDef, SplitStream<$Ret>['errors']>
+  : AsyncIterable<any, any, any> extends TDef['outputIn']
+    ? $Ret &
+        EventsConstraint<TDef, TTracked> &
+        StrictErrors<$Ret> &
+        UndeclaredCheck<TDef, SplitStream<$Ret>['errors']>
+    : $Ret | ContractYields<TDef, TTracked>;
+
+type Resolve<TDef extends BuilderDef, TContract extends AnyProcedure> = <
+  $Ret extends ContractReturns<TDef>,
+>(
+  resolver: (opts: ResolverOpts<TDef>) => ResolveReturn<TDef, $Ret>,
 ) => ImplementedProcedure<TDef, TContract, SplitReturn<$Ret>['services']>;
 
 type Terminals<TDef extends BuilderDef, TContract extends AnyProcedure> = {
   query: Resolve<TDef, TContract>;
   mutation: Resolve<TDef, TContract>;
-  subscription: <$Ret>(
+  subscription: <
+    $Ret extends ContractYields<
+      TDef,
+      ContractDefOf<TContract>['contract']['tracked']
+    >,
+  >(
     resolver: (
       opts: SubscriptionResolverOpts<TDef>,
-    ) => $Ret &
-      EventsConstraint<TDef, ContractDefOf<TContract>['contract']['tracked']> &
-      StrictErrors<$Ret> &
-      UndeclaredCheck<TDef, SplitStream<$Ret>['errors']>,
+    ) => SubscribeReturn<
+      TDef,
+      ContractDefOf<TContract>['contract']['tracked'],
+      $Ret
+    >,
   ) => ImplementedProcedure<TDef, TContract, SplitStream<$Ret>['services']>;
 };
 
