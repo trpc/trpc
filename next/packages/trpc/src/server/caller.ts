@@ -4,7 +4,11 @@ import { localLink, type LocalLinkOptions } from '../client/links/index.ts';
 import { routerType, type TrpcClient } from '../client/types.ts';
 import { frameworkError } from '../internal/error.ts';
 import type { DansonForm, MaybePromise } from '../internal/types.ts';
-import { callProcedure, normalizeCause } from './execution/index.ts';
+import {
+  callProcedure,
+  normalizeCause,
+  runtimeServices,
+} from './execution/index.ts';
 import type { RuntimeOption } from './handler/index.ts';
 import {
   checkRouterKeys,
@@ -21,9 +25,15 @@ type CtxOption<TCtx> = {} extends TCtx
 
 type Runtime<TServices> = ManagedRuntime.ManagedRuntime<TServices, unknown>;
 
-type LayerOption<TServices> = [TServices] extends [never]
-  ? { layer?: Layer.Layer<never, any, never> }
-  : { layer: Layer.Layer<TServices, any, never> };
+/** A `layer` built for the call, or a caller-owned `runtime`. */
+type CallServicesOption<TServices> = [TServices] extends [never]
+  ? {
+      layer?: Layer.Layer<never, any, never>;
+      runtime?: Runtime<never> | undefined;
+    }
+  :
+      | { layer: Layer.Layer<TServices, any, never>; runtime?: undefined }
+      | { runtime: Runtime<TServices>; layer?: undefined };
 
 /**
  * Options for {@link createRouterClient}.
@@ -78,8 +88,8 @@ export function createRouterClient<TRouter extends AnyRouter>(
 
 /**
  * The options of {@link call}. `ctx` is required when the procedure needs
- * any, and `layer` when it needs Effect services; otherwise the options can
- * be left out.
+ * any, and `layer` or `runtime` when it needs Effect services; otherwise
+ * the options can be left out.
  * @since 0.1.0
  * @stability stable
  */
@@ -89,11 +99,12 @@ export type CallOptions<TDef extends ProcedureDef> = ({} extends TDef['ctx']
   signal?: AbortSignal;
   /** Passed to middleware and the resolver. @default '' */
   path?: string;
-} & LayerOption<TDef['services']>;
+} & CallServicesOption<TDef['services']>;
 
 /**
- * Calls one procedure directly. Throws the procedure's `TrpcError`s. The
- * `layer` is built for the call and released after it.
+ * Calls one procedure directly. Throws the procedure's `TrpcError`s. A
+ * `layer` is built for the call and released once it returns, before a
+ * streamed output is read; pass a caller-owned `runtime` for those.
  *
  * @example
  * ```ts
@@ -114,6 +125,7 @@ export async function call<TDef extends ProcedureDef>(
     signal?: AbortSignal;
     path?: string;
     layer?: Layer.Layer<never, any, never>;
+    runtime?: Runtime<never>;
   };
   const effect = callProcedure({
     procedure,
@@ -122,8 +134,15 @@ export async function call<TDef extends ProcedureDef>(
     input,
     signal: o.signal ?? new AbortController().signal,
   });
+  const provided = o.runtime
+    ? Effect.flatMap(runtimeServices(o.runtime), (services) =>
+        Effect.provideContext(effect, services),
+      )
+    : o.layer
+      ? Effect.provide(effect, o.layer)
+      : effect;
   const exit = await Effect.runPromiseExit(
-    (o.layer ? Effect.provide(effect, o.layer) : effect) as Effect.Effect<TDef['output'], never, never>,
+    provided as Effect.Effect<TDef['output'], never, never>,
     { signal: o.signal },
   );
   if (Exit.isSuccess(exit)) return exit.value;

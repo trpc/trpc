@@ -1,4 +1,4 @@
-import { Context, Data, Effect, Layer } from 'effect';
+import { Context, Data, Effect, Layer, ManagedRuntime } from 'effect';
 import {
   createTrpcClient,
   httpLink,
@@ -561,7 +561,7 @@ test('call() runs one procedure, with a layer for its services', async () => {
     call(router.post.byId, { id: 'missing-2' }, { ctx: { user: null } }),
   ).rejects.toMatchObject({ code: 'NOT_FOUND', defined: true });
 
-  // @ts-expect-error -- `timed` needs Clock, so `layer` is required
+  // @ts-expect-error -- `timed` needs Clock, so `layer` or `runtime` is required
   const missing = () => call(router.timed, undefined, { ctx: { user: null } });
   expectTypeOf(missing).toBeFunction();
   // @ts-expect-error -- `byId` needs a `Ctx`, so the options are required
@@ -573,6 +573,51 @@ test('call() runs one procedure, with a layer for its services', async () => {
     .query((opts) => opts.input);
   expect(await call(echo, 'hi')).toBe('hi');
   expect(await call(echo, 'hi', { path: 'echo' })).toBe('hi');
+});
+
+test('call() releases its layer once it returns; a runtime outlives a streamed output', async () => {
+  let builds = 0;
+  let open = false;
+  const ClockScoped = Layer.effect(
+    Clock,
+    Effect.acquireRelease(
+      Effect.sync(() => {
+        builds++;
+        open = true;
+        return { now: () => (open ? 1 : 0) };
+      }),
+      () =>
+        Effect.sync(() => {
+          open = false;
+        }),
+    ),
+  );
+  const ticks = initTrpc().procedure.query(() =>
+    Effect.gen(function* () {
+      const clock = yield* Clock;
+      return (async function* () {
+        yield clock.now();
+      })();
+    }),
+  );
+  const read = async (iterable: AsyncIterable<number>) => {
+    const out: number[] = [];
+    for await (const n of iterable) out.push(n);
+    return out;
+  };
+
+  expect(
+    await read(await call(ticks, undefined, { layer: ClockScoped })),
+  ).toEqual([0]);
+
+  await using runtime = ManagedRuntime.make(ClockScoped);
+  expect(await read(await call(ticks, undefined, { runtime }))).toEqual([1]);
+  expect(await read(await call(ticks, undefined, { runtime }))).toEqual([1]);
+  expect(builds).toBe(2);
+
+  // @ts-expect-error -- `ticks` needs Clock, so `layer` or `runtime` is required
+  const missing = () => call(ticks, undefined, {});
+  expectTypeOf(missing).toBeFunction();
 });
 
 test('.output(schema, { validate: false }) types the result without running the schema (04 Q4.4)', async () => {

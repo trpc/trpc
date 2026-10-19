@@ -164,7 +164,7 @@ const create = inTx.mutation(() =>
 | `createFetchHandler({ router, layer })`        | the `layer`, built on the first call; `handler.dispose()` releases it          |
 | `createRouterClient(router, { ctx, runtime })` | your `ManagedRuntime`, built on its first use; `runtime.dispose()` releases it |
 | `localLink({ router, runtime })`               | the same                                                                       |
-| `call(procedure, input, { ctx, layer })`       | the `layer`, built for the call and released when it returns                     |
+| `call(procedure, input, { ctx, layer })`       | the `layer`, built for the call and released when it returns; or a `runtime`   |
 
 In-process clients have no lifetime of their own, so they take a runtime you own and dispose: `const runtime = ManagedRuntime.make(AppLive)`, or `await using runtime = …` in a test. Several clients can share one. Passing them a `layer` is a type error that says so. Build long-lived resources (connection pools) into the handler's `layer` or a shared runtime, not per `call()`.
 

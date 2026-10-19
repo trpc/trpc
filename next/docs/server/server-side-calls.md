@@ -26,7 +26,7 @@ In-process calls have no HTTP request: you pass the `ctx` yourself (`createRoute
 
 |                                   | `ctx`                                    | Effect services                                                           |
 | --------------------------------- | ---------------------------------------- | ------------------------------------------------------------------------- |
-| `call()`                          | a value, for this call                   | a `layer` built for the call and released when it returns                 |
+| `call()`                          | a value, for this call                   | a `layer` built for the call and released when it returns, or a `runtime` |
 | `createRouterClient`, `localLink` | a value, or a function run on every call | a `runtime` you own and dispose                                           |
 
 Pass a `ctx` function for per-request values. To share request-reading code with the handler, keep it in a function of the request and build one: `ctx: () => contextFor(HttpServerRequest.fromWeb(new Request(url, { headers })))`.
@@ -61,6 +61,8 @@ await caller.list.query();
 ```
 
 A client has no lifetime to release a layer at, so passing it a `layer` is a type error that says to pass `runtime: ManagedRuntime.make(layer)` instead. A call after `dispose()` fails with an `INTERNAL_SERVER_ERROR` instead of reaching released services, and so does a call whose layer fails to build, with the layer's error as its `cause`.
+
+`call()` takes either. Its `layer` is built for the call and released when the promise resolves, before a streamed output is read; pass a `runtime` for procedures whose output streams.
 
 ## Testing
 
