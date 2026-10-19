@@ -20,6 +20,7 @@ import {
   loadRouter,
   mergeRouters,
   type AnyRouter,
+  type inferRouterInputs,
 } from '@trpc12/trpc/server';
 import { createTestServer } from '../../fixtures/server.ts';
 import { loadRouterEffect, resolveProcedureEffect } from './router.ts';
@@ -263,7 +264,7 @@ test('mergeRouters throws when routers set a meta key to different values', () =
 });
 
 test('mergeRouters accepts routers whose meta is equal, and nests', () => {
-  const group = (routes: AnyRouter) =>
+  const group = <const R extends AnyRouter>(routes: R) =>
     t.router({ meta: { route: { prefix: '/admin', tags: ['admin'] } } }, routes);
   const inner = mergeRouters(group({ users }), { health: users });
   const merged = mergeRouters(inner, group({ ban }), { stats: users });
@@ -279,6 +280,9 @@ test('mergeRouters accepts routers whose meta is equal, and nests', () => {
   expect(() =>
     mergeRouters(merged, t.router({ meta: { route: { prefix: '/x' } } }, {})),
   ).toThrow('router meta "route"');
+  expectTypeOf<inferRouterInputs<typeof merged>['ban']>().toEqualTypeOf<{
+    id: string;
+  }>();
 });
 
 test('lazy() takes a module with a default export or the router itself', async () => {

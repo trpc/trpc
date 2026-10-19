@@ -230,7 +230,7 @@ export function mergeRouters<const T extends readonly AnyRouter[]>(
       ? unknown
       : TypeError<'mergeRouters: duplicate keys', DuplicateKeys<[...T]>>)
 ): Simplify<UnionToIntersection<T[number]>> {
-  const merged: Record<string, unknown> = {};
+  const merged: Record<string, AnyRouter[string]> = {};
   const meta: Record<string, unknown> = {};
   const metaFrom: Record<string, number> = {};
   for (const [i, router] of routers.entries()) {
@@ -238,7 +238,7 @@ export function mergeRouters<const T extends readonly AnyRouter[]>(
       if (Object.hasOwn(merged, key)) {
         throw new Error(`mergeRouters: duplicate key "${key}"`);
       }
-      merged[key] = router[key];
+      merged[key] = router[key]!;
     }
     for (const [key, value] of Object.entries(routerMetaOf(router) ?? {})) {
       if (value === undefined) continue;
