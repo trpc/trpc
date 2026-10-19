@@ -3,6 +3,7 @@ import {
   createTrpcClient,
   httpLink,
   TrpcError,
+  type TrpcIterable,
   routerType,
 } from '@trpc12/trpc/client';
 import {
@@ -15,6 +16,7 @@ import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
 
 const t = initTrpc();
+type ErrorOf<T> = T extends TrpcIterable<any, any, infer E> ? E : never;
 
 const Post = z.object({ id: z.string(), title: z.string().trim() });
 const Token = z.object({ text: z.string() });
@@ -85,7 +87,7 @@ test('stream(Item) validates and transforms each item of a streamed query', asyn
   await using ctx = await setup();
   const feed = await ctx.client.feed.query();
   expectTypeOf(feed).toEqualTypeOf<
-    AsyncIterable<{ id: string; title: string }>
+    TrpcIterable<{ id: string; title: string }, any, ErrorOf<typeof feed>>
   >();
   expect((await drain(feed)).items).toEqual([
     { id: '1', title: 'Hello' },
@@ -111,7 +113,7 @@ test('stream(Item, Return) validates the return value, and the client gets it', 
   await using ctx = await setup();
   const chat = await ctx.client.chat.mutate();
   expectTypeOf(chat).toEqualTypeOf<
-    AsyncIterable<{ text: string }, { tokens: number }>
+    TrpcIterable<{ text: string }, { tokens: number }, ErrorOf<typeof chat>>
   >();
   expect(await drain(chat)).toEqual({
     items: [{ text: 'He' }, { text: 'llo' }],
@@ -172,7 +174,7 @@ test('contracts take stream() outputs', async () => {
   });
   const chat = await client.chat.mutate();
   expectTypeOf(chat).toEqualTypeOf<
-    AsyncIterable<{ text: string }, { tokens: number }>
+    TrpcIterable<{ text: string }, { tokens: number }, ErrorOf<typeof chat>>
   >();
   expect(await drain(chat)).toEqual({
     items: [{ text: 'a' }],

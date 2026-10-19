@@ -207,7 +207,7 @@ test('no serializer: plain JSON, JSON-form client types, ?input= GET params', as
   expect(await raw.json()).toEqual({ json: 'PLAIN' });
 
   const count = await client.count.query();
-  expectTypeOf(count).toEqualTypeOf<
+  expectTypeOf(count).toExtend<
     AsyncIterable<{ n: number; at: string }, string>
   >();
   const iterator = count[Symbol.asyncIterator]();

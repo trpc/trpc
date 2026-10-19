@@ -6,7 +6,7 @@ order: 4
 v11: server/error-handling
 ---
 
-There is one error class, `TrpcError`. Return `error({ code })` from a resolver or a middleware, or fail with it in Effect code (`Effect.fail(error(…))`, `yield* error(…)`). The procedure's error union is inferred from those, with no declaration:
+There is one error class, `TrpcError`. Return `error({ code })` from a resolver or a middleware, or fail with it in Effect code (`Effect.fail(error(…))`, `yield* error(…)`). The procedure's error union is inferred from those, and from a returned `Stream`'s failures ([Streaming](./streaming.md#errors)), with no declaration:
 
 ```ts twoslash
 // ---cut-start---

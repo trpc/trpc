@@ -40,7 +40,7 @@ const [post, err] = await safeClient.post.byId.query({ id: '1' });
 
 `error` is a `TrpcError`, and its type lists every way the call can fail, in three groups:
 
-- **Defined errors** (`defined: true`): the procedure's own. They're the errors it returns, fails with or declares on the server ([Errors](../server/errors.md)), its input's `BAD_REQUEST` with `data.issues`, and errors links declare ([Custom links](./custom-links.md#errors-and-unsupported-types)). Each code has its `data` type.
+- **Defined errors** (`defined: true`): the procedure's own. They're the errors it returns, fails with (a returned `Stream`'s failures too) or declares on the server ([Errors](../server/errors.md)), its input's `BAD_REQUEST` with `data.issues`, and errors links declare ([Custom links](./custom-links.md#errors-and-unsupported-types)). Each code has its `data` type.
 - **Built-in errors** (`defined: false`, the `BuiltinError` type): one member per built-in code, and they never have `data`.
 - **Undeclared errors** (`defined: false`, the `UndeclaredError` type): a custom code thrown by a procedure that declares no errors, with its `data`, both untyped. No literal matches its code type, so `switch` cases skip it.
 
@@ -268,6 +268,60 @@ if (plainErr) {
   });
 }
 ```
+
+## Streamed outputs and subscriptions
+
+A [streamed output](../server/streaming.md#errors) and a [subscription](../subscriptions/overview.md) fail while they're iterated, after the call returned. Their iterables carry the call's errors, and `safe()` iterates them without throwing: each item is `[item, undefined]`, and a failure is a last `[undefined, error]`. Breaking out of the loop closes the stream, as with `for await` on its own. The error's type is the call's: the stream's failures, its link codes with `STREAM_INTERRUPTED`, and the rest for `unexpected`:
+
+```ts twoslash
+// ---cut-start---
+import {
+  createTrpcClient,
+  httpLink,
+  matchError,
+  routerType,
+  safe,
+} from '@trpc12/trpc/client';
+import { error } from '@trpc12/trpc/server';
+import { Stream } from 'effect';
+import { t } from './server.ts';
+declare function render(seat: string): void;
+const router = {
+  seats: t.procedure.query(() =>
+    Stream.fromIterable(['A1', 'A2']).pipe(
+      Stream.concat(
+        Stream.fail(error({ code: 'SOLD_OUT', data: { sold: 2 } })),
+      ),
+    ),
+  ),
+};
+const client = createTrpcClient({
+  router: routerType<typeof router>(),
+  links: [httpLink({ url: 'http://localhost:3000/trpc' })],
+});
+const offline = {
+  NETWORK_ERROR: () => 'You are offline',
+  BAD_RESPONSE: () => 'Try again later',
+};
+// ---cut-end---
+const [seats, err] = await safe(client.seats.query());
+if (!err) {
+  for await (const [seat, streamErr] of safe(seats)) {
+    if (streamErr) {
+      matchError(streamErr, {
+        ...offline,
+        SOLD_OUT: (e) => `Sold out after ${e.data.sold}`,
+        STREAM_INTERRUPTED: () => 'The list was cut off',
+        unexpected: (e) => e.message,
+      });
+      break;
+    }
+    render(seat);
+  }
+}
+```
+
+`createSafeClient` resolves a streamed call to the same iterable, for `safe()` to iterate. `safe()` drops a generator's return value, as `for await` does: read it with the iterator itself. In the [Effect client](./effect.md), the call's error channel lists the stream's failures too, and its streamed output is the same iterable.
 
 ## Checking a caught value
 

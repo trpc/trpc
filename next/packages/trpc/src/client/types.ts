@@ -109,11 +109,12 @@ export type ClientError<
   | UndeclaredError;
 
 /**
- * A query's or mutation's errors: the procedure's in the result form, the
- * links' as made. `STREAM_INTERRUPTED` fails a stream after its call has
- * resolved, so it's left out unless the output is an `AsyncIterable` (whose
- * error TanStack's streamed queries report); values deferred inside an
- * output reject with it untyped.
+ * A query's or mutation's errors: the procedure's in the result form (a
+ * returned `Stream`'s failures among them), the links' as made.
+ * `STREAM_INTERRUPTED` fails a stream after its call has resolved, so it's
+ * left out unless the output is an `AsyncIterable` (whose error TanStack's
+ * streamed queries report); values deferred inside an output reject with
+ * it untyped.
  * @internal
  */
 export type CallError<
@@ -121,17 +122,36 @@ export type CallError<
   F extends OutputForm,
   TLinks extends ChainTypes,
 > =
+  D['output'] extends AsyncIterable<any>
+    ? StreamedError<D, F, TLinks>
+    :
+        | ClientError<D['errors'], F, UnstreamedLinkCodes<TLinks>>
+        | DefinedError<ChainErrors<TLinks>>;
+
+/** {@link CallError} for an output that's an `AsyncIterable`. @internal */
+export type StreamedError<
+  D extends ProcedureDef,
+  F extends OutputForm,
+  TLinks extends ChainTypes,
+> =
   | ClientError<
       D['errors'],
       F,
-      D['output'] extends AsyncIterable<any>
-        ? // An output that's `never` only fails, with a response that isn't a stream.
-          [D['output']] extends [never]
-          ? UnstreamedLinkCodes<TLinks>
-          : ChainLinkCodes<TLinks>
-        : UnstreamedLinkCodes<TLinks>
+      // An output that's `never` only fails, with a response that isn't a stream.
+      [D['output']] extends [never]
+        ? UnstreamedLinkCodes<TLinks>
+        : ChainLinkCodes<TLinks>
     >
   | DefinedError<ChainErrors<TLinks>>;
+
+/**
+ * A query's or mutation's `TrpcPromise` for a streamed output: the output
+ * is a {@link TrpcIterable} carrying the call's errors. The methods pick it
+ * with an inline conditional on the output, which calls that don't stream
+ * pay nothing for; an alias around both branches cost them more.
+ * @internal
+ */
+export type StreamedPromise<V, E> = TrpcPromise<Streamed<V, E>, E>;
 
 /** A subscription's errors: every link code its chain declares. @internal */
 export type SubscriptionError<
@@ -160,6 +180,27 @@ export interface TrpcPromise<T, E> extends Promise<T> {
 export interface TrpcSubscription<T, E> extends AsyncIterable<T> {
   readonly '~error'?: E;
 }
+
+/**
+ * A query's or mutation's streamed output (a generator or `Stream` on the
+ * server), carrying the call's errors as a subscription does: iterate it
+ * with `for await`, or through `safe()` to get each step as a result.
+ * @since 0.1.0
+ * @stability experimental
+ */
+export type TrpcIterable<T, TReturn, E> = AsyncIterable<T, TReturn> & {
+  readonly '~error'?: E;
+};
+
+/**
+ * A call's value `V` whose root `AsyncIterable` carries the call's errors
+ * `E`: a {@link TrpcIterable}, by intersection, which is cheaper than
+ * inferring its item and return types. A `ReadableStream` keeps its own
+ * type: its bytes have no typed failures.
+ * @internal
+ */
+export type Streamed<V, E> =
+  V extends ReadableStream<any> ? V : V & { readonly '~error'?: E };
 
 /**
  * Options for `query()` and `mutate()` (16 CS-A): `signal`, plus the fields
@@ -264,7 +305,8 @@ type Batches<TLinks extends ChainTypes> = TLinks extends { batches: infer B }
     : true
   : false;
 
-type ChainErrors<T extends ChainTypes> = T extends { errors: infer E }
+/** @internal */
+export type ChainErrors<T extends ChainTypes> = T extends { errors: infer E }
   ? E
   : never;
 
@@ -279,7 +321,8 @@ export type ChainLinkCodes<T extends ChainTypes> = T extends {
   ? C
   : LinkErrorCode;
 
-type UnstreamedLinkCodes<T extends ChainTypes> = Exclude<
+/** @internal */
+export type UnstreamedLinkCodes<T extends ChainTypes> = Exclude<
   ChainLinkCodes<T>,
   'STREAM_INTERRUPTED'
 >;
@@ -338,10 +381,20 @@ type DecorateCarried<
           CallOptions<TContext>,
           TLinks
         >
-      ): TrpcPromise<
-        ClientValue<D['output'], ResultForm<TForm, TLinks>>,
-        CallError<D, ResultForm<TForm, TLinks>, TLinks>
-      >;
+      ): D['output'] extends AsyncIterable<any>
+        ? StreamedPromise<
+            ClientValue<D['output'], ResultForm<TForm, TLinks>>,
+            StreamedError<D, ResultForm<TForm, TLinks>, TLinks>
+          >
+        : TrpcPromise<
+            ClientValue<D['output'], ResultForm<TForm, TLinks>>,
+            | ClientError<
+                D['errors'],
+                ResultForm<TForm, TLinks>,
+                UnstreamedLinkCodes<TLinks>
+              >
+            | DefinedError<ChainErrors<TLinks>>
+          >;
     }
   : D['type'] extends 'mutation'
     ? {
@@ -352,10 +405,20 @@ type DecorateCarried<
             CallOptions<TContext>,
             TLinks
           >
-        ): TrpcPromise<
-          ClientValue<D['output'], ResultForm<TForm, TLinks>>,
-          CallError<D, ResultForm<TForm, TLinks>, TLinks>
-        >;
+        ): D['output'] extends AsyncIterable<any>
+          ? StreamedPromise<
+              ClientValue<D['output'], ResultForm<TForm, TLinks>>,
+              StreamedError<D, ResultForm<TForm, TLinks>, TLinks>
+            >
+          : TrpcPromise<
+              ClientValue<D['output'], ResultForm<TForm, TLinks>>,
+              | ClientError<
+                  D['errors'],
+                  ResultForm<TForm, TLinks>,
+                  UnstreamedLinkCodes<TLinks>
+                >
+              | DefinedError<ChainErrors<TLinks>>
+            >;
       }
     : {
         subscribe(

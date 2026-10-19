@@ -7,7 +7,7 @@ order: 1
 v11: server/subscriptions
 ---
 
-A subscription returns an async generator, an `AsyncIterable` or an Effect `Stream`. Clients iterate it with `for await`. Breaking out of the loop, or aborting `signal`, closes the connection.
+A subscription returns an async generator, an `AsyncIterable` or an Effect `Stream`. Clients iterate it with `for await`, or through `safe()` to get a failure as a result ([Errors without try/catch](../client/errors.md#streamed-outputs-and-subscriptions)). Breaking out of the loop, or aborting `signal`, closes the connection.
 
 ```ts twoslash
 // ---cut-start---

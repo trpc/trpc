@@ -96,6 +96,7 @@ export {
   type TrpcPromise,
   type UndeclaredError,
   type TrpcSubscription,
+  type TrpcIterable,
 } from './types.ts';
 export type { MessagePortLike } from '../server/sockets/index.ts';
 export {

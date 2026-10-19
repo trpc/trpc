@@ -1,6 +1,6 @@
 import { createServer } from 'node:http';
 import { NodeHttpServer } from '@effect/platform-node';
-import { Context, Effect, Exit, Layer, Scope } from 'effect';
+import { Context, Effect, Exit, Layer, Scope, Stream } from 'effect';
 import { createTrpcQueryUtils } from '@trpc12/tanstack-query';
 import {
   createTrpcClient,
@@ -116,6 +116,14 @@ export const appRouter = {
           yield word;
         }
       }),
+    /** Streams one word, then fails with `SOLD_OUT`. */
+    soldOut: t.procedure.query(() =>
+      Stream.fromIterable(['last']).pipe(
+        Stream.concat(
+          Stream.fail(error({ code: 'SOLD_OUT', data: { sku: 'a1' } })),
+        ),
+      ),
+    ),
     forever: t.procedure.mutation(async function* (opts) {
       db.openChats++;
       try {

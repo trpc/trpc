@@ -185,11 +185,15 @@ type OutputOf<R> = R extends AnyTrpcError
     : R extends Effect.Effect<infer A, any, any>
       ? Exclude<A, AnyTrpcError>
       : R;
+// A returned `Stream`'s failures are the call's too: clients get them from
+// iterating the output.
 type ErrorsOf<R> = R extends AnyTrpcError
   ? R
   : R extends Effect.Effect<infer A, infer E, any>
     ? Extract<E | A, AnyTrpcError>
-    : never;
+    : R extends Stream.Stream<any, infer E, any>
+      ? Extract<E, AnyTrpcError>
+      : never;
 // `any` is what a resolver that fails its `Returns` bound is inferred to
 // need: without the guard every router it is in would need a layer.
 type ServicesOf<R> = R extends AnyTrpcError
@@ -296,10 +300,14 @@ interface UnmappedFailure extends Error {
  * @internal
  */
 export type Returns<TOutput, TErrors> =
-  | ValueOf<TOutput>
+  | ValueOf<TOutput, TErrors>
   | Listed<TErrors>
-  | Promise<ValueOf<TOutput> | Listed<TErrors>>
-  | Effect.Effect<ValueOf<TOutput> | Listed<TErrors>, Mapped<TErrors>, any>
+  | Promise<ValueOf<TOutput, TErrors> | Listed<TErrors>>
+  | Effect.Effect<
+      ValueOf<TOutput, TErrors> | Listed<TErrors>,
+      Mapped<TErrors>,
+      any
+    >
   | (TOutput extends StreamOutput<any, any>
       ? never
       : StreamWithoutStreamSchema);
@@ -311,9 +319,9 @@ export type Yields<TEvent, TErrors> =
   | Listed<TErrors>;
 
 /** The value a query or mutation resolves to for an output schema. */
-type ValueOf<TOut> =
+type ValueOf<TOut, TErrors> =
   TOut extends StreamOutput<infer I, infer R>
-    ? AsyncIterable<I, R, any> | Stream.Stream<I, Mapped<AnyTrpcError>, any>
+    ? AsyncIterable<I, R, any> | Stream.Stream<I, Mapped<TErrors>, any>
     : TOut;
 
 /** Names the hint for a stream returned for a plain output schema. */
@@ -591,12 +599,9 @@ export type DeclaredCheck<TDef extends BuilderDef, $Ret> = [
 ] extends [never]
   ? unknown
   : ErrorsIn<
-      SplitReturn<$Ret>['errors'] | StreamFailuresOf<Awaited<$Ret>>,
+      SplitReturn<$Ret>['errors'],
       TDef['declared'][keyof TDef['declared']]
     >;
-
-type StreamFailuresOf<R> =
-  R extends Stream.Stream<any, infer E, any> ? Extract<E, AnyTrpcError> : never;
 
 /**
  * {@link DeclaredCheck} for a subscription.

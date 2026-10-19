@@ -133,6 +133,28 @@ test('errors are the typed client errors', async () => {
   }
 });
 
+test("a streamed query's error has its stream's typed failures, as they arrive", async () => {
+  await using app = await createApp();
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  const observer = new QueryObserver(
+    queryClient,
+    app.trpc.chat.soldOut.queryOptions(),
+  );
+  const result = await until(observer, (r) => r.status === 'error');
+  type Defined = Extract<typeof result.error, { readonly defined: true }>;
+  expectTypeOf<Defined>().toEqualTypeOf<
+    TrpcError<'SOLD_OUT', { sku: string }> & { readonly defined: true }
+  >();
+  expect(result.error).toMatchObject({
+    code: 'SOLD_OUT',
+    data: { sku: 'a1' },
+    defined: true,
+  });
+  expect(result.data).toEqual(['last']);
+});
+
 test('select, initialData and misspelled options are typed', async () => {
   await using app = await createApp();
   const queryClient = new QueryClient();

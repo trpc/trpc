@@ -37,8 +37,13 @@ import {
 } from '../client/link.ts';
 import type {
   CallArgs,
-  CallError,
+  StreamedError,
+  Streamed,
   SubscriptionError,
+  UnstreamedLinkCodes,
+  ChainErrors,
+  ClientError,
+  DefinedError,
   CallOptions,
   Carries,
   ChainTypes,
@@ -84,6 +89,9 @@ type DecorateEffectDef<
     ? NoLinkCarries<D['type']>
     : DecorateEffectCarried<D, TContext, TLinks>;
 
+/** A query's or mutation's Effect for a streamed output, as on the Promise client. */
+type StreamedEffect<V, E> = Effect.Effect<Streamed<V, E>, E>;
+
 type DecorateEffectCarried<
   D extends ProcedureDef,
   TContext extends object,
@@ -97,10 +105,20 @@ type DecorateEffectCarried<
           CallOptions<TContext>,
           TLinks
         >
-      ): Effect.Effect<
-        ClientValue<D['output'], ResultForm<undefined, TLinks>>,
-        CallError<D, ResultForm<undefined, TLinks>, TLinks>
-      >;
+      ): D['output'] extends AsyncIterable<any>
+        ? StreamedEffect<
+            ClientValue<D['output'], ResultForm<undefined, TLinks>>,
+            StreamedError<D, ResultForm<undefined, TLinks>, TLinks>
+          >
+        : Effect.Effect<
+            ClientValue<D['output'], ResultForm<undefined, TLinks>>,
+            | ClientError<
+                D['errors'],
+                ResultForm<undefined, TLinks>,
+                UnstreamedLinkCodes<TLinks>
+              >
+            | DefinedError<ChainErrors<TLinks>>
+          >;
     }
   : D['type'] extends 'mutation'
     ? {
@@ -111,10 +129,20 @@ type DecorateEffectCarried<
             CallOptions<TContext>,
             TLinks
           >
-        ): Effect.Effect<
-          ClientValue<D['output'], ResultForm<undefined, TLinks>>,
-          CallError<D, ResultForm<undefined, TLinks>, TLinks>
-        >;
+        ): D['output'] extends AsyncIterable<any>
+          ? StreamedEffect<
+              ClientValue<D['output'], ResultForm<undefined, TLinks>>,
+              StreamedError<D, ResultForm<undefined, TLinks>, TLinks>
+            >
+          : Effect.Effect<
+              ClientValue<D['output'], ResultForm<undefined, TLinks>>,
+              | ClientError<
+                  D['errors'],
+                  ResultForm<undefined, TLinks>,
+                  UnstreamedLinkCodes<TLinks>
+                >
+              | DefinedError<ChainErrors<TLinks>>
+            >;
       }
     : {
         subscribe(

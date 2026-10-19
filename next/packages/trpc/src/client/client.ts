@@ -28,6 +28,7 @@ import type {
   SubscribeOptions,
   TrpcClient,
   LinkErrorCode,
+  TrpcIterable,
   TrpcPromise,
   UnmetNeedCheck,
 } from './types.ts';
@@ -287,6 +288,9 @@ export type SafeResult<T, E> =
  * Awaits a call without throwing. A framework's control-flow error (Next's
  * `redirect()`, which an in-process call rethrows) still throws.
  *
+ * A streamed output or a subscription is iterated without throwing too:
+ * each step is a result, and a failure is the last one.
+ *
  * @example
  * ```ts
  * const [post, err] = await safe(client.post.byId.query({ id }));
@@ -297,6 +301,11 @@ export type SafeResult<T, E> =
  * post.title;
  *
  * const { data, error } = await safe(client.post.create.mutate(input));
+ *
+ * for await (const [token, err] of safe(tokens)) {
+ *   if (err) return err.message;
+ *   render(token);
+ * }
  * ```
  * @since 0.1.0
  * @stability stable
@@ -304,27 +313,79 @@ export type SafeResult<T, E> =
 export function safe<T, E>(
   promise: TrpcPromise<T, E>,
 ): Promise<SafeResult<T, E>>;
+/**
+ * Iterates a streamed output or a subscription without throwing: each item
+ * as `[item, undefined]`, and a failure as a last `[undefined, error]`. The
+ * generator's return value isn't kept.
+ * @since 0.1.0
+ * @stability experimental
+ */
+export function safe<T, E>(
+  iterable: TrpcIterable<T, any, E>,
+): AsyncIterable<SafeResult<T, E>>;
 // A call's `TrpcPromise` matches the first overload by reference; inferring
 // `T` through `then` here costs several times as many instantiations.
 export function safe<T, E = unknown>(
   promise: PromiseLike<T> & { readonly '~error'?: E },
 ): Promise<SafeResult<T, E>>;
-export async function safe(
+export function safe(
+  call: PromiseLike<unknown> | AsyncIterable<unknown>,
+):
+  | Promise<SafeResult<unknown, unknown>>
+  | AsyncIterable<SafeResult<unknown, unknown>> {
+  return 'then' in call && typeof call.then === 'function'
+    ? settleSafely(call)
+    : iterateSafely(call as AsyncIterable<unknown>);
+}
+
+const succeeded = (data: unknown): SafeResult<unknown, unknown> =>
+  Object.assign([data, undefined] as [unknown, undefined], {
+    data,
+    error: undefined,
+  });
+
+const failed = (cause: unknown): SafeResult<unknown, unknown> => {
+  if (hasDigest(cause)) throw cause;
+  return Object.assign([undefined, cause] as [undefined, unknown], {
+    data: undefined,
+    error: cause,
+  });
+};
+
+async function settleSafely(
   promise: PromiseLike<unknown>,
 ): Promise<SafeResult<unknown, unknown>> {
   try {
-    const data = await promise;
-    return Object.assign([data, undefined] as [unknown, undefined], {
-      data,
-      error: undefined,
-    });
+    return succeeded(await promise);
   } catch (cause) {
-    if (hasDigest(cause)) throw cause;
-    const error: unknown = cause;
-    return Object.assign([undefined, error] as [undefined, unknown], {
-      data: undefined,
-      error,
-    });
+    return failed(cause);
+  }
+}
+
+async function* iterateSafely(
+  iterable: AsyncIterable<unknown>,
+): AsyncGenerator<SafeResult<unknown, unknown>, void> {
+  const iterator = iterable[Symbol.asyncIterator]();
+  let done = false;
+  try {
+    for (;;) {
+      let step: IteratorResult<unknown>;
+      try {
+        step = await iterator.next();
+      } catch (cause) {
+        done = true;
+        yield failed(cause);
+        return;
+      }
+      if (step.done) {
+        done = true;
+        return;
+      }
+      yield succeeded(step.value);
+    }
+  } finally {
+    // The loop was left early (`break`): close the source, as `for await` would.
+    if (!done) await iterator.return?.();
   }
 }
 
