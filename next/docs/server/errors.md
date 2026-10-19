@@ -92,6 +92,61 @@ if (err) {
 }
 ```
 
+### When a procedure adds an error
+
+`post.byId` returns `NOT_FOUND`, and the client's `matchError()` handles it. When the procedure also starts returning `FORBIDDEN`, that `matchError()` stops compiling until it has a `FORBIDDEN` handler:
+
+```ts twoslash
+// @errors: 2345
+// ---cut-start---
+import {
+  createTrpcClient,
+  httpLink,
+  matchError,
+  routerType,
+  safe,
+} from '@trpc12/trpc/client';
+import { error } from '@trpc12/trpc/server';
+import { z } from 'zod';
+import { db, t } from './server.ts';
+declare const url: string;
+// ---cut-end---
+const appRouter = {
+  post: {
+    byId: t.procedure.input(z.object({ id: z.string() })).query((opts) => {
+      const post = db.post.find(opts.input.id);
+      if (!post) {
+        return error({ code: 'NOT_FOUND', data: { id: opts.input.id } });
+      }
+      if (post.author !== opts.ctx.user?.name) {
+        return error({ code: 'FORBIDDEN' });
+      }
+      return post;
+    }),
+  },
+};
+
+// ---cut-start---
+const client = createTrpcClient({
+  router: routerType<typeof appRouter>(),
+  links: [httpLink({ url })],
+});
+// ---cut-end---
+const [, err] = await safe(client.post.byId.query({ id: '1' }));
+if (err) {
+  matchError(err, {
+    NOT_FOUND: (e) => `No post ${e.data.id}`,
+    BAD_REQUEST: (e) => e.data.issues[0]?.message ?? 'Invalid id',
+    NETWORK_ERROR: () => 'You are offline',
+    BAD_RESPONSE: () => 'Try again later',
+    STREAM_INTERRUPTED: () => 'Try again later',
+    unexpected: (e) => e.message,
+  });
+}
+```
+
+Removing an error makes its handler left over, which is a type error too. Adding a code to `.errors()` works the same. A thrown error changes no type, so the client compiles and the error reaches `unexpected`. [When the links change](../client/errors.md#when-the-links-change) is the same for a link's codes.
+
 See [Errors without try/catch](../client/errors.md) for `safe()`, `matchError()` and the built-in codes.
 
 ## Thrown errors

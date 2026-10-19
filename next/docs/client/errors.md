@@ -198,7 +198,7 @@ if (err) {
 }
 ```
 
-A handler missing for one of the call's codes, or left over for a code it no longer has, is a type error, so adding an error on the server, or a link that can fail in a new way, shows every place that must handle it. So is a key for a link code the client's links don't declare (`NETWORK_ERROR` with only `localLink`), and `unexpected` once every error has its own key. The catch-all is never implied:
+A handler missing for one of the call's codes, or left over for a code it no longer has, is a type error, so adding an error on the server ([Errors](../server/errors.md#when-a-procedure-adds-an-error)), or a link that can fail in a new way ([below](#when-the-links-change)), shows every place that must handle it. So is a key for a link code the client's links don't declare (`NETWORK_ERROR` with only `localLink`), and `unexpected` once every error has its own key. The catch-all is never implied:
 
 ```ts twoslash
 // @errors: 2345
@@ -210,6 +210,63 @@ const [, err] = await safe(client.post.byId.query({ id: '1' }));
 if (err) {
   matchError(err, {
     NOT_FOUND: (e) => `No post ${e.data.id}`,
+    unexpected: (e) => e.message,
+  });
+}
+```
+
+### When the links change
+
+A link's codes are keys of every `matchError()` on its client. Adding a link that declares a code, like `rateLimit` from [Custom links](./custom-links.md#errors-and-unsupported-types), makes each `matchError()` without that key a type error. Removing it makes the key left over a type error (`offline` is the object of link handlers from above):
+
+```ts twoslash
+// @errors: 2345 2322
+// ---cut-start---
+import {
+  createTrpcClient,
+  httpLink,
+  link,
+  matchError,
+  routerType,
+  safe,
+  TrpcError,
+} from '@trpc12/trpc/client';
+import { Schema, Stream } from 'effect';
+import type { AppRouter } from './server.ts';
+declare const url: string;
+declare const budget: { take(): boolean };
+class RateLimited extends TrpcError.Tagged('RATE_LIMITED', {
+  data: Schema.Struct({ retryAfter: Schema.Number }),
+}) {}
+const rateLimit = link<{ errors: RateLimited }>((opts) =>
+  budget.take()
+    ? opts.next(opts.op)
+    : Stream.fail(new RateLimited({ retryAfter: 5 })),
+);
+const offline = {
+  NETWORK_ERROR: () => 'You are offline',
+  BAD_RESPONSE: () => 'Try again later',
+  STREAM_INTERRUPTED: () => 'Try again later',
+};
+// ---cut-end---
+const limited = createTrpcClient({
+  router: routerType<AppRouter>(),
+  links: [rateLimit, httpLink({ url })],
+});
+const [, err] = await safe(limited.post.list.query());
+if (err) {
+  matchError(err, { ...offline, unexpected: (e) => e.message });
+}
+
+const plain = createTrpcClient({
+  router: routerType<AppRouter>(),
+  links: [httpLink({ url })],
+});
+const [, plainErr] = await safe(plain.post.list.query());
+if (plainErr) {
+  matchError(plainErr, {
+    ...offline,
+    RATE_LIMITED: () => 'Slow down',
     unexpected: (e) => e.message,
   });
 }
