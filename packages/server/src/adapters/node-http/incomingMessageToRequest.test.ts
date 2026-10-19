@@ -327,24 +327,26 @@ test('does not abort request when response closes after it was ended', async () 
 });
 
 test('does not abort request after a response that finished normally', async () => {
-  let request: Request | null = null;
-  let abortedOnClose: boolean | null = null;
+  const requests: Request[] = [];
+  const abortedOnClose: boolean[] = [];
   const server = http.createServer((req, res) => {
-    request = incomingMessageToRequest(req, res, { maxBodySize: null });
+    const request = incomingMessageToRequest(req, res, { maxBodySize: null });
+    requests.push(request);
     res.once('close', () => {
-      abortedOnClose = request!.signal.aborted;
+      abortedOnClose.push(request.signal.aborted);
     });
     res.end('ok');
   });
   server.listen(0);
-  const port = (server.address() as any).port as number;
+  const address = server.address();
+  assert(address && typeof address === 'object');
 
-  const response = await fetch(`http://localhost:${port}`);
+  const response = await fetch(`http://localhost:${address.port}`);
   expect(await response.text()).toBe('ok');
-  await vi.waitFor(() => expect(abortedOnClose).not.toBeNull());
+  await vi.waitFor(() => expect(abortedOnClose).toHaveLength(1));
 
-  expect(abortedOnClose).toBe(false);
-  expect(request!.signal.aborted).toBe(false);
+  expect(abortedOnClose).toEqual([false]);
+  expect(requests.map((request) => request.signal.aborted)).toEqual([false]);
 
   await new Promise((resolve) => server.close(resolve));
 });
