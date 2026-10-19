@@ -196,6 +196,16 @@ const shapeList = {
     links: appLinks,
     callOptions: `{ tenant: 't', dedupe: false, headers: { 'x-a': '1' } }`,
   },
+  streamed: {
+    // Half return a `Stream` that may fail with `GONE`, half a generator.
+    impl: (i, kind) =>
+      i % 4 < 2
+        ? `t.procedure${input(i)}.${kind}((opts) => opts.input.a_${i} === '' ? ${returned} : Stream.make({ v_${i}: opts.input.a_${i} }).pipe(Stream.concat(Stream.fail(error({ code: 'GONE' })))))`
+        : `t.procedure${input(i)}.${kind}(async function* (opts) { yield { v_${i}: opts.input.a_${i} }; })`,
+    consume: (i, call) =>
+      `export const r${i}: AsyncIterable<{ v_${i}: string }> = await ${call};`,
+    own: { module: '', imports: `import { Stream } from 'effect';` },
+  },
 } satisfies Record<string, Shape>;
 
 type ShapeName = keyof typeof shapeList;
