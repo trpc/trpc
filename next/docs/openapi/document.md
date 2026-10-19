@@ -24,7 +24,7 @@ The document has schemas for input, output and each declared error. `filter({ pa
 
 ## From the types
 
-`experimental_generateOpenApi` only sees runtime schemas. `experimental_generateOpenApiFromTypes` from `@trpc12/trpc/openapi/typescript` also reads the router's types with the TypeScript 7 compiler, so it documents:
+`experimental_generateOpenApi` only sees runtime schemas. `experimental_generateOpenApiFromTypes` from `@trpc12/trpc/openapi/typescript` also reads the router's types with the TypeScript 7 compiler (it needs `typescript` 7 installed), so it documents:
 
 - errors that are only inferred (returned with `error()`, failed or yielded in an Effect), never declared, with their status: a `TrpcError.Tagged` class's literal `status`, the built-in code's status, or `400`;
 - the input and output of procedures without static schemas (no `.output()`, or a ctx-callback input).
