@@ -14,6 +14,7 @@ import { Link } from '@tanstack/react-router';
 import { FlaskConical } from 'lucide-react';
 import { useState } from 'react';
 
+import { TextWithCode } from '~/components/text-with-code.tsx';
 import { v12Docs } from '~/content/docs.ts';
 import { experimentIds, experiments } from '~/experiments.ts';
 import {
@@ -89,7 +90,7 @@ export function ExperimentsMenu() {
                   <span className="grid gap-0.5">
                     <span className="font-medium">{experiments[id].label}</span>
                     <span className="text-xs text-pretty text-muted-foreground">
-                      {experiments[id].description}
+                      <TextWithCode text={experiments[id].description} />
                     </span>
                   </span>
                   <Switch
@@ -113,7 +114,7 @@ export function ExperimentsMenu() {
                         })}
                         to={v12Docs.route}
                       >
-                        {page.label ?? page.title}
+                        <TextWithCode bare text={page.label ?? page.title} />
                       </Link>
                     </li>
                   ))}

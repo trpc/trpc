@@ -10,7 +10,10 @@ import {
   useDocsVersion,
   useListedDocs,
 } from '~/content/docs.ts';
+import { stripInlineCode } from '~/content/inline-code.ts';
 import type { DocMeta, DocSection } from '~/content/types.ts';
+
+import { TextWithCode } from '~/components/text-with-code.tsx';
 
 interface NavNode {
   readonly children: ReadonlyArray<NavNode>;
@@ -176,13 +179,13 @@ function NavItem(props: {
           params={{ _splat: doc.slug }}
           to={props.version.route}
         >
-          {doc.label ?? doc.title}
+          <TextWithCode bare text={doc.label ?? doc.title} />
         </Link>
         {hasChildren ? (
           <button
             aria-controls={childrenId}
             aria-expanded={open}
-            aria-label={`${open ? 'Collapse' : 'Expand'} ${doc.label ?? doc.title}`}
+            aria-label={`${open ? 'Collapse' : 'Expand'} ${stripInlineCode(doc.label ?? doc.title)}`}
             className="grid size-7 shrink-0 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-accent/60 hover:text-foreground"
             onClick={() => setOpen(!open)}
             type="button"

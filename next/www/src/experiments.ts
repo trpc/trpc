@@ -36,12 +36,13 @@ export const experiments = {
     label: 'TanStack Query beyond React',
   },
   'tanstack-db': {
-    description: "A TanStack DB collection over a procedure's queryOptions().",
+    description:
+      "A TanStack DB collection over a procedure's `queryOptions()`.",
     label: 'TanStack DB',
   },
   'experimental-react': {
     description:
-      'Render-as-you-fetch with use() and Suspense, and atoms on Effect Atom.',
+      'Render-as-you-fetch with `use()` and Suspense, and atoms on Effect Atom.',
     label: 'React without TanStack Query',
   },
   integrations: {
@@ -50,7 +51,7 @@ export const experiments = {
   },
   'byte-streams': {
     description:
-      'Procedure inputs that are the request body, a ReadableStream<Uint8Array> read as an Effect Stream.',
+      'Procedure inputs that are the request body, a `ReadableStream<Uint8Array>` read as an Effect Stream.',
     label: 'Byte stream inputs',
   },
 } as const satisfies Record<

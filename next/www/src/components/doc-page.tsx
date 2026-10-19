@@ -21,6 +21,7 @@ import {
   CollapsedTableOfContents,
   TableOfContents,
 } from '~/components/toc.tsx';
+import { TextWithCode } from '~/components/text-with-code.tsx';
 import { VersionBanner } from '~/components/version-banner.tsx';
 import {
   ancestors,
@@ -31,6 +32,7 @@ import {
   neighbours,
   useListedDocs,
 } from '~/content/docs.ts';
+import { stripInlineCode } from '~/content/inline-code.ts';
 import type { Doc } from '~/content/types.ts';
 import { experiments } from '~/experiments.ts';
 import { useEnableOnVisit } from '~/flags.ts';
@@ -69,13 +71,14 @@ export function docHead(version: DocsVersion, slug: string) {
     return { meta: [{ title: `Not found | ${site.name}` }] };
   }
   const path = `${version.basePath}/${meta.slug}`;
-  const description = meta.description || site.description;
+  const title = stripInlineCode(meta.title);
+  const description = stripInlineCode(meta.description) || site.description;
   if (version.copied) {
     return pageHead({
       canonical: trpcPageUrl(version.copied, meta.slug),
       description,
       path,
-      title: `${meta.title} (${version.id})`,
+      title: `${title} (${version.id})`,
       type: 'article',
     });
   }
@@ -89,7 +92,7 @@ export function docHead(version: DocsVersion, slug: string) {
         '@type': 'TechArticle',
         dateModified: meta.lastModified,
         description,
-        headline: meta.title,
+        headline: title,
         image: ogImageUrl(path),
         inLanguage: 'en',
         isPartOf: { '@type': 'WebSite', name: site.name, url: site.url },
@@ -117,19 +120,19 @@ export function docHead(version: DocsVersion, slug: string) {
           ...ancestors(version, meta.slug).map((parent, index) => ({
             '@type': 'ListItem',
             item: absoluteUrl(`${version.basePath}/${parent.slug}`),
-            name: parent.title,
+            name: stripInlineCode(parent.title),
             position: 3 + index,
           })),
           {
             '@type': 'ListItem',
             item: absoluteUrl(path),
-            name: meta.title,
+            name: title,
             position: 3 + ancestors(version, meta.slug).length,
           },
         ],
       },
     ],
-    title: meta.title,
+    title,
     type: 'article',
   });
 }
@@ -169,7 +172,7 @@ export function DocPage(props: {
                     params={{ _splat: parent.slug }}
                     to={version.route}
                   >
-                    {parent.label ?? parent.title}
+                    <TextWithCode bare text={parent.label ?? parent.title} />
                   </Link>
                 </li>
               ))}
@@ -212,11 +215,11 @@ export function DocPage(props: {
             </p>
           ) : null}
           <h1 className="text-3xl font-bold tracking-tight text-balance sm:text-4xl">
-            {doc.title}
+            <TextWithCode text={doc.title} />
           </h1>
           {doc.description ? (
             <p className="text-lg text-pretty text-muted-foreground">
-              {doc.description}
+              <TextWithCode text={doc.description} />
             </p>
           ) : null}
           {version.id === 'v12' ? (
@@ -235,7 +238,7 @@ export function DocPage(props: {
               className="mb-4 text-lg font-semibold tracking-tight"
               id="pages-under"
             >
-              Pages under {doc.label ?? doc.title}
+              Pages under <TextWithCode text={doc.label ?? doc.title} />
             </h2>
             <ul className="grid gap-3 sm:grid-cols-2">
               {children.map((child) => (
@@ -246,10 +249,10 @@ export function DocPage(props: {
                     to={version.route}
                   >
                     <span className="font-medium">
-                      {child.label ?? child.title}
+                      <TextWithCode bare text={child.label ?? child.title} />
                     </span>
                     <span className="text-sm text-pretty text-muted-foreground">
-                      {child.description}
+                      <TextWithCode text={child.description} />
                     </span>
                   </Link>
                 </li>
@@ -285,7 +288,10 @@ export function DocPage(props: {
                   <ArrowLeft className="size-3" /> Previous
                 </span>
                 <span className="font-medium">
-                  {around.previous.label ?? around.previous.title}
+                  <TextWithCode
+                    bare
+                    text={around.previous.label ?? around.previous.title}
+                  />
                 </span>
               </Link>
             ) : (
@@ -301,7 +307,10 @@ export function DocPage(props: {
                   Next <ArrowRight className="size-3" />
                 </span>
                 <span className="font-medium">
-                  {around.next.label ?? around.next.title}
+                  <TextWithCode
+                    bare
+                    text={around.next.label ?? around.next.title}
+                  />
                 </span>
               </Link>
             ) : null}

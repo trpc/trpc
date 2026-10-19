@@ -15,6 +15,9 @@ import {
   useDocsVersion,
   useListedDocs,
 } from '~/content/docs.ts';
+import { stripInlineCode } from '~/content/inline-code.ts';
+
+import { TextWithCode } from '~/components/text-with-code.tsx';
 
 interface SearchEntry {
   readonly hash: string | undefined;
@@ -29,8 +32,9 @@ function entriesOf(version: DocsVersion): ReadonlyArray<SearchEntry> {
   return version.allDocs.flatMap((doc) => [
     {
       hash: undefined,
-      haystack:
-        `${doc.title} ${doc.label ?? ''} ${doc.description} ${doc.section}`.toLowerCase(),
+      haystack: stripInlineCode(
+        `${doc.title} ${doc.label ?? ''} ${doc.description} ${doc.section}`,
+      ).toLowerCase(),
       id: doc.slug,
       page: doc.section,
       slug: doc.slug,
@@ -38,7 +42,7 @@ function entriesOf(version: DocsVersion): ReadonlyArray<SearchEntry> {
     },
     ...doc.headings.map((heading) => ({
       hash: heading.id,
-      haystack: `${heading.text} ${doc.title}`.toLowerCase(),
+      haystack: stripInlineCode(`${heading.text} ${doc.title}`).toLowerCase(),
       id: `${doc.slug}#${heading.id}`,
       page: doc.label ?? doc.title,
       slug: doc.slug,
@@ -231,9 +235,11 @@ function SearchPanel(props: { readonly onClose: () => void }) {
             ) : (
               <Hash className="size-4 shrink-0 text-muted-foreground" />
             )}
-            <span className="truncate">{entry.text}</span>
+            <span className="truncate">
+              <TextWithCode bare text={entry.text} />
+            </span>
             <span className="ml-auto shrink-0 text-xs text-muted-foreground">
-              {entry.page}
+              <TextWithCode bare text={entry.page} />
             </span>
           </li>
         ))}

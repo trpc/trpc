@@ -11,6 +11,7 @@ import { type CSSProperties, createElement as h, type ReactNode } from 'react';
 import satori, { type Font } from 'satori';
 import type { Plugin } from 'vite';
 
+import { stripInlineCode } from '../src/content/inline-code.ts';
 import { ogImagePath, ogImageSize } from '../src/seo.ts';
 import { type CopiedVersion, site } from '../src/site.ts';
 
@@ -72,12 +73,12 @@ interface Assets {
 
 /**
  * The fonts carry Latin only; an emoji (`TanStack React Query (⭐️)`) would
- * render as a missing glyph.
+ * render as a missing glyph. Code spans lose their backticks.
  */
 export const plainText = (text: string) =>
-  text
+  stripInlineCode(text)
+    .replaceAll(/\(\s*(?:\p{Extended_Pictographic}\uFE0F?\s*)+\)/gu, '')
     .replaceAll(/\p{Extended_Pictographic}\uFE0F?/gu, '')
-    .replaceAll(/\(\s*\)/g, '')
     .replaceAll(/\s+/g, ' ')
     .trim();
 

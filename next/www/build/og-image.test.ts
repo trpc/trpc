@@ -28,6 +28,12 @@ describe('plainText', () => {
       'Next.js Integration › App Router',
     );
   });
+
+  it("drops the backticks around code, and keeps a call's parentheses", () => {
+    expect(
+      plainText('Packages that extend every procedure with `t.concat()`'),
+    ).toBe('Packages that extend every procedure with t.concat()');
+  });
 });
 
 describe('displayUrl', () => {

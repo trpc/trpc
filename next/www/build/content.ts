@@ -5,6 +5,7 @@ import { removeTwoslashNotations } from 'twoslash/fallback';
 import type { Connect, Plugin } from 'vite';
 import { parse as parseYaml } from 'yaml';
 
+import { stripInlineCode } from '../src/content/inline-code.ts';
 import type { Doc, DocMeta, DocSection, Sample } from '../src/content/types.ts';
 import { experimentIds, experiments } from '../src/experiments.ts';
 import { stripCollapseMarkers } from './collapse.ts';
@@ -570,9 +571,9 @@ export function docsContent(options: ContentOptions): Plugin {
       });
     const experiment = source.frontmatter.experiment;
     return [
-      `# ${source.frontmatter.title}`,
+      `# ${stripInlineCode(source.frontmatter.title)}`,
       '',
-      `> ${source.frontmatter.description}`,
+      `> ${stripInlineCode(source.frontmatter.description)}`,
       '',
       ...(experiment === undefined
         ? []
@@ -603,7 +604,7 @@ export function docsContent(options: ContentOptions): Plugin {
       };
       for (const doc of section.docs) {
         lines.push(
-          `${'  '.repeat(depth(doc.slug))}- [${doc.title}](${options.siteUrl}${basePath}/${doc.slug}.md): ${doc.experiment === undefined ? '' : 'Experimental. '}${doc.description}`,
+          `${'  '.repeat(depth(doc.slug))}- [${stripInlineCode(doc.title)}](${options.siteUrl}${basePath}/${doc.slug}.md): ${doc.experiment === undefined ? '' : 'Experimental. '}${stripInlineCode(doc.description)}`,
         );
       }
       lines.push('');
