@@ -64,7 +64,7 @@ Bundle size, minified / gzip (`pnpm bench bundle`):
 | client                                      |    gzip | target |
 | ------------------------------------------- | ------: | -----: |
 | minimal JSON (`httpLink`)                   | 39.5 kB |  18 kB |
-| full (`retryLink`, `httpLink`, danSON, SSE) | 43.6 kB |  25 kB |
+| full (`retryLink`, `httpLink`, danSON, SSE) | 43.7 kB |  25 kB |
 
 The raises below are from when CI failed above a ceiling, today's size plus 0.1 kB; each records what grew the clients.
 
@@ -77,6 +77,8 @@ The raises below are from when CI failed above a ceiling, today's size plus 0.1 
 - **Raised a fourth time, 2026-10-18:** the human: "For http link you can probably do some sort of data loader service that is decoupled from http logic. And you can probably use effects primitive for fetch etc". `httpLink` batches through an HTTP-agnostic data loader, sends through `effect/http`'s `HttpClient`, reads lines with `Stream.decodeText` and `Stream.splitLines`, and reconnects SSE with `Effect.repeat`: +9,135 B on the minimal client and +9,304 B on the full one, `HttpClient` 8.0 and 8.2 kB of it (per change in [`http-link-on-effect-http.md`](../decisions/http-link-on-effect-http.md)). The ceilings moved to today's sizes plus 0.1 kB: 39,184 B and 43,330 B measured.
 
 - **Grew, 2026-10-19 (no ceiling):** the JSON and sync serializers walk a value once and return a JSON-safe value as is instead of copying it through `JSON.parse(JSON.stringify())` (f03beb40b, `scan()` in `serializer/framed.ts`): +143 B on the minimal client and +146 B on the full one (39,333 → 39,476 B and 43,460 → 43,606 B, the commit's `framed.ts` swapped in and out on today's `v12`). In exchange, serializing a 50-row list takes 13.8 µs instead of 57.5 µs, and a short string 0.11 µs instead of 0.25 µs.
+
+- **Grew, 2026-10-19 (no ceiling):** `httpLink` fails a call whose streamed response ends before its result with `NETWORK_ERROR` instead of `STREAM_INTERRUPTED` (`headless` in `client/links/http/transport.ts`, [`link-errors.md`](../decisions/link-errors.md)): +36 B on the minimal client and +57 B on the full one (39,512 → 39,548 B and 43,644 → 43,701 B). Reusing the interrupt's message instead of its own saves 10 B.
 
 - **Cut so far:** the Promise client runs its links with `runLinks`. `runOperation`'s tracer check and client span never ran there (Promise clients run on Effect's native tracer), but they were bundled: `Tracer`, `Scope` spans and `encoding/Hex`, 1.7 kB gzipped on each client.
 - **The floor of links on Effect**, same bundler and gzip:
