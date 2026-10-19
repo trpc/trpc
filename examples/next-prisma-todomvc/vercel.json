@@ -1,7 +1,5 @@
 {
   "git": {
-    "deploymentEnabled": {
-      "v12": false
-    }
+    "deploymentEnabled": false
   }
 }

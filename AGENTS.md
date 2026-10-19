@@ -10,4 +10,4 @@ Push commits straight to `v12`; don't open pull requests against it ([Landing on
 
 [`v11/`](./v11/) is the v11 monorepo (`packages/`, `examples/`, `www/`), with its own pnpm workspace and the `v11-*` workflows. Don't add vNext code there ([`next/.agent-docs/decisions/v11-folder.md`](./next/.agent-docs/decisions/v11-folder.md)).
 
-The root `www/` and `examples/` hold only `vercel.json` stubs: they exist so the v11 Vercel projects, whose root directories are still those paths, skip `v12`. They're removed at the cutover.
+The root `www/` and `examples/` hold only `vercel.json` stubs: they exist so the v11 Vercel projects, whose root directories are still those paths, skip every branch (`deploymentEnabled: false`), so PRs from branches off `v12` skip them too. The stubs only exist on `v12` and its branches; `main` keeps the real configs. They're removed at the cutover.
