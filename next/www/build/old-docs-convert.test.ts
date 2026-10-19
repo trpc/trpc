@@ -644,24 +644,27 @@ describe('convertPost', () => {
         'As Dan put it:',
         '',
         '<StaticTweet',
+        '  id="1"',
         '  name="dan 2"',
         '  username="dan_abramov2"',
         '  avatarUrl="https://github.com/gaearon.png"',
-        `  text={'"use server" = <tRPC> & @trpcio\\nhttps://example.com/a'}`,
+        `  text={'"use server" = <tRPC> & @trpcio #RSC\\nhttps://example.com/a'}`,
         '  createdAt="2024-02-10T00:58:00.000Z"',
-        '  url="https://x.com/dan_abramov2/status/1"',
-        '  archiveUrl="https://web.archive.org/web/2024/https://x.com/dan_abramov2/status/1"',
+        '  archiveUrl="https://web.archive.org/web/2024/https://twitter.com/dan_abramov2/status/1"',
         '/>',
       ].join('\n'),
     );
     expect(converted.problems).toEqual([]);
-    expect(converted.markdown.replace(/^---\n[\s\S]*?\n---\n\n/, '')).toBe(
-      [
-        'As Dan put it:',
-        '',
-        '<figure class="tweet not-prose"><figcaption><img src="https://github.com/gaearon.png" alt="" width="48" height="48" loading="lazy" /><cite><span class="tweet-name">dan 2</span><span class="tweet-username">@dan_abramov2</span></cite></figcaption><blockquote cite="https://x.com/dan_abramov2/status/1">&quot;use server&quot; = &lt;tRPC&gt; &amp; <a href="https://x.com/trpcio">@trpcio</a><br /><a href="https://example.com/a">example.com/a</a></blockquote><footer><a href="https://x.com/dan_abramov2/status/1"><time datetime="2024-02-10T00:58:00.000Z">Feb 10, 2024</time></a><a href="https://web.archive.org/web/2024/https://x.com/dan_abramov2/status/1">Archived copy</a></footer></figure>',
-        '',
-      ].join('\n'),
+    const [intro, card, ...rest] = converted.markdown
+      .replace(/^---\n[\s\S]*?\n---\n\n/, '')
+      .split('\n\n');
+    expect([intro, rest]).toEqual(['As Dan put it:', []]);
+    expect(card).toMatch(/^<figure class="tweet not-prose">.*<\/figure>\n$/);
+    expect(card).toContain(
+      '<a class="tweet-author" href="https://twitter.com/dan_abramov2"><img class="tweet-avatar" src="https://github.com/gaearon.png" alt="" width="48" height="48" loading="lazy" /><span class="tweet-author-names"><span class="tweet-name">dan 2</span><span class="tweet-username">@dan_abramov2</span></span></a><svg class="tweet-bird"',
+    );
+    expect(card).toContain(
+      '<blockquote class="tweet-text" cite="https://twitter.com/dan_abramov2/status/1">&quot;use server&quot; = &lt;tRPC&gt; &amp; <a href="https://twitter.com/trpcio">@trpcio</a> <a href="https://twitter.com/hashtag/RSC">#RSC</a><br /><a href="https://example.com/a">example.com/a</a></blockquote><div class="tweet-meta"><a href="https://twitter.com/dan_abramov2/status/1"><time datetime="2024-02-10T00:58:00.000Z">12:58 AM · Feb 10, 2024</time></a><span aria-hidden="true"> · </span><a class="tweet-archive" href="https://web.archive.org/web/2024/https://twitter.com/dan_abramov2/status/1">Archived copy</a></div><div class="tweet-footer"><a href="https://twitter.com/dan_abramov2/status/1">Read more on Twitter</a></div>',
     );
   });
 
@@ -677,7 +680,7 @@ describe('convertPost', () => {
         ].join('\n'),
       ).problems,
     ).toEqual([
-      'blog/2025-03-21-announcing-trpc-11.mdx: `<StaticTweet name="dan 2" />`: no `name`, `username`, `avatarUrl`, `text`, `createdAt` or `url`',
+      'blog/2025-03-21-announcing-trpc-11.mdx: `<StaticTweet name="dan 2" />`: no `id`, `name`, `username`, `avatarUrl`, `text` or `createdAt`',
       'blog/2025-03-21-announcing-trpc-11.mdx: no conversion for <StaticTweet>',
     ]);
   });
