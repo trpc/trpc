@@ -182,7 +182,7 @@ const t = initTrpc({ warnThrownErrors: false });
 
 ## Codes and statuses
 
-Any string is a code. The built-in ones (`NOT_FOUND`, `UNAUTHORIZED`, …) have their HTTP status; a custom code is a 400 unless its declaration (`.errors()` or a `TrpcError.Tagged` class) has a `status`. The status is for HTTP: errors don't carry it, and neither do error bodies or socket frames.
+Any string but `unexpected` is a code. The built-in ones (`NOT_FOUND`, `UNAUTHORIZED`, …) have their HTTP status; a custom code is a 400 unless its declaration (`.errors()` or a `TrpcError.Tagged` class) has a `status`. The status is for HTTP: errors don't carry it, and neither do error bodies or socket frames.
 
 ```ts twoslash
 // ---cut-start---
@@ -194,6 +194,17 @@ t.procedure
   .mutation(() => error({ code: 'OUT_OF_STOCK' })); // 409
 
 t.procedure.mutation(() => error({ code: 'OUT_OF_STOCK' })); // 400
+```
+
+`unexpected` is the key [`matchError()`](../client/errors.md#handling-every-error) sends every error without a key of its own to, so a defined error with that code would land in the catch-all. Declaring it in `.errors()`, `error()` or a `TrpcError.Tagged` class is a type error that says so:
+
+```ts twoslash
+// @errors: 2345
+// ---cut-start---
+import { t } from './server.ts';
+import { error } from '@trpc12/trpc/server';
+// ---cut-end---
+t.procedure.query(() => error({ code: 'unexpected' }));
 ```
 
 ## In Effect code

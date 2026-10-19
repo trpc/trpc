@@ -38,4 +38,9 @@ export type {
 } from '../server/procedures/index.ts';
 export type { DeclContext } from '../client/link.ts';
 export type { NoLinkCarries } from '../client/types.ts';
+export type {
+  ReservedCodeCheck,
+  ReservedCodeMessage,
+  ReservedKeyCheck,
+} from './error.ts';
 export type { TypeError, Unset } from './types.ts';

@@ -33,7 +33,7 @@
 // `SchemaValidationError`), for packages that import only the contract.
 import type {} from '@trpc12/trpc/server';
 import type { RouterType } from '../client/types.ts';
-import type { AnyTrpcError } from '../internal/error.ts';
+import type { AnyTrpcError, ReservedKeyCheck } from '../internal/error.ts';
 import {
   assertLoaded,
   flattenRoutes,
@@ -271,7 +271,7 @@ export interface ContractBuilder<TDef extends ContractDef> {
    * contract declares (Q9.3).
    */
   errors<const $Map extends ErrorMapInput>(
-    map: $Map,
+    map: $Map & ReservedKeyCheck,
   ): ContractBuilder<
     ContractWith<
       TDef,

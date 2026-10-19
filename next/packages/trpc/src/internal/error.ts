@@ -70,6 +70,36 @@ export function isBuiltinCode(code: string): code is BuiltinErrorCode {
 export type UndeclaredCode = `~undeclared:${string}`;
 
 /**
+ * A type error when `TCode` is `unexpected`: that is `matchError()`'s
+ * catch-all key, and a defined error with that code would share it.
+ * @since 0.1.0
+ * @stability stable
+ */
+export type ReservedCodeCheck<TCode extends string> =
+  'unexpected' extends TCode
+    ? string extends TCode
+      ? unknown
+      : { readonly '~reserved': ReservedCodeMessage }
+    : unknown;
+
+/**
+ * {@link ReservedCodeCheck} for an error map's keys.
+ * @since 0.1.0
+ * @stability stable
+ */
+export interface ReservedKeyCheck {
+  readonly unexpected?: ReservedCodeMessage;
+}
+
+/**
+ * The message of {@link ReservedCodeCheck}.
+ * @since 0.1.0
+ * @stability stable
+ */
+export type ReservedCodeMessage =
+  "'unexpected' is matchError()'s catch-all key: name this code something else";
+
+/**
  * Instances of the built-in classes for `TCode`, one member per code, so
  * `Effect.catchTag` takes them one at a time:
  * `CodeError<'PARSE_ERROR' | 'PAYLOAD_TOO_LARGE'>`.
@@ -244,7 +274,7 @@ export class TrpcError<
     TSchema extends AnySchema | undefined = undefined,
     const TStatus extends number | undefined = undefined,
   >(
-    code: TCode,
+    code: TCode extends 'unexpected' ? ReservedCodeMessage : TCode,
     spec: TaggedErrorSpec<TSchema, TStatus> = {},
   ): TaggedErrorClass<TCode, TSchema, TStatus> {
     const hasData = spec.data !== undefined;
@@ -259,7 +289,7 @@ export class TrpcError<
           | TaggedErrorOptions
           | undefined;
         super({
-          code,
+          code: code as TCode,
           data: hasData ? args[0] : undefined,
           message: opts?.message ?? spec.message,
           cause: opts?.cause,
@@ -430,7 +460,8 @@ export type AnyTrpcError = TrpcError<string, any>;
  * @stability stable
  */
 export function error<const TCode extends string, TData = undefined>(
-  opts: Omit<TrpcErrorOptions<TCode, TData>, 'defined'>,
+  opts: Omit<TrpcErrorOptions<TCode, TData>, 'defined'> &
+    ReservedCodeCheck<TCode>,
 ): TrpcError<TCode, TData> {
   return new TrpcError({ ...opts, defined: true });
 }

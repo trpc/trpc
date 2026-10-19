@@ -16,6 +16,7 @@ import {
   type UndeclaredCode,
   type UndeclaredError,
 } from '@trpc12/trpc/client';
+import { experimental_contract } from '@trpc12/trpc/contract';
 import { error, initTrpc, type OnErrorOpts } from '@trpc12/trpc/server';
 import { createTestServer } from '../fixtures/server.ts';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
@@ -485,6 +486,30 @@ test('matchError gives errors that share a code one handler', () => {
       },
     }),
   ).toBe('a');
+});
+
+test("unexpected can't be a defined code: it is matchError()'s catch-all key", () => {
+  t.procedure
+    // @ts-expect-error: 'unexpected' is matchError()'s catch-all key
+    .errors({ unexpected: {} })
+    .query(() => 1);
+  experimental_contract.create().errors({
+    // @ts-expect-error: 'unexpected' is matchError()'s catch-all key
+    unexpected: {},
+  });
+  t.procedure.query(() =>
+    // @ts-expect-error: 'unexpected' is matchError()'s catch-all key
+    error({ code: 'unexpected' }),
+  );
+  // @ts-expect-error: 'unexpected' is matchError()'s catch-all key
+  TrpcError.Tagged('unexpected');
+
+  // Other codes, and codes the types don't know, still pass.
+  t.procedure.errors({ UNEXPECTED: {} }).query(() => 1);
+  const anyCode = (code: string) => error({ code });
+  expectTypeOf(anyCode).returns.toEqualTypeOf<TrpcError<string, undefined>>();
+  const declared: Record<string, {}> = {};
+  t.procedure.errors(declared).query(() => 1);
 });
 
 test('every built-in code has a class', () => {

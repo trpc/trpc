@@ -5,7 +5,11 @@ import {
   type Scope,
   type Stream,
 } from 'effect';
-import type { AnyTrpcError, TrpcError } from '../../internal/error.ts';
+import type {
+  AnyTrpcError,
+  ReservedKeyCheck,
+  TrpcError,
+} from '../../internal/error.ts';
 import type {
   IsAny,
   MaybePromise,
@@ -757,7 +761,7 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
    * ```
    */
   errors<const $Map extends ErrorMapInput>(
-    map: $Map,
+    map: $Map & ReservedKeyCheck,
   ): ProcedureBuilder<
     With<
       TDef,
