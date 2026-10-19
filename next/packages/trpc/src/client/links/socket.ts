@@ -35,6 +35,7 @@ import {
   type LinkDecl,
   type TrpcLink,
 } from '../link.ts';
+import { withSubscriptions } from '../subscriptions.ts';
 import { makeDeferredDecoder, badResponse, serializeInput } from './events.ts';
 
 /** One open connection. @internal */
@@ -537,7 +538,9 @@ function makeSocketLink(
   const link: TrpcLink = ({ op }) =>
     op.type === 'subscription' ? subscription(op) : single(op);
   return withSerializer(
-    Object.assign(link, { close, [Symbol.asyncDispose]: close }),
+    withSubscriptions(
+      Object.assign(link, { close, [Symbol.asyncDispose]: close }),
+    ),
     serializer,
   );
 }

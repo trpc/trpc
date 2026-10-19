@@ -23,6 +23,7 @@ import {
   type inferRouterContext,
 } from '../../server/procedures/index.ts';
 import { link, withSerializer, type TrpcLink } from '../link.ts';
+import { withSubscriptions } from '../subscriptions.ts';
 
 /**
  * Options for {@link localLink}.
@@ -83,62 +84,74 @@ export function localLink<TRouter extends AnyRouter>(
   };
 
   return withSerializer(
-    link(({ op }) =>
-      Stream.unwrap(
-        Effect.gen(function* () {
-          const procedure = yield* resolveProcedureEffect(opts.router, op.path);
-          if (!procedure) {
-            return yield* Effect.fail(
-              new TrpcError({
-                code: 'NOT_FOUND',
-                message: `No procedure at path "${op.path}"`,
-              }),
+    withSubscriptions(
+      link(({ op }) =>
+        Stream.unwrap(
+          Effect.gen(function* () {
+            const procedure = yield* resolveProcedureEffect(
+              opts.router,
+              op.path,
             );
-          }
-          if (procedure['~trpc'].type !== op.type) {
-            return yield* Effect.fail(
-              new TrpcError({
-                code: 'METHOD_NOT_SUPPORTED',
-                message: `"${op.path}" is a ${procedure['~trpc'].type}, not a ${op.type}`,
-              }),
+            if (!procedure) {
+              return yield* Effect.fail(
+                new TrpcError({
+                  code: 'NOT_FOUND',
+                  message: `No procedure at path "${op.path}"`,
+                }),
+              );
+            }
+            if (procedure['~trpc'].type !== op.type) {
+              return yield* Effect.fail(
+                new TrpcError({
+                  code: 'METHOD_NOT_SUPPORTED',
+                  message: `"${op.path}" is a ${procedure['~trpc'].type}, not a ${op.type}`,
+                }),
+              );
+            }
+            const context = yield* services;
+            const ctx = yield* Effect.promise(
+              async () => (await opts.createContext?.()) ?? {},
             );
-          }
-          const context = yield* services;
-          const ctx = yield* Effect.promise(
-            async () => (await opts.createContext?.()) ?? {},
-          );
-          const data = yield* callProcedure({
-            procedure,
-            path: op.path,
-            ctx,
-            input: roundtrip(op.input, true),
-            signal: op.signal ?? new AbortController().signal,
-            lastEventId: op.lastEventId,
-          }).pipe(Effect.provideContext(context));
+            const data = yield* callProcedure({
+              procedure,
+              path: op.path,
+              ctx,
+              input: roundtrip(op.input, true),
+              signal: op.signal ?? new AbortController().signal,
+              lastEventId: op.lastEventId,
+            }).pipe(Effect.provideContext(context));
 
-          if (op.type === 'subscription') {
-            return Stream.map(data as Stream.Stream<unknown>, (event) =>
-              roundtrip(event),
+            if (op.type === 'subscription') {
+              return Stream.map(data as Stream.Stream<unknown>, (event) =>
+                roundtrip(event),
+              );
+            }
+            if (!serializer) return Stream.make(data);
+            const serialized = serializer.serializeDeferred(data, {
+              coerceError: (cause) =>
+                toWireError(
+                  isTrpcError(cause) ? cause : unexpectedError(cause),
+                ),
+            });
+            return Stream.fromEffect(
+              serializer.deserializeStream(
+                serialized.chunks
+                  ? Stream.concat(
+                      Stream.make(serialized.head),
+                      serialized.chunks,
+                    )
+                  : Stream.make(serialized.head),
+                {
+                  reviveError: (value) => fromWireError(value),
+                  ...streamErrors,
+                },
+              ),
             );
-          }
-          if (!serializer) return Stream.make(data);
-          const serialized = serializer.serializeDeferred(data, {
-            coerceError: (cause) =>
-              toWireError(isTrpcError(cause) ? cause : unexpectedError(cause)),
-          });
-          return Stream.fromEffect(
-            serializer.deserializeStream(
-              serialized.chunks
-                ? Stream.concat(Stream.make(serialized.head), serialized.chunks)
-                : Stream.make(serialized.head),
-              {
-                reviveError: (value) => fromWireError(value),
-                ...streamErrors,
-              },
-            ),
-          );
-        }),
-      ).pipe(Stream.catchCause((cause) => Stream.fail(normalizeCause(cause)))),
+          }),
+        ).pipe(
+          Stream.catchCause((cause) => Stream.fail(normalizeCause(cause))),
+        ),
+      ),
     ),
     serializer,
   );

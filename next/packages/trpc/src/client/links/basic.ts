@@ -9,7 +9,9 @@ import {
   type Operation,
   type TrpcLink,
   chainSerializer,
+  chainSubscriptionIterator,
   chainSwitchNames,
+  setSubscriptionIterator,
   setSwitchNames,
   withSerializer,
 } from '../link.ts';
@@ -142,6 +144,7 @@ export function splitLink<
   );
   setSwitchNames(split, [...chainSwitchNames(yes), ...chainSwitchNames(no)]);
   withSerializer(split, chainSerializer([...yes, ...no]));
+  setSubscriptionIterator(split, chainSubscriptionIterator([...yes, ...no]));
   return split as TrpcLink<any, TRouter>;
 }
 

@@ -5,6 +5,7 @@ import {
   httpLink,
   link,
   routerType,
+  withSubscriptions,
   type Operation,
 } from '@trpc12/trpc/client';
 import { createSerializer } from '@trpc12/trpc/serializer';
@@ -115,10 +116,12 @@ function stubbed(answer: (op: Operation) => Stream.Stream<unknown>) {
     router: routerType<AppRouter>(),
     links: [
       dedupeLink(),
-      link((args) => {
-        ops.push(args.op);
-        return answer(args.op);
-      }),
+      withSubscriptions(
+        link((args) => {
+          ops.push(args.op);
+          return answer(args.op);
+        }),
+      ),
     ],
   });
   return { client, ops };

@@ -12,7 +12,12 @@ import {
   createTrpcQueryUtils,
   type TrpcProviderElement,
 } from '@trpc12/tanstack-lit-query';
-import { createTrpcClient, link, routerType } from '@trpc12/trpc/client';
+import {
+  createTrpcClient,
+  link,
+  routerType,
+  withSubscriptions,
+} from '@trpc12/trpc/client';
 import { Effect, PubSub, Stream } from 'effect';
 import { html, LitElement } from 'lit';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
@@ -245,13 +250,15 @@ test('a provider swaps its client; a controller with fixed options reconnects, r
   const local = createTrpcClient({
     router: routerType<AppRouter>(),
     links: [
-      link((opts) =>
-        opts.op.type === 'subscription'
-          ? Stream.fromPubSub(posts).pipe(
-              Stream.onStart(Effect.sync(() => open++)),
-              Stream.ensuring(Effect.sync(() => open--)),
-            )
-          : Stream.make({ id: '1', title: 'Swapped' }),
+      withSubscriptions(
+        link((opts) =>
+          opts.op.type === 'subscription'
+            ? Stream.fromPubSub(posts).pipe(
+                Stream.onStart(Effect.sync(() => open++)),
+                Stream.ensuring(Effect.sync(() => open--)),
+              )
+            : Stream.make({ id: '1', title: 'Swapped' }),
+        ),
       ),
     ],
   }) as unknown as AppClient;

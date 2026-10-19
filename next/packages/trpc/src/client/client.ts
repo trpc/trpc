@@ -1,11 +1,11 @@
 import { Effect, Exit } from 'effect';
-import { toAsyncIterable } from '../internal/effects.ts';
 import {
   ERROR_CATEGORY,
   ERROR_STATUS,
   frameworkError,
   hasDigest,
   isBuiltinCode,
+  TrpcError,
   type AnyTrpcError,
   type CategoryCode,
   type ErrorCategory,
@@ -14,6 +14,7 @@ import type { ProcedureType } from '../internal/types.ts';
 import type { AnySerializer } from '../serializer/index.ts';
 import {
   chainSerializer,
+  chainSubscriptionIterator,
   chainSwitchNames,
   clientErrorFromCause,
   firstValue,
@@ -168,6 +169,7 @@ export function createUntypedClient(
 ): TrpcUntypedClient {
   const { links } = opts;
   chainSwitchNames(links);
+  const iterate = chainSubscriptionIterator(links);
   return {
     async request(o) {
       const op = makeOperation(o.type, o.path, o.input, o);
@@ -184,8 +186,16 @@ export function createUntypedClient(
     subscribe(o) {
       return {
         [Symbol.asyncIterator]() {
+          if (!iterate) {
+            const error = new TrpcError({
+              code: 'CLIENT_ERROR',
+              message:
+                'No link on this chain carries subscriptions; wrap a custom one in withSubscriptions()',
+            });
+            return { next: () => Promise.reject(error) };
+          }
           const op = makeOperation('subscription', o.path, o.input, o);
-          return toAsyncIterable(runLinks(links, op), op.signal)[
+          return iterate(runLinks(links, op), op.signal)[
             Symbol.asyncIterator
           ]();
         },

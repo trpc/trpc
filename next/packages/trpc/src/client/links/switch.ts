@@ -2,9 +2,11 @@ import { Stream } from 'effect';
 import { TrpcError } from '../../internal/error.ts';
 import {
   chainSerializer,
+  chainSubscriptionIterator,
   chainSwitchNames,
   link,
   runLinks,
+  setSubscriptionIterator,
   setSwitchNames,
   withSerializer,
   type AnyLink,
@@ -155,6 +157,8 @@ export function switchLink<
     return runLinks(chain, op);
   });
   setSwitchNames(switched, [name, ...names]);
-  withSerializer(switched, chainSerializer([...branches.values()].flat()));
+  const all = [...branches.values()].flat();
+  withSerializer(switched, chainSerializer(all));
+  setSubscriptionIterator(switched, chainSubscriptionIterator(all));
   return switched as TrpcLink<any, TRouter>;
 }
