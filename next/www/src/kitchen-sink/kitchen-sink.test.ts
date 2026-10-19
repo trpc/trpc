@@ -5,7 +5,7 @@ import {
   routerType,
   safe,
 } from '@trpc12/trpc/client';
-import { describe, expect, test, vi } from 'vitest';
+import { describe, expect, it, vi } from '@effect/vitest';
 
 import type { ProfileInput } from '../../samples/kitchen-sink-forms/src/schema.ts';
 import type { AppRouter } from '../../samples/kitchen-sink-forms/src/server.ts';
@@ -37,13 +37,13 @@ const ada = {
 } satisfies ProfileInput;
 
 describe('the forms demo', () => {
-  test('is the one demo, with every file of its sample in the editor', () => {
+  it('is the one demo, with every file of its sample in the editor', () => {
     expect(demoIds).toEqual(['forms']);
     expect(forms.files.map((file) => file.name)).toContain(forms.open);
     expect(forms.files.map((file) => file.name)).toContain(forms.entry);
   });
 
-  test('saves through the in-page network, which logs the request', async () => {
+  it('saves through the in-page network, which logs the request', async () => {
     const demo = await formsApp();
     const saved = await demo.client.profile.update.mutate({
       ...ada,
@@ -63,7 +63,7 @@ describe('the forms demo', () => {
     });
   });
 
-  test("fails with the schema's issues, by field", async () => {
+  it("fails with the schema's issues, by field", async () => {
     const demo = await formsApp();
     const [, err] = await safe(
       demo.client.profile.update.mutate({ ...ada, name: ' ', username: 'A' }),
@@ -77,7 +77,7 @@ describe('the forms demo', () => {
     }
   });
 
-  test('fails with CONFLICT for a taken username', async () => {
+  it('fails with CONFLICT for a taken username', async () => {
     const demo = await formsApp();
     const [, err] = await safe(
       demo.client.profile.update.mutate({ ...ada, username: 'admin' }),
@@ -89,7 +89,7 @@ describe('the forms demo', () => {
     });
   });
 
-  test('fails with NETWORK_ERROR when the network drops a request', async () => {
+  it('fails with NETWORK_ERROR when the network drops a request', async () => {
     const demo = await formsApp();
     demo.network.failNext();
     const [, err] = await safe(demo.client.profile.get.query());
@@ -98,14 +98,14 @@ describe('the forms demo', () => {
     expect(await demo.client.profile.get.query()).toMatchObject(ada);
   });
 
-  test("starts each run with the server's seed data", async () => {
+  it("starts each run with the server's seed data", async () => {
     const first = await formsApp();
     await first.client.profile.update.mutate({ ...ada, name: 'Grace' });
     const second = await formsApp();
     expect(await second.client.profile.get.query()).toMatchObject(ada);
   });
 
-  test("loads the edit page's profile in its loader", async () => {
+  it("loads the edit page's profile in its loader", async () => {
     const demo = await formsApp();
     const router = demo.app.getRouter({
       fetch: demo.network.fetch,
@@ -123,7 +123,7 @@ describe('the forms demo', () => {
 describe('loadModules', () => {
   const packages: Packages = { zod: () => import('zod') };
 
-  test('links the files and gives packages their default exports', async () => {
+  it('links the files and gives packages their default exports', async () => {
     const load = await loadModules({
       files: [
         {
@@ -140,7 +140,7 @@ describe('loadModules', () => {
     expect(load('b.ts')['default']).toBe('ADA');
   });
 
-  test("names the file that imports what the kit doesn't have", async () => {
+  it("names the file that imports what the kit doesn't have", async () => {
     const files = [{ code: "import 'left-pad';", name: 'a.ts' }];
     await expect(loadModules({ files, packages })).rejects.toMatchObject({
       file: 'a.ts',
@@ -149,7 +149,7 @@ describe('loadModules', () => {
     });
   });
 
-  test('names the file and line of a syntax error', async () => {
+  it('names the file and line of a syntax error', async () => {
     const files = [{ code: 'const a = 1;\nconst = 2;', name: 'a.ts' }];
     const error = await loadModules({ files, packages }).catch(
       (cause: unknown) => cause,
@@ -158,7 +158,7 @@ describe('loadModules', () => {
     expect(error).toMatchObject({ file: 'a.ts', line: 2 });
   });
 
-  test('names the file that throws while it runs', async () => {
+  it('names the file that throws while it runs', async () => {
     const load = await loadModules({
       files: [{ code: "throw new Error('boom');", name: 'a.ts' }],
       packages,
@@ -170,7 +170,7 @@ describe('loadModules', () => {
 });
 
 describe('filesOf', () => {
-  test("fails on a file that isn't listed, or listed but missing", () => {
+  it("fails on a file that isn't listed, or listed but missing", () => {
     expect(() =>
       filesOf({ './src/a.ts': '', './src/b.ts': '' }, ['a.ts', 'c.ts']),
     ).toThrow("b.ts isn't listed, c.ts doesn't exist");
