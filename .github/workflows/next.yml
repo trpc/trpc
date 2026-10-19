@@ -7,11 +7,13 @@ on:
       - 'next/**'
       - 'vendor-src.json'
       - '.github/workflows/next.yml'
+      - '.github/actions/next-setup/**'
   pull_request:
     paths:
       - 'next/**'
       - 'vendor-src.json'
       - '.github/workflows/next.yml'
+      - '.github/actions/next-setup/**'
   schedule:
     # New effect@4 releases reach users without a push here.
     - cron: '0 6 * * 1'
@@ -45,19 +47,14 @@ jobs:
         options: >-
           --health-cmd pg_isready --health-interval 2s
           --health-timeout 2s --health-retries 10
+    outputs:
+      pnpm-store-key: ${{ steps.setup.outputs.cache-key }}
     steps:
       - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
+      - id: setup
+        uses: ./.github/actions/next-setup
         with:
-          package_json_file: next/package.json
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 24
-          cache: pnpm
-          cache-dependency-path: next/pnpm-lock.yaml
-      - run: pnpm install --frozen-lockfile
-        env:
-          VP_GIT_HOOKS: '0'
+          save-cache: 'true'
       - run: pnpm typecheck
       - run: pnpm check
       # The tests, failing under 98% coverage on any metric.
@@ -68,6 +65,7 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.4.3
+          no-cache: true
       - uses: denoland/setup-deno@v2
         with:
           deno-version: 2.9.7
@@ -88,17 +86,7 @@ jobs:
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
-        with:
-          package_json_file: next/package.json
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 24
-          cache: pnpm
-          cache-dependency-path: next/pnpm-lock.yaml
-      - run: pnpm install --frozen-lockfile
-        env:
-          VP_GIT_HOOKS: '0'
+      - uses: ./.github/actions/next-setup
       # Compiled blocks, keyed by the lockfile inside; a stale entry recompiles.
       - uses: actions/cache@v4
         with:
@@ -113,14 +101,9 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
+      - uses: ./.github/actions/next-setup
         with:
-          package_json_file: next/package.json
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 24
-          cache: pnpm
-          cache-dependency-path: next/pnpm-lock.yaml
+          install: 'false'
       - name: Widen effect pins to ^4 and update to the latest 4.x
         run: |
           for f in $(git ls-files '*package.json'); do
@@ -140,20 +123,11 @@ jobs:
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
-        with:
-          package_json_file: next/package.json
-      - uses: actions/setup-node@v7
-        with:
-          node-version: 24
-          cache: pnpm
-          cache-dependency-path: next/pnpm-lock.yaml
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.4.3
-      - run: pnpm install --frozen-lockfile
-        env:
-          VP_GIT_HOOKS: '0'
+          no-cache: true
+      - uses: ./.github/actions/next-setup
       - run: pnpm test:bun
 
   cloudflare-deploy:
@@ -178,19 +152,7 @@ jobs:
       - if: steps.credentials.outputs.present == 'true'
         uses: actions/checkout@v7
       - if: steps.credentials.outputs.present == 'true'
-        uses: pnpm/action-setup@v6
-        with:
-          package_json_file: next/package.json
-      - if: steps.credentials.outputs.present == 'true'
-        uses: actions/setup-node@v7
-        with:
-          node-version: 24
-          cache: pnpm
-          cache-dependency-path: next/pnpm-lock.yaml
-      - if: steps.credentials.outputs.present == 'true'
-        run: pnpm install --frozen-lockfile
-        env:
-          VP_GIT_HOOKS: '0'
+        uses: ./.github/actions/next-setup
       - if: steps.credentials.outputs.present == 'true'
         name: Deploy
         id: deploy
@@ -206,3 +168,26 @@ jobs:
         run: pnpm client "$SMOKE_URL"
         env:
           SMOKE_URL: ${{ steps.deploy.outputs.url }}
+
+  prune-pnpm-store-caches:
+    # Each lockfile change on v12 saves a ~400 MB store, and the repo's 10 GB
+    # of caches is shared with main: keep only the current lockfile's store.
+    if: ${{ !cancelled() && github.event_name == 'push' && github.ref == 'refs/heads/v12' && needs.check.outputs.pnpm-store-key != '' }}
+    needs: check
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: write
+    steps:
+      - working-directory: .
+        run: |
+          caches=$(gh cache list --ref "$GITHUB_REF" --key "${KEEP%-*}-" --limit 100 --json id,key)
+          if ! jq -e --arg keep "$KEEP" 'any(.[]; .key == $keep)' <<< "$caches" > /dev/null; then
+            echo "$KEEP isn't saved; keeping the older stores."
+            exit 0
+          fi
+          jq -r --arg keep "$KEEP" '.[] | select(.key != $keep) | .id' <<< "$caches" | xargs -r -n1 gh cache delete
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          KEEP: ${{ needs.check.outputs.pnpm-store-key }}
