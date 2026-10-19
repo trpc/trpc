@@ -48,6 +48,11 @@ export const experiments = {
     description: 'The AI SDK and Better Auth.',
     label: 'AI SDK and Better Auth',
   },
+  'byte-streams': {
+    description:
+      'Procedure inputs that are the request body, a ReadableStream<Uint8Array> read as an Effect Stream.',
+    label: 'Byte stream inputs',
+  },
 } as const satisfies Record<
   string,
   { readonly description: string; readonly label: string }
