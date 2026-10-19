@@ -46,6 +46,8 @@ export function httpParts(opts: {
   readonly upgradeWeb?:
     | ((request: HttpServerRequest.HttpServerRequest) => App)
     | undefined;
+  /** While it's true, upgrades get a 503: the handler is draining. */
+  readonly refusing?: () => boolean;
 }): HttpParts {
   const wrap = (app: App) => withMiddleware(opts.middleware, app);
   const { endpoint } = opts;
@@ -59,6 +61,9 @@ export function httpParts(opts: {
         const url = new URL(request.url, 'http://localhost');
         if (url.pathname !== endpoint && url.pathname !== `${endpoint}/`) {
           return Effect.succeed(HttpServerResponse.empty({ status: 404 }));
+        }
+        if (opts.refusing?.()) {
+          return Effect.succeed(HttpServerResponse.empty({ status: 503 }));
         }
         return upgrade(request);
       }),

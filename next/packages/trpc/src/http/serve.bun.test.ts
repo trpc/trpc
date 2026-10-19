@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, expect, test } from 'bun:test';
 import { BunHttpServer } from '@effect/platform-bun';
-import { Context, Effect, Exit, Layer, Scope } from 'effect';
+import { Context, Effect, Exit, Layer, Scope, Stream } from 'effect';
 import {
   createTrpcClient,
   httpLink,
@@ -12,7 +12,11 @@ import {
   type TestServerShape,
 } from '@trpc12/trpc/internal/testing';
 import { createSerializer } from '@trpc12/trpc/serializer';
-import { initTrpc, tracked } from '@trpc12/trpc/server';
+import {
+  experimental_byteStream,
+  initTrpc,
+  tracked,
+} from '@trpc12/trpc/server';
 import { z } from 'zod';
 
 /** Dates, Maps and Files round-trip, so both ends use danSON. */
@@ -31,6 +35,13 @@ const router = {
     .mutation(
       async (opts) => `${opts.input.file.name}:${await opts.input.file.text()}`,
     ),
+  byteSize: t.procedure.input(experimental_byteStream()).mutation((opts) =>
+    Stream.runFold(
+      opts.input,
+      () => 0,
+      (n, chunk) => n + chunk.byteLength,
+    ),
+  ),
   download: t.procedure.query(
     () => new File(['bytes'], 'report.csv', { type: 'text/csv' }),
   ),
@@ -98,6 +109,15 @@ test('files go up as form data and come back as Files', async () => {
   const file = await client.download.query();
   expect(file.name).toBe('report.csv');
   expect(await file.text()).toBe('bytes');
+});
+
+test('a byte stream input streams up as the request body', async () => {
+  const client = createTrpcClient({
+    router: routerType<typeof router>(),
+    links: [httpLink({ url: server.url, serializer })],
+  });
+  const file = new File([new Uint8Array(300_000).fill(1)], 'big.bin');
+  expect(await client.byteSize.mutate(file.stream())).toBe(300_000);
 });
 
 test('SSE subscriptions stream and resume from lastEventId', async () => {
