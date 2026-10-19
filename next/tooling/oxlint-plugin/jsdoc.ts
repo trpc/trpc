@@ -4,7 +4,10 @@ import { packageName, publicNames } from './public-exports.ts';
 
 const REQUIRED = ['@since', '@stability'] as const;
 
-/** Declarations whose names carry the `experimental_` prefix; types follow their value's. */
+/** The stages before stable, each with its name prefix: `experimental_`, then `unstable_`. */
+const STAGES = ['experimental', 'unstable'] as const;
+
+/** Declarations whose names carry the stage prefix (`experimental_`, `unstable_`); types follow their value's. */
 const VALUES = new Set([
   'FunctionDeclaration',
   'TSDeclareFunction',
@@ -47,17 +50,20 @@ const jsdoc = defineRule({
       packagePrefix:
         '`{{name}}` is in an `experimental-` package, which says it already: export it as `{{unprefixed}}`.',
       prefix:
-        '`{{name}}` is experimental, so its name starts with `experimental_`: `experimental_{{name}}`.',
+        '`{{name}}` is {{stage}}, so its name starts with `{{stage}}_`: `{{stage}}_{{name}}`.',
       promoted:
-        "`{{name}}` isn't experimental: export it as `{{unprefixed}}` and keep `{{name}}` as a `@deprecated` alias.",
+        "`{{name}}` isn't {{stage}}: export it as {{next}} and keep `{{name}}` as a `@deprecated` alias.",
+      unstablePackage:
+        '`{{name}}` is in an `unstable-` package. There are none: publish the package under its final name, with its unstable exports named `unstable_*`.',
     },
   },
   create(context) {
     const reachable = publicNames(context.filename);
+    const pkg = packageName(context.filename) ?? '';
     // The package name already says it: every export is experimental, unprefixed.
-    const experimentalPackage = /^@[\w-]+\/experimental-/.test(
-      packageName(context.filename) ?? '',
-    );
+    const experimentalPackage = /^@[\w-]+\/experimental-/.test(pkg);
+    // An unstable feature stays, so its package already has its final name.
+    const unstablePackage = /^@[\w-]+\/unstable-/.test(pkg);
     // Overloads share one JSDoc, on the first signature.
     const checked = new Set<string>();
     return {
@@ -100,17 +106,26 @@ const jsdoc = defineRule({
             data: { name },
           });
         }
-        const experimental = /^\s*\*?\s*@stability experimental\b/m.test(text);
-        const prefixed = name.startsWith('experimental_');
-        const unprefixed = name.slice('experimental_'.length);
+        const stability = /^\s*\*?\s*@stability (\w+)/m.exec(text)?.[1];
+        const prefix = STAGES.find((stage) => name.startsWith(`${stage}_`));
+        const unprefixed =
+          prefix === undefined ? name : name.slice(prefix.length + 1);
+        if (unstablePackage) {
+          context.report({
+            node: declaration,
+            messageId: 'unstablePackage',
+            data: { name },
+          });
+          return;
+        }
         if (experimentalPackage) {
-          if (!experimental) {
+          if (stability !== 'experimental') {
             context.report({
               node: declaration,
               messageId: 'packageStability',
               data: { name },
             });
-          } else if (prefixed) {
+          } else if (prefix !== undefined) {
             context.report({
               node: declaration,
               messageId: 'packagePrefix',
@@ -120,17 +135,25 @@ const jsdoc = defineRule({
           return;
         }
         if (!VALUES.has(declaration.type)) return;
-        if (experimental && !prefixed) {
+        const stage = STAGES.find((each) => each === stability);
+        if (stage !== undefined && prefix !== stage && !deprecated) {
           context.report({
             node: declaration,
             messageId: 'prefix',
-            data: { name },
+            data: { name: unprefixed, stage },
           });
-        } else if (prefixed && !experimental && !deprecated) {
+        } else if (prefix !== undefined && prefix !== stage && !deprecated) {
           context.report({
             node: declaration,
             messageId: 'promoted',
-            data: { name, unprefixed },
+            data: {
+              name,
+              next:
+                prefix === 'experimental'
+                  ? `\`unstable_${unprefixed}\` or \`${unprefixed}\``
+                  : `\`${unprefixed}\``,
+              stage: prefix,
+            },
           });
         }
       },

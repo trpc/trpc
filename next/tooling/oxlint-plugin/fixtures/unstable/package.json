@@ -1,0 +1,7 @@
+{
+  "name": "@fixture/unstable-thing",
+  "private": true,
+  "exports": {
+    ".": "./index.ts"
+  }
+}

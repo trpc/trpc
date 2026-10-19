@@ -5,3 +5,5 @@ export const experimental_done = () => {};
 export const legacy = () => {};
 export interface Shape {}
 export class Service {}
+export const unstable_draft = () => {};
+export const unstable_done = () => {};

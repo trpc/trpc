@@ -46,7 +46,7 @@
   - "Document API suggestions in bespoke files in a structured manner"
   - "Me: I go through and picks ideas and make decisions about APIs"
   - "Also document the approach"
-- (agent) Superseded or refined since, among others: transformers on endpoints ([`replaceable-serializers.md`](./replaceable-serializers.md)); danSON as an opt-in, not the default ([`serializer.md`](./serializer.md)); stability through `unstable_` prefixes plus tags ([`stability-jsdoc-tags.md`](./stability-jsdoc-tags.md)); `@trpc12/*` instead of `@trpcdev` and `trpcdev` ([`npm-names.md`](./npm-names.md)); `v12` on trpc/trpc instead of KATT/trpc-playground ([`v12-on-trpc-trpc.md`](./v12-on-trpc-trpc.md)); the process in [`../approach.md`](../approach.md).
+- (agent) Superseded or refined since, among others: transformers on endpoints ([`replaceable-serializers.md`](./replaceable-serializers.md)); danSON as an opt-in, not the default ([`serializer.md`](./serializer.md)); stability through `experimental_` and `unstable_` prefixes plus tags ([`stability-jsdoc-tags.md`](./stability-jsdoc-tags.md)); `@trpc12/*` instead of `@trpcdev` and `trpcdev` ([`npm-names.md`](./npm-names.md)); `v12` on trpc/trpc instead of KATT/trpc-playground ([`v12-on-trpc-trpc.md`](./v12-on-trpc-trpc.md)); the process in [`../approach.md`](../approach.md).
 - Human, 2026-10-16 (decision round, the parity target after oRPC v2): "A". Parity tracks oRPC v2's table, and its missing rows are built as `experimental_` ([`orpc-v2-parity.md`](./orpc-v2-parity.md)).
 - Why: one place for the founding constraints, searchable with `pnpm decisions brief`.
 - Lost: nothing; this is the brief moved, not changed.

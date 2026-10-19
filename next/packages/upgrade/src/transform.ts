@@ -1,6 +1,10 @@
 import MagicString from 'magic-string';
 import { parseSync } from 'oxc-parser';
-import { PROMOTED } from './promoted.ts';
+import {
+  PROMOTED,
+  PROMOTED_PACKAGES,
+  type PromotedPackage,
+} from './promoted.ts';
 
 /**
  * Something the codemod couldn't rewrite: a manual step, at a position.
@@ -21,8 +25,12 @@ export interface UpgradeNote {
  * @stability stable
  */
 export interface UpgradeOptions {
-  /** `experimental_*` names promoted to stable, old to new. @default PROMOTED */
+  /** Exports promoted a stage, old name to new. @default PROMOTED */
   readonly promoted?: Readonly<Record<string, string>> | undefined;
+  /** `@trpc12/experimental-*` packages promoted, by old name. @default PROMOTED_PACKAGES */
+  readonly promotedPackages?:
+    | Readonly<Record<string, PromotedPackage>>
+    | undefined;
 }
 
 /**
@@ -163,6 +171,22 @@ const ROOT_OPTION_NOTES: Readonly<Record<string, string>> = {
 const own = <T>(record: Readonly<Record<string, T>>, key: string) =>
   Object.hasOwn(record, key) ? record[key] : undefined;
 
+/** Where `name` ends up through `promoted`: `experimental_x` → `unstable_x` → `x`. */
+const promotedName = (
+  promoted: Readonly<Record<string, string>>,
+  name: string,
+) => {
+  const seen = new Set<string>();
+  let current = name;
+  while (!seen.has(current)) {
+    seen.add(current);
+    const next = own(promoted, current);
+    if (next === undefined) break;
+    current = next;
+  }
+  return current;
+};
+
 const isNode = (value: unknown): value is Node =>
   typeof value === 'object' &&
   value !== null &&
@@ -236,10 +260,12 @@ export function upgradeSource(
   opts: UpgradeOptions = {},
 ): UpgradeResult {
   const promoted = opts.promoted ?? PROMOTED;
+  const promotedPackages = opts.promotedPackages ?? PROMOTED_PACKAGES;
   const unchanged: UpgradeResult = { code: source, changed: false, notes: [] };
   if (
     !source.includes('@trpc/') &&
     !Object.keys(promoted).some((name) => source.includes(name)) &&
+    !Object.keys(promotedPackages).some((name) => source.includes(name)) &&
     !Object.keys(PROJECT_RENAMES).some((name) => source.includes(name))
   ) {
     return unchanged;
@@ -303,10 +329,24 @@ export function upgradeSource(
     if (!isImport && !isReexport) continue;
     const from = statement['source'].value as string;
     if (TRPC12.test(from)) {
+      const pkg = Object.entries(promotedPackages).find(
+        ([name]) => from === name || from.startsWith(`${name}/`),
+      );
+      if (pkg) {
+        const [name, to] = pkg;
+        const literal = statement['source'] as Node;
+        s.overwrite(
+          literal.start + 1,
+          literal.end - 1,
+          `${to.to}${from.slice(name.length)}`,
+        );
+      }
       for (const spec of statement['specifiers'] as Node[]) {
         const key = isImport ? spec['imported'] : spec['local'];
-        const next = key?.type === 'Identifier' && own(promoted, key.name);
-        if (!next) continue;
+        if (key?.type !== 'Identifier') continue;
+        const renamed = (pkg && own(pkg[1].names ?? {}, key.name)) ?? key.name;
+        const next = promotedName(promoted, renamed);
+        if (next === key.name) continue;
         const sameName =
           spec[isImport ? 'local' : 'exported'].start === key.start;
         if (isImport && sameName) renames.set(key.name, next);

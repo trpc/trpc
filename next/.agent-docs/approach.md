@@ -71,7 +71,7 @@ Taken from the [brief](./decisions/brief.md). Every proposal is judged against t
 6. **No shortcuts to the best API.** Prefer a spike and a benchmark over a guess, and a well-typed design over a quick one.
 7. **Parity with oRPC** is the bar, and blocking it requires sign-off.
 8. **Portable types.** No TS2742, ever. CI proves it.
-9. **Clear stability.** JSDoc on every public export, explicit stability tiers, and an `experimental_` prefix on experimental values (21, [decision](./decisions/stability-jsdoc-tags.md)).
+9. **Clear stability.** JSDoc on every public export, explicit stability tiers, and `experimental_` and `unstable_` prefixes on experimental and unstable values (21, [decision](./decisions/stability-jsdoc-tags.md)).
 10. **Integration tests first.** Test through real handlers and clients, like `smoke.test.ts`. Packages may export test helpers (`@trpc12/trpc/testing`).
 
 ## 4. Technical approach
