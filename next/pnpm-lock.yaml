@@ -2284,6 +2284,12 @@ importers:
       '@tanstack/vue-query':
         specifier: 5.104.1
         version: 5.104.1(vue@3.5.43(typescript@7.0.2))
+      '@trpc/client':
+        specifier: 11.19.0
+        version: 11.19.0(@trpc/server@11.19.0(typescript@7.0.2))(typescript@7.0.2)
+      '@trpc/server':
+        specifier: 11.19.0
+        version: 11.19.0(typescript@7.0.2)
       '@trpc12/experimental-nest':
         specifier: workspace:*
         version: link:../../../packages/experimental-nest

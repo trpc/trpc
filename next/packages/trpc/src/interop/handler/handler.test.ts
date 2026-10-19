@@ -14,7 +14,14 @@ import {
   wsLink,
   type TRPCLink,
 } from '@trpc/client';
-import { initTRPC } from '@trpc/server';
+import {
+  initTRPC,
+  type TRPCBuiltRouter,
+  type TRPCDefaultErrorShape,
+  type TRPCMutationProcedure,
+  type TRPCQueryProcedure,
+  type TRPCSubscriptionProcedure,
+} from '@trpc/server';
 import { Effect, Exit, Layer, Scope, Stream } from 'effect';
 import superjson from 'superjson';
 import { EventSource } from 'undici';
@@ -25,7 +32,15 @@ import {
   fromV11Link,
   type V11HandlerOptions,
 } from '@trpc12/trpc/interop';
-import { error, initTrpc, tracked } from '@trpc12/trpc/server';
+import {
+  error,
+  initTrpc,
+  tracked,
+  type AnyProcedure,
+  type inferProcedureInput,
+  type inferProcedureOutput,
+  type Unlazy,
+} from '@trpc12/trpc/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
 
@@ -615,6 +630,88 @@ test('old apps keep their v11 AppRouter type', async () => {
     id: 1,
     title: 'T',
   });
+});
+
+// The v11 router type from `docs/migrations/from-v11/serve-v11-clients.md`
+// (`www/samples/docs/src/v11-app-router.ts`), with `transformer` a parameter.
+type V11Record<TRouter> = {
+  [K in keyof TRouter]: TRouter[K] extends AnyProcedure
+    ? V11Procedure<
+        TRouter[K],
+        {
+          input: inferProcedureInput<TRouter[K]>;
+          output: inferProcedureOutput<TRouter[K]>;
+          meta: object;
+        }
+      >
+    : V11Record<Unlazy<TRouter[K]>>;
+};
+type V11Procedure<
+  P extends AnyProcedure,
+  D extends { input: unknown; output: unknown; meta: object },
+> = {
+  query: TRPCQueryProcedure<D>;
+  mutation: TRPCMutationProcedure<D>;
+  subscription: TRPCSubscriptionProcedure<
+    D & { output: AsyncIterable<D['output'], void, any> }
+  >;
+}[NonNullable<P['~trpc']['~types']>['type']];
+type V11AppRouter<
+  TRouter,
+  TTransformer extends boolean = false,
+> = TRPCBuiltRouter<
+  {
+    ctx: object;
+    meta: object;
+    errorShape: TRPCDefaultErrorShape;
+    transformer: TTransformer;
+  },
+  V11Record<TRouter>
+>;
+
+test('a v11 client typed by the v12 router', async () => {
+  await using app = await start();
+  const client = createTRPCClient<V11AppRouter<typeof router>>({
+    links: [
+      splitLink({
+        condition: (op) => op.type === 'subscription',
+        true: httpSubscriptionLink({
+          url: app.url,
+          EventSource: EventSource as never,
+        }),
+        false: httpBatchLink({ url: app.url }),
+      }),
+    ],
+  });
+  const greeting = await client.greet.query({ name: 'typed' });
+  expectTypeOf(greeting).toEqualTypeOf<string>();
+  const post = await client.post.byId.query({ id: '1' });
+  expectTypeOf(post).toEqualTypeOf<{ id: string; title: string }>();
+  expect(post).toEqual({ id: '1', title: 'First' });
+  // @ts-expect-error: the v12 input schema types the v11 call
+  await client.greet.query({ name: 1 }).catch(() => undefined);
+  // Without a transformer, outputs are typed as JSON, as v11 typed them.
+  expectTypeOf(client.dates.query).returns.resolves.toEqualTypeOf<{
+    next: string;
+  }>();
+  const events: Array<{ id: string; data: { id: number } }> = [];
+  await new Promise<void>((resolve, reject) => {
+    const sub = client.events.subscribe(undefined, {
+      onData: (event) => {
+        expectTypeOf(event).toEqualTypeOf<{
+          readonly id: string;
+          readonly data: { id: number };
+        }>();
+        events.push(event);
+        if (events.length === 3) {
+          sub.unsubscribe();
+          resolve();
+        }
+      },
+      onError: reject,
+    });
+  });
+  expect(events.map((e) => e.data.id)).toEqual([1, 2, 3]);
 });
 
 test('a v12 client sends through a v11 terminating link', async () => {

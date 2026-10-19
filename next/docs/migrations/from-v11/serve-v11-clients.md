@@ -72,10 +72,36 @@ createV11Handler({
 });
 ```
 
-Outputs go out as v11 sent them, `JSON.stringify` after the transformer, so the old apps' types still describe them. They keep compiling against the v11 `AppRouter` type they were built with; nothing on the client changes.
+Outputs go out as v11 sent them, `JSON.stringify` after the transformer, so the old apps' types still describe them. They keep compiling against the v11 `AppRouter` type they were built with; nothing on the client changes. An app you keep working on before it moves can [take its types from the new router](#typing-v11-clients-from-the-new-router) instead.
 
 What differs from a v11 server:
 
 - `createContext` runs once per WebSocket message, as for v12 sockets, not once per connection. It gets `info.connectionParams`.
 - `httpLink` and `httpBatchLink` get an output's promises settled; a procedure that returns an async iterable needs `httpBatchStreamLink` (as in v11).
 - `responseMeta` is gone: procedures set headers and status on their `response` handle, and the v11 handler sends them. A batch's `cache-control` is the strictest policy every call in it allows; a call that sets none keeps the batch uncached.
+
+## Typing v11 clients from the new router
+
+A deployed app needs no types, but an app you keep working on while it's still on `@trpc/client` 11 does, and the v12 `AppRouter` doesn't fit `createTRPCClient<AppRouter>()`. Either keep the old router's type until the app moves, or build a v11 router type from the new router with `@trpc/server`'s own types, so procedures you add show up in the old app too:
+
+```sample title="v11-app-router.ts"
+docs/src/v11-app-router.ts
+```
+
+The old app imports it as its `AppRouter`:
+
+```ts twoslash
+// ---cut-start---
+import type { V11AppRouter } from './v11-app-router.ts';
+// ---cut-end---
+import { createTRPCClient, httpBatchLink } from '@trpc/client';
+import superjson from 'superjson';
+
+const client = createTRPCClient<V11AppRouter>({
+  links: [httpBatchLink({ url: '/trpc', transformer: superjson })],
+});
+const post = await client.post.byId.query({ id: '1' });
+//    ^?
+```
+
+Inputs are what the v12 schemas accept, and outputs what the procedures return, as `createV11Handler` sends them. Subscription events are `{ id, data }` for `tracked()` ones, as v11 typed them.

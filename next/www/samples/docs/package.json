@@ -29,6 +29,8 @@
     "@tanstack/solid-query": "5.104.1",
     "@tanstack/svelte-query": "6.3.1",
     "@tanstack/vue-query": "5.104.1",
+    "@trpc/client": "11.19.0",
+    "@trpc/server": "11.19.0",
     "@trpc12/experimental-nest": "workspace:*",
     "@trpc12/experimental-react": "workspace:*",
     "@trpc12/experimental-react-atom": "workspace:*",
