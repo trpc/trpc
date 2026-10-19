@@ -536,10 +536,13 @@ export const connectionReceiver = (
         if (drained) return Deferred.await(drained);
         if (closed) return Effect.void;
         const done = (drained = Deferred.makeUnsafe<void>());
-        if (opts.drain === 'peer') conn.send({ type: 'reconnect' });
+        // A slow client's send waits, within the timeout.
         const settled =
           opts.drain === 'peer'
-            ? Deferred.await(ended)
+            ? Effect.andThen(
+                conn.send({ type: 'reconnect' }),
+                Deferred.await(ended),
+              )
             : FiberMap.awaitEmpty(calls);
         return settled.pipe(
           Effect.timeoutOption(timeout),
