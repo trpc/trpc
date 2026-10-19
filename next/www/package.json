@@ -16,15 +16,28 @@
     "sponsors:readme": "node build/sponsors-sync.ts --readme-only"
   },
   "dependencies": {
+    "@codemirror/commands": "6.11.1",
+    "@codemirror/lang-javascript": "6.2.5",
+    "@codemirror/language": "6.13.1",
+    "@codemirror/state": "6.7.6",
+    "@codemirror/view": "6.43.14",
+    "@hookform/resolvers": "5.9.2",
+    "@lezer/highlight": "1.2.5",
     "@shared/ui": "workspace:*",
+    "@tanstack/react-query": "5.104.1",
     "@tanstack/react-router": "1.170.42",
     "@tanstack/react-start": "1.168.61",
+    "@trpc12/tanstack-react-query": "workspace:*",
+    "@trpc12/trpc": "workspace:*",
     "d3-hierarchy": "3.1.2",
     "lucide-react": "1.55.0",
     "next-themes": "0.4.6",
     "react": "19.3.0",
     "react-dom": "19.3.0",
-    "sonner": "2.0.8"
+    "react-hook-form": "7.90.0",
+    "sonner": "2.0.8",
+    "sucrase": "3.35.1",
+    "zod": "4.6.5"
   },
   "devDependencies": {
     "@effect/platform-node": "4.0.2",
@@ -33,6 +46,7 @@
     "@fontsource/jetbrains-mono": "5.3.0",
     "@resvg/resvg-js": "2.6.2",
     "@samples/docs": "workspace:*",
+    "@samples/kitchen-sink-forms": "workspace:*",
     "@shikijs/rehype": "4.5.0",
     "@shikijs/twoslash": "4.5.0",
     "@tailwindcss/typography": "0.5.20",

@@ -197,6 +197,13 @@ export default defineConfig({
         },
       },
       {
+        // The kitchen sink runs the demo code the reader edits, in the page.
+        files: ['www/src/kitchen-sink/modules.ts'],
+        rules: {
+          'typescript/no-implied-eval': 'off',
+        },
+      },
+      {
         files: ['spikes/**'],
         rules: {
           'no-console': 'off',
