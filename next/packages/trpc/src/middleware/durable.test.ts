@@ -599,7 +599,7 @@ test('inputs with files are kept without a fingerprint; an error that cannot be 
       }),
     odd: t.procedure.use(experimental_durable()).mutation(async function* () {
       yield 1;
-      throw new TrpcError({ code: 'CONFLICT', data: { fn: () => 1 } });
+      throw new TrpcError({ code: 'ODD', data: { fn: () => 1 } });
     }),
   } satisfies AnyRouter;
   const danson = createSerializer();
