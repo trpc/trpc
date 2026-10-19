@@ -272,10 +272,8 @@ const checkDeclared = (
   );
 };
 
-const declaresErrors = (def: ProcedureInternals): boolean => {
-  for (const _ in def.errors) return true;
-  return false;
-};
+const declaresErrors = (def: ProcedureInternals): boolean =>
+  Object.keys(def.errors).length > 0;
 
 type Thrown = 'typed' | 'builtin' | 'kept' | 'masked';
 
