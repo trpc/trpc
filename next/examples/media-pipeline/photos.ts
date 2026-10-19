@@ -8,6 +8,9 @@ import { TrpcError } from '@trpc12/trpc/server';
 /** How long each pipeline step takes, standing in for real work. */
 export const STEP_LATENCY = 40;
 
+/** The largest original `photos.uploadOriginal` takes. */
+export const MAX_ORIGINAL_BYTES = 1_000_000;
+
 export interface Photo {
   readonly id: string;
   readonly album: string;

@@ -2,6 +2,7 @@ import { carriesBytes, encodeRecord } from '../../internal/frames.ts';
 import {
   Cause,
   Context,
+  Deferred,
   Effect,
   Exit,
   FiberMap,
@@ -39,6 +40,7 @@ import {
 } from '../execution/index.ts';
 import type { HandlerCore } from '../handler/index.ts';
 import { resolveProcedureEffect, type AnyRouter } from '../procedures/index.ts';
+import type { DrainConnection, SocketDrains } from './drain.ts';
 import { runSocket, socketFrames } from './socket-session.ts';
 
 /** The span a socket call is a child of: the trace context in its message. */
@@ -107,6 +109,8 @@ export interface SocketCoreShape extends Pick<
   readonly router: AnyRouter;
   readonly serializer: AnySerializer;
   deserializeInput(value: unknown): unknown;
+  /** The handler's open connections, which `drain()` and `dispose()` close. */
+  readonly drains?: SocketDrains | undefined;
 }
 
 /** @internal */
@@ -193,7 +197,7 @@ export const serveSocketConnection = (
             },
             close: (code, reason) => outbox.close(code, reason),
           },
-          opts,
+          { ...opts, drain: 'peer' },
         );
         return { frame: receiver.receive, close: () => receiver.close };
       }),
@@ -268,7 +272,7 @@ export const serveMessagePort = (
         send: (message) => Effect.sync(() => port.postMessage(message)),
         close: () => (port as { close?: () => void }).close?.(),
       },
-      { ...opts, transport: 'messagePort' },
+      { ...opts, transport: 'messagePort', drain: 'calls' },
     );
     yield* Stream.runForEach(messages, receiver.receive).pipe(
       Effect.ensuring(receiver.close),
@@ -310,9 +314,18 @@ export const connectionReceiver = (
     ) => boolean;
     /** The client aborted, or the parked call failed. */
     unpark?: (id: number) => void;
+    /**
+     * Joins `core.drains`, which refuses the connection (1012) while a
+     * drain runs. A drain closes it with 1012 at its timeout, or before:
+     * - `peer`: it sends `reconnect` and waits for the client to close
+     *   the connection, which it does once the calls it sent settle.
+     * - `calls`: it waits for the calls in flight (a port's client has
+     *   nowhere to move).
+     */
+    drain?: 'peer' | 'calls';
   },
 ): Effect.Effect<ConnectionReceiver, never, Scope.Scope> =>
-  Effect.map(FiberMap.make<number, void, never>(), (calls) => {
+  Effect.flatMap(FiberMap.make<number, void, never>(), (calls) => {
     const { request } = opts;
     let connectionParams = opts.connectionParams;
     let closed = false;
@@ -508,10 +521,51 @@ export const connectionReceiver = (
         }
       });
 
+    const ended = Deferred.makeUnsafe<void>();
+    let leave: (() => void) | undefined;
     const close = Effect.suspend(() => {
       closed = true;
+      leave?.();
+      Deferred.doneUnsafe(ended, Effect.void);
       return FiberMap.clear(calls);
     });
 
-    return { receive, close };
+    let drained: Deferred.Deferred<void> | undefined;
+    const drain: DrainConnection = (timeout) =>
+      Effect.suspend(() => {
+        if (drained) return Deferred.await(drained);
+        if (closed) return Effect.void;
+        const done = (drained = Deferred.makeUnsafe<void>());
+        // A slow client's send waits, within the timeout.
+        const settled =
+          opts.drain === 'peer'
+            ? Effect.andThen(
+                conn.send({ type: 'reconnect' }),
+                Deferred.await(ended),
+              )
+            : FiberMap.awaitEmpty(calls);
+        return settled.pipe(
+          Effect.timeoutOption(timeout),
+          Effect.andThen(
+            Effect.suspend(() => {
+              if (!closed) conn.close(1012, 'Service restart');
+              return close;
+            }),
+          ),
+          Effect.ensuring(Deferred.done(done, Exit.void)),
+        );
+      });
+
+    const drains = opts.drain ? core.drains : undefined;
+    if (drains) {
+      leave = drains.add(drain);
+      if (!leave) {
+        closed = true;
+        conn.close(1012, 'Service restart');
+      }
+    }
+    return Effect.as(
+      Effect.addFinalizer(() => Effect.sync(() => leave?.())),
+      { receive, close },
+    );
   });

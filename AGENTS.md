@@ -4,7 +4,7 @@ This repo is a **from-scratch rewrite** of tRPC (vNext / `v12` branch), not main
 
 Push commits straight to `v12`; don't open pull requests against it ([Landing on `v12`](./next/AGENTS.md#landing-on-v12)).
 
-Name every branch cut from `v12` `v12/<name>`: only those get `trpc-v12` preview deployments ([`docs-website-on-vercel.md`](./next/.agent-docs/decisions/docs-website-on-vercel.md)).
+Name every branch cut from `v12` `v12-<name>`: only those get `trpc-v12` preview deployments ([`docs-website-on-vercel.md`](./next/.agent-docs/decisions/docs-website-on-vercel.md)).
 
 - Brief and constraints: `next/ideas.md`
 - Design docs (proposals, decisions, notes): `next/.agent-docs/`

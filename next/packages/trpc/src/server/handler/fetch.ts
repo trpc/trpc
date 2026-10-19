@@ -7,6 +7,7 @@ import {
   Queue,
   Stream,
   Tracer,
+  type Duration,
   type Layer,
 } from 'effect';
 import {
@@ -32,6 +33,7 @@ import {
   HEADER,
   isJsonContentType,
   isMultipartContentType,
+  isOctetContentType,
   PROTOCOL_VERSION,
   SSE_EVENT,
   type BatchCall,
@@ -43,6 +45,7 @@ import { backpressure } from '../../internal/effects.ts';
 import { accepts, encodeRecord } from '../../internal/frames.ts';
 import type { Chunk, Frame } from '../../serializer/danson/index.ts';
 import {
+  bodyStream,
   consumedError,
   parsedBody,
   readBytes as readRequestBytes,
@@ -64,10 +67,12 @@ import {
   type inferRouterContext,
   type inferRouterServices,
 } from '../procedures/index.ts';
+import { isByteStreamSchema } from '../validation/index.ts';
 import { strictestCacheControl } from './cache-control.ts';
 import { httpParts } from './routes.ts';
 import {
   fromWebSocketLike,
+  makeSocketDrains,
   serveMessagePort,
   serveSocketConnection,
   SocketCore,
@@ -250,6 +255,12 @@ export interface BaseHandlerOptions<TRouter extends AnyRouter> {
      */
     idleTimeoutMs?: number | false;
     /**
+     * How long `dispose()`, a `drain()` without `timeout` and the end of
+     * `serve()` give connections to move before closing them.
+     * @default '10 seconds'
+     */
+    drainTimeout?: Duration.Input;
+    /**
      * Upgrades a WebSocket request that reaches `handler.fetch`, on runtimes
      * that upgrade a web `Request` themselves: `Deno.upgradeWebSocket`. The
      * upgrade runs inside `middleware`, so `cors()` refuses one from another
@@ -354,7 +365,35 @@ export interface FetchHandler<TPlatform = undefined> {
    * ```
    */
   readonly routes: Layer.Layer<never, never, HttpRouter.HttpRouter>;
-  /** Releases the `layer`'s resources. */
+  /**
+   * Drains the open WebSocket, socket and MessagePort connections, for a
+   * rolling deploy. Each WebSocket or socket client gets a `reconnect`
+   * message: `wsLink` sends new calls on a new connection, moves its
+   * subscriptions there from their last `tracked()` id, and closes the old
+   * connection once the calls it sent settle. A MessagePort is closed once
+   * its calls settle. At `timeout` the handler closes what's left (1012,
+   * "service restart"), interrupting its calls. During the drain, upgrades
+   * get a 503 and sockets handed to `websocket()` are closed (1012), so
+   * clients reconnect elsewhere; after it, the handler takes connections
+   * again. `serve()` drains when its layer is released, and refuses
+   * upgrades until the server has stopped.
+   *
+   * @example
+   * ```ts
+   * process.once('SIGTERM', async () => {
+   *   await handler.drain({ timeout: '20 seconds' });
+   *   server.close();
+   * });
+   * ```
+   */
+  drain(opts?: {
+    /** @default the handler's `websocket.drainTimeout` */
+    timeout?: Duration.Input;
+  }): Promise<void>;
+  /**
+   * Drains the connections (`drain()`, with `websocket.drainTimeout`), then
+   * releases the `layer`'s resources. The handler takes no connections after.
+   */
   dispose(): Promise<void>;
 }
 
@@ -373,6 +412,11 @@ type InputError = CodeError<
   | 'PAYLOAD_TOO_LARGE'
   | 'INTERNAL_SERVER_ERROR'
 >;
+
+const takesByteStream = (procedure: AnyProcedure): boolean =>
+  procedure['~trpc'].steps.some(
+    (step) => step.kind === 'input' && isByteStreamSchema(step.arg),
+  );
 
 /** The `platform` of the request being handled. @internal */
 export const CurrentPlatform: Context.Reference<unknown> =
@@ -639,6 +683,7 @@ export function createFetchHandler<
   const readInput = (
     request: HttpServerRequest.HttpServerRequest,
     search: string,
+    procedure: AnyProcedure,
   ): Effect.Effect<unknown, InputError> => {
     if (request.method === 'GET') {
       if (search.length <= 1) return noInput;
@@ -667,6 +712,25 @@ export function createFetchHandler<
         );
       }
       return readMultipart(request);
+    }
+    if (isOctetContentType(request.headers['content-type'] ?? null)) {
+      if (!takesByteStream(procedure)) {
+        return Effect.fail(
+          protocolError(
+            'UNSUPPORTED_MEDIA_TYPE',
+            `${CONTENT_TYPE.octet} bodies are for procedures whose input is experimental_byteStream()`,
+          ),
+        );
+      }
+      if (request.headers[HEADER.version] === undefined) {
+        return Effect.fail(
+          protocolError(
+            'UNSUPPORTED_MEDIA_TYPE',
+            `${CONTENT_TYPE.octet} requests need the ${HEADER.version} header`,
+          ),
+        );
+      }
+      return bodyStream(request);
     }
     return Effect.flatMap(readBody(request), (body) => deserialize(body));
   };
@@ -923,7 +987,7 @@ export function createFetchHandler<
         result.headers,
       );
     };
-    const call = chain(readInput(request, search), (input) =>
+    const call = chain(readInput(request, search, procedure), (input) =>
       chain(makeContext(request, [{ path, type }], controller.signal), (ctx) =>
         type === 'subscription'
           ? subscription(
@@ -1238,6 +1302,7 @@ export function createFetchHandler<
     ),
   ) as never;
 
+  const drains = makeSocketDrains(opts.websocket?.drainTimeout ?? '10 seconds');
   const core: SocketCoreShape = {
     router,
     serializer,
@@ -1246,6 +1311,7 @@ export function createFetchHandler<
     deserializeInput,
     publicError,
     report,
+    drains,
   };
   const idleTimeoutMs = opts.websocket?.idleTimeoutMs ?? 60_000;
   const serveWebSocket: ServeSocket = (socket, request) =>
@@ -1291,6 +1357,7 @@ export function createFetchHandler<
     endpoint,
     serveWebSocket,
     upgradeWeb,
+    refusing: drains.refusing,
   });
 
   const handler: FetchHandler<unknown> = {
@@ -1324,7 +1391,9 @@ export function createFetchHandler<
           : (Context.make(CurrentPlatform, platform) as Context.Context<never>),
       ),
     routes: http.routes,
+    drain: (o) => Effect.runPromise(drains.drain({ timeout: o?.timeout })),
     async dispose() {
+      await Effect.runPromise(drains.drain({ final: true }));
       await http.dispose();
       await base.dispose();
     },

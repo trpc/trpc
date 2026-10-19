@@ -20,7 +20,8 @@ declare const layer: Layer.Layer<never>;
 const handler = createFetchHandler({ router, createContext, layer });
 // handler.fetch(request): Promise<Response>
 // handler.websocket(socket, { request })
-// handler.dispose(): releases the layer
+// handler.drain(): moves WebSocket clients to other servers
+// handler.dispose(): drains, then releases the layer
 ```
 
 Procedures are served under `endpoint`, `/trpc` by default.
@@ -58,6 +59,23 @@ const handler = createFetchHandler({
 ```
 
 `cors()` is Effect's `HttpMiddleware.cors` plus an origin check on WebSocket upgrades (403 for other origins). Browsers send cookies with cross-site upgrades and CORS doesn't cover them, so use it when you authenticate with cookies.
+
+## Rolling deploys
+
+A server that stops closes its WebSockets, and clients lose the queries and mutations in flight. Drain it first: `handler.drain()` sends every WebSocket and socket client a `reconnect` message, and `wsLink` sends new calls on a new connection, moves its subscriptions there from their last event id, and closes the old connection once the calls it sent there finish ([wsLink](../client/links/ws.md#rolling-deploys)). The drain ends when every client has moved, or at its timeout, when the handler closes what's left (code 1012, "service restart") and interrupts those calls. While it runs, the handler answers WebSocket upgrades with a 503 (and closes sockets handed to `handler.websocket` with 1012), so clients back off and reconnect to another server.
+
+- `serve(handler)` drains when its layer is released, before the server stops, and answers upgrades with a 503 until it has: `NodeRuntime.runMain` releases it on SIGTERM.
+- `handler.dispose()` drains, then releases the `layer`; the handler takes no connections after.
+- Serving `toHttpEffect(handler)` or `handler.routes` yourself, or a runtime's own server, call `handler.drain()` before you stop it.
+
+```ts
+process.once('SIGTERM', async () => {
+  await handler.drain({ timeout: '20 seconds' });
+  server.close();
+});
+```
+
+The timeout is `createFetchHandler({ websocket: { drainTimeout } })`, 10 seconds by default; keep it under your platform's grace period. A `MessagePort` has nowhere to move, so the drain waits for its calls and then closes it. Cloudflare's hibernating sockets don't drain, since a deploy gives the Durable Object no hook to run one: clients reconnect and resume as after a dropped connection.
 
 ## Compression
 

@@ -52,24 +52,48 @@ type Signal = Data.TaggedEnum<{
   Message: { readonly message: CallMessage };
   /** The connection dropped; the call may be sent again on a new one. */
   Lost: {};
+  /**
+   * The server asked to reconnect: the subscription was aborted on this
+   * connection and is sent again on the next one.
+   */
+  Moved: {};
   Fail: { readonly error: AnyTrpcError };
 }>;
 const Signal = Data.taggedEnum<Signal>();
 
-type CallMessage = Exclude<ServerMessage, { type: 'pong' } | { type: 'init' }>;
+type CallMessage = Exclude<
+  ServerMessage,
+  { type: 'pong' } | { type: 'init' } | { type: 'reconnect' }
+>;
 
 const LOST = Signal.Lost();
+const MOVED = Signal.Moved();
 
-/** How a call's time on one connection ended. */
-type Outcome = 'complete' | 'heard' | 'silent';
+/**
+ * How a call's time on one connection ended. `stale`: the connection was
+ * lost or retired before the call was sent on it.
+ */
+type Outcome = 'complete' | 'heard' | 'silent' | 'moved' | 'stale';
 
 interface Connection {
   readonly socket: SocketConnection;
-  /** Inboxes of the calls sent on this connection, by call id. */
-  readonly calls: Map<number, Queue.Queue<Signal>>;
+  /** The calls sent on this connection, by call id. */
+  readonly calls: Map<
+    number,
+    {
+      readonly inbox: Queue.Queue<Signal>;
+      /** A subscription that moves to the next connection on `reconnect`. */
+      readonly moves: boolean;
+    }
+  >;
   /** Messages received, so a keep-alive check can tell if it heard back. */
   received: number;
   lost: boolean;
+  /**
+   * The server sent `reconnect`: new calls go to a new connection, and this
+   * one closes once the calls sent on it settle.
+   */
+  retired: boolean;
   /** The server named another serializer: calls on this connection fail with it. */
   refused?: AnyTrpcError;
 }
@@ -81,7 +105,10 @@ interface Call {
   readonly onMessage: (
     message: CallMessage,
   ) => Effect.Effect<boolean, AnyTrpcError>;
-  /** Subscriptions only: they are sent again after a reconnect, and this runs first. */
+  /**
+   * Subscriptions only: they are sent again after a reconnect or a server's
+   * `reconnect`, and this runs first.
+   */
   readonly onReconnect?: Effect.Effect<void>;
 }
 
@@ -175,28 +202,63 @@ function makeSocketLink(
         message: `The server uses the '${message.serializer}' serializer, but this ${transport.name} uses '${serializer.name}'. Pass the same serializer to the handler and ${transport.name}.`,
       });
       conn.refused = error;
-      for (const inbox of conn.calls.values())
+      for (const { inbox } of conn.calls.values())
         Queue.offerUnsafe(inbox, Signal.Fail({ error }));
       conn.calls.clear();
+      return;
+    }
+    if (message.type === 'reconnect') {
+      if (transport.reconnect) retire(conn);
       return;
     }
     if (message.id === null) {
       if (message.type !== 'error') return;
       const signal = Signal.Fail({ error: revive(message) });
-      for (const inbox of conn.calls.values()) Queue.offerUnsafe(inbox, signal);
+      for (const { inbox } of conn.calls.values())
+        Queue.offerUnsafe(inbox, signal);
       conn.calls.clear();
       return;
     }
-    const inbox = conn.calls.get(message.id);
-    if (inbox) Queue.offerUnsafe(inbox, Signal.Message({ message }));
+    const entry = conn.calls.get(message.id);
+    if (entry) Queue.offerUnsafe(entry.inbox, Signal.Message({ message }));
   }
+
+  /**
+   * Invalidates the shared connection if it's still `conn`, so the next
+   * call opens a new one. A connection with calls on it closes once they
+   * release it.
+   */
+  const drop = (conn: Connection) =>
+    Effect.suspend(() => {
+      if (current !== conn) return Effect.void;
+      current = undefined;
+      return RcRef.invalidate(connection);
+    });
 
   function lose(conn: Connection) {
     if (conn.lost) return;
     conn.lost = true;
-    for (const inbox of conn.calls.values()) Queue.offerUnsafe(inbox, LOST);
+    for (const { inbox } of conn.calls.values()) Queue.offerUnsafe(inbox, LOST);
     conn.calls.clear();
-    Effect.runFork(RcRef.invalidate(connection));
+    Effect.runFork(drop(conn));
+  }
+
+  /**
+   * The server's `reconnect`: subscriptions are aborted here and sent again
+   * on a new connection, and their messages still arriving here are
+   * dropped, so they resume from the last event they handled. Queries and
+   * mutations finish here; nothing sent is sent again.
+   */
+  function retire(conn: Connection) {
+    if (conn.retired || conn.lost) return;
+    conn.retired = true;
+    for (const [id, { inbox, moves }] of conn.calls) {
+      if (!moves) continue;
+      conn.calls.delete(id);
+      conn.socket.send({ id, type: 'abort' });
+      Queue.offerUnsafe(inbox, MOVED);
+    }
+    Effect.runFork(drop(conn));
   }
 
   /**
@@ -235,6 +297,7 @@ function makeSocketLink(
       calls: new Map(),
       received: 0,
       lost: false,
+      retired: false,
     };
     yield* Effect.addFinalizer(() =>
       Effect.sync(() => {
@@ -252,6 +315,7 @@ function makeSocketLink(
     if (closes !== epoch) {
       conn.lost = true;
       socket.close();
+      current = conn;
       return conn;
     }
     yield* socket.messages.pipe(
@@ -291,58 +355,74 @@ function makeSocketLink(
   );
 
   /**
-   * A connection that isn't lost, or `undefined` if none opens. Fails with
-   * the error `close()` gave the call while it waited.
+   * The shared connection, `undefined` if none opens, or `stale` if it was
+   * lost or retired (it's dropped, so the next try opens another). Fails
+   * with the error `close()` gave the call while it waited.
    */
   const connected = (
     inbox: Queue.Queue<Signal>,
-  ): Effect.Effect<Connection | undefined, AnyTrpcError, Scope.Scope> =>
+  ): Effect.Effect<
+    Connection | 'stale' | undefined,
+    AnyTrpcError,
+    Scope.Scope
+  > =>
     Effect.gen(function* () {
-      for (;;) {
-        const signal = yield* Queue.poll(inbox);
-        if (Option.isSome(signal) && Signal.$is('Fail')(signal.value)) {
-          return yield* Effect.fail(signal.value.error);
-        }
-        const conn = yield* Effect.option(RcRef.get(connection));
-        if (Option.isNone(conn)) return undefined;
-        if (!conn.value.lost) return conn.value;
-        yield* RcRef.invalidate(connection);
+      const signal = yield* Queue.poll(inbox);
+      if (Option.isSome(signal) && Signal.$is('Fail')(signal.value)) {
+        return yield* Effect.fail(signal.value.error);
       }
+      const conn = yield* Effect.option(RcRef.get(connection));
+      if (Option.isNone(conn)) return undefined;
+      if (!conn.value.lost && !conn.value.retired) return conn.value;
+      yield* drop(conn.value);
+      return 'stale';
     });
 
   /**
-   * Sends the call on one connection. `complete`, or the connection dropped
-   * and `heard` says whether it had answered anything, so the next
-   * reconnect counts from the first attempt again.
+   * Sends the call on one connection. `complete`; `moved` by the server's
+   * `reconnect`; or the connection dropped and `heard` says whether it had
+   * answered anything, so the next reconnect counts from the first attempt
+   * again.
    */
   const attach = (
     call: Call,
     inbox: Queue.Queue<Signal>,
+    moves: boolean,
   ): Effect.Effect<Outcome, AnyTrpcError> =>
     Effect.gen(function* () {
       const request = yield* Effect.try({
         try: call.request,
         catch: (cause) => cause as AnyTrpcError,
       });
+      // A stale connection's reference is released with this scope, so it
+      // can close.
       const conn = yield* connected(inbox);
+      if (conn === 'stale') return 'stale';
       if (!conn) return 'silent';
       if (conn.refused) return yield* Effect.fail(conn.refused);
       const { id } = call.op;
       let complete = false;
       yield* Effect.addFinalizer(() =>
         Effect.sync(() => {
-          if (conn.calls.get(id) !== inbox) return;
+          if (conn.calls.get(id)?.inbox !== inbox) return;
           conn.calls.delete(id);
           if (!complete) conn.socket.send({ id, type: 'abort' });
         }),
       );
-      conn.calls.set(id, inbox);
-      conn.socket.send(request);
+      // Checked as it's sent: nothing is sent on a retired connection.
+      const sent = yield* Effect.sync(() => {
+        if (conn.lost || conn.retired) return false;
+        conn.calls.set(id, { inbox, moves });
+        conn.socket.send(request);
+        return true;
+      });
+      if (!sent) return 'stale';
       for (;;) {
         const signal = yield* Queue.take(inbox);
         const outcome = yield* Signal.$match(signal, {
           Lost: () =>
             Effect.succeed<Outcome>(conn.received > 0 ? 'heard' : 'silent'),
+          Moved: () => Effect.succeed<Outcome>('moved'),
           Fail: (fail) => {
             complete = true;
             return Effect.fail(fail.error);
@@ -373,15 +453,25 @@ function makeSocketLink(
       live.add(inbox);
       yield* Effect.addFinalizer(() => Effect.sync(() => live.delete(inbox)));
       const { reconnect } = transport;
+      const moves =
+        !!call.onReconnect &&
+        !!reconnect &&
+        call.op.context.reconnect !== false;
       let attempt = 0;
       for (;;) {
-        const outcome = yield* attach(call, inbox);
+        const outcome = yield* attach(call, inbox, moves);
         if (outcome === 'complete') return;
+        if (outcome === 'stale') continue;
+        if (outcome === 'moved') {
+          attempt = 0;
+          if (call.onReconnect) yield* call.onReconnect;
+          continue;
+        }
         if (outcome === 'heard') attempt = 0;
         if (
           !call.onReconnect ||
           !reconnect ||
-          call.op.context.reconnect === false ||
+          !moves ||
           ++attempt > reconnect.attempts
         ) {
           return yield* Effect.fail(lostError());
@@ -556,6 +646,15 @@ export interface ConnectionLinkOptions {
    * Reconnects after a dropped connection. Subscriptions resume from their
    * last `tracked()` event id; queries and mutations in flight fail with
    * `NETWORK_ERROR`.
+   *
+   * A server that drains (`handler.drain()`, `dispose()`, a stopping
+   * `serve()`) sends `reconnect`: new calls go to a new connection,
+   * subscriptions move there at once from their last `tracked()` event id,
+   * and the old connection closes once the queries and mutations sent on it
+   * settle. Nothing already sent is sent again. A subscription without
+   * tracked ids starts over on the new connection. One made with
+   * `{ reconnect: false }` stays, and fails with `NETWORK_ERROR` when the
+   * server closes the old connection.
    */
   reconnect?: {
     /** @default 5 */

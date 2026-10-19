@@ -21,7 +21,7 @@
  * ```
  * @module
  */
-import { Context, Effect, type Layer } from 'effect';
+import { Context, Effect, Layer } from 'effect';
 import {
   HttpEffect,
   HttpMiddleware,
@@ -45,6 +45,7 @@ import {
   type WebSocketLike,
   isUpgrade,
   serveAsWebSocket,
+  SocketCore,
   UpgradeServer,
   upgradeTo,
 } from '../server/sockets/index.ts';
@@ -155,6 +156,7 @@ export function toHttpEffect(
   const services = handlerContext(handler);
   const own = Context.getOrUndefined(services, HttpApp);
   const serveSocket = Context.getOrUndefined(services, UpgradeServer);
+  const drains = Context.getOrUndefined(services, SocketCore)?.drains;
   const fetch =
     own?.app ??
     Effect.flatMap(HttpServerRequest.HttpServerRequest, (request) =>
@@ -196,6 +198,9 @@ export function toHttpEffect(
         if (url.pathname !== endpoint && url.pathname !== `${endpoint}/`) {
           return HttpServerResponse.empty({ status: 404 });
         }
+        if (drains?.refusing()) {
+          return HttpServerResponse.empty({ status: 503 });
+        }
         yield* serveSocket
           ? upgradeTo(request, (socket) => serveSocket(socket, request))
           : Effect.scoped(viaWeb(request));
@@ -216,7 +221,11 @@ export function toHttpEffect(
  * Serves a fetch handler (and its WebSockets) on the current `HttpServer`.
  * A `createFetchHandler()` handler serves its `routes`, so other paths get
  * the router's 404; merge `handler.routes` with your own routes to serve
- * both.
+ * both. Releasing the layer drains a `createFetchHandler()` handler's
+ * connections (`handler.drain()`) before the server stops, and upgrades
+ * get a 503 until it has; serving
+ * `toHttpEffect(handler)` or `handler.routes` yourself, call
+ * `handler.drain()` before you stop the server.
  *
  * @example
  * ```ts
@@ -232,12 +241,34 @@ export function serve(
   opts: HttpOptions = {},
 ): Layer.Layer<never, never, HttpServer.HttpServer> {
   const partial = handler as Partial<FetchHandler>;
-  return partial.routes && opts.endpoint === undefined
-    ? HttpRouter.serve(partial.routes, {
-        disableLogger: true,
-        disableListenLog: true,
-      })
-    : HttpServer.serve(toHttpEffect(handler, opts));
+  const served =
+    partial.routes && opts.endpoint === undefined
+      ? HttpRouter.serve(partial.routes, {
+          disableLogger: true,
+          disableListenLog: true,
+        })
+      : HttpServer.serve(toHttpEffect(handler, opts));
+  const drains = Context.getOrUndefined(
+    handlerContext(handler),
+    SocketCore,
+  )?.drains;
+  if (!drains) return served;
+  // The drain is built after `served`, so it's released first: the server
+  // waits on open WebSockets when it stops, so they're moved off before.
+  // Upgrades are refused from then until the server has stopped.
+  let release = () => {};
+  const drain = Layer.effectDiscard(
+    Effect.addFinalizer(() =>
+      Effect.suspend(() => {
+        release = drains.hold();
+        return drains.drain();
+      }),
+    ),
+  );
+  const reopen = Layer.effectDiscard(
+    Effect.addFinalizer(() => Effect.sync(() => release())),
+  );
+  return drain.pipe(Layer.provideMerge(served), Layer.provideMerge(reopen));
 }
 
 /**
