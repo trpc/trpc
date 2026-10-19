@@ -18,6 +18,7 @@
 - (agent) Warnings skip errors made by the declared constructors, `TrpcError.Tagged` classes (when nothing is declared), declared codes, returned errors and crashes. Thrown errors in middleware and in a subscription's stream follow the same rules as in the resolver.
 - (agent) Links still turn a custom code they made themselves into `CLIENT_ERROR`. Only errors the server sent (`keepUntyped`) pass through as they are.
 - (agent) Type-check cost, on 1,500 generated procedures with tsc 7: with `.errors()`, +22% instantiations, +10% memory and about 0.1 ms more per procedure; without it, +2% instantiations and no measurable time. Four other shapes cost more and were dropped.
+  - (agent) Re-measured with `pnpm bench shapes` against the commit before (`946729e18`): `.errors()` +13% instantiations and +10% memory, `.errors()` with `.output()` +8%, no `.errors()` +4%; `pnpm bench typecheck` +2.6%. `DeclaredCheck` is about a third of the time `.errors()` adds. With the cheaper output check since, `.errors()` with `.output()` checks faster and in less memory than before this work ([`type-check-shapes.md`](../notes/type-check-shapes.md)).
 - Why: v11 code throws its errors, and masking a thrown custom code hid what the server meant. A declared list that the types and the runtime both hold to makes `matchError()`'s keys a complete list of the procedure's errors.
 - Lost:
   - `ClientError` is no longer only literal codes: `UndeclaredError`'s code is a pattern type, and its `data` is `unknown`.

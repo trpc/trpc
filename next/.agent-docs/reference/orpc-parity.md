@@ -60,12 +60,12 @@ oRPC's table compares oRPC v2 with v11 (and Hono). `pnpm bench` measures the sam
 | Metric                                    | oRPC v2           | v11               | v12                 |
 | ----------------------------------------- | ----------------- | ----------------- | ------------------- |
 | RPC over HTTP (req/s avg)                 | 59,940            | 13,165            | 46,576              |
-| Type-check, 3,000 procedures (check time) | 0.70s             | 0.92s             | 0.83s               |
-| Type-check, 3,000 procedures (memory)     | 237 MB            | 262 MB            | 322 MB              |
+| Type-check, 3,000 procedures (check time) | 0.84s             | 1.19s             | 1.23s               |
+| Type-check, 3,000 procedures (memory)     | 237 MB            | 262 MB            | 342 MB              |
 | Client bundle (minified / gzip)           | 27.1 kB / 9.6 kB  | 36.4 kB / 11.8 kB | 86.1 kB / 28.9 kB   |
 | Node server bundle (minified / gzip)      | 41.3 kB / 13.2 kB | 53.1 kB / 17.3 kB | 345.0 kB / 110.7 kB |
 
-- v12 beats v11 on throughput and check time, and trails oRPC on every row.
+- v12 beats v11 on throughput, is level with it on check time (re-run 2026-10-19, a slower session than the other rows; [`../notes/type-check-shapes.md`](../notes/type-check-shapes.md) has where it grew), and trails oRPC on every row.
 - The floors are Effect's: its `HttpServer` alone does about 69k req/s; its declarations take about 65 MB of the type-check memory; the Effect APIs the client runs on are about 20 kB gzipped, and a one-element `Stream`, which every link returns, is 10.7 kB on its own. CI reports the client's gzip sizes, without ceilings, against the human's targets (18 kB minimal JSON, 25 kB full; [`../notes/benchmarks.md`](../notes/benchmarks.md#budgets)).
 
 Not measured yet: RPC over WebSocket, OpenAPI over HTTP, Clinic profiles.
