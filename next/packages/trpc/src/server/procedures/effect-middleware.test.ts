@@ -14,7 +14,7 @@ interface Ctx {
   user: string | null;
 }
 const t = initTrpc<{ ctx: Ctx }>();
-const ctx = { user: 'ada' };
+const ctx: Ctx = { user: 'ada' };
 
 class Gone extends TrpcError.Tagged('GONE', { status: 410 }) {}
 
@@ -116,7 +116,9 @@ test('a transaction around next() rolls back when the rest of the chain fails', 
         (tx) => opts.next().pipe(Effect.provideService(Tx, tx)),
         (tx, exit) =>
           Effect.sync(() =>
-            log.push(`${Exit.isSuccess(exit) ? 'commit' : 'rollback'} ${tx.id}`),
+            log.push(
+              `${Exit.isSuccess(exit) ? 'commit' : 'rollback'} ${tx.id}`,
+            ),
           ),
       ),
     ),
@@ -221,9 +223,9 @@ test('auth before next() and ctx for next() keep both branches typed', async () 
     ),
   );
   const me = authed.query((opts) => opts.ctx.user);
-  expectTypeOf<inferProcedureErrors<typeof me>['code']>().toEqualTypeOf<
-    'UNAUTHORIZED'
-  >();
+  expectTypeOf<
+    inferProcedureErrors<typeof me>['code']
+  >().toEqualTypeOf<'UNAUTHORIZED'>();
   expectTypeOf<inferProcedureOutput<typeof me>>().toEqualTypeOf<string>();
   expect(await call(me, undefined, { ctx })).toBe('ada');
   await expect(

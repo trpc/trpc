@@ -437,9 +437,7 @@ export function callProcedure(
   };
 
   /** The cause behind each error a `next()` gave this call's middleware. */
-  let nextCauses:
-    | WeakMap<AnyTrpcError, Cause.Cause<AnyTrpcError>>
-    | undefined;
+  let nextCauses: WeakMap<AnyTrpcError, Cause.Cause<AnyTrpcError>> | undefined;
 
   /**
    * A failed `next()`'s error as clients will get it, before `settle`
@@ -457,10 +455,7 @@ export function callProcedure(
       else if (kind === 'kept') keepUntyped(thrown);
     }
     err ??= normalizeCause(cause);
-    (nextCauses ??= new WeakMap()).set(
-      err,
-      cause as Cause.Cause<AnyTrpcError>,
-    );
+    (nextCauses ??= new WeakMap()).set(err, cause as Cause.Cause<AnyTrpcError>);
     return err;
   };
 
