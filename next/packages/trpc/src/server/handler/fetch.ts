@@ -33,6 +33,7 @@ import {
   HEADER,
   isJsonContentType,
   isMultipartContentType,
+  isOctetContentType,
   PROTOCOL_VERSION,
   SSE_EVENT,
   type BatchCall,
@@ -44,6 +45,7 @@ import { backpressure } from '../../internal/effects.ts';
 import { accepts, encodeRecord } from '../../internal/frames.ts';
 import type { Chunk, Frame } from '../../serializer/danson/index.ts';
 import {
+  bodyStream,
   consumedError,
   parsedBody,
   readBytes as readRequestBytes,
@@ -65,6 +67,7 @@ import {
   type inferRouterContext,
   type inferRouterServices,
 } from '../procedures/index.ts';
+import { isByteStreamSchema } from '../validation/index.ts';
 import { strictestCacheControl } from './cache-control.ts';
 import { httpParts } from './routes.ts';
 import {
@@ -410,6 +413,11 @@ type InputError = CodeError<
   | 'INTERNAL_SERVER_ERROR'
 >;
 
+const takesByteStream = (procedure: AnyProcedure): boolean =>
+  procedure['~trpc'].steps.some(
+    (step) => step.kind === 'input' && isByteStreamSchema(step.arg),
+  );
+
 /** The `platform` of the request being handled. @internal */
 export const CurrentPlatform: Context.Reference<unknown> =
   Context.Reference<unknown>('@trpc12/trpc/CurrentPlatform', {
@@ -675,6 +683,7 @@ export function createFetchHandler<
   const readInput = (
     request: HttpServerRequest.HttpServerRequest,
     search: string,
+    procedure: AnyProcedure,
   ): Effect.Effect<unknown, InputError> => {
     if (request.method === 'GET') {
       if (search.length <= 1) return noInput;
@@ -703,6 +712,25 @@ export function createFetchHandler<
         );
       }
       return readMultipart(request);
+    }
+    if (isOctetContentType(request.headers['content-type'] ?? null)) {
+      if (!takesByteStream(procedure)) {
+        return Effect.fail(
+          protocolError(
+            'UNSUPPORTED_MEDIA_TYPE',
+            `${CONTENT_TYPE.octet} bodies are for procedures whose input is experimental_byteStream()`,
+          ),
+        );
+      }
+      if (request.headers[HEADER.version] === undefined) {
+        return Effect.fail(
+          protocolError(
+            'UNSUPPORTED_MEDIA_TYPE',
+            `${CONTENT_TYPE.octet} requests need the ${HEADER.version} header`,
+          ),
+        );
+      }
+      return bodyStream(request);
     }
     return Effect.flatMap(readBody(request), (body) => deserialize(body));
   };
@@ -959,7 +987,7 @@ export function createFetchHandler<
         result.headers,
       );
     };
-    const call = chain(readInput(request, search), (input) =>
+    const call = chain(readInput(request, search, procedure), (input) =>
       chain(makeContext(request, [{ path, type }], controller.signal), (ctx) =>
         type === 'subscription'
           ? subscription(
