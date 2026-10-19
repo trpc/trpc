@@ -389,6 +389,14 @@ export type ErrorHandlers<E extends AnyTrpcError> = {
   ? {}
   : { readonly unexpected: (err: UnexpectedOf<E>) => unknown });
 
+/**
+ * A type error naming each of `matchError()`'s keys that no error of the
+ * call goes to. Over the keys alone, so it's cached when there are none.
+ */
+type Leftover<K extends PropertyKey> = {
+  [P in K]: `'${P & string}' handles no error of this call`;
+};
+
 type HandlerResult<H> = H[keyof H] extends (err: never) => infer R ? R : never;
 
 /**
@@ -416,7 +424,7 @@ type HandlerResult<H> = H[keyof H] extends (err: never) => infer R ? R : never;
 export function matchError<
   E extends AnyTrpcError,
   H extends ErrorHandlers<E> &
-    Record<Exclude<keyof H, keyof ErrorHandlers<E>>, never>,
+    Leftover<Exclude<keyof H, keyof ErrorHandlers<E>>>,
 >(err: E, handlers: H): HandlerResult<H> {
   const table = handlers as unknown as Record<
     string,

@@ -449,6 +449,11 @@ test('matchError needs a handler per defined code and link code, and unexpected 
     // @ts-expect-error: categories aren't keys
     unavailable: () => 1,
   });
+  // The type error names the key: the type a leftover key must have is its message.
+  matchError(missing!, {
+    ...all,
+    GONE: "'GONE' handles no error of this call",
+  });
 
   const newer = new TrpcError({ code: 'GONE', defined: true }) as TrpcError<
     'GONE',

@@ -198,7 +198,7 @@ if (err) {
 }
 ```
 
-A handler missing for one of the call's codes, or left over for a code it no longer has, is a type error, so adding an error on the server ([Errors](../server/errors.md#when-a-procedure-adds-an-error)), or a link that can fail in a new way ([below](#when-the-links-change)), shows every place that must handle it. So is a key for a link code the client's links don't declare (`NETWORK_ERROR` with only `localLink`), and `unexpected` once every error has its own key. The catch-all is never implied:
+A handler missing for one of the call's codes, or left over for a code it no longer has, is a type error, so adding an error on the server ([Errors](../server/errors.md#when-a-procedure-adds-an-error)), or a link that can fail in a new way ([below](#when-the-links-change)), shows every place that must handle it. So is a key for a link code the client's links don't declare (`NETWORK_ERROR` with only `localLink`), and `unexpected` once every error has its own key; the error names the key (`'GONE' handles no error of this call`). The catch-all is never implied:
 
 ```ts twoslash
 // @errors: 2345
