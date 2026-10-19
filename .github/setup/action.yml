@@ -13,8 +13,9 @@ runs:
       id: pnpm-cache
       run: |
         echo "pnpm_cache_dir=$(pnpm store path)" >> $GITHUB_OUTPUT
-    - uses: actions/cache@v6
-      name: Setup pnpm cache
+    - uses: actions/cache/restore@v6
+      name: Restore pnpm cache
+      id: restore-pnpm-cache
       with:
         path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
         key: ${{ runner.os }}-pnpm-store-${{ hashFiles('pnpm-lock.yaml') }}
@@ -25,3 +26,10 @@ runs:
       env:
         # `playwright@1.28.1` (via `konn`) downloads browsers on install; e2e uses the runner's Chrome
         PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
+    # Only pushes to the default branch save: a PR's or merge queue entry's cache is restorable only by that same ref
+    - uses: actions/cache/save@v6
+      name: Save pnpm cache
+      if: github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch) && steps.restore-pnpm-cache.outputs.cache-hit != 'true'
+      with:
+        path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
+        key: ${{ steps.restore-pnpm-cache.outputs.cache-primary-key }}
