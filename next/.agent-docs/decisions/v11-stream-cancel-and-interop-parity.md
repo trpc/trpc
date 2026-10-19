@@ -1,0 +1,29 @@
+# v11's streams end when the client leaves, and the interop answers in v11's exact shapes (human)
+
+- Human, 2026-10-19 (decision round), on whether the interop's JSON Lines stream gets the subscription shutdown fix (`830e5d416`): "A) do a pr on this towards `main` and patch it straight on `v12` until that commit is merged in. if it's not a problem on main but is a problem on v12, we probably fucked up the interop handler - (make sure you port all tests on it if you didn't so response shapes are always the same)".
+- Found on `main` (v11's own server): the Node adapters were fine, because they abort the request signal on `res.on('close')` before the body is cancelled. The fetch adapter wasn't: a JSON Lines or SSE body cancelled without the request's signal aborting never ended a procedure waiting on its `signal`, so its `finally` never ran and `cancel()` never settled. Fixed in [trpc/trpc#7683](https://github.com/trpc/trpc/pull/7683): cancelling a streamed body aborts its calls' signals.
+- `v12`'s `v11/` tree carries the same patch (`764147895`, and its tests trimmed to the two that fail without it) until #7683 is merged and `main` is synced into `v12` ([`v11-folder.md`](./v11-folder.md)). The sync then brings the same change in, with nothing to resolve. Human, 2026-10-19: no more PRs to `main` for now, since npm publishing is broken; #7683 stays open as is.
+- Found on `v12`: the interop's JSON Lines stream hung (`2c2f98cba`), and so did danSON's stream reader in the v12 handler (`91e49f0c3`). A query whose generator awaited its signal kept the server's shutdown waiting when the client left mid-write: `Stream.fromAsyncIterable` awaits the iterator's `return()` on close, which only settles once the signal aborts, after the stream has closed. Both now close without awaiting `return()` (`returnUnawaited` in `src/internal/effects.ts`), as subscriptions already did.
+- (agent) "Response shapes are always the same" is a test: `v11-parity.test.ts` sends the same requests to a v11 router on `@trpc/server` 11's `fetchRequestHandler` and to the same router on the interop, and compares status, `content-type`, `vary`, `cache-control` and body. That's about 80 requests over six configurations: plain, `superjson`, an `errorFormatter`, batching off, a batch cap and `allowMethodOverride`. JSON Lines bodies are compared as the tree they resolve to, because ids and line order follow which value settles first. v11's `streaming.test.ts` scenarios also run through a v11 client against both servers: out-of-order streaming, an iterable and its return value, an iterable's error, cancellation, embedded promises, and a transformer.
+- What that changed in the interop:
+  - Request-level errors are one object, even for a batch: batching off, the batch cap, mixed types, an unsupported content-type, a path outside the endpoint.
+  - The method is checked per call, with the call's `path`.
+  - Invalid JSON is `BAD_REQUEST` with the parser's message.
+  - A streamed request without `batch=1` is refused, as in v11.
+  - Batched subscriptions get v11's message.
+  - Every response has `vary: trpc-accept, accept`.
+  - An iterable's return value reaches `httpBatchStreamLink`.
+  - A single subscription's errors are `serialized-error` events, whether they come from the method, the input or `createContext`.
+  - A stream output on `httpLink` has no `path`.
+  - SSE events end with v11's extra blank line.
+- (agent) Kept different, each listed with its reason in the test's `known` table, which also checks they still differ:
+  - Validation errors say "Input validation failed", where v11 put the zod issues in the message. `errorFormatter` can rebuild them from `error.data`.
+  - Request-level errors are `application/json`; v11 sent `text/plain`.
+  - The unsupported content-type message has its closing quote, which v11's lacks.
+  - The JSON links get promises settled ([`v11-interop-handler.md`](./v11-interop-handler.md)), where v11 refused them with 415.
+  - Inputs are read once, before any call. v11 read them lazily, so a procedure without an input ignored a malformed one.
+  - A POST without a content-type is read as JSON, where v11 refused it with 415. v11 clients always send one.
+- Why: a deployed v11 app must not notice which server answers it, and only a side-by-side comparison against v11 itself catches the differences in shape that each hand-written assertion missed.
+- Lost: nothing a v11 client reads. The interop's own earlier shapes (an array of request-level errors, `PARSE_ERROR` for invalid JSON) are gone.
+- Open: whether the JSON links should refuse promises with 415, as v11 did, instead of settling them. That would match v11 exactly, but a router shared by old and new clients could no longer return them to `httpLink`.
+- Lives in: `packages/trpc/src/interop/handler/` (`handler.ts`, `jsonl.ts`, `v11-parity.test.ts`, `handler.test.ts`, `handler-edges.test.ts`), `packages/trpc/src/serializer/danson/stream.ts`, `packages/trpc/src/internal/effects.ts`, `packages/trpc/src/server/handler/fetch-edges.test.ts`, `../v11/packages/server/src/unstable-core-do-not-import/http/resolveResponse.ts`, `../v11/packages/tests/server/streamCancellation.test.ts`.
