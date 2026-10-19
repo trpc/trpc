@@ -1,6 +1,10 @@
 import { Effect } from 'effect';
+import type { ClientTypes, ResultForm } from '../../client/types.ts';
 import type {
+  ClientValue,
   IsAny,
+  JsonForm,
+  OutputForm,
   Simplify,
   TypeError,
   UnionToIntersection,
@@ -370,24 +374,55 @@ const loadAll = (router: AnyRouter): Effect.Effect<void> =>
     { concurrency: 'unbounded', discard: true },
   );
 
-type RouterMap<R, F extends 'input' | 'output' | 'errors'> = {
+type InputMap<R> = {
   [K in keyof R]: R[K] extends AnyProcedure
-    ? ProcedureDefOf<R[K]>[F]
-    : RouterMap<Unlazy<R[K]>, F>;
+    ? ProcedureDefOf<R[K]>['input']
+    : InputMap<Unlazy<R[K]>>;
 };
 
+type OutputMap<R, F extends OutputForm> = {
+  [K in keyof R]: R[K] extends AnyProcedure
+    ? ClientValue<ProcedureDefOf<R[K]>['output'], F>
+    : OutputMap<Unlazy<R[K]>, F>;
+};
+
+/** What a client type, or a client factory's, records; `never` for a router. */
+type SourceClient<T> = ClientTypes<T extends (...args: any) => infer C ? C : T>;
+
 /**
- * Every procedure's input, by path.
+ * Every procedure's input, by path, as the client's calls take it. `T` is
+ * a router type, a client's type or a client factory's.
+ *
+ * @example
+ * ```ts
+ * type NewPost = inferRouterInputs<AppRouter>['post']['create'];
+ * ```
  * @since 0.1.0
  * @stability stable
  */
-export type inferRouterInputs<R> = RouterMap<R, 'input'>;
+export type inferRouterInputs<T> = InputMap<
+  [SourceClient<T>] extends [never] ? T : SourceClient<T>['router']
+>;
 /**
- * Every procedure's output, by path.
+ * Every procedure's output, by path, as a client receives it. For a client's
+ * type (or a client factory's), outputs follow its links' serializer, as its
+ * calls do; for a router type, they are in plain JSON's form, the default
+ * serializer's (`Date` arrives as a `string`). A procedure's output as the
+ * server returns it is `inferProcedureOutput`.
+ *
+ * @example
+ * ```ts
+ * type Post = inferRouterOutputs<typeof client>['post']['byId'];
+ * ```
  * @since 0.1.0
  * @stability stable
  */
-export type inferRouterOutputs<R> = RouterMap<R, 'output'>;
+export type inferRouterOutputs<T> = [SourceClient<T>] extends [never]
+  ? OutputMap<T, JsonForm>
+  : OutputMap<
+      SourceClient<T>['router'],
+      ResultForm<undefined, SourceClient<T>['links']>
+    >;
 
 /** One field of every procedure's def; an untyped (`any`) subtree adds none. */
 type DefField<R, F extends keyof ProcedureDef> =

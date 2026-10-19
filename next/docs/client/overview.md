@@ -69,6 +69,46 @@ await client.post.byId.query(
 
 A call rejects with one of the procedure's errors (`defined: true`, with its `data`) or a built-in one (`defined: false`: `NETWORK_ERROR`, `CLIENT_CLOSED_REQUEST`, `INTERNAL_SERVER_ERROR`, …). The error's type lists them all, so a `switch` on `code` narrows it. `safe()` returns a result tuple instead of throwing, and `matchError()` checks that each error is handled ([Errors without try/catch](./errors.md)).
 
+## Inferring types
+
+`inferRouterOutputs` and `inferRouterInputs` name what the client receives and sends, by path. Pass the client's type (or the type of a function that makes it) and outputs follow its links' serializer, as its calls do:
+
+```ts twoslash
+// ---cut-start---
+import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import { createSerializer } from '@trpc12/trpc/serializer';
+import type { AppRouter } from './server.ts';
+// ---cut-end---
+import type {
+  inferRouterInputs,
+  inferRouterOutputs,
+} from '@trpc12/trpc/server';
+
+const client = createTrpcClient({
+  router: routerType<AppRouter>(),
+  links: [httpLink({ url: '/trpc', serializer: createSerializer() })],
+});
+
+type NewPost = inferRouterInputs<typeof client>['post']['create'];
+//   ^?
+type Post = inferRouterOutputs<typeof client>['post']['byId'];
+//   ^?
+```
+
+A router type has no links, so `inferRouterOutputs<AppRouter>` is the outputs in the default serializer's form, plain JSON: `createdAt` is a `string`, as a client without a serializer receives it.
+
+```ts twoslash
+// ---cut-start---
+import type { AppRouter } from './server.ts';
+// ---cut-end---
+import type { inferRouterOutputs } from '@trpc12/trpc/server';
+
+type Post = inferRouterOutputs<AppRouter>['post']['byId'];
+//   ^?
+```
+
+`inferProcedureOutput<AppRouter['post']['byId']>` is the output as the procedure returns it, which in-process callers (`createRouterClient`) receive too ([Serializers](../server/serializers.md#client-types-follow-the-link)).
+
 ## Other clients
 
 - [The Effect client](./effect.md): an `Effect` per call and a `Stream` per subscription.
