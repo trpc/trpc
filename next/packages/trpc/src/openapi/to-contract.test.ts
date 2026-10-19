@@ -535,6 +535,84 @@ test('$ref parameters, request bodies and responses, path-level and header param
   expect(await requests[1]?.json()).toEqual({ title: 'Two' });
 });
 
+test('header parameters next to a body, and $refs that lead nowhere', async () => {
+  const note = {
+    content: {
+      'application/json': {
+        schema: {
+          type: 'object',
+          properties: { text: { type: 'string' } },
+          required: ['text'],
+        },
+      },
+    },
+  } satisfies Record<string, unknown>;
+  const ifMatch = {
+    name: 'If-Match',
+    in: 'header',
+    required: true,
+    schema: { type: 'string' },
+  } satisfies Record<string, unknown>;
+  const doc: OpenApiSource = {
+    openapi: '3.1.0',
+    paths: {
+      '/notes': {
+        put: {
+          operationId: 'notes.put',
+          parameters: [
+            ifMatch,
+            { $ref: 'shared.yaml#/components/parameters/trace' },
+            { $ref: '#/components/parameters/missing/deeper' },
+          ],
+          requestBody: { required: true, ...note },
+          responses: { '204': { description: 'Saved' } },
+        },
+        patch: {
+          operationId: 'notes.patch',
+          parameters: [{ ...ifMatch, required: false }],
+          requestBody: note,
+          responses: { '204': { description: 'Saved' } },
+        },
+      },
+    },
+  };
+  const source = experimental_generateContractFromOpenApi(doc);
+  await expect(source).toMatchFileSnapshot('./fixtures/generated/headers.ts');
+
+  const mod = await import('./fixtures/generated/headers.ts');
+  const json = experimental_toContract(mod.contract);
+  expect(json.procedures['notes.put']?.route).toEqual({
+    method: 'PUT',
+    path: '/notes',
+    inputStructure: 'detailed',
+    successStatus: 204,
+  });
+  const requests: Request[] = [];
+  const client = createTrpcClient({
+    router: json,
+    links: [
+      experimental_openApiLink({
+        url: 'http://localhost',
+        prefix: '',
+        contract: json,
+        fetch: async (input, init) => {
+          requests.push(new Request(input, init));
+          return new Response(null, { status: 204 });
+        },
+      }),
+    ],
+  });
+  await client.notes.put.mutate({
+    headers: { 'if-match': 'v1' },
+    body: { text: 'Hi' },
+  });
+  await client.notes.patch.mutate({ body: { text: 'Again' } });
+  expect(requests[0]?.headers.get('if-match')).toBe('v1');
+  expect(await requests[0]?.json()).toEqual({ text: 'Hi' });
+  expect(requests[1]?.headers.get('if-match')).toBeNull();
+  expect(await requests[1]?.json()).toEqual({ text: 'Again' });
+});
+
 test('an operation cannot also be a namespace', () => {
   expect(() =>
     experimental_generateContractFromOpenApi({
