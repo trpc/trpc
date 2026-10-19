@@ -17,7 +17,7 @@ runs:
       name: Setup pnpm cache
       with:
         path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
-        key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+        key: ${{ runner.os }}-pnpm-store-${{ hashFiles('pnpm-lock.yaml') }}
         restore-keys: |
           ${{ runner.os }}-pnpm-store-
     - run: pnpm install
