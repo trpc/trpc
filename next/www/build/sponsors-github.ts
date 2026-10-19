@@ -232,7 +232,7 @@ export const fetchSponsorships = Effect.fn('fetchSponsorships')(function* (
     if (node.tier === null) {
       return yield* failFor(
         account,
-        `${entity.login}'s tier is hidden: TRPC_GITHUB_TOKEN has to be ${tokenOwner[account.kind](account.login)}`,
+        `${entity.login}'s tier is hidden: SPONSORS_SYNC_GITHUB_TOKEN has to be ${tokenOwner[account.kind](account.login)}`,
       );
     }
     sponsorships.push({
@@ -260,6 +260,12 @@ export const fetchLifetimeValues = Effect.fn('fetchLifetimeValues')(function* (
   });
   const values: Array<LifetimeValue> = [];
   for (const raw of nodes) {
+    if (raw === null) {
+      return yield* failFor(
+        account,
+        "what its sponsors paid is hidden (GitHub sends null): SPONSORS_SYNC_GITHUB_TOKEN has to be a classic personal access token, not an app's token such as gh's",
+      );
+    }
     const node = yield* Schema.decodeUnknownEffect(LifetimeValueNode)(raw).pipe(
       Effect.mapError((cause) =>
         failFor(account, `unexpected lifetime value: ${cause.message}`),

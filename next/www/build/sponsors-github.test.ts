@@ -104,11 +104,11 @@ describe('fetchSponsorships', () => {
       return Effect.gen(function* () {
         const user = yield* Effect.result(fetchSponsorships(katt, token));
         expect(failureMessage(user)).toBe(
-          "GitHub, for user KATT: someone's tier is hidden: TRPC_GITHUB_TOKEN has to be KATT's own token",
+          "GitHub, for user KATT: someone's tier is hidden: SPONSORS_SYNC_GITHUB_TOKEN has to be KATT's own token",
         );
         const org = yield* Effect.result(fetchSponsorships(trpc, token));
         expect(failureMessage(org)).toBe(
-          "GitHub, for organization trpc: someone's tier is hidden: TRPC_GITHUB_TOKEN has to be a token of an admin of trpc",
+          "GitHub, for organization trpc: someone's tier is hidden: SPONSORS_SYNC_GITHUB_TOKEN has to be a token of an admin of trpc",
         );
         if (Result.isFailure(org)) {
           expect(org.failure).toSatisfy(
@@ -192,4 +192,17 @@ describe('fetchLifetimeValues', () => {
       expect(github.sent).toHaveLength(2);
     }).pipe(Effect.provide(github.layer));
   });
+
+  it.effect(
+    "fails when GitHub sends null for every payment, as to gh's token",
+    () => {
+      const github = fakeGithub(() => ({ body: connectionPage([null, null]) }));
+      return Effect.gen(function* () {
+        const result = yield* Effect.result(fetchLifetimeValues(trpc, token));
+        expect(failureMessage(result)).toBe(
+          "GitHub, for organization trpc: what its sponsors paid is hidden (GitHub sends null): SPONSORS_SYNC_GITHUB_TOKEN has to be a classic personal access token, not an app's token such as gh's",
+        );
+      }).pipe(Effect.provide(github.layer));
+    },
+  );
 });

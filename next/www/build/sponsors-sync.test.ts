@@ -148,6 +148,56 @@ describe('syncSponsors', () => {
   );
 
   it.effect(
+    'with onlyWhenJoinedOrLeft, writes only when a sponsor joined or left',
+    () => {
+      let logins = ['coderabbitai', 'fan'];
+      let fanCents = 2_000;
+      const fake = github((sent) =>
+        isLifetimeQuery(sent)
+          ? [
+              lifetimeNode('coderabbitai', 300_000),
+              lifetimeNode('fan', fanCents),
+            ]
+          : logins.map((login) => sponsorshipNode(login)),
+      );
+      return Effect.gen(function* () {
+        const files = yield* fixture;
+        const fs = yield* FileSystem.FileSystem;
+        const syncWhenJoinedOrLeft = syncSponsors({
+          ...files,
+          accounts: [{ kind: 'user', login: 'KATT' }],
+          config: { ...config, direct: [] },
+          onlyWhenJoinedOrLeft: true,
+          token: Redacted.make('test-token'),
+        });
+        yield* syncWhenJoinedOrLeft;
+        const json = yield* fs.readFileString(files.sponsorsFile);
+        const written = yield* fs.readFileString(files.readme);
+        expect(JSON.parse(json)).toHaveLength(2);
+
+        fanCents = 150_000;
+        expect(yield* syncWhenJoinedOrLeft).toBe(
+          `No sponsor joined or left the 2 in ${files.sponsorsFile}; wrote nothing.`,
+        );
+        expect(yield* fs.readFileString(files.sponsorsFile)).toBe(json);
+        expect(yield* fs.readFileString(files.readme)).toBe(written);
+
+        logins = ['coderabbitai', 'newcomer'];
+        expect(yield* syncWhenJoinedOrLeft).toBe(
+          `Wrote 2 sponsors to ${files.sponsorsFile} and ${files.readme}.`,
+        );
+        const after: ReadonlyArray<{ login: string }> = JSON.parse(
+          yield* fs.readFileString(files.sponsorsFile),
+        );
+        expect(after.map((sponsor) => sponsor.login).toSorted()).toEqual([
+          'coderabbitai',
+          'newcomer',
+        ]);
+      }).pipe(Effect.provide(Layer.mergeAll(NodeServices.layer, fake.layer)));
+    },
+  );
+
+  it.effect(
     'writes nothing when GitHub reports no sponsors or no payments',
     () => {
       const noSponsors = github(() => []);
@@ -161,13 +211,13 @@ describe('syncSponsors', () => {
           sync(files).pipe(Effect.provide(noSponsors.layer)),
         );
         expect(Result.isFailure(first) && first.failure.message).toBe(
-          'GitHub reports no sponsors of KATT and trpc; is TRPC_GITHUB_TOKEN theirs? Wrote nothing.',
+          'GitHub reports no sponsors of KATT and trpc; is SPONSORS_SYNC_GITHUB_TOKEN theirs? Wrote nothing.',
         );
         const second = yield* Effect.result(
           sync(files).pipe(Effect.provide(noPayments.layer)),
         );
         expect(Result.isFailure(second) && second.failure.message).toBe(
-          'GitHub reports nothing paid to KATT and trpc; is TRPC_GITHUB_TOKEN theirs? Wrote nothing.',
+          'GitHub reports nothing paid to KATT and trpc; is SPONSORS_SYNC_GITHUB_TOKEN theirs? Wrote nothing.',
         );
         expect(yield* fs.readFileString(files.sponsorsFile)).toBe('[]\n');
         expect(yield* fs.readFileString(files.readme)).toBe(readme);
