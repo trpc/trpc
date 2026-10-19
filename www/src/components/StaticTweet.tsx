@@ -38,7 +38,7 @@ export function StaticTweet(props: {
         {props.text}
       </blockquote>
       <div className="flex flex-wrap justify-between gap-x-4 gap-y-1 text-sm text-zinc-600 dark:text-zinc-400">
-        <a href={props.url} className="text-inherit">
+        <a href={props.url}>
           <time dateTime={date.toJSON()}>
             {date.toLocaleDateString('en-US', {
               month: 'short',
