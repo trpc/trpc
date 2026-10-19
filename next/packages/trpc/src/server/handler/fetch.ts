@@ -178,7 +178,7 @@ export type PlatformField<TPlatform> = undefined extends TPlatform
 export type LayerOption<TServices> = [TServices] extends [never]
   ? { layer?: Layer.Layer<never, any, never> }
   : {
-      /** Provides the Effect services the router's procedures need (02 S1). */
+      /** Provides the Effect services the router's procedures need. */
       layer: Layer.Layer<TServices, any, never>;
     };
 
@@ -228,7 +228,7 @@ export interface BaseHandlerOptions<TRouter extends AnyRouter> {
   onError?: (opts: OnErrorOpts) => void;
   /**
    * Effect HTTP middleware around the handler, outermost first: CORS,
-   * logging, rate limits (13 C). `@trpc12/trpc/http`'s `cors()` also checks the
+   * logging, rate limits. `@trpc12/trpc/http`'s `cors()` also checks the
    * origin of WebSocket upgrades.
    *
    * @example
@@ -317,7 +317,7 @@ export interface FetchHandler<TPlatform = undefined> {
     ...platform: PlatformArgs<TPlatform>
   ) => Promise<Response>;
   /**
-   * Serves calls over an accepted WebSocket (10, 12). `request` is the
+   * Serves calls over an accepted WebSocket. `request` is the
    * upgrade request; `createContext` receives it. The upgrade already
    * happened, so `middleware` doesn't run: on Deno, prefer
    * `websocket.upgrade`, which upgrades inside it.
@@ -510,7 +510,7 @@ const chain = <A, B, E, E2, R, R2>(
     : Effect.flatMap(effect, f);
 
 /**
- * Serves a router over the web-standard `fetch` interface (12 P-A). Works on
+ * Serves a router over the web-standard `fetch` interface. Works on
  * any runtime with `Request`/`Response`; `@trpc12/trpc/http` serves it with
  * Effect's `HttpServer` on Node, Bun and the rest. Underneath it's an
  * `effect/http` app: `middleware` wraps it, and `createContext` gets the

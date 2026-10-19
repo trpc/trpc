@@ -47,7 +47,7 @@ import type {
 import type { TrackedEnvelope } from '../subscriptions/index.ts';
 
 /**
- * The builder's state: one mapped bag (03 G-A).
+ * The builder's state: one mapped bag.
  * @since 0.1.0
  * @stability stable
  */
@@ -92,7 +92,7 @@ export type CurrentCtx<TDef extends BuilderDef> = Overwrite<
 >;
 
 /**
- * What a context-aware input callback receives (05 D-A).
+ * What a context-aware input callback receives.
  * @since 0.1.0
  * @stability stable
  */
@@ -114,7 +114,7 @@ export type ErrorConstructorOpts<TData> = {
 } & (undefined extends TData ? { data?: TData } : { data: TData });
 
 /**
- * Typed constructors for the errors declared with `.errors()` (07 A). The
+ * Typed constructors for the errors declared with `.errors()`. The
  * errors they make are `defined` even when thrown from deep helper code.
  * @since 0.1.0
  * @stability stable
@@ -663,7 +663,7 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
    */
   input<$S extends AnySchema>(schema: $S): ProcedureBuilder<InputDef<TDef, $S>>;
   /**
-   * Adds an input schema built from the ctx (05 D-A). The callback runs per
+   * Adds an input schema built from the ctx. The callback runs per
    * call, so build schemas outside it where possible.
    *
    * @example
@@ -680,7 +680,7 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
   /**
    * Types and documents the result with a schema, without running it: the
    * resolver and the client both get the schema's input type, since no
-   * transform runs (04 Q4.4).
+   * transform runs.
    *
    * @example
    * ```ts
@@ -728,7 +728,7 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
   >;
 
   /**
-   * Declares errors (07 A): each gets a typed constructor on the resolver's
+   * Declares errors: each gets a typed constructor on the resolver's
    * `errors`, its `data` is validated, and it is documented in OpenAPI.
    * Errors made by the constructors are `defined` even when thrown.
    *
@@ -796,7 +796,7 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
     >
   >;
   /**
-   * Adds an Effect middleware (06 M-A), made with `t.middleware.effect` or
+   * Adds an Effect middleware, made with `t.middleware.effect` or
    * `middleware.effect`. Its failures join the error union and the services
    * it provides are no longer required from the handler's `layer`.
    */

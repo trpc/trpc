@@ -4,7 +4,7 @@ import type { IsAny, ProcedureType } from '../../internal/types.ts';
 import type { AnySchema, OutputSchema } from '../validation/index.ts';
 
 /**
- * A declared error (07 A): its status, default message and `data` schema.
+ * A declared error: its status, default message and `data` schema.
  * @since 0.1.0
  * @stability stable
  */
@@ -80,7 +80,7 @@ export type Step =
   | {
       readonly kind: 'use';
       readonly fn: (opts: any) => unknown;
-      /** `next()` returns an `Effect` (06 M-A). */
+      /** `next()` returns an `Effect`. */
       readonly effect?: boolean;
     }
   | {
@@ -108,7 +108,7 @@ export interface ProcedureInternals {
   readonly errors: ErrorMap;
   /** `false`: no development warning when a `TrpcError` is thrown. */
   readonly warnThrown?: false | undefined;
-  /** Absent on contract procedures (09). */
+  /** Absent on contract procedures. */
   readonly resolver: ((opts: any) => unknown) | undefined;
 }
 

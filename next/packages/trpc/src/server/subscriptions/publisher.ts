@@ -178,7 +178,7 @@ export const memoryPublisher = (
   });
 
 /**
- * Typed publish/subscribe as an Effect service (14 Q14.6). Declare a key
+ * Typed publish/subscribe as an Effect service. Declare a key
  * with its channels, provide a layer (in-memory, or your backend's), and
  * return `subscribe()` from a subscription: its events are `tracked()`, so
  * reconnects resume.

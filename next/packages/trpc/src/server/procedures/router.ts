@@ -13,7 +13,7 @@ import {
 } from './procedure.ts';
 
 /**
- * A router is a plain object of procedures and nested routers (08 A). Keys
+ * A router is a plain object of procedures and nested routers. Keys
  * are path segments: `{ post: { byId } }` serves `post.byId`.
  *
  * @example
@@ -62,7 +62,7 @@ export interface RouterOptions<TMeta = Record<string, unknown>> {
 const META = '~meta';
 
 /**
- * A router with router-level meta (08 Q8.3). The result is the same plain
+ * A router with router-level meta. The result is the same plain
  * object (with the meta kept off its keys), so types and RPC paths don't
  * change. Routers take no middleware: put it on a base procedure.
  *
@@ -111,7 +111,7 @@ export interface LazyDef {
 }
 
 /**
- * A subtree that loads on first use (08 Q8.4). Made by {@link lazy}.
+ * A subtree that loads on first use. Made by {@link lazy}.
  * @since 0.1.0
  * @stability stable
  */
@@ -135,7 +135,7 @@ export type AnyLazyRouter = LazyRouter<any>;
 export type Unlazy<T> = T extends LazyRouter<infer TRouter> ? TRouter : T;
 
 /**
- * Loads a subtree on its first call (08 Q8.4), for large routers in
+ * Loads a subtree on its first call, for large routers in
  * serverless functions that should start fast. The client types it as if it
  * were inline. `t.lazy(load, { meta })` also takes router-level meta, as
  * `t.router()` does.
@@ -404,7 +404,7 @@ type DefField<R, F extends keyof ProcedureDef> =
  */
 export type inferRouterErrors<R> = DefField<R, 'errors'>;
 /**
- * The Effect services the handler's `layer` must provide (02 S1).
+ * The Effect services the handler's `layer` must provide.
  * @since 0.1.0
  * @stability stable
  */

@@ -157,7 +157,7 @@ export const encodeWebSocketMessage = (
     : JSON.stringify(message);
 
 /**
- * Serves calls over an Effect `Socket` until it closes (10): a WebSocket
+ * Serves calls over an Effect `Socket` until it closes: a WebSocket
  * from `request.upgrade` or `Socket.fromWebSocket`, one client message per
  * frame, unless `messages` frames them otherwise (raw sockets' lines).
  * @internal
@@ -250,7 +250,7 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null;
 
 /**
- * Serves calls over a `MessagePort` (10) until it closes. Each request
+ * Serves calls over a `MessagePort` until it closes. Each request
  * message is one call with its own `createContext`, like an HTTP request;
  * `connectionParams` from the client's `init` message reach `createContext`.
  * It listens to `port` when called, as `portMessages` does.

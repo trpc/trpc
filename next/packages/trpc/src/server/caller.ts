@@ -33,8 +33,8 @@ export type RouterClientOptions<TRouter extends AnyRouter> = CtxOption<
   ServicesOption<inferRouterServices<TRouter>>;
 
 /**
- * Calls a router in-process with the same shape as the HTTP client (15
- * SC-A). Values are passed by reference, not serialized.
+ * Calls a router in-process with the same shape as the HTTP client. Values
+ * are passed by reference, not serialized.
  *
  * @example
  * ```ts

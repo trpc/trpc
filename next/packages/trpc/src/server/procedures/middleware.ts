@@ -65,7 +65,7 @@ export interface OkResult<T> {
 }
 
 /**
- * Ends the chain with `data` instead of calling `next()` (06 Q6.2). The
+ * Ends the chain with `data` instead of calling `next()`. The
  * resolver does not run, but output validation does. The builder checks
  * `data` against the procedure's output at the terminal.
  *
@@ -339,7 +339,7 @@ interface MiddlewareFactory {
     $Input
   >;
   /**
-   * A standalone Effect middleware (06 M-A). Declare the services it
+   * A standalone Effect middleware. Declare the services it
    * provides; procedures after it no longer require them.
    *
    * @example

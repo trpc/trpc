@@ -224,7 +224,7 @@ export interface ImplementerMethods<
     >,
     TContract
   >;
-  /** Adds an Effect middleware (06 M-A). */
+  /** Adds an Effect middleware. */
   use<
     $Ctx extends object,
     $Err extends TDef['errors'],

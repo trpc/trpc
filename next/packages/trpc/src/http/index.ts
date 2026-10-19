@@ -135,7 +135,7 @@ export function cors(options: CorsOptions = {}): HttpMiddleware.HttpMiddleware {
  * Adapts a fetch handler to an Effect HTTP app. A `createFetchHandler()`
  * handler runs as its own `effect/http` app, so requests aren't converted
  * to web `Request`s, and its `middleware` wraps WebSocket upgrades too.
- * Upgrade requests to the endpoint become WebSocket connections (10).
+ * Upgrade requests to the endpoint become WebSocket connections.
  *
  * @example
  * ```ts
