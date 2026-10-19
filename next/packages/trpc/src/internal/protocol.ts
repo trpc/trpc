@@ -213,7 +213,13 @@ export type ServerMessage =
   | { id: number | null; type: 'error'; body: unknown }
   /** The answer to the client's `init`: the server's serializer's `name`, in plain JSON. */
   | { type: 'init'; serializer: string }
-  | { type: 'pong' };
+  | { type: 'pong' }
+  /**
+   * The server is going away (a drain): send new calls on a new connection,
+   * move subscriptions there, and close this one once the calls sent on it
+   * settle. Nothing already sent is sent again.
+   */
+  | { type: 'reconnect' };
 
 interface BlobMeta {
   type: string;
