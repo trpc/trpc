@@ -360,6 +360,8 @@ const cases: Array<[Setup, string, string, RequestInit?]> = [
     },
   ],
   ['plain', 'GET mutation', `/add`],
+  ['plain', 'HEAD', `/greet`, { method: 'HEAD' }],
+  ['plain', 'HEAD outside the endpoint', `/../nope`, { method: 'HEAD' }],
   ['plain', 'POST query', `/greet`, post({ name: 'a' })],
   [
     'plain',

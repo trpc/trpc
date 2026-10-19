@@ -16,6 +16,7 @@
   - A single subscription's errors are `serialized-error` events, whether they come from the method, the input or `createContext`.
   - A stream output on `httpLink` has no `path`.
   - SSE events end with v11's extra blank line.
+  - (agent, 2026-10-19) `HEAD` is an empty `204`, which v11 sends for health checks and Lambda warm-ups; it was a `405`.
 - (agent) Kept different, each listed with its reason in the test's `known` table, which also checks they still differ:
   - Validation errors say "Input validation failed", where v11 put the zod issues in the message. `errorFormatter` can rebuild them from `error.data`.
   - Request-level errors are `application/json`; v11 sent `text/plain`.

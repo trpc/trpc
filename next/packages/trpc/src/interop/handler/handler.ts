@@ -864,6 +864,10 @@ export function createV11Handler<
     HttpServerRequest.HttpServerRequest
   > = Effect.gen(function* () {
     const request = yield* HttpServerRequest.HttpServerRequest;
+    // v11 answers HEAD with an empty 204, for health checks and Lambda warm-ups.
+    if (request.method === 'HEAD') {
+      return HttpServerResponse.empty({ status: 204 });
+    }
     const url = new URL(request.url, 'http://localhost');
     const isBatch = url.searchParams.get('batch') === '1';
     const rest = url.pathname.startsWith(`${endpoint}/`)
