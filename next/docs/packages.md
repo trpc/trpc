@@ -42,7 +42,7 @@ Every export's JSDoc carries `@stability` (`stable` or `experimental`) and `@sin
 
 ## Versions
 
-Each package has its own version. When a package releases, every package that depends on it releases too, built against the new version, so the newest version of each `@trpc12/*` package works with the newest of the others. Update them together.
+Each package has its own version. When a package releases, every package that depends on it releases too, built against the new version, so the newest version of each `@trpc12/*` package works with the newest of the others. Update them together: during `0.x`, each integration's peer dependency on `@trpc12/trpc` is the exact version it was released with, so updating `@trpc12/trpc` alone gives a peer conflict.
 
 ## Internal entry points
 
