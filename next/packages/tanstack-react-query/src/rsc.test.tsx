@@ -74,6 +74,28 @@ test('createTrpcRsc: per-request ctx and query client, and a server HydrationBou
   expect(db.calls).toEqual(['post.byId:2']);
 });
 
+test('prefetch fills infinite queries with their first page, for useSuspenseInfiniteQuery', async () => {
+  await using _app = await createApp({ posts: 3 });
+  const rsc = createTrpcRsc({
+    router: appRouter,
+    serializer,
+    ctx: { locale: null },
+    cache: requestCache(),
+  });
+  const feed = rsc.trpc.post.list.infiniteOptions({
+    input: (cursor: number | undefined) => ({ limit: 2, cursor }),
+    initialPageParam: undefined,
+    getNextPageParam: (page) => page.nextCursor,
+  });
+  rsc.prefetch(feed);
+  await expect
+    .poll(() => rsc.getQueryClient().getQueryData(feed.queryKey))
+    .toEqual({
+      pages: [{ items: [expect.anything(), expect.anything()], nextCursor: 2 }],
+      pageParams: [undefined],
+    });
+});
+
 test("HydrationBoundary keeps Next's digest errors, which Next needs to see, and redacts the rest", async () => {
   const dynamic = Object.assign(new Error('Dynamic server usage'), {
     digest: 'DYNAMIC_SERVER_USAGE',
