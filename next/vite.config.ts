@@ -56,9 +56,48 @@ export default defineConfig({
       './tooling/oxlint-plugin/index.ts',
       './tooling/oxlint-plugin/anti-slop/effect/index.ts',
     ],
+    // Warnings don't fail `pnpm check`, so a stray `test.only` would pass.
+    categories: { correctness: 'error' },
     rules: {
       // Runtime import cycles only: `import type` edges are erased and ignored.
       'import/no-cycle': 'error',
+      // From Effect's oxlint config. A value import used only as a type keeps
+      // a runtime edge, which `import/no-cycle` counts.
+      'typescript/consistent-type-imports': [
+        'error',
+        { fixStyle: 'inline-type-imports' },
+      ],
+      'typescript/no-import-type-side-effects': 'error',
+      'typescript/no-unnecessary-type-constraint': 'error',
+      'typescript/no-useless-empty-export': 'error',
+      'import/no-duplicates': 'error',
+      'import/no-self-import': 'error',
+      'no-unneeded-ternary': 'error',
+      'no-useless-concat': 'error',
+      'no-useless-constructor': 'error',
+      'no-var': 'error',
+      'unicorn/no-accessor-recursion': 'error',
+      'unicorn/prefer-array-flat-map': 'error',
+      // From raf-query's.
+      'no-empty': 'error',
+      // A `let` read by a closure that can run before it's assigned stays.
+      'prefer-const': ['error', { ignoreReadBeforeAssign: true }],
+      // Rethrowing from a `catch` keeps the caught error as `cause`.
+      'preserve-caught-error': 'error',
+      // `vitest/no-hooks` without the loophole; clean up with `using`.
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: ['vite-plus/test', 'vitest', '@effect/vitest'].map((name) => ({
+            name,
+            importNames: ['onTestFinished'],
+            message: 'Return a Disposable and `using` it instead.',
+          })),
+        },
+      ],
+      // From oRPC's. A `for…in` also walks keys inherited from a polluted
+      // `Object.prototype`.
+      'guard-for-in': 'error',
       'trpc/acronym-case': 'error',
       'trpc/no-custom-test-timeout': 'error',
       'trpc/no-mock': 'error',
@@ -99,9 +138,11 @@ export default defineConfig({
           'examples/media-pipeline/**',
         ],
         rules: {
+          'anti-slop-effect/no-manual-effect-error-tag': 'error',
           'anti-slop-effect/no-manual-tag-comparison': 'error',
           'anti-slop-effect/no-manual-tagged-construction': 'error',
           'anti-slop-effect/prefer-effect-match': 'error',
+          'trpc/no-throw-in-effect': 'error',
         },
       },
       {
@@ -139,6 +180,14 @@ export default defineConfig({
               ignore: ['fixtures'],
             },
           ],
+        },
+      },
+      {
+        // A docs page shows a sample one `#region` at a time, so a region
+        // imports what it shows even when another region already did.
+        files: ['www/samples/**'],
+        rules: {
+          'import/no-duplicates': 'off',
         },
       },
       {

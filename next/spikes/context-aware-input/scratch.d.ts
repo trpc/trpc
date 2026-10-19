@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import type { z } from 'zod';
 declare const r1: z.ZodObject<
   {
     limit: z.ZodNumber;

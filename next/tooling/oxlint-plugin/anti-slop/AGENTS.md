@@ -13,13 +13,16 @@ Oxlint rules copied from [dmmulroy/anti-slop](https://github.com/dmmulroy/anti-s
 
 | Rule                            | Upstream file                                       |
 | ------------------------------- | --------------------------------------------------- |
+| `no-manual-effect-error-tag`    | `src/effect/rules/no-manual-effect-error-tag.ts`    |
 | `no-manual-tag-comparison`      | `src/effect/rules/no-manual-tag-comparison.ts`      |
 | `no-manual-tagged-construction` | `src/effect/rules/no-manual-tagged-construction.ts` |
 | `prefer-effect-match`           | `src/effect/rules/prefer-effect-match.ts`           |
 
 `effect/shared/tagged-values.ts` is copied whole, helpers for rules we haven't adopted included, so it diffs cleanly.
 
-Not adopted: upstream's generic `src/rules/` and the Effect rules `no-manual-effect-error-tag` and `no-service-constructor-imports`.
+`no-manual-tag-comparison` skips `_tag` comparisons inside a broad `Effect.catch`/`catchAll`/`catchIf` handler, and `no-manual-effect-error-tag` reports exactly those, pointing at `catchTag`/`catchReason`; the two need each other.
+
+Not adopted: upstream's generic `src/rules/` (raf-query enables most of them; here they'd flag type assertions, `unknown`, `typeof` and options objects throughout the library), and the Effect rule `no-service-constructor-imports`, which reads any imported `make*` function as a service constructor (`makeEffectMiddleware`, `makeDeferredDecoder`).
 
 The plugin is registered in `vite.config.ts` (`lint.jsPlugins`), and the rules are switched on by an override for code built on Effect (`packages/*/src`, `tooling`, `test`, `examples/effect`), not for `spikes`.
 

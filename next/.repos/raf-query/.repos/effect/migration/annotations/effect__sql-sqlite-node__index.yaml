@@ -1,3 +1,0 @@
-"@effect/sql-sqlite-node/index":
-  replacement: "@effect/sql-sqlite-node"
-  note: "The explicit /index entrypoint was removed; import the same namespaces from the @effect/sql-sqlite-node package root or import specific modules directly."

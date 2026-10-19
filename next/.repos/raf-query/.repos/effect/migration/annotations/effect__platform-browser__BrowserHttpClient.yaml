@@ -1,3 +1,0 @@
-"@effect/platform-browser/BrowserHttpClient#currentXHRResponseType":
-  replacement: "BrowserHttpClient.CurrentXHRResponseType"
-  note: "The FiberRef became a defaulted Context.Reference; use withXHRArrayBuffer or provide the reference as a service."

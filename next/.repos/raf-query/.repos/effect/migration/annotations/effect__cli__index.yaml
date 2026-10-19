@@ -1,3 +1,0 @@
-"@effect/cli/index":
-  replacement: "effect/cli"
-  note: "The package barrel was removed; import the same namespaces from the effect/cli barrel or import specific modules directly."

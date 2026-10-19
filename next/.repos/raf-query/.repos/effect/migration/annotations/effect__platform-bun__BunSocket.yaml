@@ -1,3 +1,0 @@
-"@effect/platform-bun/BunSocket#NetSocket":
-  replacement: "BunSocket.NetSocket"
-  note: "The identifier remains, but the old interface/tag pair is now one Context.Service for node:net.Socket."

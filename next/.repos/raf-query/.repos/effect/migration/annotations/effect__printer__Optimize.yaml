@@ -1,3 +1,0 @@
-"@effect/printer/Optimize":
-  replacement: none
-  note: The @effect/printer document optimizer was removed with the document algebra in v4. String-based output needs no equivalent optimization stage.

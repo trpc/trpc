@@ -1,3 +1,0 @@
-"@effect/platform-node-shared/NodeCommandExecutor#layer":
-  replacement: "NodeChildProcessSpawner.layer"
-  note: "CommandExecutor became effect/process/ChildProcessSpawner; the Node adapter was renamed and still requires FileSystem and Path."

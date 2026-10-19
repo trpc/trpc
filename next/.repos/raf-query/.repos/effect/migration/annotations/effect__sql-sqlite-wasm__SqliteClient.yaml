@@ -1,6 +1,0 @@
-"@effect/sql-sqlite-wasm/SqliteClient#currentTransferables":
-  replacement: "@effect/sql-sqlite-wasm/SqliteClient#Transferables"
-  note: "Renamed and changed from FiberRef to Context.Reference; prefer withTransferables or provide Transferables as a service."
-"@effect/sql-sqlite-wasm/SqliteClient#SqliteClient":
-  replacement: "@effect/sql-sqlite-wasm/SqliteClient#SqliteClient"
-  note: "Retained with the same export/import surface; the service value is now a Context.Service."

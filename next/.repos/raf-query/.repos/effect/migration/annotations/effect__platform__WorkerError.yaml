@@ -1,6 +1,0 @@
-"@effect/platform/WorkerError#WorkerErrorFrom":
-  replacement: "WorkerError.WorkerError"
-  note: "The old serializable reason object was replaced by WorkerError wrapping dedicated spawn, send, receive, or unknown reason classes."
-"@effect/platform/WorkerError#WorkerErrorTypeId":
-  replacement: "WorkerError.TypeId"
-  note: "The type-level worker error marker was shortened to TypeId in the moved module."

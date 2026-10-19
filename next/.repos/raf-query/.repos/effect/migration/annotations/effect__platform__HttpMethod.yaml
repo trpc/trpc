@@ -1,3 +1,0 @@
-"@effect/platform/HttpMethod#all":
-  replacement: "HttpMethod.all"
-  note: "Retained as the readonly set of all supported methods."

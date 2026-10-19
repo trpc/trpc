@@ -39,7 +39,9 @@ function decodeLeaf(raw: string): JsonValue {
     if (v === null || typeof v === 'number' || typeof v === 'boolean') {
       return v;
     }
-  } catch {}
+  } catch {
+    // Not JSON: keep the raw string.
+  }
   return raw;
 }
 

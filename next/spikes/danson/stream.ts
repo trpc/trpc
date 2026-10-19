@@ -6,7 +6,15 @@
  * Deserialized deferred values are plain `Promise` / `AsyncIterable` /
  * `ReadableStream`, so Promise users never see Effect.
  */
-import { Cause, Deferred, Effect, Exit, Queue, Scope, Stream } from 'effect';
+import {
+  Cause,
+  Deferred,
+  Effect,
+  Exit,
+  Queue,
+  type Scope,
+  Stream,
+} from 'effect';
 import {
   deserializeSync,
   serializeSync,

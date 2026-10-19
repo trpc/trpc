@@ -97,7 +97,9 @@ for (const chunk of chunks) {
         compress: true,
         mangle: false,
       }).code.length;
-    } catch {}
+    } catch {
+      // A module that doesn't minify on its own keeps its unminified size.
+    }
     rows.push({ id, label: label(id), rendered: m.renderedLength, min });
   }
 }

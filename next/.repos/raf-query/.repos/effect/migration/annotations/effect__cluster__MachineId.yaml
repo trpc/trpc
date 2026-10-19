@@ -1,3 +1,0 @@
-"@effect/cluster/MachineId#make":
-  replacement: "effect/cluster/MachineId#make"
-  note: "Moved into core Effect. The v4 helper is an unchecked cast; validate external input with the MachineId schema when needed."

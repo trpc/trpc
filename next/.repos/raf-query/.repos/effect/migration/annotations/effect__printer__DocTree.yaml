@@ -1,3 +1,0 @@
-"@effect/printer/DocTree":
-  replacement: none
-  note: The @effect/printer package and its structured DocTree rendering representation were removed in v4. Use a target-specific tree and renderer or another pretty-printing library.

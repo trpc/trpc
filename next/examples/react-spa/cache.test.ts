@@ -16,7 +16,7 @@ import {
 } from '@trpc12/trpc/client';
 import { expect, test } from 'vite-plus/test';
 import { directoryRouter } from './server/directory.ts';
-import { trackerRouter } from './server/tracker.ts';
+import type { trackerRouter } from './server/tracker.ts';
 import { isDraft, listOptions, registerIssueMutations } from './src/issues.ts';
 import { serializer } from './src/serializer.ts';
 import { tracker as trackerApi } from './server/api.ts';

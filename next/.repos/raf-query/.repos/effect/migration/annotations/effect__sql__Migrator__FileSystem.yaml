@@ -1,3 +1,0 @@
-"@effect/sql/Migrator/FileSystem":
-  replacement: "effect/sql/Migrator"
-  note: "fromFileSystem was merged into the main Migrator module with the same (directory) signature; use Migrator.fromFileSystem as the loader."

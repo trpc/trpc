@@ -17,8 +17,12 @@ import {
   type FetchLike,
   type WebSocketHandlerLike,
 } from '@trpc12/trpc/http';
-import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
-import { expect, test } from 'vite-plus/test';
+import {
+  createFetchHandler,
+  initTrpc,
+  type WebSocketLike,
+} from '@trpc12/trpc/server';
+import { expect, test, vi } from 'vite-plus/test';
 import { z } from 'zod';
 
 const t = initTrpc();
@@ -161,6 +165,31 @@ test("another handler's websocket() closes the upgraded socket through the WebSo
   const [event] = (await once(socket, 'close')) as [CloseEvent];
   expect(event.code).toBe(1002);
   expect(event.reason).toBe('Unsupported protocol version');
+});
+
+test("another handler's websocket() counts what it sent but the socket hasn't taken in bufferedAmount", async () => {
+  let accepted: WebSocketLike | undefined;
+  let afterSend: number | undefined;
+  const sender: FetchLike & WebSocketHandlerLike = {
+    fetch: () => Promise.resolve(new Response(null, { status: 404 })),
+    websocket(ws) {
+      accepted = ws;
+      ws.addEventListener('message', () => {
+        for (let i = 0; i < 100; i++) ws.send('x'.repeat(1024));
+        afterSend = ws.bufferedAmount;
+      });
+    },
+  };
+  await using server = await listen(HttpServer.serve(toHttpEffect(sender)));
+  const socket = new WebSocket(server.url.replace('http', 'ws'));
+  await once(socket, 'open');
+  let received = 0;
+  socket.addEventListener('message', () => received++);
+  socket.send('go');
+  await vi.waitFor(() => expect(received).toBe(100));
+  expect(afterSend).toBeGreaterThanOrEqual(100 * 1024);
+  await vi.waitFor(() => expect(accepted?.bufferedAmount).toBe(0));
+  socket.close();
 });
 
 test("serve() serves a createFetchHandler()'s routes, with its middleware; cors() takes a predicate", async () => {

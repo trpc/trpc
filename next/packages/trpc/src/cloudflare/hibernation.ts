@@ -296,10 +296,11 @@ export function experimental_createHibernatingWebSockets<TPlatform>(
       const make = connectionReceiver(
         core,
         {
-          send(message) {
-            if (socket.readyState === OPEN)
-              socket.send(JSON.stringify(message));
-          },
+          send: (message) =>
+            Effect.sync(() => {
+              if (socket.readyState === OPEN)
+                socket.send(JSON.stringify(message));
+            }),
           close(code, reason) {
             socket.close(code, reason);
           },

@@ -1,6 +1,0 @@
-"@effect/platform-node/NodeContext#layer":
-  replacement: "NodeServices.layer"
-  note: "The aggregate was renamed and now provides ChildProcessSpawner, Crypto, FileSystem, Path, Stdio, and Terminal; add NodeWorker separately when needed."
-"@effect/platform-node/NodeContext#NodeContext":
-  replacement: "NodeServices.NodeServices"
-  note: "Use the renamed service union; it replaces CommandExecutor with ChildProcessSpawner, adds Crypto and Stdio, and omits WorkerManager."

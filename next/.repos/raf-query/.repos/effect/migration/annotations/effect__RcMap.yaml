@@ -1,9 +1,0 @@
-effect/RcMap#RcMap:
-  replacement: "RcMap.RcMap"
-  note: "The model remains as a Pipeable reference-counted resource map; use RcMap.get explicitly inside a Scope."
-effect/RcMap#RcMap.Variance:
-  replacement: "none"
-  note: "The public variance marker was removed; use RcMap.RcMap directly."
-effect/RcMap#TypeId:
-  replacement: "none"
-  note: "The RcMap type id is internal in v4; do not inspect or construct the brand directly."

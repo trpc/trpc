@@ -326,21 +326,23 @@ export function experimentPageProblems(
         : [[page.doc.slug, page.doc.experiment] as const],
     ),
   );
-  return pages
-    .filter((page) => page.doc.experiment === undefined)
-    .flatMap((page) => [
-      ...(page.doc.parent !== undefined && experimentOf.has(page.doc.parent)
-        ? [
-            `${page.doc.slug}: nests under ${page.doc.parent}, which is in the ${experimentOf.get(page.doc.parent)} experiment`,
-          ]
-        : []),
-      ...[...new Set(page.links.map((link) => link.slug))]
-        .filter((slug) => experimentOf.has(slug))
-        .map(
-          (slug) =>
-            `${page.doc.slug}: links to ${slug}.md, which is in the ${experimentOf.get(slug)} experiment`,
-        ),
-    ]);
+  return pages.flatMap((page) =>
+    page.doc.experiment !== undefined
+      ? []
+      : [
+          ...(page.doc.parent !== undefined && experimentOf.has(page.doc.parent)
+            ? [
+                `${page.doc.slug}: nests under ${page.doc.parent}, which is in the ${experimentOf.get(page.doc.parent)} experiment`,
+              ]
+            : []),
+          ...[...new Set(page.links.map((link) => link.slug))]
+            .filter((slug) => experimentOf.has(slug))
+            .map(
+              (slug) =>
+                `${page.doc.slug}: links to ${slug}.md, which is in the ${experimentOf.get(slug)} experiment`,
+            ),
+        ],
+  );
 }
 
 /**

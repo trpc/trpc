@@ -1,3 +1,0 @@
-"@effect/workflow":
-  replacement: "effect/workflow"
-  note: "The @effect/workflow package was merged into the effect package; import the effect/workflow barrel or import specific modules directly (e.g. effect/workflow/<Module>)."

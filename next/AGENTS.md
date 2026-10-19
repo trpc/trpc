@@ -43,7 +43,9 @@ pnpm example
 
 Many agents push to `v12` at once, about a hundred commits a day, so a change that waits drifts into conflicts.
 
-- Commit straight to `v12` in small semantic commits, as the [brief](./.agent-docs/decisions/brief.md) says, not on a branch held open for a pull request. When a human asks for one, land it as soon as it's green, squashed onto the latest `v12`. Run `git pull --rebase origin v12` before the gates and again just before pushing; when the push is rejected, rebase and push again.
+- Push straight to `v12` and don't open pull requests against it, cloud agents included, whose default is a branch and a draft PR. Commit in small semantic commits, as the [brief](./.agent-docs/decisions/brief.md) says, and land them with `git pull --rebase origin v12 && git push origin v12`: no feature branch, no force push, no merge commits. Only when a human explicitly asks for a pull request, open one, land it squashed onto the latest `v12` as soon as it's green, and close it.
+- Name every branch cut from `v12` `v12/<name>`, cloud agents' included (not `cursor/…`): `trpc-v12` builds previews only for `v12/**` ([`docs-website-on-vercel.md`](./.agent-docs/decisions/docs-website-on-vercel.md)).
+- Run `git pull --rebase origin v12` before the gates and again just before pushing; when the push is rejected, rebase and push again.
 - `AGENTS.md`, `README.md`, `.agent-docs/README.md`, `docs/README.md` and `vite.config.ts` are shared by most changes. Edit as little of them as you can: put the detail in the decision file, skill, page or code it's about, and add one line to the shared file that links it. Say a fact in one place and link to it elsewhere; a fact restated in `AGENTS.md`, `README.md` and a decision is three edits for the next change and three chances to conflict.
 - Git conflicts by line, and a Markdown bullet or paragraph is one line: two changes to different sentences of one bullet conflict. Give a new topic its own bullet instead of adding sentences to another topic's, and split a bullet that has grown several topics.
 - On a `pnpm-lock.yaml` conflict, take `v12`'s (`git checkout origin/v12 -- pnpm-lock.yaml`), run `pnpm install`, and commit the result. Don't merge the lockfile by hand.
@@ -92,6 +94,8 @@ Source for this project's key dependencies is vendored under `.repos/`, pinned t
 - `raf-query` (ref `a9f2aa77`, 0.11.1) → `.repos/raf-query`
 
 Managed by [vendor-src](https://www.npmjs.com/package/vendor-src), a devDependency of this workspace. Its config has to live at the repo root (`../vendor-src.json`, `"dir": "next/.repos"`), because vendor-src looks for the nearest directory with both `.git` and `package.json`. `rootAgentsMd` is off, so keep the list above in sync by hand when adding or bumping a vendored repo.
+
+Every repo ignores `.repos/**`, its own vendored sources: `raf-query` vendors TanStack Query, TanStack Router and another Effect, which would be most of the tree and none of it ours to read. `ignore` paths are pruned on `add` and `sync`; after adding one to a repo you don't want to sync, delete the matching paths by hand.
 
 Every repo is git-only (`"packages": []`): vendor-src resolves installed packages from the repo root, which has no dependencies (`v11/` and `next/` are separate workspaces), so it can't tie a checkout to this workspace's lockfile. `vendor-src check` (run by `pnpm install`) skips git-only repos. `pnpm vendor:sync [name…]` moves each to its newest upstream ref: a tag to the highest tag with the same prefix (`effect@4.0.2` follows `effect@*`; prereleases only from a prerelease), a SHA (`raf-query`) to the default branch's `HEAD`.
 

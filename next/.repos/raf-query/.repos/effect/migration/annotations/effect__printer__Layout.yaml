@@ -1,3 +1,0 @@
-"@effect/printer/Layout":
-  replacement: none
-  note: The @effect/printer layout pipeline was removed in v4 with no general replacement. Use another pretty-printing library; for Effect CLI output only, use CliOutput from effect/cli.

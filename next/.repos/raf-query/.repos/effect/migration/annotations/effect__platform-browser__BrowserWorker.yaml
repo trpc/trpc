@@ -1,6 +1,0 @@
-"@effect/platform-browser/BrowserWorker#layerManager":
-  replacement: "BrowserWorker.layerPlatform"
-  note: "WorkerManager was removed. Provide WorkerPlatform directly, or use BrowserWorker.layer(spawn) when a Worker.Spawner is also required."
-"@effect/platform-browser/BrowserWorker#layerWorker":
-  replacement: "BrowserWorker.layerPlatform"
-  note: "PlatformWorker became Worker.WorkerPlatform. The platform-only layer no longer takes a spawn callback; BrowserWorker.layer(spawn) combines platform and spawner layers."

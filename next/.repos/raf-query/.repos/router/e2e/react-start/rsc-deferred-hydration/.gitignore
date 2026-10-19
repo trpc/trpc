@@ -1,5 +1,0 @@
-dist
-node_modules
-port*.txt
-test-results
-playwright-report

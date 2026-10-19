@@ -1,4 +1,4 @@
-import { Cause, Effect, Fiber, Queue, Stream } from 'effect';
+import { type Cause, Effect, Fiber, Queue, Stream } from 'effect';
 import {
   fromWireError,
   streamErrors,

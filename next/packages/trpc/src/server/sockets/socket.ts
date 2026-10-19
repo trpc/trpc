@@ -65,6 +65,12 @@ const traceParent = (trace: unknown): Tracer.AnySpan | undefined =>
  */
 export interface WebSocketLike {
   readonly readyState: number;
+  /**
+   * Bytes queued by `send` but not sent yet. When present, the server
+   * stops reading a subscription while it's past 64 KiB, until the client
+   * catches up. Workers' `WebSocket` doesn't have it.
+   */
+  readonly bufferedAmount?: number;
   send(data: string | Uint8Array<ArrayBuffer>): void;
   close(code?: number, reason?: string): void;
   addEventListener(type: string, listener: (event: any) => void): void;
@@ -117,7 +123,8 @@ export const SocketCore: Context.ServiceClass<
 
 /** Where a connection's server messages go, whatever carries it. @internal */
 export interface Connection {
-  send(message: ServerMessage): void;
+  /** Returns once the message is queued, which waits for a slow client where the transport can tell. */
+  send(message: ServerMessage): Effect.Effect<void>;
   /** The client asked for binary messages; transports that have them may send file bytes so. */
   acceptBinary?(): void;
   close(code: number, reason: string): void;
@@ -258,7 +265,7 @@ export const serveMessagePort = (
     const receiver = yield* connectionReceiver(
       core,
       {
-        send: (message) => port.postMessage(message),
+        send: (message) => Effect.sync(() => port.postMessage(message)),
         close: () => (port as { close?: () => void }).close?.(),
       },
       { ...opts, transport: 'messagePort' },
@@ -393,40 +400,40 @@ export const connectionReceiver = (
             exit.value as Stream.Stream<unknown, AnyTrpcError>,
             core.serializer,
             coerceError(path, kind),
-            (frame) => Effect.sync(() => conn.send(frameMessage(id, frame))),
+            (frame) => conn.send(frameMessage(id, frame)),
           );
-          if (!parked) conn.send({ id, type: 'done' });
+          if (!parked) yield* conn.send({ id, type: 'done' });
           return;
         }
         const serialized = core.serializer.serializeDeferred(exit.value, {
           coerceError: coerceError(path, kind),
         });
         if (!serialized.chunks) {
-          conn.send({ id, type: 'result', body: serialized.head });
+          yield* conn.send({ id, type: 'result', body: serialized.head });
           return;
         }
-        conn.send({
+        yield* conn.send({
           id,
           type: 'result',
           body: serialized.head,
           deferred: true,
         });
         yield* Stream.runForEach(serialized.chunks, (chunk) =>
-          Effect.sync(() => conn.send({ id, type: 'chunk', chunk })),
+          conn.send({ id, type: 'chunk', chunk }),
         ).pipe(
           Effect.catchCause((cause) =>
             Cause.hasInterruptsOnly(cause) ? Effect.interrupt : Effect.void,
           ),
         );
-        conn.send({ id, type: 'done' });
+        yield* conn.send({ id, type: 'done' });
       }).pipe(
         Effect.catchCause((cause) => {
           if (Cause.hasInterruptsOnly(cause)) return Effect.interrupt;
-          return Effect.sync(() => {
+          return Effect.suspend(() => {
             if (parked) opts.unpark?.(id);
             const err = normalizeCause(cause);
             core.report(err, request, path, type);
-            sendError(id, err);
+            return sendError(id, err);
           });
         }),
         Effect.onInterrupt(() => Effect.sync(() => controller.abort())),
@@ -437,24 +444,26 @@ export const connectionReceiver = (
       Effect.suspend(() => {
         if (closed) return Effect.void;
         if (!isRecord(raw) || typeof raw['type'] !== 'string') {
-          sendError(
+          return sendError(
             null,
             new TrpcError.ParseError({ message: 'Invalid message' }),
           );
-          return Effect.void;
         }
         const message = raw as ClientMessage;
         switch (message.type) {
           case 'init': {
             if (message.version !== PROTOCOL_VERSION) {
-              sendError(
-                null,
-                new TrpcError.UnsupportedProtocol({
-                  message: `Unsupported protocol version "${String(message.version)}", expected "${PROTOCOL_VERSION}"`,
-                }),
+              return Effect.andThen(
+                sendError(
+                  null,
+                  new TrpcError.UnsupportedProtocol({
+                    message: `Unsupported protocol version "${String(message.version)}", expected "${PROTOCOL_VERSION}"`,
+                  }),
+                ),
+                Effect.sync(() =>
+                  conn.close(1002, 'Unsupported protocol version'),
+                ),
               );
-              conn.close(1002, 'Unsupported protocol version');
-              return Effect.void;
             }
             connectionParams = isRecord(message.connectionParams)
               ? message.connectionParams
@@ -463,13 +472,14 @@ export const connectionReceiver = (
             refused =
               typeof message.serializer === 'string' &&
               message.serializer !== core.serializer.name;
-            conn.send({ type: 'init', serializer: core.serializer.name });
             if (!refused) opts.onInit?.(connectionParams);
-            return Effect.void;
+            return conn.send({
+              type: 'init',
+              serializer: core.serializer.name,
+            });
           }
           case 'ping':
-            conn.send({ type: 'pong' });
-            return Effect.void;
+            return conn.send({ type: 'pong' });
           case 'abort':
             opts.unpark?.(message.id);
             return FiberMap.remove(calls, message.id);
@@ -479,24 +489,22 @@ export const connectionReceiver = (
               typeof message.id !== 'number' ||
               FiberMap.hasUnsafe(calls, message.id)
             ) {
-              sendError(
+              return sendError(
                 null,
                 new TrpcError.BadRequest({
                   message: 'Each request needs a unique numeric id',
                 }),
               );
-              return Effect.void;
             }
             return Effect.asVoid(
               FiberMap.run(calls, message.id, call(message)),
             );
           }
           default:
-            sendError(
+            return sendError(
               null,
               new TrpcError.BadRequest({ message: 'Unknown message' }),
             );
-            return Effect.void;
         }
       });
 

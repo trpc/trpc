@@ -1,3 +1,0 @@
-"@effect/platform-bun/BunFileSystem/ParcelWatcher#layer":
-  replacement: "BunFileSystem.layer"
-  note: "The Parcel watcher adapter was removed. BunFileSystem.layer uses the built-in node:fs-compatible watcher; provide a custom FileSystem.WatchBackend for specialized behavior."

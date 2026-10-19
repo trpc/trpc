@@ -1,4 +1,4 @@
-import { Context, Effect, Layer, Stream } from 'effect';
+import { type Context, Effect, Layer, Stream } from 'effect';
 import { HibernationSlot } from '../internal/hibernation.ts';
 import {
   memoryPublisher,

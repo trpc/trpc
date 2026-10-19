@@ -1,3 +1,0 @@
-"@effect/experimental/index":
-  replacement: "none"
-  note: "The package barrel was removed along with the package; import each module from its new effect/* location per the Import Map."

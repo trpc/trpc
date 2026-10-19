@@ -1,3 +1,0 @@
-"@effect/sql-mysql2/MysqlClient#MysqlClientConfig":
-  replacement: "@effect/sql-mysql2/MysqlClient#MysqlClientConfig"
-  note: "Retained; connectionTTL uses Duration.Input and v4 adds disablePreparedStatements."

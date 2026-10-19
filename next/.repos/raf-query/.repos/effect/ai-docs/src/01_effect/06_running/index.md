@@ -1,1 +1,0 @@
-## Running Effect programs

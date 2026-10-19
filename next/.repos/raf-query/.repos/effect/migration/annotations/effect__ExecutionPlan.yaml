@@ -1,9 +1,0 @@
-effect/ExecutionPlan#ExecutionPlan:
-  replacement: "ExecutionPlan.ExecutionPlan"
-  note: "The plan type remains; withRequirements was renamed to captureRequirements."
-effect/ExecutionPlan#make:
-  replacement: "ExecutionPlan.make"
-  note: "The variadic execution-plan constructor remains unchanged."
-effect/ExecutionPlan#TypesBase:
-  replacement: "ExecutionPlan.ConfigBase"
-  note: "The base type for execution-plan step configuration was renamed."

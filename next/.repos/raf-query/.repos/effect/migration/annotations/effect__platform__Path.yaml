@@ -1,3 +1,0 @@
-"@effect/platform/Path#TypeId":
-  replacement: "typeof Path.TypeId"
-  note: "The module moved to effect/Path; the runtime marker remains exported but the separate type alias was removed."

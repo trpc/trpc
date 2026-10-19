@@ -1,3 +1,0 @@
-effect/TestAnnotation:
-  replacement: none
-  note: The legacy test-runner annotation key and built-in counters were removed. Use Vitest skip/repeat/retry options for runner concerns and FiberSet for explicit fiber tracking; there is no annotation-key equivalent.

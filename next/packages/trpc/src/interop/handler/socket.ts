@@ -83,13 +83,14 @@ function v11Session(
     err: AnyTrpcError,
     path?: string,
     type: ProcedureType | 'unknown' = 'unknown',
-  ) => {
-    base.report(err, request, path, type === 'unknown' ? undefined : type);
-    send({
-      ...envelope(id, jsonrpc),
-      error: output.serialize(core.errorShape(err, path, type)),
+  ) =>
+    Effect.suspend(() => {
+      base.report(err, request, path, type === 'unknown' ? undefined : type);
+      return send({
+        ...envelope(id, jsonrpc),
+        error: output.serialize(core.errorShape(err, path, type)),
+      });
     });
-  };
 
   const call = (
     id: RequestId,
@@ -155,13 +156,13 @@ function v11Session(
       }
       if (type !== 'subscription') {
         const data = yield* core.settle(exit.value);
-        send({
+        yield* send({
           ...head,
           result: { type: 'data', data: output.serialize(data) },
         });
         return;
       }
-      send({ ...head, result: { type: 'started' } });
+      yield* send({ ...head, result: { type: 'started' } });
       yield* Stream.runForEach(
         // Aborts before the stream's finalizers run: a resolver awaiting its
         // signal returns only after it aborts.
@@ -171,37 +172,29 @@ function v11Session(
           ),
         ),
         (event) =>
-          Effect.sync(() =>
-            send({
-              ...head,
-              result: isTracked(event)
-                ? {
-                    type: 'data',
-                    id: event.id,
-                    data: output.serialize({ id: event.id, data: event.data }),
-                  }
-                : { type: 'data', data: output.serialize(event) },
-            }),
-          ),
+          send({
+            ...head,
+            result: isTracked(event)
+              ? {
+                  type: 'data',
+                  id: event.id,
+                  data: output.serialize({ id: event.id, data: event.data }),
+                }
+              : { type: 'data', data: output.serialize(event) },
+          }),
       ).pipe(
         Effect.catchCause((cause) =>
           Cause.hasInterruptsOnly(cause)
             ? Effect.failCause(cause)
-            : Effect.sync(() =>
-                sendError(id, jsonrpc, normalizeCause(cause), path, type),
-              ),
+            : sendError(id, jsonrpc, normalizeCause(cause), path, type),
         ),
-        Effect.ensuring(
-          Effect.sync(() => send({ ...head, result: { type: 'stopped' } })),
-        ),
+        Effect.ensuring(send({ ...head, result: { type: 'stopped' } })),
       );
     }).pipe(
       Effect.catchCause((cause) =>
         Cause.hasInterruptsOnly(cause)
           ? Effect.failCause(cause)
-          : Effect.sync(() =>
-              sendError(id, jsonrpc, normalizeCause(cause), path, method),
-            ),
+          : sendError(id, jsonrpc, normalizeCause(cause), path, method),
       ),
       Effect.onInterrupt(() => abort),
     ) as Effect.Effect<void>;
@@ -209,12 +202,11 @@ function v11Session(
 
   const receive = (message: unknown): Effect.Effect<void> => {
     if (!isRecord(message)) {
-      sendError(
+      return sendError(
         null,
         undefined,
         new TrpcError.ParseError({ message: 'Invalid message' }),
       );
-      return Effect.void;
     }
     const { id, jsonrpc, method } = message;
     if (method === 'connectionParams') {
@@ -224,31 +216,28 @@ function v11Session(
       return Effect.void;
     }
     if (typeof id !== 'number' && typeof id !== 'string') {
-      sendError(
+      return sendError(
         null,
         jsonrpc,
         new TrpcError.ParseError({ message: '`id` is required' }),
       );
-      return Effect.void;
     }
     if (method === 'subscription.stop') return FiberMap.remove(calls, id);
     if (typeof method !== 'string' || !METHODS.has(method)) {
-      sendError(
+      return sendError(
         id,
         jsonrpc,
         new TrpcError.ParseError({
           message: `Unknown method "${String(method)}"`,
         }),
       );
-      return Effect.void;
     }
     if (FiberMap.hasUnsafe(calls, id)) {
-      sendError(
+      return sendError(
         id,
         jsonrpc,
         new TrpcError.BadRequest({ message: `Duplicate id ${id}` }),
       );
-      return Effect.void;
     }
     return Effect.asVoid(
       FiberMap.run(
@@ -267,19 +256,15 @@ function v11Session(
   return {
     frame: (data) =>
       Effect.suspend(() => {
-        if (data === 'PING') {
-          outbox.send('PONG');
-          return Effect.void;
-        }
+        if (data === 'PING') return outbox.send('PONG');
         if (data === 'PONG') return Effect.void;
         const parsed = parseSocketMessage(data);
         if (parsed === undefined) {
-          sendError(
+          return sendError(
             null,
             undefined,
             new TrpcError.ParseError({ message: 'Invalid JSON' }),
           );
-          return Effect.void;
         }
         return Effect.forEach(
           Array.isArray(parsed) ? parsed : [parsed],

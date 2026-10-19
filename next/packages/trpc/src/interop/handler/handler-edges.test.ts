@@ -85,7 +85,10 @@ test('inputs that cannot be read are refused before any call runs', async () => 
   const badJson = await call(handler, '/trpc/greet?input={nope');
   expect(badJson.status).toBe(400);
   expect(await badJson.json()).toMatchObject({
-    error: { message: 'Invalid JSON', data: { code: 'PARSE_ERROR' } },
+    error: {
+      message: expect.stringContaining('JSON'),
+      data: { code: 'BAD_REQUEST', path: 'greet' },
+    },
   });
 
   const empty = await call(handler, '/trpc/add', json(''));
@@ -146,19 +149,16 @@ test('batches: no input, a non-object input, mixed types, subscriptions', async 
   ]);
 
   const mixed = await call(handler, '/trpc/greet,add?batch=1', json('{}'));
-  expect(await mixed.json()).toMatchObject([
-    {
-      error: {
-        message: 'Cannot mix procedure types in call: query, mutation',
-      },
-    },
-    {},
-  ]);
+  const mixedBody = (await mixed.json()) as { error: { data: object } };
+  expect(mixedBody).toMatchObject({
+    error: { message: 'Cannot mix procedure types in call: query, mutation' },
+  });
+  expect(mixedBody.error.data).not.toHaveProperty('path');
 
   const subs = await call(handler, '/trpc/events,events?batch=1');
   expect(await subs.json()).toMatchObject([
-    { error: { message: 'Subscriptions cannot be batched' } },
-    { error: { message: 'Subscriptions cannot be batched' } },
+    { error: { message: 'Cannot batch subscription calls' } },
+    { error: { message: 'Cannot batch subscription calls' } },
   ]);
 
   const tags = await call(
@@ -188,7 +188,7 @@ test('a GET batch keeps the strictest cache-control every call allows', async ()
   await handler.dispose();
 });
 
-test('paths outside the endpoint are 404, one error per batched call', async () => {
+test('paths outside the endpoint are 404, one error for a whole batch', async () => {
   const handler = make({ endpoint: '/legacy/' });
   const single = await call(handler, '/trpc/greet');
   expect(single.status).toBe(404);
@@ -196,9 +196,9 @@ test('paths outside the endpoint are 404, one error per batched call', async () 
     error: { message: 'Not found: /trpc/greet' },
   });
   const batch = await call(handler, '/elsewhere?batch=1');
-  expect(await batch.json()).toMatchObject([
-    { error: { data: { code: 'NOT_FOUND' } } },
-  ]);
+  expect(await batch.json()).toMatchObject({
+    error: { data: { code: 'NOT_FOUND' } },
+  });
   expect(await (await call(handler, '/legacy/greet')).json()).toEqual({
     result: { data: 'hello ada' },
   });

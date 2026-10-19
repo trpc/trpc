@@ -1,3 +1,0 @@
-"effect/GlobalValue#globalValue":
-  replacement: "module-scoped const"
-  note: "The global registry helper was removed; use a module singleton, or explicitly own a globalThis and Symbol.for registry when cross-bundle identity is required."

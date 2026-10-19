@@ -1,6 +1,0 @@
-"@effect/ai-anthropic/AnthropicConfig#AnthropicConfig":
-  replacement: "AnthropicConfig.AnthropicConfig"
-  note: "Still exported in v4; update imports and adapt to the revised v4 service and HTTP client types."
-"@effect/ai-anthropic/AnthropicConfig#AnthropicConfig.Service":
-  replacement: "AnthropicConfig.AnthropicConfig.Service"
-  note: "Still exported in v4; update imports and adapt to the revised v4 service and HTTP client types."

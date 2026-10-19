@@ -1,3 +1,0 @@
-"@effect/platform/PlatformLogger":
-  replacement: "effect/Logger"
-  note: "toFile moved to Logger.toFile; it still requires a FileSystem service (e.g. NodeFileSystem.layer) and Scope."

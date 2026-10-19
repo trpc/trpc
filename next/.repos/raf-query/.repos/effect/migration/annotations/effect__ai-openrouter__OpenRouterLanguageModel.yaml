@@ -1,9 +1,0 @@
-"@effect/ai-openrouter/OpenRouterLanguageModel#Config":
-  replacement: "OpenRouterLanguageModel.Config"
-  note: "Still exported in v4; update imports and adapt to the regenerated chat request schema and revised Context.Service configuration."
-"@effect/ai-openrouter/OpenRouterLanguageModel#Config.Service":
-  replacement: "OpenRouterLanguageModel.Config.Service"
-  note: "Still exported in v4; update imports and adapt to the regenerated chat request schema and revised Context.Service configuration."
-"@effect/ai-openrouter/OpenRouterLanguageModel#OpenRouterReasoningInfo":
-  replacement: "OpenRouterLanguageModel.ReasoningDetails"
-  note: "The bespoke reasoning-info union was replaced by the provider's raw reasoning-details array, preserved through Prompt options and Response metadata."

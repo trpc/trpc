@@ -1,1 +1,0 @@
-## Testing Effect programs
