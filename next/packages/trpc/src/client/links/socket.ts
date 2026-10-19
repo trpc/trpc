@@ -30,6 +30,7 @@ import { jsonSerializer, type AnySerializer } from '../../serializer/index.ts';
 import type { MessagePortLike } from '../../server/sockets/index.ts';
 import {
   withSerializer,
+  type BuiltinCallOptions,
   type Operation,
   type OperationStream,
   type LinkDecl,
@@ -166,6 +167,9 @@ interface SocketTransport {
  * message that doesn't decode, and a stream cut off with it.
  */
 type SocketErrors = 'NETWORK_ERROR' | 'BAD_RESPONSE' | 'STREAM_INTERRUPTED';
+
+/** The call option links that reconnect read. */
+type ReconnectOption = Pick<BuiltinCallOptions, 'reconnect'>;
 
 const lostError = () =>
   new TrpcError({ code: 'NETWORK_ERROR', message: 'The connection was lost' });
@@ -787,7 +791,11 @@ export interface WebSocketLinkOptions
  */
 export function wsLink<TOpts extends WebSocketLinkOptions>(
   opts: TOpts,
-): SocketLink<{ form: FormOfOptions<TOpts>; builtinErrors: SocketErrors }>;
+): SocketLink<{
+  context: ReconnectOption;
+  form: FormOfOptions<TOpts>;
+  builtinErrors: SocketErrors;
+}>;
 export function wsLink(opts: WebSocketLinkOptions): SocketLink<any> {
   const Impl = opts.WebSocket ?? globalThis.WebSocket;
   return makeSocketLink(
@@ -948,7 +956,7 @@ export interface RawSocketLinkOptions
  */
 export function experimental_socketLink(
   opts: RawSocketLinkOptions,
-): SocketLink<{ builtinErrors: SocketErrors }> {
+): SocketLink<{ context: ReconnectOption; builtinErrors: SocketErrors }> {
   const connect = Effect.gen(function* () {
     const socket = yield* opts.socket;
     return yield* socketConnection(socket, {

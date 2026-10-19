@@ -7,6 +7,7 @@ import {
 } from '../../../serializer/index.ts';
 import {
   withSerializer,
+  type BuiltinCallOptions,
   type Operation,
   type TrpcLink,
   type TrpcRequestInit,
@@ -96,7 +97,8 @@ export interface HttpLinkOptions<
 }
 
 /**
- * What `httpLink` declares: its serializer's form, the responses it reports
+ * What `httpLink` declares: the call options it reads (`headers`, `init`,
+ * `batch`, `reconnect`, `onResponse`), its serializer's form, the responses it reports
  * to `onResponse`, the errors it makes (`NETWORK_ERROR` when `fetch`
  * fails or a connection drops, `BAD_RESPONSE` for a page that isn't tRPC's
  * or a body that doesn't decode, `STREAM_INTERRUPTED` for a stream that
@@ -106,6 +108,7 @@ export interface HttpLinkOptions<
  * @stability stable
  */
 export type HttpLinkDecl<TOpts> = {
+  context: BuiltinCallOptions;
   form: FormOfOptions<TOpts>;
   provides: 'response';
   builtinErrors: 'NETWORK_ERROR' | 'BAD_RESPONSE' | 'STREAM_INTERRUPTED';

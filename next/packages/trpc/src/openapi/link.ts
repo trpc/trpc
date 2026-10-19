@@ -1,5 +1,10 @@
 import { Effect, Stream } from 'effect';
-import type { Operation, OperationStream, TrpcLink } from '../client/link.ts';
+import type {
+  BuiltinCallOptions,
+  Operation,
+  OperationStream,
+  TrpcLink,
+} from '../client/link.ts';
 import type { ContractJson } from '../contract/index.ts';
 import {
   codeOfStatus,
@@ -90,6 +95,7 @@ const hasBlob = (value: unknown): boolean =>
  * @stability experimental
  */
 export function experimental_openApiLink(opts: OpenApiLinkOptions): TrpcLink<{
+  context: Pick<BuiltinCallOptions, 'headers'>;
   form: JsonForm;
   builtinErrors: 'NETWORK_ERROR' | 'BAD_RESPONSE';
 }> {

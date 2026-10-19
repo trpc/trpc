@@ -22,7 +22,6 @@ import type {
 import type {
   AnyLink,
   DeclContext,
-  BuiltinCallOptions,
   TrpcLink,
 } from './link.ts';
 
@@ -143,7 +142,8 @@ export interface TrpcSubscription<T, E> extends AsyncIterable<T> {
 
 /**
  * Options for `query()` and `mutate()` (16 CS-A): `signal`, plus the fields
- * links read (17 F-B), typed from the links with `router:`.
+ * the client's links read (17 F-B), typed from what they declare: `headers`
+ * only with a link that sends them, such as `httpLink`.
  *
  * @example
  * ```ts
@@ -154,8 +154,7 @@ export interface TrpcSubscription<T, E> extends AsyncIterable<T> {
  */
 export type CallOptions<TContext extends object = {}> = {
   signal?: AbortSignal | undefined;
-} & BuiltinCallOptions &
-  TContext;
+} & TContext;
 
 /**
  * Options for `subscribe()`.

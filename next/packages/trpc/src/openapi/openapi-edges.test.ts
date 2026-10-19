@@ -549,12 +549,7 @@ test('experimental_openApiLink subscriptions yield plain and tracked events, the
   const events: unknown[] = [];
   let failure: unknown;
   try {
-    for await (const event of app.client.feed.subscribe(
-      { fail: true },
-      {
-        reconnect: false,
-      },
-    )) {
+    for await (const event of app.client.feed.subscribe({ fail: true })) {
       events.push(event);
     }
   } catch (err) {

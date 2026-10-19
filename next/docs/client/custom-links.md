@@ -25,7 +25,7 @@ const traceLink = link<{ context: { traceId?: string } }>((opts) => {
 // client.post.byId.query(input, { traceId: 'abc' })
 ```
 
-Links receive the fields in `op.context`. `signal` and `lastEventId` are reserved: a link declaring either is a type error. The built-in fields (`headers`, `init`, `batch`, `reconnect`, `onResponse`) are always there; anything else comes from what your links declare.
+Links receive the fields in `op.context`. `signal` and `lastEventId` are reserved: a link declaring either is a type error. A call takes only the fields some link in the chain declares, the built-in ones included: `httpLink` declares `headers`, `init`, `batch`, `reconnect` and `onResponse` (`BuiltinCallOptions`), `wsLink` only `reconnect`. A link of your own that sends requests and reads one of them declares it too, as in `link<{ context: Pick<BuiltinCallOptions, 'headers'> }>(…)`.
 
 ## Errors and unsupported types
 

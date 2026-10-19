@@ -1,14 +1,19 @@
 import { Effect, Schema, Stream } from 'effect';
+import { MessageChannel } from 'node:worker_threads';
 import {
   createTrpcClient,
   dedupeLink,
+  experimental_messagePortLink,
   httpLink,
   link,
+  localLink,
   routerType,
   safe,
   splitLink,
   switchLink,
   TrpcError,
+  wsLink,
+  type AnyLink,
   type Operation,
 } from '@trpc12/trpc/client';
 import { createEffectClient } from '@trpc12/trpc/effect';
@@ -134,6 +139,53 @@ test('links declare the call option fields calls may pass (17 D-C, F-B)', async 
     // @ts-expect-error -- no link declares `cache`
     void client.post.byId.query({ id: '1' }, { cache: false });
   });
+});
+
+test('a call takes the built-in options only when a link reads them', () => {
+  type OptionsOf<F> = F extends (input: any, opts?: infer O) => any
+    ? keyof NonNullable<O>
+    : never;
+  const url = 'http://localhost';
+  const ws = wsLink({ url: 'ws://localhost' });
+  const port = experimental_messagePortLink({ port: new MessageChannel().port1 });
+  const clientOf = <const L extends ReadonlyArray<AnyLink>>(links: L) =>
+    createTrpcClient({ router: routerType<AppRouter>(), links });
+
+  const overHttp = clientOf([httpLink({ url })]);
+  expectTypeOf<OptionsOf<typeof overHttp.post.byId.query>>().toEqualTypeOf<
+    'signal' | 'headers' | 'init' | 'batch' | 'reconnect' | 'onResponse'
+  >();
+  const overWs = clientOf([ws]);
+  expectTypeOf<OptionsOf<typeof overWs.post.byId.query>>().toEqualTypeOf<
+    'signal' | 'reconnect'
+  >();
+  const inProcess = clientOf([localLink({ router })]);
+  expectTypeOf<
+    OptionsOf<typeof inProcess.post.byId.query>
+  >().toEqualTypeOf<'signal'>();
+  const overPort = clientOf([port]);
+  expectTypeOf<
+    OptionsOf<typeof overPort.post.byId.query>
+  >().toEqualTypeOf<'signal'>();
+  const split = clientOf([
+    splitLink({
+      condition: (op) => op.type === 'subscription',
+      true: ws,
+      false: httpLink({ url }),
+    }),
+  ]);
+  expectTypeOf<OptionsOf<typeof split.post.byId.query>>().toEqualTypeOf<
+    'signal' | 'headers' | 'init' | 'batch' | 'reconnect' | 'onResponse'
+  >();
+
+  void (() => {
+    // @ts-expect-error -- wsLink sends no HTTP headers
+    void overWs.post.byId.query({ id: '1' }, { headers: { 'x-a': '1' } });
+    // @ts-expect-error -- nothing in process reads `batch`
+    void inProcess.post.byId.query({ id: '1' }, { batch: false });
+  });
+  void ws[Symbol.asyncDispose]();
+  void port[Symbol.asyncDispose]();
 });
 
 test('splitLink sees typed paths, and merges both branches', async () => {

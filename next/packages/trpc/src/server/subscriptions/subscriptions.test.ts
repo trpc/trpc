@@ -4,7 +4,6 @@ import { EventSource } from 'undici';
 import {
   createTrpcClient,
   httpLink,
-  type TrpcClient,
   routerType,
 } from '@trpc12/trpc/client';
 import {
@@ -130,7 +129,7 @@ async function setup(user: string | null = 'ada') {
     createContext: () => ({ user }),
   });
   current = server;
-  const client: TrpcClient<AppRouter> = createTrpcClient({
+  const client = createTrpcClient({
     router: routerType<AppRouter>(),
     links: [httpLink({ url: server.url, reconnect: { delayMs: () => 10 } })],
   });

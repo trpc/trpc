@@ -63,7 +63,7 @@ await client.post.byId.query(
 );
 ```
 
-`headers`, `init` and `batch: false` (send this call alone) are read by `httpLink`, and `dedupe` by `dedupeLink`. The built-in fields (`headers`, `init`, `batch`, `reconnect`, `onResponse`) are always there; anything else comes from what your links declare ([Custom links](./custom-links.md)).
+`headers`, `init`, `batch: false` (send this call alone), `reconnect: false` and `onResponse` are read by `httpLink`, `reconnect: false` also by `wsLink`, and `dedupe` by `dedupeLink`. A call takes only the fields its links read: a client over `wsLink` alone has no `headers`, and one over `localLink` has only `signal`. Your own links add fields by declaring them ([Custom links](./custom-links.md)).
 
 ## Errors
 
