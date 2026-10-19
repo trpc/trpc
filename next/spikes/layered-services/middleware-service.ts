@@ -16,13 +16,17 @@
  * ```
  */
 import { Effect, type Context } from 'effect';
-import type { BuilderDef, CurrentCtx, With } from '@trpc12/trpc/internal';
+import type {
+  BuilderDef,
+  CurrentCtx,
+  TypeError,
+  With,
+} from '@trpc12/trpc/internal';
 import {
   middleware,
   type AnyTrpcError,
   type ProcedureBuilder,
   type ProcedureType,
-  type TypeError,
 } from '@trpc12/trpc/server';
 
 /** What the wrapped call succeeds with: opaque, as `RpcMiddleware.SuccessValue` is. */

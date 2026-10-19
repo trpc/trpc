@@ -9,6 +9,9 @@ export type {
   BuilderDef,
   BuilderInternals,
   ConcatCheck,
+  EveryLeafDeclares,
+  ImplementMetaCheck,
+  RootConcatCheck,
   ConcatOutputCheck,
   CurrentCtx,
   InputDef,
@@ -35,4 +38,4 @@ export type {
 } from '../server/procedures/index.ts';
 export type { DeclContext } from '../client/link.ts';
 export type { NoLinkCarries } from '../client/types.ts';
-export type { Unset } from './types.ts';
+export type { TypeError, Unset } from './types.ts';

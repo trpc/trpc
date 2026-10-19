@@ -37,7 +37,6 @@ export {
   type RootMiddleware,
   type RootOptions,
   type TrpcRoot,
-  type RootConcatCheck,
   type AnyProcedureBuilder,
   type DeclaredErrors,
   type ErrorConstructorOpts,
@@ -48,11 +47,9 @@ export {
   type ProvideOpts,
   type ResolverOpts,
   type SubscriptionResolverOpts,
-  type EveryLeafDeclares,
   type ImplementedRouter,
   type Implementer,
   type ImplementerRoot,
-  type ImplementMetaCheck,
   type ImplementRouter,
   type ImplementResult,
   type ProcedureImplementer,
@@ -177,4 +174,4 @@ export {
   type ErrorCategory,
   type TrpcErrorOptions,
 } from '../internal/error.ts';
-export type { ProcedureType, TypeError } from '../internal/types.ts';
+export type { ProcedureType } from '../internal/types.ts';
