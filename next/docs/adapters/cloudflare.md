@@ -1,6 +1,6 @@
 ---
 title: Cloudflare
-description: Everything in @trpc12/trpc/cloudflare. Durable Objects with hibernating WebSockets, publishers, durable calls, locks and connection tokens, plus Workers Traces.
+description: Everything in @trpc12/trpc/cloudflare. Durable Objects with hibernating WebSockets, publishers, durable calls, locks, rate limits and connection tokens, plus Workers Traces.
 section: Adapters
 order: 7
 experiment: cloudflare
@@ -241,6 +241,50 @@ createFetchHandler({ router, layer: experimental_durableLocker(env.LOCKS) });
 
 Bind `LOCKS` to `Locks` in `wrangler.jsonc` (a `new_sqlite_classes` migration). The example locks a seat across two room objects.
 
+## Rate limits
+
+`experimental_durableRateLimiterStore(env.RATE_LIMITS)` is a store for `rateLimit()` ([Rate limiting](../middleware/rate-limit.md#cloudflare)) that every Worker instance shares: one object per key, counting with its own clock in its storage. The object delegates to `experimental_durableRateLimitObject(this.ctx)`, and its alarm deletes the counters once they expire:
+
+```ts twoslash
+// ---cut-start---
+/// <reference types="@cloudflare/workers-types" />
+import { DurableObject } from 'cloudflare:workers';
+import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
+const t = initTrpc();
+const router = { health: t.procedure.query(() => 'ok') };
+interface Env {
+  RATE_LIMITS: DurableObjectNamespace<RateLimits>;
+}
+declare const env: Env;
+// ---cut-end---
+import { Layer } from 'effect';
+import { RateLimiter } from 'effect/persistence';
+import {
+  experimental_durableRateLimiterStore,
+  experimental_durableRateLimitObject,
+} from '@trpc12/trpc/cloudflare';
+
+export class RateLimits extends DurableObject<Env> {
+  limits = experimental_durableRateLimitObject(this.ctx);
+  override fetch(request: Request) {
+    return this.limits.fetch(request);
+  }
+  override alarm() {
+    return this.limits.alarm();
+  }
+}
+
+// wherever the handler is made
+createFetchHandler({
+  router,
+  layer: RateLimiter.layer.pipe(
+    Layer.provide(experimental_durableRateLimiterStore(env.RATE_LIMITS)),
+  ),
+});
+```
+
+Bind `RATE_LIMITS` to `RateLimits` in `wrangler.jsonc` (a `new_sqlite_classes` migration). The example limits each sender to three messages a minute in a room.
+
 ## Workers Traces
 
 `experimental_workersTracer({ tracing })` is an Effect `Tracer` that records spans with Workers Traces' custom spans API, with no OpenTelemetry SDK: tRPC's server and client spans and any `Effect.withSpan`, with their attributes and an error status on failure. Turn on `observability.traces` in the Wrangler config. Workers nests spans by async context, so pass `snapshot: () => AsyncLocalStorage.snapshot()` (`nodejs_compat`) too: then spans nest as Effect nests them, and the spans Workers adds itself (subrequests, storage, other objects) sit under the call that made them. Without it, every span is a child of the request's.
@@ -368,4 +412,4 @@ const link = wsLink({
 
 ## Credits
 
-Hibernating WebSockets, the Durable Object publisher and lock, and Workers Traces follow oRPC's [hibernation integration](https://orpc.dev/docs/integrations/hibernation), [publisher](https://orpc.dev/docs/helpers/publisher), [locks](https://orpc.dev/docs/helpers/lock) and [Cloudflare Traces integration](https://orpc.dev/docs/integrations/cloudflare-traces).
+Hibernating WebSockets, the Durable Object publisher and lock, and Workers Traces follow oRPC's [hibernation integration](https://orpc.dev/docs/integrations/hibernation), [publisher](https://orpc.dev/docs/helpers/publisher), [locks](https://orpc.dev/docs/helpers/lock) and [Cloudflare Traces integration](https://orpc.dev/docs/integrations/cloudflare-traces). The Durable Object rate limit store follows oRPC's [Durable Object rate limiter](https://orpc.dev/docs/helpers/ratelimit).
