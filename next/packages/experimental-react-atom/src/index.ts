@@ -20,6 +20,8 @@
  */
 import {
   Duration,
+  Equal,
+  Hash,
   Layer,
   Schema,
   SchemaTransformation,
@@ -222,6 +224,25 @@ const keyString = (key: Key): string =>
       : Duration.toMillis(Duration.fromInputUnsafe(key.options.timeToLive)),
   ]);
 
+/**
+ * An atom's identity, equal by its key string, so `Atom.family` keeps the
+ * key only while it keeps the atom.
+ */
+class AtomKey implements Equal.Equal {
+  readonly key: Key;
+  readonly id: string;
+  constructor(key: Key) {
+    this.key = key;
+    this.id = keyString(key);
+  }
+  [Equal.symbol](that: Equal.Equal): boolean {
+    return that instanceof AtomKey && that.id === this.id;
+  }
+  [Hash.symbol](): number {
+    return Hash.string(this.id);
+  }
+}
+
 const at = (client: unknown, path: string): any =>
   path.split('.').reduce((node: any, segment) => node[segment], client);
 
@@ -267,10 +288,9 @@ export function createAtomClient(opts: {
     success: serializerSchema(serializer),
   });
   const runtime = Atom.runtime(Layer.empty);
-  const keys = new Map<string, Key>();
 
-  const atoms = Atom.family((id: string) => {
-    const key = keys.get(id)!;
+  const atoms = Atom.family((atomKey: AtomKey) => {
+    const key = atomKey.key;
     const { options } = key;
     let atom: Atom.Atom<any> =
       key.type === 'query'
@@ -285,7 +305,7 @@ export function createAtomClient(opts: {
     // still send the request.
     if (key.type === 'query') {
       atom = Atom.serializable(atom, {
-        key: `trpc:${id}`,
+        key: `trpc:${atomKey.id}`,
         schema: resultSchema as Schema.Codec<unknown, unknown>,
       });
     }
@@ -300,11 +320,7 @@ export function createAtomClient(opts: {
     }
     return atom;
   });
-  const atomFor = (key: Key) => {
-    const id = keyString(key);
-    if (!keys.has(id)) keys.set(id, key);
-    return atoms(id);
-  };
+  const atomFor = (key: Key) => atoms(new AtomKey(key));
 
   const mutations = Atom.family((path: string) =>
     runtime.fn<{ input: unknown; reactivityKeys?: ReactivityKeys }>()(
