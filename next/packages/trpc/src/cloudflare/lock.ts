@@ -171,10 +171,15 @@ export function experimental_durableLocker(
         const timeout = Duration.fromInputUnsafe(
           opts?.timeout ?? options.timeout ?? '10 seconds',
         );
-        const response = yield* Effect.promise(() =>
-          namespace.getByName(prefix + key).fetch('https://lock/acquire', {
-            headers: { upgrade: 'websocket' },
-          }),
+        // The object holds the lock for whoever has this socket open, so
+        // an acquire interrupted while it's on its way still closes it.
+        const response = yield* Effect.acquireRelease(
+          Effect.promise(() =>
+            namespace.getByName(prefix + key).fetch('https://lock/acquire', {
+              headers: { upgrade: 'websocket' },
+            }),
+          ),
+          (response) => Effect.sync(() => response.webSocket?.close()),
         );
         const socket = response.webSocket;
         if (!socket) {

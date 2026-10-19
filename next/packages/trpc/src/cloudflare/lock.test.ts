@@ -283,6 +283,39 @@ test('a waiter whose socket the object drops dies; a closed socket closes quietl
   expect(String(exit)).toContain('The lock object closed the socket');
 });
 
+test('an acquire interrupted before the object answers closes the socket it gets, so the lock is free', async () => {
+  vi.stubGlobal('WebSocketPair', WebSocketPair);
+  const durable = namespace();
+  const answer = Promise.withResolvers<void>();
+  const slow: DurableLockNamespace = {
+    getByName(name) {
+      const stub = durable.ns.getByName(name);
+      return {
+        fetch: (input, init) =>
+          answer.promise.then(() => stub.fetch(input, init)),
+      };
+    },
+  };
+  const program = Effect.gen(function* () {
+    const locker = yield* experimental_Locker;
+    const first = yield* Effect.forkChild(
+      Effect.scoped(Effect.andThen(locker.acquire('k'), Effect.never)),
+    );
+    yield* Effect.sleep('5 millis');
+    // The upgrade's round trip isn't interruptible: the interrupt waits for it.
+    const interrupting = yield* Effect.forkChild(Fiber.interrupt(first));
+    yield* Effect.sleep('1 millis');
+    answer.resolve();
+    yield* Fiber.join(interrupting);
+    yield* Effect.sleep('5 millis');
+    return yield* Effect.scoped(locker.acquire('k', { timeout: '50 millis' }));
+  });
+  const result = await Effect.runPromise(
+    program.pipe(Effect.provide(experimental_durableLocker(slow))),
+  );
+  expect(result).toEqual({ waited: false });
+});
+
 test('an object outside Workers, or one that refuses the upgrade, is an error', async () => {
   const outside = experimental_durableLockObject({
     acceptWebSocket() {},
