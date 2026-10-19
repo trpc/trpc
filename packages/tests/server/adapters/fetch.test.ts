@@ -358,7 +358,8 @@ test.each([
       },
     });
     if (path === 'infinite') {
-      const reader = res.body!.getReader();
+      assert(res.body);
+      const reader = res.body.getReader();
       await reader.read();
       await reader.cancel();
     } else if (path === 'streamErrors') {
