@@ -369,10 +369,11 @@ export interface FetchHandler<TPlatform = undefined> {
    * subscriptions there from their last `tracked()` id, and closes the old
    * connection once the calls it sent settle. A MessagePort is closed once
    * its calls settle. At `timeout` the handler closes what's left (1012,
-   * "service restart"), interrupting its calls. Connections that open during
-   * the drain are closed at once, so clients reconnect elsewhere; after it,
-   * the handler takes connections again. `serve()` drains when its layer is
-   * released, before the server stops.
+   * "service restart"), interrupting its calls. During the drain, upgrades
+   * get a 503 and sockets handed to `websocket()` are closed (1012), so
+   * clients reconnect elsewhere; after it, the handler takes connections
+   * again. `serve()` drains when its layer is released, and refuses
+   * upgrades until the server has stopped.
    *
    * @example
    * ```ts
@@ -1328,6 +1329,7 @@ export function createFetchHandler<
     endpoint,
     serveWebSocket,
     upgradeWeb,
+    refusing: drains.refusing,
   });
 
   const handler: FetchHandler<unknown> = {

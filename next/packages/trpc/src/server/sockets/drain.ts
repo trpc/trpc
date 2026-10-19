@@ -8,10 +8,17 @@ export type DrainConnection = (
 /** The socket connections a handler serves, so it can drain them. @internal */
 export interface SocketDrains {
   /**
-   * Adds a connection and returns what removes it, or `undefined` while a
-   * drain runs or after the final one: the handler takes no connections then.
+   * Adds a connection and returns what removes it, or `undefined` while
+   * the handler is `refusing`.
    */
   readonly add: (drain: DrainConnection) => (() => void) | undefined;
+  /**
+   * Whether the handler takes no new connections: a drain runs, a `hold`
+   * is on, or the final drain ran. Upgrades are answered 503 then.
+   */
+  readonly refusing: () => boolean;
+  /** Refuses new connections until the returned function runs. */
+  readonly hold: () => () => void;
   /**
    * Drains every open connection at once. With `final`, the handler never
    * takes another one.
@@ -27,19 +34,30 @@ export const makeSocketDrains = (
   defaultTimeout: Duration.Input,
 ): SocketDrains => {
   const open = new Set<DrainConnection>();
-  let draining = 0;
+  let holds = 0;
   let final = false;
+  const refusing = () => final || holds > 0;
+  const hold = () => {
+    holds++;
+    let held = true;
+    return () => {
+      if (held) holds--;
+      held = false;
+    };
+  };
   return {
     add: (drain) => {
-      if (final || draining > 0) return undefined;
+      if (refusing()) return undefined;
       open.add(drain);
       return () => {
         open.delete(drain);
       };
     },
+    refusing,
+    hold,
     drain: (opts = {}) =>
       Effect.suspend(() => {
-        draining++;
+        const release = hold();
         if (opts.final) final = true;
         const timeout = Duration.fromInputUnsafe(
           opts.timeout ?? defaultTimeout,
@@ -47,13 +65,7 @@ export const makeSocketDrains = (
         return Effect.forEach([...open], (drain) => drain(timeout), {
           concurrency: 'unbounded',
           discard: true,
-        }).pipe(
-          Effect.ensuring(
-            Effect.sync(() => {
-              draining--;
-            }),
-          ),
-        );
+        }).pipe(Effect.ensuring(Effect.sync(release)));
       }),
   };
 };

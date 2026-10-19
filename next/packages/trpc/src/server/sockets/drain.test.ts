@@ -1,4 +1,4 @@
-import { createServer } from 'node:http';
+import { createServer, request as httpRequest } from 'node:http';
 import { MessageChannel } from 'node:worker_threads';
 import { NodeHttpServer } from '@effect/platform-node';
 import { Context, type Duration, Effect, Exit, Layer, Scope } from 'effect';
@@ -174,15 +174,37 @@ test('the default drain timeout is websocket.drainTimeout', async () => {
   expect((await client.closed).code).toBe(1012);
 });
 
-test('a connection opened during a drain is closed with 1012; after it, connections are served again', async () => {
+/** The status an upgrade request gets, when it isn't upgraded. */
+const upgradeStatus = (url: string) =>
+  new Promise<number | undefined>((resolve, reject) => {
+    const request = httpRequest(url.replace(/^ws/, 'http'), {
+      headers: {
+        connection: 'Upgrade',
+        upgrade: 'websocket',
+        'sec-websocket-key': 'dGhlIHNhbXBsZSBub25jZQ==',
+        'sec-websocket-version': '13',
+      },
+    });
+    request.on('response', (response) => {
+      response.resume();
+      resolve(response.statusCode);
+    });
+    request.on('upgrade', (_response, socket) => {
+      socket.destroy();
+      resolve(101);
+    });
+    request.on('error', reject);
+    request.end();
+  });
+
+test('an upgrade during a drain gets a 503; after it, connections are served again', async () => {
   reset();
   await using server = await start('a');
   const open = await raw(server.wsUrl);
   const drain = server.handler.drain({ timeout: '10 seconds' });
   await open.received({ type: 'reconnect' });
 
-  const refused = await raw(server.wsUrl);
-  expect((await refused.closed).code).toBe(1012);
+  expect(await upgradeStatus(server.wsUrl)).toBe(503);
 
   open.socket.close(1000);
   await drain;

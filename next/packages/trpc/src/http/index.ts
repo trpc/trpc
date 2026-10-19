@@ -156,6 +156,7 @@ export function toHttpEffect(
   const services = handlerContext(handler);
   const own = Context.getOrUndefined(services, HttpApp);
   const serveSocket = Context.getOrUndefined(services, UpgradeServer);
+  const drains = Context.getOrUndefined(services, SocketCore)?.drains;
   const fetch =
     own?.app ??
     Effect.flatMap(HttpServerRequest.HttpServerRequest, (request) =>
@@ -197,6 +198,9 @@ export function toHttpEffect(
         if (url.pathname !== endpoint && url.pathname !== `${endpoint}/`) {
           return HttpServerResponse.empty({ status: 404 });
         }
+        if (drains?.refusing()) {
+          return HttpServerResponse.empty({ status: 503 });
+        }
         yield* serveSocket
           ? upgradeTo(request, (socket) => serveSocket(socket, request))
           : Effect.scoped(viaWeb(request));
@@ -218,7 +222,8 @@ export function toHttpEffect(
  * A `createFetchHandler()` handler serves its `routes`, so other paths get
  * the router's 404; merge `handler.routes` with your own routes to serve
  * both. Releasing the layer drains a `createFetchHandler()` handler's
- * connections (`handler.drain()`) before the server stops; serving
+ * connections (`handler.drain()`) before the server stops, and upgrades
+ * get a 503 until it has; serving
  * `toHttpEffect(handler)` or `handler.routes` yourself, call
  * `handler.drain()` before you stop the server.
  *
@@ -248,11 +253,22 @@ export function serve(
     SocketCore,
   )?.drains;
   if (!drains) return served;
-  // Built after `served`, so it's released first: the server waits on open
-  // WebSockets when it stops, so they're moved off before.
-  return Layer.effectDiscard(Effect.addFinalizer(() => drains.drain())).pipe(
-    Layer.provideMerge(served),
+  // The drain is built after `served`, so it's released first: the server
+  // waits on open WebSockets when it stops, so they're moved off before.
+  // Upgrades are refused from then until the server has stopped.
+  let release = () => {};
+  const drain = Layer.effectDiscard(
+    Effect.addFinalizer(() =>
+      Effect.suspend(() => {
+        release = drains.hold();
+        return drains.drain();
+      }),
+    ),
   );
+  const reopen = Layer.effectDiscard(
+    Effect.addFinalizer(() => Effect.sync(() => release())),
+  );
+  return drain.pipe(Layer.provideMerge(served), Layer.provideMerge(reopen));
 }
 
 /**
