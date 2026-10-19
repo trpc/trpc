@@ -22,6 +22,8 @@
   - Query atoms take reactivity keys and a time-to-live; mutation atoms invalidate keys; subscription atoms hold the latest event. Atoms carry typed errors from the Effect client.
   - Keys sort plain object keys, as in the promise client.
   - Hydration: query atoms are `Atom.serializable`, keyed `trpc:<path and input>`, with `AsyncResult.Schema({ success: serializerSchema(serializer) })`, a `Schema` that encodes with the links' serializer (default `jsonSerializer`). Failures don't encode, so `Hydration.dehydrate` skips them and the browser runs those queries again.
+- (agent) The promise client's store owns a `Scope` with a `FiberSet` runtime. Requests are `Effect.tryPromise` fibers, so interruption aborts their signal; GC timers are `Effect.sleep` fibers; links' `attach()` cleanups are finalizers of the scope. `dispose()` closes it, which ends the store: it starts no requests afterwards. Cost: 462 B gzip (`createReactClient` with `standardLinks()`: 46,055 to 46,517 B) ([`effect-internal-patterns.md`](./effect-internal-patterns.md)).
+- (agent) The atom client keys `Atom.family` by an `AtomKey` that is `Equal` and `Hash` by its key string. The family holds atoms weakly and forgets a key once its atom is collected; the `Map` of keys it replaced kept every key forever.
 - (agent) Passing server-started promises from React Server Components to `use()` in the browser is not a goal of either package (Q20.3).
 - Why: the human wants a React integration without TanStack in v1, both the Effect-native one and a plain-promise one with raf-query's model. Every feature beyond stable promises is opt-in, so an app pays only for the links it uses.
 - Lost:
