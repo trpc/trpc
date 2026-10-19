@@ -862,33 +862,170 @@ export function searchParamsUrl(expression: string) {
   return `${call[1]}${params.join('&')}`;
 }
 
-/** Posts on X the blog embeds that X no longer serves, by id, and who wrote them. */
-export const deletedTweets: ReadonlyMap<string, string> = new Map([
-  ['1756120297529368801', 'Dan Abramov'],
-]);
+const staticTweetAttribute =
+  /\s+([\w-]+)=(?:"([^"]*)"|\{\s*('(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*")\s*\})/g;
+const staticTweet = new RegExp(
+  `<StaticTweet((?:${staticTweetAttribute.source})*)\\s*/>`,
+  'g',
+);
 
-/** A `<Tweet>` (react-tweet), in the `<div>` that centers it or not, as a link to it or a note that it's gone. */
-function tweetOf(id: string, context: Converting) {
-  if (context.imports.get('Tweet') !== 'react-tweet') {
-    context.problems.push(`${context.file}: <Tweet> isn't react-tweet's`);
+/** A JS string literal's value: `'a\nb'` is two lines. Escapes other than `\n`, `\\` and quotes aren't. */
+function stringLiteralValue(literal: string) {
+  let unknown = false;
+  const value = literal
+    .slice(1, -1)
+    .replaceAll(/\\(.)/g, (_escape, character: string) => {
+      if (character === 'n') {
+        return '\n';
+      }
+      unknown ||= !`\\'"`.includes(character);
+      return character;
+    });
+  return unknown ? undefined : value;
+}
+
+function escapeHtml(text: string) {
+  return text
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;');
+}
+
+const staticTweetProps = [
+  'id',
+  'name',
+  'username',
+  'avatarUrl',
+  'text',
+  'createdAt',
+] as const;
+
+const months = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+];
+
+/** `9:41 AM · Feb 10, 2024`, in UTC, as trpc.io's `StaticTweet` shows it. */
+export function tweetTimestamp(date: Date) {
+  const hours = date.getUTCHours();
+  const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+  const time = `${hours % 12 || 12}:${minutes} ${hours < 12 ? 'AM' : 'PM'}`;
+  return `${time} · ${months[date.getUTCMonth()]} ${date.getUTCDate()}, ${date.getUTCFullYear()}`;
+}
+
+/** Twitter's bird, as its embedded tweets show it. */
+const twitterBird =
+  '<svg class="tweet-bird" viewBox="0 0 24 24" aria-hidden="true"><path d="M23.643 4.937c-.835.37-1.732.62-2.675.733.962-.576 1.7-1.49 2.048-2.578-.9.534-1.897.922-2.958 1.13-.85-.904-2.06-1.47-3.4-1.47-2.572 0-4.658 2.086-4.658 4.66 0 .364.042.718.12 1.06-3.873-.195-7.304-2.05-9.602-4.868-.4.69-.63 1.49-.63 2.342 0 1.616.823 3.043 2.072 3.878-.764-.025-1.482-.234-2.11-.583v.06c0 2.257 1.605 4.14 3.737 4.568-.392.106-.803.162-1.227.162-.3 0-.593-.028-.877-.082.593 1.85 2.313 3.198 4.352 3.234-1.595 1.25-3.604 1.995-5.786 1.995-.376 0-.747-.022-1.112-.065 2.062 1.323 4.51 2.093 7.14 2.093 8.57 0 13.255-7.098 13.255-13.254 0-.2-.005-.402-.014-.602.91-.658 1.7-1.477 2.323-2.41z" /></svg>';
+
+/**
+ * A `<StaticTweet>` (trpc.io's copy of a tweet, `src/components/StaticTweet.tsx`)
+ * as the same card in HTML, styled like Twitter's embedded tweets by
+ * `.tweet`: the author links to their profile, URLs, @mentions and
+ * #hashtags in the text are links, and the timestamp and "Read more on
+ * Twitter" link to the tweet, deleted or not. `archiveUrl` is an "Archived
+ * copy" link beside the timestamp.
+ */
+function staticTweetOf(tag: string, attributes: string, context: Converting) {
+  const problem = (why: string) => {
+    context.problems.push(
+      `${context.file}: \`${tag.split('\n')[0]?.trim()}\`: ${why}`,
+    );
+    return '';
+  };
+  if (context.imports.get('StaticTweet') !== 'src/components/StaticTweet') {
+    return problem("isn't trpc.io's StaticTweet");
   }
-  const author = deletedTweets.get(id);
-  return author === undefined
-    ? `\n[View the post on X](https://x.com/i/status/${id})\n`
-    : `\n> [!NOTE] Post deleted\n> ${author}'s post on X that was embedded here has since been deleted.\n`;
+  const props = new Map<string, string>();
+  for (const match of attributes.matchAll(staticTweetAttribute)) {
+    const value = match[2] ?? stringLiteralValue(match[3] ?? '');
+    if (value === undefined) {
+      return problem(`no conversion for \`${match[1]}\`'s escapes`);
+    }
+    props.set(match[1] ?? '', value);
+  }
+  const known = new Set<string>([...staticTweetProps, 'archiveUrl']);
+  const wrong = [
+    ...[...props.keys()]
+      .filter((name) => !known.has(name))
+      .map((name) => `no conversion for \`${name}\``),
+    ...staticTweetProps
+      .filter((name) => !props.has(name))
+      .map((name) => `no \`${name}\``),
+  ];
+  if (wrong.length > 0) {
+    return problem(wrong.join(', '));
+  }
+  const id = props.get('id') ?? '';
+  const username = props.get('username') ?? '';
+  if (!/^\d+$/.test(id) || !/^\w+$/.test(username)) {
+    return problem('`id` is no tweet id, or `username` no handle');
+  }
+  const date = new Date(props.get('createdAt') ?? '');
+  if (Number.isNaN(date.getTime())) {
+    return problem('`createdAt` is no date');
+  }
+  const profileUrl = `https://twitter.com/${username}`;
+  const tweetUrl = `${profileUrl}/status/${id}`;
+  const archiveUrl = props.get('archiveUrl');
+  const text = (props.get('text') ?? '')
+    .split(/(https?:\/\/\S+|(?<!\w)@\w+|(?<!\w)#\w*[a-z_]\w*)/i)
+    .map((part, index) => {
+      if (index % 2 === 0) {
+        return escapeHtml(part);
+      }
+      const href = part.startsWith('@')
+        ? `https://twitter.com/${part.slice(1)}`
+        : part.startsWith('#')
+          ? `https://twitter.com/hashtag/${part.slice(1)}`
+          : part;
+      return `<a href="${escapeHtml(href)}">${escapeHtml(part.replace(/^https?:\/\//, ''))}</a>`;
+    })
+    .join('')
+    .replaceAll('\n', '<br />');
+  return [
+    '',
+    '<figure class="tweet">',
+    `<div class="tweet-header"><a class="tweet-author" href="${profileUrl}"><img class="tweet-avatar" src="${escapeHtml(props.get('avatarUrl') ?? '')}" alt="" width="48" height="48" loading="lazy" /><span class="tweet-author-names"><span class="tweet-name">${escapeHtml(props.get('name') ?? '')}</span><span class="tweet-username">@${username}</span></span></a>${twitterBird}</div>`,
+    `<blockquote class="tweet-text" cite="${tweetUrl}">${text}</blockquote>`,
+    `<div class="tweet-meta"><a href="${tweetUrl}"><time datetime="${date.toJSON()}">${tweetTimestamp(date)}</time></a>${
+      archiveUrl === undefined
+        ? ''
+        : `<span aria-hidden="true"> · </span><a class="tweet-archive" href="${escapeHtml(archiveUrl)}">Archived copy</a>`
+    }</div>`,
+    `<div class="tweet-footer"><a href="${tweetUrl}">Read more on Twitter</a></div>`,
+    '</figure>',
+    '',
+  ].join('\n');
 }
 
 /**
  * The StackBlitz embed of v10's quickstart: an `<Iframe>` filling a
- * `<div>` 800px high, as one iframe. A `<Tweet>` is a link to the post.
+ * `<div>` 800px high, as one iframe. `<StaticTweet>`s, alone or in the
+ * `<div>` that lays them out, are cards.
  */
 function convertEmbeds(lines: ReadonlyArray<string>, context: Converting) {
   return editProse(lines, (prose) =>
     prose
       .replaceAll(
-        /<div\b[^>]*>\s*<Tweet\s+id="(\d+)"\s*\/>\s*<\/div>|<Tweet\s+id="(\d+)"\s*\/>/g,
-        (_tweet, wrapped: string | undefined, bare: string | undefined) =>
-          tweetOf(wrapped ?? bare ?? '', context),
+        new RegExp(
+          `<div\\b[^>]*>\\s*((?:${staticTweet.source}\\s*)+)</div>`,
+          'g',
+        ),
+        (_div, tweets: string) => tweets,
+      )
+      .replaceAll(staticTweet, (tag, attributes: string) =>
+        staticTweetOf(tag, attributes, context),
       )
       .replaceAll(
         /<div\s+className=\{clsx\(\s*(['"])([^'"]*)\1,?\s*\)\}\s*>\s*<Iframe\s+src=\{([\s\S]*?)\}\s*(?:[\w-]+="[^"]*"\s*)*\/>\s*<\/div>/g,
