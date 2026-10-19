@@ -28,6 +28,7 @@ Agent-written working notes: research, spike results, benchmarks and anything wo
 | [Declared invalidation plugin](./invalidation-plugin.md)                  | 19         | `invalidation/`             |
 | [Nested deferred values over SSE](./sse-nested-deferred.md)               | 19         | `sse-deferred/`             |
 | [Durable mid-stream resume](./durable-mid-stream-resume.md)               | 19         | `durable-resume/`           |
+| [Client bundle anatomy](./client-bundle-anatomy.md)                       | 02 (g), 17 | `client-bundle/`            |
 | [Benchmarks against v11 and oRPC](./benchmarks.md)                        | all        | `tooling/bench/`            |
 | [MCP tools](./mcp-tools.md)                                               | 25         | `mcp/`                      |
 | [Live queries and TanStack DB](./live-queries.md)                         | 26         | `live-queries/`             |
