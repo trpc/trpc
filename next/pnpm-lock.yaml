@@ -1224,6 +1224,36 @@ importers:
         specifier: 1.1.0
         version: 1.1.0(@opentelemetry/api@1.9.1)(@types/node@24.19.1)(@vitest/coverage-v8@5.0.3)(@vitest/ui@5.0.3)(esbuild@0.28.2)(happy-dom@20.14.6)(jiti@2.7.0)(svelte@5.57.2)(typescript@7.0.2)(yaml@2.9.1)
 
+  packages/experimental-tanstack-db:
+    devDependencies:
+      '@effect/platform-node':
+        specifier: 4.0.2
+        version: 4.0.2(effect@4.0.2)(redis@6.3.0(@opentelemetry/api@1.9.1))
+      '@tanstack/db':
+        specifier: 0.15.0
+        version: 0.15.0(typescript@7.0.2)
+      '@tooling/tsconfig':
+        specifier: workspace:*
+        version: link:../../tooling/tsconfig
+      '@trpc12/trpc':
+        specifier: workspace:*
+        version: link:../trpc
+      '@types/node':
+        specifier: ^24.0.0
+        version: 24.19.1
+      effect:
+        specifier: 4.0.2
+        version: 4.0.2
+      typescript:
+        specifier: ^7.0.2
+        version: 7.0.2
+      vite-plus:
+        specifier: 1.1.0
+        version: 1.1.0(@opentelemetry/api@1.9.1)(@types/node@24.19.1)(@vitest/coverage-v8@5.0.3)(@vitest/ui@5.0.3)(esbuild@0.28.2)(happy-dom@20.14.6)(jiti@2.7.0)(svelte@5.57.2)(typescript@7.0.2)(yaml@2.9.1)
+      zod:
+        specifier: 4.6.5
+        version: 4.6.5
+
   packages/experimental-tanstack-lit-query:
     dependencies:
       '@trpc12/tanstack-query':
@@ -1688,6 +1718,9 @@ importers:
       '@tanstack/query-core':
         specifier: 5.90.20
         version: 5.90.20
+      '@tanstack/query-db-collection':
+        specifier: 1.4.5
+        version: 1.4.5(@tanstack/query-core@5.90.20)(typescript@7.0.2)
       '@tanstack/react-query':
         specifier: 5.104.1
         version: 5.104.1(react@19.3.0)
@@ -1700,6 +1733,9 @@ importers:
       '@trpc/server':
         specifier: 11.19.0
         version: 11.19.0(typescript@7.0.2)
+      '@trpc12/experimental-tanstack-db':
+        specifier: workspace:*
+        version: link:../packages/experimental-tanstack-db
       '@trpc12/tanstack-query':
         specifier: workspace:*
         version: link:../packages/tanstack-query
@@ -2302,6 +2338,9 @@ importers:
       '@trpc12/experimental-tanstack-angular-query':
         specifier: workspace:*
         version: link:../../../packages/experimental-tanstack-angular-query
+      '@trpc12/experimental-tanstack-db':
+        specifier: workspace:*
+        version: link:../../../packages/experimental-tanstack-db
       '@trpc12/experimental-tanstack-lit-query':
         specifier: workspace:*
         version: link:../../../packages/experimental-tanstack-lit-query
@@ -12101,6 +12140,13 @@ snapshots:
       '@standard-schema/spec': 1.1.0
       '@tanstack/db': 0.15.0(typescript@7.0.2)
       '@tanstack/query-core': 5.104.1
+      typescript: 7.0.2
+
+  '@tanstack/query-db-collection@1.4.5(@tanstack/query-core@5.90.20)(typescript@7.0.2)':
+    dependencies:
+      '@standard-schema/spec': 1.1.0
+      '@tanstack/db': 0.15.0(typescript@7.0.2)
+      '@tanstack/query-core': 5.90.20
       typescript: 7.0.2
 
   '@tanstack/query-devtools@5.104.1(csstype@3.2.3)':

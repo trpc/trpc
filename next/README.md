@@ -15,6 +15,7 @@ next/
   packages/experimental-tanstack-*-query/  `@trpc12/experimental-tanstack-{preact,vue,solid,svelte,angular,lit}-query`: the other adapters, one package each
   packages/experimental-react/       `@trpc12/experimental-react`: stable `use()` promises, features as links
   packages/experimental-react-atom/  `@trpc12/experimental-react-atom`: queries and mutations as Effect Atoms
+  packages/experimental-tanstack-db/  `@trpc12/experimental-tanstack-db`: TanStack DB collections synced by a subscription
   packages/upgrade/     `@trpc12/upgrade`: the v11 → v12 codemod (`trpc12-upgrade` bin)
   packages/experimental-nest/        `@trpc12/experimental-nest`: contracts implemented in NestJS controllers (`@Implement`, `TrpcModule`)
   examples/             workspace-linked examples
