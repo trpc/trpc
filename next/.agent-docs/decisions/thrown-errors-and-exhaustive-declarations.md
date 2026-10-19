@@ -8,7 +8,7 @@
   - Returning or failing with an error it doesn't list, or with `data` of another type, is a type error (`DeclaredCheck`, `DeclaredStreamCheck`). Contract implementations already had `UndeclaredCheck`.
   - A thrown custom code it doesn't list is an `INTERNAL_SERVER_ERROR` (a crash, masked in production).
   - A thrown error with a listed code is typed, even without its constructor, and its `data` is validated.
-- `matchError()` keys follow the types (the D answer): every inferred or declared code is a required key, built-in codes go to the four categories or `builtin`, and no built-in code becomes a key of its own.
+- `matchError()` keys follow the types (the D answer): every inferred or declared code is a required key. Since [exhaustive-match-error](./exhaustive-match-error.md), so is every link code, and the rest go to one required `unexpected`.
 - When `NODE_ENV` is `development`, a procedure that throws a `TrpcError` it could return logs an Effect warning, once per procedure and code, hinting that v11's `throw new TRPCError()` is `return error()` now. `initTrpc({ warnThrownErrors: false })` turns it off.
 - (agent) The reading of "number 2", relayed by the coordinator: a thrown custom code from a procedure without `.errors()` reaches the client, untyped, and lands in a category handler or `builtin`.
 - (agent) On the client it is an `UndeclaredError`, a third member of `ClientError`. Its code type is `` `~undeclared:${string}` ``, so no literal matches it: `switch (err.code)` cases and `err.code === 'NOT_FOUND'` leave it out, and only `default`, its category and `builtin` see it. A branded `string & {…}` still narrowed into `case 'NOT_FOUND'`.
