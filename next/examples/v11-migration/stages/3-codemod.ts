@@ -40,7 +40,7 @@ const steps = [
   'app/client/links.ts:2:1 observable(): subscriptions return an async generator or an Effect Stream; a v11 link keeps it under fromV11Link',
   'app/client/queries.ts:9:16 createTrpcQueryUtils({ client }): the queryClient goes to QueryClientProvider',
   "app/server/context.ts:1:15 CreateContextOpts: opts.req is opts.request, whose headers are a record (request.headers['authorization']); response headers go on the procedure's response handle, docs/server/responses.md",
-  'app/server/index.ts:7:12 createFetchHandler: make the handler once, outside the request function; createContext gets { request, info }',
+  'app/server/index.ts:7:12 createFetchHandler: make the handler once, outside the request function; createContext gets { request, info }; old clients: createV11Handler on this endpoint, createFetchHandler on another (docs/migrations/from-v11/serve-v11-clients.md)',
   'app/server/router.ts:27:27 lastEventId: v12 passes it to the resolver as opts.lastEventId; v12 clients send subscribe(input, { lastEventId })',
   'app/server/router.ts:28:37 lastEventId: v12 passes it to the resolver as opts.lastEventId; v12 clients send subscribe(input, { lastEventId })',
   'app/server/trpc.ts:7:3 transformer: drop it here; pass the same createSyncSerializer(transformer) to the handler and every link',

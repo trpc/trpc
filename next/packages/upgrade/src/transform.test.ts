@@ -163,7 +163,7 @@ export default {
     `);
     expect(messages(source)).toMatchInlineSnapshot(`
       [
-        "6:5 createFetchHandler: make the handler once, outside the request function; createContext gets { request, info }",
+        "6:5 createFetchHandler: make the handler once, outside the request function; createContext gets { request, info }; old clients: createV11Handler on this endpoint, createFetchHandler on another (docs/migrations/from-v11/serve-v11-clients.md)",
       ]
     `);
   });
@@ -193,7 +193,7 @@ import { something } from '@trpc/unknown';
     ).toMatchInlineSnapshot(`
       [
         "1:1 observable(): subscriptions return an async generator or an Effect Stream; a v11 link keeps it under fromV11Link",
-        "2:1 adapters: serve createFetchHandler() with serve() from @trpc12/trpc/http (docs/adapters/overview.md)",
+        "2:1 adapters: serve createFetchHandler() with serve() from @trpc12/trpc/http (docs/adapters/overview.md); old clients: createV11Handler on this endpoint, createFetchHandler on another (docs/migrations/from-v11/serve-v11-clients.md)",
         "3:1 @trpc/unknown: no v12 module, see docs/migrations/from-v11.md",
       ]
     `);
@@ -613,7 +613,7 @@ export const handle = (request: Request) =>
     expect(messages(source)).toMatchInlineSnapshot(`
       [
         "5:17 createCallerFactory: createRouterClient(router, { ctx }) makes a caller",
-        "7:3 createFetchHandler: make the handler once, outside the request function; createContext gets { request, info }",
+        "7:3 createFetchHandler: make the handler once, outside the request function; createContext gets { request, info }; old clients: createV11Handler on this endpoint, createFetchHandler on another (docs/migrations/from-v11/serve-v11-clients.md)",
       ]
     `);
   });

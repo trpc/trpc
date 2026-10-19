@@ -134,15 +134,15 @@ const QUERY_HELPERS: Readonly<Record<string, string>> = {
     'infiniteQueryKey(input) is infiniteKey({ input, initialPageParam }) in v12',
 };
 
+const OLD_CLIENTS =
+  'old clients: createV11Handler on this endpoint, createFetchHandler on another (docs/migrations/from-v11/serve-v11-clients.md)';
+
 const MODULE_NOTES: Readonly<Record<string, string>> = {
   '@trpc/server/observable':
     'observable(): subscriptions return an async generator or an Effect Stream; a v11 link keeps it under fromV11Link',
-  '@trpc/server/adapters/standalone':
-    'adapters: serve createFetchHandler() with serve() from @trpc12/trpc/http (docs/adapters/overview.md)',
-  '@trpc/server/adapters/express':
-    'adapters: mount createFetchHandler() with toNodeHandler from @trpc12/trpc/http (docs/adapters/node.md)',
-  '@trpc/server/adapters/ws':
-    'adapters: handler.websocket(socket, { request }) or serve() from @trpc12/trpc/http (docs/adapters/overview.md)',
+  '@trpc/server/adapters/standalone': `adapters: serve createFetchHandler() with serve() from @trpc12/trpc/http (docs/adapters/overview.md); ${OLD_CLIENTS}`,
+  '@trpc/server/adapters/express': `adapters: mount createFetchHandler() with toNodeHandler from @trpc12/trpc/http (docs/adapters/node.md); ${OLD_CLIENTS}`,
+  '@trpc/server/adapters/ws': `adapters: handler.websocket(socket, { request }) or serve() from @trpc12/trpc/http (docs/adapters/overview.md); ${OLD_CLIENTS}`,
   '@trpc/react-query':
     '@trpc/react-query has no v12 version: move to @trpc12/tanstack-react-query',
   '@trpc/next':
@@ -686,7 +686,7 @@ export function upgradeSource(
             s.appendLeft(node.end, `.fetch(${value})`);
             note(
               node.start,
-              'createFetchHandler: make the handler once, outside the request function; createContext gets { request, info }',
+              `createFetchHandler: make the handler once, outside the request function; createContext gets { request, info }; ${OLD_CLIENTS}`,
             );
           }
         } else if (
