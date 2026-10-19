@@ -232,11 +232,17 @@ const fail = <C extends BuiltinErrorCode>(code: C, message: string) =>
 const isRecord = (v: unknown): v is Record<string, unknown> =>
   typeof v === 'object' && v !== null;
 
-const streamOutputError = () =>
-  new TrpcError.UnsupportedMediaType({
+/** v11 fails these for the whole request on `httpLink`, so without a path. */
+const streamOutputErrors = new WeakSet<AnyTrpcError>();
+
+const streamOutputError = () => {
+  const err = new TrpcError.UnsupportedMediaType({
     message:
       'Cannot use stream-like response in non-streaming request - use httpBatchStreamLink',
   });
+  streamOutputErrors.add(err);
+  return err;
+};
 
 const settleOne = (value: unknown): Effect.Effect<unknown, AnyTrpcError> => {
   if (isAsyncIterable(value) || Stream.isStream(value)) {
@@ -265,11 +271,22 @@ const settle = (value: unknown): Effect.Effect<unknown, AnyTrpcError> =>
       : Effect.succeed(root),
   );
 
+const acceptOf = (request: HttpServerRequest.HttpServerRequest) =>
+  request.headers['trpc-accept'] ??
+  (request.headers['accept']
+    ?.split(',')
+    .some((t) => t.trim() === 'application/jsonl')
+    ? 'application/jsonl'
+    : undefined);
+
 const parseJson = (text: string) =>
   Effect.try({
     try: () => (text === '' ? undefined : (JSON.parse(text) as unknown)),
     catch: (cause) =>
-      new TrpcError.ParseError({ message: 'Invalid JSON', cause }),
+      new TrpcError.BadRequest({
+        message: (cause as SyntaxError).message,
+        cause,
+      }),
   });
 
 /** Aborted when the fiber handling the request is interrupted (the client left). */
@@ -388,19 +405,22 @@ export function createV11Handler<
     request: HttpServerRequest.HttpServerRequest,
     call: Call,
     outcome: Outcome,
+    single: boolean,
   ): Effect.Effect<{ status: number; text: string }> => {
     const failed = (err: AnyTrpcError) => {
+      const path =
+        single && streamOutputErrors.has(err) ? undefined : call.path;
       report(
         err,
         request,
-        call.path,
+        path,
         call.type === 'unknown' ? undefined : call.type,
       );
       return {
         status: statusOf(publicError(err), call.procedure?.['~trpc'].errors),
         text: JSON.stringify({
           error: output.serialize(
-            errorShape(err, call.path, call.type, call.procedure),
+            errorShape(err, path, call.type, call.procedure),
           ),
         }),
       };
@@ -451,12 +471,6 @@ export function createV11Handler<
         return yield* fail(
           'FORBIDDEN',
           'Cross-site requests must have content-type: application/json',
-        );
-      }
-      if (type !== null && !multipart && !octet && !isJsonContentType(type)) {
-        return yield* fail(
-          'UNSUPPORTED_MEDIA_TYPE',
-          `Unsupported content-type "${type}"`,
         );
       }
       const bytes = yield* readBytes(request, maxBodySize);
@@ -521,6 +535,25 @@ export function createV11Handler<
       );
     });
 
+  /** Checked per call, as v11 does, so each error has its call's path. */
+  const methodError = (
+    request: HttpServerRequest.HttpServerRequest,
+    call: Call,
+  ): AnyTrpcError | undefined => {
+    const allowed =
+      call.type === 'mutation'
+        ? ['POST']
+        : opts.allowMethodOverride
+          ? ['GET', 'POST']
+          : ['GET'];
+    return allowed.includes(request.method)
+      ? undefined
+      : new TrpcError({
+          code: 'METHOD_NOT_SUPPORTED',
+          message: `Unsupported ${request.method}-request to ${call.type} procedure at path "${call.path}"`,
+        });
+  };
+
   const run = (
     request: HttpServerRequest.HttpServerRequest,
     call: Call,
@@ -538,11 +571,13 @@ export function createV11Handler<
           }),
         } as const;
       }
+      const wrongMethod = methodError(request, call);
+      if (wrongMethod) return { ok: false, error: wrongMethod } as const;
       if (call.type === 'subscription') {
         return {
           ok: false,
           error: new TrpcError.BadRequest({
-            message: 'Subscriptions cannot be batched',
+            message: 'Cannot batch subscription calls',
           }),
         } as const;
       }
@@ -587,31 +622,34 @@ export function createV11Handler<
     request: HttpServerRequest.HttpServerRequest,
     url: URL,
     call: Call & { procedure: AnyProcedure },
-    ctx: object,
-    callInput: unknown,
+    prepared: Exit.Exit<{ ctx: object; input: unknown }, AnyTrpcError>,
     controller: AbortController,
   ) =>
     Effect.gen(function* () {
-      const lastEventId =
-        request.headers['last-event-id'] ??
-        url.searchParams.get('lastEventId') ??
-        url.searchParams.get('Last-Event-Id') ??
-        inputEventId(callInput);
       const response = createResponseHandle();
-      const parent = yield* parentSpan(request);
-      const exit = yield* base.run({
-        request,
-        procedure: call.procedure,
-        path: call.path,
-        ctx,
-        input: callInput,
-        signal: controller.signal,
-        response,
-        lastEventId,
-        parent,
-      });
+      const wrongMethod = methodError(request, call);
+      const exit: Exit.Exit<unknown, unknown> = wrongMethod
+        ? Exit.fail(wrongMethod)
+        : Exit.isFailure(prepared)
+          ? prepared
+          : yield* base.run({
+              request,
+              procedure: call.procedure,
+              path: call.path,
+              ctx: prepared.value.ctx,
+              input: prepared.value.input,
+              signal: controller.signal,
+              response,
+              lastEventId:
+                request.headers['last-event-id'] ??
+                url.searchParams.get('lastEventId') ??
+                url.searchParams.get('Last-Event-Id') ??
+                inputEventId(prepared.value.input),
+              parent: yield* parentSpan(request),
+            });
+      // Each event ends with two blank lines, as v11's do.
       const frame = (event: string | undefined, data: string, id?: string) =>
-        `${event === undefined ? '' : `event: ${event}\n`}data: ${data}\n${id === undefined ? '' : `id: ${id}\n`}\n`;
+        `${event === undefined ? '' : `event: ${event}\n`}data: ${data}\n${id === undefined ? '' : `id: ${id}\n`}\n\n`;
       const errorFrame = (err: AnyTrpcError) => {
         report(err, request, call.path, 'subscription');
         return frame(
@@ -719,17 +757,17 @@ export function createV11Handler<
 
         if (!isBatch) {
           const call = calls[0]!;
-          if (
-            call.type === 'subscription' &&
-            call.procedure &&
-            Exit.isSuccess(prepared)
-          ) {
+          if (call.type === 'subscription' && call.procedure) {
             return yield* subscription(
               request,
               url,
               { ...call, procedure: call.procedure },
-              prepared.value.ctx,
-              prepared.value.inputs[0],
+              Exit.isFailure(prepared)
+                ? Exit.fail(normalizeCause(prepared.cause))
+                : Exit.succeed({
+                    ctx: prepared.value.ctx,
+                    input: prepared.value.inputs[0],
+                  }),
               controller,
             );
           }
@@ -745,18 +783,11 @@ export function createV11Handler<
               out = HttpServerResponse.mergeCookies(out, options.cookies);
             return out;
           }
-          const body = yield* callBody(request, call, result);
+          const body = yield* callBody(request, call, result, true);
           return json(body.status, body.text, result.headers);
         }
 
-        const accept =
-          request.headers['trpc-accept'] ??
-          (request.headers['accept']
-            ?.split(',')
-            .some((t) => t.trim() === 'application/jsonl')
-            ? 'application/jsonl'
-            : undefined);
-        if (accept === 'application/jsonl') {
+        if (acceptOf(request) === 'application/jsonl') {
           const data: Record<string, unknown> = {};
           calls.forEach((call, i) => {
             data[i] = Effect.map(outcome(i), (result) => {
@@ -800,7 +831,7 @@ export function createV11Handler<
           calls,
           (call, i) =>
             Effect.flatMap(outcome(i), (result) =>
-              Effect.map(callBody(request, call, result), (body) => ({
+              Effect.map(callBody(request, call, result, false), (body) => ({
                 ...body,
                 headers: result.headers,
               })),
@@ -839,24 +870,43 @@ export function createV11Handler<
       ? decodeURIComponent(url.pathname.slice(endpoint.length + 1))
       : undefined;
     const paths = isBatch ? (rest ?? '').split(',') : [rest ?? ''];
+    // A request-level error is one object even for a batch, as v11 sends it.
     const failAll = (err: AnyTrpcError) => {
       report(err, request);
-      const text = JSON.stringify({
-        error: output.serialize(errorShape(err, undefined, 'unknown')),
-      });
       return json(
         statusOf(publicError(err)),
-        isBatch ? `[${paths.map(() => text).join(',')}]` : text,
+        JSON.stringify({
+          error: output.serialize(errorShape(err, undefined, 'unknown')),
+        }),
       );
     };
     return yield* Effect.gen(function* () {
       if (rest === undefined) {
         return yield* fail('NOT_FOUND', `Not found: ${url.pathname}`);
       }
+      const type = request.headers['content-type'];
+      if (
+        request.method !== 'GET' &&
+        type !== undefined &&
+        !isMultipartContentType(type) &&
+        !hasMediaType(type, 'application/octet-stream') &&
+        !isJsonContentType(type)
+      ) {
+        return yield* fail(
+          'UNSUPPORTED_MEDIA_TYPE',
+          `Unsupported content-type "${type}"`,
+        );
+      }
       if (isBatch && !batch) {
         return yield* fail(
           'BAD_REQUEST',
           'Batching is not enabled on the server',
+        );
+      }
+      if (!isBatch && acceptOf(request) === 'application/jsonl') {
+        return yield* fail(
+          'BAD_REQUEST',
+          'Streaming requests must be batched (you can do a batch of 1)',
         );
       }
       if (isBatch && batch && paths.length > batch.maxItems) {
@@ -881,25 +931,21 @@ export function createV11Handler<
           `Cannot mix procedure types in call: ${[...types].join(', ')}`,
         );
       }
-      const type = [...types][0];
-      const allowed =
-        type === 'mutation'
-          ? ['POST']
-          : opts.allowMethodOverride
-            ? ['GET', 'POST']
-            : ['GET'];
-      if (type !== undefined && !allowed.includes(request.method)) {
-        return yield* fail(
-          'METHOD_NOT_SUPPORTED',
-          `Unsupported ${request.method}-request to ${type} procedure at path "${rest}"`,
-        );
-      }
       return yield* serve(request, url, calls, isBatch);
     }).pipe(
       Effect.catchCause((cause) =>
         Cause.hasInterruptsOnly(cause)
           ? Effect.failCause(cause)
           : Effect.succeed(failAll(normalizeCause(cause))),
+      ),
+      Effect.map((response) =>
+        HttpServerResponse.setHeader(
+          response,
+          'vary',
+          response.headers['vary']
+            ? `${response.headers['vary']}, trpc-accept, accept`
+            : 'trpc-accept, accept',
+        ),
       ),
     );
   }) as never;

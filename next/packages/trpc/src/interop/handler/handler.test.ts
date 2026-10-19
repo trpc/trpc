@@ -675,14 +675,13 @@ test('batching can be turned off or capped', async () => {
   await using off = await start({ batch: false });
   const res = await fetch(`${off.url}/greet?batch=1&input={}`);
   expect(res.status).toBe(400);
-  expect(await res.json()).toMatchObject([
-    { error: { message: 'Batching is not enabled on the server' } },
-  ]);
+  expect(await res.json()).toMatchObject({
+    error: { message: 'Batching is not enabled on the server' },
+  });
 
   await using capped = await start({ batch: { maxItems: 1 } });
   const two = await fetch(`${capped.url}/greet,greet?batch=1&input={}`);
-  expect(await two.json()).toMatchObject([
-    { error: { message: 'Batch call exceeds maximum size' } },
-    { error: { message: 'Batch call exceeds maximum size' } },
-  ]);
+  expect(await two.json()).toMatchObject({
+    error: { message: 'Batch call exceeds maximum size' },
+  });
 });
