@@ -177,8 +177,14 @@ export class TrpcHost implements OnApplicationShutdown {
         });
       },
     );
+    // The handler is disposed last, after the request fibers end.
     this.#node = Effect.runSync(
-      NodeHttpServer.makeHandler(app, { scope: this.#scope }),
+      Scope.addFinalizer(
+        this.#scope,
+        Effect.promise(() => handler.dispose()),
+      ).pipe(
+        Effect.andThen(NodeHttpServer.makeHandler(app, { scope: this.#scope })),
+      ),
     );
   }
 
@@ -200,15 +206,18 @@ export class TrpcHost implements OnApplicationShutdown {
       ).toString();
     }
     this.#pending.set(req, { call, context });
-    return new Promise((resolve) => {
-      finished(res, () => resolve());
-      this.#node(req, res);
-    });
+    return Effect.runPromise(
+      Effect.callback<void>((resume) => {
+        const cleanup = finished(res, () => resume(Effect.void));
+        this.#node(req, res);
+        return Effect.sync(cleanup);
+      }),
+    );
   }
 
-  async onApplicationShutdown(): Promise<void> {
-    await Effect.runPromise(Scope.close(this.#scope, Exit.void));
-    await this.handler.dispose();
+  /** Ends the requests in flight, then disposes the handler and its layer. */
+  onApplicationShutdown(): Promise<void> {
+    return Effect.runPromise(Scope.close(this.#scope, Exit.void));
   }
 }
 
