@@ -1,7 +1,7 @@
 import type { BuiltinErrorCode } from '@trpc12/trpc/client';
 import { describe, expectTypeOf, test } from 'vite-plus/test';
 import type { Closed } from '../closed-errors/closed.ts';
-import { AuthShell, createApp, OfflineShell } from './app.ts';
+import { AuthShell, type createApp, OfflineShell } from './app.ts';
 import type { Remaining } from './shells.ts';
 
 declare const app: ReturnType<typeof createApp>;

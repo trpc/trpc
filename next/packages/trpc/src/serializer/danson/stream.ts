@@ -15,7 +15,7 @@ import {
   Exit,
   Queue,
   Result,
-  Scope,
+  type Scope,
   Stream,
 } from 'effect';
 import { Base64 } from 'effect/encoding';

@@ -215,7 +215,9 @@ const inputSchemaOf = (procedure: AnyProcedure) => {
     let schema: JsonSchema | undefined;
     try {
       schema = inputJsonSchema(procedure['~trpc']);
-    } catch {}
+    } catch {
+      // No JSON Schema for this input: its form values stay strings.
+    }
     schemas.set(procedure, schema);
   }
   return schemas.get(procedure);

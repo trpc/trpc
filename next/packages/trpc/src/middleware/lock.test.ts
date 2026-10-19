@@ -1,5 +1,5 @@
 import { NodeRedis } from '@effect/platform-node';
-import { Duration, Effect, Fiber, Layer } from 'effect';
+import { type Duration, Effect, Fiber, Layer } from 'effect';
 import {
   createTrpcClient,
   httpLink,

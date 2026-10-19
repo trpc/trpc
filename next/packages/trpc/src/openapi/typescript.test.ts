@@ -1,6 +1,9 @@
 import { Effect } from 'effect';
-import { HttpServerRequest, HttpServerResponse } from 'effect/http';
-import { HttpEffect } from 'effect/http';
+import {
+  type HttpServerRequest,
+  HttpServerResponse,
+  HttpEffect,
+} from 'effect/http';
 import {
   experimental_generateOpenApi,
   experimental_openApiReference,

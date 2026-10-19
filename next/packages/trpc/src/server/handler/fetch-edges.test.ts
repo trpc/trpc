@@ -377,8 +377,8 @@ test.each(['rows', 'report'])(
       );
       const body = response.body;
       if (!Predicate.isTagged(body, 'Stream')) {
-      return yield* Effect.die(new Error('not a stream'));
-    }
+        return yield* Effect.die(new Error('not a stream'));
+      }
       // Stuck on its first chunk, like a server waiting for a socket to drain.
       const writer = yield* Effect.forkChild(
         Stream.runForEach(body.stream, () => Effect.never),

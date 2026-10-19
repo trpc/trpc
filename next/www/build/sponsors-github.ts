@@ -5,7 +5,7 @@
  * sponsors and amounts, so the token has to be theirs; with anyone else's,
  * the fetch fails rather than weighing everyone at nothing.
  */
-import { Data, Effect, Option, Redacted, Schema } from 'effect';
+import { Data, Effect, Option, type Redacted, Schema } from 'effect';
 import { HttpClient, HttpClientRequest } from 'effect/http';
 
 export class SponsorsSyncError extends Data.TaggedError('SponsorsSyncError')<{

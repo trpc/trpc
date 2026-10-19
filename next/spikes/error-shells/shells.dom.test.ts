@@ -1,7 +1,6 @@
 // @vitest-environment happy-dom
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { createElement as h, type ReactNode } from 'react';
-import { act } from 'react';
+import { createElement as h, type ReactNode, act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { expect, test, vi } from 'vite-plus/test';
 import { matchError } from '../closed-errors/closed.ts';

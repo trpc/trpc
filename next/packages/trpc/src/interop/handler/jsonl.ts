@@ -1,4 +1,4 @@
-import { Cause, Effect, FiberSet, Queue, Stream } from 'effect';
+import { type Cause, Effect, FiberSet, Queue, Stream } from 'effect';
 import { backpressure, returnUnawaited } from '../../internal/effects.ts';
 import {
   isAsyncIterable,

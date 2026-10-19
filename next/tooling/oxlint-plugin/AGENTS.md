@@ -16,7 +16,7 @@ Entry `index.ts`. Rules, switched on in `vite.config.ts` (everywhere unless note
 | `no-custom-test-timeout`       | Tests keep Vitest's default timeouts                                                                                                                                                                                                                                          |
 | `no-overzealous-destructuring` | A destructured local is read at least three times; off in `spikes/**`, on in `docs/` code blocks                                                                                                                                                                              |
 | `infer-callback-params`        | Callbacks leave their parameters to inference from the call; `examples/**` only                                                                                                                                                                                               |
-| `no-throw-in-effect` | No `throw` in `Effect.gen`/`Effect.fn` bodies or `Effect.*`/`Stream.*` callbacks; code built on Effect only (as `anti-slop-effect`) |
+| `no-throw-in-effect`           | No `throw` in `Effect.gen`/`Effect.fn` bodies or `Effect.*`/`Stream.*` callbacks; code built on Effect only (as `anti-slop-effect`)                                                                                                                                           |
 
 ## Code blocks in `docs/`
 

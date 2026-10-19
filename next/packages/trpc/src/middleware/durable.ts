@@ -1,5 +1,5 @@
 import {
-  Cause,
+  type Cause,
   Deferred,
   Duration,
   Effect,
