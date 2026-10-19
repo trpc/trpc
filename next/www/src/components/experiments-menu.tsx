@@ -1,5 +1,5 @@
 import { Badge } from '@shared/ui/components/badge';
-import { Button } from '@shared/ui/components/button';
+import { Button, buttonVariants } from '@shared/ui/components/button';
 import {
   InputGroup,
   InputGroupAddon,
@@ -11,13 +11,12 @@ import {
   PopoverDescription,
   PopoverHeader,
   PopoverTitle,
-  PopoverTrigger,
 } from '@shared/ui/components/popover';
 import { Switch } from '@shared/ui/components/switch';
 import { cn } from '@shared/ui/lib/utils';
 import { Link } from '@tanstack/react-router';
 import { Check, ChevronRight, FlaskConical, Link2, Search } from 'lucide-react';
-import { useEffect, useEffectEvent, useRef, useState } from 'react';
+import { useEffect, useEffectEvent, useId, useRef, useState } from 'react';
 
 import { TextWithCode } from '~/components/text-with-code.tsx';
 import { v12Docs } from '~/content/docs.ts';
@@ -31,6 +30,7 @@ import {
   menuOpen,
   siteEnv,
   useFlagsOn,
+  useHydrated,
   useMenuState,
   useSetFlags,
   useSetMenuState,
@@ -59,8 +59,10 @@ function matches(id: ExperimentId, query: string) {
  * environment, each with links to its pages. A switch rewrites `?flags=` in
  * the URL, where the experiments live, and the menu is open while the URL
  * has `?experiments=` (`open`, or the experiment whose pages it shows), so a
- * link opens it. Neither adds a history entry or scrolls the page; following
- * a link drops `?experiments=`, closing it.
+ * link opens it, the header's button among them: it's a link to this URL with
+ * `?experiments=` toggled, so it can be opened in a new tab or copied. None
+ * of them adds a history entry or scrolls the page; following any other link
+ * drops `?experiments=`, closing it.
  */
 export function ExperimentsMenu(props: { readonly hidden?: boolean }) {
   const on = useFlagsOn();
@@ -71,6 +73,9 @@ export function ExperimentsMenu(props: { readonly hidden?: boolean }) {
   const [copied, setCopied] = useState(false);
   const list = useRef<HTMLUListElement>(null);
   const search = useRef<HTMLInputElement>(null);
+  const trigger = useRef<HTMLAnchorElement>(null);
+  const popupId = useId();
+  const hydrated = useHydrated();
   const open = state !== undefined && props.hidden !== true;
   const shown = experimentIds.filter((id) => matches(id, query));
 
@@ -92,7 +97,16 @@ export function ExperimentsMenu(props: { readonly hidden?: boolean }) {
 
   return (
     <Popover
-      onOpenChange={(next) => {
+      onOpenChange={(next, details) => {
+        // Pressing the link toggles the menu itself, through its href.
+        if (
+          details.reason === 'outside-press' &&
+          details.event.target instanceof Node &&
+          trigger.current?.contains(details.event.target)
+        ) {
+          details.cancel();
+          return;
+        }
         setState(next ? (state ?? menuOpen) : undefined);
         if (!next) {
           setQuery('');
@@ -100,21 +114,31 @@ export function ExperimentsMenu(props: { readonly hidden?: boolean }) {
       }}
       open={open}
     >
-      <PopoverTrigger
-        render={
-          <Button
-            aria-label={
-              on.length > 0 ? `Experiments, ${on.length} on` : 'Experiments'
-            }
-            className={cn(
-              'text-muted-foreground hover:text-foreground',
-              on.length > 0 && 'text-foreground',
-            )}
-            size="sm"
-            title="Experiments"
-            variant="ghost"
-          />
+      <Link
+        aria-controls={open ? popupId : undefined}
+        aria-expanded={open}
+        aria-haspopup="dialog"
+        aria-label={
+          on.length > 0 ? `Experiments, ${on.length} on` : 'Experiments'
         }
+        className={cn(
+          buttonVariants({ size: 'sm', variant: 'ghost' }),
+          'text-muted-foreground hover:text-foreground',
+          on.length > 0 && 'text-foreground',
+        )}
+        // The server doesn't know the URL's hash, so it joins the href after
+        // hydration.
+        {...(hydrated ? { hash: true } : {})}
+        hashScrollIntoView={false}
+        ref={trigger}
+        replace
+        resetScroll={false}
+        search={(prev) => ({
+          ...prev,
+          experiments: open ? undefined : menuOpen,
+        })}
+        title="Experiments"
+        to="."
       >
         <FlaskConical className={cn(on.length > 0 && 'text-brand')} />
         <span className="hidden lg:inline">Experiments</span>
@@ -123,10 +147,13 @@ export function ExperimentsMenu(props: { readonly hidden?: boolean }) {
             {on.length}
           </span>
         ) : null}
-      </PopoverTrigger>
+      </Link>
       <PopoverContent
         align="end"
+        anchor={trigger}
         className="max-h-[min(40rem,calc(100dvh-5rem))] w-[26rem] max-w-[calc(100vw-1rem)] gap-0 p-0"
+        finalFocus={trigger}
+        id={popupId}
         initialFocus={(type) => (type === 'touch' ? true : search.current)}
         side="bottom"
       >
