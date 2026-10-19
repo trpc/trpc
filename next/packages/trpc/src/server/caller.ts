@@ -1,6 +1,6 @@
 import { Effect, Exit, type Layer } from 'effect';
 import { createTrpcClient } from '../client/client.ts';
-import { localLink } from '../client/links/index.ts';
+import { localLink, type LocalLinkOptions } from '../client/links/index.ts';
 import { routerType, type TrpcClient } from '../client/types.ts';
 import { frameworkError } from '../internal/error.ts';
 import type { DansonForm, MaybePromise } from '../internal/types.ts';
@@ -66,7 +66,7 @@ export function createRouterClient<TRouter extends AnyRouter>(
         createContext: (typeof ctx === 'function'
           ? ctx
           : () => ctx ?? {}) as () => never,
-      }),
+      } as LocalLinkOptions<TRouter> & { serializer: false }),
     ],
   }) as TrpcClient<TRouter, {}, DansonForm, { builtinErrors: never }>;
 }

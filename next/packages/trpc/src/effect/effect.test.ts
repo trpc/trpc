@@ -2,6 +2,7 @@ import { Context, Effect, Exit, Layer, Option, Stream, Tracer } from 'effect';
 import {
   createTrpcClient,
   httpLink,
+  localLink,
   routerType,
   wsLink,
   type ClientError,
@@ -148,6 +149,24 @@ test('a missing layer is a type error', () => {
     // @ts-expect-error -- the router needs PostRepo, so `layer` is required
     createTestServer({ router, createContext: () => ({ user: null }) });
   expectTypeOf(create).toBeFunction();
+});
+
+test('localLink needs the layer too', async () => {
+  // @ts-expect-error -- the router needs PostRepo, so `layer` is required
+  localLink({ router, createContext: () => ({ user: null }) });
+  const client = createEffectClient({
+    router: routerType<AppRouter>(),
+    links: [
+      localLink({
+        router,
+        createContext: () => ({ user: null }),
+        layer: PostRepoLive,
+      }),
+    ],
+  });
+  expect(
+    await Effect.runPromise(client.post.byId.query({ id: '2' })),
+  ).toEqual(seed[1]);
 });
 
 test('typed errors land in the Effect error channel', async () => {

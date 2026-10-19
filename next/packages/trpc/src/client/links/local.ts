@@ -17,10 +17,12 @@ import {
   normalizeCause,
   unexpectedError,
 } from '../../server/execution/index.ts';
+import type { LayerOption } from '../../server/handler/index.ts';
 import {
   resolveProcedureEffect,
   type AnyRouter,
   type inferRouterContext,
+  type inferRouterServices,
 } from '../../server/procedures/index.ts';
 import { link, withSerializer, type TrpcLink } from '../link.ts';
 import { isByteStreamInput } from './events.ts';
@@ -30,19 +32,17 @@ import { isByteStreamInput } from './events.ts';
  * @since 0.1.0
  * @stability stable
  */
-export interface LocalLinkOptions<TRouter extends AnyRouter> {
+export type LocalLinkOptions<TRouter extends AnyRouter> = {
   router: TRouter;
   /** Runs once per call. */
   createContext?: () => MaybePromise<inferRouterContext<TRouter>>;
-  /** Provides the Effect services the router needs. */
-  layer?: Layer.Layer<never, any, never> | undefined;
   /**
    * Round-trip inputs and outputs through a serializer, as over the wire.
    * `false` passes values by reference, with native types.
    * @default jsonSerializer
    */
   serializer?: AnySerializer | false;
-}
+} & LayerOption<inferRouterServices<TRouter>>;
 
 /**
  * Runs calls in-process, without HTTP. For tests and SSR.
@@ -70,7 +70,7 @@ export function localLink<TRouter extends AnyRouter>(
 ): TrpcLink<any> {
   const serializer =
     opts.serializer === false ? undefined : (opts.serializer ?? jsonSerializer);
-  const layer = opts.layer as Layer.Layer<any, any, never> | undefined;
+  const layer = (opts as { layer?: Layer.Layer<any, any, never> }).layer;
   const services = layer
     ? Effect.orDie(ManagedRuntime.make(layer).contextEffect)
     : Effect.succeed(Context.empty() as Context.Context<any>);
