@@ -34,7 +34,10 @@ import type { AppRouter } from './server';
 
 export const trpc = createReactClient({
   router: routerType<AppRouter>(),
-  links: [...standardLinks({ staleTime: '10 seconds' }), httpLink({ url: '/trpc' })],
+  links: [
+    ...standardLinks({ staleTime: '10 seconds' }),
+    httpLink({ url: '/trpc' }),
+  ],
 });
 
 // The route's loader starts the request; the navigation doesn't wait for it.

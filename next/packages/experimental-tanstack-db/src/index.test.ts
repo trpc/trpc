@@ -288,7 +288,7 @@ test('after a dropped WebSocket, the new snapshot replaces the rows', async () =
   await using ws = wsLink({
     url: app.wsUrl,
     serializer,
-    reconnect: { delayMs: () => 10 },
+    reconnect: { delay: () => 10 },
   });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
@@ -319,7 +319,7 @@ test('a server with a change log resumes a dropped WebSocket with the changes it
   await using ws = wsLink({
     url: app.wsUrl,
     serializer,
-    reconnect: { delayMs: () => 10 },
+    reconnect: { delay: () => 10 },
   });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
