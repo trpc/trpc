@@ -381,24 +381,23 @@ function makeSocketLink(
    * lost or retired (it's dropped, so the next try opens another). Fails
    * with the error `close()` gave the call while it waited.
    */
-  const connected = (
+  const connected = Effect.fnUntraced(function* (
     inbox: Queue.Queue<Signal>,
-  ): Effect.Effect<
+  ): Effect.fn.Return<
     Connection | 'stale' | undefined,
     AnyTrpcError,
     Scope.Scope
-  > =>
-    Effect.gen(function* () {
-      const signal = yield* Queue.poll(inbox);
-      if (Option.isSome(signal) && Signal.$is('Fail')(signal.value)) {
-        return yield* Effect.fail(signal.value.error);
-      }
-      const conn = yield* Effect.option(RcRef.get(connection));
-      if (Option.isNone(conn)) return undefined;
-      if (!conn.value.lost && !conn.value.retired) return conn.value;
-      yield* drop(conn.value);
-      return 'stale';
-    });
+  > {
+    const signal = yield* Queue.poll(inbox);
+    if (Option.isSome(signal) && Signal.$is('Fail')(signal.value)) {
+      return yield* Effect.fail(signal.value.error);
+    }
+    const conn = yield* Effect.option(RcRef.get(connection));
+    if (Option.isNone(conn)) return undefined;
+    if (!conn.value.lost && !conn.value.retired) return conn.value;
+    yield* drop(conn.value);
+    return 'stale';
+  });
 
   /**
    * Sends the call on one connection. `complete`; `moved` by the server's
@@ -406,108 +405,106 @@ function makeSocketLink(
    * answered anything, so the next reconnect counts from the first attempt
    * again.
    */
-  const attach = (
+  const attach = Effect.fnUntraced(function* (
     call: Call,
     inbox: Queue.Queue<Signal>,
     moves: boolean,
-  ): Effect.Effect<Outcome, AnyTrpcError> =>
-    Effect.gen(function* () {
-      const request = yield* Effect.try({
-        try: call.request,
-        catch: (cause) => cause as AnyTrpcError,
+  ): Effect.fn.Return<Outcome, AnyTrpcError, Scope.Scope> {
+    const request = yield* Effect.try({
+      try: call.request,
+      catch: (cause) => cause as AnyTrpcError,
+    });
+    // A stale connection's reference is released with this scope, so it
+    // can close.
+    const conn = yield* connected(inbox);
+    if (conn === 'stale') return 'stale';
+    if (!conn) return 'silent';
+    if (conn.refused) return yield* Effect.fail(conn.refused);
+    const { id } = call.op;
+    let complete = false;
+    yield* Effect.addFinalizer(() =>
+      Effect.sync(() => {
+        if (conn.calls.get(id)?.inbox !== inbox) return;
+        conn.calls.delete(id);
+        if (!complete) conn.socket.send({ id, type: 'abort' });
+      }),
+    );
+    // Checked as it's sent: nothing is sent on a retired connection.
+    const sent = yield* Effect.sync(() => {
+      if (conn.lost || conn.retired) return false;
+      conn.calls.set(id, { inbox, moves });
+      conn.socket.send(request);
+      return true;
+    });
+    if (!sent) return 'stale';
+    for (;;) {
+      const signal = yield* Queue.take(inbox);
+      const outcome = yield* Signal.$match(signal, {
+        Lost: () =>
+          Effect.succeed<Outcome>(conn.received > 0 ? 'heard' : 'silent'),
+        Moved: () => Effect.succeed<Outcome>('moved'),
+        Fail: (fail) => {
+          complete = true;
+          return Effect.fail(fail.error);
+        },
+        Message: ({ message }) => {
+          const { type } = message;
+          complete =
+            type === 'done' ||
+            type === 'error' ||
+            (type === 'result' && !message.deferred);
+          return Effect.map(
+            call.onMessage(message),
+            (done): Outcome | undefined => (done ? 'complete' : undefined),
+          );
+        },
       });
-      // A stale connection's reference is released with this scope, so it
-      // can close.
-      const conn = yield* connected(inbox);
-      if (conn === 'stale') return 'stale';
-      if (!conn) return 'silent';
-      if (conn.refused) return yield* Effect.fail(conn.refused);
-      const { id } = call.op;
-      let complete = false;
-      yield* Effect.addFinalizer(() =>
-        Effect.sync(() => {
-          if (conn.calls.get(id)?.inbox !== inbox) return;
-          conn.calls.delete(id);
-          if (!complete) conn.socket.send({ id, type: 'abort' });
-        }),
-      );
-      // Checked as it's sent: nothing is sent on a retired connection.
-      const sent = yield* Effect.sync(() => {
-        if (conn.lost || conn.retired) return false;
-        conn.calls.set(id, { inbox, moves });
-        conn.socket.send(request);
-        return true;
-      });
-      if (!sent) return 'stale';
-      for (;;) {
-        const signal = yield* Queue.take(inbox);
-        const outcome = yield* Signal.$match(signal, {
-          Lost: () =>
-            Effect.succeed<Outcome>(conn.received > 0 ? 'heard' : 'silent'),
-          Moved: () => Effect.succeed<Outcome>('moved'),
-          Fail: (fail) => {
-            complete = true;
-            return Effect.fail(fail.error);
-          },
-          Message: ({ message }) => {
-            const { type } = message;
-            complete =
-              type === 'done' ||
-              type === 'error' ||
-              (type === 'result' && !message.deferred);
-            return Effect.map(
-              call.onMessage(message),
-              (done): Outcome | undefined => (done ? 'complete' : undefined),
-            );
-          },
-        });
-        if (outcome) return outcome;
-      }
-    }).pipe(Effect.scoped);
+      if (outcome) return outcome;
+    }
+  }, Effect.scoped);
 
   /**
    * Runs a call to completion. A dropped connection fails it with
    * `NETWORK_ERROR`, unless it's a subscription the link reconnects.
    */
-  const run = (call: Call): Effect.Effect<void, AnyTrpcError> =>
-    Effect.gen(function* () {
-      const inbox = yield* Queue.unbounded<Signal>();
-      live.add(inbox);
-      yield* Effect.addFinalizer(() => Effect.sync(() => live.delete(inbox)));
-      const { reconnect } = transport;
-      const moves =
-        !!call.onReconnect &&
-        !!reconnect &&
-        call.op.context.reconnect !== false;
-      let attempt = 0;
-      for (;;) {
-        const outcome = yield* attach(call, inbox, moves);
-        if (outcome === 'complete') return;
-        if (outcome === 'stale') continue;
-        if (outcome === 'moved') {
-          attempt = 0;
-          if (call.onReconnect) yield* call.onReconnect;
-          continue;
-        }
-        if (outcome === 'heard') attempt = 0;
-        if (
-          !call.onReconnect ||
-          !reconnect ||
-          !moves ||
-          ++attempt > reconnect.attempts
-        ) {
-          return yield* Effect.fail(lostError());
-        }
-        yield* call.onReconnect;
-        // `close()` can fail the call while it waits.
-        const signal = yield* Queue.take(inbox).pipe(
-          Effect.timeoutOption(reconnect.delay(attempt)),
-        );
-        if (Option.isSome(signal) && Signal.$is('Fail')(signal.value)) {
-          return yield* Effect.fail(signal.value.error);
-        }
+  const run = Effect.fnUntraced(function* (
+    call: Call,
+  ): Effect.fn.Return<void, AnyTrpcError, Scope.Scope> {
+    const inbox = yield* Queue.unbounded<Signal>();
+    live.add(inbox);
+    yield* Effect.addFinalizer(() => Effect.sync(() => live.delete(inbox)));
+    const { reconnect } = transport;
+    const moves =
+      !!call.onReconnect && !!reconnect && call.op.context.reconnect !== false;
+    let attempt = 0;
+    for (;;) {
+      const outcome = yield* attach(call, inbox, moves);
+      if (outcome === 'complete') return;
+      if (outcome === 'stale') continue;
+      if (outcome === 'moved') {
+        attempt = 0;
+        if (call.onReconnect) yield* call.onReconnect;
+        continue;
       }
-    }).pipe(Effect.scoped);
+      if (outcome === 'heard') attempt = 0;
+      if (
+        !call.onReconnect ||
+        !reconnect ||
+        !moves ||
+        ++attempt > reconnect.attempts
+      ) {
+        return yield* Effect.fail(lostError());
+      }
+      yield* call.onReconnect;
+      // `close()` can fail the call while it waits.
+      const signal = yield* Queue.take(inbox).pipe(
+        Effect.timeoutOption(reconnect.delay(attempt)),
+      );
+      if (Option.isSome(signal) && Signal.$is('Fail')(signal.value)) {
+        return yield* Effect.fail(signal.value.error);
+      }
+    }
+  }, Effect.scoped);
 
   const request = (op: Operation, lastEventId?: string): ClientMessage => ({
     id: op.id,
