@@ -255,6 +255,13 @@ catalogs:
     typescript:
       specifier: ^6.0.3
       version: 6.0.3
+  www:
+    '@tanstack/query-core':
+      specifier: ^5.102.0
+      version: 5.104.4
+    '@tanstack/react-query':
+      specifier: ^5.102.0
+      version: 5.104.4
 
 patchedDependencies:
   '@lerna-lite/core@5.6.3': 41ad352143b329d810bcc48cd214d83c2e6d01a19c21c2f4ce81a2ff9f308ba6
@@ -2733,10 +2740,10 @@ importers:
         specifier: ^3.1.0
         version: 3.1.0(@types/react@19.1.0)(react@19.1.0)
       '@tanstack/query-core':
-        specifier: ^5.102.0
+        specifier: catalog:www
         version: 5.104.4
       '@tanstack/react-query':
-        specifier: ^5.102.0
+        specifier: catalog:www
         version: 5.104.4(@types/react@19.1.0)(react@19.1.0)
       '@trpc/client':
         specifier: workspace:*
