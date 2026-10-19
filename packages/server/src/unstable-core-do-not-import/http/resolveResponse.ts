@@ -365,6 +365,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     interface RPCResultOk {
       data: unknown;
       signal?: AbortSignal;
+      clearMaxDurationTimer?: () => void;
     }
     type RPCResult = ResultTuple<RPCResultOk>;
     const bodyCancelled = new AbortController();
@@ -375,6 +376,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     const rpcCalls = info.calls.map(async (call): Promise<RPCResult> => {
       const proc = call.procedure;
       const combinedAbort = combinedAbortController(callSignal);
+      let clearMaxDurationTimer: (() => void) | undefined;
       try {
         if (opts.error) {
           throw opts.error;
@@ -412,6 +414,13 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             }
             const timer = setTimeout(cleanup, config.sse.maxDurationMs);
             combinedAbort.signal.addEventListener('abort', cleanup);
+
+            // the request signal may never abort (e.g. after a completed
+            // response), so the timer is also cleared when the stream ends
+            clearMaxDurationTimer = () => {
+              clearTimeout(timer);
+              combinedAbort.signal.removeEventListener('abort', cleanup);
+            };
           }
         }
         const data: unknown = await proc({
@@ -430,9 +439,11 @@ export async function resolveResponse<TRouter extends AnyRouter>(
               proc._def.type === 'subscription'
                 ? combinedAbort.signal
                 : undefined,
+            clearMaxDurationTimer,
           },
         ];
       } catch (cause) {
+        clearMaxDurationTimer?.();
         const error = getTRPCErrorFromUnknown(cause);
         const input = call.result();
 
@@ -568,14 +579,20 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             headers.set(key, value);
           }
 
-          const headResponse = initResponse({
-            ctx: ctxManager.valueOrUndefined(),
-            info,
-            responseMeta: opts.responseMeta,
-            errors: [],
-            headers,
-            untransformedJSON: null,
-          });
+          let headResponse: ReturnType<typeof initResponse>;
+          try {
+            headResponse = initResponse({
+              ctx: ctxManager.valueOrUndefined(),
+              info,
+              responseMeta: opts.responseMeta,
+              errors: [],
+              headers,
+              untransformedJSON: null,
+            });
+          } catch (cause) {
+            result?.clearMaxDurationTimer?.();
+            throw cause;
+          }
 
           const abortSignal = result?.signal;
           let responseBody: ReadableStream<Uint8Array> = stream;
@@ -589,19 +606,26 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             } else {
               abortSignal.addEventListener('abort', onAbort, { once: true });
             }
+            const onStreamEnd = () => {
+              abortSignal.removeEventListener('abort', onAbort);
+              result?.clearMaxDurationTimer?.();
+            };
 
             responseBody = new ReadableStream({
               async pull(controller) {
-                const chunk = await reader.read();
+                const chunk = await reader.read().catch((cause: unknown) => {
+                  onStreamEnd();
+                  throw cause;
+                });
                 if (chunk.done) {
-                  abortSignal.removeEventListener('abort', onAbort);
+                  onStreamEnd();
                   controller.close();
                 } else {
                   controller.enqueue(chunk.value);
                 }
               },
               cancel() {
-                abortSignal.removeEventListener('abort', onAbort);
+                onStreamEnd();
                 bodyCancelled.abort();
                 return reader.cancel();
               },
