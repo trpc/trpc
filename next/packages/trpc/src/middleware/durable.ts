@@ -283,7 +283,10 @@ export function experimental_durable<TReq extends MiddlewareRequirements = {}>(
             Effect.repeat(Schedule.spaced(Duration.divideUnsafe(claimTtl, 2))),
             Effect.forkChild,
           );
-        const result = yield* opts.next() as Effect.Effect<Result>;
+        const result: Result = yield* Effect.catch(
+          opts.next() as Effect.Effect<Result, AnyTrpcError>,
+          (error) => Effect.succeed({ ok: false as const, error }),
+        );
         yield* Fiber.interrupt(heartbeat);
         const entry = stored(serializer, result, input);
         // A streamed output's claim stays until the handler starts its log.
@@ -311,7 +314,8 @@ export function experimental_durable<TReq extends MiddlewareRequirements = {}>(
               .pipe(Effect.orDie),
           );
       }
-      return joined.result;
+      const result = joined.result;
+      return result.ok ? result : yield* Effect.fail(result.error);
     }),
   );
 }

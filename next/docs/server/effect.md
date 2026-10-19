@@ -126,17 +126,83 @@ const withUser = t.middleware.effect<{ provides: CurrentUser }>()((opts) =>
 );
 ```
 
-## Resources
+## Around `next()`
 
-Effect code in a query or mutation has a `Scope`, as in `effect/rpc`: what an Effect resolver, a `.provide()` factory or an Effect middleware acquires with `Effect.acquireRelease` is released when that step ends, so a transaction a `.provide()` opens lives until the resolver is done. A subscription's code gets none; acquire in its `Stream` (`Stream.acquireRelease`, or `Stream.unwrap` of an Effect that acquires), which releases when the subscription ends.
+An Effect middleware's `next()` succeeds with the rest of the chain's result (`data`) and fails with its error, a `NextError`: the `TrpcError` clients will get, where a thrown value is an `INTERNAL_SERVER_ERROR`. Its `_tag` is its code, so Effect's own combinators work on it:
 
 ```ts twoslash
 // ---cut-start---
-import { Context, Effect } from 'effect';
+import { Effect, Exit } from 'effect';
+import { t } from './server.ts';
+// ---cut-end---
+import { TrpcError } from '@trpc12/trpc/server';
+
+class PostGone extends TrpcError.Tagged('POST_GONE', { status: 410 }) {}
+
+const resilient = t.middleware.effect()((opts) =>
+  opts.next().pipe(
+    Effect.retry({
+      times: 2,
+      while: (err) => err.code === 'SERVICE_UNAVAILABLE',
+    }),
+    Effect.catchTag('NOT_FOUND', () => Effect.fail(new PostGone())),
+    Effect.timeoutOrElse({
+      duration: '5 seconds',
+      orElse: () => Effect.fail(new TrpcError.Timeout()),
+    }),
+    Effect.onExit((exit) =>
+      Effect.log(opts.path, Exit.isSuccess(exit) ? 'ok' : 'failed'),
+    ),
+  ),
+);
+
+const byId = t.procedure.use(resilient).query(() => 'post');
+type Errors = import('@trpc12/trpc/server').inferProcedureErrors<typeof byId>;
+//   ^?
+```
+
+Failing with a `NextError` again adds nothing to the procedure's errors: the step that failed put it there already, and it keeps its cause, so a crash stays masked. What a middleware maps it to (`POST_GONE`, `TIMEOUT`) joins them, and a failure that isn't a `TrpcError`, such as `Effect.timeout`'s `TimeoutError`, is a type error until it's mapped. A client that goes away interrupts `next()`, as it does any Effect code, rather than failing it.
+
+Because the failure reaches `next()`, a transaction can commit or roll back on its outcome:
+
+```ts twoslash
+// ---cut-start---
+import { Context, Effect, Exit } from 'effect';
+import { t } from './server.ts';
+interface Transaction {
+  insert: (title: string) => Effect.Effect<string>;
+  commit: Effect.Effect<void>;
+  rollback: Effect.Effect<void>;
+}
+declare const db: { begin: Effect.Effect<Transaction> };
+// ---cut-end---
+class Tx extends Context.Service<Tx, Transaction>()('Tx') {}
+
+const inTx = t.procedure.use(
+  t.middleware.effect<{ provides: Tx }>()((opts) =>
+    Effect.acquireUseRelease(
+      db.begin,
+      (tx) => opts.next().pipe(Effect.provideService(Tx, tx)),
+      (tx, exit) => (Exit.isSuccess(exit) ? tx.commit : tx.rollback),
+    ),
+  ),
+);
+```
+
+`Effect.exit(opts.next())` gives the outcome as a value, the way a Promise middleware's `next()` resolves to `{ ok: true, data }` or `{ ok: false, error }`.
+
+## Resources
+
+Effect code in a query or mutation has a `Scope`, as in `effect/rpc`: what an Effect resolver, a `.provide()` factory or an Effect middleware acquires with `Effect.acquireRelease` is released when that step ends, so a transaction a `.provide()` opens lives until the resolver is done, and its release sees whether the call failed. A subscription's code gets none; acquire in its `Stream` (`Stream.acquireRelease`, or `Stream.unwrap` of an Effect that acquires), which releases when the subscription ends.
+
+```ts twoslash
+// ---cut-start---
+import { Context, Effect, Exit } from 'effect';
 import { t } from './server.ts';
 declare const db: {
   begin: Effect.Effect<{ insert: (title: string) => Effect.Effect<string> }>;
   commit: Effect.Effect<void>;
+  rollback: Effect.Effect<void>;
 };
 // ---cut-end---
 class Tx extends Context.Service<
@@ -145,7 +211,9 @@ class Tx extends Context.Service<
 >()('Tx') {}
 
 const inTx = t.procedure.provide(Tx, () =>
-  Effect.acquireRelease(db.begin, () => db.commit),
+  Effect.acquireRelease(db.begin, (_, exit) =>
+    Exit.isSuccess(exit) ? db.commit : db.rollback,
+  ),
 );
 
 const create = inTx.mutation(() =>

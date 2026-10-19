@@ -202,7 +202,6 @@ export const createResponseHandle = (): ResponseHandle => ({
   status: undefined,
 });
 
-const MIDDLEWARE_CAUSE = Symbol('trpc.middlewareCause');
 const RESOLVED = Symbol('trpc.resolved');
 
 interface Resolved {
@@ -437,46 +436,74 @@ export function callProcedure(
     response,
   };
 
+  /** The cause behind each error a `next()` gave this call's middleware. */
+  let nextCauses:
+    | WeakMap<AnyTrpcError, Cause.Cause<AnyTrpcError>>
+    | undefined;
+
   /**
    * A failed `next()`'s error as clients will get it, before `settle`
-   * validates declared `data`.
+   * validates declared `data`. Middleware that fails with it again (or
+   * returns it) fails with its cause, so it stays what it was.
    */
   const seenByMiddleware = (cause: Cause.Cause<unknown>): AnyTrpcError => {
     const thrown = cause.reasons.some(Cause.isFailReason)
       ? undefined
       : cause.reasons.find(Cause.isDieReason)?.defect;
+    let err: AnyTrpcError | undefined;
     if (isTrpcError(thrown)) {
       const kind = classifyThrown(def, thrown);
-      if (kind === 'typed') return withDefined(thrown, true);
-      if (kind === 'kept') keepUntyped(thrown);
+      if (kind === 'typed') err = withDefined(thrown, true);
+      else if (kind === 'kept') keepUntyped(thrown);
     }
-    return normalizeCause(cause);
+    err ??= normalizeCause(cause);
+    (nextCauses ??= new WeakMap()).set(
+      err,
+      cause as Cause.Cause<AnyTrpcError>,
+    );
+    return err;
   };
+
+  const causeOf = (err: unknown) =>
+    isTrpcError(err) ? nextCauses?.get(err) : undefined;
+
+  /** A middleware's failure: the cause of an error from `next()`, or typed. */
+  const middlewareCause = (
+    cause: Cause.Cause<unknown>,
+  ): Cause.Cause<AnyTrpcError> => {
+    const fromNext = causeOf(cause.reasons.find(Cause.isFailReason)?.error);
+    return fromNext ?? typedCause(cause);
+  };
+
+  const okResult = (value: unknown) =>
+    isResolved(value)
+      ? { ok: true, data: value[RESOLVED], [RESOLVED]: value }
+      : { ok: true, data: value };
 
   const toResult = (exit: Exit.Exit<unknown, AnyTrpcError>) =>
     Exit.isSuccess(exit)
-      ? isResolved(exit.value)
-        ? { ok: true, data: exit.value[RESOLVED], [RESOLVED]: exit.value }
-        : { ok: true, data: exit.value }
-      : {
-          ok: false,
-          error: seenByMiddleware(exit.cause),
-          [MIDDLEWARE_CAUSE]: exit.cause,
-        };
+      ? okResult(exit.value)
+      : { ok: false, error: seenByMiddleware(exit.cause) };
+
+  /** Effect `next()`: interruption stays interruption. */
+  const failNext = (cause: Cause.Cause<AnyTrpcError>) =>
+    Cause.hasFails(cause) || Cause.hasDies(cause)
+      ? Effect.fail(seenByMiddleware(cause))
+      : Effect.failCause(cause);
+
+  const failWith = (err: AnyTrpcError) => {
+    const cause = causeOf(err);
+    return cause ? Effect.failCause(cause) : fail(err);
+  };
 
   const fromResult = (
     ret: unknown,
   ): Effect.Effect<unknown, AnyTrpcError, any> => {
-    if (isTrpcError(ret)) return fail(ret);
+    if (isTrpcError(ret)) return failWith(ret);
     if (isResolved(ret)) return Effect.succeed(ret[RESOLVED]);
     if (isOkResult(ret)) return Effect.succeed(ret.data);
     if (typeof ret === 'object' && ret !== null && 'ok' in ret) {
-      const cause = (ret as { [MIDDLEWARE_CAUSE]?: Cause.Cause<never> })[
-        MIDDLEWARE_CAUSE
-      ];
-      return cause
-        ? Effect.failCause(cause)
-        : fail((ret as unknown as { error: AnyTrpcError }).error);
+      return failWith((ret as unknown as { error: AnyTrpcError }).error);
     }
     return Effect.die(
       new Error(
@@ -583,17 +610,19 @@ export function callProcedure(
           );
         if (step.effect) {
           const next = (o?: NextOpts) =>
-            Effect.map(Effect.exit(rest(o)), toResult);
+            Effect.map(Effect.catchCause(rest(o), failNext), okResult);
           return scoped(
             Effect.flatMap(
-              Effect.suspend(() =>
-                refail(
-                  step.fn({ ...base, ctx, input, next }) as Effect.Effect<
-                    unknown,
-                    unknown,
-                    any
-                  >,
+              Effect.catchCause(
+                Effect.suspend(
+                  () =>
+                    step.fn({ ...base, ctx, input, next }) as Effect.Effect<
+                      unknown,
+                      unknown,
+                      any
+                    >,
                 ),
+                (cause) => Effect.failCause(middlewareCause(cause)),
               ),
               fromResult,
             ),

@@ -93,7 +93,7 @@ const withDb = middleware<{ ctx: { db?: Db } }>()(async (opts) =>
 
 ## Effect middleware
 
-`t.middleware.effect<{ provides: S }>()(fn)` writes a middleware whose `next()` is an `Effect`, so it can provide services ([Effect](./effect.md#middleware-that-provides-services)).
+`t.middleware.effect<{ provides: S }>()(fn)` writes a middleware whose `next()` is an `Effect`, so it can provide services ([Effect](./effect.md#middleware-that-provides-services)). That `next()` fails with the rest of the chain's error, so `Effect.catchTag`, `Effect.retry`, `Effect.timeoutOrElse` and `Effect.acquireUseRelease` work on it ([Around `next()`](./effect.md#around-next)). A Promise middleware's `next()` resolves to `{ ok: true, data }` or `{ ok: false, error }` instead, and doesn't reject.
 
 ## Built-in middleware
 

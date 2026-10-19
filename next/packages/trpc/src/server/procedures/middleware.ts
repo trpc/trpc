@@ -1,5 +1,5 @@
 import type { Effect } from 'effect';
-import type { AnyTrpcError } from '../../internal/error.ts';
+import type { AnyTrpcError, TrpcError } from '../../internal/error.ts';
 import type {
   MaybePromise,
   ProcedureType,
@@ -177,21 +177,51 @@ export type ReqInput<T extends MiddlewareRequirements> = 'input' extends keyof T
 // --- Effect middleware (06 (g) M-A) ------------------------------------------------
 
 /**
- * `next()` for Effect middleware. It requires the services the middleware
- * declares in `provides`, so a body that forgets to provide them is a type
- * error.
+ * What an Effect middleware's `next()` succeeds with. `data` is the rest of
+ * the chain's result; the phantoms carry ctx and input as in
+ * {@link MiddlewareResult}.
+ * @since 0.1.0
+ * @stability stable
+ */
+export interface NextResult<TCtx, TInput = Unset> {
+  readonly ok: true;
+  readonly data: unknown;
+  readonly '~ctx'?: TCtx;
+  readonly '~input'?: TInput;
+}
+
+/**
+ * What an Effect middleware's `next()` fails with: the error a later step
+ * failed with, as clients will get it (a thrown value is an
+ * `INTERNAL_SERVER_ERROR`). Its `_tag` is its code, so
+ * `Effect.catchTag('NOT_FOUND', …)` takes it. The step that failed already
+ * put it in the procedure's error union, so failing with it again adds
+ * nothing, and it keeps its cause.
+ * @since 0.1.0
+ * @stability stable
+ */
+export interface NextError extends TrpcError<string, unknown> {
+  /** Type only: marks an error from `next()`. */
+  readonly '~next': true;
+}
+
+/**
+ * `next()` for Effect middleware: fails with the rest of the chain's error,
+ * so `Effect.catchTag`, `Effect.retry`, `Effect.timeout` and `Effect.onExit`
+ * see it. It requires the services the middleware declares in `provides`,
+ * so a body that forgets to provide them is a type error.
  * @since 0.1.0
  * @stability stable
  */
 export interface EffectNextFn<TProvides> {
-  (): Effect.Effect<MiddlewareResult<{}>, never, TProvides>;
+  (): Effect.Effect<NextResult<{}>, NextError, TProvides>;
   <$Ctx extends object>(opts: {
     ctx: $Ctx;
-  }): Effect.Effect<MiddlewareResult<$Ctx>, never, TProvides>;
+  }): Effect.Effect<NextResult<$Ctx>, NextError, TProvides>;
   <$Input, $Ctx extends object = {}>(opts: {
     ctx?: $Ctx;
     input: $Input;
-  }): Effect.Effect<MiddlewareResult<$Ctx, $Input>, never, TProvides>;
+  }): Effect.Effect<NextResult<$Ctx, $Input>, NextError, TProvides>;
 }
 
 /**
@@ -209,9 +239,10 @@ export interface EffectMiddlewareOpts<
 }
 
 /**
- * A middleware whose body is an `Effect`. Its failures join the error union,
- * its requirements join the procedure's services, and the services it
- * `provides` are removed from what later steps require.
+ * A middleware whose body is an `Effect`. Its failures join the error union
+ * (those from `next()` are there already), its requirements join the
+ * procedure's services, and the services it `provides` are removed from
+ * what later steps require.
  * @since 0.1.0
  * @stability stable
  */
@@ -228,7 +259,7 @@ export interface EffectMiddleware<
 > {
   readonly '~effectMiddleware': (
     opts: EffectMiddlewareOpts<TCtx, TInput, TMeta, $Provides>,
-  ) => Effect.Effect<MiddlewareResult<$Ctx, $Input> | OkResult<$Ok>, $Err, $R>;
+  ) => Effect.Effect<NextResult<$Ctx, $Input> | OkResult<$Ok>, $Err, $R>;
   readonly '~types'?: { provides: $Provides; requires: $R };
 }
 
@@ -261,28 +292,46 @@ type ProvidesOf<T extends EffectMiddlewareDecl> = 'provides' extends keyof T
   ? T['provides']
   : never;
 
-/** @internal */
+type BodyNext<A> = A extends OkResult<any> ? never : A;
+type BodyCtx<A> = [BodyNext<A>] extends [never]
+  ? {}
+  : BodyNext<A> extends NextResult<infer C extends object, any>
+    ? C
+    : never;
+type BodyInput<A> = [BodyNext<A>] extends [never]
+  ? Unset
+  : BodyNext<A> extends NextResult<any, infer I>
+    ? I
+    : never;
+type BodyOk<A> = A extends OkResult<infer T> ? T : never;
+
+/**
+ * Infers the body's whole `Effect` and reads its parts from it, so a body
+ * like `user ? next() : Effect.fail(err)` gets both branches' errors:
+ * inferring `E` itself would pick one branch's, as `Effect.flatMap` does.
+ * @internal
+ */
 export type EffectMiddlewareFactory<TCtx, TInput, TMeta, $Provides> = <
-  $Ctx extends object = {},
-  $E = never,
-  $R = never,
-  $Ok = never,
-  $Input = Unset,
+  $Body extends Effect.Effect<
+    NextResult<object, unknown> | OkResult<unknown>,
+    unknown,
+    unknown
+  >,
 >(
   fn: (
     opts: EffectMiddlewareOpts<TCtx, TInput, TMeta, $Provides>,
-  ) => Effect.Effect<MiddlewareResult<$Ctx, $Input> | OkResult<$Ok>, $E, $R> &
-    EffectBodyCheck<$E, $R, $Provides>,
+  ) => $Body &
+    EffectBodyCheck<Effect.Error<$Body>, Effect.Services<$Body>, $Provides>,
 ) => EffectMiddleware<
   TCtx,
   TInput,
   TMeta,
-  $Ctx,
-  Extract<$E, AnyTrpcError>,
-  Exclude<$R, $Provides>,
+  BodyCtx<Effect.Success<$Body>>,
+  Exclude<Extract<Effect.Error<$Body>, AnyTrpcError>, NextError>,
+  Exclude<Effect.Services<$Body>, $Provides>,
   $Provides,
-  $Ok,
-  $Input
+  BodyOk<Effect.Success<$Body>>,
+  BodyInput<Effect.Success<$Body>>
 >;
 
 /** @internal */

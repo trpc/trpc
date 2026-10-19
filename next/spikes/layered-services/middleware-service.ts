@@ -25,6 +25,7 @@ import type {
 import {
   middleware,
   type AnyTrpcError,
+  type NextError,
   type ProcedureBuilder,
   type ProcedureType,
 } from '@trpc12/trpc/server';
@@ -41,7 +42,7 @@ export interface MiddlewareImpl<
   Ctx = unknown,
 > {
   (
-    next: Effect.Effect<Next, never, Provides>,
+    next: Effect.Effect<Next, NextError, Provides>,
     opts: {
       readonly ctx: Ctx;
       readonly meta: unknown;
@@ -49,7 +50,7 @@ export interface MiddlewareImpl<
       readonly type: ProcedureType;
       readonly signal: AbortSignal;
     },
-  ): Effect.Effect<Next, E>;
+  ): Effect.Effect<Next, E | NextError>;
 }
 
 type CtxCheck<TDef extends BuilderDef, Ctx> =
