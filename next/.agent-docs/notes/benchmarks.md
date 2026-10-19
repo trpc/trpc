@@ -59,12 +59,14 @@ Bundle size, minified / gzip (`pnpm bench bundle`):
 
 ## Budgets
 
-2026-10-17. The human, on working on bundle size before v1: "A sure, I only care about tree shakability when using core features" ([`../decisions/orpc-v2-parity.md`](../decisions/orpc-v2-parity.md)). `pnpm bench budget` bundles two clients the same way as `bundle` and fails above each one's ceiling; CI runs it.
+2026-10-17. The human, on working on bundle size before v1: "A sure, I only care about tree shakability when using core features" ([`../decisions/orpc-v2-parity.md`](../decisions/orpc-v2-parity.md)). `pnpm bench budget` bundles two clients the same way as `bundle` and prints their sizes against the targets; CI's `check` job runs it. Since 2026-10-19 there are no ceilings, so it never fails (the human: "c)", [`../decisions/orpc-v2-parity.md`](../decisions/orpc-v2-parity.md)).
 
-| client                                      |    gzip | ceiling (CI) | target |
-| ------------------------------------------- | ------: | -----------: | -----: |
-| minimal JSON (`httpLink`)                   | 39.2 kB |      39.3 kB |  18 kB |
-| full (`retryLink`, `httpLink`, danSON, SSE) | 43.3 kB |      43.5 kB |  25 kB |
+| client                                      |    gzip | target |
+| ------------------------------------------- | ------: | -----: |
+| minimal JSON (`httpLink`)                   | 39.2 kB |  18 kB |
+| full (`retryLink`, `httpLink`, danSON, SSE) | 43.3 kB |  25 kB |
+
+The raises below are from when CI failed above a ceiling, today's size plus 0.1 kB; each records what grew the clients.
 
 - **Raised, 2026-10-18:** fixes since the first cut added about 210 B gzipped to each client (minimal, full): streamed responses waiting for a slow client (3ba9cb525, +13 B, +33 B), the closed error union with `matchError()` (9be0d7e07, +90 B, +95 B), `httpLink` reading a JSON page that isn't an error body by its status (ad6d133c0, +26 B, +29 B; this one crossed the ceilings) and sync serializers failing on a nested `File` (6ef675ed1, +85 B, +82 B). They're behaviour the client needs, not bloat, so the ceilings moved to today's sizes plus the same 0.1 kB of room: 25,898 B and 29,304 B measured.
 

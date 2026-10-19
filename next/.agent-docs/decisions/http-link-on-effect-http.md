@@ -32,7 +32,7 @@
   | an invalid URL's message                          |     +12 |    +13 |
   | after                                             |  39,184 | 43,330 |
 
-  The ceilings rose to 39.3 and 43.5 kB ([`orpc-v2-parity.md`](./orpc-v2-parity.md)). `HttpClient` is most of it: the client, its request and response models, `Headers`, `UrlParams` and `HttpBody`.
+  The ceilings, dropped since, rose to 39.3 and 43.5 kB ([`orpc-v2-parity.md`](./orpc-v2-parity.md)). `HttpClient` is most of it: the client, its request and response models, `Headers`, `UrlParams` and `HttpBody`.
 
 - Why: batching is a data loader any transport could use, and HTTP lives in one place. Requests, bodies and their errors go through Effect's HTTP models, so Effect's fixes reach the link with the version bump, and apps that already use `HttpClient` bundle it once.
 - Lost:

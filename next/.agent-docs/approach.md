@@ -153,7 +153,7 @@ Foundations first, because later proposals assume them:
 | ---------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
 | Type-checking performance regresses (options-bag generics, error unions, link inference) | Benchmarks in spikes; contract types for clients (01); budgets in CI later              |
 | Effect leaks into Promise users' types or errors                                         | Dedicated overloads; type tests asserting hovers for Promise-only usage (02)            |
-| Bundle size for browser clients                                                          | Bundle budget in CI; keep Schema and `effect/http` out of client paths                  |
+| Bundle size for browser clients                                                          | Bundle sizes reported in CI; keep Schema and `effect/http` out of client paths          |
 | Effect v4 churn (unstable modules)                                                       | Use stable APIs publicly; CI against the latest Effect minor (02 (h))                   |
 | Scope creep from parity                                                                  | Parity rows can be explicitly deferred by a human; phases keep scope ordered            |
 | Migration pain for v11 users                                                             | Familiar APIs; protocol version header; maybe a codemod later                           |

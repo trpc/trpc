@@ -77,7 +77,7 @@ jobs:
         env:
           REDIS_URL: redis://127.0.0.1:6379
           DATABASE_URL: postgres://postgres:postgres@127.0.0.1:5432/postgres
-      # Client bundles, failing above their gzip ceilings.
+      # Client bundle sizes, reported only: there are no ceilings.
       - run: pnpm bench budget
 
   www:
