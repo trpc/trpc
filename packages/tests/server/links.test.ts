@@ -57,7 +57,7 @@ test('chainer', async () => {
 
   const result = await observableToPromise(chain);
   expect(result?.context?.['response']).toBeTruthy();
-  result.context!['response'] = '[redacted]' as any;
+  result.context!['response'] = '[redacted]';
   expect(result).toMatchInlineSnapshot(`
     Object {
       "context": Object {
@@ -813,7 +813,7 @@ test('init with URL object', async () => {
 
   const result = await observableToPromise(chain);
   expect(result?.context?.['response']).toBeTruthy();
-  result.context!['response'] = '[redacted]' as any;
+  result.context!['response'] = '[redacted]';
   expect(result).toMatchInlineSnapshot(`
     Object {
       "context": Object {

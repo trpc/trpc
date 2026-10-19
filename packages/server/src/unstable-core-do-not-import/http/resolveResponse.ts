@@ -35,13 +35,7 @@ function errorToAsyncIterable(err: TRPCError): AsyncIterable<never> {
   });
 }
 type HTTPMethods =
-  | 'GET'
-  | 'POST'
-  | 'HEAD'
-  | 'OPTIONS'
-  | 'PUT'
-  | 'DELETE'
-  | 'PATCH';
+  'GET' | 'POST' | 'HEAD' | 'OPTIONS' | 'PUT' | 'DELETE' | 'PATCH';
 
 function combinedAbortController(signal: AbortSignal) {
   const controller = new AbortController();
@@ -50,6 +44,31 @@ function combinedAbortController(signal: AbortSignal) {
     signal: combinedSignal,
     controller,
   };
+}
+
+/**
+ * A client that leaves may only cancel the response body, without aborting
+ * the request's signal, and the procedures streaming into it wait on that.
+ */
+function abortOnCancel(
+  stream: ReadableStream<Uint8Array>,
+  controller: AbortController,
+): ReadableStream<Uint8Array> {
+  const reader = stream.getReader();
+  return new ReadableStream({
+    async pull(enqueuer) {
+      const chunk = await reader.read();
+      if (chunk.done) {
+        enqueuer.close();
+      } else {
+        enqueuer.enqueue(chunk.value);
+      }
+    },
+    cancel(reason) {
+      controller.abort();
+      return reader.cancel(reason);
+    },
+  });
 }
 
 const TYPE_ACCEPTED_METHOD_MAP: Record<ProcedureType, HTTPMethods[]> = {
@@ -67,8 +86,9 @@ const TYPE_ACCEPTED_METHOD_MAP_WITH_METHOD_OVERRIDE: Record<
   subscription: ['GET', 'POST'],
 };
 
-interface ResolveHTTPRequestOptions<TRouter extends AnyRouter>
-  extends HTTPBaseHandlerOptions<TRouter, Request> {
+interface ResolveHTTPRequestOptions<
+  TRouter extends AnyRouter,
+> extends HTTPBaseHandlerOptions<TRouter, Request> {
   createContext: ResolveHTTPRequestOptionsContextFn<TRouter>;
   req: Request;
   path: string;
@@ -330,9 +350,14 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       signal?: AbortSignal;
     }
     type RPCResult = ResultTuple<RPCResultOk>;
+    const bodyCancelled = new AbortController();
+    const callSignal = abortSignalsAnyPonyfill([
+      opts.req.signal,
+      bodyCancelled.signal,
+    ]);
     const rpcCalls = info.calls.map(async (call): Promise<RPCResult> => {
       const proc = call.procedure;
-      const combinedAbort = combinedAbortController(opts.req.signal);
+      const combinedAbort = combinedAbortController(callSignal);
       try {
         if (opts.error) {
           throw opts.error;
@@ -482,7 +507,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
               );
             }
             const dataAsIterable = isObservable(result.data)
-              ? observableToAsyncIterable(result.data, opts.req.signal)
+              ? observableToAsyncIterable(result.data, callSignal)
               : result.data;
             return dataAsIterable;
           });
@@ -556,6 +581,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
               },
               cancel() {
                 abortSignal.removeEventListener('abort', onAbort);
+                bodyCancelled.abort();
                 return reader.cancel();
               },
             });
@@ -624,7 +650,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
            * Our stream producer will only resolve top-level async values or async values that are directly nested in another async value
            */
           const iterable = isObservable(result.data)
-            ? observableToAsyncIterable(result.data, opts.req.signal)
+            ? observableToAsyncIterable(result.data, callSignal)
             : Promise.resolve(result.data);
           return {
             result: Promise.resolve({
@@ -667,7 +693,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         },
       });
 
-      return new Response(stream, {
+      return new Response(abortOnCancel(stream, bodyCancelled), {
         headers,
         status: headResponse.status,
       });

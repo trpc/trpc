@@ -5,8 +5,7 @@ import type {
 } from '@trpc/server';
 
 export type DataTransformerOptions =
-  | TRPCDataTransformer
-  | TRPCCombinedDataTransformer;
+  TRPCDataTransformer | TRPCCombinedDataTransformer;
 export interface TRPCHeyApiClientOptions {
   transformer?: DataTransformerOptions;
 }

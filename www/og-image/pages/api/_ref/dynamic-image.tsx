@@ -16,32 +16,30 @@ export default async function handler(req: NextRequest) {
   }
 
   return new ImageResponse(
-    (
-      <div
+    <div
+      style={{
+        fontSize: 60,
+        color: 'black',
+        background: '#f6f6f6',
+        width: '100%',
+        height: '100%',
+        paddingTop: 50,
+        flexDirection: 'column',
+        justifyContent: 'center',
+        alignItems: 'center',
+        display: 'flex',
+      }}
+    >
+      <img
+        alt="avatar"
+        width="256"
+        src={`https://github.com/${username}.png`}
         style={{
-          fontSize: 60,
-          color: 'black',
-          background: '#f6f6f6',
-          width: '100%',
-          height: '100%',
-          paddingTop: 50,
-          flexDirection: 'column',
-          justifyContent: 'center',
-          alignItems: 'center',
-          display: 'flex',
+          borderRadius: 128,
         }}
-      >
-        <img
-          alt="avatar"
-          width="256"
-          src={`https://github.com/${username}.png`}
-          style={{
-            borderRadius: 128,
-          }}
-        />
-        <p>github.com/{username}</p>
-      </div>
-    ),
+      />
+      <p>github.com/{username}</p>
+    </div>,
     {
       width: 1200,
       height: 630,
