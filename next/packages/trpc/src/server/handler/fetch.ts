@@ -7,6 +7,7 @@ import {
   Queue,
   Stream,
   Tracer,
+  type Duration,
   type Layer,
 } from 'effect';
 import {
@@ -68,6 +69,7 @@ import { strictestCacheControl } from './cache-control.ts';
 import { httpParts } from './routes.ts';
 import {
   fromWebSocketLike,
+  makeSocketDrains,
   serveMessagePort,
   serveSocketConnection,
   SocketCore,
@@ -250,6 +252,12 @@ export interface BaseHandlerOptions<TRouter extends AnyRouter> {
      */
     idleTimeoutMs?: number | false;
     /**
+     * How long `dispose()`, a `drain()` without `timeout` and the end of
+     * `serve()` give connections to move before closing them.
+     * @default '10 seconds'
+     */
+    drainTimeout?: Duration.Input;
+    /**
      * Upgrades a WebSocket request that reaches `handler.fetch`, on runtimes
      * that upgrade a web `Request` themselves: `Deno.upgradeWebSocket`. The
      * upgrade runs inside `middleware`, so `cors()` refuses one from another
@@ -354,7 +362,34 @@ export interface FetchHandler<TPlatform = undefined> {
    * ```
    */
   readonly routes: Layer.Layer<never, never, HttpRouter.HttpRouter>;
-  /** Releases the `layer`'s resources. */
+  /**
+   * Drains the open WebSocket, socket and MessagePort connections, for a
+   * rolling deploy. Each WebSocket or socket client gets a `reconnect`
+   * message: `wsLink` sends new calls on a new connection, moves its
+   * subscriptions there from their last `tracked()` id, and closes the old
+   * connection once the calls it sent settle. A MessagePort is closed once
+   * its calls settle. At `timeout` the handler closes what's left (1012,
+   * "service restart"), interrupting its calls. Connections that open during
+   * the drain are closed at once, so clients reconnect elsewhere; after it,
+   * the handler takes connections again. `serve()` drains when its layer is
+   * released, before the server stops.
+   *
+   * @example
+   * ```ts
+   * process.once('SIGTERM', async () => {
+   *   await handler.drain({ timeout: '20 seconds' });
+   *   server.close();
+   * });
+   * ```
+   */
+  drain(opts?: {
+    /** @default the handler's `websocket.drainTimeout` */
+    timeout?: Duration.Input;
+  }): Promise<void>;
+  /**
+   * Drains the connections (`drain()`, with `websocket.drainTimeout`), then
+   * releases the `layer`'s resources. The handler takes no connections after.
+   */
   dispose(): Promise<void>;
 }
 
@@ -1238,6 +1273,7 @@ export function createFetchHandler<
     ),
   ) as never;
 
+  const drains = makeSocketDrains(opts.websocket?.drainTimeout ?? '10 seconds');
   const core: SocketCoreShape = {
     router,
     serializer,
@@ -1246,6 +1282,7 @@ export function createFetchHandler<
     deserializeInput,
     publicError,
     report,
+    drains,
   };
   const idleTimeoutMs = opts.websocket?.idleTimeoutMs ?? 60_000;
   const serveWebSocket: ServeSocket = (socket, request) =>
@@ -1324,7 +1361,9 @@ export function createFetchHandler<
           : (Context.make(CurrentPlatform, platform) as Context.Context<never>),
       ),
     routes: http.routes,
+    drain: (o) => Effect.runPromise(drains.drain({ timeout: o?.timeout })),
     async dispose() {
+      await Effect.runPromise(drains.drain({ final: true }));
       await http.dispose();
       await base.dispose();
     },

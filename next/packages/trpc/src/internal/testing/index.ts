@@ -104,6 +104,7 @@ const make = <TRouter extends AnyRouter>(
           }),
       }),
     );
+    yield* Effect.addFinalizer(() => Effect.promise(() => handler.drain()));
     const endpoint = (opts.endpoint ?? '/trpc').replace(/^\/+|\/+$/g, '');
     return {
       url: `${origin.origin}/${endpoint}`,
