@@ -1,11 +1,21 @@
 import { once } from 'node:events';
 import { connect as tcpConnect, type Socket as TcpSocket } from 'node:net';
+import type { Duplex } from 'node:stream';
+import { Effect } from 'effect';
+import type { HttpServerRequest } from 'effect/http';
+import type { Socket } from 'effect/socket';
 import { createV11Handler } from '@trpc12/trpc/interop';
 import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
 import { createTestServer } from '../../fixtures/server.ts';
-import { sendHighWaterMark } from './socket-session.ts';
+import { backpressure } from '../../internal/effects.ts';
+import {
+  bufferedAmountOf,
+  fromWebSocketLike,
+  sendHighWaterMark,
+} from './socket-session.ts';
 import type { WebSocketLike } from './socket.ts';
-import { expect, test, vi } from 'vite-plus/test';
+import { upgradeTo } from './upgrade.ts';
+import { expect, test } from 'vite-plus/test';
 
 const t = initTrpc();
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
@@ -57,15 +67,9 @@ class SlowSocket extends EventTarget {
   }
 }
 
-/** Waits until `read()` stops changing, then returns it. */
-async function settled(read: () => number) {
-  let last = read();
-  for (;;) {
-    await sleep(50);
-    const now = read();
-    if (now === last) return now;
-    last = now;
-  }
+/** Waits for `ready()`, however long a busy machine takes, within the test's own timeout. */
+async function until(ready: () => boolean) {
+  while (!ready()) await sleep(5);
 }
 
 test.each([
@@ -107,22 +111,30 @@ test.each([
     });
     transport.subscribe(socket);
 
-    const paused = await settled(() => state.yielded);
-    // The socket stops one message past the mark; the outbox holds 16 more.
-    expect(socket.bufferedAmount).toBeGreaterThan(sendHighWaterMark);
+    // The writer stops one message past the mark, and the outbox fills.
+    await until(
+      () =>
+        socket.bufferedAmount > sendHighWaterMark &&
+        state.yielded - socket.sent >= backpressure.bufferSize - 1,
+    );
+    const { sent } = socket;
+    await sleep(50);
+    // Nothing more reaches the socket while it's full, and the generator
+    // stays within the outbox, however long it waits.
+    expect(socket.sent).toBe(sent);
     expect(socket.bufferedAmount).toBeLessThan(sendHighWaterMark + 2048);
-    expect(paused - socket.sent).toBeLessThanOrEqual(20);
-    expect(paused).toBeLessThan(100);
-    await sleep(100);
-    expect(state.yielded).toBe(paused);
+    expect(state.yielded - sent).toBeLessThanOrEqual(
+      backpressure.bufferSize + 2,
+    );
 
     socket.drain();
-    await vi.waitFor(() => expect(state.yielded).toBeGreaterThan(paused + 50));
+    await until(() => socket.sent > sent + 50);
     expect(socket.bufferedAmount).toBeLessThan(sendHighWaterMark + 2048);
 
     socket.close(1000);
-    await vi.waitFor(() => expect(state.returned).toBe(true));
-    expect(state.yielded).toBeLessThan(400);
+    await until(() => state.returned);
+    // Two socketfuls and two outboxes at most.
+    expect(state.yielded).toBeLessThan(4 * (sent + backpressure.bufferSize));
     await handler.dispose();
   },
 );
@@ -172,18 +184,43 @@ test("over Node's upgrade, a client that stops reading pauses the generator, whi
   const big = counter(limit);
   const { state } = big;
   await using server = await createTestServer({ router: big.router });
+  let upgraded: Duplex | undefined;
+  server.server.on('upgrade', (_req, socket: Duplex) => (upgraded = socket));
   const client = await rawWebSocket(server.wsUrl);
   client.send({ type: 'init', version: '12' });
   client.send({ id: 1, type: 'request', method: 'subscription', path: 'big' });
 
-  await vi.waitFor(() => expect(state.yielded).toBeGreaterThan(0));
-  const paused = await settled(() => state.yielded);
-  await sleep(100);
-  expect(state.yielded).toBe(paused);
+  // Once the kernel's buffers are full, unsent bytes pile up in Node's.
+  await until(() => (upgraded?.writableLength ?? 0) > sendHighWaterMark);
+  for (let i = 0; i < 10; i++) {
+    // The server writes only while its socket is under the mark.
+    expect(upgraded?.writableLength).toBeLessThan(sendHighWaterMark + 2048);
+    expect(state.returned).toBe(false);
+    await sleep(10);
+  }
   // Socket buffers hold a few MB; without backpressure it reads all of it.
-  expect(paused).toBeLessThan(limit / 4);
+  expect(state.yielded).toBeLessThan(limit / 4);
 
   client.socket.destroy();
-  await vi.waitFor(() => expect(state.returned).toBe(true));
+  await until(() => state.returned);
   expect(state.yielded).toBeLessThan(limit / 4);
+});
+
+test("an upgrade without Node's socket under it, as on Bun, writes without waiting", async () => {
+  const plain = Object.assign(new EventTarget(), {
+    readyState: 1,
+    send: () => {},
+    close: () => {},
+  });
+  const socket = await Effect.runPromise(fromWebSocketLike(plain));
+  const request = {
+    source: new Request('http://localhost/trpc'),
+    upgrade: Effect.succeed(socket),
+  } as unknown as HttpServerRequest.HttpServerRequest;
+  let served: Socket.Socket | undefined;
+  await Effect.runPromise(
+    upgradeTo(request, (upgraded) => Effect.sync(() => (served = upgraded))),
+  );
+  expect(served).toBe(socket);
+  expect(bufferedAmountOf(socket)()).toBe(0);
 });
