@@ -37,11 +37,10 @@ import {
 } from '../client/link.ts';
 import type {
   CallArgs,
+  CallError,
   CallOptions,
   Carries,
-  ChainLinkCodes,
   ChainTypes,
-  ClientError,
   DuplicateSwitchCheck,
   LinksContext,
   LinksTypes,
@@ -49,8 +48,9 @@ import type {
   ResultForm,
   RouterOf,
   SubscribeOptions,
+  UnmetNeedCheck,
 } from '../client/types.ts';
-import type { ClientValue, DansonForm } from '../internal/types.ts';
+import type { ClientValue } from '../internal/types.ts';
 import type {
   AnyProcedure,
   ProcedureDef,
@@ -80,18 +80,12 @@ type DecorateEffectDef<
 > =
   Carries<D['type'], TLinks> extends false
     ? {}
-    : DecorateEffectCarried<
-        D,
-        TContext,
-        TLinks,
-        TLinks extends { errors: infer E } ? E : never
-      >;
+    : DecorateEffectCarried<D, TContext, TLinks>;
 
 type DecorateEffectCarried<
   D extends ProcedureDef,
   TContext extends object,
   TLinks extends ChainTypes,
-  TLinkErrors,
 > = D['type'] extends 'query'
   ? {
       query(
@@ -103,11 +97,7 @@ type DecorateEffectCarried<
         >
       ): Effect.Effect<
         ClientValue<D['output'], ResultForm<undefined, TLinks>>,
-        ClientError<
-          D['errors'] | TLinkErrors,
-          DansonForm,
-          ChainLinkCodes<TLinks>
-        >
+        CallError<D, ResultForm<undefined, TLinks>, TLinks>
       >;
     }
   : D['type'] extends 'mutation'
@@ -121,11 +111,7 @@ type DecorateEffectCarried<
           >
         ): Effect.Effect<
           ClientValue<D['output'], ResultForm<undefined, TLinks>>,
-          ClientError<
-            D['errors'] | TLinkErrors,
-            DansonForm,
-            ChainLinkCodes<TLinks>
-          >
+          CallError<D, ResultForm<undefined, TLinks>, TLinks>
         >;
       }
     : {
@@ -133,11 +119,7 @@ type DecorateEffectCarried<
           ...args: CallArgs<D['input'], SubscribeOptions<TContext>>
         ): Stream.Stream<
           ClientValue<D['output'], ResultForm<undefined, TLinks>>,
-          ClientError<
-            D['errors'] | TLinkErrors,
-            DansonForm,
-            ChainLinkCodes<TLinks>
-          >
+          CallError<D, ResultForm<undefined, TLinks>, TLinks>
         >;
       };
 
@@ -183,7 +165,9 @@ export function createEffectClient<
   TSource,
   const TLinks extends ReadonlyArray<TrpcLink<any, RouterOf<TSource>>>,
 >(
-  opts: TypedClientOptions<TSource, TLinks> & DuplicateSwitchCheck<TLinks>,
+  opts: TypedClientOptions<TSource, TLinks> &
+    DuplicateSwitchCheck<TLinks> &
+    UnmetNeedCheck<TLinks>,
 ): EffectClient<RouterOf<TSource>, LinksContext<TLinks>, LinksTypes<TLinks>>;
 export function createEffectClient(opts: TrpcClientOptions): unknown {
   chainSwitchNames(opts.links);

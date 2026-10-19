@@ -1,4 +1,5 @@
 import * as devalue from 'devalue';
+import { Effect } from 'effect';
 import superjson from 'superjson';
 import {
   createTrpcClient,
@@ -9,6 +10,7 @@ import {
   wsLink,
   type Deserialized,
 } from '@trpc12/trpc/client';
+import { createEffectClient } from '@trpc12/trpc/effect';
 import { createRouterClient, initTrpc, TrpcError } from '@trpc12/trpc/server';
 import {
   createSerializer,
@@ -298,6 +300,29 @@ test('error data follows the serializer like outputs', async () => {
     expect(nativeErr.data.at).toBeInstanceOf(Date);
   }
   expect(nativeErr?.defined).toBe(true);
+
+  const effectClient = createEffectClient({
+    router: routerType<typeof expiring>(),
+    links: [httpLink({ url: server.url })],
+  });
+  const effectErr = await Effect.runPromise(
+    Effect.flip(effectClient.expired.query()),
+  );
+  if (effectErr.defined && effectErr.code === 'EXPIRED') {
+    expectTypeOf(effectErr.data).toEqualTypeOf<{ at: string }>();
+  }
+  expect(effectErr).toMatchObject({ data: { at: at.toJSON() } });
+  const nativeEffect = createEffectClient({
+    router: routerType<typeof expiring>(),
+    links: [httpLink({ url: nativeServer.url, serializer: danson })],
+  });
+  const nativeEffectErr = await Effect.runPromise(
+    Effect.flip(nativeEffect.expired.query()),
+  );
+  if (nativeEffectErr.defined && nativeEffectErr.code === 'EXPIRED') {
+    expectTypeOf(nativeEffectErr.data).toEqualTypeOf<{ at: Date }>();
+  }
+  expect(nativeEffectErr).toMatchObject({ data: { at } });
 });
 
 const superjsonSerializer = createSyncSerializer<

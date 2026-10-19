@@ -9,6 +9,7 @@ import {
   type BuiltinCallOptions,
 } from '@trpc12/trpc/client';
 import { Predicate } from 'effect';
+import { createEffectClient } from '@trpc12/trpc/effect';
 import { error, initTrpc } from '@trpc12/trpc/server';
 import { createTestServer } from '../../fixtures/server.ts';
 import { expect, expectTypeOf, test, vi } from 'vite-plus/test';
@@ -387,5 +388,10 @@ test('a link that needs the response must have a provider after it', () => {
       responsesLink(seen),
       splitLink({ condition: () => true, true: http, false: silent }),
     ],
+  });
+  createEffectClient({
+    router: routerType<typeof versioned>(),
+    // @ts-expect-error -- the Effect client checks it too
+    links: [http, responsesLink(seen)],
   });
 });

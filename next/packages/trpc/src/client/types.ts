@@ -113,8 +113,8 @@ export type ClientError<
   | BuiltinError<Exclude<BuiltinErrorCode, Exclude<LinkErrorCode, TLinkCodes>>>
   | UndeclaredError;
 
-/** A call's errors: the procedure's in the result form, the links' as made. */
-type CallError<
+/** A call's errors: the procedure's in the result form, the links' as made. @internal */
+export type CallError<
   D extends ProcedureDef,
   F extends OutputForm,
   TLinks extends ChainTypes,
