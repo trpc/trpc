@@ -4,6 +4,7 @@ import { runInNewContext } from 'node:vm';
 import {
   homeVersionAt,
   homeVersionOf,
+  hostHomeVersion,
   homeVersionScript,
   homeVersionSearch,
   rememberHomeVersion,
@@ -87,12 +88,18 @@ describe('remembering the version', () => {
     expect(homeVersionAt('/docsx', {})).toBeUndefined();
   });
 
-  it('stores v12, and clears it for v11, the default', () => {
+  it("stores the version, and clears it for the host's default", () => {
     const stored = new Map<string, string>();
     vi.stubGlobal('localStorage', storage(stored));
+    vi.stubGlobal('location', new URL('https://trpc.io/'));
     rememberHomeVersion('v12');
     expect([...stored]).toEqual([['trpc-docs:version', 'v12']]);
     rememberHomeVersion('v11');
+    expect([...stored]).toEqual([]);
+    vi.stubGlobal('location', new URL('https://v12.trpc.io/'));
+    rememberHomeVersion('v11');
+    expect([...stored]).toEqual([['trpc-docs:version', 'v11']]);
+    rememberHomeVersion('v12');
     expect([...stored]).toEqual([]);
   });
 
@@ -118,21 +125,61 @@ describe('remembering the version', () => {
     });
   });
 
-  it('leaves other pages, nothing remembered and blocked storage alone', () => {
+  it('leaves other pages, nothing remembered and blocked storage alone on trpc.io', () => {
     const remembered = storage(new Map([['trpc-docs:version', 'v12']]));
     expect(
       land('https://v12.trpc.io/docs/client', remembered).replaced,
     ).toEqual([]);
-    expect(land('https://v12.trpc.io/', storage(new Map()))).toEqual({
+    expect(land('https://trpc.io/', storage(new Map()))).toEqual({
       replaced: [],
       shown: 'v11',
     });
-    expect(land('https://v12.trpc.io/', storage('blocked'))).toEqual({
+    expect(land('https://www.trpc.io/', storage('blocked'))).toEqual({
       replaced: [],
       shown: 'v11',
     });
     vi.stubGlobal('localStorage', storage('blocked'));
+    vi.stubGlobal('location', new URL('https://trpc.io/'));
     expect(() => rememberHomeVersion('v12')).not.toThrow();
+  });
+});
+
+describe("the host's default", () => {
+  it('is v11 on trpc.io only', () => {
+    expect(hostHomeVersion('trpc.io')).toBe('v11');
+    expect(hostHomeVersion('www.trpc.io')).toBe('v11');
+    expect(hostHomeVersion('v12.trpc.io')).toBe('v12');
+    expect(hostHomeVersion('trpc-git-v12-trpc.vercel.app')).toBe('v12');
+    expect(hostHomeVersion('localhost')).toBe('v12');
+  });
+
+  it('forwards `/` to v12 off trpc.io when nothing is remembered', () => {
+    for (const origin of [
+      'https://v12.trpc.io',
+      'https://trpc-git-v12-trpc.vercel.app',
+      'http://localhost:3000',
+    ]) {
+      expect(land(`${origin}/#steps`, storage(new Map()))).toEqual({
+        replaced: [`${origin}/?version=v12#steps`],
+        shown: 'v12',
+      });
+      expect(land(`${origin}/`, storage('blocked')).shown).toBe('v12');
+    }
+  });
+
+  it('gives way to ?version= and a remembered v11', () => {
+    expect(
+      land('https://v12.trpc.io/?version=v11', storage(new Map())),
+    ).toEqual({ replaced: [], shown: 'v11' });
+    const remembered = storage(new Map([['trpc-docs:version', 'v11']]));
+    expect(land('https://v12.trpc.io/', remembered)).toEqual({
+      replaced: [],
+      shown: 'v11',
+    });
+    expect(land('https://v12.trpc.io/docs', storage(new Map()))).toEqual({
+      replaced: [],
+      shown: 'v11',
+    });
   });
 });
 

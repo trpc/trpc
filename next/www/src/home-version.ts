@@ -1,11 +1,30 @@
 import { v11, v12 } from './site.ts';
 
-/** Which tRPC the home page shows: v11, the stable release, unless `?version=v12`. */
+/**
+ * Which tRPC the home page shows: v11, the stable release, unless
+ * `?version=v12`, which `/` gets off trpc.io (`hostHomeVersion`).
+ */
 export const homeVersions = ['v11', 'v12'] as const;
 
 export type HomeVersion = (typeof homeVersions)[number];
 
+/** The version `/` without `?version=` names, and the prerendered HTML shows. */
 export const defaultHomeVersion: HomeVersion = 'v11';
+
+/** Hosts where `/` opens on `defaultHomeVersion`; elsewhere it opens on v12. */
+const stableHosts = ['trpc.io', 'www.trpc.io'];
+
+const previewHomeVersion: HomeVersion = 'v12';
+
+/**
+ * The version `/` opens on at `hostname` when the reader names or remembers
+ * none: v11 on trpc.io, v12 on `v12.trpc.io`, previews and localhost.
+ */
+export function hostHomeVersion(hostname: string): HomeVersion {
+  return stableHosts.includes(hostname)
+    ? defaultHomeVersion
+    : previewHomeVersion;
+}
 
 export const homeVersionLabels = {
   v11: 'v11',
@@ -60,10 +79,10 @@ export function homeVersionAt(
   );
 }
 
-/** Stores v12 for the next visit to `/`; v11, the default, clears it. */
+/** Stores `version` for the next visit to `/`; the host's default clears it. */
 export function rememberHomeVersion(version: HomeVersion) {
   try {
-    if (version === defaultHomeVersion) {
+    if (version === hostHomeVersion(location.hostname)) {
       localStorage.removeItem(storageKey);
     } else {
       localStorage.setItem(storageKey, version);
@@ -75,14 +94,17 @@ export function rememberHomeVersion(version: HomeVersion) {
 
 /**
  * The version the page opens on: `?version=` when the URL names one, else on
- * `/` the remembered one, which it writes into the URL with `replaceState`
- * (no extra history entry) before the router reads it. Stringified into
+ * `/` the remembered one, else the host's (`preview` off `stableHosts`). One
+ * other than `fallback` is written into the URL with `replaceState` (no extra
+ * history entry) before the router reads it. Stringified into
  * `homeVersionScript`, so it can't use anything from its module scope.
  */
 function landingHomeVersion(
   key: string,
   versions: ReadonlyArray<string>,
   fallback: string,
+  hosts: ReadonlyArray<string>,
+  preview: string,
 ) {
   const url = new URL(location.href);
   const param = url.searchParams.get('version');
@@ -93,14 +115,18 @@ function landingHomeVersion(
   try {
     stored = localStorage.getItem(key);
   } catch {
-    // Storage is blocked: open on the default.
+    // Storage is blocked: open on the host's default.
   }
-  if (stored === null || stored === fallback || !versions.includes(stored)) {
+  let opened = hosts.includes(url.hostname) ? fallback : preview;
+  if (stored !== null && versions.includes(stored)) {
+    opened = stored;
+  }
+  if (opened === fallback) {
     return fallback;
   }
-  url.searchParams.set('version', stored);
+  url.searchParams.set('version', opened);
   history.replaceState(history.state, '', url);
-  return stored;
+  return opened;
 }
 
 /**
@@ -128,10 +154,11 @@ function applyHomeVersion(version: HomeVersion) {
 }
 
 /**
- * Runs before first paint so `/?version=v12`, typed or remembered, never
- * flashes the prerendered v11 panels. Pairs with the `[data-home-panel]` CSS.
+ * Runs before first paint so `/?version=v12`, typed, remembered or the host's
+ * default, never flashes the prerendered v11 panels. Pairs with the
+ * `[data-home-panel]` CSS.
  */
-export const homeVersionScript = `(${applyHomeVersion.toString()})((${landingHomeVersion.toString()})(${JSON.stringify(storageKey)},${JSON.stringify(homeVersions)},${JSON.stringify(defaultHomeVersion)}));`;
+export const homeVersionScript = `(${applyHomeVersion.toString()})((${landingHomeVersion.toString()})(${[storageKey, homeVersions, defaultHomeVersion, stableHosts, previewHomeVersion].map((arg) => JSON.stringify(arg)).join(',')}));`;
 
 /** Keep `<html data-home-version>` in sync after client navigations. */
 export function syncHomeVersionAttribute(version: HomeVersion) {

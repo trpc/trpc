@@ -1,0 +1,10 @@
+# Off trpc.io, the home page opens on v12 (human asked)
+
+- Human, 2026-10-19: "on the website, while we're still deploying it on anything but trpc.io (e.g. now that it's on v12.trpc.io or in dev etc), can we make it so that `?version=12` is the default on the homepage?"
+- (agent) `/` opens on v12 on every host but `trpc.io` and `www.trpc.io`: `v12.trpc.io`, Vercel previews, localhost and `docs:dev`. On trpc.io it stays v11 ([`docs-v11-by-default.md`](./docs-v11-by-default.md)). `?version=12` is read as `?version=v12`, the param the site already uses.
+- (agent) The host decides in the browser, not at build time: the site is prerendered once and every deploy serves the same HTML, which shows v11 by default. The blocking head script (`homeVersionScript`) rewrites `/` to `/?version=v12` with `history.replaceState` before the first paint and before the router reads the URL, the same path a remembered v12 already takes ([`docs-remembered-version.md`](./docs-remembered-version.md)). So there's no redirect, no flash of v11 and no hydration mismatch: the server and the client agree that no `?version=` means v11, and off trpc.io the client never hydrates without one.
+- (agent) What the URL names or the reader chose still wins: `?version=v11` shows v11, and a remembered version beats the host's default. Off trpc.io, choosing v11 (its pill, `/?version=v11` or v11's docs) is remembered as `v11` instead of clearing the key, so the next visit to `/` stays on v11; choosing the host's default clears it.
+- Why: until trpc.io serves v12, the site's other hosts exist to show v12, so they should open on it; trpc.io's readers should still get the tRPC they can install.
+- Lost: a v12-host visitor who last read v11's docs gets v11 on `/`, not v12, because remembering wins. A client navigation to a bare `/` (the v11 pill, the logo from v11's docs) shows v11 on every host.
+- Open: dropping the host check when v12 becomes the default everywhere.
+- Lives in: `next/www/src/home-version.ts` (`stableHosts`, `hostHomeVersion`, `landingHomeVersion`, `rememberHomeVersion`), `next/www/src/home-version.test.ts`.
