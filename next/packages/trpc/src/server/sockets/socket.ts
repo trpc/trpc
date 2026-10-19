@@ -110,7 +110,7 @@ export interface SocketCoreShape extends Pick<
 > {
   readonly router: AnyRouter;
   readonly serializer: AnySerializer;
-  deserializeInput(value: unknown): unknown;
+  deserializeInput(value: unknown): Effect.Effect<unknown, AnyTrpcError>;
   /** The handler's open connections, which `drain()` and `dispose()` close. */
   readonly drains?: SocketDrains | undefined;
 }
@@ -383,10 +383,7 @@ export const connectionReceiver: (
               }),
             );
           }
-          const input = yield* Effect.try({
-            try: () => core.deserializeInput(message.input),
-            catch: asTrpcError,
-          });
+          const input = yield* core.deserializeInput(message.input);
           const ctx = yield* core.makeContext({
             request,
             platform: opts.platform,
