@@ -4,10 +4,12 @@ This repo is a **from-scratch rewrite** of tRPC (vNext / `v12` branch), not main
 
 Push commits straight to `v12`; don't open pull requests against it ([Landing on `v12`](./next/AGENTS.md#landing-on-v12)).
 
+Name every branch cut from `v12` `v12-<name>`: only those get `trpc-v12` preview deployments ([`docs-website-on-vercel.md`](./next/.agent-docs/decisions/docs-website-on-vercel.md)).
+
 - Brief and constraints: `next/ideas.md`
 - Design docs (proposals, decisions, notes): `next/.agent-docs/`
 - Vendored dependency source (read-only reference): `next/.repos/`
 
 [`v11/`](./v11/) is the v11 monorepo (`packages/`, `examples/`, `www/`), with its own pnpm workspace and the `v11-*` workflows. Don't add vNext code there ([`next/.agent-docs/decisions/v11-folder.md`](./next/.agent-docs/decisions/v11-folder.md)).
 
-The root `www/` and `examples/` hold only `vercel.json` stubs: they exist so the v11 Vercel projects, whose root directories are still those paths, skip every branch (`deploymentEnabled: false`), so PRs from branches off `v12` skip them too. The stubs only exist on `v12` and its branches; `main` keeps the real configs. They're removed at the cutover.
+The root `www/` and `examples/` hold only `vercel.json` stubs: they exist so the v11 Vercel projects, whose root directories are still those paths, skip every branch (`deploymentEnabled: false`), so PRs from branches off `v12` skip them too ([`v11-folder.md`](./next/.agent-docs/decisions/v11-folder.md)). The stubs only exist on `v12` and its branches; `main` keeps the real configs. They're removed at the cutover.

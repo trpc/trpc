@@ -12,6 +12,12 @@ import type {
 } from '../../serializer/index.ts';
 import { deserializeStream } from '../../serializer/deferred.ts';
 
+/** A byte stream input, which is the request body rather than serialized. @internal */
+export const isByteStreamInput = (
+  input: unknown,
+): input is ReadableStream<Uint8Array> =>
+  typeof ReadableStream !== 'undefined' && input instanceof ReadableStream;
+
 /**
  * Serializes a call's input; a value the serializer can't send fails the call
  * as a `BAD_REQUEST` before anything is sent.
@@ -22,6 +28,12 @@ export function serializeInput(
   input: unknown,
   opts?: SerializeOpts,
 ): SerializeReturn {
+  if (isByteStreamInput(input)) {
+    throw new TrpcError({
+      code: 'BAD_REQUEST',
+      message: 'Byte stream inputs need httpLink',
+    });
+  }
   try {
     return serializer.serialize(input, opts);
   } catch (cause) {

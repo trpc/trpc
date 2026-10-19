@@ -134,6 +134,8 @@ export const CONTENT_TYPE = {
   /** JSONL's lines as length-prefixed records, with file bytes unencoded. */
   frames: 'application/vnd.trpc.frames',
   sse: 'text/event-stream',
+  /** A byte stream input's body. */
+  octet: 'application/octet-stream',
 } as const;
 
 /**
@@ -213,7 +215,13 @@ export type ServerMessage =
   | { id: number | null; type: 'error'; body: unknown }
   /** The answer to the client's `init`: the server's serializer's `name`, in plain JSON. */
   | { type: 'init'; serializer: string }
-  | { type: 'pong' };
+  | { type: 'pong' }
+  /**
+   * The server is going away (a drain): send new calls on a new connection,
+   * move subscriptions there, and close this one once the calls sent on it
+   * settle. Nothing already sent is sent again.
+   */
+  | { type: 'reconnect' };
 
 interface BlobMeta {
   type: string;
@@ -266,6 +274,9 @@ export const isJsonContentType = (value: string | null): boolean =>
 
 export const isMultipartContentType = (value: string | null): boolean =>
   hasMediaType(value, 'multipart/form-data');
+
+export const isOctetContentType = (value: string | null): boolean =>
+  hasMediaType(value, CONTENT_TYPE.octet);
 
 /** An SSE event: `event` defaults to `message`. */
 export interface SseEvent {
