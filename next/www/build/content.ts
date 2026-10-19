@@ -78,6 +78,12 @@ const Frontmatter = Schema.Struct({
   /** The page it nests under in the sidebar, by slug, in the same section. */
   parent: Schema.optional(Schema.String),
   section: Schema.String,
+  /**
+   * `unstable` for a page about `unstable_` exports: listed and indexed like
+   * any other, with an "Unstable" badge. Experimental features are hidden
+   * with `experiment` instead.
+   */
+  stability: Schema.optional(Schema.Literal('unstable')),
   title: Schema.String,
   v11: Schema.optional(Schema.String),
 });
@@ -407,6 +413,7 @@ export function docsContent(options: ContentOptions): Plugin {
         parent: source.frontmatter.parent,
         section: source.frontmatter.section,
         slug: source.slug,
+        stability: source.frontmatter.stability,
         title: source.frontmatter.title,
         v11: yield* v11Page(source),
       },
@@ -524,6 +531,7 @@ export function docsContent(options: ContentOptions): Plugin {
             parent: doc.parent,
             section: doc.section,
             slug: doc.slug,
+            stability: doc.stability,
             title: doc.title,
             v11: doc.v11,
           };

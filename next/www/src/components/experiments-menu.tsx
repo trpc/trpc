@@ -73,9 +73,9 @@ export function ExperimentsMenu() {
             </Badge>
           </PopoverTitle>
           <PopoverDescription>
-            Features we're trying out, with their docs pages. Each is off until
-            you turn it on or open one of its pages. Kept in the URL, so a link
-            you copy shares them.
+            Features we're trying out, with their docs pages. They might change
+            or go away in any release. Each is off until you turn it on or open
+            one of its pages. Kept in the URL, so a link you copy shares them.
           </PopoverDescription>
         </PopoverHeader>
         <ul className="-mx-1 grid">

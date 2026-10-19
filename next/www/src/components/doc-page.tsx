@@ -7,6 +7,7 @@ import {
   ExternalLink,
   FlaskConical,
   Pencil,
+  Wrench,
 } from 'lucide-react';
 
 import { DocBody } from '~/components/doc-body.tsx';
@@ -175,12 +176,40 @@ export function DocPage(props: {
               ))}
             </ol>
           </nav>
-          {doc.experiment ? (
+          {doc.stability === 'unstable' ? (
+            <p className="flex flex-wrap items-center gap-2 text-sm text-pretty text-muted-foreground">
+              <Badge variant="outline">
+                <Wrench className="text-brand" /> Unstable
+              </Badge>
+              <span>
+                How it works might change in a minor release.{' '}
+                <Link
+                  className="text-link hover:underline"
+                  hash="unstable"
+                  params={{ _splat: 'packages' }}
+                  to={version.route}
+                >
+                  Stability
+                </Link>
+              </span>
+            </p>
+          ) : doc.experiment ? (
             <p className="flex flex-wrap items-center gap-2 text-sm text-pretty text-muted-foreground">
               <Badge variant="outline">
                 <FlaskConical className="text-brand" /> Experimental
               </Badge>
-              {experiments[doc.experiment].label} may change in any release.
+              <span>
+                {experiments[doc.experiment].label} might change or go away in
+                any release.{' '}
+                <Link
+                  className="text-link hover:underline"
+                  hash="experimental"
+                  params={{ _splat: 'packages' }}
+                  to={version.route}
+                >
+                  Stability
+                </Link>
+              </span>
             </p>
           ) : null}
           <h1 className="text-3xl font-bold tracking-tight text-balance sm:text-4xl">

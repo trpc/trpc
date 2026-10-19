@@ -25,6 +25,8 @@ export interface DocMeta {
   readonly section: string;
   /** The page's path under `docs/`, without `.md`: `client/links`. */
   readonly slug: string;
+  /** `unstable` when the page is about `unstable_` exports: badged, but listed. */
+  readonly stability?: 'unstable' | undefined;
   readonly title: string;
   /** The slug of the v11 page on the same topic, if there is one. */
   readonly v11?: string | undefined;
