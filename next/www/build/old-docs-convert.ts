@@ -893,19 +893,48 @@ function escapeHtml(text: string) {
 }
 
 const staticTweetProps = [
+  'id',
   'name',
   'username',
   'avatarUrl',
   'text',
   'createdAt',
-  'url',
 ] as const;
 
+const months = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+];
+
+/** `9:41 AM · Feb 10, 2024`, in UTC, as trpc.io's `StaticTweet` shows it. */
+export function tweetTimestamp(date: Date) {
+  const hours = date.getUTCHours();
+  const minutes = String(date.getUTCMinutes()).padStart(2, '0');
+  const time = `${hours % 12 || 12}:${minutes} ${hours < 12 ? 'AM' : 'PM'}`;
+  return `${time} · ${months[date.getUTCMonth()]} ${date.getUTCDate()}, ${date.getUTCFullYear()}`;
+}
+
+/** Twitter's bird, as its embedded tweets show it. */
+const twitterBird =
+  '<svg class="tweet-bird" viewBox="0 0 24 24" aria-hidden="true"><path d="M23.643 4.937c-.835.37-1.732.62-2.675.733.962-.576 1.7-1.49 2.048-2.578-.9.534-1.897.922-2.958 1.13-.85-.904-2.06-1.47-3.4-1.47-2.572 0-4.658 2.086-4.658 4.66 0 .364.042.718.12 1.06-3.873-.195-7.304-2.05-9.602-4.868-.4.69-.63 1.49-.63 2.342 0 1.616.823 3.043 2.072 3.878-.764-.025-1.482-.234-2.11-.583v.06c0 2.257 1.605 4.14 3.737 4.568-.392.106-.803.162-1.227.162-.3 0-.593-.028-.877-.082.593 1.85 2.313 3.198 4.352 3.234-1.595 1.25-3.604 1.995-5.786 1.995-.376 0-.747-.022-1.112-.065 2.062 1.323 4.51 2.093 7.14 2.093 8.57 0 13.255-7.098 13.255-13.254 0-.2-.005-.402-.014-.602.91-.658 1.7-1.477 2.323-2.41z" /></svg>';
+
 /**
- * A `<StaticTweet>` (trpc.io's copy of a post on X, `src/components/StaticTweet.tsx`)
- * as the same card in HTML, styled by `.tweet`: URLs and @mentions in its
- * text are links, its date links to the post, and `archiveUrl` is an
- * "Archived copy" link.
+ * A `<StaticTweet>` (trpc.io's copy of a tweet, `src/components/StaticTweet.tsx`)
+ * as the same card in HTML, styled like Twitter's embedded tweets by
+ * `.tweet`: the author links to their profile, URLs, @mentions and
+ * #hashtags in the text are links, and the timestamp and "Read more on
+ * Twitter" link to the tweet, deleted or not. `archiveUrl` is an "Archived
+ * copy" link beside the timestamp.
  */
 function staticTweetOf(tag: string, attributes: string, context: Converting) {
   const problem = (why: string) => {
@@ -937,40 +966,44 @@ function staticTweetOf(tag: string, attributes: string, context: Converting) {
   if (wrong.length > 0) {
     return problem(wrong.join(', '));
   }
+  const id = props.get('id') ?? '';
+  const username = props.get('username') ?? '';
+  if (!/^\d+$/.test(id) || !/^\w+$/.test(username)) {
+    return problem('`id` is no tweet id, or `username` no handle');
+  }
   const date = new Date(props.get('createdAt') ?? '');
   if (Number.isNaN(date.getTime())) {
     return problem('`createdAt` is no date');
   }
-  const url = escapeHtml(props.get('url') ?? '');
+  const profileUrl = `https://twitter.com/${username}`;
+  const tweetUrl = `${profileUrl}/status/${id}`;
   const archiveUrl = props.get('archiveUrl');
   const text = (props.get('text') ?? '')
-    .split(/(https?:\/\/\S+|@\w+)/)
+    .split(/(https?:\/\/\S+|(?<!\w)@\w+|(?<!\w)#\w*[a-z_]\w*)/i)
     .map((part, index) => {
       if (index % 2 === 0) {
         return escapeHtml(part);
       }
-      return part.startsWith('@')
-        ? `<a href="https://x.com/${part.slice(1)}">${part}</a>`
-        : `<a href="${escapeHtml(part)}">${escapeHtml(part.replace(/^https?:\/\//, ''))}</a>`;
+      const href = part.startsWith('@')
+        ? `https://twitter.com/${part.slice(1)}`
+        : part.startsWith('#')
+          ? `https://twitter.com/hashtag/${part.slice(1)}`
+          : part;
+      return `<a href="${escapeHtml(href)}">${escapeHtml(part.replace(/^https?:\/\//, ''))}</a>`;
     })
     .join('')
     .replaceAll('\n', '<br />');
-  const day = new Intl.DateTimeFormat('en-US', {
-    day: 'numeric',
-    month: 'short',
-    timeZone: 'UTC',
-    year: 'numeric',
-  }).format(date);
   return [
     '',
     '<figure class="tweet">',
-    `<figcaption><img src="${escapeHtml(props.get('avatarUrl') ?? '')}" alt="" width="48" height="48" loading="lazy" /><cite><span class="tweet-name">${escapeHtml(props.get('name') ?? '')}</span><span class="tweet-username">@${escapeHtml(props.get('username') ?? '')}</span></cite></figcaption>`,
-    `<blockquote cite="${url}">${text}</blockquote>`,
-    `<footer><a href="${url}"><time datetime="${date.toJSON()}">${day}</time></a>${
+    `<div class="tweet-header"><a class="tweet-author" href="${profileUrl}"><img class="tweet-avatar" src="${escapeHtml(props.get('avatarUrl') ?? '')}" alt="" width="48" height="48" loading="lazy" /><span class="tweet-author-names"><span class="tweet-name">${escapeHtml(props.get('name') ?? '')}</span><span class="tweet-username">@${username}</span></span></a>${twitterBird}</div>`,
+    `<blockquote class="tweet-text" cite="${tweetUrl}">${text}</blockquote>`,
+    `<div class="tweet-meta"><a href="${tweetUrl}"><time datetime="${date.toJSON()}">${tweetTimestamp(date)}</time></a>${
       archiveUrl === undefined
         ? ''
-        : `<a href="${escapeHtml(archiveUrl)}">Archived copy</a>`
-    }</footer>`,
+        : `<span aria-hidden="true"> · </span><a class="tweet-archive" href="${escapeHtml(archiveUrl)}">Archived copy</a>`
+    }</div>`,
+    `<div class="tweet-footer"><a href="${tweetUrl}">Read more on Twitter</a></div>`,
     '</figure>',
     '',
   ].join('\n');
