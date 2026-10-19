@@ -9,7 +9,8 @@
  * - typecheck: a generated project of 3,000 procedures in 1,501 routers,
  *   each called through the typed client; `tsc --extendedDiagnostics`.
  * - shapes: v12 alone, one generated router per procedure shape (plain,
- *   `.output()`, `.errors()`, middleware, Effect, contract); see `shapes.ts`.
+ *   `.output()`, `.errors()`, middleware, Effect, contract, `matchError()`);
+ *   see `shapes.ts`.
  * - bundle: a minimal client, Node server and fetch handler, bundled with
  *   rolldown (tree-shaken, minified) and gzipped.
  * - budget: the client bundles whose size CI reports (see `budgets`).

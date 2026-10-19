@@ -5,7 +5,8 @@
  * Every shape writes a project of `procedures` procedures (files of 10,
  * half queries and half mutations, every field name unique so nothing is
  * shared), a fetch handler over the router, and a client file per router
- * file that calls each procedure with its result annotated. Each project is
+ * file that calls each procedure with its result annotated (`match`: through
+ * `safe()` and an exhaustive `matchError()`). Each project is
  * checked twice with tsc 7 (`--singleThreaded`, v12 from its `.d.ts`): the
  * server half alone (routers and handler), then with the client calls.
  * "per procedure" subtracts a project with an empty router.
@@ -39,7 +40,19 @@ interface Shape {
   readonly impl: (i: number, kind: string) => string;
   /** For `contract`: the contract procedure the impl implements. */
   readonly contract?: (i: number, kind: string) => string;
+  /** The client's use of procedure `i`, `call` its call; annotated by default. */
+  readonly consume?: (i: number, call: string) => string;
 }
+
+/** `match`'s handlers: the procedure's codes, `httpLink`'s, and the rest. */
+const handlers = [
+  'NOT_FOUND: (e) => e.code',
+  'BAD_REQUEST: (e) => e.message',
+  "NETWORK_ERROR: () => 'offline'",
+  'BAD_RESPONSE: (e) => e.message',
+  'STREAM_INTERRUPTED: (e) => e.message',
+  'unexpected: (e) => e.message',
+].join(', ');
 
 /** The shapes, by name; each procedure returns `{ v_i }` or a `NOT_FOUND`. */
 const shapeList = {
@@ -73,6 +86,12 @@ const shapeList = {
   contract: {
     contract: (i, kind) => `c${input(i)}${output(i)}${errors(i)}.${kind}()`,
     impl: (i, kind) => `.${kind}(${body(i, declared)})`,
+  },
+  match: {
+    // `plain`, each call through `safe()` and `matchError()`.
+    impl: (i, kind) => `t.procedure${input(i)}.${kind}(${body(i, returned)})`,
+    consume: (i, call) =>
+      `const [d${i}, e${i}] = await safe(${call});\nexport const r${i}: string = e${i} ? matchError(e${i}, { ${handlers} }) : d${i}.v_${i};`,
   },
 } satisfies Record<string, Shape>;
 
@@ -141,12 +160,17 @@ const fixture = (
             .map((i) => `  p${i}: ${shape!.impl(i, kind(i))},`)
             .join('\n')}\n};\n`,
     ]);
+    const call = (i: number) =>
+      `client.f${f}.p${i}.${kind(i) === 'query' ? 'query' : 'mutate'}({ a_${i}: 'x' })`;
     files.push([
       `consume/f${f}.ts`,
-      `import { client } from '../client';\n\n${inFile(f)
-        .map(
-          (i) =>
-            `export const r${i}: { v_${i}: string } = await client.f${f}.p${i}.${kind(i) === 'query' ? 'query' : 'mutate'}({ a_${i}: 'x' });`,
+      `${shape?.consume ? "import { matchError, safe } from '@trpc12/trpc/client';\n" : ''}import { client } from '../client';\n\n${inFile(
+        f,
+      )
+        .map((i) =>
+          shape?.consume
+            ? shape.consume(i, call(i))
+            : `export const r${i}: { v_${i}: string } = await ${call(i)};`,
         )
         .join('\n')}\n`,
     ]);
