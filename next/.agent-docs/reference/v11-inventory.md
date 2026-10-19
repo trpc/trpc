@@ -2,7 +2,7 @@
 
 **Purpose:** a single table of what v11 ships, with a suggested fate for vNext, so features can be deleted deliberately rather than by accident. Per the [brief](../decisions/brief.md), we start from scratch and are allowed to be brutal. Anything not listed as **keep** or **change** is gone unless a decision brings it back.
 
-Source: v11 `main` (packages at `11.21.0`). Paths are relative to the repo root.
+Source: v11 `main` (packages at `11.21.0`). Paths are relative to `v11/`.
 
 Fates: **keep** (same idea, maybe renamed) · **change** (concept stays, API changes) · **replace** (different mechanism) · **delete**.
 

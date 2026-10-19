@@ -4,7 +4,7 @@
 
 This repo is a **from-scratch rewrite** of tRPC (vNext / `v12` branch), not maintenance of current tRPC.
 
-**New code lives here, in `next/`.** Do not add vNext packages to the repo-root `packages/`, `examples/` or `www/` trees (that is leftover v11). Design docs live in [`.agent-docs/`](./.agent-docs/).
+**New code lives here, in `next/`.** Do not add vNext packages to `../v11/` (the v11 monorepo: `packages/`, `examples/`, `www/`). Design docs live in [`.agent-docs/`](./.agent-docs/).
 
 Start here (paths relative to `next/`):
 
@@ -26,7 +26,7 @@ Agent skills live in the repo-root `.agents/skills/<name>/SKILL.md` (for example
 
 ## Running
 
-`next/` is its own pnpm workspace. Node is pinned in `.nvmrc` (same version as the repo-root `.nvmrc`). From `next/`:
+`next/` is its own pnpm workspace. Node is pinned in `.nvmrc` (same version as `../v11/.nvmrc`). From `next/`:
 
 ```bash
 nvm use
@@ -56,7 +56,7 @@ User docs are Markdown in `docs/`, one short page per topic in a folder per side
 - `experiment: <id>` in the frontmatter (one of `www/src/experiments.ts`) puts a page that waits for review in an experiment: it's served at its URL but `noindex`, out of the sitemap and `llms.txt`, and out of the sidebar and search until the experiment is on (the Experiments menu, `?flags=<id>`, or opening one of its pages). The build fails when a listed page links to it ([`decisions/docs-experiments.md`](./.agent-docs/decisions/docs-experiments.md)). Mark it `(experimental)` in `docs/README.md`.
 - Where a page's v11 topic is at another slug, name the v11 page in its frontmatter (`v11: server/data-transformers`); the version banner and switcher link the two.
 - The v11, v10 and v9 docs are generated copies in `www/v11/`, `www/v10/` and `www/v9/`, and so are the home page's v11 code steps in `www/v11/home/` and the blog in `www/blog/`: don't edit them, rerun the copy. Nothing reruns it automatically: after merging `main` into `v12`, or when asked to sync the old docs, follow [`.agents/skills/sync-old-docs/SKILL.md`](../.agents/skills/sync-old-docs/SKILL.md) ([`decisions/old-docs-copy.md`](./.agent-docs/decisions/old-docs-copy.md)). The v11 docs' Twoslash blocks compile in `www/samples/v11`, against the `@trpc/*` canary it pins.
-- The same copy writes trpc.io's redirects to `www/trpc-io-redirects.json`; the build redirects every old trpc.io URL to its page here and fails on one that lands nowhere ([`decisions/old-urls-and-seo.md`](./.agent-docs/decisions/old-urls-and-seo.md)). `www/old-docs.json` says where each old doc, post, partial and image went, and the copy fails on a file under the root's `www/docs`, `www/versioned_docs` or `www/blog` it neither copies nor lists in `notCopied`. `old-docs:check` fails when the copies aren't what the copy writes; nothing runs it but the sync.
+- The same copy writes trpc.io's redirects to `www/trpc-io-redirects.json`; the build redirects every old trpc.io URL to its page here and fails on one that lands nowhere ([`decisions/old-urls-and-seo.md`](./.agent-docs/decisions/old-urls-and-seo.md)). `www/old-docs.json` says where each old doc, post, partial and image went, and the copy fails on a file under `v11/www/docs`, `v11/www/versioned_docs` or `v11/www/blog` it neither copies nor lists in `notCopied`. `old-docs:check` fails when the copies aren't what the copy writes; nothing runs it but the sync.
 - The sponsors in `www/sponsors.json` and the root `README.md`'s sponsors section are written by `pnpm --filter @trpc12/www sponsors:sync` (needs KATT's `TRPC_GITHUB_TOKEN`; `sponsors:readme` redoes the README from `sponsors.json`): don't edit them by hand ([`decisions/docs-sponsors.md`](./.agent-docs/decisions/docs-sponsors.md)). After merging `main` into `v12`, the `post-merge` hook reruns `sponsors:readme` when `README.md` changed; commit what it writes.
 - Link pages with relative `.md` links (`../client/links.md#query-urls`); the build fails on a missing page or heading.
 - Prefer `ts twoslash` blocks: they compile in `www/samples/docs` (import its `./server.ts` and `./client.ts`, hiding the setup between `// ---cut-start---` and `// ---cut-end---`), and `// ^?` shows a type. An undeclared type error fails the build.
@@ -93,6 +93,6 @@ Source for this project's key dependencies is vendored under `.repos/`, pinned t
 
 Managed by [vendor-src](https://www.npmjs.com/package/vendor-src), a devDependency of this workspace. Its config has to live at the repo root (`../vendor-src.json`, `"dir": "next/.repos"`), because vendor-src looks for the nearest directory with both `.git` and `package.json`. `rootAgentsMd` is off, so keep the list above in sync by hand when adding or bumping a vendored repo.
 
-Every repo is git-only (`"packages": []`): vendor-src resolves installed packages from the repo root, where v11's dependencies live, so it can't tie a checkout to this workspace's lockfile. `vendor-src check` (run by `pnpm install`) skips git-only repos. `pnpm vendor:sync [name…]` moves each to its newest upstream ref: a tag to the highest tag with the same prefix (`effect@4.0.2` follows `effect@*`; prereleases only from a prerelease), a SHA (`raf-query`) to the default branch's `HEAD`.
+Every repo is git-only (`"packages": []`): vendor-src resolves installed packages from the repo root, which has no dependencies (`v11/` and `next/` are separate workspaces), so it can't tie a checkout to this workspace's lockfile. `vendor-src check` (run by `pnpm install`) skips git-only repos. `pnpm vendor:sync [name…]` moves each to its newest upstream ref: a tag to the highest tag with the same prefix (`effect@4.0.2` follows `effect@*`; prereleases only from a prerelease), a SHA (`raf-query`) to the default branch's `HEAD`.
 
 So sync `effect` and `orpc` only when bumping their installed versions to the same release, and sync other repos by name (`pnpm vendor:sync raf-query`). `vendor-src add` needs a clean working tree and creates `git subtree` merge commits. Sync needs only the checkouts it touches to be clean, and commits the new tree and the pruned `ignore` paths itself. Then commit `../vendor-src.json` (`.repos/AGENTS.md` is rewritten for you) and update the list above by hand.

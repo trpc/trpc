@@ -1,6 +1,6 @@
 # tRPC vNext: design proposals
 
-This folder (`next/.agent-docs/`) holds the **design** work for the next version of tRPC, following the [brief](./decisions/brief.md). **Implementation lives in the rest of [`next/`](../)** — do not put new packages in the repo-root `packages/` tree. Paths such as `.repos/effect` or `spikes/` are relative to `next/`.
+This folder (`next/.agent-docs/`) holds the **design** work for the next version of tRPC, following the [brief](./decisions/brief.md). **Implementation lives in the rest of [`next/`](../)** — do not put new packages in `v11/packages/`. Paths such as `.repos/effect` or `spikes/` are relative to `next/`.
 
 It contains:
 

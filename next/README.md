@@ -1,6 +1,6 @@
 # `next/` — tRPC vNext code root
 
-All **implementation** for the rewrite lives here. The old v11 tree at the repo root (`packages/`, `examples/`, `www/`, …) is reference only until it is deleted.
+All **implementation** for the rewrite lives here. The old v11 tree, in the repo's `v11/` (`packages/`, `examples/`, `www/`, …), is reference only until it is deleted.
 
 Agents: start with [`AGENTS.md`](./AGENTS.md). Design docs live in [`.agent-docs/`](./.agent-docs/). Brief: [`.agent-docs/decisions/brief.md`](./.agent-docs/decisions/brief.md).
 
@@ -37,7 +37,7 @@ Work inside this folder (`cd next`). Use its own `pnpm-workspace.yaml`; do not a
 
 [Vite+](https://viteplus.dev) (`vite-plus`, CLI `vp`) bundles Vitest, Oxlint, Oxfmt and tsdown. Config lives in `vite.config.ts`. Requires Node ≥ 24.11.
 
-Node is pinned in `.nvmrc` (`24.21.0`, same version as the repo root). From this directory, `nvm use` selects it even when `next/` is the workspace root. Then:
+Node is pinned in `.nvmrc` (`24.21.0`, same version as `v11/.nvmrc`). From this directory, `nvm use` selects it even when `next/` is the workspace root. Then:
 
 ```bash
 nvm use
@@ -70,7 +70,7 @@ Run all of them before pushing: `pnpm fix`, `pnpm check`, `pnpm typecheck`, `pnp
 
 React without TanStack, both experimental as whole packages ([docs](./docs/integrations/experimental-react.md), [decision](./.agent-docs/decisions/react-use-package.md)): `@trpc12/experimental-react` (`createReactClient`: loaders call `.query()` for stable, `use()`-ready promises; `useQuery`, `useQueryState`; caching, structural sharing, refetching and retries as opt-in links, all of them in `standardLinks()`; `dehydrate`/`hydrate`) and `@trpc12/experimental-react-atom` (`createAtomClient`: query, mutation and subscription atoms on `effect/reactivity`, hydrated through the links' serializer).
 
-**Pre-commit:** `.vite-hooks/pre-commit` runs `vp staged` (see `staged` in `vite.config.ts`): `vp check --fix` on staged files under `next/`, plus `vp test related` for staged `.ts` files. `.vite-hooks/post-merge` reruns `pnpm --filter @trpc12/www sponsors:readme` when a merge changed the root's `README.md`. The old docs copied from the root's `www/` are synced by hand ([`../.agents/skills/sync-old-docs/SKILL.md`](../.agents/skills/sync-old-docs/SKILL.md)). `pnpm install` enables it via `vp config` unless `core.hooksPath` is already set to something else. Skip once with `VP_GIT_HOOKS=0 git commit …`.
+**Pre-commit:** `.vite-hooks/pre-commit` runs `vp staged` (see `staged` in `vite.config.ts`): `vp check --fix` on staged files under `next/`, plus `vp test related` for staged `.ts` files. `.vite-hooks/post-merge` reruns `pnpm --filter @trpc12/www sponsors:readme` when a merge changed the root's `README.md`. The old docs copied from `v11/www/` are synced by hand ([`../.agents/skills/sync-old-docs/SKILL.md`](../.agents/skills/sync-old-docs/SKILL.md)). `pnpm install` enables it via `vp config` unless `core.hooksPath` is already set to something else. Skip once with `VP_GIT_HOOKS=0 git commit …`.
 
 **CI:** `../.github/workflows/next.yml` runs for changes under `next/`: `typecheck`, `check`, `coverage`, `example` (with Redis, Postgres, Bun and Deno) and `bench budget` (sizes in the log, no ceilings); `typecheck` and `test` against the latest `effect@4.x`; and `test:bun`. `fix` and `build` aren't in CI, so run them locally. After pushing, find the run with `gh run list --workflow next.yml --branch <branch>` and watch it with `gh run watch <id> --exit-status`. Root v11 workflows are untouched.
 

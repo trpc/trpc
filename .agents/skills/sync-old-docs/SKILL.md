@@ -1,17 +1,17 @@
 ---
 name: sync-old-docs
-description: Recopy trpc.io's v11, v10 and v9 docs, its blog and the home page's v11 steps from the repo root's www/ into next/www, then make the v11 docs' Twoslash blocks compile again. Nothing reruns it automatically. Use after merging `main` into `v12`, when the root's www/ docs or blog changed, when the human asks to sync, recopy or update the old docs, or when `old-docs:check` fails.
+description: Recopy trpc.io's v11, v10 and v9 docs, its blog and the home page's v11 steps from v11/www/ into next/www, then make the v11 docs' Twoslash blocks compile again. Nothing reruns it automatically. Use after merging `main` into `v12`, when v11/www/ docs or blog changed, when the human asks to sync, recopy or update the old docs, or when `old-docs:check` fails.
 ---
 
 # Sync the old docs
 
-`next/www/{v11,v10,v9}/`, `next/www/v11/home/`, `next/www/blog/`, `next/www/public/{v11,v10,v9}/`, `next/www/old-docs.json` and `next/www/trpc-io-redirects.json` are generated from the repo root's `www/` (trpc.io's Docusaurus site) by `next/www/build/old-docs-copy.ts`. No hook or CI job reruns or checks it: the copies only change when someone follows these steps. What the copy does and why is in [`next/.agent-docs/decisions/old-docs-copy.md`](../../../next/.agent-docs/decisions/old-docs-copy.md).
+`next/www/{v11,v10,v9}/`, `next/www/v11/home/`, `next/www/blog/`, `next/www/public/{v11,v10,v9}/`, `next/www/old-docs.json` and `next/www/trpc-io-redirects.json` are generated from `v11/www/` (trpc.io's Docusaurus site) by `next/www/build/old-docs-copy.ts`. No hook or CI job reruns or checks it: the copies only change when someone follows these steps. What the copy does and why is in [`next/.agent-docs/decisions/old-docs-copy.md`](../../../next/.agent-docs/decisions/old-docs-copy.md).
 
 Work from `next/`, with `nvm use` first. Don't edit the generated files by hand: change the conversion (`www/build/old-docs-convert.ts`, with a test in `old-docs-convert.test.ts`) or the copy's lists in `old-docs-copy.ts`, and copy again.
 
 ## 1. Bring in the source
 
-The copy reads the root's `www/` as checked out, so merge first: `git fetch origin main && git merge origin/main` on `v12` (or the branch the sync lands on). It also reads v10's and v9's last releases, to pin their links to the repo, so fetch those tags:
+The copy reads `v11/www/` as checked out, so bring `main` in first ([`v11-folder.md`](../../../next/.agent-docs/decisions/v11-folder.md) says how and when; `main` keeps v11 at the repo root, and rename detection maps it onto `v11/`). It also reads v10's and v9's last releases, to pin their links to the repo, so fetch those tags:
 
 ```sh
 git fetch --depth=1 origin tag v10.45.4 tag v9.27.4

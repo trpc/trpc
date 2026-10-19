@@ -32,4 +32,4 @@ Tests of the example's own code are `*.test.ts` files under its root or `src/`; 
 
 ## Compared to v11's
 
-v11's examples (the repo root's `examples/`) had `src/server.ts` and `src/client.ts` too, run with `run-p`, `wait-port` and `start-server-and-test` on a fixed port. Here the client is a function the start script calls with the server's URL, so there are no extra tools, no port to wait for or collide on, and a failed assertion fails the run.
+v11's examples (`v11/examples/`) had `src/server.ts` and `src/client.ts` too, run with `run-p`, `wait-port` and `start-server-and-test` on a fixed port. Here the client is a function the start script calls with the server's URL, so there are no extra tools, no port to wait for or collide on, and a failed assertion fails the run.
