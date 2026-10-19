@@ -1,5 +1,5 @@
 ---
-title: localLink
+title: '`localLink`'
 description: Call a router in the same process, through the client and its other links.
 section: Client
 parent: client/links

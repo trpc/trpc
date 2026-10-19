@@ -31,7 +31,7 @@ docs/src/server.ts
 ## Growing an app
 
 - [Effect](./effect.md): resolvers that return Effects, with services from the handler's layer.
-- [Extensions](./extensions.md): packages that add middleware, context, meta and errors to every procedure.
+- [Extensions](./extensions.md): packages that add middleware, context, `meta` and errors to every procedure.
 - [Server-side calls](./server-side-calls.md): call procedures in process, for tests and server code.
 
 The handler runs on every runtime: [Adapters](../adapters/overview.md) has one page per runtime.

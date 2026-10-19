@@ -1,6 +1,6 @@
 ---
 title: The codemod
-description: '@trpc12/upgrade rewrites v11 imports, names, links and transformers to v12, keeps your formatting, and lists what is left as file:line:column steps.'
+description: '`@trpc12/upgrade` rewrites v11 imports, names, links and transformers to v12, keeps your formatting, and lists what is left as `file:line:column` steps.'
 section: Migrations
 parent: migrations/from-v11
 order: 2

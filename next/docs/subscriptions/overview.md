@@ -1,7 +1,7 @@
 ---
 title: Subscriptions
 label: Overview
-description: Streams of events over SSE or WebSockets, with tracked() ids so reconnects resume.
+description: Streams of events over SSE or WebSockets, with `tracked()` ids so reconnects resume.
 section: Subscriptions
 order: 1
 v11: server/subscriptions
@@ -81,7 +81,7 @@ client.onPost.subscribe(undefined, { lastEventId: '42' }); // resume from a know
 
 While a subscription is quiet, the handler sends a `: ping` comment every 15 seconds so proxies don't close it as idle. Set `createFetchHandler({ sse: { pingMs } })`, or `false` to turn it off.
 
-## Reading with EventSource
+## Reading with `EventSource`
 
 The stream is standard SSE, so a browser `EventSource` (or `curl`) can read a subscription without the client. Input goes in the query string as `httpLink` sends it (`/trpc/onPost?input={"channel":"news"}`, URL-encoded). Each `message` event's `data` is a serialized value: for a `tracked()` event, its `{ id, data }`, with the id also in `event.lastEventId`. An `EventSource` reconnects with `Last-Event-ID` by itself, so close it on the `done` event, or it reconnects when the stream ends. Failures arrive as `error` events with `data`:
 

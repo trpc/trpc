@@ -1,6 +1,6 @@
 ---
 title: Lifecycle hooks
-description: onStart, onSuccess, onError and onFinish, for logging and metrics.
+description: '`onStart`, `onSuccess`, `onError` and `onFinish`, for logging and metrics.'
 section: Middleware
 order: 1
 ---

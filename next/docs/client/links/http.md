@@ -1,5 +1,5 @@
 ---
-title: httpLink
+title: '`httpLink`'
 description: Queries as GET, mutations as POST and subscriptions as SSE, with batching, streamed outputs and files.
 section: Client
 parent: client/links

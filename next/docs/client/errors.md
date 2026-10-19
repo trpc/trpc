@@ -1,6 +1,6 @@
 ---
 title: Errors without try/catch
-description: safe() returns a result tuple whose error lists every way a call can fail; switch on its code, or let matchError() check you handled each one.
+description: '`safe()` returns a result tuple whose error lists every way a call can fail; switch on its code, or let `matchError()` check you handled each one.'
 section: Client
 order: 4
 v11: client/vanilla/error-handling

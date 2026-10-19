@@ -1,5 +1,5 @@
 ---
-title: wsLink
+title: '`wsLink`'
 description: Every call over one WebSocket, with connection params, keep-alive pings and reconnects that resume subscriptions.
 section: Client
 parent: client/links

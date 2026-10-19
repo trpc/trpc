@@ -1,6 +1,6 @@
 ---
 title: Raw sockets
-description: experimental_serveSocket serves the router over TCP, TLS or Unix sockets, with experimental_socketLink on the client.
+description: '`experimental_serveSocket` serves the router over TCP, TLS or Unix sockets, with `experimental_socketLink` on the client.'
 section: Adapters
 order: 10
 experiment: adapters

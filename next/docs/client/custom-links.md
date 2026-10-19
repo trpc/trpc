@@ -1,6 +1,6 @@
 ---
 title: Custom links
-description: Write a link with link(), and declare the call options it reads, the errors it fails with and what it needs.
+description: Write a link with `link()`, and declare the call options it reads, the errors it fails with and what it needs.
 section: Client
 parent: client/links
 order: 10

@@ -1,6 +1,6 @@
 ---
 title: Rate limiting
-description: experimental_rateLimit() counts calls with Effect's RateLimiter, in memory, Redis, Upstash or Durable Objects, and sets the RateLimit headers.
+description: "`experimental_rateLimit()` counts calls with Effect's `RateLimiter`, in memory, Redis, Upstash or Durable Objects, and sets the `RateLimit` headers."
 section: Middleware
 order: 2
 experiment: middleware
@@ -82,7 +82,7 @@ Cloudflare's Rate Limiting binding (`env.LIMITER.limit({ key })`) isn't a store.
 
 ## On the client
 
-`experimental_RateLimited` is a typed error, so the client narrows on its code. `retryLink({ retry, delayMs })` gets the error, so it can wait `error.data.retryAfter` ([retryLink](../client/links/retry.md#waiting-out-a-rate-limit)).
+`experimental_RateLimited` is a typed error, so the client narrows on its code. `retryLink({ retry, delayMs })` gets the error, so it can wait `error.data.retryAfter` ([`retryLink`](../client/links/retry.md#waiting-out-a-rate-limit)).
 
 ## Credits
 

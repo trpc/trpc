@@ -1,6 +1,6 @@
 ---
 title: The Effect client
-description: createEffectClient returns an Effect per call and a Stream per subscription, with typed errors in the error channel.
+description: '`createEffectClient` returns an Effect per call and a Stream per subscription, with typed errors in the error channel.'
 section: Client
 order: 6
 ---

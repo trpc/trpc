@@ -1,7 +1,7 @@
 ---
 title: Query keys and filters
 label: Keys and filters
-description: How tRPC's query keys are shaped, the filters that invalidate and read them, and keyPrefix for two APIs in one QueryClient.
+description: How tRPC's query keys are shaped, the filters that invalidate and read them, and `keyPrefix` for two APIs in one `QueryClient`.
 section: Integrations
 parent: integrations/tanstack-query
 order: 8
@@ -49,7 +49,7 @@ queryClient.setQueryData(key, (old) =>
 );
 ```
 
-## Two APIs, one QueryClient
+## Two APIs, one `QueryClient`
 
 Keys start with the procedure path, so two tRPC APIs with a `post.byId` would share cache entries. Give one a `keyPrefix`:
 

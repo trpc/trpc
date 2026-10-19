@@ -1,6 +1,6 @@
 ---
 title: AI SDK
-description: Stream useChat responses from a procedure, and give procedures to the model as tools.
+description: Stream `useChat` responses from a procedure, and give procedures to the model as tools.
 section: Integrations
 order: 3
 experiment: integrations

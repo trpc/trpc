@@ -1,6 +1,6 @@
 ---
 title: Streaming
-description: Return async generators, Effect streams and nested promises; validate each item with stream().
+description: Return async generators, Effect streams and nested promises; validate each item with `stream()`.
 section: Server
 order: 6
 v11: client/links/httpBatchStreamLink

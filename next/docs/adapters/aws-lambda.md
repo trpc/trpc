@@ -1,6 +1,6 @@
 ---
 title: AWS Lambda
-description: toLambdaHandler for API Gateway, ALB, function URLs and Lambda@Edge, with response streaming.
+description: '`toLambdaHandler` for API Gateway, ALB, function URLs and Lambda@Edge, with response streaming.'
 section: Adapters
 order: 6
 v11: server/adapters/aws-lambda

@@ -1,6 +1,6 @@
 ---
 title: Routers
-description: Plain objects of procedures, merged with mergeRouters and split with lazy().
+description: Plain objects of procedures, merged with `mergeRouters` and split with `lazy()`.
 section: Server
 order: 2
 ---
@@ -44,7 +44,7 @@ export const appRouter = {
 };
 ```
 
-`t.lazy(load, { meta })` also takes router-level meta, as `t.router()` does.
+`t.lazy(load, { meta })` also takes router-level `meta`, as `t.router()` does.
 
 `load` may return the router or a module whose `default` export is the router. Each subtree loads once.
 

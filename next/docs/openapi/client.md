@@ -1,6 +1,6 @@
 ---
 title: Calling REST from the client
-description: experimental_openApiLink sends each call to its REST route, typed from a contract.
+description: '`experimental_openApiLink` sends each call to its REST route, typed from a contract.'
 section: Contracts and OpenAPI
 order: 4
 experiment: contracts

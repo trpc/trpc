@@ -1,6 +1,6 @@
 ---
 title: REST routes
-description: 'Serve the same router over REST: route meta, the handler, inputs, outputs and groups.'
+description: 'Serve the same router over REST: route `meta`, the handler, inputs, outputs and groups.'
 section: Contracts and OpenAPI
 order: 2
 experiment: contracts
@@ -8,7 +8,7 @@ experiment: contracts
 
 A procedure gets a REST route from its `route` meta, and `experimental_createOpenApiHandler` serves the routes next to the RPC handler ([OpenAPI](./overview.md)).
 
-## Route meta
+## Route `meta`
 
 The `experimental_openapi()` root extension adds a `route` meta key. A procedure without one is served at its path: `GET /api/post/byId` for queries, `POST /api/post/create` for mutations. `route` picks the method, path and status.
 
@@ -179,7 +179,7 @@ const appRouter = {
 
 The prefix goes before every route below the group: before an explicit `.meta({ route: { path } })`, and before the path derived from the keys below the group. Group tags come before a procedure's own. Groups nest.
 
-A router's `meta` takes only the keys an extension gives a router-level form, like `route`; other meta is set on procedures.
+A router's `meta` takes only the keys an extension gives a router-level form, like `route`; other `meta` is set on procedures.
 
 A `t.lazy(load, { meta: { route: { prefix } } })` subtree is scoped the same way ([Lazy subtrees](../server/routers.md#lazy-subtrees)).
 

@@ -24,7 +24,7 @@ const me = authed.query((opts) => opts.ctx.user);
 //                                         ^?
 ```
 
-`next({ ctx })` adds to the ctx; `ok(value)` short-circuits with a result. An `error()` returned from a middleware joins the procedure's typed errors ([Errors](./errors.md)).
+`next({ ctx })` adds to the `ctx`; `ok(value)` short-circuits with a result. An `error()` returned from a middleware joins the procedure's typed errors ([Errors](./errors.md)).
 
 Middleware is per procedure: build base procedures and share them. Routers take none. `t.middleware(fn)` types a middleware once for reuse.
 
@@ -51,7 +51,7 @@ The client still sends the schema's input. A later `.input()` parses the raw cal
 
 ## Middleware for packages
 
-`middleware<{ ctx }>()(fn)` (and `middleware.effect`) declares one outside any `t`, typed by the ctx it needs, for a package to publish. Used on a procedure that lacks a key it needs, the key becomes a requirement of the procedure's ctx, the way an Effect requirement moves to whoever runs it: the handler's `createContext` (or an in-process caller's `ctx`) must supply it. A key the procedure has with another type is a type error.
+`middleware<{ ctx }>()(fn)` (and `middleware.effect`) declares one outside any `t`, typed by the `ctx` it needs, for a package to publish. Used on a procedure that lacks a key it needs, the key becomes a requirement of the procedure's `ctx`, the way an Effect requirement moves to whoever runs it: the handler's `createContext` (or an in-process caller's `ctx`) must supply it. A key the procedure has with another type is a type error.
 
 ```ts twoslash
 // ---cut-start---
@@ -74,11 +74,11 @@ createFetchHandler({
 });
 ```
 
-`.concat(plugin)` stays strict: a plugin builder's ctx must already be there. A plugin's inputs merge with the procedure's, and its `.output()` becomes the procedure's output, so concatenating a plugin with an output onto a builder that has one, or calling `.output()` after it, is a type error.
+`.concat(plugin)` stays strict: a plugin builder's `ctx` must already be there. A plugin's inputs merge with the procedure's, and its `.output()` becomes the procedure's output, so concatenating a plugin with an output onto a builder that has one, or calling `.output()` after it, is a type error.
 
 ## Running once
 
-When the plugin starts with the same middleware as the builder (the same function, in the same order), `.concat()` runs it once, on a builder or on `t`. Elsewhere, middleware applied twice runs twice. For work that should happen once per request, an Effect service in the handler's `layer` is built once, and a middleware can reuse what ctx already has, so nested `call(other, input, { ctx })`s skip it:
+When the plugin starts with the same middleware as the builder (the same function, in the same order), `.concat()` runs it once, on a builder or on `t`. Elsewhere, middleware applied twice runs twice. For work that should happen once per request, an Effect service in the handler's `layer` is built once, and a middleware can reuse what `ctx` already has, so nested `call(other, input, { ctx })`s skip it:
 
 ```ts twoslash
 // ---cut-start---
@@ -99,4 +99,4 @@ const withDb = middleware<{ ctx: { db?: Db } }>()(async (opts) =>
 
 `@trpc12/trpc/middleware` has ordinary middleware for common jobs, such as lifecycle hooks ([Built-in middleware](../middleware/overview.md)).
 
-To add middleware, ctx, meta and errors to every procedure of an app from a package, see [Extensions](./extensions.md).
+To add middleware, `ctx`, `meta` and errors to every procedure of an app from a package, see [Extensions](./extensions.md).

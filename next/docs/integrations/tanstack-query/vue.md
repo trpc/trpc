@@ -1,6 +1,6 @@
 ---
 title: Vue
-description: '@trpc12/experimental-tanstack-vue-query: a Vue plugin or provideTrpc() for the client, useTrpc() in setup, and useSubscription with refs.'
+description: '`@trpc12/experimental-tanstack-vue-query`: a Vue plugin or `provideTrpc()` for the client, `useTrpc()` in setup, and `useSubscription` with refs.'
 section: Integrations
 parent: integrations/tanstack-query
 order: 3

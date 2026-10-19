@@ -1,5 +1,5 @@
 ---
-title: retryLink
+title: '`retryLink`'
 description: Retry failed calls, by default queries that failed outside their typed errors, with backoff.
 section: Client
 parent: client/links

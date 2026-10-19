@@ -1,6 +1,6 @@
 ---
 title: Bun
-description: Bun.serve takes handler.fetch; WebSockets run on Effect's Bun server.
+description: "`Bun.serve` takes `handler.fetch`; WebSockets run on Effect's Bun server."
 section: Adapters
 order: 3
 ---

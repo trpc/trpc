@@ -1,6 +1,6 @@
 ---
 title: Solid
-description: '@trpc12/experimental-tanstack-solid-query: a context provider for the client, useTrpc() in components, and useSubscription with reactive getters.'
+description: '`@trpc12/experimental-tanstack-solid-query`: a context provider for the client, `useTrpc()` in components, and `useSubscription` with reactive getters.'
 section: Integrations
 parent: integrations/tanstack-query
 order: 4

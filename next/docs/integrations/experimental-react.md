@@ -1,6 +1,6 @@
 ---
 title: React without TanStack Query
-description: Render-as-you-fetch with use() and Suspense in @trpc12/experimental-react, where cache features are links.
+description: Render-as-you-fetch with `use()` and Suspense in `@trpc12/experimental-react`, where cache features are links.
 section: Integrations
 parent: integrations/react
 order: 3

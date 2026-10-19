@@ -1,6 +1,6 @@
 ---
 title: TanStack DB
-description: A TanStack DB query collection over a procedure's queryOptions(), with optimistic inserts that call mutations.
+description: A TanStack DB query collection over a procedure's `queryOptions()`, with optimistic inserts that call mutations.
 section: Integrations
 parent: integrations/tanstack-query
 order: 12

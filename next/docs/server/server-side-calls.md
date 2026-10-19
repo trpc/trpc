@@ -1,6 +1,6 @@
 ---
 title: Server-side calls
-description: Call procedures in process with createRouterClient, call() and localLink.
+description: Call procedures in process with `createRouterClient`, `call()` and `localLink`.
 section: Server
 order: 13
 ---

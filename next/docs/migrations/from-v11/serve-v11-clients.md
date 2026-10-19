@@ -1,6 +1,6 @@
 ---
 title: Serving v11 clients
-description: createV11Handler serves the new router to @trpc/client 11 apps on the endpoint they already call, in v11's wire format and error shape.
+description: "`createV11Handler` serves the new router to `@trpc/client` 11 apps on the endpoint they already call, in v11's wire format and error shape."
 section: Migrations
 parent: migrations/from-v11
 order: 1

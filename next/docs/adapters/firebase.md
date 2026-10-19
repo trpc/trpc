@@ -1,6 +1,6 @@
 ---
 title: Firebase
-description: Call procedures from Firebase callable functions and map their errors to HttpsError.
+description: Call procedures from Firebase callable functions and map their errors to `HttpsError`.
 section: Adapters
 order: 9
 experiment: adapters

@@ -1,6 +1,6 @@
 ---
 title: Svelte
-description: '@trpc12/experimental-tanstack-svelte-query: context helpers for the client, useTrpc() in components, and createSubscription with runes.'
+description: '`@trpc12/experimental-tanstack-svelte-query`: context helpers for the client, `useTrpc()` in components, and `createSubscription` with runes.'
 section: Integrations
 parent: integrations/tanstack-query
 order: 5

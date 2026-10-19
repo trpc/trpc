@@ -1,6 +1,6 @@
 ---
 title: Tracing
-description: Client spans that propagate traceparent and b3, so client and server share one trace.
+description: Client spans that propagate `traceparent` and `b3`, so client and server share one trace.
 section: Client
 order: 7
 ---

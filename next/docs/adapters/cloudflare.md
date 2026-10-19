@@ -1,6 +1,6 @@
 ---
 title: Cloudflare
-description: Everything in @trpc12/trpc/cloudflare. Durable Objects with hibernating WebSockets, publishers, durable calls, locks, rate limits and connection tokens, plus Workers Traces.
+description: Everything in `@trpc12/trpc/cloudflare`. Durable Objects with hibernating WebSockets, publishers, durable calls, locks, rate limits and connection tokens, plus Workers Traces.
 section: Adapters
 order: 7
 experiment: cloudflare

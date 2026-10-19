@@ -1,6 +1,6 @@
 ---
 title: Durable calls
-description: experimental_durable() keeps a call's result, so a client that lost the response gets it instead of running the mutation twice.
+description: "`experimental_durable()` keeps a call's result, so a client that lost the response gets it instead of running the mutation twice."
 section: Middleware
 order: 4
 experiment: middleware

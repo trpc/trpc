@@ -1,6 +1,6 @@
 ---
 title: Node
-description: Serve on Node with Effect's HttpServer, or mount the handler in Express, Fastify and node:http.
+description: Serve on Node with Effect's `HttpServer`, or mount the handler in Express, Fastify and `node:http`.
 section: Adapters
 order: 2
 v11: server/adapters/standalone

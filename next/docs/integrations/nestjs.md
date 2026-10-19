@@ -1,6 +1,6 @@
 ---
 title: NestJS
-description: Serve a contract from Nest controllers with @trpc12/experimental-nest.
+description: Serve a contract from Nest controllers with `@trpc12/experimental-nest`.
 section: Integrations
 order: 5
 experiment: contracts

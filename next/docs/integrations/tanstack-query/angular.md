@@ -1,6 +1,6 @@
 ---
 title: Angular
-description: '@trpc12/experimental-tanstack-angular-query: provideTrpc() next to provideTanStackQuery, injectTrpc() in components, and injectSubscription with signals.'
+description: '`@trpc12/experimental-tanstack-angular-query`: `provideTrpc()` next to `provideTanStackQuery`, `injectTrpc()` in components, and `injectSubscription` with signals.'
 section: Integrations
 parent: integrations/tanstack-query
 order: 6

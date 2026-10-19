@@ -1,5 +1,5 @@
 ---
-title: loggerLink
+title: '`loggerLink`'
 description: Log every operation, its results and its errors, to the console or a function of your own.
 section: Client
 parent: client/links

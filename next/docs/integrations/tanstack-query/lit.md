@@ -1,6 +1,6 @@
 ---
 title: Lit
-description: '@trpc12/experimental-tanstack-lit-query: a provider element for the client, useTrpc(this) in elements, and createSubscriptionController.'
+description: '`@trpc12/experimental-tanstack-lit-query`: a provider element for the client, `useTrpc(this)` in elements, and `createSubscriptionController`.'
 section: Integrations
 parent: integrations/tanstack-query
 order: 7

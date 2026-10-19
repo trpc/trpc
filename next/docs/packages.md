@@ -1,7 +1,7 @@
 ---
 title: Packages and stability
 label: Packages
-description: Every package and entry point, what each is for and where its docs are, and what experimental_, unstable_ and @stability promise.
+description: Every package and entry point, what each is for and where its docs are, and what `experimental_`, `unstable_` and `@stability` promise.
 section: Getting started
 order: 2
 ---

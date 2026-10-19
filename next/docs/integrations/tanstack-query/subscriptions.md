@@ -1,7 +1,7 @@
 ---
 title: Subscriptions in TanStack Query
 label: Subscriptions
-description: subscriptionOptions() for each framework's subscription primitive, shared between components, and liveOptions() and streamedOptions() in the query cache.
+description: "`subscriptionOptions()` for each framework's subscription primitive, shared between components, and `liveOptions()` and `streamedOptions()` in the query cache."
 section: Integrations
 parent: integrations/tanstack-query
 order: 9

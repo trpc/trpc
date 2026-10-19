@@ -1,7 +1,7 @@
 ---
 title: Your v11 links
 label: v11 links
-description: fromV11Link runs a v11 TRPCLink in a v12 chain, so you can move links one at a time, and what a rewritten link looks like.
+description: '`fromV11Link` runs a v11 `TRPCLink` in a v12 chain, so you can move links one at a time, and what a rewritten link looks like.'
 section: Migrations
 parent: migrations/from-v11
 order: 3

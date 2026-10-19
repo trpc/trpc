@@ -1,6 +1,6 @@
 ---
 title: Preact
-description: '@trpc12/experimental-tanstack-preact-query: a context provider for the client, useTrpc() in components, and useSubscription.'
+description: '`@trpc12/experimental-tanstack-preact-query`: a context provider for the client, `useTrpc()` in components, and `useSubscription`.'
 section: Integrations
 parent: integrations/tanstack-query
 order: 2
