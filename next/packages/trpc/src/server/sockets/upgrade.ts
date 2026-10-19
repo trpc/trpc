@@ -1,7 +1,12 @@
-import { Context, Effect } from 'effect';
+import { Context, Effect, Queue } from 'effect';
 import type { HttpServerError, HttpServerRequest } from 'effect/http';
-import type { Socket } from 'effect/socket';
-import { runSocket, socketFrames } from './socket-session.ts';
+import { Socket } from 'effect/socket';
+import {
+  bufferedAmountOf,
+  runSocket,
+  socketFrames,
+  withBufferedAmount,
+} from './socket-session.ts';
 import type { WebSocketLike } from './socket.ts';
 
 /** @internal */
@@ -31,21 +36,56 @@ export const UpgradeServer: Context.ServiceClass<
   ServeSocket
 > = Context.Service<UpgradeServer, ServeSocket>()('@trpc12/trpc/UpgradeServer');
 
+interface NodeDuplexLike {
+  readonly writableLength: number;
+  readonly destroyed: boolean;
+}
+
+/**
+ * The TCP socket under a Node upgrade (`IncomingMessage.socket`). `ws`
+ * writes to it directly, so what it hasn't sent yet is `ws`'s
+ * `bufferedAmount`, which Effect's `Socket` keeps to itself.
+ */
+const nodeSocketOf = (
+  request: HttpServerRequest.HttpServerRequest,
+): NodeDuplexLike | undefined => {
+  const socket = (request.source as { socket?: Partial<NodeDuplexLike> })
+    ?.socket;
+  return typeof socket?.writableLength === 'number'
+    ? (socket as NodeDuplexLike)
+    : undefined;
+};
+
 /** Upgrades `request` and serves its socket until it closes. @internal */
 export const upgradeTo = (
   request: HttpServerRequest.HttpServerRequest,
   serve: (socket: Socket.Socket) => Effect.Effect<void>,
 ): Effect.Effect<void, HttpServerError.HttpServerError> =>
-  Effect.flatMap(request.upgrade, serve);
+  Effect.flatMap(request.upgrade, (socket) => {
+    const tcp = nodeSocketOf(request);
+    return serve(
+      tcp
+        ? withBufferedAmount(socket, () =>
+            tcp.destroyed ? 0 : tcp.writableLength,
+          )
+        : socket,
+    );
+  });
 
 const OPEN = 1;
 const CLOSING = 2;
 const CLOSED = 3;
 
+const encoder = new TextEncoder();
+const byteLength = (data: string | Uint8Array) =>
+  typeof data === 'string' ? encoder.encode(data).byteLength : data.byteLength;
+
 /**
  * Serves `socket` to `accept` as a standard `WebSocket`, for a
  * `websocket()` handler that isn't ours: its contract is the `WebSocket`
  * shape, and Effect only adapts the other way (`Socket.fromWebSocket`).
+ * Its `send` can't wait, so it queues, and `bufferedAmount` counts what
+ * hasn't reached the socket yet, for the handler to wait on.
  * @internal
  */
 export const serveAsWebSocket = (
@@ -57,7 +97,24 @@ export const serveAsWebSocket = (
     frames: socketFrames(socket),
     idleTimeoutMs: false,
     open: (outbox) =>
-      Effect.sync(() => {
+      Effect.gen(function* () {
+        const unsent = bufferedAmountOf(socket);
+        const pending = yield* Queue.unbounded<
+          string | Uint8Array | Socket.CloseEvent
+        >();
+        let queuedBytes = 0;
+        yield* Queue.take(pending).pipe(
+          Effect.flatMap((item) =>
+            Socket.isCloseEvent(item)
+              ? Effect.sync(() => outbox.close(item.code, item.reason))
+              : Effect.ensuring(
+                  outbox.send(item),
+                  Effect.sync(() => (queuedBytes -= byteLength(item))),
+                ),
+          ),
+          Effect.forever,
+          Effect.forkScoped,
+        );
         const listeners = new Map<string, Set<(event: any) => void>>();
         const emit = (type: string, event: unknown) => {
           for (const listener of listeners.get(type) ?? []) listener(event);
@@ -67,13 +124,21 @@ export const serveAsWebSocket = (
           get readyState() {
             return readyState;
           },
+          get bufferedAmount() {
+            return queuedBytes + (readyState === OPEN ? (unsent?.() ?? 0) : 0);
+          },
           send(data) {
-            if (readyState === OPEN) outbox.send(data);
+            if (readyState !== OPEN) return;
+            queuedBytes += byteLength(data);
+            Queue.offerUnsafe(pending, data);
           },
           close(code, reason) {
             if (readyState !== OPEN) return;
             readyState = CLOSING;
-            outbox.close(code ?? 1000, reason);
+            Queue.offerUnsafe(
+              pending,
+              new Socket.CloseEvent(code ?? 1000, reason),
+            );
           },
           addEventListener(type, listener) {
             const set = listeners.get(type) ?? new Set();

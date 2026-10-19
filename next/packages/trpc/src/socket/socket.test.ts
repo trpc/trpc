@@ -1,3 +1,4 @@
+import { once } from 'node:events';
 import { connect, createServer, type AddressInfo } from 'node:net';
 import { NodeSocket, NodeSocketServer } from '@effect/platform-node';
 import { Context, Effect, Exit, Layer, Scope } from 'effect';
@@ -21,7 +22,12 @@ import { z } from 'zod';
 
 const t = initTrpc<{ ctx: { user: string | null; transport: string } }>();
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-const state = { aborted: 0, infos: [] as CreateContextOpts['info'][] };
+const state = {
+  aborted: 0,
+  infos: [] as CreateContextOpts['info'][],
+  yielded: 0,
+  returned: false,
+};
 
 const router = {
   hello: t.procedure
@@ -60,6 +66,16 @@ const router = {
         yield tracked(String(n), n);
       }
     }),
+  big: t.procedure.subscription(async function* () {
+    try {
+      while (state.yielded < 100_000) {
+        state.yielded++;
+        yield 'x'.repeat(1024);
+      }
+    } finally {
+      state.returned = true;
+    }
+  }),
 };
 
 async function serve(opts: { idleTimeoutMs?: number | false } = {}) {
@@ -154,6 +170,27 @@ test('subscriptions stream tracked events', async () => {
     events.push(event.data);
   }
   expect(events).toEqual([0, 1, 2]);
+});
+
+test('a client that stops reading pauses a subscription, which returns when the client leaves', async () => {
+  await using server = await serve();
+  const raw = connect(server.port, '127.0.0.1');
+  await once(raw, 'connect');
+  raw.pause();
+  raw.write(
+    `${JSON.stringify({ type: 'init', version: '12' })}\n${JSON.stringify({ id: 1, type: 'request', method: 'subscription', path: 'big' })}\n`,
+  );
+  await vi.waitFor(() => expect(state.yielded).toBeGreaterThan(0));
+  let paused = -1;
+  while (paused !== state.yielded) {
+    paused = state.yielded;
+    await sleep(100);
+  }
+  // Socket buffers hold a few MB; without backpressure it reads all of it.
+  expect(paused).toBeLessThan(25_000);
+  raw.destroy();
+  await vi.waitFor(() => expect(state.returned).toBe(true));
+  expect(state.yielded).toBeLessThan(25_000);
 });
 
 test('a dropped connection reconnects for the next call', async () => {
