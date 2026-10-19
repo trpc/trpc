@@ -50,7 +50,7 @@ interface Shape {
 }
 
 /** A chain like an app's: every built-in kind of link, and a custom one. */
-const appLinks = {
+const appLinks: Shape['links'] = {
   imports: `import { Schema, Stream } from 'effect';
 import { dedupeLink, link, loggerLink, retryLink, splitLink, TrpcError, wsLink } from '@trpc12/trpc/client';
 

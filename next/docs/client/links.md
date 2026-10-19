@@ -55,11 +55,11 @@ An operation goes through the links in order and its results come back the other
 
 A link declares the call options it reads (`dedupe` for `dedupeLink`, a `switchLink`'s name), and a client made with `router:` types them on every call next to `signal`, so a call takes an option only when a link in its chain reads it ([The client](./overview.md#call-options)). The terminating links also declare the [link codes](./errors.md#errors-from-the-links) they fail calls with, and the client's types follow:
 
-| Link        | Call options                                        | Link codes                                             | Also                                                                                  |
-| ----------- | --------------------------------------------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------- |
-| `httpLink`  | `headers`, `init`, `batch`, `reconnect`, `onResponse` | `NETWORK_ERROR`, `BAD_RESPONSE`, `STREAM_INTERRUPTED` | No `.subscribe()` with `subscriptions: false`; `batch: true` makes calls batched          |
-| `wsLink`    | `reconnect`                                         | `NETWORK_ERROR`, `BAD_RESPONSE`, `STREAM_INTERRUPTED` |                                                                                       |
-| `localLink` | none                                                | none                                                   |                                                                                       |
+| Link        | Call options                                          | Link codes                                            | Also                                                                             |
+| ----------- | ----------------------------------------------------- | ----------------------------------------------------- | -------------------------------------------------------------------------------- |
+| `httpLink`  | `headers`, `init`, `batch`, `reconnect`, `onResponse` | `NETWORK_ERROR`, `BAD_RESPONSE`, `STREAM_INTERRUPTED` | No `.subscribe()` with `subscriptions: false`; `batch: true` makes calls batched |
+| `wsLink`    | `reconnect`                                           | `NETWORK_ERROR`, `BAD_RESPONSE`, `STREAM_INTERRUPTED` |                                                                                  |
+| `localLink` | none                                                  | none                                                  |                                                                                  |
 
 A `splitLink` or `switchLink` takes the options and codes of every branch, and drops a method only when no branch carries it. Every one of these links types outputs in its serializer's form, and a chain takes its form from its first link that declares one.
 

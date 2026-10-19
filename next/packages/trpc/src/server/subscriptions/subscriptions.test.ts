@@ -1,11 +1,7 @@
 import { Effect, Fiber, Predicate, Schedule, Stream } from 'effect';
 import { HttpRouter, HttpServerRequest } from 'effect/http';
 import { EventSource } from 'undici';
-import {
-  createTrpcClient,
-  httpLink,
-  routerType,
-} from '@trpc12/trpc/client';
+import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
 import {
   createFetchHandler,
   error,

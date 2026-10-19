@@ -19,11 +19,7 @@ import type {
   ProcedureDefOf,
   Unlazy,
 } from '../server/procedures/index.ts';
-import type {
-  AnyLink,
-  DeclContext,
-  TrpcLink,
-} from './link.ts';
+import type { AnyLink, DeclContext, TrpcLink } from './link.ts';
 
 /**
  * An error's `data` as it arrives under a serializer's form, like outputs:

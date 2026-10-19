@@ -147,7 +147,9 @@ test('a call takes the built-in options only when a link reads them', () => {
     : never;
   const url = 'http://localhost';
   const ws = wsLink({ url: 'ws://localhost' });
-  const port = experimental_messagePortLink({ port: new MessageChannel().port1 });
+  const port = experimental_messagePortLink({
+    port: new MessageChannel().port1,
+  });
   const clientOf = <const L extends ReadonlyArray<AnyLink>>(links: L) =>
     createTrpcClient({ router: routerType<AppRouter>(), links });
 
