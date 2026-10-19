@@ -21,7 +21,7 @@ import {
 } from '../../../internal/protocol.ts';
 import type { Frame } from '../../../serializer/index.ts';
 import type { Operation } from '../../link.ts';
-import { badResponse } from '../events.ts';
+import { badResponse, isByteStreamInput } from '../events.ts';
 import {
   ok,
   readStream,
@@ -77,9 +77,14 @@ export function batching(opts: BatchingOptions = {}): HttpBatching {
         maxItems: opts.maxItems ?? 10,
         send: (batch) => sendBatch(transport, batch),
       });
-      /** Blobs need a multipart request of their own; a bad input fails alone. */
+      /**
+       * Blobs need a multipart request of their own, and a byte stream is the
+       * body of its own; a bad input fails alone.
+       */
       const unbatchable = (op: Operation) => {
-        if (op.context.batch === false) return true;
+        if (op.context.batch === false || isByteStreamInput(op.input)) {
+          return true;
+        }
         try {
           return (
             transport.encode(op).parts.length > 0 || initKey(op) === undefined

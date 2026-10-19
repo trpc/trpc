@@ -134,6 +134,8 @@ export const CONTENT_TYPE = {
   /** JSONL's lines as length-prefixed records, with file bytes unencoded. */
   frames: 'application/vnd.trpc.frames',
   sse: 'text/event-stream',
+  /** A byte stream input's body. */
+  octet: 'application/octet-stream',
 } as const;
 
 /**
@@ -272,6 +274,9 @@ export const isJsonContentType = (value: string | null): boolean =>
 
 export const isMultipartContentType = (value: string | null): boolean =>
   hasMediaType(value, 'multipart/form-data');
+
+export const isOctetContentType = (value: string | null): boolean =>
+  hasMediaType(value, CONTENT_TYPE.octet);
 
 /** An SSE event: `event` defaults to `message`. */
 export interface SseEvent {
