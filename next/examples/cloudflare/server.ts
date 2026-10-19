@@ -3,7 +3,8 @@
  * Each object serves tRPC over hibernating WebSockets: idle connections and
  * open subscriptions don't keep it in memory. Durable calls keep their
  * results, streamed ones too, in the object's storage. `claim` locks a seat
- * through a `Locks` object per seat, and every call's spans are recorded in
+ * through a `Locks` object per seat, `send` is rate limited through a
+ * `RateLimits` object per key, and every call's spans are recorded in
  * Workers Traces. `cors()` refuses WebSocket upgrades from other origins.
  */
 import { AsyncLocalStorage } from 'node:async_hooks';
@@ -12,10 +13,13 @@ import {
   experimental_createHibernatingWebSockets,
   experimental_durableLocker,
   experimental_durableLockObject,
+  experimental_durableRateLimiterStore,
+  experimental_durableRateLimitObject,
   experimental_workersTracer,
   experimental_hibernatingPublisher,
 } from '@trpc12/trpc/cloudflare';
 import { Layer } from 'effect';
+import { RateLimiter } from 'effect/persistence';
 import { cors } from '@trpc12/trpc/http';
 import { createFetchHandler } from '@trpc12/trpc/server';
 import { appRouter, Messages } from './src/router.ts';
@@ -24,6 +28,7 @@ import { durableObjectPersistence } from './src/storage.ts';
 export interface Env {
   ROOMS: DurableObjectNamespace<Room>;
   LOCKS: DurableObjectNamespace<Locks>;
+  RATE_LIMITS: DurableObjectNamespace<RateLimits>;
   GREETING?: string;
 }
 
@@ -37,6 +42,11 @@ export class Room extends DurableObject<Env> {
       }),
       durableObjectPersistence(this.ctx.storage),
       experimental_durableLocker(this.env.LOCKS),
+      RateLimiter.layer.pipe(
+        Layer.provide(
+          experimental_durableRateLimiterStore(this.env.RATE_LIMITS),
+        ),
+      ),
       experimental_workersTracer({
         tracing,
         snapshot: () => AsyncLocalStorage.snapshot(),
@@ -86,6 +96,18 @@ export class Locks extends DurableObject<Env> {
   }
   override webSocketError(ws: WebSocket) {
     this.locks.close(ws);
+  }
+}
+
+/** One rate limit per key, counted in the object's storage. */
+export class RateLimits extends DurableObject<Env> {
+  limits = experimental_durableRateLimitObject(this.ctx);
+
+  override fetch(request: Request): Promise<Response> {
+    return this.limits.fetch(request);
+  }
+  override alarm() {
+    return this.limits.alarm();
   }
 }
 

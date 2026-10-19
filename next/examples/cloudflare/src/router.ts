@@ -2,6 +2,7 @@ import { Effect } from 'effect';
 import {
   experimental_durable,
   experimental_lock,
+  rateLimit,
 } from '@trpc12/trpc/middleware';
 import { initTrpc, Publisher } from '@trpc12/trpc/server';
 import { z } from 'zod';
@@ -23,8 +24,17 @@ export const appRouter = {
   room: t.procedure.query(
     (opts) => `${opts.ctx.greeting} from ${opts.ctx.room}`,
   ),
+  // Three messages a minute per sender in a room. Each key's count is a
+  // `RateLimits` Durable Object, so every Worker instance counts the same.
   send: t.procedure
     .input(z.object({ from: z.string(), text: z.string().min(1) }))
+    .use(
+      rateLimit<{ ctx: { room: string }; input: { from: string } }>({
+        key: (opts) => `send:${opts.ctx.room}:${opts.input.from}`,
+        limit: 3,
+        window: '1 minute',
+      }),
+    )
     .mutation((opts) =>
       Effect.as(Messages.publish('message', opts.input), opts.input),
     ),

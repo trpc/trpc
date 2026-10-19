@@ -8,11 +8,13 @@
     "bindings": [
       { "name": "ROOMS", "class_name": "Room" },
       { "name": "LOCKS", "class_name": "Locks" },
+      { "name": "RATE_LIMITS", "class_name": "RateLimits" },
     ],
   },
   "migrations": [
     { "tag": "v1", "new_sqlite_classes": ["Room"] },
     { "tag": "v2", "new_sqlite_classes": ["Locks"] },
+    { "tag": "v3", "new_sqlite_classes": ["RateLimits"] },
   ],
   "observability": { "traces": { "enabled": true } },
 }

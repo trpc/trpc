@@ -1,8 +1,8 @@
 /**
  * Calls the Worker at `base`: a room over HTTP, a seat locked across two
  * rooms, a subscription over a hibernating WebSocket, upgrades from another
- * origin and the app's, and a durable streamed call whose connection drops
- * and resumes. Run directly, it calls
+ * origin and the app's, a rate limit, and a durable streamed call whose
+ * connection drops and resumes. Run directly, it calls
  * `process.argv[2]` or `wrangler dev`'s `http://localhost:8787`; CI passes the
  * deployed Worker's URL.
  */
@@ -12,6 +12,7 @@ import {
   createTrpcClient,
   experimental_durableLink,
   httpLink,
+  safe,
   splitLink,
   wsLink,
   routerType,
@@ -105,6 +106,17 @@ export async function main(base: string) {
   if (upgrades[0] !== 403 || upgrades[1] !== 101) {
     throw new Error('expected 403 for another origin and 101 for the app');
   }
+
+  // A sender gets three messages a minute in a room, counted by a
+  // `RateLimits` object.
+  await client.send.mutate({ from: 'ada', text: 'one more' });
+  const [, limited] = await safe(
+    client.send.mutate({ from: 'ada', text: 'one too many' }),
+  );
+  if (!limited?.defined || limited.code !== 'TOO_MANY_REQUESTS') {
+    throw new Error('expected the fourth message to be rate limited');
+  }
+  console.log('send: rate limited, retry in', limited.data.retryAfter, 'ms');
 
   // The first response's body drops after two lines, as a lost connection
   // would; the link asks again for the frames after those.
