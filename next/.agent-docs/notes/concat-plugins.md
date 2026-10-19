@@ -57,6 +57,10 @@ All of it types, and every failure is pinned with `@ts-expect-error`.
   }>;
   ```
 
+## Outputs (decided after the spike)
+
+The spike's builder had no `.output()`. v11's `concat` throws "Duplicate key output" at runtime when both builders have one. Human, 2026-10-19 (v11 issue #5787): "C". The real builder takes the plugin's output, and a second output is a type error: `.output()` after a plugin that set one, or `.concat()` of a plugin with an output onto a builder that has one. Inputs keep merging. Details and what merging outputs later would need: [builder-and-procedures](../decisions/builder-and-procedures.md).
+
 ## Constraints for the real builder
 
 - **Every type a builder can contain must be exported.** The first run failed declaration emit with TS2527 ("references an inaccessible 'unique symbol' type"), because the "no input yet" sentinel was a private `unique symbol`. A plugin package can't publish a builder whose type it can't name. This belongs in 01's portability rules, and the portability fixture should include a plugin package.

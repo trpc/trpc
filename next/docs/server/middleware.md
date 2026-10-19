@@ -74,7 +74,7 @@ createFetchHandler({
 });
 ```
 
-`.concat(plugin)` stays strict: a plugin builder's ctx must already be there.
+`.concat(plugin)` stays strict: a plugin builder's ctx must already be there. A plugin's inputs merge with the procedure's, and its `.output()` becomes the procedure's output, so concatenating a plugin with an output onto a builder that has one, or calling `.output()` after it, is a type error.
 
 ## Running once
 

@@ -129,6 +129,21 @@ test('extensions are checked against the root', () => {
   t.concat(numeric);
 });
 
+test("an extension's output is every procedure's, which can't take another (v11 #5787)", async () => {
+  const shaped = initTrpc().procedure.output(z.object({ ok: z.boolean() }));
+  const root = initTrpc().concat(shaped);
+  expect(() =>
+    // @ts-expect-error -- the extension set the output
+    root.procedure.output(z.string()),
+  ).toThrow('output: this procedure already has an output');
+  expect(() =>
+    // @ts-expect-error -- both extensions have an output
+    root.concat(shaped),
+  ).toThrow('concat: this procedure and the plugin both have an output');
+  const ping = root.procedure.query(() => ({ ok: true, extra: 1 }));
+  expect(await createRouterClient({ ping }).ping.query()).toEqual({ ok: true });
+});
+
 test('implement() on an extended root runs the extension', async () => {
   const c = experimental_contract.create();
   const impl = initTrpc<{ ctx: { ip: string } }>()

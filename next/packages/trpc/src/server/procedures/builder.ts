@@ -404,7 +404,7 @@ export type ConcatCheck<TDef extends BuilderDef, TPlugin extends BuilderDef> = [
   Missing<CurrentCtx<TDef>, TPlugin['ctx']>,
 ] extends [never]
   ? [Missing<TDef['meta'], TPlugin['meta']>] extends [never]
-    ? unknown
+    ? ConcatOutputCheck<TDef, TPlugin>
     : TypeError<
         'concat: the plugin needs meta this procedure does not declare',
         Missing<TDef['meta'], TPlugin['meta']>
@@ -413,6 +413,41 @@ export type ConcatCheck<TDef extends BuilderDef, TPlugin extends BuilderDef> = [
       'concat: the plugin needs ctx this procedure does not have',
       Missing<CurrentCtx<TDef>, TPlugin['ctx']>
     >;
+
+// --- output ----------------------------------------------------------------------
+
+/**
+ * `unknown` unless both a builder and the plugin it concatenates have an
+ * output: the plugin's becomes the procedure's, and there is only one.
+ * @since 0.1.0
+ * @stability stable
+ */
+export type ConcatOutputCheck<
+  TDef extends BuilderDef,
+  TPlugin extends BuilderDef,
+> = TPlugin['outputIn'] extends Unset
+  ? unknown
+  : TDef['outputIn'] extends Unset
+    ? unknown
+    : TypeError<
+        'concat: this procedure and the plugin both have an output',
+        TPlugin['outputIn']
+      >;
+
+/**
+ * `unknown` when a builder with `TDef` may take an `.output()`: one that
+ * already has an output, its own or a plugin's, can't take another. Inputs
+ * merge; outputs don't.
+ * @since 0.1.0
+ * @stability stable
+ */
+export type OutputCheck<TDef extends BuilderDef> =
+  TDef['outputIn'] extends Unset
+    ? unknown
+    : TypeError<
+        'output: this procedure already has an output',
+        TDef['outputIn']
+      >;
 
 // --- declared errors -------------------------------------------------------------
 
@@ -514,7 +549,7 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
    * ```
    */
   output<$S extends OutputSchema>(
-    schema: $S,
+    schema: $S & OutputCheck<TDef>,
     opts: { validate: false },
   ): ProcedureBuilder<
     With<TDef, { outputIn: OutputIn<$S>; outputOut: OutputIn<$S> }>
@@ -525,6 +560,10 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
    * validates each event (the `data` of `tracked()` events). For streamed
    * queries and mutations, `stream(Item, Return?)` validates each item.
    *
+   * A procedure has one output: a second `.output()`, or one after a
+   * `.concat()` plugin that set an output, is a type error. Inputs merge;
+   * outputs don't.
+   *
    * @example
    * ```ts
    * t.procedure.output(z.object({ id: z.string() })).query(() => ({ id: '1' }));
@@ -532,7 +571,7 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
    * ```
    */
   output<$S extends OutputSchema>(
-    schema: $S,
+    schema: $S & OutputCheck<TDef>,
     opts?: { validate?: true },
   ): ProcedureBuilder<
     With<
@@ -702,10 +741,11 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
   ): ProcedureBuilder<TDef>;
 
   /**
-   * Appends another builder's steps and declared errors. The other
-   * builder can come from a different `t`, for example a plugin package: its
-   * root ctx and meta are requirements, checked against this builder's
-   * current ctx and meta.
+   * Appends another builder's steps and declared errors, and takes its
+   * output. The other builder can come from a different `t`, for example a
+   * plugin package: its root ctx and meta are requirements, checked against
+   * this builder's current ctx and meta. Both having an output is a type
+   * error, as is an `.output()` after a plugin's.
    *
    * @example
    * ```ts
@@ -728,6 +768,12 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
         ctxAdded: Overwrite<TDef['ctxAdded'], $Plugin['ctxAdded']>;
         inputIn: Merge<TDef['inputIn'], $Plugin['inputIn']>;
         inputOut: Merge<TDef['inputOut'], $Plugin['inputOut']>;
+        outputIn: $Plugin['outputIn'] extends Unset
+          ? TDef['outputIn']
+          : $Plugin['outputIn'];
+        outputOut: $Plugin['outputOut'] extends Unset
+          ? TDef['outputOut']
+          : $Plugin['outputOut'];
         errors: TDef['errors'] | $Plugin['errors'];
         declared: Overwrite<TDef['declared'], $Plugin['declared']>;
         shorts: TDef['shorts'] | $Plugin['shorts'];
@@ -922,12 +968,16 @@ export function createBuilder(
     '~trpc': internals,
     input: (arg: AnySchema | ((opts: any) => AnySchema)) =>
       add({ kind: 'input', arg }),
-    output: (schema: AnySchema, opts?: { validate?: boolean }) =>
-      createBuilder({
+    output: (schema: AnySchema, opts?: { validate?: boolean }) => {
+      if (internals.output !== undefined) {
+        throw new Error('output: this procedure already has an output');
+      }
+      return createBuilder({
         ...internals,
         output: schema,
         validateOutput: opts?.validate === false ? false : undefined,
-      }),
+      });
+    },
     errors: (map: ErrorMap) =>
       createBuilder({ ...internals, errors: { ...internals.errors, ...map } }),
     use: (mw: unknown) =>
@@ -943,10 +993,18 @@ export function createBuilder(
       }),
     concat: (plugin: AnyProcedureBuilder) => {
       const other = plugin['~trpc'];
+      if (other.output !== undefined && internals.output !== undefined) {
+        throw new Error(
+          'concat: this procedure and the plugin both have an output',
+        );
+      }
       return createBuilder({
         ...internals,
         steps: appendSteps(internals.steps, other.steps),
         errors: { ...internals.errors, ...other.errors },
+        ...(other.output === undefined
+          ? {}
+          : { output: other.output, validateOutput: other.validateOutput }),
       });
     },
     query: build('query'),

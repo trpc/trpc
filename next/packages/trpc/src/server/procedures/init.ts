@@ -12,6 +12,7 @@ import {
   createBuilder,
   type AnyProcedureBuilder,
   type BuilderDef,
+  type ConcatOutputCheck,
   type CurrentCtx,
   type ProcedureBuilder,
   type With,
@@ -206,8 +207,8 @@ export interface TrpcRoot<
 }
 
 /**
- * `unknown` when an extension fits a root: the root has the ctx it needs and
- * no meta key with a different type.
+ * `unknown` when an extension fits a root: the root has the ctx it needs, no
+ * meta key with a different type, and no output if the extension has one.
  * @since 0.1.0
  * @stability stable
  */
@@ -216,7 +217,7 @@ export type RootConcatCheck<
   TExt extends BuilderDef,
 > = [Missing<CurrentCtx<TDef>, TExt['ctx']>] extends [never]
   ? [MetaConflicts<TDef['meta'], TExt['meta']>] extends [never]
-    ? unknown
+    ? ConcatOutputCheck<TDef, TExt>
     : TypeError<
         'concat: the extension declares meta keys with other types',
         MetaConflicts<TDef['meta'], TExt['meta']>
@@ -249,6 +250,12 @@ export type ExtendedDef<
     ctxAdded: Overwrite<TDef['ctxAdded'], TExt['ctxAdded']>;
     inputIn: Merge<TDef['inputIn'], TExt['inputIn']>;
     inputOut: Merge<TDef['inputOut'], TExt['inputOut']>;
+    outputIn: TExt['outputIn'] extends Unset
+      ? TDef['outputIn']
+      : TExt['outputIn'];
+    outputOut: TExt['outputOut'] extends Unset
+      ? TDef['outputOut']
+      : TExt['outputOut'];
     errors: TDef['errors'] | TExt['errors'];
     declared: Overwrite<TDef['declared'], TExt['declared']>;
     shorts: TDef['shorts'] | TExt['shorts'];

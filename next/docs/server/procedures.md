@@ -26,7 +26,7 @@ A resolver gets `opts`: the validated `input`, the `ctx` ([Context](./context.md
 
 ## Input and output
 
-`.input()` and `.output()` take a Standard Schema (Zod, Valibot, ArkType) or an Effect Schema. Several `.input()` calls merge.
+`.input()` and `.output()` take a Standard Schema (Zod, Valibot, ArkType) or an Effect Schema. Several `.input()` calls merge. A procedure has one output: a second `.output()` is a type error, and so is one after a `.concat()` plugin that set an output.
 
 ```ts twoslash
 // ---cut-start---

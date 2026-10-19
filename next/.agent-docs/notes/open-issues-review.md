@@ -111,46 +111,46 @@ A human answered the "Worth considering" list; each answer is a `decisions/` fil
 
 ### Already answered by vNext
 
-| PR or issue                       | Ask                                                       | vNext                                                                                             |
-| --------------------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| #7663, #7664, #7665               | the request signal aborts after a normal response         | the signal aborts only when the call is interrupted; a probe saw no aborts after normal responses |
-| #7666                             | SSE `maxDurationMs` timer left running                    | there is no such timer                                                                            |
-| #7628                             | untracked SSE events inherit the last id                  | the client parser resets `id` per event, and both links keep the last tracked one                 |
-| #7447                             | Express 5 leaves `req.body` undefined                     | `parsedBody` checks `readableEnded`, so an unread body is streamed                                |
-| #7668                             | a shared error instance formatted once                    | `withDefined` copies errors                                                                       |
-| #7667                             | lazy routes lost when composing routers                   | lazy routes are copied by reference                                                               |
-| #7435, #7406, #7480, #7654        | WebSocket ids and subscription bookkeeping                | ids are registered before any await, deleted only by their owner, and must be numbers             |
-| #7503, #7529                      | keep-alive registered twice                               | one keep-alive fiber per connection                                                               |
-| #7213, #7607                      | stray rejections and leaked subscriptions on retry        | Effect streams are structured, so retries clean up                                                |
-| #7413                             | batch stream not aborted on unsubscribe                   | a batch aborts once every call in it has aborted or settled                                       |
-| #7606                             | abort listeners kept after a request                      | `AbortSignal.any`                                                                                 |
-| #7623                             | falsy inputs dropped from query keys                      | keys drop only `undefined`                                                                        |
-| #7374, #7594                      | `skipToken`                                               | handled in `queryOptions`, `infiniteOptions` and `subscriptionOptions`                            |
-| #7655                             | link `context` for subscriptions                          | `context` reaches the links                                                                       |
-| #7620, #6962                      | `onStopped`, idle after the server ends                   | answered in the first round                                                                       |
-| #7660, #7656, #7428               | `Serialize` of records, branded tuples, `AnyRouter` proxy | checked with tsc                                                                                  |
-| #7662                             | portable inferred types                                   | the `tooling/portability` fixture                                                                 |
-| #7377, #4306                      | routers with incompatible contexts                        | a type error (first round)                                                                        |
-| #7361, #6862                      | `cursor` in infinite inputs                               | `input: (pageParam) => …`                                                                         |
-| #7345, #7258, #7384, #6819        | the batch stream's content type                           | `application/jsonl`, or frames when asked for                                                     |
-| #7627, #7626                      | sync validation first                                     | sync schemas run without a promise (first round)                                                  |
-| #7461, #6868                      | `iterate()` on subscriptions                              | subscriptions are `AsyncIterable`                                                                 |
-| #7182, #6849, #6742               | `FormData`, typed errors, Solid                           | files in inputs and outputs, `.errors()`, `@trpc12/tanstack-solid-query`                          |
-| #7318, #7388, #7616, #7621, #7428 | v11 React Query hook types                                | vNext has no hooks of its own; TanStack's types apply                                             |
-| #6681                             | type-instantiation benchmarks                             | `tooling/bench` measures tsc instantiations                                                       |
-| #7362                             | the automatic JSX runtime                                 | `"jsx": "react-jsx"` everywhere                                                                   |
-| #3708, #4876                      | forwarding headers; typed link context                    | `headers` and `context` call options; `createRouterClient({ ctx })`                               |
-| #4317                             | cancelling a mutation                                     | a `signal` call option, which interrupts the server                                               |
-| #4924, #4956                      | `setMutationDefaults`; TanStack options                   | `mutationOptions()` carries `mutationKey` and `mutationFn`; options are TanStack's own            |
-| #5959                             | a type for each procedure's function, for mocks           | `TrpcClient<AppRouter>['post']['byId']['query']`                                                  |
-| #6153, #6977                      | masking unexpected errors; `error.cause`                  | `mask-unexpected-errors.md`; `cause` stays on the server                                          |
-| #6203                             | plugins that add meta keys                                | root extensions (`t.concat(ext)`) add meta keys, and builders require them                        |
-| #6308                             | generic types for passing utils around                    | `QueryProcedureUtils`, `MutationProcedureUtils` and `SubscriptionProcedureUtils` are exported     |
-| #6772                             | the response handle and a typed platform                  | `response` and `handler.fetch(request, platform)`                                                 |
+| PR or issue                       | Ask                                                       | vNext                                                                                                                  |
+| --------------------------------- | --------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| #7663, #7664, #7665               | the request signal aborts after a normal response         | the signal aborts only when the call is interrupted; a probe saw no aborts after normal responses                      |
+| #7666                             | SSE `maxDurationMs` timer left running                    | there is no such timer                                                                                                 |
+| #7628                             | untracked SSE events inherit the last id                  | the client parser resets `id` per event, and both links keep the last tracked one                                      |
+| #7447                             | Express 5 leaves `req.body` undefined                     | `parsedBody` checks `readableEnded`, so an unread body is streamed                                                     |
+| #7668                             | a shared error instance formatted once                    | `withDefined` copies errors                                                                                            |
+| #7667                             | lazy routes lost when composing routers                   | lazy routes are copied by reference                                                                                    |
+| #7435, #7406, #7480, #7654        | WebSocket ids and subscription bookkeeping                | ids are registered before any await, deleted only by their owner, and must be numbers                                  |
+| #7503, #7529                      | keep-alive registered twice                               | one keep-alive fiber per connection                                                                                    |
+| #7213, #7607                      | stray rejections and leaked subscriptions on retry        | Effect streams are structured, so retries clean up                                                                     |
+| #7413                             | batch stream not aborted on unsubscribe                   | a batch aborts once every call in it has aborted or settled                                                            |
+| #7606                             | abort listeners kept after a request                      | `AbortSignal.any`                                                                                                      |
+| #7623                             | falsy inputs dropped from query keys                      | keys drop only `undefined`                                                                                             |
+| #7374, #7594                      | `skipToken`                                               | handled in `queryOptions`, `infiniteOptions` and `subscriptionOptions`                                                 |
+| #7655                             | link `context` for subscriptions                          | `context` reaches the links                                                                                            |
+| #7620, #6962                      | `onStopped`, idle after the server ends                   | answered in the first round                                                                                            |
+| #7660, #7656, #7428               | `Serialize` of records, branded tuples, `AnyRouter` proxy | checked with tsc                                                                                                       |
+| #7662                             | portable inferred types                                   | the `tooling/portability` fixture                                                                                      |
+| #7377, #4306                      | routers with incompatible contexts                        | a type error (first round)                                                                                             |
+| #7361, #6862                      | `cursor` in infinite inputs                               | `input: (pageParam) => …`                                                                                              |
+| #7345, #7258, #7384, #6819        | the batch stream's content type                           | `application/jsonl`, or frames when asked for                                                                          |
+| #7627, #7626                      | sync validation first                                     | sync schemas run without a promise (first round)                                                                       |
+| #7461, #6868                      | `iterate()` on subscriptions                              | subscriptions are `AsyncIterable`                                                                                      |
+| #7182, #6849, #6742               | `FormData`, typed errors, Solid                           | files in inputs and outputs, `.errors()`, `@trpc12/tanstack-solid-query`                                               |
+| #7318, #7388, #7616, #7621, #7428 | v11 React Query hook types                                | vNext has no hooks of its own; TanStack's types apply                                                                  |
+| #6681                             | type-instantiation benchmarks                             | `tooling/bench` measures tsc instantiations                                                                            |
+| #7362                             | the automatic JSX runtime                                 | `"jsx": "react-jsx"` everywhere                                                                                        |
+| #3708, #4876                      | forwarding headers; typed link context                    | `headers` and `context` call options; `createRouterClient({ ctx })`                                                    |
+| #4317                             | cancelling a mutation                                     | a `signal` call option, which interrupts the server                                                                    |
+| #4924, #4956                      | `setMutationDefaults`; TanStack options                   | `mutationOptions()` carries `mutationKey` and `mutationFn`; options are TanStack's own                                 |
+| #5959                             | a type for each procedure's function, for mocks           | `TrpcClient<AppRouter>['post']['byId']['query']`                                                                       |
+| #6153, #6977                      | masking unexpected errors; `error.cause`                  | `mask-unexpected-errors.md`; `cause` stays on the server                                                               |
+| #6203                             | plugins that add meta keys                                | root extensions (`t.concat(ext)`) add meta keys, and builders require them                                             |
+| #6308                             | generic types for passing utils around                    | `QueryProcedureUtils`, `MutationProcedureUtils` and `SubscriptionProcedureUtils` are exported                          |
+| #6772                             | the response handle and a typed platform                  | `response` and `handler.fetch(request, platform)`                                                                      |
+| #5787                             | extending outputs                                         | a second `.output()`, a plugin's included, is a type error (human); merging is left open (`builder-and-procedures.md`) |
 
 ### Open questions, recorded in decisions
 
-- #5787, extending outputs: a later `.output()` replaces an earlier one, a plugin's included. Merge them like inputs, make the second one a type error, or keep last-wins? (`builder-and-procedures.md`)
 - #7608 and #4734, a reconnect message before shutdown: there is none; subscriptions resume on a new connection, but in-flight queries fail. Add a graceful drain? (`subscriptions.md`)
 - WebSocket backpressure, found while fixing HTTP's (`streamed-responses-backpressure.md`).
 

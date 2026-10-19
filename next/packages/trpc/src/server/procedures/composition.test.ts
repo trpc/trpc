@@ -162,6 +162,47 @@ test('concat checks the ctx a plugin requires', () => {
   withDb.concat(audited);
 });
 
+const Post = z
+  .object({ id: z.string() })
+  .transform((post) => ({ ...post, checked: true as const }));
+const Tagged = z.object({ id: z.string(), tag: z.string() });
+
+test('a procedure has one output: a second .output() is a type error and throws (v11 #5787)', () => {
+  expect(() =>
+    // @ts-expect-error -- this procedure already has an output
+    t.procedure.output(Post).output(Tagged),
+  ).toThrow('output: this procedure already has an output');
+  void (() =>
+    // @ts-expect-error -- `{ validate: false }` outputs count too
+    t.procedure.output(Post, { validate: false }).output(Tagged));
+});
+
+test("concat takes a plugin's output; another .output() is a type error and throws", async () => {
+  const shaped = plugin.procedure.output(Post);
+  const app = t.procedure.concat(shaped);
+  expect(() =>
+    // @ts-expect-error -- the plugin set this procedure's output
+    app.output(Tagged),
+  ).toThrow('output: this procedure already has an output');
+  expect(() =>
+    // @ts-expect-error -- both have an output
+    t.procedure.output(Tagged).concat(shaped),
+  ).toThrow('concat: this procedure and the plugin both have an output');
+
+  const byId = app.query(() => ({ id: '1' }));
+  expectTypeOf<
+    inferRouterOutputs<{ byId: typeof byId }>['byId']
+  >().toEqualTypeOf<{
+    id: string;
+    checked: true;
+  }>();
+  const caller = createRouterClient(
+    { byId },
+    { ctx: { db: { log: [] }, user: null, plan: 'free' } },
+  );
+  expect(await caller.byId.query()).toEqual({ id: '1', checked: true });
+});
+
 test('concat runs the leading middleware an app and a plugin share once', async () => {
   const calls: string[] = [];
   const session = middleware<{ ctx: { user: string | null } }>()((opts) => {
