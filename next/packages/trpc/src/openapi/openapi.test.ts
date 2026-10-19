@@ -829,3 +829,33 @@ test('.meta({ route: { spec } }) replaces or extends the generated operation', (
   });
   expect(JSON.stringify(rpc)).not.toContain('apiKey');
 });
+
+test('security schemes, document-level security and tags', () => {
+  const doc = experimental_generateOpenApi(
+    {
+      me: t.procedure.query(() => 'me'),
+      health: t.procedure
+        .meta({ route: { spec: (op) => ({ ...op, security: [] }) } })
+        .query(() => 'ok'),
+    },
+    {
+      info: { title: 'x', version: '1' },
+      components: {
+        securitySchemes: {
+          bearer: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
+          key: { type: 'apiKey', in: 'header', name: 'x-api-key' },
+        },
+      },
+      security: [{ bearer: [] }, { key: [] }],
+      tags: [{ name: 'posts', description: 'Blog posts' }],
+    },
+  );
+  expect(doc.components.securitySchemes).toEqual({
+    bearer: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
+    key: { type: 'apiKey', in: 'header', name: 'x-api-key' },
+  });
+  expect(doc.components.schemas).toHaveProperty('TrpcError');
+  expect(doc.security).toEqual([{ bearer: [] }, { key: [] }]);
+  expect(doc.tags).toEqual([{ name: 'posts', description: 'Blog posts' }]);
+  expect(doc.paths['/api/health']!['get']?.security).toEqual([]);
+});

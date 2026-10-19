@@ -40,7 +40,7 @@ const create = t.procedure
 
 `route` also takes `summary`, `description`, `deprecated` and `operationId`. When two paths match, the one with more leading static segments wins: `/posts/latest` before `/posts/{id}`.
 
-`spec` overrides the generated operation in the document: an object replaces it, a function extends it. Later `.meta({ route })` calls merge into earlier ones key by key, and `spec` functions compose, so a base procedure can add `security` and its procedures add more:
+`spec` overrides the generated operation in the document: an object replaces it, a function extends it. Later `.meta({ route })` calls merge into earlier ones key by key, and `spec` functions compose, so a base procedure can add `security` and its procedures add more. Declare the `bearer` scheme in the document's `components.securitySchemes` ([security and tags](./document.md#security-and-tags)):
 
 ```ts twoslash
 // ---cut-start---

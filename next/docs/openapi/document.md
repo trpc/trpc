@@ -22,6 +22,37 @@ const doc = experimental_generateOpenApi(await loadRouter(appRouter), {
 
 The document has schemas for input, output and each declared error. `filter({ path, procedure })` drops operations. `target: 'rpc'` describes the RPC endpoint instead of the REST routes. `experimental_generateOpenApi` throws on a lazy subtree that hasn't loaded, so pass the result of `loadRouter()`.
 
+## Security and tags
+
+`components.securitySchemes` declares how clients authenticate, and `security` says which schemes every operation needs. Docs UIs show a login form for them, and generated clients attach the credentials. A procedure's `route.spec` overrides it, with `security: []` for a public route. `tags` describes the tags routes use, in the order docs UIs list them.
+
+```ts twoslash
+// ---cut-start---
+import { experimental_openapi } from '@trpc12/trpc/openapi';
+import { initTrpc } from '@trpc12/trpc/server';
+const t = initTrpc().concat(experimental_openapi());
+// ---cut-end---
+import { experimental_generateOpenApi } from '@trpc12/trpc/openapi';
+
+const router = {
+  me: t.procedure
+    .meta({ route: { tags: ['users'] } })
+    .query(() => ({ name: 'Ada' })),
+  health: t.procedure
+    .meta({ route: { spec: (op) => ({ ...op, security: [] }) } })
+    .query(() => 'ok'),
+};
+
+const doc = experimental_generateOpenApi(router, {
+  info: { title: 'API', version: '1.0.0' },
+  components: {
+    securitySchemes: { bearer: { type: 'http', scheme: 'bearer' } },
+  },
+  security: [{ bearer: [] }],
+  tags: [{ name: 'users', description: 'Accounts and sessions' }],
+});
+```
+
 ## From the types
 
 `experimental_generateOpenApi` only sees runtime schemas. `experimental_generateOpenApiFromTypes` from `@trpc12/trpc/openapi/typescript` also reads the router's types with the TypeScript 7 compiler (it needs `typescript` 7 installed), so it documents:
