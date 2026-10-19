@@ -6,8 +6,8 @@ import { TestClock } from 'effect/testing';
 import {
   connectionPage,
   fakeGithub,
-  isLifetimeQuery,
-  lifetimeNode,
+  isPaymentsQuery,
+  paymentNode,
   type SentQuery,
   sponsorshipNode,
 } from './fake-github.ts';
@@ -81,13 +81,10 @@ describe('syncSponsors', () => {
     () => {
       const fake = github((sent) => {
         const login = sent.variables.login;
-        if (isLifetimeQuery(sent)) {
+        if (isPaymentsQuery(sent)) {
           return login === 'KATT'
-            ? [
-                lifetimeNode('coderabbitai', 300_000),
-                lifetimeNode('fan', 2_000),
-              ]
-            : [lifetimeNode('coderabbitai', 300_000)];
+            ? [paymentNode('coderabbitai', 300_000), paymentNode('fan', 2_000)]
+            : [paymentNode('coderabbitai', 300_000)];
         }
         return login === 'KATT'
           ? [
@@ -153,11 +150,8 @@ describe('syncSponsors', () => {
       let logins = ['coderabbitai', 'fan'];
       let fanCents = 2_000;
       const fake = github((sent) =>
-        isLifetimeQuery(sent)
-          ? [
-              lifetimeNode('coderabbitai', 300_000),
-              lifetimeNode('fan', fanCents),
-            ]
+        isPaymentsQuery(sent)
+          ? [paymentNode('coderabbitai', 300_000), paymentNode('fan', fanCents)]
           : logins.map((login) => sponsorshipNode(login)),
       );
       return Effect.gen(function* () {
@@ -202,7 +196,7 @@ describe('syncSponsors', () => {
     () => {
       const noSponsors = github(() => []);
       const noPayments = github((sent) =>
-        isLifetimeQuery(sent) ? [] : [sponsorshipNode('fan')],
+        isPaymentsQuery(sent) ? [] : [sponsorshipNode('fan')],
       );
       return Effect.gen(function* () {
         const files = yield* fixture;

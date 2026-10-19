@@ -2,15 +2,18 @@ import { describe, expect, it } from '@effect/vitest';
 import { Effect, Predicate, Redacted, Result } from 'effect';
 
 import {
+  activityNode,
   connectionPage,
   fakeGithub,
-  lifetimeNode,
+  paymentNode,
   sponsorshipNode,
 } from './fake-github.ts';
 import {
+  type Activity,
   fetchLifetimeValues,
   fetchSponsorships,
   graphqlUrl,
+  paidFromActivities,
   type SponsoredAccount,
 } from './sponsors-github.ts';
 
@@ -178,8 +181,8 @@ describe('fetchLifetimeValues', () => {
     const github = fakeGithub((sent) => ({
       body:
         sent.variables.cursor === null
-          ? connectionPage([lifetimeNode('a', 12_345)], 'next')
-          : connectionPage([lifetimeNode('b', 500)]),
+          ? connectionPage([paymentNode('a', 12_345), null], 'next')
+          : connectionPage([paymentNode('b', 500)]),
     }));
     return Effect.gen(function* () {
       expect(yield* fetchLifetimeValues(katt, token)).toEqual([
@@ -187,22 +190,117 @@ describe('fetchLifetimeValues', () => {
         { cents: 500, login: 'b' },
       ]);
       expect(github.sent[0]?.query).toContain(
-        'connection: lifetimeReceivedSponsorshipValues(first: 100, after: $cursor)',
+        'connection: sponsorsActivities(first: 100, after: $cursor, period: ALL, includePrivate: true, orderBy: { field: TIMESTAMP, direction: ASC })',
       );
       expect(github.sent).toHaveLength(2);
     }).pipe(Effect.provide(github.layer));
   });
 
-  it.effect(
-    "fails when GitHub sends null for every payment, as to gh's token",
-    () => {
-      const github = fakeGithub(() => ({ body: connectionPage([null, null]) }));
-      return Effect.gen(function* () {
-        const result = yield* Effect.result(fetchLifetimeValues(trpc, token));
-        expect(failureMessage(result)).toBe(
-          "GitHub, for organization trpc: what its sponsors paid is hidden (GitHub sends null): SPONSORS_SYNC_GITHUB_TOKEN has to be a classic personal access token, not an app's token such as gh's",
-        );
-      }).pipe(Effect.provide(github.layer));
-    },
-  );
+  it.effect('fails on an activity it does not expect', () => {
+    const github = fakeGithub(() => ({
+      body: connectionPage([{ action: 'NEW_SPONSORSHIP' }]),
+    }));
+    return Effect.gen(function* () {
+      const result = yield* Effect.result(fetchLifetimeValues(trpc, token));
+      expect(failureMessage(result)).toMatch(
+        /^GitHub, for organization trpc: unexpected activity: /,
+      );
+    }).pipe(Effect.provide(github.layer));
+  });
+});
+
+describe('paidFromActivities', () => {
+  const at = (date: string) => `${date}T00:00:00Z`;
+  const paid = (
+    activities: ReadonlyArray<ReturnType<typeof activityNode> | object>,
+    now: string,
+  ) =>
+    Object.fromEntries(
+      paidFromActivities(
+        activities as ReadonlyArray<Activity>,
+        Date.parse(at(now)),
+      ).map((value) => [value.login, value.cents / 100]),
+    );
+
+  it('charges every month a tier is held, at its price then', () => {
+    expect(
+      paid(
+        [
+          activityNode('a', 'NEW_SPONSORSHIP', {
+            dollars: 50,
+            timestamp: at('2024-01-01'),
+          }),
+          activityNode('a', 'TIER_CHANGE', {
+            dollars: 150,
+            timestamp: at('2024-04-01'),
+          }),
+          activityNode('a', 'PENDING_CHANGE', { timestamp: at('2024-05-20') }),
+          activityNode('a', 'CANCELLED_SPONSORSHIP', {
+            dollars: 150,
+            timestamp: at('2024-06-01'),
+          }),
+        ],
+        '2026-01-01',
+      ),
+    ).toEqual({ a: 3 * 50 + 2 * 150 });
+  });
+
+  it('charges a current sponsor up to now, and a new one a month', () => {
+    expect(
+      paid(
+        [
+          activityNode('current', 'NEW_SPONSORSHIP', {
+            dollars: 10,
+            timestamp: at('2025-01-15'),
+          }),
+          activityNode('new', 'NEW_SPONSORSHIP', {
+            dollars: 25,
+            timestamp: at('2025-12-31'),
+          }),
+        ],
+        '2026-01-01',
+      ),
+    ).toEqual({ current: 12 * 10, new: 25 });
+  });
+
+  it('counts one-time payments once and takes back refunds', () => {
+    expect(
+      paid(
+        [
+          activityNode('once', 'NEW_SPONSORSHIP', {
+            dollars: 6000,
+            isOneTime: true,
+            timestamp: at('2023-07-01'),
+          }),
+          activityNode('once', 'CANCELLED_SPONSORSHIP', {
+            dollars: 6000,
+            isOneTime: true,
+            timestamp: at('2023-07-17'),
+          }),
+          activityNode('refunded', 'NEW_SPONSORSHIP', {
+            dollars: 20,
+            isOneTime: true,
+          }),
+          activityNode('refunded', 'REFUND', { dollars: 20, isOneTime: true }),
+        ],
+        '2026-01-01',
+      ),
+    ).toEqual({ once: 6000, refunded: 0 });
+  });
+
+  it('skips deleted sponsors', () => {
+    expect(
+      paid(
+        [
+          {
+            action: 'NEW_SPONSORSHIP',
+            sponsor: null,
+            sponsorsTier: { isOneTime: true, monthlyPriceInDollars: 5 },
+            timestamp: at('2025-01-01'),
+          },
+        ],
+        '2026-01-01',
+      ),
+    ).toEqual({});
+  });
 });
