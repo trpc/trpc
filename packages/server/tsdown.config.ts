@@ -36,6 +36,21 @@ export default defineConfig({
     tsconfig: './tsconfig.build.json',
   },
   // unbundle: true,
+  footer: ({ fileName }) => {
+    // The shared declarations end up in a hashed chunk which is not part of
+    // the package's `exports`. Make that chunk load the public
+    // `unstable-core-do-not-import` entrypoint so TypeScript can always name
+    // inferred types through `@trpc/server/unstable-core-do-not-import`
+    // instead of reporting TS2742/TS2883 (or, with `baseUrl`, silently emitting
+    // a `node_modules/@trpc/server/dist/...` path).
+    // https://github.com/trpc/trpc/issues/6998
+    const match = /^unstable-core-do-not-import-.+\.d\.(mts|cts)$/.exec(
+      fileName,
+    );
+    if (!match) return undefined;
+    const ext = match[1] === 'mts' ? 'mjs' : 'cjs';
+    return `import './unstable-core-do-not-import.${ext}';`;
+  },
   format: ['cjs', 'esm'],
   outExtensions: (ctx) => ({
     dts: ctx.format === 'cjs' ? '.d.cts' : '.d.mts',

@@ -9,6 +9,7 @@ import type {
   AnyTRPCProcedure,
   AnyTRPCRootTypes,
   AnyTRPCRouter,
+  inferProcedureErrorShape,
   inferProcedureInput,
   inferRouterContext,
   inferTransformedProcedureOutput,
@@ -274,7 +275,7 @@ export type DecoratedRouterRecord<
               input: inferProcedureInput<$Value>;
               output: inferTransformedProcedureOutput<TRoot, $Value>;
               transformer: TRoot['transformer'];
-              errorShape: TRoot['errorShape'];
+              errorShape: inferProcedureErrorShape<TRoot, $Value>;
               featureFlags: TFeatureFlags;
             }
           >
@@ -334,7 +335,7 @@ type UtilsMethods =
 /**
  * Create a typed proxy from your router types. Can also be used on the server.
  *
- * @see https://trpc.io/docs/client/tanstack-react-query/setup#3b-setup-without-react-context
+ * @see https://trpc.io/docs/client/tanstack-react-query/setup#3c-set-up-without-react-context
  * @see https://trpc.io/docs/client/tanstack-react-query/server-components#5-create-a-trpc-caller-for-server-components
  */
 export function createTRPCOptionsProxy<
