@@ -89,9 +89,10 @@ const hasBlob = (value: unknown): boolean =>
  * @since 0.1.0
  * @stability experimental
  */
-export function experimental_openApiLink(
-  opts: OpenApiLinkOptions,
-): TrpcLink<{ form: JsonForm }> {
+export function experimental_openApiLink(opts: OpenApiLinkOptions): TrpcLink<{
+  form: JsonForm;
+  builtinErrors: 'NETWORK_ERROR' | 'BAD_RESPONSE';
+}> {
   const base = String(opts.url).replace(/\/+$/, '');
   const prefix = normalizePrefix(opts.prefix);
   const fetchFn = opts.fetch ?? globalThis.fetch;

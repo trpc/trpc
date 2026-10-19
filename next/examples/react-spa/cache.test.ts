@@ -10,6 +10,7 @@ import { createTrpcQueryUtils } from '@trpc12/tanstack-react-query';
 import {
   createTrpcClient,
   dedupeLink,
+  httpLink,
   localLink,
   routerType,
 } from '@trpc12/trpc/client';
@@ -18,13 +19,23 @@ import { directoryRouter } from './server/directory.ts';
 import { trackerRouter } from './server/tracker.ts';
 import { isDraft, listOptions, registerIssueMutations } from './src/issues.ts';
 import { serializer } from './src/serializer.ts';
+import { tracker as trackerApi } from './server/api.ts';
 
-// The app's links, with the router in process instead of over HTTP; values
-// still round-trip through danSON.
+// The app's links, with `fetch` calling the API handler in process; the
+// test's helpers then have the same type as the app's, httpLink's errors
+// included.
 const trpc = createTrpcQueryUtils({
   client: createTrpcClient({
     router: routerType<typeof trackerRouter>(),
-    links: [dedupeLink(), localLink({ router: trackerRouter, serializer })],
+    links: [
+      dedupeLink(),
+      httpLink({
+        url: 'http://localhost/trpc',
+        batch: true,
+        serializer,
+        fetch: (input, init) => trackerApi.fetch(new Request(input, init)),
+      }),
+    ],
   }),
 });
 const directory = createTrpcQueryUtils({

@@ -26,7 +26,7 @@ import {
   type AnyTrpcError,
 } from '../internal/error.ts';
 import type { JsonSchema } from '../internal/json-schema.ts';
-import type { MaybePromise } from '../internal/types.ts';
+import type { DansonForm, MaybePromise } from '../internal/types.ts';
 import {
   experimental_parseBracketNotation,
   experimental_coerceBySchema,
@@ -125,7 +125,10 @@ export type ActionResult<
   TMode extends ActionResultMode,
 > = TMode extends 'throw'
   ? TDef['output']
-  : ActionSafeResult<TDef['output'], ClientError<TDef['errors']>>;
+  : ActionSafeResult<
+      TDef['output'],
+      ClientError<TDef['errors'], DansonForm, never>
+    >;
 
 /**
  * What a callable resolves to: with `result: 'safe'`, `safe()`'s
@@ -138,7 +141,7 @@ export type CallableResult<
   TMode extends ActionResultMode,
 > = TMode extends 'throw'
   ? TDef['output']
-  : SafeResult<TDef['output'], ClientError<TDef['errors']>>;
+  : SafeResult<TDef['output'], ClientError<TDef['errors'], DansonForm, never>>;
 
 type Args<TInput> = undefined extends TInput
   ? [input?: TInput]

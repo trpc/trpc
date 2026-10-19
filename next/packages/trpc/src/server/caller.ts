@@ -48,7 +48,7 @@ export function createRouterClient<TRouter extends AnyRouter>(
   ...[opts]: {} extends RouterClientOptions<TRouter>
     ? [opts?: RouterClientOptions<TRouter>]
     : [opts: RouterClientOptions<TRouter>]
-): TrpcClient<TRouter, {}, DansonForm> {
+): TrpcClient<TRouter, {}, DansonForm, { builtinErrors: never }> {
   const o = (opts ?? {}) as {
     ctx?: object | (() => MaybePromise<object>);
     layer?: Layer.Layer<never, any, never>;
@@ -66,7 +66,7 @@ export function createRouterClient<TRouter extends AnyRouter>(
           : () => ctx ?? {}) as () => never,
       }),
     ],
-  }) as TrpcClient<TRouter, {}, DansonForm>;
+  }) as TrpcClient<TRouter, {}, DansonForm, { builtinErrors: never }>;
 }
 
 /**

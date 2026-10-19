@@ -97,13 +97,17 @@ export interface HttpLinkOptions<
 
 /**
  * What `httpLink` declares: its serializer's form, the responses it reports
- * to `onResponse`, batching when on, and no subscriptions when they're off.
+ * to `onResponse`, the errors it makes (`NETWORK_ERROR` when `fetch`
+ * fails or a connection drops, `BAD_RESPONSE` for a page that isn't tRPC's
+ * or a body that doesn't decode, `STREAM_INTERRUPTED` for a stream that
+ * stops early), batching when on, and no subscriptions when they're off.
  * @since 0.1.0
  * @stability stable
  */
 export type HttpLinkDecl<TOpts> = {
   form: FormOfOptions<TOpts>;
   provides: 'response';
+  builtinErrors: 'NETWORK_ERROR' | 'BAD_RESPONSE' | 'STREAM_INTERRUPTED';
 } & (TOpts extends { batch: true | { maxItems?: number } }
   ? { batches: true }
   : {}) &

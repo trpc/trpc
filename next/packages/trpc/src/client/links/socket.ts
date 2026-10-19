@@ -134,13 +134,19 @@ interface SocketTransport {
   binary?: boolean;
 }
 
+/**
+ * What socket links fail calls with themselves: a lost connection, a
+ * message that doesn't decode, and a stream cut off with it.
+ */
+type SocketErrors = 'NETWORK_ERROR' | 'BAD_RESPONSE' | 'STREAM_INTERRUPTED';
+
 const lostError = () =>
   new TrpcError({ code: 'NETWORK_ERROR', message: 'The connection was lost' });
 
 function makeSocketLink(
   transport: SocketTransport,
   opts: SocketLinkOptions,
-): SocketLink {
+): SocketLink<any> {
   const serializer = opts.serializer ?? jsonSerializer;
   /** Every call's inbox, so `close()` can fail them wherever they are. */
   const live = new Set<Queue.Queue<Signal>>();
@@ -682,7 +688,7 @@ export interface WebSocketLinkOptions
  */
 export function wsLink<TOpts extends WebSocketLinkOptions>(
   opts: TOpts,
-): SocketLink<{ form: FormOfOptions<TOpts> }>;
+): SocketLink<{ form: FormOfOptions<TOpts>; builtinErrors: SocketErrors }>;
 export function wsLink(opts: WebSocketLinkOptions): SocketLink<any> {
   const Impl = opts.WebSocket ?? globalThis.WebSocket;
   return makeSocketLink(
@@ -750,7 +756,9 @@ export interface MessagePortLinkOptions extends SocketLinkOptions {
  */
 export function experimental_messagePortLink<
   TOpts extends MessagePortLinkOptions,
->(opts: TOpts): SocketLink<{ form: FormOfOptions<TOpts> }>;
+>(
+  opts: TOpts,
+): SocketLink<{ form: FormOfOptions<TOpts>; builtinErrors: SocketErrors }>;
 export function experimental_messagePortLink(
   opts: MessagePortLinkOptions,
 ): SocketLink<any> {
@@ -841,7 +849,7 @@ export interface RawSocketLinkOptions
  */
 export function experimental_socketLink(
   opts: RawSocketLinkOptions,
-): SocketLink {
+): SocketLink<{ builtinErrors: SocketErrors }> {
   const connect = Effect.gen(function* () {
     const socket = yield* opts.socket;
     return yield* socketConnection(socket, {

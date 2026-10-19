@@ -107,10 +107,10 @@ const isEnvelope = (value: unknown): value is { id: string; data: unknown } =>
  */
 export function experimental_validationLink(
   opts: ValidationLinkOptions & { output: 'json' },
-): TrpcLink<{ form: DansonForm }>;
+): TrpcLink<{ form: DansonForm; builtinErrors: 'BAD_RESPONSE' }>;
 export function experimental_validationLink(
   opts: ValidationLinkOptions,
-): TrpcLink;
+): TrpcLink<{ builtinErrors: 'BAD_RESPONSE' }>;
 export function experimental_validationLink(
   opts: ValidationLinkOptions,
 ): TrpcLink<any> {

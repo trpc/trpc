@@ -67,20 +67,44 @@ export type BuiltinError<TCode extends BuiltinErrorCode = BuiltinErrorCode> =
     : never;
 
 /**
- * What a call can fail with: the procedure's defined errors and the
- * built-in ones. Every member has a literal `code`, so `switch (err.code)`
- * narrows it; `err.defined` tells a defined `NOT_FOUND` from a built-in one.
+ * The built-in codes only links make, which a link declares with
+ * `builtinErrors` so that calls through it can fail with them:
+ * `NETWORK_ERROR` (no response, or the connection dropped), `BAD_RESPONSE`
+ * (a response that isn't tRPC's or doesn't decode) and
+ * `STREAM_INTERRUPTED` (a stream that stopped without an end).
  * @since 0.1.0
  * @stability stable
  */
-export type ClientError<E, F extends OutputForm = DansonForm> =
+export type LinkErrorCode =
+  | 'NETWORK_ERROR'
+  | 'BAD_RESPONSE'
+  | 'STREAM_INTERRUPTED';
+
+/**
+ * What a call can fail with: the procedure's defined errors and the
+ * built-in ones. Every member has a literal `code`, so `switch (err.code)`
+ * narrows it; `err.defined` tells a defined `NOT_FOUND` from a built-in one.
+ * `TLinkCodes` are the {@link LinkErrorCode}s the client's links declare;
+ * the others are left out. Every link code by default.
+ * @since 0.1.0
+ * @stability stable
+ */
+export type ClientError<
+  E,
+  F extends OutputForm = DansonForm,
+  TLinkCodes extends LinkErrorCode = LinkErrorCode,
+> =
   | DefinedError<E, F>
-  | BuiltinError;
+  | BuiltinError<Exclude<BuiltinErrorCode, Exclude<LinkErrorCode, TLinkCodes>>>;
 
 /** A call's errors: the procedure's in the result form, the links' as made. */
-type CallError<D extends ProcedureDef, F extends OutputForm, TLinkErrors> =
-  | ClientError<D['errors'], F>
-  | DefinedError<TLinkErrors>;
+type CallError<
+  D extends ProcedureDef,
+  F extends OutputForm,
+  TLinks extends ChainTypes,
+> =
+  | ClientError<D['errors'], F, ChainLinkCodes<TLinks>>
+  | DefinedError<ChainErrors<TLinks>>;
 
 /**
  * A call's `Promise`, carrying its error type for `safe()`.
@@ -141,6 +165,7 @@ export type CallArgs<TInput, TOpts> = undefined extends TInput
  */
 export interface ChainTypes {
   readonly errors?: unknown;
+  readonly builtinErrors?: LinkErrorCode;
   readonly unsupported?: ProcedureType;
   readonly batches?: true;
   readonly form?: OutputForm;
@@ -196,6 +221,17 @@ type ChainErrors<T extends ChainTypes> = T extends { errors: infer E }
   ? E
   : never;
 
+/**
+ * The link codes a chain declares; every one unless the links say which,
+ * so `TrpcClient<AppRouter>` takes any client.
+ * @internal
+ */
+export type ChainLinkCodes<T extends ChainTypes> = T extends {
+  builtinErrors: infer C extends LinkErrorCode;
+}
+  ? C
+  : LinkErrorCode;
+
 /** Whether the links can carry procedures of type `T`. @internal */
 export type Carries<T, TLinks extends ChainTypes> = TLinks extends {
   unsupported: infer U;
@@ -234,7 +270,6 @@ type DecorateCarried<
   TContext extends object,
   TForm extends OutputForm | undefined,
   TLinks extends ChainTypes,
-  TLinkErrors = ChainErrors<TLinks>,
 > = D['type'] extends 'query'
   ? {
       query(
@@ -246,7 +281,7 @@ type DecorateCarried<
         >
       ): TrpcPromise<
         ClientValue<D['output'], ResultForm<TForm, TLinks>>,
-        CallError<D, ResultForm<TForm, TLinks>, TLinkErrors>
+        CallError<D, ResultForm<TForm, TLinks>, TLinks>
       >;
     }
   : D['type'] extends 'mutation'
@@ -260,7 +295,7 @@ type DecorateCarried<
           >
         ): TrpcPromise<
           ClientValue<D['output'], ResultForm<TForm, TLinks>>,
-          CallError<D, ResultForm<TForm, TLinks>, TLinkErrors>
+          CallError<D, ResultForm<TForm, TLinks>, TLinks>
         >;
       }
     : {
@@ -268,7 +303,7 @@ type DecorateCarried<
           ...args: CallArgs<D['input'], SubscribeOptions<TContext>>
         ): TrpcSubscription<
           ClientValue<D['output'], ResultForm<TForm, TLinks>>,
-          CallError<D, ResultForm<TForm, TLinks>, TLinkErrors>
+          CallError<D, ResultForm<TForm, TLinks>, TLinks>
         >;
       };
 
@@ -411,6 +446,7 @@ export type LinksTypes<TLinks extends ReadonlyArray<AnyLink>> = {
       ? E
       : never
     : never;
+  builtinErrors: LinkCodesOf<TLinks[number]>;
   unsupported: DeclOf<TLinks[number]> extends infer D
     ? D extends { unsupported: infer U }
       ? U
@@ -423,6 +459,16 @@ export type LinksTypes<TLinks extends ReadonlyArray<AnyLink>> = {
     : never;
   form: FirstForm<TLinks>;
 };
+
+/** An untyped link (`TrpcLink<any>`) could make any of them. */
+type LinkCodesOf<TLink> =
+  TLink extends TrpcLink<infer D, any>
+    ? IsAny<D> extends true
+      ? LinkErrorCode
+      : D extends { builtinErrors: infer C extends LinkErrorCode }
+        ? C
+        : never
+    : never;
 
 type FirstForm<TLinks extends ReadonlyArray<AnyLink>> =
   TLinks extends readonly [

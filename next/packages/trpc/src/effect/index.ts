@@ -39,6 +39,7 @@ import type {
   CallArgs,
   CallOptions,
   Carries,
+  ChainLinkCodes,
   ChainTypes,
   ClientError,
   DuplicateSwitchCheck,
@@ -49,7 +50,7 @@ import type {
   RouterOf,
   SubscribeOptions,
 } from '../client/types.ts';
-import type { ClientValue } from '../internal/types.ts';
+import type { ClientValue, DansonForm } from '../internal/types.ts';
 import type {
   AnyProcedure,
   ProcedureDef,
@@ -102,7 +103,11 @@ type DecorateEffectCarried<
         >
       ): Effect.Effect<
         ClientValue<D['output'], ResultForm<undefined, TLinks>>,
-        ClientError<D['errors'] | TLinkErrors>
+        ClientError<
+          D['errors'] | TLinkErrors,
+          DansonForm,
+          ChainLinkCodes<TLinks>
+        >
       >;
     }
   : D['type'] extends 'mutation'
@@ -116,7 +121,11 @@ type DecorateEffectCarried<
           >
         ): Effect.Effect<
           ClientValue<D['output'], ResultForm<undefined, TLinks>>,
-          ClientError<D['errors'] | TLinkErrors>
+          ClientError<
+            D['errors'] | TLinkErrors,
+            DansonForm,
+            ChainLinkCodes<TLinks>
+          >
         >;
       }
     : {
@@ -124,7 +133,11 @@ type DecorateEffectCarried<
           ...args: CallArgs<D['input'], SubscribeOptions<TContext>>
         ): Stream.Stream<
           ClientValue<D['output'], ResultForm<undefined, TLinks>>,
-          ClientError<D['errors'] | TLinkErrors>
+          ClientError<
+            D['errors'] | TLinkErrors,
+            DansonForm,
+            ChainLinkCodes<TLinks>
+          >
         >;
       };
 

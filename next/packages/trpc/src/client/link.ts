@@ -8,6 +8,7 @@ import {
 } from '../internal/error.ts';
 import type { OutputForm, ProcedureType } from '../internal/types.ts';
 import type { AnySerializer } from '../serializer/index.ts';
+import type { LinkErrorCode } from './types.ts';
 
 /**
  * Call option fields the built-in links read from `op.context` (17 F-B).
@@ -137,6 +138,12 @@ export interface LinkDecl {
    * class instance. They join every call's typed union (`defined: true`).
    */
   errors?: AnyTrpcError;
+  /**
+   * The built-in codes only links make (`LinkErrorCode`) that this link
+   * fails calls with, such as `'NETWORK_ERROR'` for a link that sends
+   * requests. A call's union has only the ones its links declare.
+   */
+  builtinErrors?: LinkErrorCode;
   /**
    * Operation types the link can't carry. The client has no method for
    * them: with `'subscription'`, procedures have no `.subscribe()`.
