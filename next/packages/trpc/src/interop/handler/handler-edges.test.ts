@@ -130,6 +130,32 @@ test('inputs that cannot be read are refused before any call runs', async () => 
   await handler.dispose();
 });
 
+test('a body over maxBodySize is a 413, whether it says its length or streams it', async () => {
+  const handler = make({ maxBodySize: 64 });
+  const big = JSON.stringify({ text: 'x'.repeat(100) });
+  const declared = await call(handler, '/trpc/add', json(big));
+  expect(declared.status).toBe(413);
+  expect(await declared.json()).toEqual({
+    error: {
+      message: 'Request body is too large',
+      code: -32013,
+      data: { code: 'PAYLOAD_TOO_LARGE', httpStatus: 413, path: 'add' },
+    },
+  });
+
+  const streamed = await call(handler, '/trpc/add', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: new Blob([big]).stream(),
+    duplex: 'half',
+  } as RequestInit);
+  expect(streamed.status).toBe(413);
+
+  const small = await call(handler, '/trpc/add', json('{"a":1}'));
+  expect(await small.json()).toEqual({ result: { data: { a: 1 } } });
+  await handler.dispose();
+});
+
 test('batches: no input, a non-object input, mixed types, subscriptions', async () => {
   const handler = make();
   const none = await call(handler, '/trpc/greet,greet?batch=1');
