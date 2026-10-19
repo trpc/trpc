@@ -246,11 +246,33 @@ export type SplitStream<R> =
 
 // --- resolver checks ------------------------------------------------------------------
 
-type OutputConstraint<TDef extends BuilderDef> = TDef['outputIn'] extends Unset
+/**
+ * While `$Ret` is being inferred it is `unknown` and the whole union gives
+ * the resolver its contextual type, so literals stay literal. Once it is
+ * known, each member of `$Ret` is checked against the one form it can be:
+ * intersecting a union `$Ret` with the whole union costs |`$Ret`| ×
+ * |union| comparisons per procedure, each an `Effect` against a fresh
+ * `Effect`.
+ */
+/** @internal */
+export type OutputConstraint<
+  TDef extends BuilderDef,
+  $Ret,
+> = TDef['outputIn'] extends Unset
   ? unknown
-  :
-      | MaybePromise<ResultOf<TDef['outputIn']> | AnyTrpcError>
-      | Effect.Effect<ResultOf<TDef['outputIn']> | AnyTrpcError, any, any>;
+  : unknown extends $Ret
+    ?
+        | MaybePromise<ResultOf<TDef['outputIn']> | AnyTrpcError>
+        | Effect.Effect<ResultOf<TDef['outputIn']> | AnyTrpcError, any, any>
+    : OutputFor<ResultOf<TDef['outputIn']>, $Ret>;
+
+type OutputFor<O, $Ret> = $Ret extends AnyTrpcError
+  ? AnyTrpcError
+  : $Ret extends Effect.Effect<any, any, any>
+    ? Effect.Effect<O | AnyTrpcError, any, any>
+    : $Ret extends PromiseLike<any>
+      ? Promise<O | AnyTrpcError>
+      : O;
 
 type EventConstraint<TDef extends BuilderDef> = TDef['outputIn'] extends Unset
   ? unknown
@@ -327,7 +349,7 @@ type OutputChecks<
   $Ret,
 > = TDef['outputIn'] extends Unset
   ? unknown
-  : OutputConstraint<TDef> & StreamOutputCheck<TDef, $Ret>;
+  : OutputConstraint<TDef, $Ret> & StreamOutputCheck<TDef, $Ret>;
 
 /**
  * Checks values from `ok()` short-circuits against the procedure's output.

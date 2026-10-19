@@ -13,6 +13,7 @@ import {
   type BuilderDef,
   type BuilderInternals,
   type CurrentCtx,
+  type OutputConstraint,
   type ProvideOpts,
   type ResolverOpts,
   type ShortsCheck,
@@ -76,12 +77,6 @@ export type UndeclaredCheck<TDef extends BuilderDef, $Errors> = [
       Exclude<$Errors, TDef['errors']>
     >;
 
-type ResultConstraint<TDef extends BuilderDef> = TDef['outputIn'] extends Unset
-  ? unknown
-  :
-      | MaybePromise<ResultOf<TDef['outputIn']> | AnyTrpcError>
-      | Effect.Effect<ResultOf<TDef['outputIn']> | AnyTrpcError, any, any>;
-
 type EventsConstraint<
   TDef extends BuilderDef,
   TTracked,
@@ -129,7 +124,7 @@ type Resolve<TDef extends BuilderDef, TContract extends AnyProcedure> = <$Ret>(
   resolver: (
     opts: ResolverOpts<TDef>,
   ) => $Ret &
-    ResultConstraint<TDef> &
+    OutputConstraint<TDef, $Ret> &
     StrictErrors<$Ret> &
     UndeclaredCheck<TDef, SplitReturn<$Ret>['errors']> &
     ShortsCheck<
