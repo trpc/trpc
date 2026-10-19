@@ -159,7 +159,6 @@ export {
   type RouterClientOptions,
 } from './caller.ts';
 export {
-  ERROR_CATEGORY,
   ERROR_STATUS,
   error,
   isDefinedError,
@@ -172,9 +171,7 @@ export {
   type TaggedErrorSpec,
   type BuiltinErrorClass,
   type BuiltinErrorCode,
-  type CategoryCode,
   type UndeclaredCode,
-  type ErrorCategory,
   type TrpcErrorOptions,
 } from '../internal/error.ts';
 export type { ProcedureType } from '../internal/types.ts';

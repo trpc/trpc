@@ -108,15 +108,6 @@ if (localErr) {
 
 `createRouterClient` declares none, since it calls the router in-process. A client typed without its links, like `TrpcClient<AppRouter>`, has all three, so it accepts a client with any links. A [custom link](./custom-links.md#errors-and-unsupported-types) declares the link codes it makes with `builtinErrors`, and can add codes of its own with `errors`.
 
-The other built-in codes fall into four categories, which `ERROR_CATEGORY` maps each code to, since a call site usually does the same for every code in one. Undeclared errors are `rejected`:
-
-| Category      | Codes                                                                                                                                                                                | Usually                     |
-| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------- |
-| `rejected`    | Built-in 4xx codes (`UNAUTHORIZED`, `NOT_FOUND`, `BAD_REQUEST`, …), requests the server couldn't take (`PARSE_ERROR`, `PAYLOAD_TOO_LARGE`, …), `CLIENT_ERROR`, and undeclared errors | Show the message, or reload |
-| `unavailable` | `NETWORK_ERROR`, `BAD_RESPONSE`, `STREAM_INTERRUPTED`, `TIMEOUT`, `TOO_MANY_REQUESTS`, `BAD_GATEWAY`, `SERVICE_UNAVAILABLE`, `GATEWAY_TIMEOUT`                                       | Try again later             |
-| `failed`      | `INTERNAL_SERVER_ERROR`, `NOT_IMPLEMENTED`                                                                                                                                           | Report it                   |
-| `aborted`     | `CLIENT_CLOSED_REQUEST`                                                                                                                                                              | Ignore it                   |
-
 ## Switching on the code
 
 `switch (err.code)` narrows the error to the members with that code. A code can be in both groups: the server's `NOT_FOUND` for a missing post, and a built-in `NOT_FOUND` when the server doesn't have the procedure (a client deployed before its server). Until `err.defined` says which, `data` is the defined error's type or `undefined`:

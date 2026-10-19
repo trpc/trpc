@@ -61,69 +61,6 @@ export function isBuiltinCode(code: string): code is BuiltinErrorCode {
 }
 
 /**
- * The category of each built-in code, for code that treats a category's
- * codes alike, like a `matchError()` `unexpected` handler:
- *
- * - `rejected`: the server refused the call: a built-in 4xx it threw, a
- *   request it couldn't take, or a link's own failure. Undeclared errors,
- *   the custom codes a procedure without `.errors()` threw, are too.
- * - `unavailable`: no usable answer came back; trying later may work.
- * - `failed`: the server broke. The message is masked in production.
- * - `aborted`: the call's `signal` stopped it.
- *
- * @since 0.1.0
- * @stability stable
- */
-export const ERROR_CATEGORY = {
-  PARSE_ERROR: 'rejected',
-  BAD_REQUEST: 'rejected',
-  UNSUPPORTED_PROTOCOL: 'rejected',
-  UNAUTHORIZED: 'rejected',
-  PAYMENT_REQUIRED: 'rejected',
-  FORBIDDEN: 'rejected',
-  NOT_FOUND: 'rejected',
-  METHOD_NOT_SUPPORTED: 'rejected',
-  TIMEOUT: 'unavailable',
-  CONFLICT: 'rejected',
-  PRECONDITION_FAILED: 'rejected',
-  PAYLOAD_TOO_LARGE: 'rejected',
-  UNSUPPORTED_MEDIA_TYPE: 'rejected',
-  UNPROCESSABLE_CONTENT: 'rejected',
-  TOO_MANY_REQUESTS: 'unavailable',
-  CLIENT_CLOSED_REQUEST: 'aborted',
-  INTERNAL_SERVER_ERROR: 'failed',
-  NOT_IMPLEMENTED: 'failed',
-  BAD_GATEWAY: 'unavailable',
-  SERVICE_UNAVAILABLE: 'unavailable',
-  GATEWAY_TIMEOUT: 'unavailable',
-  NETWORK_ERROR: 'unavailable',
-  BAD_RESPONSE: 'unavailable',
-  CLIENT_ERROR: 'rejected',
-  STREAM_INTERRUPTED: 'unavailable',
-} as const;
-
-/**
- * A category of built-in errors: `rejected`, `unavailable`, `failed` or
- * `aborted` ({@link ERROR_CATEGORY}).
- * @since 0.1.0
- * @stability stable
- */
-export type ErrorCategory = (typeof ERROR_CATEGORY)[BuiltinErrorCode];
-
-/**
- * The built-in codes in category `TCategory`.
- * @since 0.1.0
- * @stability stable
- */
-export type CategoryCode<TCategory extends ErrorCategory> =
-  | {
-      [C in BuiltinErrorCode]: (typeof ERROR_CATEGORY)[C] extends TCategory
-        ? C
-        : never;
-    }[BuiltinErrorCode]
-  | ('rejected' extends TCategory ? UndeclaredCode : never);
-
-/**
  * The code of an `UndeclaredError`: a custom code the types don't know.
  * Type only: no literal matches the pattern, so `case 'NOT_FOUND':` and
  * `err.code === 'NOT_FOUND'` leave it out. At runtime it is the code sent.

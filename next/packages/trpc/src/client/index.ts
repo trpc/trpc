@@ -100,7 +100,6 @@ export {
 } from './types.ts';
 export type { MessagePortLike } from '../server/sockets/index.ts';
 export {
-  ERROR_CATEGORY,
   ERROR_STATUS,
   isBuiltinCode,
   isDefinedError,
@@ -113,9 +112,7 @@ export {
   type TaggedErrorSpec,
   type BuiltinErrorClass,
   type BuiltinErrorCode,
-  type CategoryCode,
   type UndeclaredCode,
-  type ErrorCategory,
   type TrpcErrorOptions,
 } from '../internal/error.ts';
 export type { Deserialized } from '../internal/types.ts';

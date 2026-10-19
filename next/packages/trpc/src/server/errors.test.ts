@@ -8,7 +8,6 @@ import {
   safe,
   TrpcError,
   routerType,
-  ERROR_CATEGORY,
   ERROR_STATUS,
   type BuiltinError,
   type BuiltinErrorClass,
@@ -448,7 +447,7 @@ test('matchError needs a handler per defined code and link code, and unexpected 
   });
   matchError(missing!, {
     ...all,
-    // @ts-expect-error: categories aren't keys
+    // @ts-expect-error: there are no category keys
     unavailable: () => 1,
   });
   // The type error names the key: the type a leftover key must have is its message.
@@ -488,10 +487,8 @@ test('matchError gives errors that share a code one handler', () => {
   ).toBe('a');
 });
 
-test('every built-in code has a category and a class', () => {
+test('every built-in code has a class', () => {
   const codes = Object.keys(ERROR_STATUS);
-  expect(Object.keys(ERROR_CATEGORY).sort()).toEqual([...codes].sort());
-  expectTypeOf<keyof typeof ERROR_CATEGORY>().toEqualTypeOf<BuiltinErrorCode>();
 
   const classes = Object.values(TrpcError).filter(
     (value): value is BuiltinErrorClass<BuiltinErrorCode> =>
