@@ -396,3 +396,35 @@ test('a streamed batch nobody reads waits instead of buffering its rows', async 
   expect(yielded).toBeLessThan(100);
   await handler.dispose();
 });
+
+test('cancelling a JSON Lines body without aborting the request ends a query waiting on its signal', async () => {
+  const state = { waiting: false, closed: false };
+  const handler = createV11Handler({
+    router: {
+      waiting: t.procedure.query(async function* (opts) {
+        try {
+          yield 'first';
+          state.waiting = true;
+          await new Promise((resolve) =>
+            opts.signal.addEventListener('abort', resolve, { once: true }),
+          );
+        } finally {
+          state.closed = true;
+        }
+      }),
+    },
+    createContext: () => ({ user: 'ada' }),
+  });
+  const res = await call(handler, '/trpc/waiting?batch=1&input={}', {
+    headers: { 'trpc-accept': 'application/jsonl' },
+  });
+  const reader = res.body!.getReader();
+  const drained = (async () => {
+    while (!(await reader.read()).done);
+  })();
+  await expect.poll(() => state.waiting).toBe(true);
+  await reader.cancel();
+  await drained;
+  await expect.poll(() => state.closed).toBe(true);
+  await handler.dispose();
+});

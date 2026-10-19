@@ -13,6 +13,28 @@ import { Effect, Stream } from 'effect';
 export const backpressure = { bufferSize: 16, strategy: 'suspend' } as const;
 
 /**
+ * For `Stream.fromAsyncIterable`: closing doesn't wait for the iterator's
+ * `return()`. A generator paused at an `await` returns only once that
+ * settles, and a procedure usually awaits its `signal`, which aborts once
+ * the stream has closed.
+ * @internal
+ */
+export const returnUnawaited = <A>(
+  iterable: AsyncIterable<A>,
+): AsyncIterable<A> => ({
+  [Symbol.asyncIterator]() {
+    const iterator = iterable[Symbol.asyncIterator]();
+    return {
+      next: () => iterator.next(),
+      return: (value?: unknown) => {
+        iterator.return?.(value).catch(() => {});
+        return Promise.resolve({ done: true, value });
+      },
+    };
+  },
+});
+
+/**
  * `Stream.toAsyncIterable`, also ending quietly when `signal` aborts: the
  * iterator returns, which interrupts a pending `next()` and closes the
  * stream without starting it.

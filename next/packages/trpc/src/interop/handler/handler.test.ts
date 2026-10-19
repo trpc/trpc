@@ -1,4 +1,4 @@
-import { createServer, type Server } from 'node:http';
+import { createServer, type Server, type ServerResponse } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { NodeHttpServer } from '@effect/platform-node';
 import {
@@ -35,7 +35,14 @@ interface Ctx {
 }
 const t = initTrpc<{ ctx: Ctx }>();
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+const untilAborted = (signal: AbortSignal) =>
+  new Promise((resolve) =>
+    signal.addEventListener('abort', resolve, { once: true }),
+  );
 let stopped = 0;
+let waiting = 0;
+// Bigger than the socket's buffers, so the server is left waiting to write it.
+const big = 'x'.repeat(16 * 1024 * 1024);
 
 const router = {
   greet: t.procedure
@@ -91,6 +98,16 @@ const router = {
     await sleep(5);
     yield 'b';
   }),
+  waitingRows: t.procedure.query(async function* (opts) {
+    try {
+      yield big;
+      waiting++;
+      await untilAborted(opts.signal);
+      yield 'aborted';
+    } finally {
+      stopped++;
+    }
+  }),
   events: t.procedure
     .input(z.object({ from: z.number().optional() }).optional())
     .subscription(async function* (opts) {
@@ -131,6 +148,7 @@ interface Running {
   readonly url: string;
   readonly wsUrl: string;
   readonly requests: string[];
+  readonly responses: ServerResponse[];
   [Symbol.asyncDispose](): Promise<void>;
 }
 
@@ -138,6 +156,7 @@ async function start(
   extra: Partial<V11HandlerOptions<typeof router>> = {},
 ): Promise<Running> {
   const requests: string[] = [];
+  const responses: ServerResponse[] = [];
   const handler = createV11Handler({
     router,
     createContext: (opts) => ({
@@ -150,7 +169,10 @@ async function start(
     ...extra,
   });
   const server: Server = createServer();
-  server.on('request', (req) => requests.push(`${req.method} ${req.url}`));
+  server.on('request', (req, res) => {
+    requests.push(`${req.method} ${req.url}`);
+    responses.push(res);
+  });
   const scope = Scope.makeUnsafe();
   await Effect.runPromise(
     Layer.buildWithScope(
@@ -167,6 +189,7 @@ async function start(
     url: `http://127.0.0.1:${address.port}/trpc`,
     wsUrl: `ws://127.0.0.1:${address.port}/trpc`,
     requests,
+    responses,
     async [Symbol.asyncDispose]() {
       server.closeAllConnections();
       await Effect.runPromise(Scope.close(scope, Exit.void));
@@ -328,6 +351,51 @@ test('httpBatchStreamLink: results stream as they settle, deferred values includ
     status: 'rejected',
     reason: { data: { code: 'NOT_FOUND' } },
   });
+});
+
+/** A `fetch` whose body stops being read once `stall()` is called. */
+function stallableFetch() {
+  let stalled = false;
+  const stallable: typeof fetch = async (input, init) => {
+    const res = await fetch(input, init);
+    const reader = res.body!.getReader();
+    const body = new ReadableStream<Uint8Array>(
+      {
+        async pull(controller) {
+          if (stalled) return new Promise<void>(() => {});
+          const chunk = await reader.read();
+          if (chunk.done) controller.close();
+          else controller.enqueue(chunk.value);
+        },
+        cancel: (reason) => reader.cancel(reason),
+      },
+      { highWaterMark: 0 },
+    );
+    return new Response(body, { headers: res.headers, status: res.status });
+  };
+  return {
+    fetch: stallable,
+    stall: () => {
+      stalled = true;
+    },
+  };
+}
+
+test('httpBatchStreamLink: a client that leaves mid-write ends a query waiting on its signal, and the server shuts down', async () => {
+  await using app = await start();
+  const stallable = stallableFetch();
+  const client = untyped([
+    httpBatchStreamLink({ url: app.url, fetch: stallable.fetch }),
+  ]);
+  const before = { waiting, stopped };
+  const ac = new AbortController();
+  await client.query('waitingRows', undefined, { signal: ac.signal });
+  stallable.stall();
+  await expect.poll(() => waiting).toBe(before.waiting + 1);
+  await expect.poll(() => app.responses.at(-1)?.writableNeedDrain).toBe(true);
+
+  ac.abort();
+  await expect.poll(() => stopped).toBe(before.stopped + 1);
 });
 
 test('a v11 transformer (superjson) carries Dates both ways', async () => {

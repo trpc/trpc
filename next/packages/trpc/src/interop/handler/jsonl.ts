@@ -1,5 +1,5 @@
 import { Cause, Effect, FiberSet, Queue, Stream } from 'effect';
-import { backpressure } from '../../internal/effects.ts';
+import { backpressure, returnUnawaited } from '../../internal/effects.ts';
 import {
   isAsyncIterable,
   isPromiseLike,
@@ -80,7 +80,10 @@ export const jsonlLines = (
           if (isAsyncIterable(value) || Stream.isStream(value)) {
             const stream = Stream.isStream(value)
               ? (value as Stream.Stream<unknown, unknown>)
-              : Stream.fromAsyncIterable(value, (cause) => cause);
+              : Stream.fromAsyncIterable(
+                  returnUnawaited(value),
+                  (cause) => cause,
+                );
             started.push(() =>
               fork(
                 Stream.runForEach(stream, (item) =>
