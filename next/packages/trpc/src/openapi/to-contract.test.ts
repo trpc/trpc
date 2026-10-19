@@ -385,6 +385,156 @@ test('recursive components, untyped and merged parameters, a prefix-only path an
   await handler.dispose();
 });
 
+test('$ref parameters, request bodies and responses, path-level and header parameters', async () => {
+  const doc: OpenApiSource = {
+    openapi: '3.0.3',
+    paths: {
+      '/repos/{owner}/issues': {
+        parameters: [{ $ref: '#/components/parameters/owner' }],
+        get: {
+          operationId: 'issues.list',
+          parameters: [
+            { $ref: '#/components/parameters/per-page' },
+            {
+              name: 'X-Api-Version',
+              in: 'header',
+              required: true,
+              schema: { type: 'string' },
+            },
+            { name: 'Authorization', in: 'header', schema: { type: 'string' } },
+            { name: 'session', in: 'cookie', schema: { type: 'string' } },
+          ],
+          responses: { '200': { $ref: '#/components/responses/issues' } },
+        },
+        post: {
+          operationId: 'issues.create',
+          requestBody: { $ref: '#/components/requestBodies/issue' },
+          responses: {
+            '201': {
+              content: {
+                'application/json': {
+                  schema: { $ref: '#/components/schemas/Issue' },
+                },
+              },
+            },
+            '404': { $ref: '#/components/responses/notFound' },
+          },
+        },
+      },
+    },
+    components: {
+      parameters: {
+        owner: {
+          name: 'owner',
+          in: 'path',
+          required: true,
+          schema: { type: 'string' },
+        },
+        'per-page': {
+          name: 'per_page',
+          in: 'query',
+          schema: { type: 'integer' },
+        },
+      },
+      requestBodies: {
+        issue: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: { title: { type: 'string' } },
+                required: ['title'],
+              },
+            },
+          },
+        },
+      },
+      responses: {
+        issues: {
+          content: {
+            'application/json': {
+              schema: {
+                type: 'array',
+                items: { $ref: '#/components/schemas/Issue' },
+              },
+            },
+          },
+        },
+        notFound: {
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['code'],
+                properties: { code: { const: 'NOT_FOUND' } },
+              },
+            },
+          },
+        },
+      },
+      schemas: {
+        Issue: {
+          type: 'object',
+          required: ['id', 'title'],
+          properties: { id: { type: 'integer' }, title: { type: 'string' } },
+        },
+      },
+    },
+  };
+  const source = experimental_generateContractFromOpenApi(doc);
+  await expect(source).toMatchFileSnapshot('./fixtures/generated/refs.ts');
+
+  const mod = await import('./fixtures/generated/refs.ts');
+  const json = experimental_toContract(mod.contract);
+  expect(json.procedures['issues.list']?.route).toEqual({
+    method: 'GET',
+    path: '/repos/{owner}/issues',
+    inputStructure: 'detailed',
+  });
+  expect(json.procedures['issues.list']?.output).toBeDefined();
+  expect(json.procedures['issues.create']?.errors).toHaveProperty('NOT_FOUND');
+
+  const requests: Request[] = [];
+  const client = createTrpcClient({
+    router: json,
+    links: [
+      experimental_openApiLink({
+        url: 'http://localhost',
+        prefix: '',
+        contract: json,
+        fetch: async (input, init) => {
+          const request = new Request(input, init);
+          requests.push(request);
+          return Response.json(
+            request.method === 'GET'
+              ? [{ id: 1, title: 'One' }]
+              : { id: 2, title: 'Two' },
+            { status: request.method === 'GET' ? 200 : 201 },
+          );
+        },
+      }),
+    ],
+  });
+  const issues = await client.issues.list.query({
+    params: { owner: 'ada' },
+    query: { per_page: 2 },
+    headers: { 'x-api-version': '1' },
+  });
+  expectTypeOf(issues).toEqualTypeOf<
+    ReadonlyArray<{ readonly id: number; readonly title: string }>
+  >();
+  expect(issues).toEqual([{ id: 1, title: 'One' }]);
+  expect(requests[0]?.url).toBe('http://localhost/repos/ada/issues?per_page=2');
+  expect(requests[0]?.headers.get('x-api-version')).toBe('1');
+
+  expect(
+    await client.issues.create.mutate({ owner: 'ada', title: 'Two' }),
+  ).toEqual({ id: 2, title: 'Two' });
+  expect(requests[1]?.url).toBe('http://localhost/repos/ada/issues');
+  expect(await requests[1]?.json()).toEqual({ title: 'Two' });
+});
+
 test('an operation cannot also be a namespace', () => {
   expect(() =>
     experimental_generateContractFromOpenApi({
