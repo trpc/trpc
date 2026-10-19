@@ -14,6 +14,7 @@ import {
   type QueryObserverOptions,
   type SkipToken,
 } from '@tanstack/query-core';
+import { Effect, identity, Stream } from 'effect';
 import { structuralSharing } from './sharing.ts';
 import type {
   ChainTypes,
@@ -659,6 +660,47 @@ type Bag = {
 
 type ClientMethod = (input: unknown, opts: object) => any;
 
+/** Calls a procedure whose output streams, handing each chunk to `onChunk`. */
+const streamChunks = Effect.fnUntraced(function* (opts: {
+  readonly path: readonly string[];
+  readonly call: (signal: AbortSignal) => PromiseLike<unknown>;
+  readonly onChunk: (chunk: unknown) => void;
+}) {
+  const signal = yield* Effect.abortSignal;
+  const output = yield* Effect.tryPromise({
+    try: () => opts.call(signal),
+    catch: identity,
+  });
+  if (!isAsyncIterable(output)) {
+    return yield* Effect.fail(
+      new TypeError(`${opts.path.join('.')} did not return an AsyncIterable`),
+    );
+  }
+  yield* Stream.runForEach(
+    Stream.fromAsyncIterable(output, identity),
+    (chunk) => Effect.sync(() => opts.onChunk(chunk)),
+  );
+}, Effect.scoped);
+
+/**
+ * Succeeds once `signal` aborts or `onUnobserved` calls its listener; never
+ * without either.
+ */
+const stopped = (
+  signal: AbortSignal | undefined,
+  onUnobserved: ((listener: () => void) => () => void) | undefined,
+): Effect.Effect<void> =>
+  Effect.callback<void>((resume) => {
+    const stop = () => resume(Effect.void);
+    if (signal?.aborted) return stop();
+    signal?.addEventListener('abort', stop, { once: true });
+    const unsubscribe = onUnobserved?.(stop);
+    return Effect.sync(() => {
+      signal?.removeEventListener('abort', stop);
+      unsubscribe?.();
+    });
+  });
+
 function streamFrom(
   method: ClientMethod,
   input: unknown,
@@ -780,51 +822,53 @@ export function createTrpcQueryUtils<TClient extends object>(
         return {
           ...mutationOpts,
           mutationKey: [path],
-          mutationFn: async (
+          mutationFn: (
             variables: unknown,
             fnContext: MutationFunctionContext,
           ) => {
             const chunks: unknown[] = [];
-            const controller = new AbortController();
             const callSignal =
               typeof signal === 'function' ? signal(variables) : signal;
-            const stop = () => controller.abort(callSignal?.reason);
-            if (callSignal?.aborted) stop();
-            callSignal?.addEventListener('abort', stop, { once: true });
-            const unsubscribe = abortWhenUnobserved
-              ? fnContext.client.getQueryCache().subscribe((event) => {
-                  if (
-                    event.type === 'observerRemoved' &&
-                    matchQuery({ queryKey, exact: true }, event.query) &&
-                    event.query.getObserversCount() === 0
-                  ) {
-                    stop();
-                  }
-                })
-              : undefined;
             fnContext.client.setQueryData(queryKey, []);
-            try {
-              const output: unknown = await mutate(variables, {
-                ...(context as object),
-                signal: controller.signal,
-              });
-              if (!isAsyncIterable(output)) {
-                throw new TypeError(
-                  `${callPath.join('.')} did not return an AsyncIterable`,
-                );
-              }
-              for await (const chunk of output) {
-                chunks.push(chunk);
-                fnContext.client.setQueryData(queryKey, [...chunks]);
-                onChunk?.(chunk, chunks);
-              }
-            } catch (cause) {
-              if (!controller.signal.aborted) throw cause;
-            } finally {
-              unsubscribe?.();
-              callSignal?.removeEventListener('abort', stop);
-            }
-            return chunks;
+            return Effect.runPromise(
+              streamChunks({
+                path: callPath,
+                call: (streamSignal) =>
+                  mutate(variables, {
+                    ...(context as object),
+                    signal: streamSignal,
+                  }),
+                onChunk: (chunk) => {
+                  chunks.push(chunk);
+                  fnContext.client.setQueryData(queryKey, [...chunks]);
+                  onChunk?.(chunk, chunks);
+                },
+              }).pipe(
+                Effect.raceFirst(
+                  stopped(
+                    callSignal,
+                    abortWhenUnobserved
+                      ? (listener) =>
+                          fnContext.client
+                            .getQueryCache()
+                            .subscribe((event) => {
+                              if (
+                                event.type === 'observerRemoved' &&
+                                matchQuery(
+                                  { queryKey, exact: true },
+                                  event.query,
+                                ) &&
+                                event.query.getObserversCount() === 0
+                              ) {
+                                listener();
+                              }
+                            })
+                      : undefined,
+                  ),
+                ),
+                Effect.as(chunks),
+              ),
+            );
           },
         };
       }
