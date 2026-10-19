@@ -125,7 +125,10 @@ export type CallError<
       D['errors'],
       F,
       D['output'] extends AsyncIterable<any>
-        ? ChainLinkCodes<TLinks>
+        ? // An output that's `never` only fails, with a response that isn't a stream.
+          [D['output']] extends [never]
+          ? UnstreamedLinkCodes<TLinks>
+          : ChainLinkCodes<TLinks>
         : UnstreamedLinkCodes<TLinks>
     >
   | DefinedError<ChainErrors<TLinks>>;

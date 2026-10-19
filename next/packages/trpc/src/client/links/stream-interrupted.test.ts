@@ -11,7 +11,7 @@ import {
   type LinkErrorCode,
 } from '@trpc12/trpc/client';
 import { createEffectClient } from '@trpc12/trpc/effect';
-import { initTrpc } from '@trpc12/trpc/server';
+import { error, initTrpc } from '@trpc12/trpc/server';
 import { createTestServer } from '../../fixtures/server.ts';
 import { ScriptedWebSocket } from '../../fixtures/scripted-websocket.ts';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
@@ -19,6 +19,7 @@ import { expect, expectTypeOf, test } from 'vite-plus/test';
 const t = initTrpc();
 const router = {
   plain: t.procedure.query(() => ({ n: 1 })),
+  failing: t.procedure.query(() => error({ code: 'NOT_FOUND' })),
   deferred: t.procedure.query(() => ({ n: 1, later: Promise.resolve(2) })),
   feed: t.procedure.query(async function* () {
     yield 1;
@@ -55,6 +56,9 @@ test('STREAM_INTERRUPTED is in the union only for calls that stream: subscriptio
     const client = createTrpcClient({ router: routerType<AppRouter>(), links });
     expectTypeOf<
       LinkCodesIn<ErrorOf<typeof client.plain.query>>
+    >().toEqualTypeOf<Unstreamed>();
+    expectTypeOf<
+      LinkCodesIn<ErrorOf<typeof client.failing.query>>
     >().toEqualTypeOf<Unstreamed>();
     // A deferred value rejects on its own; the call already resolved.
     expectTypeOf<
