@@ -1679,6 +1679,9 @@ importers:
       '@modelcontextprotocol/sdk':
         specifier: 1.32.1
         version: 1.32.1(supports-color@10.2.2)(zod@4.6.5)
+      '@orpc/client':
+        specifier: 2.0.0-beta.44
+        version: 2.0.0-beta.44
       '@tanstack/db':
         specifier: 0.15.0
         version: 0.15.0(typescript@7.0.2)
