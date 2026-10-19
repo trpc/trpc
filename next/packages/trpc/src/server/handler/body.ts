@@ -1,4 +1,4 @@
-import { Cause, Effect, Exit, Scope, Stream } from 'effect';
+import { Cause, Effect, Exit, Scope, Stream, type Context } from 'effect';
 import { Cookies, type HttpServerRequest } from 'effect/http';
 import { TrpcError, type CodeError } from '../../internal/error.ts';
 import { isJsonContentType } from '../../internal/protocol.ts';
@@ -49,10 +49,12 @@ export const consumedError = (): CodeError<'INTERNAL_SERVER_ERROR'> =>
 /**
  * `bytes` as a web stream that starts reading at the first read and, when
  * cancelled, reads the rest and drops it: Node drops the connection before
- * the response is sent when a request body is destroyed half-read.
+ * the response is sent when a request body is destroyed half-read. Reads
+ * run with `context`, the request's.
  */
 const drainingStream = (
   bytes: Stream.Stream<Uint8Array, unknown>,
+  context: Context.Context<never>,
 ): ReadableStream<Uint8Array> => {
   const scope = Scope.makeUnsafe();
   const close = Scope.close(scope, Exit.void);
@@ -72,7 +74,7 @@ const drainingStream = (
   return new ReadableStream<Uint8Array>(
     {
       pull: (controller) =>
-        Effect.runPromise(
+        Effect.runPromiseWith(context)(
           open.pipe(
             Effect.flatten,
             Effect.matchEffect({
@@ -93,7 +95,7 @@ const drainingStream = (
           ),
         ),
       cancel: () => {
-        Effect.runFork(
+        Effect.runForkWith(context)(
           Effect.ignore(Effect.forever(Effect.flatten(open))).pipe(
             Effect.ensuring(close),
           ),
@@ -126,7 +128,9 @@ export const bodyStream = (
         request.source.body ?? Stream.toReadableStream(Stream.empty),
       );
     }
-    return Effect.succeed(drainingStream(request.stream));
+    return Effect.map(Effect.context(), (context) =>
+      drainingStream(request.stream, context),
+    );
   });
 
 /**
