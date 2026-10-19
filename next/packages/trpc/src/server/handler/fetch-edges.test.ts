@@ -1,10 +1,6 @@
 import { request as httpRequest } from 'node:http';
 import { Effect, Fiber, Predicate, Stream } from 'effect';
-import {
-  HttpRouter,
-  HttpServerRequest,
-  HttpServerResponse,
-} from 'effect/http';
+import { HttpRouter, HttpServerRequest, HttpServerResponse } from 'effect/http';
 import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
 import { jsonSerializer } from '@trpc12/trpc/serializer';
 import { createFetchHandler, error, initTrpc, lazy } from '@trpc12/trpc/server';

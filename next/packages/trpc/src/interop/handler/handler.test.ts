@@ -356,8 +356,8 @@ test('httpBatchStreamLink: results stream as they settle, deferred values includ
 /** A `fetch` whose body stops being read once `stall()` is called. */
 function stallableFetch() {
   let stalled = false;
-  const stallable: typeof fetch = async (input, init) => {
-    const res = await fetch(input, init);
+  const stallable = async (input: unknown, init?: unknown) => {
+    const res = await fetch(input as string, init as RequestInit);
     const reader = res.body!.getReader();
     const body = new ReadableStream<Uint8Array>(
       {
