@@ -1,11 +1,13 @@
 import {
   Cause,
+  Channel,
   Context,
   Effect,
   Exit,
   References,
   Stream,
   Tracer,
+  type Array as Arr,
   type ManagedRuntime,
 } from 'effect';
 import { HttpServerResponse } from 'effect/http';
@@ -56,7 +58,7 @@ const attempt = <A>(fn: () => A | PromiseLike<A>): Effect.Effect<A> =>
   Effect.suspend(() => {
     const ret = fn();
     return isThenable(ret)
-      ? Effect.promise(async () => ret)
+      ? Effect.promise(() => ret)
       : Effect.succeed(ret as A);
   });
 
@@ -249,39 +251,85 @@ const eventSchema = (
   isStreamSchema(output) ? output['~trpc.stream'].item : output;
 
 /**
+ * A streamed output's items. Its done value is a generator's return
+ * value, which a `Stream` has no place for.
+ */
+type OutputChannel = Channel.Channel<
+  Arr.NonEmptyReadonlyArray<unknown>,
+  unknown,
+  unknown
+>;
+
+const OUTPUT = Symbol('trpc.output');
+
+/** A streamed output, as middleware and callers get it. */
+interface StreamedOutput extends AsyncIterable<unknown, unknown> {
+  readonly [OUTPUT]: OutputChannel;
+}
+
+const isStreamedOutput = (value: unknown): value is StreamedOutput =>
+  typeof value === 'object' && value !== null && OUTPUT in value;
+
+/**
+ * `channel` as an `AsyncIterable`: `Stream.toAsyncIterableWith`'s, which
+ * pulls an item per `next()` and closes the source on `return()`, ending
+ * as a generator does, with the done value and `return(value)`'s `value`
+ * where Effect's ends with `undefined`. The channel stays readable, so
+ * output validation extends it instead of iterating this.
+ */
+const streamedOutput = (
+  channel: OutputChannel,
+  services: Context.Context<never>,
+): StreamedOutput => ({
+  [OUTPUT]: channel,
+  [Symbol.asyncIterator]() {
+    let returned: unknown;
+    const iterator = Stream.toAsyncIterableWith(
+      Stream.fromChannel(
+        Channel.mapDone(channel, (done) => {
+          returned = done;
+        }),
+      ),
+      services,
+    )[Symbol.asyncIterator]() as Required<AsyncIterator<unknown, unknown>>;
+    return {
+      next: () =>
+        iterator.next().then((next) => {
+          if (!next.done) return next;
+          const value = returned;
+          returned = undefined;
+          return { done: true, value };
+        }),
+      return: (value?: unknown) =>
+        iterator.return().then(() => ({ done: true, value })),
+      throw: (error: unknown) => iterator.throw(error),
+    };
+  },
+});
+
+/**
  * Validates each item of a streamed output, and its return value when the
  * schema has one. Invalid values fail the stream at that point.
  */
-function validateItems(
-  source: AsyncIterable<unknown, unknown>,
+const validateItems = (
+  channel: OutputChannel,
   schema: StreamSchema,
-  services: Context.Context<never>,
-): AsyncIterable<unknown, unknown> {
-  const run = Effect.runPromiseWith(services);
+): OutputChannel => {
   const streamSchema = schema['~trpc.stream'];
-  return {
-    async *[Symbol.asyncIterator]() {
-      const iterator = source[Symbol.asyncIterator]();
-      let done = false;
-      try {
-        while (true) {
-          const next = await iterator.next();
-          if (next.done) {
-            done = true;
-            return streamSchema.return
-              ? await run(
-                  validate(streamSchema.return, next.value, outputError),
-                )
-              : next.value;
-          }
-          yield await run(validate(streamSchema.item, next.value, outputError));
-        }
-      } finally {
-        if (!done) await iterator.return?.();
-      }
-    },
-  };
-}
+  const items = Channel.mapEffect(
+    channel,
+    (chunk) =>
+      Effect.forEach(chunk, (item) =>
+        validate(streamSchema.item, item, outputError),
+      ) as Effect.Effect<Arr.NonEmptyReadonlyArray<unknown>, AnyTrpcError>,
+  );
+  const returns = streamSchema.return;
+  return returns
+    ? Channel.mapDoneEffect(items, (done) =>
+        validate(returns, done, outputError),
+      )
+    : items;
+};
 
 const checkDeclared = (
   def: ProcedureInternals,
@@ -415,23 +463,11 @@ const settleStreamed = (
 const isReadableStream = (value: unknown): boolean =>
   typeof ReadableStream === 'function' && value instanceof ReadableStream;
 
-/** `source` with what it throws settled by {@link settleStreamed}. */
-function settleIterable(
-  source: AsyncIterable<unknown, unknown>,
-  settled: (cause: Cause.Cause<unknown>) => Effect.Effect<never, AnyTrpcError>,
-  services: Context.Context<never>,
-): AsyncIterable<unknown, unknown> {
-  const run = Effect.runPromiseWith(services);
-  return {
-    async *[Symbol.asyncIterator]() {
-      try {
-        return yield* source;
-      } catch (cause) {
-        throw await run(Effect.flip(settled(Cause.die(cause))));
-      }
-    },
-  };
-}
+/** What an iterable throws is a defect, as what a resolver throws is. */
+const iterableChannel = (
+  iterable: AsyncIterable<unknown, unknown>,
+): OutputChannel =>
+  Channel.orDie(Channel.fromAsyncIterableArray(iterable, (cause) => cause));
 
 /**
  * Runs a call: middleware, inputs, `.provide()` steps, the resolver and
@@ -607,7 +643,7 @@ export function callProcedure(
         }
         return isThenable(made)
           ? Effect.flatMap(
-              Effect.promise(async () => made),
+              Effect.promise(() => made),
               provide,
             )
           : provide(made);
@@ -709,7 +745,7 @@ export function callProcedure(
     }
     return isThenable(ret)
       ? Effect.flatMap(
-          Effect.promise(async () => ret),
+          Effect.promise(() => ret),
           (value) => lift(afterResolve(value, services)),
         )
       : afterResolve(ret, services);
@@ -726,21 +762,18 @@ export function callProcedure(
         (cause) => Stream.fromEffect(settle(def, path, cause)),
       );
     }
-    const settled = (cause: Cause.Cause<unknown>) =>
-      settleStreamed(def, path, cause);
-    if (Stream.isStream(value)) {
-      return Stream.toAsyncIterableWith(
-        Stream.catchCause(
-          value as Stream.Stream<unknown, unknown, never>,
-          (cause) => Stream.fromEffect(settled(cause)),
-        ),
-        services,
-      );
-    }
-    if (isAsyncIterable(value) && !isReadableStream(value)) {
-      return settleIterable(value, settled, services);
-    }
-    return value;
+    const source = Stream.isStream(value)
+      ? Stream.toChannel(value as Stream.Stream<unknown, unknown, never>)
+      : isAsyncIterable(value) && !isReadableStream(value)
+        ? iterableChannel(value)
+        : undefined;
+    if (!source) return value;
+    return streamedOutput(
+      Channel.catchCause(source, (cause) =>
+        Channel.fromEffectDone(settleStreamed(def, path, cause)),
+      ),
+      services,
+    );
   };
 
   const complete = (
@@ -784,7 +817,12 @@ export function callProcedure(
           ]),
         );
       }
-      return Effect.succeed(validateItems(value, output, services));
+      const channel = isStreamedOutput(value)
+        ? value[OUTPUT]
+        : iterableChannel(value);
+      return Effect.succeed(
+        streamedOutput(validateItems(channel, output), services),
+      );
     }
     return Effect.succeed(value);
   };

@@ -10,7 +10,7 @@ import {
   type AnyContractRouter,
   experimental_contract,
 } from '@trpc12/trpc/contract';
-import { initTrpc, stream, tracked } from '@trpc12/trpc/server';
+import { call, initTrpc, stream, tracked } from '@trpc12/trpc/server';
 import { createTestServer } from '../../fixtures/server.ts';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
@@ -152,6 +152,87 @@ test('subscriptions validate each event with .output(Event) or .output(stream(Ev
   for await (const e of ctx.client.onPostStream.subscribe()) b.push(e);
   expectTypeOf(b[0]!).toEqualTypeOf<{ id: string; title: string }>();
   expect(b).toEqual([{ id: '1', title: 'b' }]);
+});
+
+test('in-process, a streamed output ends with its validated return value', async () => {
+  expect(await drain(await call(router.chat, undefined))).toEqual({
+    items: [{ text: 'He' }, { text: 'llo' }],
+    returned: { tokens: 2 },
+  });
+  const fromStream = t.procedure
+    .output(stream(Schema.Struct({ n: Schema.Number })))
+    .query(() => Stream.make({ n: 1 }));
+  expect(await drain(await call(fromStream, undefined))).toEqual({
+    items: [{ n: 1 }],
+    returned: undefined,
+  });
+  const bad = await drain(await call(router.badSummary, undefined)).then(
+    () => undefined,
+    (e: unknown) => e,
+  );
+  expect(bad).toBeInstanceOf(TrpcError);
+  expect(bad).toMatchObject({ code: 'INTERNAL_SERVER_ERROR' });
+});
+
+test('a streamed output reads its source one item per next(), and leaving closes it', async () => {
+  const pulled: number[] = [];
+  let closed = false;
+  async function* tokens() {
+    try {
+      for (let i = 0; ; i++) {
+        pulled.push(i);
+        yield { text: String(i) };
+      }
+    } finally {
+      await Promise.resolve();
+      closed = true;
+    }
+  }
+  const validated = t.procedure.output(stream(Token)).query(tokens);
+  const unvalidated = t.procedure.query(tokens);
+  for (const procedure of [validated, unvalidated]) {
+    pulled.length = 0;
+    closed = false;
+    const iterator = (await call(procedure, undefined))[Symbol.asyncIterator]();
+    expect(await iterator.next()).toEqual({
+      done: false,
+      value: { text: '0' },
+    });
+    expect(await iterator.next()).toEqual({
+      done: false,
+      value: { text: '1' },
+    });
+    expect(pulled).toEqual([0, 1]);
+    expect(await iterator.return?.('left')).toEqual({
+      done: true,
+      value: 'left',
+    });
+    expect(closed).toBe(true);
+    expect(await iterator.next()).toEqual({ done: true, value: undefined });
+  }
+});
+
+test('an invalid item closes the source before the stream fails', async () => {
+  let closed = false;
+  const broken = t.procedure.output(stream(Post)).query(async function* () {
+    try {
+      yield { id: '1', title: 'ok' };
+      yield { id: 2 } as unknown as { id: string; title: string };
+      yield { id: '3', title: 'never' };
+    } finally {
+      closed = true;
+    }
+  });
+  const items: unknown[] = [];
+  const err = await (async () => {
+    for await (const item of await call(broken, undefined)) items.push(item);
+  })().then(
+    () => undefined,
+    (e: unknown) => e,
+  );
+  expect(items).toEqual([{ id: '1', title: 'ok' }]);
+  expect(err).toBeInstanceOf(TrpcError);
+  expect(closed).toBe(true);
 });
 
 test('contracts take stream() outputs', async () => {
