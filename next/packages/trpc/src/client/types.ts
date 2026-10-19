@@ -208,6 +208,15 @@ type Unbatchable<TLinks extends ChainTypes> =
   | (ResultForm<undefined, TLinks>['streaming'] extends true ? never : Blob);
 
 /**
+ * Only an output with one of these keys can be {@link Unbatchable}. Testing
+ * a key first is cheaper than comparing every output with `Response` and
+ * `Blob`, which a batching chain would otherwise do once per procedure.
+ */
+type BodyLike =
+  | { readonly arrayBuffer: unknown }
+  | { readonly '~effect/http/HttpServerResponse': unknown };
+
+/**
  * The arguments of `query()`/`mutate()`. A procedure that may return a
  * `Response`, or a `Blob` under a serializer that doesn't stream files,
  * can't be batched, so on a batching chain its calls must pass
@@ -222,9 +231,11 @@ export type ProcedureCallArgs<
 > =
   Batches<TLinks> extends false
     ? CallArgs<TInput, TOpts>
-    : [Extract<TOutput, Unbatchable<TLinks>>] extends [never]
+    : [Extract<TOutput, BodyLike>] extends [never]
       ? CallArgs<TInput, TOpts>
-      : [input: TInput, opts: TOpts & { batch: false }];
+      : [Extract<TOutput, Unbatchable<TLinks>>] extends [never]
+        ? CallArgs<TInput, TOpts>
+        : [input: TInput, opts: TOpts & { batch: false }];
 
 /** Read once per chain rather than once per procedure. */
 type Batches<TLinks extends ChainTypes> = TLinks extends { batches: infer B }
