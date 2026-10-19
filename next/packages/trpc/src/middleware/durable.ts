@@ -267,10 +267,14 @@ export function experimental_durable<TReq extends MiddlewareRequirements = {}>(
           yield* Effect.sleep(pollInterval);
           continue;
         }
+        // Another call on this instance claimed it while the store answered.
+        if (local.has(key)) continue;
         break;
       }
 
-      const deferred = yield* Deferred.make<Ran>();
+      // Claimed in the same step as the check above: a yield between them
+      // would let a second call claim it too.
+      const deferred = Deferred.makeUnsafe<Ran>();
       local.set(key, deferred);
       const claim: Entry = { state: 'running', input };
       yield* store.set(key, claim, claimTtl).pipe(Effect.orDie);
