@@ -798,6 +798,32 @@ test('observers with the same key share one subscription', async () => {
   stopShared();
 });
 
+test('leaving a hand-written subscription aborts its signal while its generator awaits', async () => {
+  await using app = await createApp();
+  let signal: AbortSignal | undefined;
+  let finished = false;
+  const observer = new SubscriptionObserver({
+    ...app.trpc.clock.ticks.subscriptionOptions({ input: { from: 0 } }),
+    subscribe: async function* (opts) {
+      signal = opts.signal;
+      try {
+        yield 1;
+        await new Promise((_resolve, reject) => {
+          opts.signal.addEventListener('abort', reject, { once: true });
+        });
+      } finally {
+        finished = true;
+      }
+    },
+  });
+  const unsubscribe = observer.subscribe(() => {});
+  await until(observer, (r) => r.status === 'active');
+  unsubscribe();
+  expect(signal?.aborted).toBe(true);
+  await vi.waitFor(() => expect(finished).toBe(true));
+  expect(observer.getCurrentResult().status).toBe('active');
+});
+
 test('context reaches the links, typed from what they declare', async () => {
   await using app = await createApp();
   const queryClient = new QueryClient();
