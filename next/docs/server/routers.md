@@ -35,7 +35,10 @@ const invoices = t.procedure.query(() => [1]);
 const health = t.procedure.query(() => 'ok');
 // ---cut-end---
 const admin = t.router({ meta: { route: { prefix: '/admin' } } }, { users });
-const billing = t.router({ meta: { route: { prefix: '/billing' } } }, { invoices });
+const billing = t.router(
+  { meta: { route: { prefix: '/billing' } } },
+  { invoices },
+);
 
 // OpenAPI: GET /api/admin/users and GET /api/admin/health
 export const adminApi = mergeRouters(admin, { health });

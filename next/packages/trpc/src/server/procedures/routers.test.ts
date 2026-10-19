@@ -228,7 +228,10 @@ test("a root router's own route meta applies to every route", async () => {
     { meta: { route: { prefix: '/admin', tags: ['admin'] } } },
     { users, ban },
   );
-  expect(openApiPaths(admin)).toEqual(['/api/admin/users', '/api/admin/bans/{id}']);
+  expect(openApiPaths(admin)).toEqual([
+    '/api/admin/users',
+    '/api/admin/bans/{id}',
+  ]);
   expect(openApiPaths(mergeRouters(admin, { health: users }))).toEqual([
     '/api/admin/users',
     '/api/admin/bans/{id}',
@@ -265,7 +268,10 @@ test('mergeRouters throws when routers set a meta key to different values', () =
 
 test('mergeRouters accepts routers whose meta is equal, and nests', () => {
   const group = <const R extends AnyRouter>(routes: R) =>
-    t.router({ meta: { route: { prefix: '/admin', tags: ['admin'] } } }, routes);
+    t.router(
+      { meta: { route: { prefix: '/admin', tags: ['admin'] } } },
+      routes,
+    );
   const inner = mergeRouters(group({ users }), { health: users });
   const merged = mergeRouters(inner, group({ ban }), { stats: users });
   expect(routerMetaOf(merged)).toEqual({
