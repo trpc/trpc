@@ -60,6 +60,14 @@ const splitUrl = (url: string): { pathname: string; search: string } => {
 };
 
 /** A procedure path from the URL, or `undefined` when its escapes are malformed. */
+const decodePath = (raw: string): string | undefined => {
+  try {
+    return decodeURIComponent(raw);
+  } catch {
+    return undefined;
+  }
+};
+
 /**
  * The span an HTTP call's span is a child of: the request's span (Effect's
  * HTTP tracer middleware makes one from `traceparent`), else the trace
@@ -99,16 +107,14 @@ export const makeApp = (handler: HttpHandler): HttpAppShape['app'] =>
       return Effect.fail(protocolError('NOT_FOUND', `Not found: ${pathname}`));
     }
     const rest = pathname.slice(handler.under.length);
+    const path = decodePath(rest);
+    if (path === undefined) {
+      return Effect.fail(protocolError('NOT_FOUND', `Not found: ${pathname}`));
+    }
     return Effect.flatMap(parentSpan(request), (parent) =>
       rest === '' && request.headers[HEADER.batch] === '1'
         ? batched(handler, request, parent)
-        : singleCall(
-            handler,
-            request,
-            parts.search,
-            decodeURIComponent(rest),
-            parent,
-          ),
+        : singleCall(handler, request, parts.search, path, parent),
     );
   }).pipe(
     Effect.catchCause((cause) =>
