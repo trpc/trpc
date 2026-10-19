@@ -375,10 +375,12 @@ export const middleware: MiddlewareFactory = Object.assign(
 
 // --- lifecycle helpers (06 (f)) ----------------------------------------------------
 
-type AnyOpts = MiddlewareOpts<unknown, unknown, unknown>;
-
 /**
- * Runs `fn` before the rest of the chain.
+ * Runs `fn` before the rest of the chain. `opts.meta` and `opts.input` are
+ * typed from the procedure; `opts.ctx` is `unknown` unless given as the
+ * first type argument (`onStart<{ user: User }>((opts) => …)`), and a key
+ * the procedure's ctx lacks becomes a requirement, as for any middleware.
+ * The same goes for {@link onSuccess}, {@link onError} and {@link onFinish}.
  *
  * @example
  * ```ts
@@ -387,9 +389,9 @@ type AnyOpts = MiddlewareOpts<unknown, unknown, unknown>;
  * @since 0.1.0
  * @stability stable
  */
-export function onStart(
-  fn: (opts: AnyOpts) => MaybePromise<void>,
-): MiddlewareFunction<unknown, unknown, unknown, {}, never> {
+export function onStart<TCtx = unknown, TInput = unknown, TMeta = unknown>(
+  fn: (opts: MiddlewareOpts<TCtx, TInput, TMeta>) => MaybePromise<void>,
+): MiddlewareFunction<TCtx, TInput, TMeta, {}, never> {
   return async (opts) => {
     await fn(opts);
     return opts.next();
@@ -407,9 +409,12 @@ export function onStart(
  * @since 0.1.0
  * @stability stable
  */
-export function onSuccess(
-  fn: (data: unknown, opts: AnyOpts) => MaybePromise<void>,
-): MiddlewareFunction<unknown, unknown, unknown, {}, never> {
+export function onSuccess<TCtx = unknown, TInput = unknown, TMeta = unknown>(
+  fn: (
+    data: unknown,
+    opts: MiddlewareOpts<TCtx, TInput, TMeta>,
+  ) => MaybePromise<void>,
+): MiddlewareFunction<TCtx, TInput, TMeta, {}, never> {
   return async (opts) => {
     const result = await opts.next();
     if (result.ok) await fn(result.data, opts);
@@ -427,9 +432,12 @@ export function onSuccess(
  * @since 0.1.0
  * @stability stable
  */
-export function onError(
-  fn: (error: AnyTrpcError, opts: AnyOpts) => MaybePromise<void>,
-): MiddlewareFunction<unknown, unknown, unknown, {}, never> {
+export function onError<TCtx = unknown, TInput = unknown, TMeta = unknown>(
+  fn: (
+    error: AnyTrpcError,
+    opts: MiddlewareOpts<TCtx, TInput, TMeta>,
+  ) => MaybePromise<void>,
+): MiddlewareFunction<TCtx, TInput, TMeta, {}, never> {
   return async (opts) => {
     const result = await opts.next();
     if (!result.ok) await fn(result.error, opts);
@@ -447,14 +455,14 @@ export function onError(
  * @since 0.1.0
  * @stability stable
  */
-export function onFinish(
+export function onFinish<TCtx = unknown, TInput = unknown, TMeta = unknown>(
   fn: (
     result:
       | { readonly ok: true; readonly data: unknown }
       | { readonly ok: false; readonly error: AnyTrpcError },
-    opts: AnyOpts,
+    opts: MiddlewareOpts<TCtx, TInput, TMeta>,
   ) => MaybePromise<void>,
-): MiddlewareFunction<unknown, unknown, unknown, {}, never> {
+): MiddlewareFunction<TCtx, TInput, TMeta, {}, never> {
   return async (opts) => {
     const result = await opts.next();
     await fn(result, opts);

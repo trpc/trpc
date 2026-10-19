@@ -427,6 +427,34 @@ test('lifecycle helpers observe the chain', async () => {
   ]);
 });
 
+test('lifecycle helpers type meta and input from the procedure, and ctx from a type argument', async () => {
+  const typed = initTrpc<{ ctx: Ctx; meta: { auth?: boolean } }>();
+  const seen: unknown[] = [];
+  const byId = typed.procedure
+    .meta({ auth: true })
+    .input(z.object({ id: z.string() }))
+    .use(
+      onFinish((_result, opts) => {
+        expectTypeOf(opts.meta.auth).toEqualTypeOf<boolean | undefined>();
+        expectTypeOf(opts.input).toEqualTypeOf<{ id: string }>();
+        expectTypeOf(opts.ctx).toBeUnknown();
+        seen.push(opts.meta.auth, opts.input.id);
+      }),
+    )
+    .use(onStart<Ctx>((opts) => void seen.push(opts.ctx.user)))
+    .query((opts) => opts.input.id);
+  expect(await call(byId, { id: '1' }, { ctx: { user: 'ada' } })).toBe('1');
+  expect(seen).toEqual(['ada', true, '1']);
+
+  const needsUser = initTrpc()
+    .procedure.use(onStart<{ user: string }>((opts) => void opts.ctx.user))
+    .query(() => 1);
+  // @ts-expect-error -- the hook's ctx is now a requirement of the procedure
+  const missing = () => call(needsUser, undefined);
+  expectTypeOf(missing).toBeFunction();
+  expect(await call(needsUser, undefined, { ctx: { user: 'bo' } })).toBe(1);
+});
+
 test('Effect middleware provides services and its failures are typed', async () => {
   await using ctx = await setup();
   expect(await ctx.client.me.query()).toBe('ada');
