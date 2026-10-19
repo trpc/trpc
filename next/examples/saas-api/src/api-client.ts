@@ -1,4 +1,5 @@
 import {
+  batching,
   createTrpcClient,
   dedupeLink,
   httpLink,
@@ -55,7 +56,7 @@ export function createApiClient(opts: ApiClientOptions) {
           app: [
             dedupeLink(),
             retryLink(),
-            httpLink({ url, batch: true, headers, fetch: opts.fetch }),
+            httpLink({ url, batch: batching(), headers, fetch: opts.fetch }),
           ],
           admin: httpLink({ url, headers, fetch: opts.fetch }),
         },
