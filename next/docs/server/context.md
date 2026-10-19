@@ -19,7 +19,7 @@ const t = initTrpc<{ ctx: { user: User | null } }>();
 
 ## From the request
 
-The handler's `createContext` makes it for each call, from the request (and, on runtimes like Workers, the platform argument):
+The handler's `createContext` makes it from the request (and, on runtimes like Workers, the platform argument). It runs once per HTTP request, so the calls in a batch share one `ctx`, and once per call over a WebSocket or `MessagePort`; `opts.info.calls` lists the paths it serves:
 
 ```ts twoslash
 // ---cut-start---
@@ -47,7 +47,7 @@ Middleware adds to the `ctx` with `next({ ctx })`, and the procedures after it s
 
 ## In-process calls
 
-In-process calls have no HTTP request: you pass the `ctx` (or a function that makes it) yourself, and the handler's `createContext` doesn't run. To share request-reading code with the handler, keep it in a function of the request and build one: `ctx: () => contextFor(HttpServerRequest.fromWeb(new Request(url, { headers })))`. See [Server-side calls](./server-side-calls.md).
+In-process calls have no HTTP request: you pass the `ctx` yourself (`createRouterClient` also takes a function that makes it, run per call), and the handler's `createContext` doesn't run. To share request-reading code with the handler, keep it in a function of the request and build one: `ctx: () => contextFor(HttpServerRequest.fromWeb(new Request(url, { headers })))`. See [Server-side calls](./server-side-calls.md).
 
 ## Services instead of `ctx`
 

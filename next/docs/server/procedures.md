@@ -103,7 +103,7 @@ const latest = t.procedure
 
 ## Metadata
 
-`.meta()` attaches data to a procedure that middleware reads as `opts.meta`. Meta keys a root doesn't declare are a type error, so declare them on `initTrpc`:
+`.meta()` attaches data to a procedure that middleware and the resolver read as `opts.meta`. Meta keys a root doesn't declare are a type error, so declare them on `initTrpc`:
 
 ```ts twoslash
 import { initTrpc } from '@trpc12/trpc/server';
