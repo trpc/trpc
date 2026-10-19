@@ -107,7 +107,7 @@ test('malformed messages get PARSE_ERROR replies with no id', async () => {
 });
 
 test("a message with more calls than batch.maxItems runs none and fails each by id, as v11's maxBatchSize does over HTTP", async () => {
-  const onError = vi.fn();
+  const onError = vi.fn<() => void>();
   await using app = await start({ batch: { maxItems: 2 }, onError });
   const ws = await connect(app.url);
   const echo = (id: number) => ({
