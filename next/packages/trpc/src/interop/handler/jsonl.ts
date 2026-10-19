@@ -1,9 +1,14 @@
-import { type Cause, Effect, FiberSet, Queue, Stream } from 'effect';
-import { backpressure, returnUnawaited } from '../../internal/effects.ts';
+import { Cause, Effect, FiberSet, Queue, Stream } from 'effect';
+import { backpressure } from '../../internal/effects.ts';
 import {
+  ERROR as FAILED,
   isAsyncIterable,
   isPromiseLike,
   isPlainObject,
+  RETURN as RETURNED,
+  sourceOf,
+  type Status,
+  VALUE,
 } from '../../serializer/danson/index.ts';
 
 const PROMISE = 0;
@@ -24,23 +29,6 @@ export interface JsonlOptions {
   /** The v11 shape of a deferred value's failure at `path` (`path[0]` is the call's index). */
   readonly formatError: (cause: Cause.Cause<unknown>, path: Path) => unknown;
 }
-
-const keepReturn = <A>(
-  iterable: AsyncIterable<A>,
-  onReturn: (value: unknown) => void,
-): AsyncIterable<A> => ({
-  [Symbol.asyncIterator]() {
-    const iterator = iterable[Symbol.asyncIterator]();
-    return {
-      next: async () => {
-        const result = await iterator.next();
-        if (result.done) onReturn(result.value);
-        return result;
-      },
-      ...(iterator.return && { return: iterator.return.bind(iterator) }),
-    };
-  },
-});
 
 const isDeferred = (value: unknown) =>
   Effect.isEffect(value) ||
@@ -92,50 +80,47 @@ export const jsonlLines = (
           started: Array<() => void>,
         ): [number, number] => {
           const id = counter++;
-          const failed = (status: number) => (cause: Cause.Cause<unknown>) =>
-            emit([id, status, opts.formatError(cause, path)]);
-          if (isAsyncIterable(value) || Stream.isStream(value)) {
-            // v11 sends a generator's return value in its last line.
-            let returned: unknown;
-            const stream = Stream.isStream(value)
-              ? (value as Stream.Stream<unknown, unknown>)
-              : Stream.fromAsyncIterable(
-                  returnUnawaited(keepReturn(value, (v) => (returned = v))),
-                  (cause) => cause,
-                );
-            started.push(() =>
-              fork(
-                Stream.runForEach(stream, (item) =>
-                  send(item, path, (encoded) => [id, YIELD, encoded]),
-                ).pipe(
-                  Effect.matchCauseEffect({
-                    onSuccess: () =>
-                      send(returned, path, (encoded) => [id, RETURN, encoded]),
-                    onFailure: failed(ERROR),
-                  }),
-                ),
-              ),
-            );
-            return [ITERABLE, id];
-          }
-          const settle = Effect.isEffect(value)
-            ? (value as Effect.Effect<unknown, unknown>)
-            : Effect.tryPromise({
-                try: () => Promise.resolve(value),
-                catch: (cause) => cause,
-              });
+          const iterable = isAsyncIterable(value) || Stream.isStream(value);
+          // A generator's return value is its last line, as v11 sends it.
+          const settled: Stream.Stream<[Status, unknown], unknown> =
+            Stream.isStream(value)
+              ? Stream.concat(
+                  Stream.map(
+                    value as Stream.Stream<unknown, unknown>,
+                    (v): [Status, unknown] => [VALUE, v],
+                  ),
+                  Stream.succeed<[Status, unknown]>([RETURNED, undefined]),
+                )
+              : Effect.isEffect(value)
+                ? Stream.fromEffect(
+                    Effect.map(
+                      value as Effect.Effect<unknown, unknown>,
+                      (v): [Status, unknown] => [VALUE, v],
+                    ),
+                  )
+                : sourceOf(value as Parameters<typeof sourceOf>[0]);
+          const failed = (cause: Cause.Cause<unknown>) =>
+            emit([
+              id,
+              iterable ? ERROR : REJECTED,
+              opts.formatError(cause, path),
+            ]);
+          const status = (settledAs: Status) =>
+            !iterable ? FULFILLED : settledAs === VALUE ? YIELD : RETURN;
           started.push(() =>
             fork(
-              settle.pipe(
-                Effect.matchCauseEffect({
-                  onSuccess: (resolved) =>
-                    send(resolved, path, (encoded) => [id, FULFILLED, encoded]),
-                  onFailure: failed(REJECTED),
-                }),
-              ),
+              Stream.runForEach(settled, ([settledAs, v]) =>
+                settledAs === FAILED
+                  ? failed(Cause.fail(v))
+                  : send(v, path, (encoded) => [
+                      id,
+                      status(settledAs),
+                      encoded,
+                    ]),
+              ).pipe(Effect.catchCause(failed)),
             ),
           );
-          return [PROMISE, id];
+          return [iterable ? ITERABLE : PROMISE, id];
         };
 
         const encode = (
