@@ -28,7 +28,7 @@ const client = createTrpcClient({
 - `fetch`: a `fetch` of your own.
 - `serializer`: must match the handler's, and client types follow it ([Serializers](../../server/serializers.md)).
 - `maxUrlLength` and `longQuery`: when a query goes with a body (below).
-- `binary`: streamed outputs as binary frames (below).
+- `streams`: read streamed outputs, and optionally binary frames, with `experimental_httpStreams()` (below).
 - `subscriptions: false`: no SSE, so procedures lose `.subscribe()`, for a link that only carries queries and mutations.
 - `reconnect`: how a dropped subscription reconnects, `{ attempts: 5, delayMs }` by default.
 
@@ -69,7 +69,21 @@ A query whose URL would be longer than `maxUrlLength` (2048) is sent with a body
 
 ## Streamed outputs and files
 
-Outputs with nested promises, async iterables or files stream as JSONL ([Streaming](../../server/streaming.md)). With `binary: true` they stream as [binary frames](../../server/files.md#binary-frames) instead, which carry file bytes unencoded; a server that doesn't know frames answers with JSONL. An unbatched call whose output is a `File` or `Blob` gets it as the raw response body.
+Outputs with nested promises, async iterables or files stream as JSONL ([Streaming](../../server/streaming.md)). A call sent alone reads them with `streams: experimental_httpStreams()`, which keeps the JSONL reader, resuming for durable calls and the frames decoder out of clients that never stream:
+
+```ts twoslash
+// ---cut-start---
+declare const url: string;
+// ---cut-end---
+import { experimental_httpStreams, httpLink } from '@trpc12/trpc/client';
+
+httpLink({ url, streams: experimental_httpStreams() });
+httpLink({ url, streams: experimental_httpStreams({ binary: true }) });
+```
+
+Without `streams`, the link asks for `application/json` only. The handler streams such an output whatever `accept` says, so the call runs, and then fails on the client with `UNSUPPORTED_PROTOCOL`; the link cancels the body, which stops the stream on the server. Batched calls read deferred values either way, since a batch's response is JSONL already.
+
+With `binary: true`, streamed outputs and batches come as [binary frames](../../server/files.md#binary-frames) instead, which carry file bytes unencoded; a server that doesn't know frames answers with JSONL. An unbatched call whose output is a `File` or `Blob` gets it as the raw response body.
 
 Inputs holding a `File` or `Blob` go alone as `multipart/form-data` ([Files](../../server/files.md)).
 

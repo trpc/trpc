@@ -6,7 +6,7 @@ parent: integrations/tanstack-query
 order: 10
 ---
 
-A mutation that returns an async iterable (an AI reply, say) can fill in as it streams:
+A mutation that returns an async iterable (an AI reply, say) can fill in as it streams. Over `httpLink`, the link needs `streams: experimental_httpStreams()` ([httpLink](../../client/links/http.md#streamed-outputs-and-files)):
 
 ```ts twoslash
 // ---cut-start---
