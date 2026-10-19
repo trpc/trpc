@@ -188,7 +188,7 @@ export function makeTransport(
     method: 'GET' | 'POST' | 'QUERY',
     url: string,
     extra: Record<string, string>,
-    body?: string | FormData,
+    body?: string | FormData | ReadableStream<Uint8Array>,
   ): Effect.Effect<Prepared, AnyTrpcError> =>
     Effect.tryPromise({
       try: async () => {
@@ -218,6 +218,8 @@ export function makeTransport(
         // its boundary.
         if (typeof body === 'string') {
           headers.set('content-type', CONTENT_TYPE.json);
+        } else if (body instanceof ReadableStream) {
+          headers.set('content-type', CONTENT_TYPE.octet);
         } else if (body) {
           headers.delete('content-type');
         }
@@ -229,7 +231,9 @@ export function makeTransport(
           method,
           headers,
           ...(body === undefined ? {} : { body }),
-        };
+          // `fetch` only sends a stream body half-duplex.
+          ...(body instanceof ReadableStream ? { duplex: 'half' } : {}),
+        } as RequestInit;
         return { url: resolveUrl(url), init };
       },
       catch: toHttpError,
@@ -368,13 +372,7 @@ export function makeTransport(
       const headers: Record<string, string> = { accept, ...extra };
       if (isByteStreamInput(op.input)) {
         return yield* execute(
-          yield* prepare(
-            [op],
-            'POST',
-            url,
-            headers,
-            HttpBody.raw(op.input, { contentType: CONTENT_TYPE.octet }),
-          ),
+          yield* prepare([op], 'POST', url, headers, op.input),
           op.signal,
         );
       }
