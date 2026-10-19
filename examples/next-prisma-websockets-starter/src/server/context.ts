@@ -1,6 +1,7 @@
 import type { CreateNextContextOptions } from '@trpc/server/adapters/next';
 import type { CreateWSSContextFnOptions } from '@trpc/server/adapters/ws';
-import { getSession } from 'next-auth/react';
+import { ServerResponse } from 'node:http';
+import { getServerAuthSession } from './auth';
 
 /**
  * Creates context for an incoming request
@@ -9,7 +10,14 @@ import { getSession } from 'next-auth/react';
 export const createContext = async (
   opts: CreateNextContextOptions | CreateWSSContextFnOptions,
 ) => {
-  const session = await getSession(opts);
+  /**
+   * `getServerSession` writes refreshed session cookies to the response, but a
+   * WebSocket connection has no HTTP response to write to, so they go to a
+   * detached one and are dropped.
+   */
+  const res = 'setHeader' in opts.res ? opts.res : new ServerResponse(opts.req);
+
+  const session = await getServerAuthSession(opts.req, res);
 
   console.log('createContext for', session?.user?.name ?? 'unknown user');
 

@@ -16,8 +16,22 @@ const MyApp: AppType<{ session: Session | null }> = ({
 };
 
 MyApp.getInitialProps = async ({ ctx }) => {
+  if (ctx.req && ctx.res) {
+    /**
+     * The import is dynamic so that `[...nextauth].ts` is only evaluated when
+     * a request actually hits this branch - importing it statically evaluates
+     * it while `next build` collects page data, where a missing GitHub client
+     * id throws.
+     */
+    const { getServerAuthSession } = await import('~/server/auth');
+
+    return {
+      session: await getServerAuthSession(ctx.req, ctx.res),
+    };
+  }
+
   return {
-    session: await getSession(ctx),
+    session: await getSession(),
   };
 };
 
