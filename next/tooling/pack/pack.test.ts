@@ -134,6 +134,38 @@ test.each(packages.map((opts) => [opts.name, opts.dir, opts.pkg] as const))(
   },
 );
 
+type WithPeerMeta = PackageJson & {
+  readonly peerDependenciesMeta?: Record<string, { optional?: boolean }>;
+};
+
+// npm installs a required peer nobody above declares at its newest version.
+// When the dependent's framework package pins an older one
+// (`@tanstack/react-query` pins its `@tanstack/query-core`), the app gets two
+// copies, two `skipToken`s and two `QueryClient` types.
+test.each(
+  packages.flatMap((dependency) =>
+    packages
+      .filter((dependent) =>
+        Object.hasOwn(dependent.pkg.dependencies ?? {}, dependency.pkg.name),
+      )
+      .map(
+        (dependent) =>
+          [dependency.pkg.name, dependent.pkg.name, dependency, dependent] as const,
+      ),
+  ),
+)(
+  "%s's peers are %s's peers too, or optional",
+  (_dependency, _dependent, dependency, dependent) => {
+    const pkg = dependency.pkg as WithPeerMeta;
+    const unforwarded = Object.keys(pkg.peerDependencies ?? {}).filter(
+      (peer) =>
+        !Object.hasOwn(dependent.pkg.peerDependencies ?? {}, peer) &&
+        pkg.peerDependenciesMeta?.[peer]?.optional !== true,
+    );
+    expect(unforwarded).toEqual([]);
+  },
+);
+
 test('importedPackages reads imports, not comments', () => {
   const source = [
     "import { Effect } from 'effect';",

@@ -17,7 +17,8 @@
 
 - (agent) This answers Q19.1 (proposal 19): per-framework packages, not one agnostic package with `./react`.
 - (agent) Each framework package depends on `@trpc12/tanstack-query` and re-exports it, so an app imports from one package.
+- (agent) `@trpc12/tanstack-query`'s `@tanstack/query-core` peer is optional (`peerDependenciesMeta`): each TanStack adapter pins its own `query-core` version, and npm installed a required peer at the newest one beside it. Measured 2026-10-19 with the packed packages, an app on `@tanstack/react-query` 5.104.1 (latest `query-core` 5.104.4): `npm install` gave two copies, so `skipToken` from `@tanstack/react-query` went into the key as an input instead of disabling the query, and every `useQuery(trpc.….queryOptions())` was a type error (two `QueryClient` classes). Optional, npm and pnpm (`hoist=false` too) both resolve the adapter's copy. `tooling/pack/pack.test.ts` requires a dependency's peers to be the dependent's peers too, or optional.
 - Why: optional peers on subpaths still show up in every install. Package managers warn about or auto-install them, and a user of one framework sees the other six in `peerDependencies`. Separate packages give each framework accurate, required peers.
 - Lost: one package with optional peers per subpath (the first TanStack build's layout). Seven more packages to version and publish.
 - Human, 2026-10-15 (Q19.6): "Later or never". Pinia Colada isn't planned; if it is ever built, it is `@trpc12/pinia-colada`.
-- Lives in: `packages/tanstack-*/package.json`.
+- Lives in: `packages/tanstack-*/package.json`, `tooling/pack/pack.test.ts` (forwarded or optional peers).
