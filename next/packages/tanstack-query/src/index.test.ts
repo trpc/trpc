@@ -683,8 +683,7 @@ test('streamedOptions collect subscription events; liveOptions keep the latest',
   expect(db.openTickers).toBe(1);
 
   stopLive();
-  await sleep(30);
-  expect(db.openTickers).toBe(0);
+  await vi.waitFor(() => expect(db.openTickers).toBe(0));
   expect(
     queryClient.getQueryData(
       app.trpc.clock.ticks.liveKey({ input: { from: 10 } }),
@@ -703,7 +702,7 @@ test('SubscriptionObserver tracks status, events and restarts', async () => {
   );
   const unsubscribe = observer.subscribe((r) => results.push(r.status));
   expect(observer.getCurrentResult().status).toBe('connecting');
-  await sleep(30);
+  await vi.waitFor(() => expect(db.listeners.size).toBe(1));
 
   app.addPost('Hello');
   const active = await until(observer, (r) => r.status === 'active');
@@ -712,8 +711,7 @@ test('SubscriptionObserver tracks status, events and restarts', async () => {
   expectTypeOf(active.data).toEqualTypeOf<Post>();
 
   unsubscribe();
-  await sleep(20);
-  expect(db.listeners.size).toBe(0);
+  await vi.waitFor(() => expect(db.listeners.size).toBe(0));
 
   const countdown = new SubscriptionObserver(
     app.trpc.clock.countdown.subscriptionOptions({ input: { from: 2 } }),
@@ -756,8 +754,7 @@ test('observers with the same key share one subscription', async () => {
   const stopA = a.subscribe(() => {});
   const stopB = b.subscribe(() => {});
   expect(b.getCurrentResult().status).toBe('connecting');
-  await sleep(30);
-  expect(db.listeners.size).toBe(1);
+  await vi.waitFor(() => expect(db.listeners.size).toBe(1));
 
   app.addPost('One');
   const [ra, rb] = await Promise.all([
@@ -781,8 +778,7 @@ test('observers with the same key share one subscription', async () => {
   expect(late.getCurrentResult().status).toBe('connecting');
   stopB();
   stopLate();
-  await sleep(20);
-  expect(db.listeners.size).toBe(0);
+  await vi.waitFor(() => expect(db.listeners.size).toBe(0));
 
   const own = new SubscriptionObserver({
     ...app.trpc.post.onAdd.subscriptionOptions({
@@ -792,8 +788,7 @@ test('observers with the same key share one subscription', async () => {
   });
   const stopOwn = own.subscribe(() => {});
   const stopShared = observe('c').subscribe(() => {});
-  await sleep(30);
-  expect(db.listeners.size).toBe(2);
+  await vi.waitFor(() => expect(db.listeners.size).toBe(2));
   stopOwn();
   stopShared();
 });
