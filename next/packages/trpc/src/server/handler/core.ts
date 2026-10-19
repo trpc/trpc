@@ -16,6 +16,7 @@ import type { MaybePromise, ProcedureType } from '../../internal/types.ts';
 import {
   callProcedure,
   isUnexpectedError,
+  runtimeServices,
   unexpectedError,
 } from '../execution/index.ts';
 import type { CreateContextOpts, OnErrorOpts } from './fetch.ts';
@@ -94,15 +95,8 @@ const isDev = () => {
 export function createHandlerCore(opts: CoreOptions): HandlerCore {
   const expose = opts.exposeUnexpectedErrors ?? isDev();
   const runtime = opts.layer ? ManagedRuntime.make(opts.layer) : undefined;
-  const noServices = Effect.succeed(Context.empty() as Context.Context<any>);
   /** The layer's services, built once by the runtime on first use. */
-  const services: Effect.Effect<Context.Context<any>> = runtime
-    ? Effect.suspend(() =>
-        runtime.cachedContext
-          ? Effect.succeed(runtime.cachedContext)
-          : Effect.orDie(runtime.contextEffect),
-      )
-    : noServices;
+  const services = runtimeServices(runtime);
 
   /** The call with its services in place of the running fiber's. */
   const call = (o: RunOpts) =>

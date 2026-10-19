@@ -1,4 +1,4 @@
-import { Context, Effect, ManagedRuntime, Stream, type Layer } from 'effect';
+import { Effect, Stream, type ManagedRuntime } from 'effect';
 import {
   fromWireError,
   isTrpcError,
@@ -15,9 +15,10 @@ import { jsonSerializer, type AnySerializer } from '../../serializer/index.ts';
 import {
   callProcedure,
   normalizeCause,
+  runtimeServices,
   unexpectedError,
 } from '../../server/execution/index.ts';
-import type { LayerOption } from '../../server/handler/index.ts';
+import type { RuntimeOption } from '../../server/handler/index.ts';
 import {
   resolveProcedureEffect,
   type AnyRouter,
@@ -41,7 +42,7 @@ export type LocalLinkOptions<TRouter extends AnyRouter> = {
    */
   serializer?: AnySerializer | false;
 } & LocalContextOption<inferRouterContext<TRouter>> &
-  LayerOption<inferRouterServices<TRouter>>;
+  RuntimeOption<inferRouterServices<TRouter>>;
 
 /** `createContext` is required when the router's procedures need a `ctx`. */
 type LocalContextOption<TCtx> = {} extends TCtx
@@ -55,7 +56,8 @@ type LocalContextOption<TCtx> = {} extends TCtx
     };
 
 /**
- * Runs calls in-process, without HTTP. For tests and SSR.
+ * Runs calls in-process, without HTTP. For tests and SSR. The router's
+ * Effect services come from `runtime`, which the caller owns and disposes.
  *
  * @example
  * ```ts
@@ -80,10 +82,10 @@ export function localLink<TRouter extends AnyRouter>(
 ): TrpcLink<any> {
   const serializer =
     opts.serializer === false ? undefined : (opts.serializer ?? jsonSerializer);
-  const layer = (opts as { layer?: Layer.Layer<any, any, never> }).layer;
-  const services = layer
-    ? Effect.orDie(ManagedRuntime.make(layer).contextEffect)
-    : Effect.succeed(Context.empty() as Context.Context<any>);
+  const services = runtimeServices(
+    (opts as { runtime?: ManagedRuntime.ManagedRuntime<never, unknown> })
+      .runtime,
+  );
   const roundtrip = (value: unknown, input?: boolean) => {
     // A byte stream input is the request body over HTTP, not serialized.
     if (!serializer || (input && isByteStreamInput(value))) return value;

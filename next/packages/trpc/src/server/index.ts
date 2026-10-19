@@ -143,6 +143,7 @@ export {
   type OnErrorOpts,
   type PlatformArgs,
   type PlatformField,
+  type RuntimeOption,
 } from './handler/index.ts';
 export type {
   MessagePortLike,

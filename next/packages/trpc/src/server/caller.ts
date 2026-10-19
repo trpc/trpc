@@ -1,10 +1,11 @@
-import { Effect, Exit, type Layer } from 'effect';
+import { Effect, Exit, type Layer, type ManagedRuntime } from 'effect';
 import { createTrpcClient } from '../client/client.ts';
 import { localLink, type LocalLinkOptions } from '../client/links/index.ts';
 import { routerType, type TrpcClient } from '../client/types.ts';
 import { frameworkError } from '../internal/error.ts';
 import type { DansonForm, MaybePromise } from '../internal/types.ts';
 import { callProcedure, normalizeCause } from './execution/index.ts';
+import type { RuntimeOption } from './handler/index.ts';
 import {
   checkRouterKeys,
   type Procedure,
@@ -18,7 +19,9 @@ type CtxOption<TCtx> = {} extends TCtx
   ? { ctx?: TCtx | (() => MaybePromise<TCtx>) }
   : { ctx: TCtx | (() => MaybePromise<TCtx>) };
 
-type ServicesOption<TServices> = [TServices] extends [never]
+type Runtime<TServices> = ManagedRuntime.ManagedRuntime<TServices, unknown>;
+
+type LayerOption<TServices> = [TServices] extends [never]
   ? { layer?: Layer.Layer<never, any, never> }
   : { layer: Layer.Layer<TServices, any, never> };
 
@@ -30,11 +33,13 @@ type ServicesOption<TServices> = [TServices] extends [never]
 export type RouterClientOptions<TRouter extends AnyRouter> = CtxOption<
   inferRouterContext<TRouter>
 > &
-  ServicesOption<inferRouterServices<TRouter>>;
+  RuntimeOption<inferRouterServices<TRouter>>;
 
 /**
  * Calls a router in-process with the same shape as the HTTP client. Values
- * are passed by reference, not serialized.
+ * are passed by reference, not serialized. The router's Effect services
+ * come from `runtime`, which the caller owns: make it once with
+ * `ManagedRuntime.make(layer)` and dispose it when done.
  *
  * @example
  * ```ts
@@ -53,7 +58,7 @@ export function createRouterClient<TRouter extends AnyRouter>(
   checkRouterKeys(router);
   const o = (opts ?? {}) as {
     ctx?: object | (() => MaybePromise<object>);
-    layer?: Layer.Layer<never, any, never>;
+    runtime?: Runtime<never>;
   };
   const ctx = o.ctx;
   return createTrpcClient({
@@ -61,7 +66,7 @@ export function createRouterClient<TRouter extends AnyRouter>(
     links: [
       localLink({
         router,
-        layer: o.layer,
+        runtime: o.runtime,
         serializer: false,
         createContext: (typeof ctx === 'function'
           ? ctx
@@ -84,7 +89,7 @@ export type CallOptions<TDef extends ProcedureDef> = ({} extends TDef['ctx']
   signal?: AbortSignal;
   /** Passed to middleware and the resolver. @default '' */
   path?: string;
-} & ServicesOption<TDef['services']>;
+} & LayerOption<TDef['services']>;
 
 /**
  * Calls one procedure directly. Throws the procedure's `TrpcError`s. The
@@ -117,13 +122,8 @@ export async function call<TDef extends ProcedureDef>(
     input,
     signal: o.signal ?? new AbortController().signal,
   });
-  const layer = o.layer;
   const exit = await Effect.runPromiseExit(
-    (layer ? Effect.provide(effect, layer) : effect) as Effect.Effect<
-      TDef['output'],
-      never,
-      never
-    >,
+    (o.layer ? Effect.provide(effect, o.layer) : effect) as Effect.Effect<TDef['output'], never, never>,
     { signal: o.signal },
   );
   if (Exit.isSuccess(exit)) return exit.value;

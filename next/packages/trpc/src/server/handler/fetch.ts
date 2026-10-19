@@ -9,6 +9,7 @@ import {
   Tracer,
   type Duration,
   type Layer,
+  type ManagedRuntime,
 } from 'effect';
 import {
   HttpServerRequest,
@@ -39,7 +40,11 @@ import {
   type BatchCall,
   type BatchLine,
 } from '../../internal/protocol.ts';
-import type { MaybePromise, ProcedureType } from '../../internal/types.ts';
+import type {
+  MaybePromise,
+  ProcedureType,
+  TypeError,
+} from '../../internal/types.ts';
 import { jsonSerializer, type AnySerializer } from '../../serializer/index.ts';
 import { backpressure } from '../../internal/effects.ts';
 import { accepts, encodeRecord } from '../../internal/frames.ts';
@@ -181,6 +186,23 @@ export type LayerOption<TServices> = [TServices] extends [never]
       /** Provides the Effect services the router's procedures need. */
       layer: Layer.Layer<TServices, any, never>;
     };
+
+/**
+ * `runtime`, required when the router's procedures need Effect services. The
+ * caller owns it: calls read its services, and `runtime.dispose()` (or
+ * `await using`) runs the layer's finalizers. `layer` is a type error that
+ * names the fix.
+ * @since 0.1.0
+ * @stability stable
+ */
+export type RuntimeOption<TServices> = ([TServices] extends [never]
+  ? { runtime?: ManagedRuntime.ManagedRuntime<never, unknown> | undefined }
+  : {
+      /** Provides the Effect services the router's procedures need. */
+      runtime: ManagedRuntime.ManagedRuntime<TServices, unknown>;
+    }) & {
+  layer?: TypeError<'pass `runtime: ManagedRuntime.make(layer)` instead of `layer`, and dispose the runtime when done'>;
+};
 
 /**
  * The handler's `serializer` option.

@@ -12,6 +12,7 @@ export {
   isUnexpectedError,
   normalizeCause,
   procedureEvents,
+  runtimeServices,
   unexpectedError,
 } from './execute.ts';
 export type { CallOpts } from './execute.ts';

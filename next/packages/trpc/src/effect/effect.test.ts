@@ -1,4 +1,13 @@
-import { Context, Effect, Exit, Layer, Option, Stream, Tracer } from 'effect';
+import {
+  Context,
+  Effect,
+  Exit,
+  Layer,
+  ManagedRuntime,
+  Option,
+  Stream,
+  Tracer,
+} from 'effect';
 import {
   createTrpcClient,
   httpLink,
@@ -7,6 +16,7 @@ import {
   wsLink,
   type ClientError,
   type LinkErrorCode,
+  type LocalLinkOptions,
 } from '@trpc12/trpc/client';
 import type { DansonForm } from '@trpc12/trpc/serializer';
 import { createEffectClient } from '@trpc12/trpc/effect';
@@ -19,6 +29,7 @@ import {
   type inferRouterServices,
   initTrpc,
   type InputValidationErrorData,
+  type RouterClientOptions,
   type TrpcError,
 } from '@trpc12/trpc/server';
 import { createTestServer } from '../fixtures/server.ts';
@@ -154,22 +165,78 @@ test('a missing layer is a type error', () => {
   expectTypeOf(create).toBeFunction();
 });
 
-test('localLink needs the layer too', async () => {
-  // @ts-expect-error -- the router needs PostRepo, so `layer` is required
+test('localLink and createRouterClient need a runtime, and a layer names the fix', async () => {
+  // @ts-expect-error -- the router needs PostRepo, so `runtime` is required
   localLink({ router, createContext: () => ({ user: null }) });
+  // @ts-expect-error -- the router needs PostRepo, so `runtime` is required
+  createRouterClient(router, { ctx: { user: null } });
+  localLink({
+    router,
+    createContext: () => ({ user: null }),
+    // @ts-expect-error -- `layer` is gone: pass `runtime: ManagedRuntime.make(layer)`
+    layer: PostRepoLive,
+  });
+  // @ts-expect-error -- `layer` is gone: pass `runtime: ManagedRuntime.make(layer)`
+  createRouterClient(router, { ctx: { user: null }, layer: PostRepoLive });
+  type Fix =
+    'pass `runtime: ManagedRuntime.make(layer)` instead of `layer`, and dispose the runtime when done';
+  expectTypeOf<
+    NonNullable<RouterClientOptions<AppRouter>['layer']>['~typeError']
+  >().toEqualTypeOf<Fix>();
+  expectTypeOf<
+    NonNullable<LocalLinkOptions<AppRouter>['layer']>['~typeError']
+  >().toEqualTypeOf<Fix>();
+
+  await using runtime = ManagedRuntime.make(PostRepoLive);
   const client = createEffectClient({
     router: routerType<AppRouter>(),
     links: [
-      localLink({
-        router,
-        createContext: () => ({ user: null }),
-        layer: PostRepoLive,
-      }),
+      localLink({ router, createContext: () => ({ user: null }), runtime }),
     ],
   });
   expect(await Effect.runPromise(client.post.byId.query({ id: '2' }))).toEqual(
     seed[1],
   );
+});
+
+test('in-process clients share the caller runtime, and disposing it runs the layer finalizers', async () => {
+  const before = { ...lifecycle };
+  const runtime = ManagedRuntime.make(PostRepoLive);
+  const caller = createRouterClient(router, { ctx: { user: null }, runtime });
+  const client = createTrpcClient({
+    router: routerType<AppRouter>(),
+    links: [
+      localLink({ router, createContext: () => ({ user: null }), runtime }),
+    ],
+  });
+  expect(await caller.post.byId.query({ id: '1' })).toEqual(seed[0]);
+  expect(await caller.post.byId.query({ id: '2' })).toEqual(seed[1]);
+  expect(await client.post.byId.query({ id: '1' })).toEqual(seed[0]);
+  expect(lifecycle).toEqual({ ...before, acquired: before.acquired + 1 });
+
+  await runtime.dispose();
+  expect(lifecycle).toEqual({
+    acquired: before.acquired + 1,
+    released: before.released + 1,
+  });
+  await expect(caller.post.byId.query({ id: '1' })).rejects.toMatchObject({
+    code: 'INTERNAL_SERVER_ERROR',
+    cause: 'ManagedRuntime disposed',
+  });
+  expect(lifecycle.acquired).toBe(before.acquired + 1);
+});
+
+test('a layer that fails to build is an unexpected INTERNAL_SERVER_ERROR caused by its error', async () => {
+  const boom = new Error('pool unavailable');
+  await using runtime = ManagedRuntime.make(
+    Layer.effect(PostRepo, Effect.fail(boom)),
+  );
+  const caller = createRouterClient(router, { ctx: { user: null }, runtime });
+  await expect(caller.post.byId.query({ id: '1' })).rejects.toMatchObject({
+    code: 'INTERNAL_SERVER_ERROR',
+    message: 'pool unavailable',
+    cause: boom,
+  });
 });
 
 test('typed errors land in the Effect error channel', async () => {
@@ -349,7 +416,8 @@ test('a layer that provides no services, like a tracer, is accepted', async () =
     Tracer.make({ span: (o) => new Tracer.NativeSpan(o) }),
   );
   const handler = createFetchHandler({ router, layer: tracing });
-  const client = createRouterClient(router, { ctx: {}, layer: tracing });
+  await using runtime = ManagedRuntime.make(tracing);
+  const client = createRouterClient(router, { ctx: {}, runtime });
   expect(await client.ping.query()).toBe('pong');
   await handler.dispose();
 });
@@ -363,6 +431,9 @@ test('every call runs in a span named after its path', async () => {
       return span;
     },
   });
+  await using runtime = ManagedRuntime.make(
+    Layer.succeed(Tracer.Tracer, tracer),
+  );
   const t = initTrpc();
   const client = createRouterClient(
     {
@@ -377,10 +448,7 @@ test('every call runs in a span named after its path', async () => {
           ),
       },
     },
-    {
-      ctx: {},
-      layer: Layer.succeed(Tracer.Tracer, tracer),
-    },
+    { ctx: {}, runtime },
   );
   expect(await client.post.byId.query({ id: '1' })).toBe('Hello');
   await expect(client.post.byId.query({ id: '2' })).rejects.toMatchObject({

@@ -58,7 +58,7 @@ const hasDigest = (error: unknown) =>
 
 /**
  * Options for {@link createTrpcRsc}: the router and its ctx (a function is
- * called once per request) and layer, as for `createRouterClient`.
+ * called once per request) and runtime, as for `createRouterClient`.
  * @since 0.1.0
  * @stability stable
  */

@@ -24,6 +24,7 @@ export type {
   OnErrorOpts,
   PlatformArgs,
   PlatformField,
+  RuntimeOption,
   SerializerOption,
 } from './fetch.ts';
 export { handlerContext, setHandlerContext } from './handler-context.ts';

@@ -157,16 +157,16 @@ const create = inTx.mutation(() =>
 
 ## The services a router needs
 
-`inferRouterServices<typeof router>` is what every entry point's `layer` must provide; leaving one out is a type error that names it.
+`inferRouterServices<typeof router>` is what every entry point's `layer` or `runtime` must provide; leaving one out is a type error that names it.
 
-| entry point                                  | the `layer` is built                                     |
-| -------------------------------------------- | -------------------------------------------------------- |
-| `createFetchHandler({ router, layer })`      | once, on the first call; `handler.dispose()` releases it |
-| `createRouterClient(router, { ctx, layer })` | once per client, on its first call, and kept             |
-| `localLink({ router, layer })`               | once per link, on its first call, and kept               |
-| `call(procedure, input, { ctx, layer })`     | for the call, and released after it                      |
+| entry point                                    | the services come from                                                         |
+| ---------------------------------------------- | ------------------------------------------------------------------------------ |
+| `createFetchHandler({ router, layer })`        | the `layer`, built on the first call; `handler.dispose()` releases it          |
+| `createRouterClient(router, { ctx, runtime })` | your `ManagedRuntime`, built on its first use; `runtime.dispose()` releases it |
+| `localLink({ router, runtime })`               | the same                                                                       |
+| `call(procedure, input, { ctx, layer })`       | the `layer`, built for the call and released when it returns                     |
 
-Build long-lived resources (connection pools) into the handler's `layer`, not per `call()`.
+In-process clients have no lifetime of their own, so they take a runtime you own and dispose: `const runtime = ManagedRuntime.make(AppLive)`, or `await using runtime = …` in a test. Several clients can share one. Passing them a `layer` is a type error that says so. Build long-lived resources (connection pools) into the handler's `layer` or a shared runtime, not per `call()`.
 
 ## Tracing
 

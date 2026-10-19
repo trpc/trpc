@@ -6,6 +6,7 @@ import {
   References,
   Stream,
   Tracer,
+  type ManagedRuntime,
 } from 'effect';
 import { HttpServerResponse } from 'effect/http';
 import {
@@ -70,6 +71,32 @@ export function unexpectedError(
   unexpectedErrors.add(err);
   return err;
 }
+
+const noServices = Effect.succeed(Context.empty() as Context.Context<any>);
+
+/**
+ * A runtime's services, built by it on first use. Read on every call, since
+ * a disposed runtime swaps its `contextEffect` for a defect: a call then
+ * fails instead of running on released resources. A layer that fails to
+ * build is a defect, so calls get an unexpected `INTERNAL_SERVER_ERROR`
+ * with the layer's error as its `cause`.
+ * @internal
+ */
+export const runtimeServices = (
+  runtime: ManagedRuntime.ManagedRuntime<never, unknown> | undefined,
+): Effect.Effect<Context.Context<any>> =>
+  runtime
+    ? Effect.suspend(() =>
+        runtime.cachedContext
+          ? Effect.succeed(runtime.cachedContext as Context.Context<any>)
+          : Effect.orDie(
+              runtime.contextEffect as Effect.Effect<
+                Context.Context<any>,
+                unknown
+              >,
+            ),
+      )
+    : noServices;
 
 /** Whether the error wraps something that was not a `TrpcError`. @internal */
 export const isUnexpectedError = (err: AnyTrpcError): boolean =>
