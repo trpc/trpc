@@ -636,6 +636,52 @@ describe('convertPost', () => {
     );
   });
 
+  it('renders a static copy of a post on X as its card', () => {
+    const converted = convert(
+      [
+        "import { StaticTweet } from '@site/src/components/StaticTweet';",
+        '',
+        'As Dan put it:',
+        '',
+        '<StaticTweet',
+        '  name="dan 2"',
+        '  username="dan_abramov2"',
+        '  avatarUrl="https://github.com/gaearon.png"',
+        `  text={'"use server" = <tRPC> & @trpcio\\nhttps://example.com/a'}`,
+        '  createdAt="2024-02-10T00:58:00.000Z"',
+        '  url="https://x.com/dan_abramov2/status/1"',
+        '  archiveUrl="https://web.archive.org/web/2024/https://x.com/dan_abramov2/status/1"',
+        '/>',
+      ].join('\n'),
+    );
+    expect(converted.problems).toEqual([]);
+    expect(converted.markdown.replace(/^---\n[\s\S]*?\n---\n\n/, '')).toBe(
+      [
+        'As Dan put it:',
+        '',
+        '<figure class="tweet not-prose"><figcaption><img src="https://github.com/gaearon.png" alt="" width="48" height="48" loading="lazy" /><cite><span class="tweet-name">dan 2</span><span class="tweet-username">@dan_abramov2</span></cite></figcaption><blockquote cite="https://x.com/dan_abramov2/status/1">&quot;use server&quot; = &lt;tRPC&gt; &amp; <a href="https://x.com/trpcio">@trpcio</a><br /><a href="https://example.com/a">example.com/a</a></blockquote><footer><a href="https://x.com/dan_abramov2/status/1"><time datetime="2024-02-10T00:58:00.000Z">Feb 10, 2024</time></a><a href="https://web.archive.org/web/2024/https://x.com/dan_abramov2/status/1">Archived copy</a></footer></figure>',
+        '',
+      ].join('\n'),
+    );
+  });
+
+  it('reports a static post on X without its data', () => {
+    expect(
+      convert(
+        [
+          "import { StaticTweet } from '@site/src/components/StaticTweet';",
+          '',
+          'Hello.',
+          '',
+          '<StaticTweet name="dan 2" />',
+        ].join('\n'),
+      ).problems,
+    ).toEqual([
+      'blog/2025-03-21-announcing-trpc-11.mdx: `<StaticTweet name="dan 2" />`: no `name`, `username`, `avatarUrl`, `text`, `createdAt` or `url`',
+      'blog/2025-03-21-announcing-trpc-11.mdx: no conversion for <StaticTweet>',
+    ]);
+  });
+
   it("reports a post that doesn't open with a paragraph", () => {
     expect(convert('## Hello').problems).toEqual([
       "blog/2025-03-21-announcing-trpc-11.mdx: doesn't open with a paragraph",

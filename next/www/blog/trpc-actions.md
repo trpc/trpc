@@ -17,8 +17,9 @@ we're going to talk about how to use tRPC with server actions from Next.js.
 In case you live under a rock and haven't kept up with the latest [React](https://react.dev/reference/rsc/server-actions) and [Next.js](https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions-and-mutations) features, server actions allows you to write regular functions that are executed on the server, import them on the client and call them just as if they were regular functions.
 You may think that this sounds similar to tRPC which is true. According to [Dan Abramov](https://x.com/dan_abramov2), server actions are tRPC as a bundler feature:
 
-> [!NOTE] Post deleted
-> Dan Abramov's post on X that was embedded here has since been deleted.
+<div class="mb-4 flex w-full justify-center">
+  <figure class="tweet not-prose"><figcaption><img src="https://github.com/gaearon.png" alt="" width="48" height="48" loading="lazy" /><cite><span class="tweet-name">dan 2</span><span class="tweet-username">@dan_abramov2</span></cite></figcaption><blockquote cite="https://x.com/dan_abramov2/status/1756120297529368801">&quot;use client&quot; = Astro as a bundler feature<br />&quot;use server&quot; = tRPC as a bundler feature</blockquote><footer><a href="https://x.com/dan_abramov2/status/1756120297529368801"><time datetime="2024-02-10T00:58:00.000Z">Feb 10, 2024</time></a><a href="https://web.archive.org/web/20240526122424/https://react-tweet.vercel.app/api/tweet/1756120297529368801">Archived copy</a></footer></figure>
+</div>
 
 And this is totally accurate, server actions are similar to tRPC, at the end of the day they're both [RPCs](https://en.wikipedia.org/wiki/Remote_procedure_call). Both allow you to write functions on the backend and call them with full typesafety on the frontend with the network layer abstracted away.
 

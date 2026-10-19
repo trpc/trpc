@@ -835,6 +835,79 @@ function youTubeEmbed(attributes: ReadonlyMap<string, string | true>) {
   return `<iframe src="https://www.youtube-nocookie.com/embed/${id}" title="${title}" style="aspect-ratio: 16 / 9; width: 100%; max-width: 42rem; border: 0" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>`;
 }
 
+/** `'a\nb'` or `"a\nb"`, a JSX attribute's `{…}` string, as its value. */
+function stringLiteral(source: string) {
+  const match = /^\s*(['"])([\s\S]*)\1\s*$/.exec(source);
+  return match?.[2]?.replaceAll(
+    /\\(.)/g,
+    (_escape, character: string) =>
+      (({ n: '\n', t: '\t' }) as Record<string, string>)[character] ??
+      character,
+  );
+}
+
+function escapeHtml(text: string) {
+  return text
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;');
+}
+
+/**
+ * trpc.io's `<StaticTweet>`, a post on X copied as data, as the card it
+ * renders, on one line: a blank line would end Markdown's HTML block.
+ */
+function staticTweet(attributes: ReadonlyMap<string, string | true>) {
+  const value = (name: string) => {
+    const attribute = attributes.get(name);
+    return typeof attribute === 'string' ? attribute : undefined;
+  };
+  const text = stringLiteral(value('text') ?? '');
+  const [name, username, avatarUrl, createdAt, url] = [
+    'name',
+    'username',
+    'avatarUrl',
+    'createdAt',
+    'url',
+  ].map(value);
+  const archiveUrl = value('archiveUrl');
+  if (
+    text === undefined ||
+    name === undefined ||
+    username === undefined ||
+    avatarUrl === undefined ||
+    createdAt === undefined ||
+    url === undefined
+  ) {
+    return undefined;
+  }
+  const date = new Date(createdAt);
+  const body = text
+    .split(/(https?:\/\/\S+|@\w+)/)
+    .map((part) => {
+      if (part.startsWith('@')) {
+        return `<a href="https://x.com/${part.slice(1)}">${part}</a>`;
+      }
+      if (/^https?:\/\//.test(part)) {
+        return `<a href="${escapeHtml(part)}">${escapeHtml(part.replace(/^https?:\/\//, ''))}</a>`;
+      }
+      return escapeHtml(part).replaceAll('\n', '<br />');
+    })
+    .join('');
+  const day = date.toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    timeZone: 'UTC',
+  });
+  return `<figure class="tweet not-prose"><figcaption><img src="${escapeHtml(avatarUrl)}" alt="" width="48" height="48" loading="lazy" /><cite><span class="tweet-name">${escapeHtml(name)}</span><span class="tweet-username">@${escapeHtml(username)}</span></cite></figcaption><blockquote cite="${escapeHtml(url)}">${body}</blockquote><footer><a href="${escapeHtml(url)}"><time datetime="${date.toJSON()}">${day}</time></a>${
+    archiveUrl === undefined
+      ? ''
+      : `<a href="${escapeHtml(archiveUrl)}">Archived copy</a>`
+  }</footer></figure>`;
+}
+
 /**
  * `` `https://stackblitz.com/…?` + searchParams({ embed: '1', file: ['a.ts'] }) ``
  * as the URL it builds (`src/utils/searchParams.ts`): each value, or each
@@ -933,6 +1006,14 @@ function expandComponent(
   }
   if (source.endsWith('/YouTubeEmbed')) {
     return youTubeEmbed(attributes) ?? problem('no `videoId` or `title`');
+  }
+  if (source.endsWith('/StaticTweet')) {
+    return (
+      staticTweet(attributes) ??
+      problem(
+        'no `name`, `username`, `avatarUrl`, `text`, `createdAt` or `url`',
+      )
+    );
   }
   if (source.endsWith('.svg')) {
     context.images.add(source);
