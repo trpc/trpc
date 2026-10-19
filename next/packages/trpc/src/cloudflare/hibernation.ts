@@ -1,4 +1,4 @@
-import { Context, Effect, Exit, Scope, Stream } from 'effect';
+import { Context, Effect, Exit, Fiber, FiberSet, Scope, Stream } from 'effect';
 import { HttpEffect, HttpServerRequest, HttpServerResponse } from 'effect/http';
 import {
   isTrpcError,
@@ -26,7 +26,6 @@ import {
   parseSocketMessage,
   SocketCore,
   type ConnectionReceiver,
-  type SocketCoreShape,
 } from '../server/sockets/index.ts';
 import {
   tracked,
@@ -175,7 +174,7 @@ type Deliver = (
   key: string,
   channel: string,
   event: TrackedEnvelope<unknown>,
-) => Promise<void>;
+) => Effect.Effect<void>;
 
 /**
  * The adapter serving each Durable Object, for `experimental_hibernatingPublisher`. The
@@ -247,6 +246,14 @@ export function experimental_createHibernatingWebSockets<TPlatform>(
       h.toLowerCase(),
     ),
   );
+  /**
+   * The object's lifetime: every callback's work is a fiber in its
+   * `FiberSet`, and each socket's calls run in a scope forked from it.
+   */
+  const owner = Scope.makeUnsafe();
+  const run = Effect.runSync(
+    Scope.provide(FiberSet.makeRuntime<never, void, never>(), owner),
+  );
   /** Each socket's receiver, its calls in the scope that `close()` ends. */
   const receivers = new WeakMap<
     HibernatableWebSocket,
@@ -283,105 +290,97 @@ export function experimental_createHibernatingWebSockets<TPlatform>(
     store(socket, subs.length ? { ...rest, subs } : rest);
   };
 
+  const connect = Effect.fnUntraced(function* (
+    socket: HibernatableWebSocket,
+    attachment: Attachment,
+    platform: unknown,
+  ) {
+    const scope = yield* Scope.fork(owner);
+    const receiver = yield* connectionReceiver(
+      core,
+      {
+        send: (message) =>
+          Effect.sync(() => {
+            if (socket.readyState === OPEN)
+              socket.send(JSON.stringify(message));
+          }),
+        close(code, reason) {
+          socket.close(code, reason);
+        },
+      },
+      {
+        request: requestOf(attachment),
+        platform,
+        transport: 'websocket',
+        connectionParams: attachment.connectionParams,
+        onInit(connectionParams) {
+          const now = current(socket) ?? attachment;
+          if (!store(socket, { ...now, connectionParams })) {
+            warn(
+              "A socket's connection params pass Cloudflare's 2 KB attachment limit; createContext won't see them after the object wakes.",
+            );
+            store(socket, {
+              ...now,
+              headers: [],
+              connectionParams: undefined,
+            });
+          }
+        },
+        hibernate(sub) {
+          const now = current(socket) ?? attachment;
+          const subs: Parked[] = [
+            ...(now.subs ?? []),
+            { c: sub.id, k: sub.key, ch: sub.channel, p: sub.path },
+          ];
+          if (store(socket, { ...now, subs })) return true;
+          warn(
+            `The subscription "${sub.path}" doesn't fit the socket's 2 KB attachment, so it keeps the object awake.`,
+          );
+          return false;
+        },
+        unpark(id) {
+          unpark(socket, id);
+        },
+      },
+    ).pipe(Scope.provide(scope));
+    receivers.set(socket, { receiver, scope });
+    return receiver;
+  });
+
+  /**
+   * The socket's receiver, made from its attachment on its first callback
+   * since the object woke; `undefined` for a socket the adapter didn't
+   * accept.
+   */
   const receiverFor = (
     socket: HibernatableWebSocket,
     platform: unknown,
-  ): ConnectionReceiver | undefined => {
-    const attachment = current(socket);
-    if (!attachment) return undefined;
-    let served = receivers.get(socket);
-    if (!served) {
-      const request = requestOf(attachment);
-      const scope = Scope.makeUnsafe();
-      const make = connectionReceiver(
-        core,
-        {
-          send: (message) =>
-            Effect.sync(() => {
-              if (socket.readyState === OPEN)
-                socket.send(JSON.stringify(message));
-            }),
-          close(code, reason) {
-            socket.close(code, reason);
-          },
-        },
-        {
-          request,
-          platform,
-          transport: 'websocket',
-          connectionParams: attachment.connectionParams,
-          onInit(connectionParams) {
-            const now = current(socket) ?? attachment;
-            if (!store(socket, { ...now, connectionParams })) {
-              warn(
-                "A socket's connection params pass Cloudflare's 2 KB attachment limit; createContext won't see them after the object wakes.",
-              );
-              store(socket, {
-                ...now,
-                headers: [],
-                connectionParams: undefined,
-              });
-            }
-          },
-          hibernate(sub) {
-            const now = current(socket) ?? attachment;
-            const subs: Parked[] = [
-              ...(now.subs ?? []),
-              { c: sub.id, k: sub.key, ch: sub.channel, p: sub.path },
-            ];
-            if (store(socket, { ...now, subs })) return true;
-            warn(
-              `The subscription "${sub.path}" doesn't fit the socket's 2 KB attachment, so it keeps the object awake.`,
-            );
-            return false;
-          },
-          unpark(id) {
-            unpark(socket, id);
-          },
-        },
-      );
-      served = { receiver: Effect.runSync(Scope.provide(make, scope)), scope };
-      receivers.set(socket, served);
-    }
-    return served.receiver;
-  };
+  ): Effect.Effect<ConnectionReceiver | undefined> =>
+    Effect.suspend(() => {
+      const served = receivers.get(socket);
+      if (served) return Effect.succeed(served.receiver);
+      const attachment = current(socket);
+      return attachment
+        ? connect(socket, attachment, platform)
+        : Effect.succeed(undefined);
+    });
 
-  const deliver: Deliver = async (key, channel, event) => {
-    const sockets = opts.state.getWebSockets?.() ?? [];
-    await Promise.all(
-      sockets.flatMap((socket) => {
-        const attachment = current(socket);
-        return (attachment?.subs ?? [])
-          .filter((s) => s.k === key && s.ch === channel)
-          .map((sub) =>
-            sendEvent(
-              core,
-              socket,
-              attachment!,
-              sub,
-              tracked(event.id, event.data),
-            ),
-          );
-      }),
-    );
-  };
-
-  const sendEvent = async (
-    core: SocketCoreShape,
+  const sendEvent = Effect.fnUntraced(function* (
     socket: HibernatableWebSocket,
     attachment: Attachment,
     sub: Parked,
     event: TrackedEnvelope<unknown>,
-  ) => {
-    const send = (message: ServerMessage) => {
-      if (socket.readyState === OPEN) socket.send(JSON.stringify(message));
-    };
+  ) {
+    const send = (message: ServerMessage) =>
+      Effect.sync(() => {
+        if (socket.readyState === OPEN) socket.send(JSON.stringify(message));
+      });
     const request = requestOf(attachment);
     const report = (err: AnyTrpcError) => {
       core.report(err, request, sub.p, 'subscription');
       return toWireError(core.publicError(err));
     };
-    const exit = await Effect.runPromiseExit(
+    const exit = yield* Effect.exit(
       Effect.flatMap(resolveProcedureEffect(core.router, sub.p), (procedure) =>
         procedure
           ? emitEvents(
@@ -389,21 +388,48 @@ export function experimental_createHibernatingWebSockets<TPlatform>(
               core.serializer,
               (cause) =>
                 report(isTrpcError(cause) ? cause : unexpectedError(cause)),
-              (frame) => Effect.sync(() => send(frameMessage(sub.c, frame))),
+              (frame) => send(frameMessage(sub.c, frame)),
             )
           : Effect.void,
       ),
     );
     if (Exit.isFailure(exit)) {
       const err = normalizeCause(exit.cause);
-      send({
+      yield* send({
         id: sub.c,
         type: 'error',
         body: core.serializer.serialize(report(err)),
       });
       unpark(socket, sub.c);
     }
-  };
+  });
+
+  /**
+   * Sends a published event to the sockets parked on its channel, from a
+   * fiber the object owns: a publisher interrupted while it waits doesn't
+   * stop the delivery.
+   */
+  const deliver: Deliver = (key, channel, event) =>
+    Effect.suspend(() => {
+      const targets = (opts.state.getWebSockets?.() ?? []).flatMap((socket) => {
+        const attachment = current(socket);
+        return attachment
+          ? (attachment.subs ?? [])
+              .filter((s) => s.k === key && s.ch === channel)
+              .map((sub) => [socket, attachment, sub] as const)
+          : [];
+      });
+      return Fiber.join(
+        run(
+          Effect.forEach(
+            targets,
+            ([socket, attachment, sub]) =>
+              sendEvent(socket, attachment, sub, tracked(event.id, event.data)),
+            { concurrency: 'unbounded', discard: true },
+          ),
+        ),
+      );
+    });
 
   deliveries.set(opts.state, deliver);
 
@@ -449,20 +475,21 @@ export function experimental_createHibernatingWebSockets<TPlatform>(
         socket.serializeAttachment({ ...attachment, headers: [] });
       }
       opts.state.acceptWebSocket(socket as never);
-      receiverFor(socket, platform[0]);
+      run(Effect.asVoid(receiverFor(socket, platform[0])));
     },
     message(socket, data, ...platform) {
-      const receiver = receiverFor(socket, platform[0]);
-      if (!receiver) {
-        socket.close(1011, 'Not a tRPC socket');
-        return;
-      }
-      Effect.runFork(receiver.receive(parseSocketMessage(data)));
+      run(
+        Effect.flatMap(receiverFor(socket, platform[0]), (receiver) =>
+          receiver
+            ? receiver.receive(parseSocketMessage(data))
+            : Effect.sync(() => socket.close(1011, 'Not a tRPC socket')),
+        ),
+      );
     },
     close(socket, code, reason) {
       const served = receivers.get(socket);
-      if (served) Effect.runFork(Scope.close(served.scope, Exit.void));
       receivers.delete(socket);
+      if (served) run(Scope.close(served.scope, Exit.void));
       try {
         // 1005 and 1006 are reported, never sent.
         socket.close(code === 1005 || code === 1006 ? 1000 : code, reason);
