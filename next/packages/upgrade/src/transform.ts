@@ -166,6 +166,8 @@ const NAME_NOTES: Readonly<Record<string, string>> = {
     "CreateContextOpts: opts.req is opts.request, whose headers are a record (request.headers['authorization']); response headers go on the procedure's response handle, docs/server/responses.md",
   TRPCLink:
     'TRPCLink: stays on @trpc/client; keep the link with fromV11Link(link) from @trpc12/trpc/interop, or rewrite it with link() as an Effect Stream function',
+  inferRouterOutputs:
+    "inferRouterOutputs<AppRouter> is plain JSON's form (Date is string), as v11's without a transformer; with a serializer, pass the client's type: inferRouterOutputs<typeof client>",
 };
 
 const ROOT_OPTION_NOTES: Readonly<Record<string, string>> = {

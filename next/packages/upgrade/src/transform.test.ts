@@ -263,6 +263,22 @@ export const authLink: TRPCLink<AppRouter> = () => ({ op, next }) => next(op);
     `);
   });
 
+  test("inferRouterOutputs keeps its name, with a note on the serializer's form", () => {
+    const source = `import type { inferRouterOutputs } from '@trpc/server';
+export type Post = inferRouterOutputs<AppRouter>['post']['byId'];
+`;
+    expect(upgrade(source).code).toMatchInlineSnapshot(`
+      "import type { inferRouterOutputs } from '@trpc12/trpc/server';
+      export type Post = inferRouterOutputs<AppRouter>['post']['byId'];
+      "
+    `);
+    expect(messages(source)).toMatchInlineSnapshot(`
+      [
+        "1:15 inferRouterOutputs<AppRouter> is plain JSON's form (Date is string), as v11's without a transformer; with a serializer, pass the client's type: inferRouterOutputs<typeof client>",
+      ]
+    `);
+  });
+
   test('TRPCLink stays imported from @trpc/client, for fromV11Link', () => {
     const only = `import type { TRPCLink } from '@trpc/client';
 export const authLink: TRPCLink<AppRouter> = () => ({ op, next }) => next(op);
