@@ -1,5 +1,6 @@
-import { Effect, Exit, Stream } from 'effect';
+import { Effect } from 'effect';
 import { HttpBody, HttpServerResponse } from 'effect/http';
+import { interruptSignal } from '../../internal/effects.ts';
 import { linesBody } from './responses.ts';
 
 /**
@@ -15,26 +16,21 @@ export const withCallSignal = <E>(
     signal: AbortSignal,
   ) => Effect.Effect<HttpServerResponse.HttpServerResponse, E>,
 ): Effect.Effect<HttpServerResponse.HttpServerResponse, E> =>
-  Effect.suspend(() => {
-    const controller = new AbortController();
-    const abortOnInterrupt = (exit: Exit.Exit<unknown, unknown>) =>
-      Exit.hasInterrupts(exit)
-        ? Effect.sync(() => controller.abort())
-        : Effect.void;
-    return Effect.map(
-      Effect.onExit(call(controller.signal), abortOnInterrupt),
+  Effect.flatMap(interruptSignal(), (interrupt) =>
+    Effect.map(
+      interrupt.abortOnInterrupt(call(interrupt.signal)),
       (response) => {
         const body = linesBody(response);
         return body
           ? HttpServerResponse.setBody(
               response,
               HttpBody.stream(
-                Stream.onExit(body.stream, abortOnInterrupt),
+                interrupt.abortOnInterrupt(body.stream),
                 body.contentType,
                 body.contentLength,
               ),
             )
           : response;
       },
-    );
-  });
+    ),
+  );
