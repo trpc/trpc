@@ -102,10 +102,11 @@ export function makeSubscriptions(
         };
 
         /**
-         * One connection; `true` once the server ended the subscription. Its
-         * scope aborts the request.
+         * One connection, after the delay a reconnect waits; `true` once the
+         * server ended the subscription. Its scope aborts the request.
          */
         const connect = Effect.gen(function* () {
+          if (attempt > 0) yield* Effect.sleep(reconnectDelay(attempt));
           const reply = yield* transport
             .call(
               op,
@@ -146,17 +147,7 @@ export function makeSubscriptions(
           return false;
         }).pipe(Effect.scoped);
 
-        const loop: Effect.Effect<void, AnyTrpcError> = Effect.flatMap(
-          connect,
-          (ended) =>
-            ended
-              ? Effect.void
-              : Effect.andThen(
-                  Effect.sleep(reconnectDelay(attempt)),
-                  Effect.suspend(() => loop),
-                ),
-        );
-        return loop.pipe(
+        return Effect.repeat(connect, { until: (ended) => ended }).pipe(
           Effect.matchCause({
             onSuccess: () => Queue.endUnsafe(queue),
             onFailure: (cause) => Queue.failCauseUnsafe(queue, cause),
