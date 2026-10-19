@@ -65,12 +65,18 @@ export interface SSEStreamProducerOptions<TValue = unknown> {
    * @default {}
    */
   client?: SSEClientOptions;
+  /**
+   * The last event id the client sent when (re)connecting
+   * @default undefined
+   */
+  lastEventId?: string | null;
 }
 
 const PING_EVENT = 'ping';
 const SERIALIZED_ERROR_EVENT = 'serialized-error';
 const CONNECTED_EVENT = 'connected';
 const RETURN_EVENT = 'return';
+const RESTORE_ID_EVENT = 'restore-id';
 
 interface SSEvent {
   id?: string;
@@ -129,6 +135,13 @@ export function sseStreamProducer<TValue = unknown>(
     let value: null | TIteratorValue;
     let chunk: null | SSEvent;
 
+    // The id the client's EventSource holds and sends when it reconnects.
+    // An id with these characters can't be sent back in an `id` field
+    let lastEventId =
+      opts.lastEventId && !/[\0\n\r]/.test(opts.lastEventId)
+        ? opts.lastEventId
+        : null;
+
     for await (value of iterable) {
       if (value === PING_SYM) {
         yield { event: PING_EVENT, data: '' };
@@ -141,7 +154,19 @@ export function sseStreamProducer<TValue = unknown>(
 
       chunk.data = JSON.stringify(serialize(chunk.data));
 
-      yield chunk;
+      if (chunk.id !== undefined) {
+        lastEventId = chunk.id;
+        yield chunk;
+      } else if (lastEventId === null) {
+        yield chunk;
+      } else {
+        // EventSource gives an event without an `id` the last id it received,
+        // so clear the id for this event and then set it back with an event
+        // that clients don't listen to, so reconnecting still resumes from it
+        chunk.id = '';
+        yield chunk;
+        yield { event: RESTORE_ID_EVENT, data: '', id: lastEventId };
+      }
 
       // free up references for garbage collection
       value = null;
@@ -202,35 +227,41 @@ interface ConsumerStreamResultBase<TConfig extends ConsumerConfig> {
   eventSource: InstanceType<TConfig['EventSource']> | null;
 }
 
-interface ConsumerStreamResultData<TConfig extends ConsumerConfig>
-  extends ConsumerStreamResultBase<TConfig> {
+interface ConsumerStreamResultData<
+  TConfig extends ConsumerConfig,
+> extends ConsumerStreamResultBase<TConfig> {
   type: 'data';
   data: inferTrackedOutput<TConfig['data']>;
 }
 
-interface ConsumerStreamResultError<TConfig extends ConsumerConfig>
-  extends ConsumerStreamResultBase<TConfig> {
+interface ConsumerStreamResultError<
+  TConfig extends ConsumerConfig,
+> extends ConsumerStreamResultBase<TConfig> {
   type: 'serialized-error';
   error: TConfig['error'];
 }
 
-interface ConsumerStreamResultConnecting<TConfig extends ConsumerConfig>
-  extends ConsumerStreamResultBase<TConfig> {
+interface ConsumerStreamResultConnecting<
+  TConfig extends ConsumerConfig,
+> extends ConsumerStreamResultBase<TConfig> {
   type: 'connecting';
   event: EventSourceLike.EventOf<TConfig['EventSource']> | null;
 }
-interface ConsumerStreamResultTimeout<TConfig extends ConsumerConfig>
-  extends ConsumerStreamResultBase<TConfig> {
+interface ConsumerStreamResultTimeout<
+  TConfig extends ConsumerConfig,
+> extends ConsumerStreamResultBase<TConfig> {
   type: 'timeout';
   ms: number;
 }
-interface ConsumerStreamResultPing<TConfig extends ConsumerConfig>
-  extends ConsumerStreamResultBase<TConfig> {
+interface ConsumerStreamResultPing<
+  TConfig extends ConsumerConfig,
+> extends ConsumerStreamResultBase<TConfig> {
   type: 'ping';
 }
 
-interface ConsumerStreamResultConnected<TConfig extends ConsumerConfig>
-  extends ConsumerStreamResultBase<TConfig> {
+interface ConsumerStreamResultConnected<
+  TConfig extends ConsumerConfig,
+> extends ConsumerStreamResultBase<TConfig> {
   type: 'connected';
   options: SSEClientOptions;
 }

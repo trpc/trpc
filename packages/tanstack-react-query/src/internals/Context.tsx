@@ -33,7 +33,7 @@ export interface CreateTRPCContextResult<
 /**
  * Create a set of type-safe provider-consumers
  *
- * @see https://trpc.io/docs/client/tanstack-react-query/setup#3a-setup-the-trpc-context-provider
+ * @see https://trpc.io/docs/client/tanstack-react-query/setup#3a-set-up-the-trpc-context-provider
  */
 export function createTRPCContext<
   TRouter extends AnyTRPCRouter,
@@ -85,8 +85,5 @@ export function createTRPCContext<
     return client;
   }
 
-  return { TRPCProvider, useTRPC, useTRPCClient } as CreateTRPCContextResult<
-    TRouter,
-    TFeatureFlags
-  >;
+  return { TRPCProvider, useTRPC, useTRPCClient };
 }
