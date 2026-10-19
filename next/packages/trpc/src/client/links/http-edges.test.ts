@@ -141,6 +141,28 @@ test('fetch failures and pages that are not tRPC errors', async () => {
   expect(await empty.echo.query(1)).toBeUndefined();
 });
 
+test('a relative url with no page to resolve it against fails before fetch, as an invalid URL', async () => {
+  let fetched = 0;
+  const relative = createTrpcClient({
+    router: routerType<typeof router>(),
+    links: [
+      httpLink({
+        url: '/trpc',
+        fetch: async () => {
+          fetched++;
+          return new Response();
+        },
+      }),
+    ],
+  });
+  const [, err] = await safe(relative.echo.query(1));
+  expect(err).toMatchObject({
+    code: 'NETWORK_ERROR',
+    message: expect.stringMatching(/URL/),
+  });
+  expect(fetched).toBe(0);
+});
+
 test('calls with differing inits batch apart; ones JSON cannot key go alone', async () => {
   const requests: string[] = [];
   const client = clientWith(

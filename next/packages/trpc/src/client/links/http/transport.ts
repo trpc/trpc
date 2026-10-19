@@ -5,6 +5,7 @@ import {
   HttpClient,
   HttpClientError,
   HttpClientRequest,
+  Url,
   type HttpClientResponse,
   type HttpMethod,
 } from 'effect/http';
@@ -44,7 +45,9 @@ const isAbort = (cause: unknown) =>
 /** An `HttpClientError` stands for what it wraps: a fetch or body failure. */
 export function toHttpError(cause: unknown): AnyTrpcError {
   if (HttpClientError.isHttpClientError(cause)) {
-    return toHttpError(cause.reason.cause);
+    const inner = cause.reason.cause;
+    // An invalid URL wraps `new URL`'s own error in a `UrlError`.
+    return toHttpError(inner instanceof Url.UrlError ? inner.cause : inner);
   }
   if (isTrpcError(cause)) return cause;
   if (isAbort(cause)) {
