@@ -1,10 +1,13 @@
 /**
  * Calls the Worker at `base`: a room over HTTP, a seat locked across two
- * rooms, a subscription over a hibernating WebSocket, and a durable streamed
- * call whose connection drops and resumes. Run directly, it calls
+ * rooms, a subscription over a hibernating WebSocket, upgrades from another
+ * origin and the app's, and a durable streamed call whose connection drops
+ * and resumes. Run directly, it calls
  * `process.argv[2]` or `wrangler dev`'s `http://localhost:8787`; CI passes the
  * deployed Worker's URL.
  */
+import { request as httpRequest } from 'node:http';
+import { request as httpsRequest } from 'node:https';
 import {
   createTrpcClient,
   experimental_durableLink,
@@ -92,6 +95,17 @@ export async function main(base: string) {
   if (seen.length !== 2) throw new Error('expected two messages');
   await ws.close();
 
+  // The room's `cors()` sees its hibernating upgrades: another origin's is
+  // refused before a socket exists, the app's is accepted.
+  const upgrades = [
+    await upgradeStatus(url, 'https://evil.example'),
+    await upgradeStatus(url, 'https://app.example.com'),
+  ];
+  console.log('upgrade from evil.example, app.example.com:', upgrades);
+  if (upgrades[0] !== 403 || upgrades[1] !== 101) {
+    throw new Error('expected 403 for another origin and 101 for the app');
+  }
+
   // The first response's body drops after two lines, as a lost connection
   // would; the link asks again for the frames after those.
   const resumedFrom: Array<string | null> = [];
@@ -124,6 +138,35 @@ export async function main(base: string) {
 }
 
 if (import.meta.main) await main(process.argv[2] ?? 'http://localhost:8787');
+
+/**
+ * The status of a WebSocket upgrade to `url` sent with `origin`, which a
+ * browser sets and Node's `WebSocket` can't.
+ */
+function upgradeStatus(url: string, origin: string): Promise<number> {
+  const send = url.startsWith('https:') ? httpsRequest : httpRequest;
+  return new Promise((resolve, reject) => {
+    const req = send(url, {
+      headers: {
+        connection: 'Upgrade',
+        upgrade: 'websocket',
+        origin,
+        'sec-websocket-version': '13',
+        'sec-websocket-key': btoa('trpc-cors-check!'),
+      },
+    });
+    req.on('response', (res) => {
+      res.resume();
+      resolve(res.statusCode ?? 0);
+    });
+    req.on('upgrade', (res, socket) => {
+      socket.destroy();
+      resolve(res.statusCode ?? 0);
+    });
+    req.on('error', reject);
+    req.end();
+  });
+}
 
 /** Polls Local Explorer's trace store until `sql` returns rows. */
 async function waitForRows(

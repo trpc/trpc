@@ -4,7 +4,7 @@
  * open subscriptions don't keep it in memory. Durable calls keep their
  * results, streamed ones too, in the object's storage. `claim` locks a seat
  * through a `Locks` object per seat, and every call's spans are recorded in
- * Workers Traces.
+ * Workers Traces. `cors()` refuses WebSocket upgrades from other origins.
  */
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { DurableObject, tracing } from 'cloudflare:workers';
@@ -16,6 +16,7 @@ import {
   experimental_hibernatingPublisher,
 } from '@trpc12/trpc/cloudflare';
 import { Layer } from 'effect';
+import { cors } from '@trpc12/trpc/http';
 import { createFetchHandler } from '@trpc12/trpc/server';
 import { appRouter, Messages } from './src/router.ts';
 import { durableObjectPersistence } from './src/storage.ts';
@@ -45,6 +46,9 @@ export class Room extends DurableObject<Env> {
       room: opts.request.headers['x-room'] ?? 'unknown',
       greeting: opts.platform?.env.GREETING ?? 'hello',
     }),
+    // The browser app's origin; clients that send none, like Node's, pass.
+    // `sockets.upgrade()` runs this too, so a cross-origin upgrade gets a 403.
+    middleware: [cors({ allowedOrigins: ['https://app.example.com'] })],
   });
   // `x-room` is kept with each socket, so `createContext` still sees it
   // after the object wakes from hibernation.
@@ -53,7 +57,7 @@ export class Room extends DurableObject<Env> {
     keepHeaders: ['x-room'],
   });
 
-  override fetch(request: Request): Response | Promise<Response> {
+  override fetch(request: Request): Promise<Response> {
     if (request.headers.get('upgrade') !== 'websocket') {
       return this.handler.fetch(request, { env: this.env });
     }
