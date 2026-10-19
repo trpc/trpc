@@ -76,7 +76,7 @@ export interface WebSocketHandlerLike {
 export interface HttpOptions {
   /**
    * Only upgrade requests to this path; others get a 404.
-   * @default '/trpc'
+   * @default a `createFetchHandler()` handler's `endpoint`, else `'/trpc'`
    */
   endpoint?: string;
 }
@@ -152,9 +152,9 @@ export function toHttpEffect(
   HttpServerError.HttpServerError,
   HttpServerRequest.HttpServerRequest
 > {
-  const endpoint = `/${(opts.endpoint ?? '/trpc').replace(/^\/+|\/+$/g, '')}`;
   const services = handlerContext(handler);
   const own = Context.getOrUndefined(services, HttpApp);
+  const endpoint = `/${(opts.endpoint ?? own?.endpoint ?? '/trpc').replace(/^\/+|\/+$/g, '')}`;
   const serveSocket = Context.getOrUndefined(services, UpgradeServer);
   const drains = Context.getOrUndefined(services, HandlerDrains);
   const fetch =

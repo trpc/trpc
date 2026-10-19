@@ -434,6 +434,8 @@ export interface HttpAppShape {
     HttpServerRequest.HttpServerRequest
   >;
   readonly middleware: ReadonlyArray<HttpMiddleware.HttpMiddleware>;
+  /** The path prefix the app serves, which upgrades must target. */
+  readonly endpoint?: string | undefined;
 }
 
 /** @internal */
@@ -1406,7 +1408,7 @@ export function createFetchHandler<
     Context.make(SocketCore, core).pipe(
       Context.add(HandlerDrains, drains),
       Context.add(UpgradeServer, serveWebSocket),
-      Context.add(HttpApp, { app, middleware }),
+      Context.add(HttpApp, { app, middleware, endpoint }),
     ),
   );
   return handler as FetchHandler<TPlatform>;

@@ -157,6 +157,20 @@ test('upgrades reach the endpoint only, through createFetchHandler() and other h
   }
 });
 
+test("toHttpEffect() upgrades on a createFetchHandler()'s own endpoint", async () => {
+  const api = createFetchHandler({ router, endpoint: '/api' });
+  await using server = await listen(HttpServer.serve(toHttpEffect(api)));
+  await using link = wsLink({
+    url: server.url.replace('http', 'ws').replace('/trpc', '/api'),
+    keepAlive: false,
+  });
+  const client = createTrpcClient({
+    router: routerType<typeof router>(),
+    links: [link],
+  });
+  expect(await client.hello.query({ name: 'api' })).toBe('hello api');
+});
+
 test("another handler's websocket() closes the upgraded socket through the WebSocket it gets", async () => {
   await using server = await listen(HttpServer.serve(toHttpEffect(plain)));
   const socket = new WebSocket(server.url.replace('http', 'ws'));
