@@ -113,11 +113,33 @@ export const abortOnInterrupt = <A, E>(
     ),
   );
 
+/** What {@link makeTransport} gives the link. */
+export interface Transport {
+  readonly serializer: AnySerializer;
+  readonly call: (
+    op: Operation,
+    accept: string,
+    extra?: Record<string, string>,
+  ) => Effect.Effect<Reply, AnyTrpcError, Scope.Scope>;
+  readonly single: (op: Operation) => Effect.Effect<unknown, AnyTrpcError>;
+  readonly sendBatch: (
+    batch: Batch<Operation>,
+  ) => Effect.Effect<void, AnyTrpcError>;
+  readonly readError: (reply: Reply) => Effect.Effect<never, AnyTrpcError>;
+  readonly reported: (
+    op: Operation,
+    reply: Reply,
+  ) => Effect.Effect<void, AnyTrpcError>;
+  readonly unbatchable: (op: Operation) => boolean;
+  /** Calls with differing `init`s or types never share a batch. */
+  readonly batchKey: (op: Operation) => string;
+}
+
 /** The HTTP side of `httpLink`: requests, responses and their bodies. */
 export function makeTransport(
   opts: HttpLinkOptions,
   serializer: AnySerializer,
-) {
+): Transport {
   const baseUrl = String(opts.url).replace(/\/+$/, '');
   const maxUrlLength = opts.maxUrlLength ?? 2048;
   const longQueryMethod = opts.longQuery === 'query' ? 'QUERY' : 'POST';
@@ -573,10 +595,6 @@ export function makeTransport(
     readError,
     reported,
     unbatchable,
-    /** Calls with differing `init`s or types never share a batch. */
-    batchKey: (op: Operation) => `${op.type} ${initKey(op)}`,
+    batchKey: (op) => `${op.type} ${initKey(op)}`,
   };
 }
-
-/** What {@link makeTransport} gives the link. */
-export type Transport = ReturnType<typeof makeTransport>;
