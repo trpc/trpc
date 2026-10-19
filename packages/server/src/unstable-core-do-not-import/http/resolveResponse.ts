@@ -30,19 +30,17 @@ import type {
 } from './types';
 
 /**
- * `decodeURIComponent` throws a plain `URIError` on malformed escape sequences,
- * which would otherwise surface as an `INTERNAL_SERVER_ERROR` even though the
- * request itself is at fault
+ * The client doesn't URL-encode procedure paths, so a path that isn't valid
+ * URL-encoding (e.g. a procedure keyed `100%`) is used as-is
  */
 function decodePath(path: string) {
   try {
     return decodeURIComponent(path);
   } catch (cause) {
-    throw new TRPCError({
-      code: 'BAD_REQUEST',
-      message: `Invalid URL-encoding in path "${path}"`,
-      cause,
-    });
+    if (cause instanceof URIError) {
+      return path;
+    }
+    throw cause;
   }
 }
 
