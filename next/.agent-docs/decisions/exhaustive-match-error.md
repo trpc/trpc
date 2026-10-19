@@ -1,6 +1,6 @@
 # `matchError()` is exhaustive: a key per inferred code, and one required `unexpected` (agent)
 
-- Human (Alex), 2026-10-19, replying to "type errors for a wrong output now name the one expected type instead of a four-member union — OK?": "it should be exhaustive based on the errors / is that matchError forced to be exhaustive on the inferred errors? if not make it".
+- Human, 2026-10-19, replying to "type errors for a wrong output now name the one expected type instead of a four-member union — OK?": "it should be exhaustive based on the errors / is that matchError forced to be exhaustive on the inferred errors? if not make it".
 - Human, 2026-10-19 (the D answer, [link-errors](./link-errors.md)): "the types should rule it, and if it's inferred we should still have it in the match [...] links should be able to infer their own errors they can return [...] there's always a "catch all" unexpected error but we should do our best outside of that to be exhaustive".
 - Human: "always fix stuff if there's a faster way without sacrificing dx".
 - Human, 2026-10-18 ([granular-errors](./granular-errors.md)), which the categories came from: "i'd like to push it as far as possible without it becoming annoying and handling dozens of type of errors for every rpc call [...] it'd be good to have some generic errors that you'd be forced to match (or sub-types)". The forced generic errors are now the link codes and `unexpected` (four keys over `httpLink`, not dozens), and `unexpected`'s `e.code` narrows to the sub-types.
