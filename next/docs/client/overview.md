@@ -14,6 +14,7 @@ v11: client
 import type { AppRouter } from './server.ts';
 // ---cut-end---
 import {
+  batching,
   createTrpcClient,
   dedupeLink,
   httpLink,
@@ -24,7 +25,7 @@ const client = createTrpcClient({
   router: routerType<AppRouter>(),
   links: [
     dedupeLink(),
-    httpLink({ url: 'http://localhost:3000/trpc', batch: true }),
+    httpLink({ url: 'http://localhost:3000/trpc', batch: batching() }),
   ],
 });
 
@@ -45,6 +46,7 @@ The second argument holds `signal` (and `lastEventId` for subscriptions) plus th
 // ---cut-start---
 import type { AppRouter } from './server.ts';
 import {
+  batching,
   createTrpcClient,
   dedupeLink,
   httpLink,
@@ -52,7 +54,7 @@ import {
 } from '@trpc12/trpc/client';
 const client = createTrpcClient({
   router: routerType<AppRouter>(),
-  links: [dedupeLink(), httpLink({ url: '/trpc', batch: true })],
+  links: [dedupeLink(), httpLink({ url: '/trpc', batch: batching() })],
 });
 const signal = new AbortController().signal;
 const id = '1';

@@ -127,7 +127,12 @@ import {
   createTrpcQueryUtils,
   useSubscription,
 } from '@trpc12/tanstack-react-query';
-import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import {
+  createTrpcClient,
+  httpLink,
+  routerType,
+  sse,
+} from '@trpc12/trpc/client';
 import { t, type Post } from './server.ts';
 declare function onPost(): AsyncIterable<Post>;
 declare function toast(message: string): void;
@@ -141,7 +146,7 @@ const router = {
 const trpc = createTrpcQueryUtils({
   client: createTrpcClient({
     router: routerType<typeof router>(),
-    links: [httpLink({ url: '/trpc' })],
+    links: [httpLink({ url: '/trpc', subscriptions: sse() })],
   }),
 });
 // ---cut-end---

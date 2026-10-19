@@ -11,6 +11,7 @@ order: 4
 ```ts twoslash
 // ---cut-start---
 import {
+  batching,
   createTrpcClient,
   httpLink,
   routerType,
@@ -32,7 +33,7 @@ const client = createTrpcClient({
     switchLink({
       name: 'transport',
       links: {
-        http: httpLink({ url, batch: true }),
+        http: httpLink({ url, batch: batching() }),
         ws: wsLink({ url: wsUrl }),
       },
       pick: (op) => (op.type === 'subscription' ? 'ws' : 'http'),

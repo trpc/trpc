@@ -91,7 +91,12 @@ import {
   createTrpcQueryUtils,
   useSubscription,
 } from '@trpc12/tanstack-react-query';
-import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import {
+  createTrpcClient,
+  httpLink,
+  routerType,
+  sse,
+} from '@trpc12/trpc/client';
 import { tracked } from '@trpc12/trpc/server';
 import { z } from 'zod';
 import { t } from './server.ts';
@@ -122,7 +127,7 @@ const job = {
 const trpc = createTrpcQueryUtils({
   client: createTrpcClient({
     router: routerType<{ job: typeof job }>(),
-    links: [httpLink({ url: '/trpc' })],
+    links: [httpLink({ url: '/trpc', subscriptions: sse() })],
   }),
 });
 // ---cut-end---
