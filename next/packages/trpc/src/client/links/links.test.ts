@@ -10,6 +10,7 @@ import {
   splitLink,
   switchLink,
   type LoggerEvent,
+  type TrpcLink,
   routerType,
   withSubscriptions,
 } from '@trpc12/trpc/client';
@@ -536,8 +537,11 @@ test('what a link fails, dies or ends with becomes a client error', async () => 
 
 test('subscriptions need a link marked withSubscriptions, found through splitLink and switchLink', async () => {
   const events = () => Stream.make(1, 2);
-  const read = async (links: Parameters<typeof createTrpcClient>[0]['links']) => {
-    const client = createTrpcClient({ router: routerType<typeof router>(), links });
+  const read = async (links: ReadonlyArray<TrpcLink<any, any>>) => {
+    const client = createTrpcClient({
+      router: routerType<typeof router>(),
+      links,
+    });
     const ticks: number[] = [];
     for await (const n of client.ticks.subscribe()) ticks.push(n);
     return ticks;
@@ -562,7 +566,10 @@ test('subscriptions need a link marked withSubscriptions, found through splitLin
     await read([
       switchLink({
         name: 'via',
-        links: { plain: link(events), events: [withSubscriptions(link(events))] },
+        links: {
+          plain: link(events),
+          events: [withSubscriptions(link(events))],
+        },
         pick: () => 'events',
       }),
     ]),
