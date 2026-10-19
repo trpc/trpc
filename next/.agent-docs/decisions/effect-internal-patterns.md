@@ -17,4 +17,5 @@
 - Why: one model for lifetimes, interruption and shared state, so `dispose()` releases everything a handler or link started, and so the code reads like the Effect source it builds on. Bare `Effect.runFork`s and hand-rolled refcounts are where leaks and races hide.
 - Lost: some client bytes where an Effect primitive is bigger than the hand-rolled loop it replaces (counted per change); churn across files other agents are editing.
 - Open: the OpenAPI handler and link (`src/openapi/`) and `@trpc12/experimental-tanstack-db` wait until the work in flight on them lands.
+- (agent) Execution and procedures: [`stream-item-validation.md`](./stream-item-validation.md), [`effect-middleware-next.md`](./effect-middleware-next.md), [`middleware.md`](./middleware.md), [`actions-and-rsc.md`](./actions-and-rsc.md), [`internals-use-effect.md`](./internals-use-effect.md).
 - Lives in: `packages/*/src/`; the areas and what each changed are listed in the decisions they link from here.
