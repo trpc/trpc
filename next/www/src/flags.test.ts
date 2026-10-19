@@ -3,6 +3,7 @@ import { describe, expect, it } from '@effect/vitest';
 import {
   flagParamFor,
   flagsIn,
+  menuStateOf,
   siteEnvOf,
   validateFlagSearch,
   withFlag,
@@ -56,6 +57,26 @@ describe('validateFlagSearch', () => {
     });
     expect(validateFlagSearch({ flags: 'nope' })).toEqual({});
     expect(validateFlagSearch({ other: 'x' })).toEqual({});
+  });
+
+  it('keeps the open menu, on no experiment or on one', () => {
+    expect(validateFlagSearch({ experiments: 'open' })).toEqual({
+      experiments: 'open',
+    });
+    expect(
+      validateFlagSearch({ experiments: 'publisher', flags: 'contracts' }),
+    ).toEqual({ experiments: 'publisher', flags: 'contracts' });
+    expect(validateFlagSearch({ experiments: 'nope' })).toEqual({});
+    expect(validateFlagSearch({ experiments: true })).toEqual({});
+  });
+});
+
+describe('menuStateOf', () => {
+  it('is open, an experiment, or closed', () => {
+    expect(menuStateOf('open')).toBe('open');
+    expect(menuStateOf('tanstack-db')).toBe('tanstack-db');
+    expect(menuStateOf('nope')).toBeUndefined();
+    expect(menuStateOf(undefined)).toBeUndefined();
   });
 });
 
