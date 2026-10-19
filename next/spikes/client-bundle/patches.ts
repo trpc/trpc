@@ -10,36 +10,6 @@ export const cuts: Record<
   string,
   { readonly what: string; readonly patches: readonly Patch[] }
 > = {
-  sse: {
-    what: 'SSE subscriptions out of httpLink (an opt-in sseLink / subscriptions module)',
-    patches: [
-      [
-        'client/links/http/link.ts',
-        'const subscription = makeSubscriptions(transport, opts);',
-        'const subscription = (op: Operation): any => Stream.die(op);',
-      ],
-    ],
-  },
-  batch: {
-    what: 'batching (the data loader) out of httpLink (an opt-in batch link or module)',
-    patches: [
-      [
-        'client/links/http/link.ts',
-        `const batched = makeBatcher<Operation>({
-    // Calls without an \`initKey\` are unbatchable, so they never get here.
-    key: transport.batchKey,
-    maxItems,
-    send: transport.sendBatch,
-  });`,
-        'const batched = (op: Operation): any => transport.single(op);',
-      ],
-      [
-        'client/links/http/transport.ts',
-        '    sendBatch,\n    readError,',
-        '    sendBatch: undefined as never,\n    readError,',
-      ],
-    ],
-  },
   frames: {
     what: 'binary frames (`binary: true`) out of the default link',
     patches: [
