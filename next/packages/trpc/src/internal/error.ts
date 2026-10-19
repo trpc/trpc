@@ -75,12 +75,11 @@ export type UndeclaredCode = `~undeclared:${string}`;
  * @since 0.1.0
  * @stability stable
  */
-export type ReservedCodeCheck<TCode extends string> =
-  'unexpected' extends TCode
-    ? string extends TCode
-      ? unknown
-      : { readonly '~reserved': ReservedCodeMessage }
-    : unknown;
+export type ReservedCodeCheck<TCode extends string> = 'unexpected' extends TCode
+  ? string extends TCode
+    ? unknown
+    : { readonly '~reserved': ReservedCodeMessage }
+  : unknown;
 
 /**
  * {@link ReservedCodeCheck} for an error map's keys.

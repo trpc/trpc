@@ -481,8 +481,14 @@ test('links takes at least one link, since the last one sends the request', () =
 
   // A spread before or after a link counts, and so does a tuple type.
   const before = [dedupeLink()];
-  createTrpcClient({ router: routerType<AppRouter>(), links: [...before, http] });
-  createTrpcClient({ router: routerType<AppRouter>(), links: [http, ...before] });
+  createTrpcClient({
+    router: routerType<AppRouter>(),
+    links: [...before, http],
+  });
+  createTrpcClient({
+    router: routerType<AppRouter>(),
+    links: [http, ...before],
+  });
   const tuple = [http] as const;
   createTrpcClient({ router: routerType<AppRouter>(), links: tuple });
 });
@@ -494,7 +500,7 @@ test('an any router, like an AppRouter import that broke, gives the untyped clie
       yield 1;
       yield 2;
     }),
-  };
+  } as const;
   const client = createTrpcClient({
     router: routerType<any>(),
     links: [localLink({ router: live })],
@@ -510,6 +516,7 @@ test('an any router, like an AppRouter import that broke, gives the untyped clie
     client.request({ type: 'query', path: 'post.byId', input: { id: '7' } }),
   ).resolves.toMatchObject({ id: '7' });
   const ticks: unknown[] = [];
-  for await (const tick of client.subscribe({ path: 'ticks' })) ticks.push(tick);
+  for await (const tick of client.subscribe({ path: 'ticks' }))
+    ticks.push(tick);
   expect(ticks).toEqual([1, 2]);
 });
