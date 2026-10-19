@@ -6,7 +6,7 @@ import {
   type HttpLinkOptions,
 } from '@trpc12/trpc/client';
 import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
-import { expect, test } from 'vite-plus/test';
+import { expect, test, vi } from 'vite-plus/test';
 import { z } from 'zod';
 
 const t = initTrpc();
@@ -467,4 +467,23 @@ test('a batch whose calls were all aborted before it was sent sends nothing', as
   expect((await call).error).toMatchObject({ code: 'CLIENT_CLOSED_REQUEST' });
   await sleep(10);
   expect(requests).toBe(0);
+});
+
+test('calls go out where there is no ReadableStream (Hermes)', async () => {
+  const inits: RequestInit[] = [];
+  const replies = [1, 2].map(
+    () => new Response(JSON.stringify({ json: 'ok' })),
+  );
+  const client = clientWith(async (_url, init) => {
+    inits.push(init ?? {});
+    return replies.shift()!;
+  });
+  vi.stubGlobal('ReadableStream', undefined);
+  expect(await client.echo.query(1)).toBe('ok');
+  // Past `maxUrlLength`, so a body goes too.
+  expect(await client.echo.query('x'.repeat(3000))).toBe('ok');
+  expect(inits.map((init) => [init.method, 'duplex' in init])).toEqual([
+    ['GET', false],
+    ['POST', false],
+  ]);
 });

@@ -214,11 +214,14 @@ export function makeTransport(
           base?.next || call?.next
             ? { ...base?.next, ...call?.next }
             : undefined;
+        // Runs for every request, so it must not throw where there's no
+        // `ReadableStream` (Hermes), as a bare `instanceof` would.
+        const stream = isByteStreamInput(body);
         // A JSON body names its type; `fetch` sets a multipart one's, with
         // its boundary.
         if (typeof body === 'string') {
           headers.set('content-type', CONTENT_TYPE.json);
-        } else if (body instanceof ReadableStream) {
+        } else if (stream) {
           headers.set('content-type', CONTENT_TYPE.octet);
         } else if (body) {
           headers.delete('content-type');
@@ -232,7 +235,7 @@ export function makeTransport(
           headers,
           ...(body === undefined ? {} : { body }),
           // `fetch` only sends a stream body half-duplex.
-          ...(body instanceof ReadableStream ? { duplex: 'half' } : {}),
+          ...(stream ? { duplex: 'half' } : {}),
         } as RequestInit;
         return { url: resolveUrl(url), init };
       },
