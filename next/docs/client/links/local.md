@@ -27,6 +27,6 @@ const posts = await client.post.list.query();
 - `router`: the router to call.
 - `createContext()`: makes the `ctx` of each call, required when the router's procedures need one. The handler's `createContext` doesn't run, since there is no request ([Server-side calls](../../server/server-side-calls.md)).
 - `runtime`: a `ManagedRuntime` that provides the Effect services the router needs, required when it needs any. You own it: build it once with `ManagedRuntime.make(layer)` and call `runtime.dispose()` when done, which runs the layer's finalizers ([Server-side calls](../../server/server-side-calls.md#services)).
-- `serializer`: inputs and outputs round-trip through it as over the wire, `jsonSerializer` by default. `false` passes values by reference, so they keep native types.
+- `serializer`: inputs and outputs round-trip through it as over the wire, `jsonSerializer` by default. `false` passes values by reference, so they keep native types. A procedure's own response is never serialized: it arrives as a web `Response` ([Responses](../../server/responses.md#returning-a-response)).
 
 Without other links to run, `createRouterClient(router, { ctx })` calls a router in process with less setup ([Server-side calls](../../server/server-side-calls.md)).

@@ -51,7 +51,7 @@ const report = t.procedure.query(() =>
 const res = await client.report.query(); // Response
 ```
 
-Only an unbatched HTTP call can carry one: in a batch, over WebSockets or in-process, the call fails with `BAD_REQUEST`. With `httpLink({ batch: true })`, the client's types require `{ batch: false }` on calls to procedures that may return a response, and the link sends them alone: `client.report.query(undefined, { batch: false })`. A `batch` that may be on, such as a `boolean` variable, counts as on.
+An unbatched HTTP call or an in-process call can carry one; in a batch or over WebSockets, the call fails with `BAD_REQUEST`. In-process callers (`createRouterClient`, `localLink` and `call()`) get the web `Response` an HTTP client would: its status, its headers over the handle's, and its body as a stream, never serialized. `call()`'s type says `Response` too, for an `HttpServerResponse`. With `httpLink({ batch: true })`, the client's types require `{ batch: false }` on calls to procedures that may return a response, and the link sends them alone: `client.report.query(undefined, { batch: false })`. A `batch` that may be on, such as a `boolean` variable, counts as on.
 
 ## Reading the response on the client
 

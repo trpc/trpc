@@ -3,9 +3,15 @@ import { createTrpcClient } from '../client/client.ts';
 import { localLink, type LocalLinkOptions } from '../client/links/index.ts';
 import { routerType, type TrpcClient } from '../client/types.ts';
 import { frameworkError } from '../internal/error.ts';
-import type { DansonForm, MaybePromise } from '../internal/types.ts';
+import type {
+  DansonForm,
+  MaybePromise,
+  ProcedureResponse,
+} from '../internal/types.ts';
 import {
   callProcedure,
+  createResponseHandle,
+  inProcessOutput,
   normalizeCause,
   runtimeServices,
 } from './execution/index.ts';
@@ -101,10 +107,16 @@ export type CallOptions<TDef extends ProcedureDef> = ({} extends TDef['ctx']
   path?: string;
 } & CallServicesOption<TDef['services']>;
 
+/** A returned `HttpServerResponse` reaches {@link call}'s caller as a web `Response`. */
+type CallOutput<T> = [Extract<T, ProcedureResponse>] extends [never]
+  ? T
+  : Exclude<T, ProcedureResponse> | globalThis.Response;
+
 /**
  * Calls one procedure directly. Throws the procedure's `TrpcError`s. A
  * `layer` is built for the call and released once it returns, before a
- * streamed output is read; pass a caller-owned `runtime` for those.
+ * streamed output is read; pass a caller-owned `runtime` for those. A
+ * returned response arrives as the web `Response` HTTP would send.
  *
  * @example
  * ```ts
@@ -119,7 +131,7 @@ export async function call<TDef extends ProcedureDef>(
   ...[opts]: {} extends CallOptions<TDef>
     ? [opts?: CallOptions<TDef>]
     : [opts: CallOptions<TDef>]
-): Promise<TDef['output']> {
+): Promise<CallOutput<TDef['output']>> {
   const o = (opts ?? {}) as {
     ctx?: object;
     signal?: AbortSignal;
@@ -127,13 +139,19 @@ export async function call<TDef extends ProcedureDef>(
     layer?: Layer.Layer<never, any, never>;
     runtime?: Runtime<never>;
   };
-  const effect = callProcedure({
-    procedure,
-    path: o.path ?? '',
-    ctx: o.ctx ?? {},
-    input,
-    signal: o.signal ?? new AbortController().signal,
-  });
+  const response = createResponseHandle();
+  const effect = Effect.flatMap(
+    callProcedure({
+      procedure,
+      path: o.path ?? '',
+      ctx: o.ctx ?? {},
+      input,
+      signal: o.signal ?? new AbortController().signal,
+      response,
+      allowResponse: true,
+    }),
+    (value) => inProcessOutput(value, response),
+  );
   const provided = o.runtime
     ? Effect.flatMap(runtimeServices(o.runtime), (services) =>
         Effect.provideContext(effect, services),
@@ -142,7 +160,7 @@ export async function call<TDef extends ProcedureDef>(
       ? Effect.provide(effect, o.layer)
       : effect;
   const exit = await Effect.runPromiseExit(
-    provided as Effect.Effect<TDef['output'], never, never>,
+    provided as Effect.Effect<CallOutput<TDef['output']>, never, never>,
     { signal: o.signal },
   );
   if (Exit.isSuccess(exit)) return exit.value;

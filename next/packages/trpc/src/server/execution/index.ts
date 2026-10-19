@@ -9,6 +9,7 @@ export type { EventFrame } from './events.ts';
 export {
   callProcedure,
   createResponseHandle,
+  inProcessOutput,
   isUnexpectedError,
   normalizeCause,
   procedureEvents,

@@ -14,6 +14,8 @@ import type {
 import { jsonSerializer, type AnySerializer } from '../../serializer/index.ts';
 import {
   callProcedure,
+  createResponseHandle,
+  inProcessOutput,
   normalizeCause,
   runtimeServices,
   unexpectedError,
@@ -58,6 +60,8 @@ type LocalContextOption<TCtx> = {} extends TCtx
 /**
  * Runs calls in-process, without HTTP. For tests and SSR. The router's
  * Effect services come from `runtime`, which the caller owns and disposes.
+ * A procedure that returns a response gives the web `Response` an
+ * unbatched HTTP call would get, never serialized.
  *
  * @example
  * ```ts
@@ -121,6 +125,7 @@ export function localLink<TRouter extends AnyRouter>(
           const ctx = yield* Effect.promise(
             async () => (await opts.createContext?.()) ?? {},
           );
+          const response = createResponseHandle();
           const data = yield* callProcedure({
             procedure,
             path: op.path,
@@ -128,14 +133,25 @@ export function localLink<TRouter extends AnyRouter>(
             input: roundtrip(op.input, true),
             signal: op.signal ?? new AbortController().signal,
             lastEventId: op.lastEventId,
-          }).pipe(Effect.provideContext(context));
+            response,
+            allowResponse: true,
+          }).pipe(
+            Effect.flatMap((value) => inProcessOutput(value, response)),
+            Effect.provideContext(context),
+          );
 
           if (op.type === 'subscription') {
             return Stream.map(data as Stream.Stream<unknown>, (event) =>
               roundtrip(event),
             );
           }
-          if (!serializer) return Stream.make(data);
+          if (
+            !serializer ||
+            (typeof globalThis.Response === 'function' &&
+              data instanceof globalThis.Response)
+          ) {
+            return Stream.make(data);
+          }
           const serialized = serializer.serializeDeferred(data, {
             coerceError: (cause) =>
               toWireError(isTrpcError(cause) ? cause : unexpectedError(cause)),

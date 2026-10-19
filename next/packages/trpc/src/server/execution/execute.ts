@@ -182,7 +182,7 @@ export interface CallOpts {
   readonly signal: AbortSignal;
   readonly lastEventId?: string | undefined;
   readonly response?: ResponseHandle | undefined;
-  /** An unbatched HTTP call: the procedure may return an `HttpServerResponse`. */
+  /** An unbatched HTTP or in-process call: the procedure may return an `HttpServerResponse`. */
   readonly allowResponse?: boolean | undefined;
   /** The span the call's span is a child of; the fiber's current span otherwise. */
   readonly parent?: Tracer.AnySpan | undefined;
@@ -201,6 +201,26 @@ export const createResponseHandle = (): ResponseHandle => ({
   headers: new Headers(),
   status: undefined,
 });
+
+/**
+ * A call's output as an in-process caller gets it: a returned response,
+ * which `allowResponse` let through, becomes the web `Response` HTTP would
+ * send, the handle's headers under its own. @internal
+ */
+export const inProcessOutput = (
+  value: unknown,
+  handle: ResponseHandle,
+): Effect.Effect<unknown> =>
+  HttpServerResponse.isHttpServerResponse(value)
+    ? Effect.map(Effect.context<never>(), (context) => {
+        const web = HttpServerResponse.toWeb(value, { context });
+        for (const [key, header] of handle.headers) {
+          if (key === 'set-cookie') web.headers.append(key, header);
+          else if (!web.headers.has(key)) web.headers.set(key, header);
+        }
+        return web;
+      })
+    : Effect.succeed(value);
 
 const RESOLVED = Symbol('trpc.resolved');
 
@@ -732,7 +752,7 @@ export function callProcedure(
       if (!opts.allowResponse) {
         return Effect.fail(
           new TrpcError.BadRequest({
-            message: `"${path}" returns a Response, which only an unbatched HTTP call can carry`,
+            message: `"${path}" returns a Response, which only an unbatched HTTP call or an in-process call can carry`,
           }),
         );
       }

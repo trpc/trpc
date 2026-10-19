@@ -31,7 +31,7 @@ In-process calls have no HTTP request: you pass the `ctx` yourself (`createRoute
 
 Pass a `ctx` function for per-request values. To share request-reading code with the handler, keep it in a function of the request and build one: `ctx: () => contextFor(HttpServerRequest.fromWeb(new Request(url, { headers })))`.
 
-In-process callers (`createRouterClient`, `createTrpcRsc`, `localLink({ serializer: false })`) pass values by reference, so they keep native types whatever the [serializer](./serializers.md).
+In-process callers (`createRouterClient`, `createTrpcRsc`, `localLink({ serializer: false })`) pass values by reference, so they keep native types whatever the [serializer](./serializers.md). A procedure's own response arrives as a web `Response` from all of them ([Responses](./responses.md#returning-a-response)).
 
 ## Services
 
