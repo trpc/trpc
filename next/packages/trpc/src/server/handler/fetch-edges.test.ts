@@ -94,7 +94,10 @@ test('a path with a malformed escape is a 404, through fetch and toHttpEffect al
     const response = await serve(new Request('http://localhost/trpc/%E0%A4'));
     expect(response.status).toBe(404);
   }
-  expect(errors).toContain('Not found: /trpc/%E0%A4');
+  expect(errors).toEqual([
+    'Not found: /trpc/%E0%A4',
+    'Not found: /trpc/%E0%A4',
+  ]);
 });
 
 test('unreadable inputs are protocol errors', async () => {

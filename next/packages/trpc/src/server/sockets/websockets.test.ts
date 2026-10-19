@@ -724,3 +724,51 @@ test('a websocket.upgrade that throws answers 400', async () => {
   expect(response.status).toBe(400);
   await handler.dispose();
 });
+
+/** A socket whose peer never answers the close handshake: only its session's end lets go of it. */
+class UnansweredSocket extends StandardSocket {
+  listeners = 0;
+  override addEventListener(
+    ...args: Parameters<EventTarget['addEventListener']>
+  ) {
+    this.listeners++;
+    super.addEventListener(...args);
+  }
+  override removeEventListener(
+    ...args: Parameters<EventTarget['removeEventListener']>
+  ) {
+    this.listeners--;
+    super.removeEventListener(...args);
+  }
+  override close(code?: number, reason?: string) {
+    this.closed = { code, reason };
+    this.readyState = 2;
+  }
+}
+
+test('dispose() ends the sessions handler.websocket started, even when the peer never answers the close', async () => {
+  const handler = createFetchHandler({
+    router,
+    createContext: () => ({ user: 'deno', transport: 'websocket' }),
+    websocket: { drainTimeout: 0 },
+  });
+  const socket = new UnansweredSocket();
+  socket.open();
+  handler.websocket(socket, { request: new Request('http://localhost/trpc') });
+  socket.receive({ type: 'init', version: '12' });
+  await vi.waitFor(() =>
+    expect(socket.sent).toContainEqual({ type: 'init', serializer: 'json' }),
+  );
+  expect(socket.listeners).toBeGreaterThan(0);
+
+  await handler.dispose();
+  expect(socket.closed).toEqual({ code: 1012, reason: 'Service restart' });
+  expect(socket.listeners).toBe(0);
+
+  const late = new StandardSocket();
+  late.open();
+  handler.websocket(late, { request: new Request('http://localhost/trpc') });
+  await vi.waitFor(() =>
+    expect(late.closed).toEqual({ code: 1012, reason: 'Service restart' }),
+  );
+});

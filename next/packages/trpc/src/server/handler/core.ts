@@ -1,8 +1,10 @@
 import {
   Context,
   Effect,
+  Exit,
+  FiberSet,
   ManagedRuntime,
-  type Exit,
+  Scope,
   type Layer,
   type Tracer,
 } from 'effect';
@@ -21,7 +23,7 @@ import {
 } from '../execution/index.ts';
 import type { CreateContextOpts, OnErrorOpts } from './fetch.ts';
 import type { ResponseHandle, AnyProcedure } from '../procedures/index.ts';
-import type { Transport } from '../sockets/index.ts';
+import type { SocketDrains, Transport } from '../sockets/index.ts';
 
 /** @internal */
 export interface CoreOptions {
@@ -29,6 +31,8 @@ export interface CoreOptions {
   layer?: Layer.Layer<any, any, never>;
   exposeUnexpectedErrors?: boolean;
   onError?: (opts: OnErrorOpts) => void;
+  /** The handler's socket connections, which `dispose()` drains first. */
+  drains?: SocketDrains | undefined;
 }
 
 /** @internal */
@@ -81,6 +85,21 @@ export interface HandlerCore {
     path?: string,
     type?: ProcedureType,
   ) => void;
+  /**
+   * Runs a connection's session with `context`, in the handler's
+   * `FiberSet`, so `dispose()` interrupts it. Once `dispose()` has begun,
+   * a session runs untracked: the drain refuses its connection (1012),
+   * which the session does itself, and a closed set would interrupt it
+   * before it could.
+   */
+  readonly fork: (
+    session: Effect.Effect<void>,
+    context?: Context.Context<never>,
+  ) => void;
+  /**
+   * Closes the handler's scope: drains the connections (`drains`),
+   * interrupts the sessions still running, then releases the layer.
+   */
   readonly dispose: () => Promise<void>;
 }
 
@@ -97,6 +116,24 @@ export function createHandlerCore(opts: CoreOptions): HandlerCore {
   const runtime = opts.layer ? ManagedRuntime.make(opts.layer) : undefined;
   /** The layer's services, built once by the runtime on first use. */
   const services = runtimeServices(runtime);
+
+  // Finalizers run last-added first: the drain, the sessions, the layer.
+  const scope = Scope.makeUnsafe();
+  if (runtime) Effect.runSync(Scope.addFinalizer(scope, runtime.disposeEffect));
+  const sessions = Effect.runSync(
+    Scope.provide(FiberSet.make<void, never>(), scope),
+  );
+  if (opts.drains) {
+    // A drained session writes its close frame on its next turn, so the
+    // sessions get one before they're interrupted.
+    Effect.runSync(
+      Scope.addFinalizer(
+        scope,
+        Effect.andThen(opts.drains.drain({ final: true }), Effect.yieldNow),
+      ),
+    );
+  }
+  let disposing = false;
 
   /** The call with its services in place of the running fiber's. */
   const call = (o: RunOpts) =>
@@ -150,8 +187,13 @@ export function createHandlerCore(opts: CoreOptions): HandlerCore {
     report: (error, request, path, type) => {
       opts.onError?.({ error, path, type, request });
     },
-    dispose: async () => {
-      await runtime?.dispose();
+    fork: (session, context = Context.empty()) => {
+      const fiber = Effect.runForkWith(context)(session);
+      if (!disposing) FiberSet.addUnsafe(sessions, fiber);
+    },
+    dispose: () => {
+      disposing = true;
+      return Effect.runPromise(Scope.close(scope, Exit.void));
     },
   };
 }

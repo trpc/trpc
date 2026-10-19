@@ -1,5 +1,10 @@
 import { type Layer, Effect, type Context } from 'effect';
-import { HttpRouter, HttpServerRequest, HttpServerResponse } from 'effect/http';
+import {
+  HttpEffect,
+  HttpRouter,
+  HttpServerRequest,
+  HttpServerResponse,
+} from 'effect/http';
 import { isUpgrade, upgradeTo, type ServeSocket } from '../sockets/index.ts';
 
 type App = Effect.Effect<
@@ -19,7 +24,7 @@ export const withMiddleware = (
 
 /**
  * A handler's `effect/http` side: its `HttpRouter` routes, and `fetch`
- * through `HttpRouter.toWebHandler`. @internal
+ * through `HttpEffect.toWebHandler`, which holds no resources. @internal
  */
 export interface HttpParts {
   readonly routes: Layer.Layer<never, never, HttpRouter.HttpRouter>;
@@ -27,7 +32,6 @@ export interface HttpParts {
     request: Request,
     context?: Context.Context<never>,
   ) => Promise<Response>;
-  readonly dispose: () => Promise<void>;
 }
 
 /** @internal */
@@ -79,18 +83,12 @@ export function httpParts(opts: {
     endpoint === '/'
       ? HttpRouter.add('*', '*', route)
       : HttpRouter.add('*', `${endpoint as `/${string}`}/*`, route);
-  const web = HttpRouter.toWebHandler(
-    HttpRouter.add(
-      '*',
-      '*',
+  // `toWebHandler` runs the app uninterruptibly, as servers do; routes
+  // are interruptible, so an aborted request interrupts its call.
+  const fetch = HttpEffect.toWebHandler(
+    Effect.interruptible(
       opts.upgradeWeb ? upgrading(opts.upgradeWeb) : wrap(opts.app),
     ),
-    { disableLogger: true },
   );
-  return {
-    routes: routes as HttpParts['routes'],
-    fetch: (request, context) =>
-      (web.handler as HttpParts['fetch'])(request, context),
-    dispose: web.dispose,
-  };
+  return { routes: routes as HttpParts['routes'], fetch };
 }

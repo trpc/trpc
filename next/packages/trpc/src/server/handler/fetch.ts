@@ -397,6 +397,7 @@ export function createFetchHandler<
       createContext?: (o: CreateContextOpts<any>) => MaybePromise<object>;
       layer?: Layer.Layer<any, any, never>;
     }),
+    drains,
   });
   const handler = makeHttpHandler(opts, base);
   const sessions = makeSessions(handler, drains, opts.websocket);
@@ -423,11 +424,7 @@ export function createFetchHandler<
       ),
     routes: http.routes,
     drain: (o) => Effect.runPromise(drains.drain({ timeout: o?.timeout })),
-    async dispose() {
-      await Effect.runPromise(drains.drain({ final: true }));
-      await http.dispose();
-      await base.dispose();
-    },
+    dispose: base.dispose,
   };
   setHandlerContext(
     fetchHandler,

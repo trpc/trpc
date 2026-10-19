@@ -1,6 +1,7 @@
 import { Context, Effect, Layer } from 'effect';
 import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
 import { expect, test } from 'vite-plus/test';
+import { createHandlerCore } from './core.ts';
 
 class Builds extends Context.Service<Builds, { readonly id: number }>()(
   'Builds',
@@ -31,4 +32,18 @@ test("the handler's layer is built once, by the first calls, and shared by every
   expect(new Set([...first, later]).size).toBe(1);
   expect(later).toContain('1');
   await handler.dispose();
+});
+
+test('dispose() interrupts the sessions forked on the core; one forked after it runs to its end', async () => {
+  const events: string[] = [];
+  const core = createHandlerCore({});
+  core.fork(
+    Effect.never.pipe(
+      Effect.onInterrupt(() => Effect.sync(() => events.push('interrupted'))),
+    ),
+  );
+  await core.dispose();
+  expect(events).toEqual(['interrupted']);
+  core.fork(Effect.sync(() => events.push('ran')));
+  expect(events).toEqual(['interrupted', 'ran']);
 });

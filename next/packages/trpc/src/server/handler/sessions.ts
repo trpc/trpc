@@ -16,8 +16,11 @@ import { deserialize } from './input.ts';
 import { CurrentPlatform } from './platform.ts';
 
 /**
- * A fetch handler's WebSocket and MessagePort side: the socket core its
- * sessions share, and how each way in starts one. @internal
+ * A fetch handler's WebSocket and MessagePort side. Sessions handed over
+ * by a callback (`websocket()`, `messagePort()`, `websocket.upgrade`) run
+ * on the handler core's `fork`, so `dispose()` interrupts them; upgrades
+ * under `serve()` and `handler.routes` run in their request's fiber,
+ * which the server owns. @internal
  */
 export interface Sessions {
   readonly core: SocketCoreShape;
@@ -92,18 +95,23 @@ export const makeSessions = (
             onFailure: () =>
               Effect.succeed(HttpServerResponse.empty({ status: 400 })),
             onSuccess: (upgraded) =>
-              Effect.gen(function* () {
-                const platform = yield* CurrentPlatform;
-                yield* Effect.forkDetach(
-                  serveWebSocketLike(upgraded.socket, request, platform),
-                  { startImmediately: true },
+              Effect.withFiber((fiber) => {
+                base.fork(
+                  serveWebSocketLike(
+                    upgraded.socket,
+                    request,
+                    fiber.getRef(CurrentPlatform),
+                  ),
+                  fiber.context,
                 );
-                return HttpServerResponse.raw(upgraded.response);
+                return Effect.succeed(
+                  HttpServerResponse.raw(upgraded.response),
+                );
               }),
           }),
         )),
     websocket: (socket, o) => {
-      Effect.runFork(
+      base.fork(
         serveWebSocketLike(
           socket,
           HttpServerRequest.fromWeb(o.request),
@@ -112,7 +120,7 @@ export const makeSessions = (
       );
     },
     messagePort: (port, o) => {
-      Effect.runFork(
+      base.fork(
         serveMessagePort(core, port, {
           request: HttpServerRequest.fromWeb(
             o?.request ?? new Request('http://localhost/'),
