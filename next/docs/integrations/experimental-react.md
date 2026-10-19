@@ -9,7 +9,7 @@ experiment: experimental-react
 
 `@trpc12/experimental-react` reads tRPC in React with `use()` and Suspense, without TanStack Query: render-as-you-fetch, after [raf-query](https://github.com/KATT/raf-query). A route loader (or an event handler) calls `.query()`, which starts the request and returns a promise. The component reads that promise with `useQuery()` and `use()`. Components don't start requests.
 
-The whole package is experimental: the package name says so, every export is `@stability experimental`, and the API may change in any release. For a stable React integration, use [TanStack Query](./tanstack-query/react.md); [React and Next.js](./react.md) compares the three.
+The whole package is experimental: the package name says so, every export is `@stability experimental`, and the API might change or go away in any release. For a stable React integration, use [TanStack Query](./tanstack-query/react.md); [React and Next.js](./react.md) compares the three.
 
 ```package-install
 @trpc12/trpc effect @trpc12/experimental-react

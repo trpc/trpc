@@ -1,7 +1,7 @@
 ---
 title: Packages and stability
 label: Packages
-description: Every package and entry point, what each is for and where its docs are, and what experimental_ and @stability promise.
+description: Every package and entry point, what each is for and where its docs are, and what experimental_, unstable_ and @stability promise.
 section: Getting started
 order: 2
 ---
@@ -36,9 +36,32 @@ The TanStack packages re-export `@trpc12/tanstack-query`, so an app installs one
 
 ## Stability
 
-An export whose name starts with `experimental_` (such as `experimental_createAction`) may still change in a minor release, and so may every export of a package whose name starts with `experimental-`, whose exports have no prefix. When one becomes stable, it gets its name without the prefix, and the `experimental_` name stays as a deprecated alias until the next major. `npx @trpc12/upgrade` rewrites those imports.
+An export is stable, unstable or experimental, and its name says which: unstable exports start with `unstable_` and experimental ones with `experimental_`. Stable exports follow semver.
 
-Every export's JSDoc carries `@stability` (`stable` or `experimental`) and `@since`. Until 12.0.0, prereleases promise nothing; `@stability` says how the export is planned to ship.
+### `unstable_` {#unstable}
+
+An `unstable_` feature is one we want, but how it works can still change:
+
+- Its name, options and behavior might change in a minor release.
+- It's already used in production, and we encourage you to use it.
+- Any change to it is in the release notes, and you'll see type errors.
+- Report suggestions on its API and issues at [github.com/trpc/trpc/issues](https://github.com/trpc/trpc/issues).
+
+### `experimental_` {#experimental}
+
+An `experimental_` feature might change or go away in any release:
+
+- What it covers and how it's used might change.
+- It might not be well tested.
+- It might be dropped entirely.
+
+A package whose name starts with `experimental-` is experimental as a whole, so its exports have no prefix. There are no `unstable-` packages: an unstable feature stays, so its package has its final name, with its unstable exports named `unstable_*`.
+
+### Promotion
+
+A feature moves from experimental to unstable to stable, or skips unstable. Each step renames it (`experimental_x` to `unstable_x` to `x`), and the old name stays as a deprecated alias until the next major. A promoted `experimental-` package gets its final name, and its exports that aren't stable yet get `unstable_`. `npx @trpc12/upgrade` rewrites those imports.
+
+Every export's JSDoc carries `@stability` (`stable`, `unstable` or `experimental`) and `@since`. Until 12.0.0, prereleases promise nothing; `@stability` says how the export is planned to ship.
 
 ## Versions
 

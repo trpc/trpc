@@ -1,6 +1,6 @@
 # `@trpc12/upgrade`
 
-Rewrites a tRPC v11 codebase to v12 where there's one v12 form (imports, `initTRPC`, `TRPCError`, the HTTP links and their `transformer`, `createTRPCContext`, …), keeps your formatting, and prints the rest as `file:line:column` steps. It also rewrites imports of `experimental_*` exports that became stable.
+Rewrites a tRPC v11 codebase to v12 where there's one v12 form (imports, `initTRPC`, `TRPCError`, the HTTP links and their `transformer`, `createTRPCContext`, …), keeps your formatting, and prints the rest as `file:line:column` steps. It also rewrites imports of `experimental_*` and `unstable_*` exports, and of `@trpc12/experimental-*` packages, that moved on a stage.
 
 ```sh
 npx @trpc12/upgrade src          # dry run: what would change, what's left

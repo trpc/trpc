@@ -7,7 +7,7 @@ Pages marked (experimental) belong to an experiment, unlisted on the site until 
 ## Getting started
 
 - [Getting started](./getting-started.md): A router, a handler that serves it, and a client that calls it with the router's types.
-- [Packages and stability](./packages.md): Every package and entry point, what each is for and where its docs are, and what experimental_ and @stability promise.
+- [Packages and stability](./packages.md): Every package and entry point, what each is for and where its docs are, and what experimental_, unstable_ and @stability promise.
 
 ## Server
 
