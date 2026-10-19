@@ -40,6 +40,11 @@ const router = {
   thrown: t.procedure.query((): string => {
     throw new PostNotFound({ id: 'x' }, { message: 'No such post' });
   }),
+  thrownDeclared: t.procedure
+    .errors({ POST_NOT_FOUND: PostNotFound })
+    .query((): string => {
+      throw new PostNotFound({ id: 'x' }, { message: 'No such post' });
+    }),
   badData: t.procedure.query(() =>
     Effect.fail(new PostNotFound({ id: 1 } as unknown as { id: string })),
   ),
@@ -104,14 +109,28 @@ test('a tagged error without data defaults to 400', async () => {
   expect(new Gone()._tag).toBe('GONE');
 });
 
-test('a thrown tagged error is typed too, and keeps its message', async () => {
+test('a thrown tagged error is untyped unless .errors() declares it, like any thrown code', async () => {
   await using ctx = await setup();
   const [, err] = await safe(ctx.client.thrown.query());
   expect(err).toMatchObject({
     code: 'POST_NOT_FOUND',
     message: 'No such post',
+    data: { id: 'x' },
+    defined: false,
+  });
+  expect(isDefinedError(err)).toBe(false);
+  expect((await fetch(`${ctx.url}/thrown`)).status).toBe(404);
+
+  const [, declared] = await safe(ctx.client.thrownDeclared.query());
+  expect(declared).toMatchObject({
+    code: 'POST_NOT_FOUND',
+    message: 'No such post',
+    data: { id: 'x' },
     defined: true,
   });
+  if (isDefinedError(declared)) {
+    expectTypeOf(declared.code).toEqualTypeOf<'POST_NOT_FOUND'>();
+  }
 });
 
 test('invalid data is an unexpected error', async () => {

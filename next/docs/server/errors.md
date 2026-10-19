@@ -151,7 +151,7 @@ See [Errors without try/catch](../client/errors.md) for `safe()`, `matchError()`
 
 ## Thrown errors
 
-v11 code throws its errors (`throw new TRPCError({ code })`). In v12 that still works, but a thrown error is untyped on the client, so return it instead: `return error({ code })`, or `yield*` it in an Effect. When `NODE_ENV` is `development`, a procedure that throws a `TrpcError` it could return logs a warning, once per procedure and code. Errors made by the declared constructors (`opts.errors.NOT_FOUND()`), `TrpcError.Tagged` classes and declared codes are typed, so they don't warn. A thrown code that `.errors()` doesn't list always warns in development, since it becomes an `INTERNAL_SERVER_ERROR`.
+v11 code throws its errors (`throw new TRPCError({ code })`). In v12 that still works, but a thrown error is untyped on the client, so return it instead: `return error({ code })`, or `yield*` it in an Effect. When `NODE_ENV` is `development`, a procedure that throws a `TrpcError` it could return logs a warning, once per procedure and code. Errors with a declared code, from its constructor (`opts.errors.NOT_FOUND()`), a `TrpcError.Tagged` class or `new TrpcError()`, are typed, so they don't warn; a thrown `TrpcError.Tagged` class nothing declares is untyped like any other thrown code. A thrown code that `.errors()` doesn't list always warns in development, since it becomes an `INTERNAL_SERVER_ERROR`.
 
 Turn the warning off for every procedure of a root:
 

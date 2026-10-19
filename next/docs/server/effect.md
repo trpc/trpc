@@ -37,7 +37,7 @@ createFetchHandler({
 
 ## Errors clients may see
 
-A failure that isn't a `TrpcError` is a type error until it is mapped (`Effect.catchTag`), so internals like a database error's query never reach clients. Mark the errors clients may see by making them `TrpcError.Tagged` classes; yielding or throwing one sends it typed, with its `data` validated first:
+A failure that isn't a `TrpcError` is a type error until it is mapped (`Effect.catchTag`), so internals like a database error's query never reach clients. Mark the errors clients may see by making them `TrpcError.Tagged` classes; yielding one sends it typed, with its `data` validated first. A thrown one (`Effect.die`, or a `throw` in a helper) has no type, so it's typed only once the procedure lists it, `.errors({ POST_NOT_FOUND: PostNotFound })`:
 
 ```ts twoslash
 // ---cut-start---

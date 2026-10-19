@@ -23,7 +23,7 @@ import {
   type CodeError,
 } from '../../internal/error.ts';
 import { returnUnawaited } from '../../internal/effects.ts';
-import { errorConstructors, isDeclaredError } from './declared.ts';
+import { errorConstructors } from './declared.ts';
 import { CurrentFrameSink } from './frame-sink.ts';
 import type {
   MiddlewareOpts,
@@ -91,9 +91,9 @@ const undeclared = (err: AnyTrpcError): AnyTrpcError => {
  * The one error a failed call surfaces. Failures in the error channel are
  * typed (`defined`) errors. Defects are thrown values: a thrown `TrpcError`
  * with a built-in code keeps it but is `defined: false` and loses its
- * `data` (unless it came from a declared error's constructor), a custom
- * code is kept only from a procedure without `.errors()`, anything else is
- * unexpected.
+ * `data`, a custom code is kept only from a procedure without `.errors()`,
+ * anything else is unexpected. A call's own failures were settled first:
+ * a thrown error with a declared code is a failure by then.
  * @since 0.1.0
  * @stability stable
  */
@@ -107,9 +107,7 @@ export function normalizeCause(cause: Cause.Cause<unknown>): AnyTrpcError {
   for (const reason of cause.reasons) {
     if (Cause.isDieReason(reason)) {
       if (!isTrpcError(reason.defect)) return unexpectedError(reason.defect);
-      return isDeclaredError(reason.defect)
-        ? withDefined(reason.defect, true)
-        : undeclared(reason.defect);
+      return undeclared(reason.defect);
     }
   }
   return new TrpcError.ClientClosedRequest({
@@ -276,20 +274,17 @@ const declaresErrors = (def: ProcedureInternals): boolean =>
 type Thrown = 'typed' | 'builtin' | 'kept' | 'masked';
 
 /**
- * What a thrown `TrpcError` is, by what the procedure declares. One from a
- * declared error's constructor or with a declared code is typed, and so is
- * a `TrpcError.Tagged` one when nothing is declared. A built-in code stays
- * built-in. Any other code is sent as it is, untyped, from a procedure
- * without `.errors()`; with them the list is exhaustive, so it is a crash.
+ * What a thrown `TrpcError` is, by what the procedure declares. One with a
+ * declared code is typed, with or without its constructor. A built-in code
+ * stays built-in. Any other code, a `TrpcError.Tagged` class's too, is sent
+ * as it is, untyped, from a procedure without `.errors()`; with them the
+ * list is exhaustive, so it is a crash. A throw has no type, so only a
+ * declaration makes one typed: clients' types list nothing else.
  */
 const classifyThrown = (def: ProcedureInternals, err: AnyTrpcError): Thrown => {
-  if (isDeclaredError(err) || Object.hasOwn(def.errors, err.code)) {
-    return 'typed';
-  }
-  const declares = declaresErrors(def);
-  if (!declares && taggedSpec(err)) return 'typed';
+  if (Object.hasOwn(def.errors, err.code)) return 'typed';
   if (isBuiltinCode(err.code)) return 'builtin';
-  return declares ? 'masked' : 'kept';
+  return declaresErrors(def) ? 'masked' : 'kept';
 };
 
 const warned = new Set<string>();
@@ -338,7 +333,7 @@ const settle = (
       );
     }
     if (kind === 'kept') keepUntyped(err);
-    const rethrow = Effect.failCause(cause as Cause.Cause<AnyTrpcError>);
+    const rethrow = Effect.die(undeclared(err));
     if (def.warnThrown === false) return rethrow;
     const lost =
       kind === 'builtin' && err.data !== undefined
@@ -348,7 +343,7 @@ const settle = (
       warnOnce(
         path,
         err.code,
-        `"${path}" threw ${err.code}, so clients get it untyped (defined: false)${lost}. Return it, or yield* it in an Effect, to make it one of the procedure's typed errors: v11's \`throw new TRPCError()\` is \`return error()\` now. Turn this warning off with initTrpc({ warnThrownErrors: false }).`,
+        `"${path}" threw ${err.code}, so clients get it untyped (defined: false)${lost}. Return it (yield* it in an Effect), or declare its code with .errors(), to make it one of the procedure's typed errors: v11's \`throw new TRPCError()\` is \`return error()\` now. Turn this warning off with initTrpc({ warnThrownErrors: false }).`,
       ),
       rethrow,
     );
@@ -415,18 +410,20 @@ export function callProcedure(
     response,
   };
 
-  /** Marks the kept errors in `cause`, so middleware sees them as clients will. */
-  const markKept = (cause: Cause.Cause<unknown>) => {
-    for (const reason of cause.reasons) {
-      if (
-        Cause.isDieReason(reason) &&
-        isTrpcError(reason.defect) &&
-        classifyThrown(def, reason.defect) === 'kept'
-      ) {
-        keepUntyped(reason.defect);
-      }
+  /**
+   * A failed `next()`'s error as clients will get it, before `settle`
+   * validates declared `data`.
+   */
+  const seenByMiddleware = (cause: Cause.Cause<unknown>): AnyTrpcError => {
+    const thrown = cause.reasons.some(Cause.isFailReason)
+      ? undefined
+      : cause.reasons.find(Cause.isDieReason)?.defect;
+    if (isTrpcError(thrown)) {
+      const kind = classifyThrown(def, thrown);
+      if (kind === 'typed') return withDefined(thrown, true);
+      if (kind === 'kept') keepUntyped(thrown);
     }
-    return cause;
+    return normalizeCause(cause);
   };
 
   const toResult = (exit: Exit.Exit<unknown, AnyTrpcError>) =>
@@ -436,7 +433,7 @@ export function callProcedure(
         : { ok: true, data: exit.value }
       : {
           ok: false,
-          error: normalizeCause(markKept(exit.cause)),
+          error: seenByMiddleware(exit.cause),
           [MIDDLEWARE_CAUSE]: exit.cause,
         };
 

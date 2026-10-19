@@ -6,7 +6,12 @@ import {
   safe,
   TrpcError,
 } from '@trpc12/trpc/client';
-import { error, initTrpc, type ErrorMapInput } from '@trpc12/trpc/server';
+import {
+  createRouterClient,
+  error,
+  initTrpc,
+  type ErrorMapInput,
+} from '@trpc12/trpc/server';
 import { expect, test, vi } from 'vite-plus/test';
 import { z } from 'zod';
 import { createTestServer } from '../fixtures/server.ts';
@@ -214,6 +219,42 @@ test("a query's streamed output follows the same rules", async () => {
   expect((builtin.err as TrpcError).data).toBeUndefined();
   const failed = await failure(await ctx.client.streamedFailure.query());
   expect(failed.err).toMatchObject({ code: 'CONFLICT', defined: true });
+});
+
+test("middleware sees a thrown error as clients will, by the procedure's declarations", async () => {
+  const seen: unknown[] = [];
+  const watched = t.procedure.use(async (opts) => {
+    const result = await opts.next();
+    if (!result.ok) seen.push(result.error);
+    return result;
+  });
+  let made: TrpcError | undefined;
+  const caller = createRouterClient(
+    {
+      declared: watched.errors(OutOfStock).query((opts): string => {
+        made = opts.errors.OUT_OF_STOCK({ data: { sku: 'a1' } });
+        throw made;
+      }),
+      undeclared: watched.query((): string => {
+        throw new TrpcError({ code: 'OUT_OF_STOCK', data: { sku: 'a1' } });
+      }),
+      otherConstructor: watched.query((): string => {
+        throw made;
+      }),
+    },
+    { ctx: {} },
+  );
+  const [, declared] = await safe(caller.declared.query());
+  expect(declared).toMatchObject({ code: 'OUT_OF_STOCK', defined: true });
+  const [, undeclared] = await safe(caller.undeclared.query());
+  expect(undeclared).toMatchObject({ code: 'OUT_OF_STOCK', defined: false });
+  const [, other] = await safe(caller.otherConstructor.query());
+  expect(other).toMatchObject({ code: 'OUT_OF_STOCK', defined: false });
+  expect(seen).toMatchObject([
+    { code: 'OUT_OF_STOCK', defined: true },
+    { code: 'OUT_OF_STOCK', defined: false },
+    { code: 'OUT_OF_STOCK', defined: false },
+  ]);
 });
 
 test('declared errors are exhaustive in the types too', () => {
