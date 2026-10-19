@@ -479,11 +479,8 @@ export function makeTransport(
     if (!ok(reply)) return readError(reply);
     const blob = reply.web.headers.get(HEADER.blob);
     if (blob !== null) {
-      return Effect.tryPromise({
-        // The web body: a browser can keep a large `Blob` on disk.
-        try: () => readBlob(reply.web, blob),
-        catch: toHttpError,
-      });
+      // The web body: a browser can keep a large `Blob` on disk.
+      return Effect.mapError(readBlob(reply.web, blob), toHttpError);
     }
     if (streamed(reply)) {
       const frames = readStream(reply) as Stream.Stream<Frame, AnyTrpcError>;
