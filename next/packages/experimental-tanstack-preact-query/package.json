@@ -45,6 +45,7 @@
   "peerDependencies": {
     "@tanstack/preact-query": "^5.104.0",
     "@trpc12/trpc": "workspace:*",
+    "effect": "^4.0.0",
     "preact": "^10"
   }
 }
