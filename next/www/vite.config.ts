@@ -9,6 +9,7 @@ import { blogContent, blogPosts } from './build/blog-content.ts';
 import { docPages, docsContent } from './build/content.ts';
 import { blogFeeds } from './build/feeds.ts';
 import { siteIcons } from './build/icons.ts';
+import { bundledServer } from './build/on-demand.ts';
 import { OgCard, ogImages } from './build/og-image.ts';
 import { absoluteUrl, postDate, trpcPageUrl, trpcPostUrl } from './src/seo.ts';
 import {
@@ -165,6 +166,7 @@ export default defineConfig({
       ],
     }),
     tailwindcss(),
+    bundledServer(),
     tanstackStart({
       pages: [
         { path: '/', sitemap: { changefreq: 'weekly', priority: 1 } },
@@ -208,6 +210,8 @@ export default defineConfig({
             // An index route (`/blog/`) is found with its slash, which the
             // host redirects away.
             (page.path === '/' || !page.path.endsWith('/')) &&
+            // A query (`?flags=`, `?version=v12`) is rendered on request
+            // (`build/on-demand.ts`), not once per combination here.
             !/[?#]/.test(page.path);
           // Crawling (which checks that every link resolves) and route
           // discovery add more than the pages listed above: anchors,

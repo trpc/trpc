@@ -89,17 +89,17 @@ export function useHydrated() {
 }
 
 /**
- * The experiments the URL turns on. The prerendered page was built without
- * a query string, so this is empty until the page has hydrated, and an
- * experiment's pages appear right after.
+ * The experiments the URL turns on, the same on the server and in the
+ * browser: a URL with `?flags=` is rendered on demand (`build/on-demand.ts`),
+ * so its HTML already lists their pages, and the prerendered pages are the
+ * URLs without it.
  */
 export function useFlagsOn() {
-  const hydrated = useHydrated();
   const param = useSearch({
     select: (search) => search.flags,
     strict: false,
   });
-  return hydrated ? flagsIn(param) : [];
+  return flagsIn(param);
 }
 
 /** Rewrites `?flags=` to turn on `next`, leaving the page where it is. */

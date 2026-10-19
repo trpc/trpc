@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { Effect, FileSystem, Path } from 'effect';
 
 import { site } from '../src/site.ts';
+import { onDemandFunction } from './on-demand.ts';
 import {
   land,
   redirectsFile,
@@ -57,6 +58,11 @@ const setup = Effect.fn('setup')(function* (
     yield* fs.makeDirectory(path.dirname(target), { recursive: true });
     yield* fs.writeFileString(target, contents);
   }
+  yield* fs.makeDirectory(path.join(root, 'dist/server'), { recursive: true });
+  yield* fs.writeFileString(
+    path.join(root, 'dist/server/server.js'),
+    'export default { fetch: () => new Response("") };\n',
+  );
   yield* fs.writeFileString(
     path.join(root, redirectsFile),
     JSON.stringify(redirects),
@@ -205,6 +211,27 @@ describe('writeVercelOutput', () => {
         headers: { 'X-Robots-Tag': 'noindex' },
         src: '^/.*$',
       });
+
+      // Flagged pages go to the function, after the markdown and before
+      // the files.
+      const onDemand = config.routes.findIndex(
+        (route: { dest?: string }) =>
+          route.dest?.startsWith(`/${onDemandFunction}?`) === true,
+      );
+      expect(onDemand).toBeGreaterThan(config.routes.indexOf(markdownRewrite));
+      expect(onDemand).toBeLessThan(
+        config.routes.findIndex(
+          (route: { handle?: string }) => route.handle === 'filesystem',
+        ),
+      );
+      expect(
+        yield* fs.exists(
+          path.join(
+            output,
+            `functions/${onDemandFunction}.func/server/server.js`,
+          ),
+        ),
+      ).toBe(true);
     }).pipe(Effect.scoped, Effect.provide(NodeServices.layer)),
   );
 

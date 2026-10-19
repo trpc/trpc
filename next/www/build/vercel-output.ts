@@ -13,6 +13,11 @@ import { Data, Effect, FileSystem, Path, Schema } from 'effect';
 import { indexable, indexedHost } from '../src/seo.ts';
 import { copiedVersions, site, v12 } from '../src/site.ts';
 import {
+  onDemandRoutes,
+  pageCacheControl,
+  writeOnDemandFunction,
+} from './on-demand.ts';
+import {
   oldRedirects,
   onTrpcIoRoutes,
   redirectRoutes,
@@ -122,10 +127,7 @@ export const routes = (
   },
   {
     continue: true,
-    headers: {
-      'Cache-Control':
-        'public, max-age=0, s-maxage=86400, stale-while-revalidate=604800',
-    },
+    headers: { 'Cache-Control': pageCacheControl },
     src: '^/(?!assets/).*$',
   },
   {
@@ -163,6 +165,7 @@ export const routes = (
     has: acceptsMarkdown,
     src: `${docPath}$`,
   },
+  ...onDemandRoutes(),
   { handle: 'filesystem' },
   { handle: 'error' },
   { dest: '/404.md', has: acceptsMarkdown, src: '^/.*$', status: 404 },
@@ -258,6 +261,7 @@ export const writeVercelOutput = Effect.fn('writeVercelOutput')(function* (
     path.join(output, 'config.json'),
     `${JSON.stringify(config, null, 2)}\n`,
   );
+  yield* writeOnDemandFunction(root, output);
 });
 
 if (import.meta.main) {

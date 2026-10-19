@@ -5,6 +5,7 @@ import {
   Outlet,
   retainSearchParams,
   Scripts,
+  useSearch,
 } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
 
@@ -18,7 +19,7 @@ import {
 } from '~/components/unpublished.tsx';
 import { useRememberHomeVersion } from '~/content/docs.ts';
 import { type FlagSearch, validateFlagSearch } from '~/flags.ts';
-import { homeVersionScript } from '~/home-version.ts';
+import { homeVersionOf, homeVersionScript } from '~/home-version.ts';
 import { indexable } from '~/seo.ts';
 import { blog, site } from '~/site.ts';
 import appCss from '~/styles.css?url';
@@ -84,8 +85,14 @@ function RootComponent() {
 }
 
 function RootDocument(props: { readonly children: ReactNode }) {
+  // `homeVersionScript` sets it again before the first paint, for the hosts
+  // and remembered versions that open `/` on v12 without `?version=`.
+  const homeVersion = useSearch({
+    select: (search) => homeVersionOf({ version: search.version }),
+    strict: false,
+  });
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html data-home-version={homeVersion} lang="en" suppressHydrationWarning>
       <head>
         <HeadContent />
       </head>
