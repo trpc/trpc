@@ -338,15 +338,17 @@ test('does not abort request after a response that finished normally', async () 
     res.end('ok');
   });
   server.listen(0);
-  const address = server.address();
-  assert(address && typeof address === 'object');
+  try {
+    const address = server.address();
+    assert(address && typeof address === 'object');
 
-  const response = await fetch(`http://localhost:${address.port}`);
-  expect(await response.text()).toBe('ok');
-  await vi.waitFor(() => expect(abortedOnClose).toHaveLength(1));
+    const response = await fetch(`http://localhost:${address.port}`);
+    expect(await response.text()).toBe('ok');
+    await vi.waitFor(() => expect(abortedOnClose).toHaveLength(1));
 
-  expect(abortedOnClose).toEqual([false]);
-  expect(requests.map((request) => request.signal.aborted)).toEqual([false]);
-
-  await new Promise((resolve) => server.close(resolve));
+    expect(abortedOnClose).toEqual([false]);
+    expect(requests.map((request) => request.signal.aborted)).toEqual([false]);
+  } finally {
+    await new Promise((resolve) => server.close(resolve));
+  }
 });
