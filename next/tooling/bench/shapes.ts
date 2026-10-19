@@ -47,6 +47,16 @@ interface Shape {
   readonly links?: { readonly imports: string; readonly links: string };
   /** The call options each call passes. */
   readonly callOptions?: string;
+  /** Files of its own, which its router files import from (`./effect-shape.ts`). */
+  readonly own?: {
+    readonly module: string;
+    /** The router files' import of `module`. */
+    readonly imports: string;
+    /** The handler's options after `router` and `createContext`. */
+    readonly handler?: string;
+    /** `client.ts`, instead of the Promise client. */
+    readonly client?: string;
+  };
 }
 
 /** A chain like an app's: every built-in kind of link, and a custom one. */
@@ -85,6 +95,37 @@ const handlers = [
   'unexpected: (e) => e.message',
 ].join(', ');
 
+const effectBody = (i: number) => `Effect.gen(function* () {
+    if (opts.input.a_${i} === '') return yield* ${returned};
+    return { v_${i}: opts.input.a_${i} };
+  })`;
+
+/** Five services from the handler's layer, and a `.provide()`d one. */
+const effectServices = `import { Context, Effect, Layer } from 'effect';
+import { t } from './base';
+
+const service = <Self>() =>
+  Context.Service<Self, { get: (s: string) => Effect.Effect<string> }>();
+export class S0 extends service<S0>()('S0') {}
+export class S1 extends service<S1>()('S1') {}
+export class S2 extends service<S2>()('S2') {}
+export class S3 extends service<S3>()('S3') {}
+export class S4 extends service<S4>()('S4') {}
+export class User extends Context.Service<User, { id: string }>()('User') {}
+
+export const withUser = t.procedure.provide(User, (opts) =>
+  Effect.succeed({ id: opts.ctx.user?.id ?? 'anon' }),
+);
+const live = { get: (s: string) => Effect.succeed(s) };
+export const layer = Layer.mergeAll(
+  Layer.succeed(S0, live),
+  Layer.succeed(S1, live),
+  Layer.succeed(S2, live),
+  Layer.succeed(S3, live),
+  Layer.succeed(S4, live),
+);
+`;
+
 /** The shapes, by name; each procedure returns `{ v_i }` or a `NOT_FOUND`. */
 const shapeList = {
   plain: {
@@ -109,10 +150,33 @@ const shapeList = {
   },
   effect: {
     impl: (i, kind) =>
-      `t.procedure${input(i)}.${kind}((opts) => Effect.gen(function* () {
+      `t.procedure${input(i)}.${kind}((opts) => ${effectBody(i)})`,
+  },
+  'effect services': {
+    // Every third procedure provides a service; each uses one of the layer's.
+    impl: (i, kind) =>
+      `${i % 3 === 0 ? 'withUser' : 't.procedure'}${input(i)}.${kind}((opts) => Effect.gen(function* () {
     if (opts.input.a_${i} === '') return yield* ${returned};
-    return { v_${i}: opts.input.a_${i} };
+    const service = yield* S${i % 5};
+    return { v_${i}: yield* service.get(opts.input.a_${i}) };
   }))`,
+    own: {
+      module: effectServices,
+      imports: `import { S0, S1, S2, S3, S4, withUser } from '../effect-shape';`,
+      handler: 'layer',
+    },
+  },
+  'effect client': {
+    // `effect`, called through `createEffectClient` with a `catchTag`.
+    impl: (i, kind) =>
+      `t.procedure${input(i)}.${kind}((opts) => ${effectBody(i)})`,
+    consume: (i, call) =>
+      `export const r${i}: Effect.Effect<{ v_${i}: string } | null, unknown> = ${call}.pipe(Effect.catchTag('NOT_FOUND', () => Effect.succeed(null)));`,
+    own: {
+      module: '',
+      imports: '',
+      client: `import { httpLink, routerType } from '@trpc12/trpc/client';\nimport { createEffectClient } from '@trpc12/trpc/effect';\nimport type { router } from './router';\n\nexport const client = createEffectClient({\n  router: routerType<typeof router>(),\n  links: [httpLink({ url: 'http://localhost:3000/trpc' })],\n});\n`,
+    },
   },
   contract: {
     contract: (i, kind) => `c${input(i)}${output(i)}${errors(i)}.${kind}()`,
@@ -173,6 +237,8 @@ const fixture = (
     );
   const kind = (i: number) => (i % 2 === 0 ? 'query' : 'mutation');
   const contract = shape?.contract;
+  const own = shape?.own;
+  if (own?.module) files.push(['effect-shape.ts', own.module]);
 
   for (const f of ids) {
     if (contract) {
@@ -191,7 +257,7 @@ const fixture = (
         ? `import { impl } from './impl';\n\nexport const f${f} = {\n${inFile(f)
             .map((i) => `  p${i}: impl.f${f}.p${i}${shape!.impl(i, kind(i))},`)
             .join('\n')}\n};\n`
-        : `import { Effect } from 'effect';\nimport { authed, error, t, type S } from '../base';\n\nexport const f${f} = {\n${inFile(
+        : `import { Effect } from 'effect';\nimport { authed, error, t, type S } from '../base';\n${own?.imports ?? ''}\n\nexport const f${f} = {\n${inFile(
             f,
           )
             .map((i) => `  p${i}: ${shape!.impl(i, kind(i))},`)
@@ -202,7 +268,7 @@ const fixture = (
       `client.f${f}.p${i}.${kind(i) === 'query' ? 'query' : 'mutate'}({ a_${i}: 'x' }${callOptions})`;
     files.push([
       `consume/f${f}.ts`,
-      `${shape?.consume ? "import { matchError, safe } from '@trpc12/trpc/client';\n" : ''}import { client } from '../client';\n\n${inFile(
+      `${own?.client ? "import { Effect } from 'effect';\n" : shape?.consume ? "import { matchError, safe } from '@trpc12/trpc/client';\n" : ''}import { client } from '../client';\n\n${inFile(
         f,
       )
         .map((i) =>
@@ -237,7 +303,7 @@ const fixture = (
   }
   files.push([
     'server.ts',
-    `import { createFetchHandler } from '@trpc12/trpc/server';\nimport { router } from './router';\n\nexport const handler = createFetchHandler({\n  router,\n  createContext: () => ({ user: null }),\n});\n`,
+    `import { createFetchHandler } from '@trpc12/trpc/server';\n${own?.handler ? `import { ${own.handler} } from './effect-shape';\n` : ''}import { router } from './router';\n\nexport const handler = createFetchHandler({\n  router,\n  createContext: () => ({ user: null }),${own?.handler ? `\n  ${own.handler},` : ''}\n});\n`,
   ]);
   const links = shape?.links ?? {
     imports: '',
@@ -245,11 +311,18 @@ const fixture = (
   };
   files.push([
     'client.ts',
-    `import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';\n${links.imports}import type { router } from './router';\n\nexport const client = createTrpcClient({\n  router: routerType<typeof router>(),\n  links: ${links.links},\n});\n`,
+    own?.client ??
+      `import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';\n${links.imports}import type { router } from './router';\n\nexport const client = createTrpcClient({\n  router: routerType<typeof router>(),\n  links: ${links.links},\n});\n`,
   ]);
   files.push([
     'tsconfig.server.json',
-    fixtureTsconfig(['base.ts', 'contract', 'router', 'server.ts']),
+    fixtureTsconfig([
+      'base.ts',
+      ...(own?.module ? ['effect-shape.ts'] : []),
+      'contract',
+      'router',
+      'server.ts',
+    ]),
   ]);
   files.push(['tsconfig.json', fixtureTsconfig(['.'])]);
   return files;
@@ -286,7 +359,7 @@ export const shapes = Command.make(
       ] as const;
       const measure = (name: ShapeName | 'empty', procedures: number) =>
         Effect.gen(function* () {
-          const dir = `${generated}/shapes-${name.replace('+', '-')}`;
+          const dir = `${generated}/shapes-${name.replace(/[+ ]/g, '-')}`;
           yield* writeFiles(dir, fixture(name, procedures));
           const out = [];
           for (const [, project] of halves) {

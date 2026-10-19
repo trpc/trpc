@@ -14,6 +14,8 @@
 | `errors+output` | both                                                                                                                                |
 | `middleware`    | `authed` (three `.use()`, one returning `UNAUTHORIZED`) plus an inline `.use((opts) => opts.next({ ctx: { … } }))`, then `.input()` |
 | `effect`        | `plain` with an `Effect.gen` resolver that `yield*`s the error                                                                      |
+| `effect services` | `effect` that also `yield*`s one of five services, every third after a `.provide()`; the handler takes their `layer`               |
+| `effect client` | `effect`, called through `createEffectClient` with `Effect.catchTag('NOT_FOUND', …)`                                                 |
 | `contract`      | `c.input(S).output(S).errors({ … }).query()` in a contract, implemented through `t.implement(contract)` and `impl.router()`         |
 
 Instantiations, types and memory are the same on every run. Check time moves by about 10% between sessions on this VM (v11's fixed number read 1.15s to 1.30s on the same day), so compare times within one table. Median of 5 runs (3 for `errors` and `effect`, which this work doesn't change).
@@ -85,8 +87,11 @@ Per-step costs, from one-step fixtures (`micro-*`, instantiations per procedure)
 
 - **Tried, no gain:** respelling `With` (`Omit`, homomorphic and `Pick` forms) and a spelled-out `OutputDef` (alias arguments are evaluated eagerly, so worse); an empty-`declared` fast path in `Overwrite` (−2%); changing `ResolverOpts` members; `.output()` checked through a `$Ret extends OutputConstraint` bound with the other checks still on the return (fewer types, 37% more instantiations; the bound with the checks folded in is the change above); `Pick<Terminals, type>` on a contract leaf replaced by a conditional (same); a single `[$Ret] extends [union] ? unknown : …` check (literal outputs lose their contextual type).
 
+- **Effect shapes (2026-10-19, `fix(effect)` work).** Services cost little: `effect services` is 538,103 instantiations against `effect`'s 535,197 on the server half (+2 per procedure), and excluding `Scope` from query and mutation services added 3,007 to each (about 2 per procedure). The Effect client's type costs what the Promise client's does: without the `catchTag`, the `effect client` project is 979,996 instantiations against `effect`'s 980,259. `Effect.catchTag` doubles the client half (1,866,024, 1.42s against 0.78s), about 590 instantiations a call for `ExtractTag`/`ExcludeTag` over the call's error union of some 27 members; `safe()` plus `matchError()` (`match`) costs more, 2,171,838.
+
 ## Open
 
 - The contract terminal costs more than the builder's (670 against 518 per procedure, before the bound); without an output, `UndeclaredCheck` and `StrictErrors` both compute `SplitReturn<$Ret>`.
 - The client half: the link codes and the closed union cost about 53 instantiations per call in `pnpm bench typecheck`.
 - An inline `.use()` after a base procedure costs 60% more than on `t.procedure` (211 against 131): `Overwrite` of the accumulated ctx.
+- `Effect.catchTag` on a client call costs about 590 instantiations, mostly distributing over the built-in codes in the error union.
