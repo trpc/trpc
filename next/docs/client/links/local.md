@@ -7,7 +7,7 @@ order: 8
 v11: client/links/localLink
 ---
 
-`localLink({ router })` runs calls against a router in the same process, with no HTTP in between. The client, its types and the links before it work as they do over the network, which suits tests, server code and apps that bundle the router with the client.
+`localLink({ router })` runs calls against a router in the same process, with no HTTP in between. The client, its types and the links before it work as they do over the network, which suits tests, server code and apps that bundle the router with the client. Its errors leave out the network's ([Errors from the links](../errors.md#errors-from-the-links)), so its TanStack Query helpers don't pass where helpers typed from an `httpLink` client are expected; for those, give `httpLink` a `fetch` that calls the handler in process, `fetch: (input, init) => handler.fetch(new Request(input, init))`.
 
 ```ts twoslash
 // ---cut-start---

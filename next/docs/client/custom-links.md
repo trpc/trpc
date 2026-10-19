@@ -29,7 +29,9 @@ Links receive the fields in `op.context`. `signal` and `lastEventId` are reserve
 
 ## Errors and unsupported types
 
-A link can also declare the errors it fails calls with, and the operation types it can't carry. Declared errors join every call's typed union (`defined: true`). An error a link didn't declare reaches callers as a built-in one: a custom code becomes `CLIENT_ERROR`, and a built-in code loses its `data`. Procedures of an unsupported type lose their method:
+A link can also declare the errors it fails calls with, and the operation types it can't carry. Declared errors join every call's typed union (`defined: true`). An error a link didn't declare reaches callers as a built-in one: a custom code becomes `CLIENT_ERROR`, and a built-in code loses its `data`. Procedures of an unsupported type lose their method.
+
+A link that sends requests or reads responses itself declares the [link codes](./errors.md#errors-from-the-links) it fails calls with in `builtinErrors` (`link<{ builtinErrors: 'NETWORK_ERROR' | 'BAD_RESPONSE' }>`), since a call's union has only the ones its links declare:
 
 ```ts
 class RateLimited extends TrpcError.Tagged('RATE_LIMITED', {

@@ -45,13 +45,28 @@ const [post, err] = await safeClient.post.byId.query({ id: '1' });
 
 | Built-in code               | When                                                                                                                                                   |
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `NETWORK_ERROR`             | The request got no response.                                                                                                                           |
+| `NETWORK_ERROR`             | The request got no response, or the connection dropped. Only from links that send requests.                                                            |
+| `BAD_RESPONSE`              | The response wasn't a tRPC one (a proxy's HTML page) or didn't decode. Only from links that read responses.                                            |
+| `STREAM_INTERRUPTED`        | A stream stopped without an end or an error. Only from links that read streams.                                                                        |
 | `CLIENT_CLOSED_REQUEST`     | The call's `signal` aborted it.                                                                                                                        |
-| `BAD_RESPONSE`              | The response wasn't a tRPC one (a proxy's HTML page) or didn't decode.                                                                                 |
-| `STREAM_INTERRUPTED`        | A stream stopped without an end or an error.                                                                                                           |
 | `CLIENT_ERROR`              | A link failed, or failed with a custom code it didn't declare.                                                                                         |
 | `INTERNAL_SERVER_ERROR`     | The server crashed, or threw a custom code it didn't declare. The message is masked in production.                                                     |
 | Any other code (`CONFLICT`) | The server threw it without declaring it, a proxy answered with its status (`401` is `UNAUTHORIZED`), or the server lacks the procedure (`NOT_FOUND`). |
+
+### Errors from the links
+
+The first three codes, the `LinkErrorCode` type, are made only by links, so a call's error has those its client's links declare and no others. With only `localLink`, which runs calls in-process, no call can fail with `NETWORK_ERROR`, and `switch (err.code)` can't have a `case 'NETWORK_ERROR'`. The other codes can reach any call.
+
+| Link                                                                             | Link codes it declares                                |
+| -------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| `httpLink`                                                                       | `NETWORK_ERROR`, `BAD_RESPONSE`, `STREAM_INTERRUPTED` |
+| `wsLink`, `experimental_messagePortLink`, `experimental_socketLink`              | `NETWORK_ERROR`, `BAD_RESPONSE`, `STREAM_INTERRUPTED` |
+| `experimental_openApiLink`                                                       | `NETWORK_ERROR`, `BAD_RESPONSE`                       |
+| `experimental_validationLink`                                                    | `BAD_RESPONSE` (a result that fails its schema)       |
+| `splitLink`, `switchLink`                                                        | What their chains declare                             |
+| `localLink`, `retryLink`, `dedupeLink`, `loggerLink`, `experimental_durableLink` | None                                                  |
+
+`createRouterClient` declares none, since it calls the router in-process. A client typed without its links, like `TrpcClient<AppRouter>`, has all three, so it accepts a client with any links. [Custom links](./custom-links.md#errors-and-unsupported-types) declare theirs with `builtinErrors`.
 
 Built-in errors fall into four categories (`ERROR_CATEGORY` maps each code to one), since a call site usually does the same for every code in one:
 
@@ -118,6 +133,24 @@ async function title(id: string) {
 ```
 
 `builtin` handles the categories you don't list, so `builtin: (e) => e.message` alone takes every built-in error.
+
+A link code the call can fail with can have its own handler, which takes it from its category: `NETWORK_ERROR: () => 'You are offline'` beside `unavailable`, which then gets the rest. When every code of a category has its own handler, the category's key is a type error, and so is a key for a link code the client's links don't declare:
+
+```ts twoslash
+// ---cut-start---
+import { client } from './client.ts';
+import { matchError, safe } from '@trpc12/trpc/client';
+// ---cut-end---
+const [, err] = await safe(client.post.byId.query({ id: '1' }));
+if (err) {
+  matchError(err, {
+    NOT_FOUND: (e) => `No post ${e.data.id}`,
+    BAD_REQUEST: (e) => e.data.issues[0]?.message ?? 'Invalid id',
+    NETWORK_ERROR: () => 'You are offline',
+    builtin: (e) => e.message,
+  });
+}
+```
 
 A handler missing for one of the procedure's codes, or left over for a code it no longer has, is a type error, so adding an error on the server shows every place that must handle it:
 
