@@ -100,7 +100,8 @@ export interface HttpLinkOptions<
  * to `onResponse`, the errors it makes (`NETWORK_ERROR` when `fetch`
  * fails or a connection drops, `BAD_RESPONSE` for a page that isn't tRPC's
  * or a body that doesn't decode, `STREAM_INTERRUPTED` for a stream that
- * stops early), batching when on, and no subscriptions when they're off.
+ * stops early), batching unless it's off (a `batch` that may be on, such
+ * as a `boolean`, counts as on), and no subscriptions when they're off.
  * @since 0.1.0
  * @stability stable
  */
@@ -108,8 +109,10 @@ export type HttpLinkDecl<TOpts> = {
   form: FormOfOptions<TOpts>;
   provides: 'response';
   builtinErrors: 'NETWORK_ERROR' | 'BAD_RESPONSE' | 'STREAM_INTERRUPTED';
-} & (TOpts extends { batch: true | { maxItems?: number } }
-  ? { batches: true }
+} & ('batch' extends keyof TOpts
+  ? [Exclude<TOpts[keyof TOpts & 'batch'], undefined>] extends [false]
+    ? {}
+    : { batches: true }
   : {}) &
   (TOpts extends { subscriptions: false }
     ? { unsupported: 'subscription' }

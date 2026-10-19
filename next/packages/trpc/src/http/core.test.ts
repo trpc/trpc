@@ -221,6 +221,16 @@ test('a procedure can return its own response on unbatched HTTP calls (04 Q4.3)'
   expect(await alone.text()).toBe('a,b\n1,2\n');
   expect(server.requests.length - before).toBe(2);
 
+  const batching = (on: boolean) =>
+    createTrpcClient({
+      router: routerType<Router>(),
+      links: [httpLink({ url: server.url, batch: on })],
+    });
+  // @ts-expect-error -- a `batch` that may be on counts as on
+  await expect(batching(true).csv.query()).rejects.toMatchObject({
+    code: 'BAD_REQUEST',
+  });
+
   const caller = createRouterClient(router, {
     ctx: { cookie: null, web: false },
   });
