@@ -286,13 +286,15 @@ test('a waiter whose socket the object drops dies; a closed socket closes quietl
 test('an acquire interrupted before the object answers closes the socket it gets, so the lock is free', async () => {
   vi.stubGlobal('WebSocketPair', WebSocketPair);
   const durable = namespace();
-  const answer = Promise.withResolvers<void>();
+  let answer!: () => void;
+  const answered = new Promise<void>((resolve) => {
+    answer = resolve;
+  });
   const slow: DurableLockNamespace = {
     getByName(name) {
       const stub = durable.ns.getByName(name);
       return {
-        fetch: (input, init) =>
-          answer.promise.then(() => stub.fetch(input, init)),
+        fetch: (input, init) => answered.then(() => stub.fetch(input, init)),
       };
     },
   };
@@ -305,7 +307,7 @@ test('an acquire interrupted before the object answers closes the socket it gets
     // The upgrade's round trip isn't interruptible: the interrupt waits for it.
     const interrupting = yield* Effect.forkChild(Fiber.interrupt(first));
     yield* Effect.sleep('1 millis');
-    answer.resolve();
+    answer();
     yield* Fiber.join(interrupting);
     yield* Effect.sleep('5 millis');
     return yield* Effect.scoped(locker.acquire('k', { timeout: '50 millis' }));
