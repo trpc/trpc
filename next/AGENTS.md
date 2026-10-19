@@ -26,7 +26,7 @@ Agent skills live in the repo-root `.agents/skills/<name>/SKILL.md` (for example
 
 ## Running
 
-`next/` is its own pnpm workspace. Node is pinned in `.nvmrc` (same version as `../v11/.nvmrc`). From `next/`:
+`next/` is its own pnpm workspace. Node is pinned in `.nvmrc` (same version as `../v11/.nvmrc` and the repo root's `../.nvmrc`; bump all three together). From `next/`:
 
 ```bash
 nvm use
