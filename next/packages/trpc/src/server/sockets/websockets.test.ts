@@ -56,6 +56,20 @@ const router = {
     await sleep(50);
     return opts.signal.aborted ? 'aborted' : 'done';
   }),
+  /** Answers once its call is aborted. */
+  held: t.procedure.query(
+    (opts) =>
+      new Promise<string>((resolve) =>
+        opts.signal.addEventListener('abort', () => resolve('aborted')),
+      ),
+  ),
+  /** Sends `0`, then nothing until its call is aborted. */
+  heldTicks: t.procedure.subscription(async function* (opts) {
+    yield 0;
+    await new Promise((resolve) =>
+      opts.signal.addEventListener('abort', resolve),
+    );
+  }),
   report: t.procedure.query(() => ({
     title: 'Report',
     total: (async () => {
@@ -223,8 +237,8 @@ test('aborting a call sends an abort and aborts the server signal', async () => 
 test('close() fails calls in flight, and the next call reconnects', async () => {
   await using ctx = await setup();
   const upgrades = countUpgrades(ctx.server);
-  const pending = ctx.client.slow.query();
-  const ticks = ctx.client.ticks.subscribe()[Symbol.asyncIterator]();
+  const pending = ctx.client.held.query();
+  const ticks = ctx.client.heldTicks.subscribe()[Symbol.asyncIterator]();
   expect(await ticks.next()).toEqual({ done: false, value: 0 });
   await ctx.link.close();
   await expect(pending).rejects.toMatchObject({
