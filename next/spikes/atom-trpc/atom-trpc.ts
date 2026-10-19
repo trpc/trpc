@@ -7,7 +7,7 @@
  */
 import { Duration, Layer, type Cause, type Effect, type Stream } from 'effect';
 import { type AsyncResult, Atom, Reactivity } from 'effect/reactivity';
-import type { AnyLink, RouterOf } from '@trpc12/trpc/client';
+import type { AtLeastOneLink, RouterOf } from '@trpc12/trpc/client';
 import { createEffectClient, type EffectClient } from '@trpc12/trpc/effect';
 import { createSerializer } from '@trpc12/trpc/serializer';
 
@@ -92,7 +92,7 @@ const at = (client: unknown, path: string): any =>
 
 export function make<TSource>(opts: {
   readonly router: TSource;
-  readonly links: ReadonlyArray<AnyLink>;
+  readonly links: AtLeastOneLink;
 }): AtomTrpc<RouterOf<TSource>> {
   const client = createEffectClient(opts) as EffectClient<RouterOf<TSource>>;
   const runtime = Atom.runtime(Layer.empty);

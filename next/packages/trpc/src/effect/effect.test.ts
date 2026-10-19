@@ -282,7 +282,7 @@ test("a call fails with the Promise client's errors, data in the wire form", () 
       error({ code: 'NOT_FOUND', data: { at: new Date(0) } }),
     ),
   };
-  const links = [httpLink({ url: 'http://localhost' })];
+  const links = [httpLink({ url: 'http://localhost' })] as const;
   const promise = createTrpcClient({
     router: routerType<typeof router>(),
     links,

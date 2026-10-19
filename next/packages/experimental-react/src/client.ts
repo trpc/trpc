@@ -1,10 +1,10 @@
 import {
   createTrpcClient,
+  type AtLeastOneLink,
   type LinksContext,
   type LinksTypes,
   type RouterOf,
   type TrpcClient,
-  type TrpcLink,
   type TrpcPromise,
   type TypedClientOptions,
 } from '@trpc12/trpc/client';
@@ -90,7 +90,7 @@ export type ReactClient<TClient> = ReactProcedures<TClient> & {
  */
 export type ReactClientOptions<
   TSource,
-  TLinks extends ReadonlyArray<TrpcLink<any, RouterOf<TSource>>>,
+  TLinks extends AtLeastOneLink<RouterOf<TSource>>,
 > = TypedClientOptions<TSource, TLinks> & {
   /**
    * A server's store keeps every entry for the client's life: create one
@@ -129,7 +129,7 @@ const at = (node: unknown, path: readonly string[]): any =>
  */
 export function createReactClient<
   TSource,
-  const TLinks extends ReadonlyArray<TrpcLink<any, RouterOf<TSource>>>,
+  const TLinks extends AtLeastOneLink<RouterOf<TSource>>,
 >(
   opts: ReactClientOptions<TSource, TLinks>,
 ): ReactClient<
@@ -142,7 +142,7 @@ export function createReactClient<
 >;
 export function createReactClient(opts: {
   router: unknown;
-  links: ReadonlyArray<TrpcLink<any, any>>;
+  links: AtLeastOneLink;
   isServer?: boolean | undefined;
 }): unknown {
   const client = createTrpcClient(opts);

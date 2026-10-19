@@ -7,7 +7,7 @@ import {
   routerType,
   safe,
   wsLink,
-  type AnyLink,
+  type AtLeastOneLink,
   type AnyTrpcError,
   type LinkErrorCode,
   type TrpcIterable,
@@ -187,7 +187,7 @@ test('a declared streamed output may fail only with what it declares, with or wi
     .query(() => Stream.fail(error({ code: 'GONE' })));
 });
 
-async function expectTypedFailures(links: ReadonlyArray<AnyLink>) {
+async function expectTypedFailures(links: AtLeastOneLink) {
   const client = createTrpcClient({ router: routerType<AppRouter>(), links });
 
   const [feed, feedErr] = await safe(client.feed.query());

@@ -7,7 +7,7 @@ import {
   isBuiltinCode,
   type AnyTrpcError,
 } from '../internal/error.ts';
-import type { ProcedureType } from '../internal/types.ts';
+import type { IsAny, ProcedureType } from '../internal/types.ts';
 import type { AnySerializer } from '../serializer/index.ts';
 import {
   chainSerializer,
@@ -16,9 +16,8 @@ import {
   firstValue,
   runLinks,
   type Operation,
-  type AnyLink,
+  type AtLeastOneLink,
   type BuiltinCallOptions,
-  type TrpcLink,
 } from './link.ts';
 import type {
   DuplicateSwitchCheck,
@@ -112,7 +111,7 @@ export interface UntypedCallOptions {
  */
 export interface TrpcClientOptions {
   /** The request chain. The last link sends the request. */
-  links: ReadonlyArray<AnyLink>;
+  links: AtLeastOneLink;
 }
 
 /**
@@ -122,7 +121,7 @@ export interface TrpcClientOptions {
  */
 export interface TypedClientOptions<
   TSource,
-  TLinks extends ReadonlyArray<TrpcLink<any, RouterOf<TSource>>>,
+  TLinks extends AtLeastOneLink<RouterOf<TSource>>,
 > {
   /** `routerType<AppRouter>()`, a contract, or the router itself. */
   router: TSource;
@@ -195,7 +194,10 @@ export function createUntypedClient(
 /**
  * Creates a typed client for a router (16 CS-A). With `router:` (17 D-C)
  * the call options are typed from what the links declare, and
- * router-aware links like `splitLink` see typed paths.
+ * router-aware links like `splitLink` see typed paths. An `any` router (an
+ * `AppRouter` import that doesn't resolve) gives the
+ * {@link TrpcUntypedClient}, whose `request()` and `subscribe()` work on
+ * any client.
  *
  * @example
  * ```ts
@@ -213,22 +215,28 @@ export function createUntypedClient(
  */
 export function createTrpcClient<
   TSource,
-  const TLinks extends ReadonlyArray<TrpcLink<any, RouterOf<TSource>>>,
+  const TLinks extends AtLeastOneLink<RouterOf<TSource>>,
 >(
   opts: TypedClientOptions<TSource, TLinks> &
     DuplicateSwitchCheck<TLinks> &
     UnmetNeedCheck<TLinks>,
-): TrpcClient<
-  RouterOf<TSource>,
-  LinksContext<TLinks>,
-  undefined,
-  LinksTypes<TLinks>
->;
+): IsAny<RouterOf<TSource>> extends true
+  ? TrpcUntypedClient
+  : TrpcClient<
+      RouterOf<TSource>,
+      LinksContext<TLinks>,
+      undefined,
+      LinksTypes<TLinks>
+    >;
 export function createTrpcClient(opts: TrpcClientOptions): unknown {
   const untyped = createUntypedClient(opts);
   const client = createRecursiveProxy((path, args) => {
     const method = path.at(-1) as keyof typeof METHODS | undefined;
     const type = method ? METHODS[method] : undefined;
+    const [root] = path;
+    if (path.length === 1 && (root === 'request' || root === 'subscribe')) {
+      return untyped[root](args[0] as never);
+    }
     if (!type) {
       throw new TypeError(
         `Call .query(), .mutate() or .subscribe() on a procedure, not ${path.join('.')}()`,

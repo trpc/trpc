@@ -201,6 +201,16 @@ export interface TrpcLink<TDecl extends LinkDecl = {}, TRouter = any> {
  */
 export type AnyLink = TrpcLink<any, any>;
 
+/**
+ * A client's `links`: at least one, since the last one sends the request.
+ * A spread before or after a link counts (`[...links, httpLink({ url })]`).
+ * @since 0.1.0
+ * @stability stable
+ */
+export type AtLeastOneLink<TRouter = any> =
+  | readonly [TrpcLink<any, TRouter>, ...TrpcLink<any, TRouter>[]]
+  | readonly [...TrpcLink<any, TRouter>[], TrpcLink<any, TRouter>];
+
 /** The `context` a link's declaration adds. @internal */
 export type DeclContext<TDecl> = TDecl extends { context: infer C }
   ? C extends object

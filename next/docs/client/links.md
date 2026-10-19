@@ -33,6 +33,30 @@ const client = createTrpcClient({
 
 An operation goes through the links in order and its results come back the other way. Here the logger sees each call once, and identical queries are shared before the retries, so a retried query is still one request for every caller.
 
+`links` takes at least one link, since the last one sends the request. An empty array is a type error, and so is an array type that may be empty (`AnyLink[]`). A spread before or after a link counts. A chain built elsewhere keeps its links' types written `as const`, and a function that takes one constrains it with `AtLeastOneLink`:
+
+```ts twoslash
+// @errors: 2345
+// ---cut-start---
+import type { AppRouter } from './server.ts';
+// ---cut-end---
+import {
+  createTrpcClient,
+  dedupeLink,
+  httpLink,
+  routerType,
+  type AtLeastOneLink,
+} from '@trpc12/trpc/client';
+
+const shared = [dedupeLink()];
+const chain = [...shared, httpLink({ url: '/trpc' })] as const;
+createTrpcClient({ router: routerType<AppRouter>(), links: chain });
+
+const clientWith = <const L extends AtLeastOneLink>(links: L) =>
+  createTrpcClient({ router: routerType<AppRouter>(), links });
+clientWith([]);
+```
+
 ## Terminating links
 
 | Link                            | Carries calls                                                          |

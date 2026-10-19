@@ -6,6 +6,7 @@ import {
   link,
   runLinks,
   type AnyLink,
+  type AtLeastOneLink,
   type Operation,
   type TrpcLink,
   chainSerializer,
@@ -18,7 +19,7 @@ import { isByteStreamInput } from './events.ts';
 import { retrying, withResume, type Retries } from './resume.ts';
 
 /** @internal */
-export type Chain = AnyLink | ReadonlyArray<AnyLink>;
+export type Chain = AnyLink | AtLeastOneLink;
 
 /** @internal */
 export const asArray = (links: Chain): ReadonlyArray<AnyLink> =>

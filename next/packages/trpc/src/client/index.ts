@@ -32,6 +32,7 @@ export {
 export {
   link,
   type AnyLink,
+  type AtLeastOneLink,
   type EffectLinkOpts,
   type LinkDecl,
   type ReservedCallOptions,

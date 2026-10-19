@@ -30,11 +30,11 @@ import {
 import { AsyncResult, Atom, Reactivity } from 'effect/reactivity';
 import {
   createTrpcClient,
+  type AtLeastOneLink,
   getClientSerializer,
   type LinksContext,
   type LinksTypes,
   type RouterOf,
-  type TrpcLink,
   type TypedClientOptions,
 } from '@trpc12/trpc/client';
 import { createEffectClient, type EffectClient } from '@trpc12/trpc/effect';
@@ -148,7 +148,7 @@ export type AtomClient<TEffectClient> = AtomProcedures<TEffectClient> & {
  */
 export type AtomClientOptions<
   TSource,
-  TLinks extends ReadonlyArray<TrpcLink<any, RouterOf<TSource>>>,
+  TLinks extends AtLeastOneLink<RouterOf<TSource>>,
 > = TypedClientOptions<TSource, TLinks> & {
   /**
    * How query results are encoded for `Hydration.dehydrate`. Must match the
@@ -247,7 +247,7 @@ const at = (client: unknown, path: string): any =>
  */
 export function createAtomClient<
   TSource,
-  const TLinks extends ReadonlyArray<TrpcLink<any, RouterOf<TSource>>>,
+  const TLinks extends AtLeastOneLink<RouterOf<TSource>>,
 >(
   opts: AtomClientOptions<TSource, TLinks>,
 ): AtomClient<
@@ -255,7 +255,7 @@ export function createAtomClient<
 >;
 export function createAtomClient(opts: {
   router: unknown;
-  links: ReadonlyArray<TrpcLink<any, any>>;
+  links: AtLeastOneLink;
   serializer?: AnySerializer | undefined;
 }): unknown {
   const client = createEffectClient(opts);

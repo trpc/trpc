@@ -33,7 +33,7 @@ import {
   firstValue,
   link,
   runOperation,
-  type TrpcLink,
+  type AtLeastOneLink,
 } from '../client/link.ts';
 import type {
   CallArgs,
@@ -196,7 +196,7 @@ const METHODS = {
  */
 export function createEffectClient<
   TSource,
-  const TLinks extends ReadonlyArray<TrpcLink<any, RouterOf<TSource>>>,
+  const TLinks extends AtLeastOneLink<RouterOf<TSource>>,
 >(
   opts: TypedClientOptions<TSource, TLinks> &
     DuplicateSwitchCheck<TLinks> &

@@ -37,6 +37,22 @@ Queries are called with `.query()`, mutations with `.mutate()` and subscriptions
 
 `routerType<AppRouter>()` types the client from the router type alone.
 
+When `AppRouter` is `any`, because its import doesn't resolve or the server's types didn't build, the client is the untyped one (`TrpcUntypedClient` from `@trpc12/trpc/extend`), which has only `request()` and `subscribe()`. The first procedure call is then a type error, rather than every call being typed `any`:
+
+```ts twoslash
+// @errors: 2339
+// ---cut-start---
+import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+// ---cut-end---
+type AppRouter = any; // an import that didn't resolve
+
+const client = createTrpcClient({
+  router: routerType<AppRouter>(),
+  links: [httpLink({ url: 'http://localhost:3000/trpc' })],
+});
+await client.post.byId.query({ id: '1' });
+```
+
 ## Call options
 
 The second argument holds `signal` (and `lastEventId` for subscriptions) plus the fields links read. Links declare those fields, and a client made with `router:` types them:
