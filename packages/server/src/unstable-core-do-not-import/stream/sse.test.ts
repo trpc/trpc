@@ -111,9 +111,9 @@ test('e2e, server-sent events (SSE)', async () => {
 
         await Promise.all([
           // Restart the server
-          await server.restart(),
+          server.restart(),
           // Wait for the EventSource to detect the error and reconnect
-          await new Promise<void>((resolve) => {
+          new Promise<void>((resolve) => {
             es!.addEventListener(
               'error',
               () => {
@@ -327,6 +327,70 @@ test('SSE on serverless - emit and disconnect early', async () => {
       },
     ]
   `);
+});
+
+describe('untracked events after a tracked event', () => {
+  async function produce(
+    opts: Omit<Parameters<typeof sseStreamProducer>[0], 'data'>,
+    values: unknown[],
+  ) {
+    async function* data() {
+      yield* values;
+    }
+    const text = await new Response(
+      sseStreamProducer({ ...opts, data: data() }),
+    ).text();
+    return text.split('\n\n\n');
+  }
+
+  test('clear the id for the untracked event and restore it afterwards', async () => {
+    expect(
+      await produce({}, [tracked('1', 'a'), 'b', 'c', tracked('2', 'd'), 'e']),
+    ).toEqual([
+      'event: connected\ndata: {}',
+      'data: "a"\nid: 1',
+      'data: "b"\nid: ',
+      'event: restore-id\ndata: \nid: 1',
+      'data: "c"\nid: ',
+      'event: restore-id\ndata: \nid: 1',
+      'data: "d"\nid: 2',
+      'data: "e"\nid: ',
+      'event: restore-id\ndata: \nid: 2',
+      'event: return\ndata: ',
+      '',
+    ]);
+  });
+
+  test('restore the id the client resumed from', async () => {
+    expect(await produce({ lastEventId: '1' }, ['a'])).toEqual([
+      'event: connected\ndata: {}',
+      'data: "a"\nid: ',
+      'event: restore-id\ndata: \nid: 1',
+      'event: return\ndata: ',
+      '',
+    ]);
+  });
+
+  test('do not change events when nothing is tracked', async () => {
+    expect(await produce({}, ['a', 'b'])).toEqual([
+      'event: connected\ndata: {}',
+      'data: "a"',
+      'data: "b"',
+      'event: return\ndata: ',
+      '',
+    ]);
+  });
+
+  test('ignore a resumed id that would break the event stream', async () => {
+    expect(
+      await produce({ lastEventId: '1\ndata: "injected"' }, ['a']),
+    ).toEqual([
+      'event: connected\ndata: {}',
+      'data: "a"',
+      'event: return\ndata: ',
+      '',
+    ]);
+  });
 });
 
 test('sse()', () => {

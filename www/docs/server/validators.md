@@ -415,6 +415,31 @@ export const appRouter = t.router({
 export type AppRouter = typeof appRouter;
 ```
 
+### With [Sury](https://github.com/DZakh/sury)
+
+```ts twoslash
+import { initTRPC } from '@trpc/server';
+import * as S from 'sury';
+
+export const t = initTRPC.create();
+
+const publicProcedure = t.procedure;
+
+export const appRouter = t.router({
+  hello: publicProcedure
+    .input(S.schema({ name: S.string }))
+    .output(S.schema({ greeting: S.string }))
+    .query(({ input }) => {
+      //      ^?
+      return {
+        greeting: `hello ${input.name}`,
+      };
+    }),
+});
+
+export type AppRouter = typeof appRouter;
+```
+
 ### With [@robolex/sure](https://github.com/robolex-app/public_ts)
 
 You're able to define your own Error types and error throwing function if necessary.

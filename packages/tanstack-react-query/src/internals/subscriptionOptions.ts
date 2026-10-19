@@ -12,7 +12,7 @@ import type {
   TRPCQueryKey,
   TRPCQueryOptionsResult,
 } from './types';
-import { createTRPCOptionsResult, readQueryKey } from './utils';
+import { createTRPCOptionsResult } from './utils';
 
 interface BaseTRPCSubscriptionOptionsIn<TOutput, TError> {
   enabled?: boolean;
@@ -33,7 +33,9 @@ interface TRPCSubscriptionOptionsOut<
   TOutput,
   TError,
   TFeatureFlags extends FeatureFlags,
-> extends UnusedSkipTokenTRPCSubscriptionOptionsIn<TOutput, TError>,
+>
+  extends
+    UnusedSkipTokenTRPCSubscriptionOptionsIn<TOutput, TError>,
     TRPCQueryOptionsResult {
   enabled: boolean;
   queryKey: TRPCQueryKey<TFeatureFlags['keyPrefix']>;
@@ -70,10 +72,7 @@ export interface TRPCSubscriptionOptions<
   >;
 }
 export type TRPCSubscriptionStatus =
-  | 'idle'
-  | 'connecting'
-  | 'pending'
-  | 'error';
+  'idle' | 'connecting' | 'pending' | 'error';
 
 export interface TRPCSubscriptionBaseResult<TOutput, TError> {
   status: TRPCSubscriptionStatus;
@@ -85,29 +84,35 @@ export interface TRPCSubscriptionBaseResult<TOutput, TError> {
   reset: () => void;
 }
 
-export interface TRPCSubscriptionIdleResult<TOutput>
-  extends TRPCSubscriptionBaseResult<TOutput, null> {
+export interface TRPCSubscriptionIdleResult<
+  TOutput,
+> extends TRPCSubscriptionBaseResult<TOutput, null> {
   status: 'idle';
   data: undefined;
   error: null;
 }
 
-export interface TRPCSubscriptionConnectingResult<TOutput, TError>
-  extends TRPCSubscriptionBaseResult<TOutput, TError> {
+export interface TRPCSubscriptionConnectingResult<
+  TOutput,
+  TError,
+> extends TRPCSubscriptionBaseResult<TOutput, TError> {
   status: 'connecting';
   data: undefined | TOutput;
   error: TError | null;
 }
 
-export interface TRPCSubscriptionPendingResult<TOutput>
-  extends TRPCSubscriptionBaseResult<TOutput, undefined> {
+export interface TRPCSubscriptionPendingResult<
+  TOutput,
+> extends TRPCSubscriptionBaseResult<TOutput, undefined> {
   status: 'pending';
   data: TOutput | undefined;
   error: null;
 }
 
-export interface TRPCSubscriptionErrorResult<TOutput, TError>
-  extends TRPCSubscriptionBaseResult<TOutput, TError> {
+export interface TRPCSubscriptionErrorResult<
+  TOutput,
+  TError,
+> extends TRPCSubscriptionBaseResult<TOutput, TError> {
   status: 'error';
   data: TOutput | undefined;
   error: TError;
@@ -135,16 +140,24 @@ export const trpcSubscriptionOptions = <
   subscribe: typeof TRPCUntypedClient.prototype.subscription;
   path: string[];
   queryKey: TRPCQueryKey<TFeatureFlags['keyPrefix']>;
+  /**
+   * The raw input before queryKey serialization. Required to correctly detect
+   * `skipToken` because `getQueryKeyInternal` strips it from the queryKey args.
+   */
+  input: unknown;
   opts?: AnyTRPCSubscriptionOptionsIn;
 }): AnyTRPCSubscriptionOptionsOut<TFeatureFlags> => {
-  const { subscribe, path, queryKey, opts = {} } = args;
-  const input = readQueryKey(queryKey)?.args?.input;
+  const { subscribe, path, queryKey, input, opts = {} } = args;
   const enabled = 'enabled' in opts ? !!opts.enabled : input !== skipToken;
 
   const _subscribe: ReturnType<
     TRPCSubscriptionOptions<any, TFeatureFlags>
   >['subscribe'] = (innerOpts) => {
-    return subscribe(path.join('.'), input ?? undefined, innerOpts);
+    return subscribe(
+      path.join('.'),
+      input === skipToken ? undefined : input,
+      innerOpts,
+    );
   };
 
   return {
@@ -237,7 +250,6 @@ export function useSubscription<TOutput, TError>(
     currentSubscriptionRef.current = () => {
       subscription.unsubscribe();
     };
-    // eslint-disable-next-line react-hooks/react-compiler
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hashKey(opts.queryKey), opts.enabled]);
 

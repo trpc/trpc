@@ -9,8 +9,8 @@
     "@tsconfig/esm": "^1.0.3",
     "@tsconfig/node-lts": "^18.12.2",
     "@tsconfig/strictest": "^2.0.1",
-    "@types/node": "^22.13.5",
-    "tsdown": "0.12.7",
+    "@types/node": "^24.13.4",
+    "tsdown": "0.23.0",
     "typescript": "^5.9.2"
   },
   "dependencies": {
@@ -18,6 +18,6 @@
     "@trpc/next": "npm:@trpc/next",
     "@trpc/react-query": "npm:@trpc/react-query",
     "@trpc/server": "npm:@trpc/server",
-    "next": "^15.3.8"
+    "next": "^15.5.25"
   }
 }

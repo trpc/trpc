@@ -2,6 +2,7 @@ name: main
 on:
   pull_request:
     types: [synchronize, opened, reopened]
+  merge_group:
   push:
     branches: [main, next, canary]
 
@@ -11,8 +12,8 @@ concurrency:
 
 jobs:
   build:
-    # only run on PRs
-    if: github.event_name == 'pull_request'
+    # only run on PRs and in the merge queue
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
     timeout-minutes: 10
     env:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
@@ -21,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: ./.github/setup
@@ -29,8 +30,8 @@ jobs:
       - run: pnpm build
 
   typecheck:
-    # only run on PRs
-    if: github.event_name == 'pull_request'
+    # only run on PRs and in the merge queue
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
     timeout-minutes: 10
     env:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
@@ -39,7 +40,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: ./.github/setup
@@ -47,8 +48,8 @@ jobs:
       - run: pnpm typecheck-packages
 
   typecheck-www:
-    # only run on PRs
-    if: github.event_name == 'pull_request'
+    # only run on PRs and in the merge queue
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
     timeout-minutes: 10
     env:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
@@ -56,7 +57,7 @@ jobs:
     needs: [build]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: ./.github/setup
@@ -73,7 +74,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: ./.github/setup
@@ -92,15 +93,15 @@ jobs:
             exit 1
           fi
 
-      - uses: codecov/codecov-action@v6
+      - uses: codecov/codecov-action@v7
         with:
           fail_ci_if_error: true
           # only use token if not a fork PR
           token: ${{ github.event.pull_request.head.repo.fork == false && secrets.CODECOV_TOKEN || '' }}
 
   e2e:
-    # only run on PRs
-    if: github.event_name == 'pull_request'
+    # only run on PRs and in the merge queue
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
     name: 'E2E-tests'
     needs: [build]
     services:
@@ -123,7 +124,6 @@ jobs:
       matrix:
         dir: [
             .experimental/next-app-dir,
-            .test/diagnostics-big-router,
             .test/internal-types-export,
             .test/ssg,
             cloudflare-workers,
@@ -131,6 +131,7 @@ jobs:
             express-server,
             fastify-server,
             minimal-react,
+            minimal-per-procedure-errors,
             next-formdata,
             next-minimal-starter,
             next-prisma-starter,
@@ -144,7 +145,7 @@ jobs:
             nuxt,
           ]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: ./.github/setup
@@ -158,8 +159,8 @@ jobs:
       - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
 
   e2e-deno:
-    # only run on PRs
-    if: github.event_name == 'pull_request'
+    # only run on PRs and in the merge queue
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
     name: 'E2E-tests (Deno)'
     needs: [build]
     env:
@@ -175,14 +176,14 @@ jobs:
       matrix:
         dir: [deno-deploy]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: ./.github/setup
 
       - run: pnpm build
 
-      - uses: denoland/setup-deno@v1
+      - uses: denoland/setup-deno@v2.0.5
         with:
           deno-version: 2.x
 
@@ -193,8 +194,8 @@ jobs:
           pnpm dlx start-server-and-test "deno run --allow-net=:8000 --allow-env ./src/index.ts" http://127.0.0.1:8000 "deno run --allow-net --allow-env ./src/client.ts"
 
   e2e-bun:
-    # only run on PRs
-    if: github.event_name == 'pull_request'
+    # only run on PRs and in the merge queue
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
     name: 'E2E-tests (Bun)'
     needs: [build]
     env:
@@ -210,7 +211,7 @@ jobs:
         dir: [bun]
         os: [ubuntu-latest]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: ./.github/setup
@@ -219,7 +220,7 @@ jobs:
 
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: 1.3.9
+          bun-version: 1.4.3
 
       - run: bun --version
       - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
@@ -228,8 +229,8 @@ jobs:
       - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
 
   e2e-legacy-node:
-    # only run on PRs
-    if: github.event_name == 'pull_request'
+    # only run on PRs and in the merge queue
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
     needs: [build]
     services:
       postgres:
@@ -255,16 +256,16 @@ jobs:
             next-prisma-websockets-starter,
             next-prisma-todomvc,
           ]
-        node-start: ['18.x', '20.x']
+        node-start: ['20.x', '22.x']
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: ./.github/setup
 
       - run: pnpm build
 
-      - uses: actions/setup-node@v6
+      - uses: actions/setup-node@v7
         with:
           node-version: ${{ matrix.node-start }}
           cache: 'pnpm'
@@ -276,6 +277,7 @@ jobs:
   # https://pkg.pr.new
   release-tmp:
     name: Release using pkg.pr.new
+    if: github.event_name != 'merge_group'
     needs: [build]
     runs-on: ubuntu-latest
     env:
@@ -283,7 +285,7 @@ jobs:
       TURBO_TEAM: ${{ vars.TURBO_TEAM }}
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: ./.github/setup
@@ -296,7 +298,7 @@ jobs:
     needs: [build]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - uses: ./.github/setup

@@ -112,10 +112,7 @@ function transformTRPCResponseItem<
  **/
 export function transformTRPCResponse<
   TResponse extends
-    | TRPCResponse
-    | TRPCResponse[]
-    | TRPCResponseMessage
-    | TRPCResponseMessage[],
+    TRPCResponse | TRPCResponse[] | TRPCResponseMessage | TRPCResponseMessage[],
 >(config: RootConfig<AnyRootTypes>, itemOrItems: TResponse) {
   return Array.isArray(itemOrItems)
     ? itemOrItems.map((item) => transformTRPCResponseItem(config, item))

@@ -21,7 +21,7 @@ import {
   isObject,
   run,
 } from '../utils';
-import { getAcceptHeader, getRequestInfo } from './contentType';
+import { getAcceptHeader, getLastEventId, getRequestInfo } from './contentType';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
 import type {
   HTTPBaseHandlerOptions,
@@ -29,19 +29,30 @@ import type {
   TRPCRequestInfo,
 } from './types';
 
+/**
+ * `decodeURIComponent` throws a plain `URIError` on malformed escape sequences,
+ * which would otherwise surface as an `INTERNAL_SERVER_ERROR` even though the
+ * request itself is at fault
+ */
+function decodePath(path: string) {
+  try {
+    return decodeURIComponent(path);
+  } catch (cause) {
+    throw new TRPCError({
+      code: 'BAD_REQUEST',
+      message: `Invalid URL-encoding in path "${path}"`,
+      cause,
+    });
+  }
+}
+
 function errorToAsyncIterable(err: TRPCError): AsyncIterable<never> {
   return run(async function* () {
     throw err;
   });
 }
 type HTTPMethods =
-  | 'GET'
-  | 'POST'
-  | 'HEAD'
-  | 'OPTIONS'
-  | 'PUT'
-  | 'DELETE'
-  | 'PATCH';
+  'GET' | 'POST' | 'HEAD' | 'OPTIONS' | 'PUT' | 'DELETE' | 'PATCH';
 
 function combinedAbortController(signal: AbortSignal) {
   const controller = new AbortController();
@@ -50,6 +61,31 @@ function combinedAbortController(signal: AbortSignal) {
     signal: combinedSignal,
     controller,
   };
+}
+
+/**
+ * A client that leaves may only cancel the response body, without aborting
+ * the request's signal, and the procedures streaming into it wait on that.
+ */
+function abortOnCancel(
+  stream: ReadableStream<Uint8Array>,
+  controller: AbortController,
+): ReadableStream<Uint8Array> {
+  const reader = stream.getReader();
+  return new ReadableStream({
+    async pull(enqueuer) {
+      const chunk = await reader.read();
+      if (chunk.done) {
+        enqueuer.close();
+      } else {
+        enqueuer.enqueue(chunk.value);
+      }
+    },
+    cancel(reason) {
+      controller.abort();
+      return reader.cancel(reason);
+    },
+  });
 }
 
 const TYPE_ACCEPTED_METHOD_MAP: Record<ProcedureType, HTTPMethods[]> = {
@@ -67,8 +103,9 @@ const TYPE_ACCEPTED_METHOD_MAP_WITH_METHOD_OVERRIDE: Record<
   subscription: ['GET', 'POST'],
 };
 
-interface ResolveHTTPRequestOptions<TRouter extends AnyRouter>
-  extends HTTPBaseHandlerOptions<TRouter, Request> {
+interface ResolveHTTPRequestOptions<
+  TRouter extends AnyRouter,
+> extends HTTPBaseHandlerOptions<TRouter, Request> {
   createContext: ResolveHTTPRequestOptionsContextFn<TRouter>;
   req: Request;
   path: string;
@@ -243,7 +280,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         undefined,
         await getRequestInfo({
           req,
-          path: decodeURIComponent(opts.path),
+          path: decodePath(opts.path),
           router,
           searchParams: url.searchParams,
           headers: opts.req.headers,
@@ -328,11 +365,18 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     interface RPCResultOk {
       data: unknown;
       signal?: AbortSignal;
+      clearMaxDurationTimer?: () => void;
     }
     type RPCResult = ResultTuple<RPCResultOk>;
+    const bodyCancelled = new AbortController();
+    const callSignal = abortSignalsAnyPonyfill([
+      opts.req.signal,
+      bodyCancelled.signal,
+    ]);
     const rpcCalls = info.calls.map(async (call): Promise<RPCResult> => {
       const proc = call.procedure;
-      const combinedAbort = combinedAbortController(opts.req.signal);
+      const combinedAbort = combinedAbortController(callSignal);
+      let clearMaxDurationTimer: (() => void) | undefined;
       try {
         if (opts.error) {
           throw opts.error;
@@ -370,6 +414,13 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             }
             const timer = setTimeout(cleanup, config.sse.maxDurationMs);
             combinedAbort.signal.addEventListener('abort', cleanup);
+
+            // the request signal may never abort (e.g. after a completed
+            // response), so the timer is also cleared when the stream ends
+            clearMaxDurationTimer = () => {
+              clearTimeout(timer);
+              combinedAbort.signal.removeEventListener('abort', cleanup);
+            };
           }
         }
         const data: unknown = await proc({
@@ -388,9 +439,11 @@ export async function resolveResponse<TRouter extends AnyRouter>(
               proc._def.type === 'subscription'
                 ? combinedAbort.signal
                 : undefined,
+            clearMaxDurationTimer,
           },
         ];
       } catch (cause) {
+        clearMaxDurationTimer?.();
         const error = getTRPCErrorFromUnknown(cause);
         const input = call.result();
 
@@ -482,13 +535,17 @@ export async function resolveResponse<TRouter extends AnyRouter>(
               );
             }
             const dataAsIterable = isObservable(result.data)
-              ? observableToAsyncIterable(result.data, opts.req.signal)
+              ? observableToAsyncIterable(result.data, callSignal)
               : result.data;
             return dataAsIterable;
           });
 
           const stream = sseStreamProducer({
             ...config.sse,
+            lastEventId: getLastEventId({
+              headers: req.headers,
+              searchParams: url.searchParams,
+            }),
             data: iterable,
             serialize: (v) => config.transformer.output.serialize(v),
             formatError(errorOpts) {
@@ -522,14 +579,20 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             headers.set(key, value);
           }
 
-          const headResponse = initResponse({
-            ctx: ctxManager.valueOrUndefined(),
-            info,
-            responseMeta: opts.responseMeta,
-            errors: [],
-            headers,
-            untransformedJSON: null,
-          });
+          let headResponse: ReturnType<typeof initResponse>;
+          try {
+            headResponse = initResponse({
+              ctx: ctxManager.valueOrUndefined(),
+              info,
+              responseMeta: opts.responseMeta,
+              errors: [],
+              headers,
+              untransformedJSON: null,
+            });
+          } catch (cause) {
+            result?.clearMaxDurationTimer?.();
+            throw cause;
+          }
 
           const abortSignal = result?.signal;
           let responseBody: ReadableStream<Uint8Array> = stream;
@@ -543,19 +606,27 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             } else {
               abortSignal.addEventListener('abort', onAbort, { once: true });
             }
+            const onStreamEnd = () => {
+              abortSignal.removeEventListener('abort', onAbort);
+              result?.clearMaxDurationTimer?.();
+            };
 
             responseBody = new ReadableStream({
               async pull(controller) {
-                const chunk = await reader.read();
+                const chunk = await reader.read().catch((cause: unknown) => {
+                  onStreamEnd();
+                  throw cause;
+                });
                 if (chunk.done) {
-                  abortSignal.removeEventListener('abort', onAbort);
+                  onStreamEnd();
                   controller.close();
                 } else {
                   controller.enqueue(chunk.value);
                 }
               },
               cancel() {
-                abortSignal.removeEventListener('abort', onAbort);
+                onStreamEnd();
+                bodyCancelled.abort();
                 return reader.cancel();
               },
             });
@@ -572,7 +643,10 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     // batch response handlers
     if (info.accept === 'application/jsonl') {
       // httpBatchStreamLink
-      headers.set('content-type', 'application/json');
+      headers.set(
+        'content-type',
+        config.jsonl?.contentType ?? 'application/json',
+      );
       headers.set('transfer-encoding', 'chunked');
       const headResponse = initResponse({
         ctx: ctxManager.valueOrUndefined(),
@@ -621,7 +695,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
            * Our stream producer will only resolve top-level async values or async values that are directly nested in another async value
            */
           const iterable = isObservable(result.data)
-            ? observableToAsyncIterable(result.data, opts.req.signal)
+            ? observableToAsyncIterable(result.data, callSignal)
             : Promise.resolve(result.data);
           return {
             result: Promise.resolve({
@@ -664,7 +738,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         },
       });
 
-      return new Response(stream, {
+      return new Response(abortOnCancel(stream, bodyCancelled), {
         headers,
         status: headResponse.status,
       });
