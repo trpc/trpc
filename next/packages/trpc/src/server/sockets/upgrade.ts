@@ -36,25 +36,14 @@ export const UpgradeServer: Context.ServiceClass<
   ServeSocket
 > = Context.Service<UpgradeServer, ServeSocket>()('@trpc12/trpc/UpgradeServer');
 
-interface NodeDuplexLike {
-  readonly writableLength: number;
-  readonly destroyed: boolean;
-}
-
 /**
  * The TCP socket under a Node upgrade (`IncomingMessage.socket`). `ws`
  * writes to it directly, so what it hasn't sent yet is `ws`'s
- * `bufferedAmount`, which Effect's `Socket` keeps to itself.
+ * `bufferedAmount`, which Effect's `Socket` keeps to itself. Bun's
+ * request is a web `Request`, without one.
  */
-const nodeSocketOf = (
-  request: HttpServerRequest.HttpServerRequest,
-): NodeDuplexLike | undefined => {
-  const socket = (request.source as { socket?: Partial<NodeDuplexLike> })
-    ?.socket;
-  return typeof socket?.writableLength === 'number'
-    ? (socket as NodeDuplexLike)
-    : undefined;
-};
+const nodeSocketOf = (request: HttpServerRequest.HttpServerRequest) =>
+  (request.source as { socket?: { readonly writableLength: number } }).socket;
 
 /** Upgrades `request` and serves its socket until it closes. @internal */
 export const upgradeTo = (
@@ -64,11 +53,7 @@ export const upgradeTo = (
   Effect.flatMap(request.upgrade, (socket) => {
     const tcp = nodeSocketOf(request);
     return serve(
-      tcp
-        ? withBufferedAmount(socket, () =>
-            tcp.destroyed ? 0 : tcp.writableLength,
-          )
-        : socket,
+      tcp ? withBufferedAmount(socket, () => tcp.writableLength) : socket,
     );
   });
 
@@ -125,7 +110,7 @@ export const serveAsWebSocket = (
             return readyState;
           },
           get bufferedAmount() {
-            return queuedBytes + (readyState === OPEN ? (unsent?.() ?? 0) : 0);
+            return queuedBytes + unsent();
           },
           send(data) {
             if (readyState !== OPEN) return;
