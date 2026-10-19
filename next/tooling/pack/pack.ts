@@ -17,6 +17,7 @@ export interface PackageJson {
   readonly name: string;
   readonly dependencies?: Record<string, string>;
   readonly peerDependencies?: Record<string, string>;
+  readonly sideEffects?: boolean | ReadonlyArray<string>;
   readonly exports: Record<string, Entry>;
   readonly publishConfig?: {
     readonly access?: string;

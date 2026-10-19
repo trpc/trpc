@@ -1963,6 +1963,9 @@ importers:
       '@types/node':
         specifier: ^24.0.0
         version: 24.19.1
+      rolldown:
+        specifier: 1.2.13
+        version: 1.2.13
       typescript:
         specifier: ^7.0.2
         version: 7.0.2

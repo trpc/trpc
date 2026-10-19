@@ -8,6 +8,7 @@ import {
   keepEntryPointImports,
   type PackageJson,
 } from './pack.ts';
+import { unusedImportOutput } from './side-effects.ts';
 
 const run = <A, E>(effect: Effect.Effect<A, E, NodeServices.NodeServices>) =>
   Effect.runPromise(Effect.provide(effect, NodeServices.layer));
@@ -131,6 +132,64 @@ test.each(packages.map((opts) => [opts.name, opts.dir, opts.pkg] as const))(
       (name) => !declared.has(name) && !/^(?:node|cloudflare):/.test(name),
     );
     expect(undeclared).toEqual([]);
+  },
+);
+
+// The built modules that run code when they load, by package folder. The
+// rest keep nothing in a bundle that imports them unused, even one that
+// ignores `sideEffects`: mark a module-level call `/* @__PURE__ */`.
+const runsOnLoad = new Set([
+  // Nest's decorators record its dependency-injection metadata on the
+  // module's own classes, so `sideEffects: false` still drops it unused.
+  'experimental-nest/index.js',
+  // Attaches the built-in classes (`TrpcError.NotFound`) to `TrpcError` as
+  // own properties; dropping it unused is safe for the same reason.
+  'trpc/internal/error.js',
+  // The `trpc12-upgrade` CLI: not an entry point, and listed in the
+  // package's `sideEffects`.
+  'upgrade/bin.js',
+]);
+
+const listedSideEffects: Record<string, ReadonlyArray<string>> = {
+  upgrade: ['./src/bin.ts', './dist/bin.js'],
+};
+
+test.each(packages.map((opts) => [opts.name, opts.dir, opts.pkg] as const))(
+  '%s declares its side effects, and only its runsOnLoad modules have any',
+  async (name, dir, pkg) => {
+    expect(pkg.sideEffects).toEqual(listedSideEffects[name] ?? false);
+    const running = await run(
+      Effect.gen(function* () {
+        const fs = yield* FileSystem.FileSystem;
+        const path = yield* Path.Path;
+        const dist = path.join(dir, 'dist');
+        const files = (yield* fs.readDirectory(dist, { recursive: true }))
+          .filter((file) => file.endsWith('.js'))
+          .sort();
+        const outputs = yield* Effect.forEach(
+          files,
+          (file) => unusedImportOutput(path.join(dist, file), 'module'),
+          { concurrency: 4 },
+        );
+        return files
+          .filter((_, i) => outputs[i] !== '')
+          .map((file) => `${name}/${file}`);
+      }),
+    );
+    expect(running).toEqual(
+      [...runsOnLoad].filter((key) => key.startsWith(`${name}/`)),
+    );
+  },
+);
+
+test.each(entries)(
+  '%s %s: an unused import of the published entry bundles to nothing',
+  async (_name, subpath, dir, pkg) => {
+    const published = pkg.publishConfig.exports![subpath]!;
+    const code = await run(
+      unusedImportOutput(`${dir}/${published.default}`, 'package'),
+    );
+    expect(code).toBe('');
   },
 );
 
