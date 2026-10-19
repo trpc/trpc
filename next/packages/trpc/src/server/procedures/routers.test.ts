@@ -8,6 +8,7 @@ import {
   experimental_openapi,
 } from '@trpc12/trpc/openapi';
 import {
+  createFetchHandler,
   createRouterClient,
   initTrpc,
   isLazy,
@@ -234,4 +235,23 @@ test('resolveProcedureEffect and loadRouterEffect load lazy subtrees as Effects'
     await Effect.runPromise(resolveProcedureEffect(router, 'admin.nope')),
   ).toBeUndefined();
   expect(await Effect.runPromise(loadRouterEffect(router))).toBe(router);
+});
+
+test('a router key no client can call is an error when it is served', async () => {
+  const q = t.procedure.query(() => 1);
+  expect(() => createFetchHandler({ router: { post: { then: q } } })).toThrow(
+    'Router key "post.then": "then" is reserved',
+  );
+  expect(() => createRouterClient({ 'post.byId': q })).toThrow(
+    'Router key "post.byId": "." separates path segments',
+  );
+  const router: AnyRouter = { admin: lazy(async () => ({ then: q })) };
+  await expect(resolveProcedure(router, 'admin.then')).rejects.toThrow(
+    'Router key "then"',
+  );
+  expect(() =>
+    createFetchHandler({
+      router: { call: q, apply: q, nested: { thenable: q } },
+    }),
+  ).not.toThrow();
 });

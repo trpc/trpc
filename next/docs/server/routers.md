@@ -19,6 +19,8 @@ export const appRouter = {
 };
 ```
 
+Two kinds of key can't be called from a client, so `createFetchHandler` and `createRouterClient` throw on them (and a lazy subtree throws when it loads): `then`, because clients and their nested routers can be awaited, and a key with a `.`, which separates path segments (nest it instead: `{ post: { byId } }`).
+
 Merge routers with `mergeRouters(a, b)`. A key in both is a type error and a runtime error; object spread would silently keep the last.
 
 With thousands of procedures, split the router into packages and type apps from the server's built declarations: see [Large routers](./large-routers.md).

@@ -5,12 +5,13 @@ import { routerType, type TrpcClient } from '../client/types.ts';
 import { frameworkError } from '../internal/error.ts';
 import type { DansonForm, MaybePromise } from '../internal/types.ts';
 import { callProcedure, normalizeCause } from './execution/index.ts';
-import type {
-  Procedure,
-  ProcedureDef,
-  AnyRouter,
-  inferRouterContext,
-  inferRouterServices,
+import {
+  checkRouterKeys,
+  type Procedure,
+  type ProcedureDef,
+  type AnyRouter,
+  type inferRouterContext,
+  type inferRouterServices,
 } from './procedures/index.ts';
 
 type CtxOption<TCtx> = {} extends TCtx
@@ -49,6 +50,7 @@ export function createRouterClient<TRouter extends AnyRouter>(
     ? [opts?: RouterClientOptions<TRouter>]
     : [opts: RouterClientOptions<TRouter>]
 ): TrpcClient<TRouter, {}, DansonForm, { builtinErrors: never }> {
+  checkRouterKeys(router);
   const o = (opts ?? {}) as {
     ctx?: object | (() => MaybePromise<object>);
     layer?: Layer.Layer<never, any, never>;

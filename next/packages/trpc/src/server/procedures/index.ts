@@ -101,6 +101,7 @@ export type {
   inferProcedureOutput,
 } from './procedure.ts';
 export {
+  checkRouterKeys,
   getProcedure,
   isLazy,
   lazy,

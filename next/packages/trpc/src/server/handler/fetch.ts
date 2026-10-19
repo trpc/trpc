@@ -62,6 +62,7 @@ import {
 } from '../execution/index.ts';
 import {
   type AnyProcedure,
+  checkRouterKeys,
   resolveProcedureEffect,
   type AnyRouter,
   type inferRouterContext,
@@ -532,6 +533,7 @@ export function createFetchHandler<
   TPlatform = undefined,
 >(opts: FetchHandlerOptions<TRouter, TPlatform>): FetchHandler<TPlatform> {
   const { router } = opts;
+  checkRouterKeys(router);
   const base = createHandlerCore(
     opts as typeof opts & {
       createContext?: (o: CreateContextOpts<any>) => MaybePromise<object>;

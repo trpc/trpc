@@ -165,9 +165,12 @@ export function lazyWith<TRouter extends AnyRouter>(
     meta: opts.meta,
     loaded: undefined,
     loadEffect: Effect.promise(load).pipe(
-      Effect.map((mod): AnyRouter =>
-        isLazyModule(mod) && !isProcedure(mod.default) ? mod.default : mod,
-      ),
+      Effect.map((mod): AnyRouter => {
+        const loaded =
+          isLazyModule(mod) && !isProcedure(mod.default) ? mod.default : mod;
+        checkRouterKeys(loaded);
+        return loaded;
+      }),
       Effect.tap((loaded) =>
         Effect.sync(() => {
           def.loaded = loaded;
@@ -227,6 +230,34 @@ export function mergeRouters<const T extends readonly AnyRouter[]>(
     }
   }
   return merged as never;
+}
+
+/**
+ * Throws on a router key no client can call: `then` (clients and their
+ * nested routers can be awaited, so they read `then` as undefined) or a key
+ * with a `.` (paths split on it). A lazy subtree is checked when it loads.
+ * @internal
+ */
+export function checkRouterKeys(router: AnyRouter, prefix = ''): void {
+  for (const key of Object.keys(router)) {
+    const path = `${prefix}${key}`;
+    if (key === 'then' || key.includes('.')) {
+      throw new Error(
+        key === 'then'
+          ? `Router key "${path}": "then" is reserved, because clients can be awaited; rename it`
+          : `Router key "${path}": "." separates path segments; nest it as { ${key.split('.')[0]}: { … } } instead`,
+      );
+    }
+    const node: unknown = router[key];
+    if (
+      typeof node === 'object' &&
+      node !== null &&
+      !isProcedure(node) &&
+      !isLazy(node)
+    ) {
+      checkRouterKeys(node as AnyRouter, `${path}.`);
+    }
+  }
 }
 
 /**
