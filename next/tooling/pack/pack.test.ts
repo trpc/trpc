@@ -150,7 +150,12 @@ test.each(
       )
       .map(
         (dependent) =>
-          [dependency.pkg.name, dependent.pkg.name, dependency, dependent] as const,
+          [
+            dependency.pkg.name,
+            dependent.pkg.name,
+            dependency,
+            dependent,
+          ] as const,
       ),
   ),
 )(
