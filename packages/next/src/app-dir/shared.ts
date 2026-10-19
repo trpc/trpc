@@ -11,6 +11,7 @@ import type {
   AnyQueryProcedure,
   AnyRootTypes,
   AnyRouter,
+  inferProcedureErrorShape,
   inferProcedureInput,
   inferTransformedProcedureOutput,
   ProtectedIntersection,
@@ -30,7 +31,7 @@ export type UseProcedureRecord<
       ? Resolver<{
           input: inferProcedureInput<$Value>;
           output: inferTransformedProcedureOutput<TRoot, $Value>;
-          errorShape: TRoot['errorShape'];
+          errorShape: inferProcedureErrorShape<TRoot, $Value>;
           transformer: TRoot['transformer'];
         }>
       : $Value extends RouterRecord
@@ -132,5 +133,5 @@ export type inferActionDef<
 > = {
   input: inferProcedureInput<TProc>;
   output: inferProcedureOutput<TProc>;
-  errorShape: TRoot['errorShape'];
+  errorShape: inferProcedureErrorShape<TRoot, TProc>;
 };

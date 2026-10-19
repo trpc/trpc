@@ -63,7 +63,9 @@ export type TrpcQueryOptionsForUseSuspenseQueries<TOutput, TData, TError> =
 export declare type QueriesResults<
   TQueriesOptions extends UseQueryOptionsForUseQueries<any, any, any, any>[],
 > = {
-  [TKey in keyof TQueriesOptions]: TQueriesOptions[TKey] extends UseQueryOptionsForUseQueries<
+  [
+    TKey in keyof TQueriesOptions
+  ]: TQueriesOptions[TKey] extends UseQueryOptionsForUseQueries<
     infer TQueryFnData,
     infer TError,
     infer TData,
@@ -85,7 +87,9 @@ export declare type SuspenseQueriesResults<
   >[],
 > = [
   {
-    [TKey in keyof TQueriesOptions]: TQueriesOptions[TKey] extends UseQueryOptionsForUseSuspenseQueries<
+    [
+      TKey in keyof TQueriesOptions
+    ]: TQueriesOptions[TKey] extends UseQueryOptionsForUseSuspenseQueries<
       infer TQueryFnData,
       any,
       infer TData,
@@ -97,7 +101,9 @@ export declare type SuspenseQueriesResults<
       : never;
   },
   {
-    [TKey in keyof TQueriesOptions]: TQueriesOptions[TKey] extends UseQueryOptionsForUseSuspenseQueries<
+    [
+      TKey in keyof TQueriesOptions
+    ]: TQueriesOptions[TKey] extends UseQueryOptionsForUseSuspenseQueries<
       infer TQueryFnData,
       infer TError,
       infer TData,

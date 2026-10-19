@@ -28,34 +28,43 @@ type MutationArgs<TDef extends ActionHandlerDef> = TDef['input'] extends void
   ? [input?: undefined | void, opts?: TRPCProcedureOptions]
   : [input: FormData | TDef['input'], opts?: TRPCProcedureOptions];
 
+type ActionError<TDef extends ActionHandlerDef> = TRPCClientError<{
+  errorShape: TDef['errorShape'];
+  transformer: boolean;
+}>;
+
 interface UseTRPCActionBaseResult<TDef extends ActionHandlerDef> {
   mutate: (...args: MutationArgs<TDef>) => void;
   mutateAsync: (...args: MutationArgs<TDef>) => Promise<TDef['output']>;
 }
 
-interface UseTRPCActionSuccessResult<TDef extends ActionHandlerDef>
-  extends UseTRPCActionBaseResult<TDef> {
+interface UseTRPCActionSuccessResult<
+  TDef extends ActionHandlerDef,
+> extends UseTRPCActionBaseResult<TDef> {
   data: TDef['output'];
   error?: never;
   status: 'success';
 }
 
-interface UseTRPCActionErrorResult<TDef extends ActionHandlerDef>
-  extends UseTRPCActionBaseResult<TDef> {
+interface UseTRPCActionErrorResult<
+  TDef extends ActionHandlerDef,
+> extends UseTRPCActionBaseResult<TDef> {
   data?: never;
-  error: TRPCClientError<TDef['errorShape']>;
+  error: ActionError<TDef>;
   status: 'error';
 }
 
-interface UseTRPCActionIdleResult<TDef extends ActionHandlerDef>
-  extends UseTRPCActionBaseResult<TDef> {
+interface UseTRPCActionIdleResult<
+  TDef extends ActionHandlerDef,
+> extends UseTRPCActionBaseResult<TDef> {
   data?: never;
   error?: never;
   status: 'idle';
 }
 
-interface UseTRPCActionLoadingResult<TDef extends ActionHandlerDef>
-  extends UseTRPCActionBaseResult<TDef> {
+interface UseTRPCActionLoadingResult<
+  TDef extends ActionHandlerDef,
+> extends UseTRPCActionBaseResult<TDef> {
   data?: never;
   error?: never;
   status: 'loading';
@@ -126,7 +135,7 @@ export function experimental_serverActionLink<
 
 interface UseTRPCActionOptions<TDef extends ActionHandlerDef> {
   onSuccess?: (result: TDef['output']) => MaybePromise<void> | void;
-  onError?: (result: TRPCClientError<TDef['errorShape']>) => MaybePromise<void>;
+  onError?: (result: ActionError<TDef>) => MaybePromise<void>;
 }
 // ts-prune-ignore-next
 export function experimental_createActionHook<
@@ -168,12 +177,12 @@ export function experimental_createActionHook<
     const mutateAsync = useCallback(
       (input: any, requestOptions?: TRPCRequestOptions) => {
         const idx = ++count.current;
-        const context = {
+        const context: ActionContext = {
           ...requestOptions?.context,
           _action(innerInput) {
             return handler(innerInput);
           },
-        } as ActionContext;
+        };
 
         setState({
           status: 'loading',
@@ -184,13 +193,13 @@ export function experimental_createActionHook<
             context,
           })
           .then(async (data) => {
-            await actionOptsRef.current?.onSuccess?.(data as any);
+            await actionOptsRef.current?.onSuccess?.(data);
             if (idx !== count.current) {
               return;
             }
             setState({
               status: 'success',
-              data: data as any,
+              data,
             });
           })
           .catch(async (error) => {

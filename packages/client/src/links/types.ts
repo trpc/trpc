@@ -40,8 +40,7 @@ interface HeadersInitEsque {
  * @internal
  */
 export type HTTPHeaders =
-  | HeadersInitEsque
-  | Record<string, string[] | string | undefined>;
+  HeadersInitEsque | Record<string, string[] | string | undefined>;
 
 /**
  * The default `fetch` implementation has an overloaded signature. By convention this library
