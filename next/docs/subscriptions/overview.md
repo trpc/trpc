@@ -77,7 +77,7 @@ const client = createTrpcClient({
 client.onPost.subscribe(undefined, { lastEventId: '42' }); // resume from a known id
 ```
 
-`httpLink` reconnects a dropped subscription with backoff (`reconnect: { attempts, delayMs }`). `wsLink` resends `lastEventId` after reconnecting. A subscription whose resolver has side effects that must not rerun can opt out with `subscribe(input, { reconnect: false })`; a dropped connection then ends it with `NETWORK_ERROR`.
+`httpLink` reconnects a dropped subscription with backoff (`reconnect: { attempts, delayMs }`). `wsLink` resends `lastEventId` after reconnecting, and when a draining server asks it to move to a new connection ([Rolling deploys](../client/links/ws.md#rolling-deploys)). A subscription without `tracked()` ids has nothing to resume from, so a reconnect or a move starts it over: the resolver runs again without `lastEventId`. A subscription whose resolver has side effects that must not rerun can opt out with `subscribe(input, { reconnect: false })`; a dropped connection then ends it with `NETWORK_ERROR`.
 
 While a subscription is quiet, the handler sends a `: ping` comment every 15 seconds so proxies don't close it as idle. Set `createFetchHandler({ sse: { pingMs } })`, or `false` to turn it off.
 

@@ -24,7 +24,7 @@ serve(handler).pipe(
 );
 ```
 
-`serve` takes `endpoint`, the path WebSocket upgrades must use. Any Effect `HttpServer` layer works in place of Node's.
+`serve` takes `endpoint`, the path WebSocket upgrades must use. Any Effect `HttpServer` layer works in place of Node's. On SIGTERM, `runMain` releases the layer, and `serve` first moves WebSocket clients to other servers ([Rolling deploys](./overview.md#rolling-deploys)), so Node doesn't wait on open sockets.
 
 ## Routes next to your own
 
@@ -51,7 +51,25 @@ HttpRouter.serve(app).pipe(
 );
 ```
 
-`handler.fetch` runs the same app through `HttpRouter.toWebHandler`. To use the handler as one app instead of routes, `toHttpEffect(handler)` is the app itself.
+`handler.fetch` runs the same app through `HttpRouter.toWebHandler`. To use the handler as one app instead of routes, `toHttpEffect(handler)` is the app itself. Serving the routes or the app yourself, drain before the server stops: a layer built after the server's runs its finalizer first.
+
+```ts twoslash
+// ---cut-start---
+import { createServer } from 'node:http';
+import { NodeHttpServer } from '@effect/platform-node';
+import { HttpRouter } from 'effect/http';
+import { handler } from './server.ts';
+// ---cut-end---
+import { Effect, Layer } from 'effect';
+
+const drain = Layer.effectDiscard(
+  Effect.addFinalizer(() => Effect.promise(() => handler.drain())),
+);
+const live = drain.pipe(
+  Layer.provideMerge(HttpRouter.serve(handler.routes)),
+  Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 })),
+);
+```
 
 ## Express, Fastify and `node:http`
 
