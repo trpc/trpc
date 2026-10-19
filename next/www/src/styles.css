@@ -361,6 +361,71 @@ html:has(#hero-code) {
   --callout: oklch(0.6 0.2 25);
 }
 
+/* Posts on X, copied from the old docs' `<StaticTweet>` (`build/old-docs-convert.ts`). */
+.tweet {
+  margin-block: 1.5em;
+  max-width: 550px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  background: var(--card);
+  padding: 1rem;
+}
+
+.tweet figcaption {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0;
+  color: var(--foreground);
+  font-size: 1rem;
+}
+
+.tweet img {
+  margin: 0;
+  border-radius: 9999px;
+  width: 3rem;
+  height: 3rem;
+}
+
+.tweet cite {
+  display: flex;
+  flex-direction: column;
+  font-style: normal;
+  line-height: 1.4;
+}
+
+.tweet-name {
+  font-weight: 700;
+}
+
+.tweet-username,
+.tweet footer {
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+}
+
+.tweet blockquote {
+  margin-block: 0.75rem;
+  border: 0;
+  padding: 0;
+  color: var(--foreground);
+  font-style: normal;
+  font-weight: inherit;
+  font-size: 1.125rem;
+  quotes: none;
+}
+
+.tweet footer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.25rem 1rem;
+}
+
+.tweet footer a {
+  color: inherit;
+}
+
 .prose details {
   margin-block: 1.5em;
   border: 1px solid var(--border);

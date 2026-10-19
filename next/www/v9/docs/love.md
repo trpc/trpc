@@ -12,123 +12,53 @@ Do you love or hate tRPC? Feel free to ping [@alexdotjs on Twitter](https://twit
 
 > For more testimonials, see this Twitter collection: https://twitter.com/alexdotjs/timelines/1441435105910796291
 
-<blockquote class="twitter-tweet">
-  <p lang="en" dir="ltr">
-    Tried out trpc for the first time yesterday. The fact that you get type
-    safety WITHOUT codegen is extremely compelling. It makes the feedback loop
-    very very fast.
-    <br />
-    <br />
-    Sort of wishing I had used this instead of graphql for my last project.
-    <a href="https://t.co/xPPIJ5Zqa3">https://t.co/xPPIJ5Zqa3</a>
-  </p>
-  &mdash; Matt Pocock (@mattpocockuk) 
-  <a href="https://twitter.com/mattpocockuk/status/1537761528962764802?ref_src=twsrc%5Etfw">
-    June 17, 2022
-  </a>
-</blockquote>
+<figure class="tweet">
+<figcaption><img src="https://github.com/mattpocock.png" alt="" width="48" height="48" loading="lazy" /><cite><span class="tweet-name">Matt Pocock</span><span class="tweet-username">@mattpocockuk</span></cite></figcaption>
+<blockquote cite="https://x.com/mattpocockuk/status/1537761528962764802">Tried out trpc for the first time yesterday. The fact that you get type safety WITHOUT codegen is extremely compelling. It makes the feedback loop very very fast.<br /><br />Sort of wishing I had used this instead of graphql for my last project.<br /><a href="https://x.com/trpcio/status/1537719366908792832">x.com/trpcio/status/1537719366908792832</a></blockquote>
+<footer><a href="https://x.com/mattpocockuk/status/1537761528962764802"><time datetime="2022-06-17T11:38:13.000Z">Jun 17, 2022</time></a></footer>
+</figure>
 
-<blockquote class="twitter-tweet">
-  <p lang="en" dir="ltr">
-    That being said, we _are_ starting a production project right now, and
-    we&#39;re using 
-    <a href="https://twitter.com/nextjs?ref_src=twsrc%5Etfw">@nextjs</a> with 
-    <a href="https://twitter.com/trpcio?ref_src=twsrc%5Etfw">@trpcio</a> .
-    It&#39;s so good I don&#39;t even know where to start 🔥. Probably with the
-    e2e type-safety 😍
-    <br />
-    Haven&#39;t thought about client state much but the former probably applies.
-  </p>
-  &mdash; Dominik 🇺🇦 (@TkDodo)
-  <a href="https://twitter.com/TkDodo/status/1573391189373751297?ref_src=twsrc%5Etfw">
-    September 23, 2022
-  </a>
-</blockquote>
+<figure class="tweet">
+<figcaption><img src="https://github.com/TkDodo.png" alt="" width="48" height="48" loading="lazy" /><cite><span class="tweet-name">Dominik 🇺🇦</span><span class="tweet-username">@TkDodo</span></cite></figcaption>
+<blockquote cite="https://x.com/TkDodo/status/1573391189373751297">That being said, we _are_ starting a production project right now, and we're using <a href="https://x.com/nextjs">@nextjs</a> with <a href="https://x.com/trpcio">@trpcio</a> . It's so good I don't even know where to start 🔥. Probably with the e2e type-safety 😍<br />Haven't thought about client state much but the former probably applies.</blockquote>
+<footer><a href="https://x.com/TkDodo/status/1573391189373751297"><time datetime="2022-09-23T19:17:46.000Z">Sep 23, 2022</time></a></footer>
+</figure>
 
-<blockquote class="twitter-tweet">
-  <p lang="en" dir="ltr">
-    The amount that tRPC has improved the quality of our code, the speed of our
-    delivery, and the happiness of our devs is hard to comprehend.
-    <br />
-    <br />I know I shill it a lot but seriously, please try 
-    <a href="https://twitter.com/trpcio?ref_src=twsrc%5Etfw">@trpcio</a>
-  </p>
-  &mdash; Theo - t3.gg (@theo) 
-  <a href="https://twitter.com/theo/status/1571922456239284224?ref_src=twsrc%5Etfw">
-    September 19, 2022
-  </a>
-</blockquote>
+<figure class="tweet">
+<figcaption><img src="https://github.com/t3dotgg.png" alt="" width="48" height="48" loading="lazy" /><cite><span class="tweet-name">Theo - t3.gg</span><span class="tweet-username">@theo</span></cite></figcaption>
+<blockquote cite="https://x.com/theo/status/1571922456239284224">The amount that tRPC has improved the quality of our code, the speed of our delivery, and the happiness of our devs is hard to comprehend.<br /><br />I know I shill it a lot but seriously, please try <a href="https://x.com/trpcio">@trpcio</a></blockquote>
+<footer><a href="https://x.com/theo/status/1571922456239284224"><time datetime="2022-09-19T18:01:33.000Z">Sep 19, 2022</time></a></footer>
+</figure>
 
-<blockquote class="twitter-tweet">
-  <p lang="en" dir="ltr">
-    I&#39;ve used 
-    <a href="https://twitter.com/trpcio?ref_src=twsrc%5Etfw">@trpcio</a> for
-    exactly 5 seconds, and I can already tell - it is the _best_ way to consume
-    first-party APIs with React Query. <br />
-    <br />
-    Why? The &quot;t&quot; - TypeScript means you get end-to-end type safety
-    PLUS auto-complete for your query keys everywhere, like `invalidateQueries`.
-  </p>
-  &mdash; R. Alex Anderson 🚀 (@ralex1993)
-  <a href="https://twitter.com/ralex1993/status/1556619478556876802?ref_src=twsrc%5Etfw">
-    August 8, 2022
-  </a>
-</blockquote>
+<figure class="tweet">
+<figcaption><img src="https://github.com/alexanderson1993.png" alt="" width="48" height="48" loading="lazy" /><cite><span class="tweet-name">R. Alex Anderson 🚀</span><span class="tweet-username">@ralex1993</span></cite></figcaption>
+<blockquote cite="https://x.com/ralex1993/status/1556619478556876802">I've used <a href="https://x.com/trpcio">@trpcio</a> for exactly 5 seconds, and I can already tell - it is the _best_ way to consume first-party APIs with React Query. <br /><br />Why? The &quot;t&quot; - TypeScript means you get end-to-end type safety PLUS auto-complete for your query keys everywhere, like `invalidateQueries`.</blockquote>
+<footer><a href="https://x.com/ralex1993/status/1556619478556876802"><time datetime="2022-08-08T12:32:58.000Z">Aug 8, 2022</time></a><a href="https://web.archive.org/web/20220808123409/https://twitter.com/ralex1993/status/1556619478556876802">Archived copy</a></footer>
+</figure>
 
-<blockquote class="twitter-tweet">
-  <p lang="en" dir="ltr">
-    tRPC - Safe API between your client and server 🔥
-    <br />
-    <br />I *LOVE* this project!
-    <br />
-    <br />
-    If you&#39;re building your client and server with TypeScript, tRPC allows
-    you to have static verification of your communication protocol with *zero*
-    overhead on the client.
-    <a href="https://t.co/qsyjD9et3R">https://t.co/qsyjD9et3R</a>
-  </p>
-  &mdash; Minko Gechev (@mgechev)
-  <a href="https://twitter.com/mgechev/status/1549140656752234496?ref_src=twsrc%5Etfw">
-    July 18, 2022
-  </a>
-</blockquote>
+<figure class="tweet">
+<figcaption><img src="https://github.com/mgechev.png" alt="" width="48" height="48" loading="lazy" /><cite><span class="tweet-name">Minko Gechev</span><span class="tweet-username">@mgechev</span></cite></figcaption>
+<blockquote cite="https://x.com/mgechev/status/1549140656752234496">tRPC - Safe API between your client and server 🔥<br /><br />I *LOVE* this project!<br /><br />If you're building your client and server with TypeScript, tRPC allows you to have static verification of your communication protocol with *zero* overhead on the client.<br /><br /><a href="https://github.com/trpc/trpc">github.com/trpc/trpc</a></blockquote>
+<footer><a href="https://x.com/mgechev/status/1549140656752234496"><time datetime="2022-07-18T21:14:48.000Z">Jul 18, 2022</time></a></footer>
+</figure>
 
-<blockquote class="twitter-tweet">
-  <p lang="en" dir="ltr">
-    tRPC is super cool. Mucho magic there and good magic at that.
-  </p>
-  &mdash; Tanner Linsley (@tannerlinsley)
-  <a href="https://twitter.com/tannerlinsley/status/1507753424187650048?ref_src=twsrc%5Etfw">
-    March 26, 2022
-  </a>
-</blockquote> 
+<figure class="tweet">
+<figcaption><img src="https://github.com/tannerlinsley.png" alt="" width="48" height="48" loading="lazy" /><cite><span class="tweet-name">Tanner Linsley</span><span class="tweet-username">@tannerlinsley</span></cite></figcaption>
+<blockquote cite="https://x.com/tannerlinsley/status/1507753424187650048">tRPC is super cool. Mucho magic there and good magic at that.</blockquote>
+<footer><a href="https://x.com/tannerlinsley/status/1507753424187650048"><time datetime="2022-03-26T16:16:43.000Z">Mar 26, 2022</time></a></footer>
+</figure>
 
-<blockquote class="twitter-tweet" data-cards="hidden">
-  <p lang="en" dir="ltr">
-    Hah, we just did our first endpoint, returned some mock data from a resolver
-    and got instant autocomplete in the client. Everyone&#39;s heads went 🤯🥳
-  </p>
-  &mdash; Marcus Rådell 🦀 (@marcusradell)
-  <a href="https://twitter.com/marcusradell/status/1402991694446952458?ref_src=twsrc%5Etfw">
-    June 10, 2021
-  </a>
-</blockquote>
+<figure class="tweet">
+<figcaption><img src="https://github.com/marcusradell.png" alt="" width="48" height="48" loading="lazy" /><cite><span class="tweet-name">Marcus Rådell 🦀</span><span class="tweet-username">@marcusradell</span></cite></figcaption>
+<blockquote cite="https://x.com/marcusradell/status/1402991694446952458">Hah, we just did our first endpoint, returned some mock data from a resolver and got instant autocomplete in the client. Everyone's heads went 🤯🥳</blockquote>
+<footer><a href="https://x.com/marcusradell/status/1402991694446952458"><time datetime="2021-06-10T14:11:00.000Z">Jun 10, 2021</time></a></footer>
+</figure>
 
-<blockquote class="twitter-tweet">
-  <p lang="en" dir="ltr">
-    for my money, Zod + 
-    <a href="https://twitter.com/HookForm?ref_src=twsrc%5Etfw">@HookForm</a> +
-    tRPC has been the best stack for building typesafe forms for nearly three
-    years now <br />
-    <br />
-    what are the other challengers? 
-    <a href="https://t.co/qFxfjzg0fa">https://t.co/qFxfjzg0fa</a>
-  </p>
-  &mdash; Colin McDonnell (@colinhacks)
-  <a href="https://twitter.com/colinhacks/status/1629950516242313216?ref_src=twsrc%5Etfw">
-    February 26, 2023
-  </a>
-</blockquote>
+<figure class="tweet">
+<figcaption><img src="https://github.com/colinhacks.png" alt="" width="48" height="48" loading="lazy" /><cite><span class="tweet-name">Colin McDonnell</span><span class="tweet-username">@colinhacks</span></cite></figcaption>
+<blockquote cite="https://x.com/colinhacks/status/1629950516242313216">for my money, Zod + <a href="https://x.com/HookForm">@HookForm</a> + tRPC has been the best stack for building typesafe forms for nearly three years now  <br /><br />what are the other challengers?<br /><a href="https://x.com/Hicksyfern/status/1629931362403713024">x.com/Hicksyfern/status/1629931362403713024</a></blockquote>
+<footer><a href="https://x.com/colinhacks/status/1629950516242313216"><time datetime="2023-02-26T21:04:20.000Z">Feb 26, 2023</time></a></footer>
+</figure>
 
 ## From GitHub
 

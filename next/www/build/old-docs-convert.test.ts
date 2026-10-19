@@ -604,36 +604,72 @@ describe('convertPost', () => {
     );
   });
 
-  it('links an embedded post on X, or says that it was deleted', () => {
+  it('renders a copied post on X as a card, alone or in the `<div>` that lays them out', () => {
     const converted = convert(
       [
-        "import { Tweet } from 'react-tweet';",
-        '',
-        'Shipped:',
-        '',
-        '<Tweet id="123" />',
+        "import { StaticTweet } from '@site/src/components/StaticTweet';",
         '',
         'As Dan put it:',
         '',
-        '<div className="flex justify-center">',
-        '  <Tweet id="1756120297529368801" />',
+        '<div className="mb-4 flex w-full justify-center">',
+        '  <StaticTweet',
+        '    name="dan 2"',
+        '    username="dan_abramov2"',
+        '    avatarUrl="https://github.com/gaearon.png"',
+        `    text={'"use client" = Astro & co\\n"use server" = <tRPC>'}`,
+        '    createdAt="2024-02-10T00:58:00.000Z"',
+        '    url="https://x.com/dan_abramov2/status/1756120297529368801"',
+        '    archiveUrl="https://web.archive.org/web/2024/https://x.com/dan_abramov2"',
+        '  />',
         '</div>',
+        '',
+        '<StaticTweet',
+        '  name="Theo"',
+        '  username="theo"',
+        '  avatarUrl="https://github.com/t3dotgg.png"',
+        '  text={"Why? The \\"t\\"\\n\\nplease try @trpcio https://github.com/trpc/trpc"}',
+        '  createdAt="2022-09-19T18:01:33.000Z"',
+        '  url="https://x.com/theo/status/1571922456239284224"',
+        '/>',
       ].join('\n'),
     );
     expect(converted.problems).toEqual([]);
     expect(converted.markdown.replace(/^---\n[\s\S]*?\n---\n\n/, '')).toBe(
       [
-        'Shipped:',
-        '',
-        '[View the post on X](https://x.com/i/status/123)',
-        '',
         'As Dan put it:',
         '',
-        '> [!NOTE] Post deleted',
-        "> Dan Abramov's post on X that was embedded here has since been deleted.",
+        '<figure class="tweet">',
+        '<figcaption><img src="https://github.com/gaearon.png" alt="" width="48" height="48" loading="lazy" /><cite><span class="tweet-name">dan 2</span><span class="tweet-username">@dan_abramov2</span></cite></figcaption>',
+        '<blockquote cite="https://x.com/dan_abramov2/status/1756120297529368801">&quot;use client&quot; = Astro &amp; co<br />&quot;use server&quot; = &lt;tRPC&gt;</blockquote>',
+        '<footer><a href="https://x.com/dan_abramov2/status/1756120297529368801"><time datetime="2024-02-10T00:58:00.000Z">Feb 10, 2024</time></a><a href="https://web.archive.org/web/2024/https://x.com/dan_abramov2">Archived copy</a></footer>',
+        '</figure>',
+        '',
+        '<figure class="tweet">',
+        '<figcaption><img src="https://github.com/t3dotgg.png" alt="" width="48" height="48" loading="lazy" /><cite><span class="tweet-name">Theo</span><span class="tweet-username">@theo</span></cite></figcaption>',
+        '<blockquote cite="https://x.com/theo/status/1571922456239284224">Why? The &quot;t&quot;<br /><br />please try <a href="https://x.com/trpcio">@trpcio</a> <a href="https://github.com/trpc/trpc">github.com/trpc/trpc</a></blockquote>',
+        '<footer><a href="https://x.com/theo/status/1571922456239284224"><time datetime="2022-09-19T18:01:33.000Z">Sep 19, 2022</time></a></footer>',
+        '</figure>',
         '',
       ].join('\n'),
     );
+  });
+
+  it("reports a post on X it can't render", () => {
+    const converted = convert(
+      [
+        "import { StaticTweet } from '@site/src/components/StaticTweet';",
+        '',
+        'Posts:',
+        '',
+        '<StaticTweet name="A" username="a" text={\'\\u0041\'} />',
+        '',
+        '<StaticTweet name="A" username="a" likes="3" createdAt="2024-02-10" />',
+      ].join('\n'),
+    );
+    expect(converted.problems).toEqual([
+      'blog/2025-03-21-announcing-trpc-11.mdx: `<StaticTweet name="A" username="a" text={\'\\u0041\'} />`: no conversion for `text`\'s escapes',
+      'blog/2025-03-21-announcing-trpc-11.mdx: `<StaticTweet name="A" username="a" likes="3" createdAt="2024-02-10" />`: no conversion for `likes`, no `avatarUrl`, no `text`, no `url`',
+    ]);
   });
 
   it("reports a post that doesn't open with a paragraph", () => {
