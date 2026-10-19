@@ -165,25 +165,34 @@ export function dedupeLink(
     const op = args.op;
     const key = opts.key ? opts.key(op) : op.path;
     const options = callOptions(op.context);
-    const shared =
-      [...joinable].find(
-        (other) =>
-          other.key === key &&
-          other.op.lastEventId === op.lastEventId &&
-          (opts.key !== undefined || deepEqual(other.op.input, op.input)) &&
-          deepEqual(other.options, options),
-      ) ?? open(args, key, options);
     const caller: Caller = { op, failed: Deferred.makeUnsafe() };
-    shared.callers.add(caller);
-    shared.unaborted++;
-    op.signal?.addEventListener('abort', () => {
-      if (--shared.unaborted === 0) shared.controller.abort();
+    let shared: Shared | undefined;
+    // Joins in the step that subscribes to `shared.stream`: `interruptWhen`
+    // runs its stream on a forked fiber, and a request that ends before that
+    // fiber subscribes would be run again for it.
+    const joined = Stream.suspend(() => {
+      const found =
+        [...joinable].find(
+          (other) =>
+            other.key === key &&
+            other.op.lastEventId === op.lastEventId &&
+            (opts.key !== undefined || deepEqual(other.op.input, op.input)) &&
+            deepEqual(other.options, options),
+        ) ?? open(args, key, options);
+      shared = found;
+      found.callers.add(caller);
+      found.unaborted++;
+      op.signal?.addEventListener('abort', () => {
+        if (--found.unaborted === 0) found.controller.abort();
+      });
+      for (const meta of found.responses) tell(found, caller, meta);
+      return found.stream;
     });
-    for (const meta of shared.responses) tell(shared, caller, meta);
-    return shared.stream.pipe(
+    return joined.pipe(
       Stream.interruptWhen(Deferred.await(caller.failed)),
       Stream.ensuring(
         Effect.sync(() => {
+          if (!shared) return;
           shared.callers.delete(caller);
           if (shared.callers.size === 0) joinable.delete(shared);
         }),

@@ -1,4 +1,4 @@
-import { Effect, Stream } from 'effect';
+import { Deferred, Effect, Stream } from 'effect';
 import {
   createTrpcClient,
   dedupeLink,
@@ -293,6 +293,25 @@ test('a call made once every caller has left sends its own request', async () =>
   expect(stub.ops.at(-1)!.signal!.aborted).toBe(false);
 });
 
+test('a call made in the tick the request answers is told once and gets the value', async () => {
+  const sent = Deferred.makeUnsafe<void>();
+  const answer = Deferred.makeUnsafe<number>();
+  const stub = stubbed((op) => {
+    op.context.onResponse?.({ status: 203, headers: new Headers() });
+    Deferred.doneUnsafe(sent, Effect.void);
+    return Stream.fromEffect(Deferred.await(answer));
+  });
+  const statuses: string[] = [];
+  const a = stub.client.slow.query();
+  await Effect.runPromise(Deferred.await(sent));
+  const b = stub.client.slow.query(undefined, {
+    onResponse: (meta) => void statuses.push(`b ${meta.status}`),
+  });
+  Deferred.doneUnsafe(answer, Effect.succeed(7));
+  await expect(Promise.all([a, b])).resolves.toEqual([7, 7]);
+  expect(statuses).toEqual(['b 203']);
+});
+
 test('an error reaches every caller', async () => {
   await using ctx = await setup();
   const results = await Promise.allSettled([
@@ -312,11 +331,12 @@ test('an error reaches every caller', async () => {
 });
 
 test('each caller gets onResponse, also for one sent before it joined; one that throws fails only its own call', async () => {
+  const answer = Deferred.makeUnsafe<number>();
   const stub = stubbed((op) =>
     Stream.unwrap(
       Effect.sync(() => {
         op.context.onResponse?.({ status: 203, headers: new Headers() });
-        return Stream.fromEffect(Effect.as(Effect.sleep(20), 7));
+        return Stream.fromEffect(Deferred.await(answer));
       }),
     ),
   );
@@ -324,18 +344,29 @@ test('each caller gets onResponse, also for one sent before it joined; one that 
   const throws = () => {
     throw new Error('nope');
   };
-  const first = stub.client.slow.query(undefined, {
-    onResponse: (meta) => void statuses.push(`a ${meta.status}`),
-  });
-  await sleep(5);
-  const results = await Promise.allSettled([
-    first,
-    stub.client.slow.query(undefined, {
-      onResponse: (meta) => void statuses.push(`b ${meta.status}`),
-    }),
-    stub.client.slow.query(undefined, { onResponse: throws }),
-  ]);
-  expect(statuses).toEqual(['a 203', 'b 203']);
+  /** An `onResponse` that records `name`'s status, and `heard` once it ran. */
+  const listener = (name: string, then = () => {}) => {
+    const heard = Deferred.makeUnsafe<void>();
+    return {
+      heard: Effect.runPromise(Deferred.await(heard)),
+      onResponse: (meta: { status: number }) => {
+        statuses.push(`${name} ${meta.status}`);
+        Deferred.doneUnsafe(heard, Effect.void);
+        then();
+      },
+    };
+  };
+  const [a, b, c] = [listener('a'), listener('b'), listener('c', throws)];
+  const first = stub.client.slow.query(undefined, { onResponse: a.onResponse });
+  await a.heard;
+  const joined = [
+    stub.client.slow.query(undefined, { onResponse: b.onResponse }),
+    stub.client.slow.query(undefined, { onResponse: c.onResponse }),
+  ];
+  await Promise.all([b.heard, c.heard]);
+  Deferred.doneUnsafe(answer, Effect.succeed(7));
+  const results = await Promise.allSettled([first, ...joined]);
+  expect(statuses).toEqual(['a 203', 'b 203', 'c 203']);
   expect(results).toMatchObject([
     { status: 'fulfilled', value: 7 },
     { status: 'fulfilled', value: 7 },
