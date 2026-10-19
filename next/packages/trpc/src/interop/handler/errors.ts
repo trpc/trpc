@@ -1,6 +1,9 @@
 import { statusOf, type AnyTrpcError } from '../../internal/error.ts';
 import type { ProcedureType } from '../../internal/types.ts';
 
+/** v11's `maxBatchSize` message, for an HTTP batch or a WebSocket message over the cap. @internal */
+export const BATCH_TOO_LARGE = 'Batch call exceeds maximum size';
+
 /** v11's JSON-RPC numbers, by code. */
 const RPC_CODES: Record<string, number> = {
   PARSE_ERROR: -32700,

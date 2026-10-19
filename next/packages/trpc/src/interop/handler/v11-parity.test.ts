@@ -818,7 +818,7 @@ class StandardSocket extends EventTarget {
   }
 }
 
-const wsPair = (config: V11Config) => {
+const wsPair = (config: V11Config & { maxBatchSize?: number }) => {
   const v11 = getWSConnectionHandler({
     router: v11Router(config),
     createContext: () => who(null),
@@ -831,6 +831,9 @@ const wsPair = (config: V11Config) => {
     exposeUnexpectedErrors: true,
     ...(config.transformer ? { transformer: config.transformer } : {}),
     ...(config.errorFormatter ? { errorFormatter: custom } : {}),
+    ...(config.maxBatchSize
+      ? { batch: { maxItems: config.maxBatchSize } }
+      : {}),
   });
   return {
     v11: () => {
@@ -858,6 +861,7 @@ const wsSetups = {
   plain: wsPair({}),
   superjson: wsPair({ transformer: superjson }),
   formatted: wsPair({ errorFormatter: custom }),
+  capped: wsPair({ maxBatchSize: 1 }),
 };
 
 /** Messages to send, then how many replies to wait for, in all. */
@@ -950,6 +954,12 @@ const wsCases: Array<[keyof typeof wsSetups, string, Array<WsStep>]> = [
     [[[call(1, 'subscription', 'events', superjson.serialize(undefined))], 4]],
   ],
   ['formatted', 'ws formatted error', [[[call(1, 'query', 'missing')], 1]]],
+  [
+    'capped',
+    'ws batch over the cap',
+    [[[[call(1, 'query', 'nul'), call(2, 'query', 'nul')]], 2]],
+  ],
+  ['capped', 'ws batch at the cap', [[[[call(1, 'query', 'nul')]], 1]]],
 ];
 
 /** Where the interop answers differently on purpose. */
@@ -959,6 +969,8 @@ const wsKnown: Record<string, string> = {
     'v11 answers with id null and "Invalid procedure type"; the interop answers by id, with the method it got. v11 clients send only the methods they know.',
   'ws params not an object':
     'v11 answers with id null and "Not an object"; the interop answers by id, as a call to path "". v11 clients always send params.',
+  'ws batch over the cap':
+    "v11's sockets have no cap and run both calls; the interop refuses them with the error v11 sends for an HTTP batch over `maxBatchSize`, by id (compared below).",
   'ws invalid JSON':
     "v11's message is `JSON.parse`'s, which varies by runtime; the interop's is \"Invalid JSON\".",
 };
@@ -993,6 +1005,31 @@ test.each(wsCases)('%s: %s', async (setup, name, steps) => {
   const right = await run(wsSetups[setup].v12());
   if (wsKnown[name]) expect(right).not.toEqual(left);
   else expect(right).toEqual(left);
+});
+
+test("a WebSocket message over the cap fails each call with v11's error for an HTTP batch over maxBatchSize", async () => {
+  const res = await setups.capped.v11(
+    new Request('http://localhost/trpc/nul,nul?batch=1'),
+  );
+  const body = (await res.json()) as unknown;
+  const v11Error = (
+    (Array.isArray(body) ? body[0] : body) as { error: unknown }
+  ).error;
+  expect(v11Error).toMatchObject({
+    message: 'Batch call exceeds maximum size',
+    data: { code: 'BAD_REQUEST' },
+  });
+  const socket = wsSetups.capped.v12();
+  socket.receive(
+    JSON.stringify([call(1, 'query', 'nul'), call(2, 'query', 'nul')]),
+  );
+  await vi.waitFor(() => expect(socket.sent).toHaveLength(2));
+  await sleep(20);
+  socket.close();
+  expect(socket.sent).toEqual([
+    { id: 1, jsonrpc: '2.0', error: v11Error },
+    { id: 2, jsonrpc: '2.0', error: v11Error },
+  ]);
 });
 
 test('every known WebSocket divergence names a case', () => {

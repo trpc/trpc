@@ -411,6 +411,37 @@ test('a client with another protocol version gets a connection error', async () 
   expect((await closed).code).toBe(1002);
 });
 
+test('an array of requests is one invalid message: the protocol has no batches to cap', async () => {
+  await using ctx = await setup();
+  const socket = new WebSocket(ctx.server.wsUrl);
+  await new Promise((resolve) => socket.addEventListener('open', resolve));
+  const replies: unknown[] = [];
+  socket.addEventListener('message', (e) =>
+    replies.push(JSON.parse(String(e.data))),
+  );
+  const hello = (id: number) => ({
+    id,
+    type: 'request',
+    method: 'query',
+    path: 'hello',
+    input: { json: { name: 'a' } },
+  });
+  socket.send(JSON.stringify([hello(1), hello(2)]));
+  socket.send(JSON.stringify(hello(3)));
+  await vi.waitFor(() => expect(replies).toHaveLength(2));
+  socket.close();
+  expect(replies).toMatchObject([
+    {
+      id: null,
+      type: 'error',
+      body: {
+        json: { error: { code: 'PARSE_ERROR', message: 'Invalid message' } },
+      },
+    },
+    { id: 3, type: 'result' },
+  ]);
+});
+
 test('a call keeps the connectionParams it arrived under, despite a later init', async () => {
   await using ctx = await setup();
   const socket = new WebSocket(ctx.server.wsUrl);

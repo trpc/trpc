@@ -106,6 +106,71 @@ test('malformed messages get PARSE_ERROR replies with no id', async () => {
   ws.close();
 });
 
+test("a message with more calls than batch.maxItems runs none and fails each by id, as v11's maxBatchSize does over HTTP", async () => {
+  const onError = vi.fn();
+  await using app = await start({ batch: { maxItems: 2 }, onError });
+  const ws = await connect(app.url);
+  const echo = (id: number) => ({
+    id,
+    jsonrpc: '2.0',
+    method: 'mutation',
+    params: { path: 'echo', input: id },
+  });
+  ws.send([echo(1), echo(2), echo(3), { method: 'connectionParams' }]);
+  const refused = {
+    jsonrpc: '2.0',
+    error: {
+      message: 'Batch call exceeds maximum size',
+      code: -32600,
+      data: { code: 'BAD_REQUEST', httpStatus: 400 },
+    },
+  };
+  expect(await ws.until(3)).toEqual([
+    { id: 1, ...refused },
+    { id: 2, ...refused },
+    { id: 3, ...refused },
+  ]);
+  expect(onError).toHaveBeenCalledOnce();
+  ws.send([echo(4), echo(5)]);
+  expect(await ws.until(5)).toEqual(
+    expect.arrayContaining([
+      { id: 4, jsonrpc: '2.0', result: { type: 'data', data: 4 } },
+      { id: 5, jsonrpc: '2.0', result: { type: 'data', data: 5 } },
+    ]),
+  );
+  ws.send([{ id: 6, method: 'subscription.stop' }, 'x', 7]);
+  expect((await ws.until(6))[5]).toEqual({
+    id: null,
+    ...refused,
+    jsonrpc: undefined,
+  });
+  ws.close();
+});
+
+test('with batch: false, a WebSocket message keeps the default cap of 100 calls', async () => {
+  await using app = await start({ batch: false });
+  const ws = await connect(app.url);
+  const calls = (from: number, count: number) =>
+    Array.from({ length: count }, (_, i) => ({
+      id: from + i,
+      method: 'query',
+      params: { path: 'whoami' },
+    }));
+  ws.send(calls(0, 100));
+  const ran = await ws.until(100);
+  expect(ran.every((reply) => 'result' in (reply as object))).toBe(true);
+  ws.send(calls(100, 101));
+  const refused = (await ws.until(201)).slice(100);
+  expect(
+    refused.every(
+      (reply) =>
+        (reply as { error?: { message?: string } }).error?.message ===
+        'Batch call exceeds maximum size',
+    ),
+  ).toBe(true);
+  ws.close();
+});
+
 test('calls to missing paths, or with the wrong method, fail by id', async () => {
   await using app = await start();
   const ws = await connect(app.url);

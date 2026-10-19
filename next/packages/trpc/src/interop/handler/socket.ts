@@ -16,6 +16,7 @@ import {
   parseSocketMessage,
 } from '../../server/sockets/index.ts';
 import { isTracked } from '../../server/subscriptions/index.ts';
+import { BATCH_TOO_LARGE } from './errors.ts';
 import type { V11Core } from './handler.ts';
 
 type RequestId = number | string;
@@ -257,6 +258,35 @@ function v11Session(
     );
   };
 
+  /**
+   * Refuses a message with more calls than `batch.maxItems`, none of them
+   * run, as v11 refuses an HTTP batch over `maxBatchSize`: its error, for
+   * each request's id so `wsLink` settles them, or once with id null.
+   */
+  const tooLarge = (messages: ReadonlyArray<unknown>): Effect.Effect<void> =>
+    Effect.suspend(() => {
+      const err = new TrpcError.BadRequest({ message: BATCH_TOO_LARGE });
+      base.report(err, request, undefined, undefined);
+      const error = output.serialize(
+        core.errorShape(err, undefined, 'unknown'),
+      );
+      const requests = messages.filter(
+        (m): m is Record<string, unknown> =>
+          isRecord(m) &&
+          (typeof m['id'] === 'number' || typeof m['id'] === 'string') &&
+          typeof m['method'] === 'string' &&
+          METHODS.has(m['method']),
+      );
+      return requests.length === 0
+        ? send({ id: null, error })
+        : Effect.forEach(
+            requests,
+            (m) =>
+              send({ ...envelope(m['id'] as RequestId, m['jsonrpc']), error }),
+            { discard: true },
+          );
+    });
+
   return {
     frame: (data) =>
       Effect.suspend(() => {
@@ -269,6 +299,9 @@ function v11Session(
             undefined,
             new TrpcError.ParseError({ message: 'Invalid JSON' }),
           );
+        }
+        if (Array.isArray(parsed) && parsed.length > core.maxSocketBatch) {
+          return tooLarge(parsed);
         }
         return Effect.forEach(
           Array.isArray(parsed) ? parsed : [parsed],

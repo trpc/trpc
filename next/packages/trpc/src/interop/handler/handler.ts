@@ -64,6 +64,7 @@ import {
 } from '../../server/sockets/index.ts';
 import { isTracked } from '../../server/subscriptions/index.ts';
 import {
+  BATCH_TOO_LARGE,
   v11Shape,
   type V11ErrorFormatterOpts,
   type V11ErrorShape,
@@ -120,7 +121,10 @@ export interface BaseV11HandlerOptions<TRouter extends AnyRouter> {
   errorFormatter?: (opts: V11ErrorFormatterOpts) => V11ErrorShape;
   /**
    * Accept `httpBatchLink` and `httpBatchStreamLink` batches, as v11 does
-   * by default, of at most `maxItems` calls (v11 had no cap).
+   * by default, of at most `maxItems` calls (v11's `maxBatchSize`, which
+   * it left unlimited). `maxItems` also caps the calls in one `wsLink`
+   * message, whose array of calls is answered as v11 answers an HTTP batch
+   * over `maxBatchSize`; with `false`, sockets keep the default cap.
    * @default { maxItems: 100 }
    */
   batch?: boolean | { maxItems?: number };
@@ -210,6 +214,8 @@ export interface V11Core {
   readonly settle: (value: unknown) => Effect.Effect<unknown, AnyTrpcError>;
   /** The open WebSockets, which `dispose()` closes. */
   readonly drains: SocketDrains;
+  /** The most calls one WebSocket message's array may carry: `batch.maxItems`. */
+  readonly maxSocketBatch: number;
 }
 
 interface Call {
@@ -234,6 +240,8 @@ type Outcome =
 
 const decoder = new TextDecoder();
 const identity: V11Transformer = { serialize: (v) => v, deserialize: (v) => v };
+
+const DEFAULT_MAX_BATCH = 100;
 
 const fail = <C extends BuiltinErrorCode>(code: C, message: string) =>
   Effect.fail(new TrpcError({ code, message }) as CodeError<C>);
@@ -378,7 +386,7 @@ export function createV11Handler<
           maxItems:
             (typeof opts.batch === 'object'
               ? opts.batch.maxItems
-              : undefined) ?? 100,
+              : undefined) ?? DEFAULT_MAX_BATCH,
         };
 
   const errorShape: V11Core['errorShape'] = (err, path, type, procedure) => {
@@ -394,6 +402,7 @@ export function createV11Handler<
     errorShape,
     settle,
     drains: makeSocketDrains(0),
+    maxSocketBatch: batch?.maxItems ?? DEFAULT_MAX_BATCH,
   };
 
   const json = (
@@ -924,7 +933,7 @@ export function createV11Handler<
         );
       }
       if (isBatch && batch && paths.length > batch.maxItems) {
-        return yield* fail('BAD_REQUEST', 'Batch call exceeds maximum size');
+        return yield* fail('BAD_REQUEST', BATCH_TOO_LARGE);
       }
       const procedures = yield* Effect.forEach(
         paths,
