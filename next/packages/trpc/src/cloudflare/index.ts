@@ -15,6 +15,14 @@ export {
   type experimental_DurableLockerOptions,
 } from './lock.ts';
 export {
+  experimental_durableRateLimiterStore,
+  experimental_durableRateLimitObject,
+  type DurableRateLimitNamespace,
+  type DurableRateLimitObject,
+  type DurableRateLimitState,
+  type experimental_DurableRateLimiterStoreOptions,
+} from './ratelimit.ts';
+export {
   experimental_workersTracer,
   type AsyncContextRunner,
   type experimental_WorkersTracerOptions,
