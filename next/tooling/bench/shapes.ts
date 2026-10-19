@@ -154,6 +154,11 @@ const shapeList = {
     impl: (i, kind) =>
       `t.procedure${input(i)}.${kind}((opts) => ${effectBody(i)})`,
   },
+  'effect middleware': {
+    // `middleware`, its own middleware an Effect one that logs failures.
+    impl: (i, kind) =>
+      `authed.use(t.middleware.effect()((opts) => opts.next({ ctx: { perm_${i}: true } }).pipe(Effect.tapError((e) => Effect.log(e)))))${input(i)}.${kind}((opts) => opts.input.a_${i} === '' ? ${returned} : { v_${i}: opts.ctx.user.id + opts.ctx.tenant })`,
+  },
   'effect services': {
     // Every third procedure provides a service; each uses one of the layer's.
     impl: (i, kind) =>
