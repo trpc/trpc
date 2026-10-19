@@ -265,6 +265,38 @@ test('the module layer provides Effect services', async () => {
   expect(await (await fetch(`${app.url}/post/count`)).json()).toBe(2);
 });
 
+test('closing the app releases the module layer', async () => {
+  let released = 0;
+  @Controller()
+  class CountController {
+    @Implement({ count: appContract.post.count })
+    count() {
+      return { count: impl.post.count.query(() => Counter.use((c) => c.next)) };
+    }
+  }
+  @Module({
+    imports: [
+      TrpcModule.forRoot({
+        layer: Layer.effect(
+          Counter,
+          Effect.acquireRelease(
+            Effect.succeed({ next: Effect.succeed(1) }),
+            () => Effect.sync(() => released++),
+          ),
+        ),
+      }),
+    ],
+    controllers: [CountController],
+  })
+  class ReleaseModule {}
+  const nest = await NestFactory.create(ReleaseModule, { logger: false });
+  await nest.listen(0, '127.0.0.1');
+  expect(await (await fetch(`${await nest.getUrl()}/count`)).json()).toBe(1);
+  expect(released).toBe(0);
+  await nest.close();
+  expect(released).toBe(1);
+});
+
 test('Nest guards run before the procedure', async () => {
   await using app = await listen();
   const res = await fetch(`${app.url}/secret`);
