@@ -43,7 +43,8 @@ export interface OpenApiLinkOptions {
   headers?:
     | HeadersInit
     | ((opts: { op: Operation }) => HeadersInit | Promise<HeadersInit>);
-  fetch?: typeof globalThis.fetch;
+  /** A custom `fetch`, called with the URL as a string. */
+  fetch?: (url: string, init: RequestInit) => Promise<Response>;
 }
 
 const isAbort = (cause: unknown) =>

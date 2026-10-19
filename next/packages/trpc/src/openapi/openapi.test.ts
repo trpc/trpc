@@ -391,9 +391,7 @@ test('experimental_openApiLink calls the REST endpoints from a JSON contract (18
         contract,
         headers: { 'x-user': 'ada' },
         fetch: (input, init) => {
-          requests.push(
-            `${init?.method} ${(input instanceof Request ? input.url : String(input as string | URL)).slice(s.origin.length)}`,
-          );
+          requests.push(`${init.method} ${input.slice(s.origin.length)}`);
           return fetch(input, init);
         },
       }),

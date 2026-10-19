@@ -52,8 +52,12 @@ export interface HttpLinkOptions<
     | ((opts: {
         ops: ReadonlyArray<Operation>;
       }) => MaybePromise<TrpcRequestInit | undefined>);
-  /** A custom `fetch`. */
-  fetch?: typeof globalThis.fetch;
+  /**
+   * A custom `fetch`, called with the URL as a string. Any function with
+   * that call shape fits, so a wrapper needn't copy extras like Bun's
+   * `fetch.preconnect`.
+   */
+  fetch?: (url: string, init: RequestInit) => Promise<Response>;
   /**
    * Queries whose URL would be longer than this are sent with a body, as
    * `longQuery` says.

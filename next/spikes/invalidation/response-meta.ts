@@ -76,9 +76,9 @@ export function responseHttpLink(
   opts: HttpLinkOptions,
 ): TrpcLink<{ context: ResponseContext }> & Capabilities<'response'> {
   const baseFetch = opts.fetch ?? globalThis.fetch;
-  const fetch: typeof globalThis.fetch = async (input, init) => {
-    const res = await baseFetch(input, init);
-    const report = (init as Record<string, unknown> | undefined)?.[
+  const fetch: NonNullable<HttpLinkOptions['fetch']> = async (url, init) => {
+    const res = await baseFetch(url, init);
+    const report = (init as Record<string, unknown>)[
       ON_RESPONSE
     ] as ResponseContext['onResponse'];
     report?.({ status: res.status, headers: res.headers });

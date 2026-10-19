@@ -13,7 +13,7 @@ export interface experimental_UpstashOptions {
   /** `UPSTASH_REDIS_REST_TOKEN`. */
   readonly token: string;
   /** @default globalThis.fetch */
-  readonly fetch?: typeof fetch;
+  readonly fetch?: (url: string, init: RequestInit) => Promise<Response>;
 }
 
 const noSubscribe = new Redis.RedisError({
