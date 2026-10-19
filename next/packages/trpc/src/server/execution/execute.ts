@@ -53,13 +53,21 @@ const unexpectedErrors = new WeakSet<AnyTrpcError>();
 const isThenable = (value: unknown): value is PromiseLike<unknown> =>
   typeof (value as PromiseLike<unknown> | null)?.then === 'function';
 
-/** Runs user code; only a returned promise makes the call asynchronous. */
-const attempt = <A>(fn: () => A | PromiseLike<A>): Effect.Effect<A> =>
-  Effect.suspend(() => {
-    const ret = fn();
-    return isThenable(ret)
-      ? Effect.promise(() => ret)
-      : Effect.succeed(ret as A);
+/**
+ * Runs Promise middleware; only a returned promise makes the step
+ * asynchronous. `signal` aborts when the step's fiber is interrupted, so
+ * the `next()` calls it runs on fibers of their own are interrupted too.
+ */
+const attempt = <A>(
+  fn: (signal: AbortSignal) => A | PromiseLike<A>,
+): Effect.Effect<A> =>
+  Effect.callback<A>((resume, signal) => {
+    const ret = fn(signal);
+    if (!isThenable(ret)) return resume(Effect.succeed(ret));
+    ret.then(
+      (value) => resume(Effect.succeed(value as A)),
+      (cause) => resume(Effect.die(cause)),
+    );
   });
 
 /** Wraps a thrown non-`TrpcError` value. Its message is masked in production. @internal */
@@ -682,14 +690,21 @@ export function callProcedure(
           );
         }
         const runNext = Effect.runPromiseExitWith(services);
-        const next = async (o?: NextOpts) =>
-          toResult(
-            await runNext(rest(o) as Effect.Effect<unknown, AnyTrpcError>, {
-              signal: opts.signal,
-            }),
-          );
         return Effect.flatMap(
-          attempt(() => step.fn({ ...base, ctx, input, next })),
+          attempt((signal) =>
+            step.fn({
+              ...base,
+              ctx,
+              input,
+              next: async (o?: NextOpts) =>
+                toResult(
+                  await runNext(
+                    rest(o) as Effect.Effect<unknown, AnyTrpcError>,
+                    { signal },
+                  ),
+                ),
+            }),
+          ),
           fromResult,
         );
       }

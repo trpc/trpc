@@ -214,6 +214,46 @@ test('a client abort interrupts next(); it is not a failure', async () => {
   expect(outcomes).toEqual(['interrupted']);
 });
 
+test('interrupting next() reaches the steps after a Promise middleware', async () => {
+  const outcomes: string[] = [];
+  let settle!: () => void;
+  const settled = new Promise<void>((resolve) => {
+    settle = resolve;
+  });
+  const timed = t.procedure
+    .use(
+      t.middleware.effect()((opts) =>
+        opts.next().pipe(
+          Effect.timeoutOrElse({
+            duration: '1 millis',
+            orElse: () => Effect.fail(new Gone()),
+          }),
+        ),
+      ),
+    )
+    .use(async (opts) => {
+      const result = await opts.next();
+      outcomes.push(`promise middleware ${result.ok}`);
+      settle();
+      return result;
+    })
+    .query(() =>
+      Effect.never.pipe(
+        Effect.onInterrupt(() =>
+          Effect.sync(() => outcomes.push('resolver interrupted')),
+        ),
+      ),
+    );
+  await expect(call(timed, undefined, { ctx })).rejects.toMatchObject({
+    code: 'GONE',
+  });
+  await settled;
+  expect(outcomes).toEqual([
+    'resolver interrupted',
+    'promise middleware false',
+  ]);
+});
+
 test('auth before next() and ctx for next() keep both branches typed', async () => {
   const authed = t.procedure.use(
     t.middleware.effect()((opts) =>
