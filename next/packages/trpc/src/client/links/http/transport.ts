@@ -1,15 +1,5 @@
 import { Cause, Effect, Exit, Queue, Scope, Stream } from 'effect';
 import {
-  FetchHttpClient,
-  HttpBody,
-  HttpClient,
-  HttpClientError,
-  HttpClientRequest,
-  Url,
-  type HttpClientResponse,
-  type HttpMethod,
-} from 'effect/http';
-import {
   codeOfStatus,
   fromWireError,
   isTrpcError,
@@ -42,13 +32,8 @@ import type { HttpLinkOptions } from './link.ts';
 const isAbort = (cause: unknown) =>
   cause instanceof Error && cause.name === 'AbortError';
 
-/** An `HttpClientError` stands for what it wraps: a fetch or body failure. */
+/** A fetch, URL or body failure as the call's error. */
 export function toHttpError(cause: unknown): AnyTrpcError {
-  if (HttpClientError.isHttpClientError(cause)) {
-    const inner = cause.reason.cause;
-    // An invalid URL wraps `new URL`'s own error in a `UrlError`.
-    return toHttpError(inner instanceof Url.UrlError ? inner.cause : inner);
-  }
   if (isTrpcError(cause)) return cause;
   if (isAbort(cause)) {
     return new TrpcError({
@@ -88,16 +73,41 @@ function initKey(op: Operation): string | undefined {
 }
 
 /**
- * A response: Effect's, for reading its body, and the web one it wraps,
- * which `onResponse`, `File` outputs and raw responses hand on.
+ * A response, which `onResponse`, `File` outputs and raw responses hand on
+ * as is.
  */
 export interface Reply {
-  readonly response: HttpClientResponse.HttpClientResponse;
   readonly web: Response;
 }
 
 export const ok = (reply: Reply): boolean =>
-  reply.response.status >= 200 && reply.response.status < 300;
+  reply.web.status >= 200 && reply.web.status < 300;
+
+/**
+ * A response's body (callers check it has one). It fails with what the read
+ * threw: SSE reconnects after anything but a tRPC error.
+ */
+export const bodyStream = (reply: Reply): Stream.Stream<Uint8Array, unknown> =>
+  Stream.fromReadableStream({
+    evaluate: () => reply.web.body!,
+    onError: (cause) => cause,
+  });
+
+/**
+ * `url` resolved against the page, as `fetch` would in a browser, so a
+ * custom `fetch` gets an absolute URL there too.
+ */
+const resolveUrl = (url: string): string => {
+  const page = (
+    globalThis as { location?: { origin?: string; pathname?: string } }
+  ).location;
+  return new URL(
+    url,
+    page?.origin !== undefined && page.pathname !== undefined
+      ? page.origin + page.pathname
+      : undefined,
+  ).href;
+};
 
 /**
  * Runs `effect` with a scope that closes, aborting its requests, only if
@@ -112,6 +122,12 @@ export const abortOnInterrupt = <A, E>(
       Effect.onInterrupt(() => Scope.close(scope, Exit.void)),
     ),
   );
+
+/** A request as `fetch` takes it. */
+interface Prepared {
+  readonly url: string;
+  readonly init: RequestInit;
+}
 
 /** What {@link makeTransport} gives the link. */
 export interface Transport {
@@ -144,18 +160,9 @@ export function makeTransport(
   const maxUrlLength = opts.maxUrlLength ?? 2048;
   const longQueryMethod = opts.longQuery === 'query' ? 'QUERY' : 'POST';
   const rawFetch = opts.fetch ?? globalThis.fetch;
-  // `withScope`: requests abort when the caller's scope closes, rather than
-  // when the response is garbage collected (or, without a
-  // `FinalizationRegistry`, after 5 s unread), since bodies outlive it.
-  const client = HttpClient.withScope(
-    Effect.runSync(
-      Effect.provide(
-        Effect.service(HttpClient.HttpClient),
-        FetchHttpClient.layer,
-      ),
-    ),
-  );
   const reviveError = (value: unknown) => fromWireError(value);
+  const readText = (reply: Reply) =>
+    Effect.tryPromise({ try: () => reply.web.text(), catch: toHttpError });
 
   /** Hands `op` its response; an `onResponse` that throws fails the call. */
   const report = (op: Operation, status: number, headers: Headers) => {
@@ -178,11 +185,11 @@ export function makeTransport(
    */
   const prepare = (
     ops: ReadonlyArray<Operation>,
-    method: HttpMethod.HttpMethod,
+    method: 'GET' | 'POST' | 'QUERY',
     url: string,
     extra: Record<string, string>,
-    body?: HttpBody.HttpBody,
-  ) =>
+    body?: string | FormData,
+  ): Effect.Effect<Prepared, AnyTrpcError> =>
     Effect.tryPromise({
       try: async () => {
         const base =
@@ -207,63 +214,59 @@ export function makeTransport(
           base?.next || call?.next
             ? { ...base?.next, ...call?.next }
             : undefined;
-        const request = HttpClientRequest.make(method)(url, { headers });
-        return {
-          // The body goes last: it sets the request's `content-type`.
-          request: body ? HttpClientRequest.setBody(request, body) : request,
-          init: { ...base, ...call, ...(next ? { next } : {}) } as RequestInit,
+        // A JSON body names its type; `fetch` sets a multipart one's, with
+        // its boundary.
+        if (typeof body === 'string') {
+          headers.set('content-type', CONTENT_TYPE.json);
+        } else if (body) {
+          headers.delete('content-type');
+        }
+        headers.delete('content-length');
+        const init: RequestInit = {
+          ...base,
+          ...call,
+          ...(next ? { next } : {}),
+          method,
+          headers,
+          ...(body === undefined ? {} : { body }),
         };
+        return { url: resolveUrl(url), init };
       },
       catch: toHttpError,
     });
 
   /**
-   * Sends `request` through `HttpClient`, with the options it can't carry
-   * (`credentials`, `cache`, Next's `next`) as `init`. Aborts when the
-   * caller's scope closes or `signal` aborts.
+   * Sends `request`, aborting it when the caller's scope closes (its body
+   * can outlive the call) or `signal` aborts.
    */
   const execute = (
-    prepared: {
-      request: HttpClientRequest.HttpClientRequest;
-      init: RequestInit;
-    },
+    request: Prepared,
     signal: AbortSignal | undefined,
   ): Effect.Effect<Reply, AnyTrpcError, Scope.Scope> =>
-    Effect.suspend(() => {
-      let web: Response | undefined;
-      // `HttpClientResponse` keeps the web response private, so it's caught
-      // on its way out of `fetch`. `FetchHttpClient` passes a `URL` and
-      // Effect `Headers`; a custom `fetch` gets a string and web `Headers`.
-      const fetch = async (url: URL, init: RequestInit = {}) => {
-        const res = await rawFetch(url.href, {
-          ...init,
-          headers: new Headers(init.headers),
-          ...(signal && init.signal
-            ? { signal: AbortSignal.any([init.signal, signal]) }
-            : {}),
-        });
-        const theirs = res.headers.get(HEADER.serializer);
-        if (theirs !== null && theirs !== serializer.name) {
-          await res.body?.cancel().catch(() => {});
-          throw new TrpcError({
-            code: 'UNSUPPORTED_PROTOCOL',
-            message: `The server uses the '${theirs}' serializer, but this httpLink uses '${serializer.name}'. Pass the same serializer to the handler and httpLink.`,
+    Effect.gen(function* () {
+      const controller = new AbortController();
+      yield* Effect.addFinalizer(() => Effect.sync(() => controller.abort()));
+      const web = yield* Effect.tryPromise({
+        try: async () => {
+          const res = await rawFetch(request.url, {
+            ...request.init,
+            signal: signal
+              ? AbortSignal.any([controller.signal, signal])
+              : controller.signal,
           });
-        }
-        web = res;
-        return res;
-      };
-      return client.execute(prepared.request).pipe(
-        Effect.map((response): Reply => ({ response, web: web! })),
-        Effect.provideService(
-          FetchHttpClient.Fetch,
-          fetch as typeof globalThis.fetch,
-        ),
-        Effect.provideService(FetchHttpClient.RequestInit, prepared.init),
-        // Calls carry their own span's trace headers (`op.trace`).
-        Effect.provideService(HttpClient.TracerDisabledWhen, () => true),
-        Effect.mapError(toHttpError),
-      );
+          const theirs = res.headers.get(HEADER.serializer);
+          if (theirs !== null && theirs !== serializer.name) {
+            await res.body?.cancel().catch(() => {});
+            throw new TrpcError({
+              code: 'UNSUPPORTED_PROTOCOL',
+              message: `The server uses the '${theirs}' serializer, but this httpLink uses '${serializer.name}'. Pass the same serializer to the handler and httpLink.`,
+            });
+          }
+          return res;
+        },
+        catch: toHttpError,
+      });
+      return { web };
     });
 
   interface Encoded {
@@ -299,8 +302,7 @@ export function makeTransport(
    * framework's JSON 404), whose status names the error.
    */
   const readError = (reply: Reply): Effect.Effect<never, AnyTrpcError> =>
-    reply.response.text.pipe(
-      Effect.mapError(toHttpError),
+    readText(reply).pipe(
       Effect.flatMap((text) => {
         let body: unknown;
         let cause: unknown;
@@ -314,8 +316,8 @@ export function makeTransport(
           typeof error === 'object' && error !== null
             ? fromWireError(body)
             : new TrpcError({
-                code: codeOfStatus(reply.response.status) ?? 'BAD_RESPONSE',
-                message: `Unexpected ${reply.response.status} response`,
+                code: codeOfStatus(reply.web.status) ?? 'BAD_RESPONSE',
+                message: `Unexpected ${reply.web.status} response`,
                 cause: cause ?? body,
               }),
         );
@@ -326,7 +328,7 @@ export function makeTransport(
     ? `${CONTENT_TYPE.frames}, ${CONTENT_TYPE.jsonl}`
     : CONTENT_TYPE.jsonl;
   const contentType = (reply: Reply) =>
-    reply.response.headers['content-type'] ?? '';
+    reply.web.headers.get('content-type') ?? '';
   const streamed = (reply: Reply) => {
     const type = contentType(reply);
     return (
@@ -337,7 +339,7 @@ export function makeTransport(
   };
   /** A streamed body's lines, parsed. */
   const readStream = (reply: Reply): Stream.Stream<unknown, AnyTrpcError> => {
-    const bytes = reply.response.stream.pipe(Stream.mapError(toHttpError));
+    const bytes = bodyStream(reply).pipe(Stream.mapError(toHttpError));
     return contentType(reply).startsWith(CONTENT_TYPE.frames)
       ? decodeRecords(bytes)
       : textLines(bytes).pipe(
@@ -377,7 +379,7 @@ export function makeTransport(
           );
         }
         return yield* execute(
-          yield* prepare([op], 'POST', url, headers, HttpBody.formData(form)),
+          yield* prepare([op], 'POST', url, headers, form),
           op.signal,
         );
       }
@@ -397,9 +399,7 @@ export function makeTransport(
           op.type === 'query' ? longQueryMethod : 'POST',
           url,
           headers,
-          HttpBody.raw(json === undefined ? '' : JSON.stringify(json), {
-            contentType: CONTENT_TYPE.json,
-          }),
+          json === undefined ? '' : JSON.stringify(json),
         ),
         op.signal,
       );
@@ -467,7 +467,7 @@ export function makeTransport(
           Effect.catchDefect((defect) => Effect.fail(toHttpError(defect))),
         );
     }
-    return reply.response.text.pipe(
+    return readText(reply).pipe(
       Effect.flatMap((text) =>
         Effect.try({
           try: () =>
@@ -553,9 +553,7 @@ export function makeTransport(
             'POST',
             baseUrl,
             { accept: streamType, [HEADER.batch]: '1' },
-            HttpBody.raw(JSON.stringify(calls), {
-              contentType: CONTENT_TYPE.json,
-            }),
+            JSON.stringify(calls),
           ),
           undefined,
         ).pipe(Scope.provide(batch.scope));
