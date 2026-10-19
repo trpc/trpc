@@ -10,11 +10,11 @@ import {
 import {
   CONTENT_TYPE,
   HEADER,
-  parseSse,
+  sseEvents,
   toInputSearch,
   PROTOCOL_VERSION,
   readBlob,
-  readLines,
+  textLines,
   SSE_EVENT,
   type BatchCall,
   type BatchLine,
@@ -336,17 +336,24 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
   const readStream = (
     type: string,
     body: ReadableStream<Uint8Array>,
-  ): Stream.Stream<unknown, AnyTrpcError> =>
-    type.startsWith(CONTENT_TYPE.frames)
-      ? decodeRecords(
-          Stream.fromReadableStream({
-            evaluate: () => body,
-            onError: toHttpError,
-          }),
-        )
-      : Stream.fromAsyncIterable(readLines(body), toHttpError).pipe(
-          Stream.map((line) => JSON.parse(line) as unknown),
+  ): Stream.Stream<unknown, AnyTrpcError> => {
+    const bytes = Stream.fromReadableStream({
+      evaluate: () => body,
+      onError: toHttpError,
+    });
+    return type.startsWith(CONTENT_TYPE.frames)
+      ? decodeRecords(bytes)
+      : textLines(bytes).pipe(
+          Stream.map((line) => line.trim()),
+          Stream.filter((line) => line !== ''),
+          // Line by line, so the lines before an unreadable one still arrive.
+          // An unreadable line is a defect: what's still open fails as a
+          // broken stream.
+          Stream.mapEffect((line) =>
+            Effect.sync(() => JSON.parse(line) as unknown),
+          ),
         );
+  };
 
   async function readResult(res: Response, op?: Operation): Promise<unknown> {
     if (res.headers.get(HEADER.response) === '1') return res;
@@ -689,9 +696,12 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
             );
           }
           const decoder = makeDeferredDecoder(serializer);
-          const ended = yield* Stream.fromAsyncIterable(
-            parseSse(res.body),
-            (cause) => cause,
+          const body = res.body;
+          const ended = yield* sseEvents(
+            Stream.fromReadableStream({
+              evaluate: () => body,
+              onError: (cause) => cause,
+            }),
           ).pipe(
             Stream.mapEffect((event) => read(event, decoder)),
             Stream.takeUntil((done) => done),

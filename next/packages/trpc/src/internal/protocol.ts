@@ -1,3 +1,4 @@
+import { Stream } from 'effect';
 import type { ProcedureType } from './types.ts';
 
 /**
@@ -266,81 +267,70 @@ export const isJsonContentType = (value: string | null): boolean =>
 export const isMultipartContentType = (value: string | null): boolean =>
   hasMediaType(value, 'multipart/form-data');
 
+/** An SSE event: `event` defaults to `message`. */
+export interface SseEvent {
+  readonly event: string;
+  readonly data: string;
+  readonly id: string | undefined;
+}
+
 /**
- * Decodes a byte stream as UTF-8 text. `TextDecoder` with `stream: true`
- * rather than `TextDecoderStream`, which React Native's Hermes lacks.
+ * A byte stream's text, split at `\n`, `\r\n` or `\r`. `Stream.decodeText`
+ * decodes with `TextDecoder`, not `TextDecoderStream`, which React Native's
+ * Hermes lacks.
  */
-async function* readText(
-  stream: ReadableStream<Uint8Array>,
-): AsyncGenerator<string> {
-  const reader = stream.getReader();
-  const decoder = new TextDecoder();
-  try {
-    while (true) {
-      const chunk = await reader.read();
-      if (chunk.done) break;
-      const text = decoder.decode(chunk.value, { stream: true });
-      if (text) yield text;
-    }
-    const rest = decoder.decode();
-    if (rest) yield rest;
-  } finally {
-    await reader.cancel().catch(() => {});
-  }
+export const textLines = <E>(
+  bytes: Stream.Stream<Uint8Array, E>,
+): Stream.Stream<string, E> =>
+  bytes.pipe(Stream.decodeText(), Stream.splitLines);
+
+/** The fields of the SSE event being read. */
+interface SseFields {
+  data: string[];
+  event: string;
+  id: string | undefined;
 }
 
-/** Parses SSE events out of a text stream, per the HTML spec's rules. */
-export async function* parseSse(
-  stream: ReadableStream<Uint8Array>,
-): AsyncGenerator<{ event: string; data: string; id: string | undefined }> {
-  let buffer = '';
-  let data: string[] = [];
-  let event = '';
-  let id: string | undefined;
-  for await (const value of readText(stream)) {
-    buffer += value;
-    let newline: number;
-    while ((newline = buffer.search(/\r\n|\r|\n/)) !== -1) {
-      // A trailing `\r` may be the first half of a `\r\n` split across chunks.
-      if (newline === buffer.length - 1 && buffer.endsWith('\r')) break;
-      const line = buffer.slice(0, newline);
-      buffer = buffer.slice(
-        newline + (buffer.startsWith('\r\n', newline) ? 2 : 1),
-      );
-      if (line === '') {
-        if (data.length > 0 || event) {
-          yield { event: event || 'message', data: data.join('\n'), id };
+/** Parses SSE events out of a byte stream, per the HTML spec's rules. */
+export const sseEvents = <E>(
+  bytes: Stream.Stream<Uint8Array, E>,
+): Stream.Stream<SseEvent, E> =>
+  textLines(bytes).pipe(
+    Stream.mapAccum(
+      (): SseFields => ({ data: [], event: '', id: undefined }),
+      (state, line): readonly [SseFields, ReadonlyArray<SseEvent>] => {
+        if (line === '') {
+          return [
+            { data: [], event: '', id: undefined },
+            state.data.length > 0 || state.event
+              ? [
+                  {
+                    event: state.event || 'message',
+                    data: state.data.join('\n'),
+                    id: state.id,
+                  },
+                ]
+              : [],
+          ];
         }
-        data = [];
-        event = '';
-        id = undefined;
-        continue;
-      }
-      if (line.startsWith(':')) continue;
-      const colon = line.indexOf(':');
-      const field = colon === -1 ? line : line.slice(0, colon);
-      let val = colon === -1 ? '' : line.slice(colon + 1);
-      if (val.startsWith(' ')) val = val.slice(1);
-      if (field === 'data') data.push(val);
-      else if (field === 'event') event = val;
-      else if (field === 'id') id = val;
-    }
-  }
-}
+        const colon = line.indexOf(':');
+        const field = colon === -1 ? line : line.slice(0, colon);
+        let value = colon === -1 ? '' : line.slice(colon + 1);
+        if (value.startsWith(' ')) value = value.slice(1);
+        if (field === 'data') state.data.push(value);
+        else if (field === 'event') state.event = value;
+        else if (field === 'id') state.id = value;
+        return [state, []];
+      },
+    ),
+  );
 
-/** Splits a byte stream into non-empty lines. */
-export async function* readLines(
-  stream: ReadableStream<Uint8Array>,
-): AsyncGenerator<string> {
-  let buffer = '';
-  for await (const value of readText(stream)) {
-    buffer += value;
-    let newline: number;
-    while ((newline = buffer.indexOf('\n')) !== -1) {
-      const line = buffer.slice(0, newline).trim();
-      buffer = buffer.slice(newline + 1);
-      if (line) yield line;
-    }
-  }
-  if (buffer.trim()) yield buffer.trim();
-}
+/** {@link sseEvents} of a web body, for code outside Effect. */
+export const parseSse = (
+  body: ReadableStream<Uint8Array>,
+): AsyncIterable<SseEvent> =>
+  Stream.toAsyncIterable(
+    sseEvents(
+      Stream.fromReadableStream({ evaluate: () => body, onError: (e) => e }),
+    ),
+  );

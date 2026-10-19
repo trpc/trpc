@@ -1,10 +1,11 @@
+import { Effect, Stream } from 'effect';
 import { expect, test, vi } from 'vite-plus/test';
 import {
   hasMediaType,
   isJsonContentType,
   isMultipartContentType,
   parseSse,
-  readLines,
+  textLines,
 } from './protocol.ts';
 
 const streamOf = (...chunks: (string | Uint8Array)[]) =>
@@ -29,8 +30,10 @@ const collect = async <T>(it: AsyncIterable<T>) => {
 test('lines split mid-character decode whole, without TextDecoderStream', async () => {
   vi.stubGlobal('TextDecoderStream', undefined);
   const bytes = new TextEncoder().encode('{"a":"é"}\n{"b":1}');
-  const lines = await collect(
-    readLines(streamOf(bytes.slice(0, 7), bytes.slice(7))),
+  const lines = await Effect.runPromise(
+    Stream.runCollect(
+      textLines(Stream.make(bytes.slice(0, 7), bytes.slice(7))),
+    ),
   );
   expect(lines).toEqual(['{"a":"é"}', '{"b":1}']);
 });
