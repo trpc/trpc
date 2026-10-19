@@ -59,7 +59,23 @@ interface Shape {
     /** `client.ts`, instead of the Promise client. */
     readonly client?: string;
   };
+  /** How router files and the root compose, instead of plain objects. */
+  readonly compose?: {
+    /** A router file's export, around its routes object. */
+    readonly file: (routes: string) => string;
+    /** The root router, from the router files' names; with its imports. */
+    readonly root: (files: ReadonlyArray<string>) => string;
+    readonly rootImports: string;
+  };
 }
+
+/** `mergeRouters` over groups of ten files at a time. */
+const mergeTens = (files: ReadonlyArray<string>) => {
+  const groups = Array.from({ length: Math.ceil(files.length / 10) }, (_, g) =>
+    files.slice(g * 10, g * 10 + 10),
+  );
+  return `mergeRouters(\n${groups.map((group) => `  mergeRouters(${group.join(', ')}),`).join('\n')}\n)`;
+};
 
 /** A chain like an app's: every built-in kind of link, and a custom one. */
 const appLinks: Shape['links'] = {
@@ -187,6 +203,21 @@ const shapeList = {
       client: `import { httpLink, routerType } from '@trpc12/trpc/client';\nimport { createEffectClient } from '@trpc12/trpc/effect';\nimport type { router } from './router';\n\nexport const client = createEffectClient({\n  router: routerType<typeof router>(),\n  links: [httpLink({ url: 'http://localhost:3000/trpc' })],\n});\n`,
     },
   },
+  merged: {
+    // `plain`, each file a `t.router()` group with the same `route` meta,
+    // merged ten files at a time and the groups merged again at the root.
+    impl: (i, kind) => `t.procedure${input(i)}.${kind}(${body(i, returned)})`,
+    own: {
+      module: `import { experimental_openapi } from '@trpc12/trpc/openapi';\nimport { t } from './base';\n\nexport const api = t.concat(experimental_openapi());\n`,
+      imports: `import { api } from '../effect-shape';`,
+    },
+    compose: {
+      file: (routes) =>
+        `api.router({ meta: { route: { prefix: '/v1', tags: ['v1'] } } }, ${routes})`,
+      root: mergeTens,
+      rootImports: `import { mergeRouters } from '@trpc12/trpc/server';\n`,
+    },
+  },
   contract: {
     contract: (i, kind) => `c${input(i)}${output(i)}${errors(i)}.${kind}()`,
     impl: (i, kind) => `.${kind}(${body(i, declared)})`,
@@ -265,6 +296,10 @@ const fixture = (
   const contract = shape?.contract;
   const own = shape?.own;
   if (own?.module) files.push(['effect-shape.ts', own.module]);
+  const compose = shape?.compose;
+  // A composed file keeps its procedures under `f<n>`, so client paths match.
+  const composeFile = (f: number, routes: string) =>
+    compose ? compose.file(`{ f${f}: ${routes} }`) : routes;
 
   for (const f of ids) {
     if (contract) {
@@ -283,11 +318,12 @@ const fixture = (
         ? `import { impl } from './impl';\n\nexport const f${f} = {\n${inFile(f)
             .map((i) => `  p${i}: impl.f${f}.p${i}${shape!.impl(i, kind(i))},`)
             .join('\n')}\n};\n`
-        : `import { Effect } from 'effect';\nimport { authed, error, t, type S } from '../base';\n${own?.imports ?? ''}\n\nexport const f${f} = {\n${inFile(
+        : `import { Effect } from 'effect';\nimport { authed, error, t, type S } from '../base';\n${own?.imports ?? ''}\n\nexport const f${f} = ${composeFile(
             f,
-          )
-            .map((i) => `  p${i}: ${shape!.impl(i, kind(i))},`)
-            .join('\n')}\n};\n`,
+            `{\n${inFile(f)
+              .map((i) => `  p${i}: ${shape!.impl(i, kind(i))},`)
+              .join('\n')}\n}`,
+          )};\n`,
     ]);
     const callOptions = shape?.callOptions ? `, ${shape.callOptions}` : '';
     const call = (i: number) =>
@@ -324,7 +360,9 @@ const fixture = (
   } else {
     files.push([
       'router/index.ts',
-      `${imports}\n\nexport const router = {\n${entries}\n};\n`,
+      compose
+        ? `${compose.rootImports}${imports}\n\nexport const router = ${compose.root(ids.map((f) => `f${f}`))};\n`
+        : `${imports}\n\nexport const router = {\n${entries}\n};\n`,
     ]);
   }
   files.push([
