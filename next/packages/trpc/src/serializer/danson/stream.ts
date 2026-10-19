@@ -9,10 +9,14 @@
  * @internal
  */
 import {
+  Array as Arr,
   Cause,
+  Channel,
+  type Context,
   Deferred,
   Effect,
   Exit,
+  identity,
   Queue,
   Result,
   type Scope,
@@ -29,7 +33,7 @@ import {
   type SerializeRecord,
   type SerializeReturn,
 } from './sync.ts';
-import { backpressure, toAsyncIterable } from '../../internal/effects.ts';
+import { backpressure, returnUnawaited } from '../../internal/effects.ts';
 import { JsonBytes } from '../../internal/frames.ts';
 import { counter, DansonError } from './utils.ts';
 
@@ -58,7 +62,30 @@ export const isPromiseLike = (v: unknown): v is PromiseLike<unknown> =>
   v !== null &&
   typeof (v as { then?: unknown }).then === 'function';
 
-/** Every deferred value becomes a stream of `[status, value]` pairs. */
+/**
+ * A channel's items as VALUE pairs, then its done value as RETURN, or its
+ * failure as ERROR. It pulls one item per item read.
+ */
+const statusesOf = <D>(
+  channel: Channel.Channel<Arr.NonEmptyReadonlyArray<unknown>, unknown, D>,
+): Stream.Stream<[Status, unknown]> =>
+  Stream.fromChannel(
+    channel.pipe(
+      Channel.map(Arr.map((v): [Status, unknown] => [VALUE, v])),
+      Channel.concatWith((done) =>
+        Channel.succeed(Arr.of<[Status, unknown]>([RETURN, done])),
+      ),
+      Channel.catch((error) =>
+        Channel.succeed(Arr.of<[Status, unknown]>([ERROR, error])),
+      ),
+    ),
+  );
+
+/**
+ * Every deferred value becomes a stream of `[status, value]` pairs. A
+ * promise is listened to at once, so its rejection is handled before the
+ * stream starts.
+ */
 export function sourceOf(
   value:
     | ReadableStream<unknown>
@@ -68,41 +95,19 @@ export function sourceOf(
   if (value instanceof ReadableStream || isAsyncIterable(value)) {
     const iterable =
       value instanceof ReadableStream
-        ? (value as ReadableStream<unknown> & AsyncIterable<unknown>)
-        : value;
-    return Stream.callback<[Status, unknown]>(
-      (queue) =>
-        Effect.gen(function* () {
-          const iterator = iterable[Symbol.asyncIterator]();
-          // Not awaited: a generator awaiting its signal returns only once
-          // that aborts, after the stream has closed.
-          yield* Effect.addFinalizer(() =>
-            Effect.sync(() => {
-              iterator.return?.().catch(() => {});
-            }),
-          );
-          while (true) {
-            const next = yield* Effect.tryPromise({
-              try: () => iterator.next(),
-              catch: (cause) => cause,
-            }).pipe(Effect.exit);
-            if (Exit.isFailure(next)) {
-              yield* Queue.offer(queue, [ERROR, Cause.squash(next.cause)]);
-              break;
-            }
-            if (next.value.done) {
-              yield* Queue.offer(queue, [RETURN, next.value.value]);
-              break;
-            }
-            yield* Queue.offer(queue, [VALUE, next.value.value]);
-          }
-          yield* Queue.end(queue);
-        }),
-      backpressure,
+        ? (value as ReadableStream<unknown> & AsyncIterable<unknown, unknown>)
+        : (value as AsyncIterable<unknown, unknown>);
+    return statusesOf(
+      Channel.fromAsyncIterableArray(returnUnawaited(iterable), identity),
     );
   }
+  const settled = Deferred.makeUnsafe<unknown, unknown>();
+  Promise.resolve(value).then(
+    (v) => Deferred.doneUnsafe(settled, Exit.succeed(v)),
+    (e) => Deferred.doneUnsafe(settled, Exit.fail(e)),
+  );
   return Stream.fromEffect(
-    Effect.tryPromise({ try: () => value, catch: (cause) => cause }).pipe(
+    Deferred.await(settled).pipe(
       Effect.match({
         onSuccess: (v): [Status, unknown] => [VALUE, v],
         onFailure: (e): [Status, unknown] => [ERROR, e],
@@ -115,18 +120,14 @@ const isFile = (v: unknown): v is File =>
   typeof File !== 'undefined' && v instanceof File;
 
 /** A blob's bytes, one chunk per read. */
-async function* byteChunks(blob: Blob): AsyncGenerator<JsonBytes> {
-  const reader = blob.stream().getReader();
-  try {
-    while (true) {
-      const chunk = await reader.read();
-      if (chunk.done) return;
-      yield JsonBytes.wrap(chunk.value);
-    }
-  } finally {
-    reader.releaseLock();
-  }
-}
+const byteChunks = (blob: Blob): Stream.Stream<[Status, unknown]> =>
+  statusesOf(
+    Channel.fromReadableStream({
+      evaluate: () => blob.stream(),
+      onError: identity,
+      releaseLockOnEnd: true,
+    }).pipe(Channel.map(Arr.map((chunk) => JsonBytes.wrap(chunk)))),
+  );
 
 /** Chunks arrive as bytes over binary transports, base64 over JSON ones. */
 function toBytes(chunks: unknown[]): Uint8Array<ArrayBuffer>[] {
@@ -257,7 +258,7 @@ export function serializeDeferred(
     serializers: withDeferred(options.serializers),
     dedupe: options.dedupe,
     context: {
-      register: (v: Parameters<typeof sourceOf>[0]) => register(v),
+      register: (v: Parameters<typeof sourceOf>[0]) => register(sourceOf(v)),
       registerBlob: (blob: Blob) => registerBlob(blob),
     } satisfies DeferredContext,
   };
@@ -271,13 +272,9 @@ export function serializeDeferred(
     }
     return idx;
   }
-  function register(v: Parameters<typeof sourceOf>[0]): number {
-    if (isPromiseLike(v)) {
-      // Rejections surface as ERROR chunks once the source starts.
-      Promise.resolve(v).catch(() => {});
-    }
+  function register(source: Stream.Stream<[Status, unknown]>): number {
     const idx = nextIndex();
-    pending.push([idx, sourceOf(v)]);
+    pending.push([idx, source]);
     return idx;
   }
   const serialize = (v: unknown) =>
@@ -371,23 +368,6 @@ export function deferredChunks(
   );
 }
 
-/** An async iterable whose `return` value is the stream's RETURN chunk. */
-export function iterateWithReturn(
-  source: Stream.Stream<[Status, unknown], unknown>,
-  revive: (value: unknown) => unknown,
-): AsyncIterable<unknown, unknown> {
-  return {
-    async *[Symbol.asyncIterator]() {
-      for await (const [status, v] of toAsyncIterable(source)) {
-        if (status === VALUE) yield v;
-        else if (status === RETURN) return v;
-        else throw revive(v);
-      }
-      return undefined;
-    },
-  };
-}
-
 /**
  * Rebuilds deferred values from their chunk streams: a `Promise` settles with
  * the first chunk, an `AsyncIterable` yields until RETURN, and a
@@ -400,10 +380,85 @@ export interface DeferredBuilders {
   readonly ReadableStream: (idx: number) => ReadableStream<unknown>;
 }
 
-export function deferredBuilders(
-  take: (idx: number) => Stream.Stream<[Status, unknown], unknown>,
+/** An async iterable whose `return` value is the stream's RETURN chunk. */
+const iterateWithReturn = (
+  source: Stream.Stream<[Status, unknown], unknown>,
   revive: (value: unknown) => unknown,
-): DeferredBuilders {
+  context: Context.Context<never>,
+): AsyncIterable<unknown, unknown> => {
+  const results = source.pipe(
+    Stream.takeUntil(([status]) => status !== VALUE),
+    Stream.mapEffect(([status, v]) =>
+      status === ERROR
+        ? Effect.fail(revive(v))
+        : Effect.succeed<IteratorResult<unknown, unknown>>({
+            done: status === RETURN,
+            value: v,
+          }),
+    ),
+  );
+  return {
+    [Symbol.asyncIterator]() {
+      const iterator = Stream.toAsyncIterableWith(results, context)[
+        Symbol.asyncIterator
+      ]() as Required<AsyncIterator<IteratorResult<unknown, unknown>>>;
+      return {
+        next: () =>
+          iterator.next().then((next) => {
+            if (next.done) return next;
+            const result = next.value;
+            return result.done ? iterator.return().then(() => result) : result;
+          }),
+        return: (value?: unknown) =>
+          iterator.return().then(() => ({ done: true, value })),
+      };
+    },
+  };
+};
+
+/**
+ * The chunk queues of one deserialization, one per deferred value, made
+ * in Effect by whichever comes first: a chunk for the value or its reader.
+ * The values it builds run on the context of the fiber that made it, as
+ * `Stream.toReadableStreamEffect`'s do.
+ */
+export interface ChunkQueues {
+  readonly offer: (idx: number, item: [Status, unknown]) => Effect.Effect<void>;
+  /** Fails one value with `error`, after the chunks it holds. */
+  readonly fail: (idx: number, error: unknown) => Effect.Effect<void>;
+  /** Fails every value with `error`, those read later too: the frames ended. */
+  readonly end: (error: unknown) => Effect.Effect<void>;
+  readonly builders: DeferredBuilders;
+}
+
+export type ChunkQueue = Queue.Queue<[Status, unknown], unknown>;
+
+export const makeChunkQueues: (
+  revive: (value: unknown) => unknown,
+) => Effect.Effect<ChunkQueues> = Effect.fnUntraced(function* (revive) {
+  const context = yield* Effect.context<never>();
+  const queues = new Map<number, ChunkQueue>();
+  let ended: Cause.Cause<unknown> | undefined;
+  const queueFor = (idx: number): Effect.Effect<ChunkQueue> =>
+    Effect.suspend(() => {
+      const known = queues.get(idx);
+      if (known) return Effect.succeed(known);
+      return Effect.map(
+        Queue.unbounded<[Status, unknown], unknown>(),
+        (made) => {
+          // Another fiber may have made it while this one yielded.
+          const raced = queues.get(idx);
+          if (raced) return raced;
+          queues.set(idx, made);
+          if (ended) Queue.failCauseUnsafe(made, ended);
+          return made;
+        },
+      );
+    });
+  const take = (idx: number) =>
+    Stream.unwrap(Effect.map(queueFor(idx), Stream.fromQueue)).pipe(
+      Stream.ensuring(Effect.sync(() => queues.delete(idx))),
+    );
   const iterate = (idx: number) =>
     take(idx).pipe(
       Stream.takeWhile(([status]) => status !== RETURN),
@@ -411,11 +466,12 @@ export function deferredBuilders(
         status === VALUE ? Effect.succeed(v) : Effect.fail(revive(v)),
       ),
     );
-  return {
+  const runPromise = Effect.runPromiseWith(context);
+  const builders: DeferredBuilders = {
     iterate,
     // Chunk queues fail, never end, so a promise always gets its chunk.
-    Promise: (idx: number): Promise<unknown> => {
-      const p = Effect.runPromise(
+    Promise: (idx) => {
+      const p = runPromise(
         iterate(idx).pipe(
           Stream.take(1),
           Stream.runCollect,
@@ -425,16 +481,33 @@ export function deferredBuilders(
       p.catch(() => {});
       return p;
     },
-    AsyncIterable: (idx: number): AsyncIterable<unknown, unknown> =>
-      iterateWithReturn(take(idx), revive),
+    AsyncIterable: (idx) => iterateWithReturn(take(idx), revive, context),
     // Nothing queued ahead of a read: a failure errors the stream, which
     // drops what's queued, so items before it would be lost.
-    ReadableStream: (idx: number): ReadableStream<unknown> =>
-      Stream.toReadableStream(iterate(idx), {
+    ReadableStream: (idx) =>
+      Stream.toReadableStreamWith(iterate(idx), context, {
         strategy: { highWaterMark: 0 },
       }),
   };
-}
+  return {
+    offer: (idx, item) =>
+      Effect.flatMap(queueFor(idx), (queue) =>
+        Effect.asVoid(Queue.offer(queue, item)),
+      ),
+    fail: (idx, error) =>
+      Effect.flatMap(queueFor(idx), (queue) =>
+        Effect.asVoid(Queue.failCause(queue, Cause.fail(error))),
+      ),
+    end: (error) =>
+      Effect.sync(() => {
+        const cause = (ended = Cause.fail(error));
+        for (const queue of queues.values()) {
+          Queue.failCauseUnsafe(queue, cause);
+        }
+      }),
+    builders,
+  };
+});
 
 export interface StreamErrorOptions {
   /** Turns a deserialized ERROR chunk into the value a deferred rejects with. */
@@ -483,8 +556,6 @@ export function streamErrorsOf(options: StreamErrorOptions): StreamErrors {
   };
 }
 
-export type ChunkQueue = Queue.Queue<[Status, unknown], unknown>;
-
 export function deserializeStream<T, E>(
   source: Stream.Stream<Frame, E>,
   options: DeserializeStreamOptions,
@@ -492,21 +563,8 @@ export function deserializeStream<T, E>(
   const errors = streamErrorsOf(options);
   return Effect.gen(function* () {
     const head = yield* Deferred.make<T, E | DansonError>();
-    const queues = new Map<number, ChunkQueue>();
-    const queueFor = (idx: number) => {
-      let q = queues.get(idx);
-      if (!q) {
-        q = Effect.runSync(Queue.unbounded<[Status, unknown], unknown>());
-        queues.set(idx, q);
-      }
-      return q;
-    };
-    const take = (idx: number) =>
-      Stream.fromQueue(queueFor(idx)).pipe(
-        Stream.ensuring(Effect.sync(() => queues.delete(idx))),
-      );
-
-    const { iterate, ...builders } = deferredBuilders(take, errors.revive);
+    const chunks = yield* makeChunkQueues(errors.revive);
+    const { iterate, ...builders } = chunks.builders;
     const opts: DeserializeOptions = {
       ...options,
       cache: new Map(),
@@ -546,47 +604,42 @@ export function deserializeStream<T, E>(
             collected.set(idx, toBytes(Array.from(chunks)));
           }),
           Deferred.into(done),
-          Effect.forkDetach,
+          Effect.forkChild,
           Effect.as(done),
         );
       });
     const HEAD = -1;
     /** The last frame waiting for bytes, per target. */
     const tails = new Map<number, Deferred.Deferred<void, unknown>>();
-    const apply = (target: number, frame: Frame) => {
-      if (target === HEAD) {
-        Deferred.doneUnsafe(
-          head,
-          Effect.succeed(deserializeSync<T>(frame as SerializeReturn, opts)),
-        );
-        return;
-      }
-      const [, status, json] = frame as Chunk;
-      Queue.offerUnsafe(queueFor(target), [
-        status,
-        json.json instanceof Uint8Array
-          ? json.json
-          : deserializeSync(json, opts),
-      ]);
-    };
     // A frame that can't be read fails its own target: the head as it is
     // (the link names it), a deferred value as a failed stream would.
-    const fail = (target: number, error: unknown) => {
-      if (target === HEAD)
-        Deferred.doneUnsafe(head, Effect.fail(error as never));
-      else
-        Queue.failCauseUnsafe(
-          queueFor(target),
-          Cause.fail(errors.unreadable(error)),
-        );
-    };
-    const settle = (target: number, frame: Frame) => {
-      try {
-        apply(target, frame);
-      } catch (cause) {
-        fail(target, toDeserializeError(cause));
-      }
-    };
+    const fail = (target: number, error: unknown): Effect.Effect<void> =>
+      target === HEAD
+        ? Effect.asVoid(Deferred.fail(head, error as DansonError))
+        : chunks.fail(target, errors.unreadable(error));
+    const settle = (target: number, frame: Frame): Effect.Effect<void> =>
+      target === HEAD
+        ? Effect.try({
+            try: () => deserializeSync<T>(frame as SerializeReturn, opts),
+            catch: toDeserializeError,
+          }).pipe(Deferred.into(head), Effect.asVoid)
+        : Effect.try({
+            try: (): [Status, unknown] => {
+              const [, status, json] = frame as Chunk;
+              return [
+                status,
+                json.json instanceof Uint8Array
+                  ? json.json
+                  : deserializeSync(json, opts),
+              ];
+            },
+            catch: toDeserializeError,
+          }).pipe(
+            Effect.matchEffect({
+              onSuccess: (item) => chunks.offer(target, item),
+              onFailure: (error) => fail(target, error),
+            }),
+          );
 
     let first = true;
     yield* source.pipe(
@@ -605,7 +658,7 @@ export function deserializeStream<T, E>(
           });
           const waits = yield* Effect.forEach(refs, (idx) => collect(idx));
           const tail = tails.get(target);
-          if (waits.length === 0 && !tail) return settle(target, frame);
+          if (waits.length === 0 && !tail) return yield* settle(target, frame);
           const settled = Deferred.makeUnsafe<void, unknown>();
           tails.set(target, settled);
           const ready: ReadonlyArray<Deferred.Deferred<void, unknown>> = tail
@@ -614,7 +667,7 @@ export function deserializeStream<T, E>(
           yield* Effect.forEach(ready, (d) => Deferred.await(d), {
             discard: true,
           }).pipe(
-            Effect.matchCause({
+            Effect.matchCauseEffect({
               onFailure: (cause) => fail(target, Cause.squash(cause)),
               onSuccess: () => settle(target, frame),
             }),
@@ -624,7 +677,7 @@ export function deserializeStream<T, E>(
                 if (tails.get(target) === settled) tails.delete(target);
               }),
             ),
-            Effect.forkDetach,
+            Effect.forkChild,
           );
         }),
       ),
@@ -632,25 +685,26 @@ export function deserializeStream<T, E>(
         Effect.gen(function* () {
           const error = errors.ended(exit);
           // Bytes already received still drain; then waiting frames settle.
-          for (const idx of bytes.keys()) {
-            const q = queues.get(idx);
-            if (q) Queue.failCauseUnsafe(q, Cause.fail(error));
-          }
+          yield* Effect.forEach(
+            [...bytes.keys()],
+            (idx) => chunks.fail(idx, error),
+            { discard: true },
+          );
           yield* Effect.forEach([...tails.values()], (d) => Deferred.await(d), {
             discard: true,
           });
           // A no-op once the head is out; a head frame that failed to read leaves it open.
-          Deferred.doneUnsafe(
+          yield* Deferred.done(
             head,
             Exit.isFailure(exit)
-              ? Effect.failCause(exit.cause)
-              : Effect.fail(errors.interrupted() as never),
+              ? Exit.failCause(exit.cause)
+              : Exit.fail(errors.interrupted() as never),
           );
-          for (const q of queues.values()) {
-            Queue.failCauseUnsafe(q, Cause.fail(error));
-          }
+          yield* chunks.end(error);
         }),
       ),
+      // The frames are read for as long as the deferred values they feed,
+      // past the caller's fiber. Its forks are its children.
       Effect.forkDetach,
     );
     return yield* Deferred.await(head);

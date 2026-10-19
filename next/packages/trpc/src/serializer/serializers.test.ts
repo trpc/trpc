@@ -1,5 +1,5 @@
 import * as devalue from 'devalue';
-import { Effect } from 'effect';
+import { Effect, Stream } from 'effect';
 import superjson from 'superjson';
 import {
   createTrpcClient,
@@ -520,6 +520,27 @@ test('nested deferred values stream with every serializer; files in inputs need 
   await expect(client.file.mutate(new Blob(['x']))).rejects.toMatchObject({
     message: expect.stringContaining('streaming serializer'),
   });
+});
+
+test("returning a deferred AsyncIterable ends a read that's still waiting for its chunk", async () => {
+  const silent: AsyncIterable<never> = {
+    [Symbol.asyncIterator]: () => ({ next: () => new Promise(() => {}) }),
+  };
+  for (const serializer of [createSerializer(), jsonSerializer]) {
+    const serialized = serializer.serializeDeferred({ items: silent });
+    const value = await Effect.runPromise(
+      serializer.deserializeStream<{ items: AsyncIterable<unknown> }, never>(
+        Stream.concat(Stream.make(serialized.head), Stream.never),
+      ),
+    );
+    const iterator = value.items[Symbol.asyncIterator]();
+    const read = iterator.next();
+    await expect(iterator.return?.()).resolves.toEqual({
+      done: true,
+      value: undefined,
+    });
+    await expect(read).resolves.toEqual({ done: true, value: undefined });
+  }
 });
 
 test('a File nested in an input or output fails with the other serializers, before it is sent', async () => {

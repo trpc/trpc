@@ -6,20 +6,23 @@
  */
 export { deserializers, inputDeserializers, serializers } from './std.ts';
 export {
-  deferredBuilders,
   deferredChunks,
   deserializeStream,
+  ERROR,
   isAsyncIterable,
   isPromiseLike,
+  makeChunkQueues,
+  RETURN,
   serializeDeferred,
   sourceOf,
   streamErrorsOf,
   toDansonError,
   toDeserializeError,
+  VALUE,
 } from './stream.ts';
 export type {
   Chunk,
-  ChunkQueue,
+  ChunkQueues,
   Frame,
   PendingSource,
   SerializedDeferred,

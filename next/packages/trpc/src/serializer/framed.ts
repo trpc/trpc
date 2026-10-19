@@ -1,19 +1,17 @@
-import { Cause, Deferred, Effect, Exit, Queue, Stream } from 'effect';
+import { Deferred, Effect, Exit, Stream } from 'effect';
 import type { JsonForm, SyncForm } from '../internal/types.ts';
 import type { Serializer } from './index.ts';
 import {
-  deferredBuilders,
   deferredChunks,
   isAsyncIterable,
   isPromiseLike,
+  makeChunkQueues,
   sourceOf,
   streamErrorsOf,
   toDansonError,
   toDeserializeError,
   type Chunk,
-  type ChunkQueue,
   type PendingSource,
-  type Status,
   type SerializeReturn,
   DansonError,
   type JsonValue,
@@ -224,7 +222,6 @@ function framedSerializer(
       const pending: PendingSource[] = [];
       let next = 0;
       const register = (v: Parameters<typeof sourceOf>[0]) => {
-        if (isPromiseLike(v)) Promise.resolve(v).catch(() => {});
         const idx = next++;
         pending.push([idx, sourceOf(v)]);
         return idx;
@@ -250,65 +247,47 @@ function framedSerializer(
       const errors = streamErrorsOf(opts);
       return Effect.gen(function* () {
         const head = yield* Deferred.make<T, E | DansonError>();
-        const queues = new Map<number, ChunkQueue>();
-        const queueFor = (idx: number) => {
-          let q = queues.get(idx);
-          if (!q) {
-            q = Effect.runSync(Queue.unbounded<[Status, unknown], unknown>());
-            queues.set(idx, q);
-          }
-          return q;
-        };
-        const take = (idx: number) =>
-          Stream.fromQueue(queueFor(idx)).pipe(
-            Stream.ensuring(Effect.sync(() => queues.delete(idx))),
-          );
-        const builders = deferredBuilders(take, errors.revive);
+        const chunks = yield* makeChunkQueues(errors.revive);
         const revivePayload = (p: FramedPayload): unknown => {
           let v: unknown = deserialize(p);
           for (const [path, idx, kind] of p.d ?? []) {
-            queueFor(idx);
-            v = setAt(v, path, builders[kind](idx));
+            v = setAt(v, path, chunks.builders[kind](idx));
           }
           return v;
         };
+        const read = (frame: FramedPayload) =>
+          Effect.try({
+            try: () => revivePayload(frame),
+            catch: toDeserializeError,
+          });
         let first = true;
         yield* frames.pipe(
-          Stream.runForEach((frame) =>
-            Effect.try({
-              try: () => {
-                if (first) {
-                  first = false;
-                  Deferred.doneUnsafe(
-                    head,
-                    Effect.succeed(revivePayload(frame as FramedPayload) as T),
-                  );
-                  return;
-                }
-                const [idx, status, json] = frame as Chunk;
-                Queue.offerUnsafe(queueFor(idx), [
-                  status,
-                  revivePayload(json as FramedPayload),
-                ]);
-              },
-              catch: toDeserializeError,
-            }),
-          ),
+          Stream.runForEach((frame) => {
+            if (first) {
+              first = false;
+              return Effect.flatMap(read(frame as FramedPayload), (value) =>
+                Deferred.succeed(head, value as T),
+              );
+            }
+            const [idx, status, json] = frame as Chunk;
+            return Effect.flatMap(read(json as FramedPayload), (value) =>
+              chunks.offer(idx, [status, value]),
+            );
+          }),
           Effect.onExit((exit) =>
-            Effect.sync(() => {
-              const error = errors.ended(exit);
+            Effect.andThen(
               // A no-op once the head is out; a head frame that failed to read leaves it open.
-              Deferred.doneUnsafe(
+              Deferred.done(
                 head,
                 Exit.isFailure(exit)
-                  ? Effect.failCause(exit.cause)
-                  : Effect.fail(errors.interrupted() as never),
-              );
-              for (const q of queues.values()) {
-                Queue.failCauseUnsafe(q, Cause.fail(error));
-              }
-            }),
+                  ? Exit.failCause(exit.cause)
+                  : Exit.fail(errors.interrupted() as never),
+              ),
+              chunks.end(errors.ended(exit)),
+            ),
           ),
+          // The frames are read for as long as the deferred values they
+          // feed, past the caller's fiber.
           Effect.forkDetach,
         );
         return yield* Deferred.await(head);
