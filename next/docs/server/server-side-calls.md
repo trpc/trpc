@@ -20,7 +20,16 @@ await call(appRouter.post.byId, { id: '1' }, { ctx: { user } });
 
 `localLink({ router })` does the same inside a client's link chain. For React Server Actions, see [Server Actions](../integrations/server-actions.md).
 
-In-process calls have no HTTP request: you pass the `ctx` (or a function that makes it) yourself, and the handler's `createContext` doesn't run. To share request-reading code with the handler, keep it in a function of the request and build one: `ctx: () => contextFor(HttpServerRequest.fromWeb(new Request(url, { headers })))`.
+`call()` takes no options when the procedure needs no `ctx` and no services: `await call(health, undefined)`.
+
+In-process calls have no HTTP request: you pass the `ctx` yourself (`createRouterClient` and `localLink` also take a function that makes it), and the handler's `createContext` doesn't run.
+
+|                                   | `ctx`                                    | `layer`                                                    |
+| --------------------------------- | ---------------------------------------- | ---------------------------------------------------------- |
+| `call()`                          | a value, for this call                   | built for the call and released after it                   |
+| `createRouterClient`, `localLink` | a value, or a function run on every call | built on the first call and kept for the client's lifetime |
+
+So create a router client once, not per request, and pass a `ctx` function for per-request values; a client made per request builds its layer again each time and never releases it. To share request-reading code with the handler, keep it in a function of the request and build one: `ctx: () => contextFor(HttpServerRequest.fromWeb(new Request(url, { headers })))`.
 
 In-process callers (`createRouterClient`, `createTrpcRsc`, `localLink({ serializer: false })`) pass values by reference, so they keep native types whatever the [serializer](./serializers.md).
 

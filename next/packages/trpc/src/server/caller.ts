@@ -70,13 +70,15 @@ export function createRouterClient<TRouter extends AnyRouter>(
 }
 
 /**
- * The options of {@link call}. `layer` is required when the procedure needs
- * Effect services.
+ * The options of {@link call}. `ctx` is required when the procedure needs
+ * any, and `layer` when it needs Effect services; otherwise the options can
+ * be left out.
  * @since 0.1.0
  * @stability stable
  */
-export type CallOptions<TDef extends ProcedureDef> = {
-  ctx: TDef['ctx'];
+export type CallOptions<TDef extends ProcedureDef> = ({} extends TDef['ctx']
+  ? { ctx?: TDef['ctx'] }
+  : { ctx: TDef['ctx'] }) & {
   signal?: AbortSignal;
   /** Passed to middleware and the resolver. @default '' */
   path?: string;
@@ -96,23 +98,31 @@ export type CallOptions<TDef extends ProcedureDef> = {
 export async function call<TDef extends ProcedureDef>(
   procedure: Procedure<TDef>,
   input: TDef['input'],
-  opts: CallOptions<TDef>,
+  ...[opts]: {} extends CallOptions<TDef>
+    ? [opts?: CallOptions<TDef>]
+    : [opts: CallOptions<TDef>]
 ): Promise<TDef['output']> {
+  const o = (opts ?? {}) as {
+    ctx?: object;
+    signal?: AbortSignal;
+    path?: string;
+    layer?: Layer.Layer<never, any, never>;
+  };
   const effect = callProcedure({
     procedure,
-    path: opts.path ?? '',
-    ctx: opts.ctx,
+    path: o.path ?? '',
+    ctx: o.ctx ?? {},
     input,
-    signal: opts.signal ?? new AbortController().signal,
+    signal: o.signal ?? new AbortController().signal,
   });
-  const layer = (opts as { layer?: Layer.Layer<never, any, never> }).layer;
+  const layer = o.layer;
   const exit = await Effect.runPromiseExit(
     (layer ? Effect.provide(effect, layer) : effect) as Effect.Effect<
       TDef['output'],
       never,
       never
     >,
-    { signal: opts.signal },
+    { signal: o.signal },
   );
   if (Exit.isSuccess(exit)) return exit.value;
   const error = normalizeCause(exit.cause);

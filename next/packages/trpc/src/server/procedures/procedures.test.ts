@@ -529,6 +529,15 @@ test('call() runs one procedure, with a layer for its services', async () => {
   // @ts-expect-error -- `timed` needs Clock, so `layer` is required
   const missing = () => call(router.timed, undefined, { ctx: { user: null } });
   expectTypeOf(missing).toBeFunction();
+  // @ts-expect-error -- `byId` needs a `Ctx`, so the options are required
+  const noCtx = () => call(router.post.byId, { id: '1' });
+  expectTypeOf(noCtx).toBeFunction();
+
+  const echo = initTrpc()
+    .procedure.input(z.string())
+    .query(({ input }) => input);
+  expect(await call(echo, 'hi')).toBe('hi');
+  expect(await call(echo, 'hi', { path: 'echo' })).toBe('hi');
 });
 
 test('.output(schema, { validate: false }) types the result without running the schema (04 Q4.4)', async () => {
