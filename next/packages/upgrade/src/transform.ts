@@ -452,23 +452,39 @@ export function upgradeSource(
   const linkOptions = (call: Node, linkName: string) => {
     const arg = call['arguments'][0] as Node | undefined;
     const object = objectArg(call);
-    if (
+    // What the v11 link did that `httpLink` takes as an import.
+    const feature =
       linkName === 'httpBatchLink' ||
       linkName === 'httpBatchStreamLink' ||
       linkName === 'unstable_httpBatchStreamLink'
-    ) {
+        ? (['batch', 'batching'] as const)
+        : linkName === 'httpSubscriptionLink' ||
+            linkName === 'unstable_httpSubscriptionLink'
+          ? (['subscriptions', 'sse'] as const)
+          : undefined;
+    if (feature) {
+      const [option, exported] = feature;
+      // A name the file already uses, as `const sse = …` would, gets an alias.
+      const clashes = new RegExp(`\\b${exported}\\b`).test(source);
+      const name = clashes
+        ? `trpc${exported[0]!.toUpperCase()}${exported.slice(1)}`
+        : exported;
+      ensure(
+        '@trpc12/trpc/client',
+        clashes ? `${exported} as ${name}` : exported,
+      );
       const first = object?.['properties'][0] as Node | undefined;
       if (first) {
         const gap = source.slice(object!.start + 1, first.start);
         s.appendLeft(
           first.start,
-          `batch: true,${gap.includes('\n') ? gap.slice(gap.lastIndexOf('\n')) : ' '}`,
+          `${option}: ${name}(),${gap.includes('\n') ? gap.slice(gap.lastIndexOf('\n')) : ' '}`,
         );
       } else if (object) {
-        take(object.start, object.end, '{ batch: true }');
+        take(object.start, object.end, `{ ${option}: ${name}() }`);
       } else if (arg) {
         s.appendLeft(arg.start, '{ ...');
-        s.appendRight(arg.end, ', batch: true }');
+        s.appendRight(arg.end, `, ${option}: ${name}() }`);
       }
     }
     if (!object) return;
