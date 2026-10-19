@@ -1,4 +1,4 @@
-import { Logger } from 'effect';
+import { Logger, Stream } from 'effect';
 import {
   createTrpcClient,
   httpLink,
@@ -57,9 +57,38 @@ const router = {
       yield 1;
       throw new TrpcError({ code: 'FEED_GONE' });
     }),
+  streamed: t.procedure.query(async function* () {
+    yield 1;
+    throw new TrpcError({ code: 'FEED_GONE', data: { feed: 'a' } });
+  }),
+  streamedUndeclared: t.procedure.errors(OutOfStock).query(async function* () {
+    yield 1;
+    throw new TrpcError({ code: 'SOLD_OUT', data: { sku: 'a1' } });
+  }),
+  streamedBadData: t.procedure.errors(OutOfStock).query(async function* () {
+    yield 1;
+    throw new TrpcError({ code: 'OUT_OF_STOCK', data: { sku: 1 } });
+  }),
+  streamedBuiltin: t.procedure.query(async function* () {
+    yield 1;
+    throw new TrpcError({ code: 'CONFLICT', data: { table: 'posts' } });
+  }),
+  streamedFailure: t.procedure.query(() =>
+    Stream.concat(Stream.make(1), Stream.fail(new TrpcError.Conflict())),
+  ),
 };
 
 /** A server whose Effect warnings land in `warnings`, with `NODE_ENV` set to `env`. */
+const failure = async (stream: AsyncIterable<number>) => {
+  const seen: number[] = [];
+  try {
+    for await (const value of stream) seen.push(value);
+  } catch (err) {
+    return { seen, err };
+  }
+  throw new Error('the stream did not fail');
+};
+
 async function setup(env = 'development') {
   vi.stubEnv('NODE_ENV', env);
   const warnings: string[] = [];
@@ -152,15 +181,6 @@ test('a custom code thrown in middleware keeps its code and data', async () => {
 
 test('a subscription that throws mid-stream follows the same rules', async () => {
   await using ctx = await setup();
-  const failure = async (sub: AsyncIterable<number>) => {
-    const seen: number[] = [];
-    try {
-      for await (const value of sub) seen.push(value);
-    } catch (err) {
-      return { seen, err };
-    }
-    throw new Error('the subscription did not fail');
-  };
   const kept = await failure(ctx.client.events.subscribe());
   expect(kept.seen).toEqual([1]);
   expect(kept.err).toMatchObject({
@@ -170,6 +190,30 @@ test('a subscription that throws mid-stream follows the same rules', async () =>
   });
   const masked = await failure(ctx.client.declaredEvents.subscribe());
   expect(masked.err).toMatchObject({ code: 'INTERNAL_SERVER_ERROR' });
+});
+
+test("a query's streamed output follows the same rules", async () => {
+  await using ctx = await setup('production');
+  const kept = await failure(await ctx.client.streamed.query());
+  expect(kept.seen).toEqual([1]);
+  expect(kept.err).toMatchObject({
+    code: 'FEED_GONE',
+    data: { feed: 'a' },
+    defined: false,
+  });
+  const masked = await failure(await ctx.client.streamedUndeclared.query());
+  expect(masked.err).toMatchObject({
+    code: 'INTERNAL_SERVER_ERROR',
+    message: 'Internal server error',
+  });
+  expect(masked.err).not.toHaveProperty('data.sku');
+  const invalid = await failure(await ctx.client.streamedBadData.query());
+  expect(invalid.err).toMatchObject({ code: 'INTERNAL_SERVER_ERROR' });
+  const builtin = await failure(await ctx.client.streamedBuiltin.query());
+  expect(builtin.err).toMatchObject({ code: 'CONFLICT', defined: false });
+  expect((builtin.err as TrpcError).data).toBeUndefined();
+  const failed = await failure(await ctx.client.streamedFailure.query());
+  expect(failed.err).toMatchObject({ code: 'CONFLICT', defined: true });
 });
 
 test('declared errors are exhaustive in the types too', () => {

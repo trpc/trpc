@@ -126,22 +126,21 @@ const isAsyncIterable = (value: unknown): value is AsyncIterable<unknown> =>
   typeof value === 'object' && value !== null && Symbol.asyncIterator in value;
 
 /** Typed `TrpcError` failures stay failures; anything else is a defect (02 d.i). */
+const typedCause = (cause: Cause.Cause<unknown>): Cause.Cause<AnyTrpcError> =>
+  Cause.fromReasons(
+    cause.reasons.map((reason) =>
+      Cause.isFailReason(reason)
+        ? isTrpcError(reason.error)
+          ? Cause.makeFailReason(withDefined(reason.error, true))
+          : Cause.makeDieReason(reason.error)
+        : reason,
+    ),
+  ) as Cause.Cause<AnyTrpcError>;
+
 const refail = <A, R>(
   effect: Effect.Effect<A, unknown, R>,
 ): Effect.Effect<A, AnyTrpcError, R> =>
-  Effect.catchCause(effect, (cause) =>
-    Effect.failCause(
-      Cause.fromReasons(
-        cause.reasons.map((reason) =>
-          Cause.isFailReason(reason)
-            ? isTrpcError(reason.error)
-              ? Cause.makeFailReason(withDefined(reason.error, true))
-              : Cause.makeDieReason(reason.error)
-            : reason,
-        ),
-      ) as Cause.Cause<AnyTrpcError>,
-    ),
-  );
+  Effect.catchCause(effect, (cause) => Effect.failCause(typedCause(cause)));
 
 const fail = (err: AnyTrpcError) => Effect.fail(withDefined(err, true));
 
@@ -193,7 +192,6 @@ const isOkResult = (value: unknown): value is { ok: true; data: unknown } =>
   (value as { ok?: unknown }).ok === true &&
   'data' in value;
 
-/** Validates declared errors' `data` (07 A). Invalid data is an unexpected error. */
 /** The output schema to run, unless it only types the result. */
 const validated = (def: ProcedureInternals): OutputSchema | undefined =>
   def.validateOutput === false ? undefined : def.output;
@@ -357,6 +355,40 @@ const settle = (
   }
   return Effect.failCause(cause as Cause.Cause<AnyTrpcError>);
 };
+
+/**
+ * A streamed output's failure, settled like the resolver's and failing
+ * with the error clients get, since nothing normalizes it after.
+ */
+const settleStreamed = (
+  def: ProcedureInternals,
+  path: string,
+  cause: Cause.Cause<unknown>,
+): Effect.Effect<never, AnyTrpcError> =>
+  Effect.catchCause(settle(def, path, typedCause(cause)), (settled) =>
+    Effect.fail(normalizeCause(settled)),
+  );
+
+const isReadableStream = (value: unknown): boolean =>
+  typeof ReadableStream === 'function' && value instanceof ReadableStream;
+
+/** `source` with what it throws settled by {@link settleStreamed}. */
+function settleIterable(
+  source: AsyncIterable<unknown, unknown>,
+  settled: (cause: Cause.Cause<unknown>) => Effect.Effect<never, AnyTrpcError>,
+  services: Context.Context<never>,
+): AsyncIterable<unknown, unknown> {
+  const run = Effect.runPromiseWith(services);
+  return {
+    async *[Symbol.asyncIterator]() {
+      try {
+        return yield* source;
+      } catch (cause) {
+        throw await run(Effect.flip(settled(Cause.die(cause))));
+      }
+    },
+  };
+}
 
 /**
  * Runs a call: middleware, inputs, `.provide()` steps, the resolver and
@@ -612,11 +644,19 @@ export function callProcedure(
         (cause) => Stream.fromEffect(settle(def, path, cause)),
       );
     }
+    const settled = (cause: Cause.Cause<unknown>) =>
+      settleStreamed(def, path, cause);
     if (Stream.isStream(value)) {
       return Stream.toAsyncIterableWith(
-        value as Stream.Stream<unknown, unknown, never>,
+        Stream.catchCause(
+          value as Stream.Stream<unknown, unknown, never>,
+          (cause) => Stream.fromEffect(settled(cause)),
+        ),
         services,
       );
+    }
+    if (isAsyncIterable(value) && !isReadableStream(value)) {
+      return settleIterable(value, settled, services);
     }
     return value;
   };
