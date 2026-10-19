@@ -46,6 +46,31 @@ function combinedAbortController(signal: AbortSignal) {
   };
 }
 
+/**
+ * A client that leaves may only cancel the response body, without aborting
+ * the request's signal, and the procedures streaming into it wait on that.
+ */
+function abortOnCancel(
+  stream: ReadableStream<Uint8Array>,
+  controller: AbortController,
+): ReadableStream<Uint8Array> {
+  const reader = stream.getReader();
+  return new ReadableStream({
+    async pull(enqueuer) {
+      const chunk = await reader.read();
+      if (chunk.done) {
+        enqueuer.close();
+      } else {
+        enqueuer.enqueue(chunk.value);
+      }
+    },
+    cancel(reason) {
+      controller.abort();
+      return reader.cancel(reason);
+    },
+  });
+}
+
 const TYPE_ACCEPTED_METHOD_MAP: Record<ProcedureType, HTTPMethods[]> = {
   mutation: ['POST'],
   query: ['GET'],
@@ -326,9 +351,14 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       clearMaxDurationTimer?: () => void;
     }
     type RPCResult = ResultTuple<RPCResultOk>;
+    const bodyCancelled = new AbortController();
+    const callSignal = abortSignalsAnyPonyfill([
+      opts.req.signal,
+      bodyCancelled.signal,
+    ]);
     const rpcCalls = info.calls.map(async (call): Promise<RPCResult> => {
       const proc = call.procedure;
-      const combinedAbort = combinedAbortController(opts.req.signal);
+      const combinedAbort = combinedAbortController(callSignal);
       let clearMaxDurationTimer: (() => void) | undefined;
       try {
         if (opts.error) {
@@ -488,7 +518,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
               );
             }
             const dataAsIterable = isObservable(result.data)
-              ? observableToAsyncIterable(result.data, opts.req.signal)
+              ? observableToAsyncIterable(result.data, callSignal)
               : result.data;
             return dataAsIterable;
           });
@@ -575,6 +605,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
               },
               cancel() {
                 onStreamEnd();
+                bodyCancelled.abort();
                 return reader.cancel();
               },
             });
@@ -640,7 +671,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
            * Our stream producer will only resolve top-level async values or async values that are directly nested in another async value
            */
           const iterable = isObservable(result.data)
-            ? observableToAsyncIterable(result.data, opts.req.signal)
+            ? observableToAsyncIterable(result.data, callSignal)
             : Promise.resolve(result.data);
           return {
             result: Promise.resolve({
@@ -683,7 +714,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         },
       });
 
-      return new Response(stream, {
+      return new Response(abortOnCancel(stream, bodyCancelled), {
         headers,
         status: headResponse.status,
       });
