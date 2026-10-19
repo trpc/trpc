@@ -1,5 +1,3 @@
-import { Effect, Exit } from 'effect';
-import { toAsyncIterable } from '../internal/effects.ts';
 import {
   ERROR_CATEGORY,
   ERROR_STATUS,
@@ -15,14 +13,13 @@ import type { AnySerializer } from '../serializer/index.ts';
 import {
   chainSerializer,
   chainSwitchNames,
-  clientErrorFromCause,
-  firstValue,
-  runLinks,
-  type Operation,
+  runChain,
+  runRequest,
+  toClientError,
   type AnyLink,
-  type BuiltinCallOptions,
-  type TrpcLink,
-} from './link.ts';
+  type PromiseLink,
+} from './chain.ts';
+import type { Operation, BuiltinCallOptions, TrpcLink } from './link.ts';
 import type {
   DuplicateSwitchCheck,
   LinksContext,
@@ -124,7 +121,9 @@ export interface TrpcClientOptions {
  */
 export interface TypedClientOptions<
   TSource,
-  TLinks extends ReadonlyArray<TrpcLink<any, RouterOf<TSource>>>,
+  TLinks extends ReadonlyArray<
+    TrpcLink<any, RouterOf<TSource>> | PromiseLink<any, RouterOf<TSource>>
+  >,
 > {
   /** `routerType<AppRouter>()`, a contract, or the router itself. */
   router: TSource;
@@ -171,21 +170,18 @@ export function createUntypedClient(
   return {
     async request(o) {
       const op = makeOperation(o.type, o.path, o.input, o);
-      const exit = await Effect.runPromiseExit(
-        firstValue(runLinks(links, op)),
-        {
-          signal: op.signal,
-        },
-      );
-      if (Exit.isSuccess(exit)) return exit.value;
-      const error = clientErrorFromCause(exit.cause);
-      throw frameworkError(error) ?? error;
+      try {
+        return await runRequest(links, op);
+      } catch (cause) {
+        const error = toClientError(cause);
+        throw frameworkError(error) ?? error;
+      }
     },
     subscribe(o) {
       return {
         [Symbol.asyncIterator]() {
           const op = makeOperation('subscription', o.path, o.input, o);
-          return toAsyncIterable(runLinks(links, op), op.signal)[
+          return (runChain(links, 0, op) as AsyncIterable<unknown>)[
             Symbol.asyncIterator
           ]();
         },
@@ -215,7 +211,9 @@ export function createUntypedClient(
  */
 export function createTrpcClient<
   TSource,
-  const TLinks extends ReadonlyArray<TrpcLink<any, RouterOf<TSource>>>,
+  const TLinks extends ReadonlyArray<
+    TrpcLink<any, RouterOf<TSource>> | PromiseLink<any, RouterOf<TSource>>
+  >,
 >(
   opts: TypedClientOptions<TSource, TLinks> &
     DuplicateSwitchCheck<TLinks> &

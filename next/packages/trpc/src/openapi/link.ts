@@ -1,5 +1,5 @@
-import { Effect, Stream } from 'effect';
-import type { Operation, OperationStream, TrpcLink } from '../client/link.ts';
+import { promiseLink, type PromiseLink } from '../client/chain.ts';
+import type { Operation } from '../client/link.ts';
 import type { ContractJson } from '../contract/index.ts';
 import {
   codeOfStatus,
@@ -89,7 +89,9 @@ const hasBlob = (value: unknown): boolean =>
  * @since 0.1.0
  * @stability experimental
  */
-export function experimental_openApiLink(opts: OpenApiLinkOptions): TrpcLink<{
+export function experimental_openApiLink(
+  opts: OpenApiLinkOptions,
+): PromiseLink<{
   form: JsonForm;
   builtinErrors: 'NETWORK_ERROR' | 'BAD_RESPONSE';
 }> {
@@ -119,7 +121,7 @@ export function experimental_openApiLink(opts: OpenApiLinkOptions): TrpcLink<{
 
   async function request(
     op: Operation,
-    signal: AbortSignal,
+    signal: AbortSignal | undefined,
   ): Promise<Response> {
     const route = routeOf(op);
     const headers = new Headers(
@@ -178,7 +180,7 @@ export function experimental_openApiLink(opts: OpenApiLinkOptions): TrpcLink<{
       method: route.method,
       headers,
       ...(payload === undefined ? {} : { body: payload }),
-      signal,
+      signal: signal ?? null,
     });
   }
 
@@ -229,24 +231,26 @@ export function experimental_openApiLink(opts: OpenApiLinkOptions): TrpcLink<{
     }
   }
 
-  return ({ op }): OperationStream => {
-    if (op.type !== 'subscription') {
-      return Stream.fromEffect(
-        Effect.tryPromise({
-          try: async (signal) =>
-            readResult(op, await request(op, linked(signal, op))),
-          catch: toError,
-        }),
-      );
+  async function* subscribe(op: Operation) {
+    const controller = new AbortController();
+    try {
+      yield* events(op, linked(controller.signal, op));
+    } catch (cause) {
+      throw toError(cause);
+    } finally {
+      controller.abort();
     }
-    return Stream.unwrap(
-      Effect.sync(() => {
-        const controller = new AbortController();
-        return Stream.fromAsyncIterable(
-          events(op, linked(controller.signal, op)),
-          toError,
-        ).pipe(Stream.ensuring(Effect.sync(() => controller.abort())));
-      }),
-    );
-  };
+  }
+
+  async function call(op: Operation) {
+    try {
+      return await readResult(op, await request(op, op.signal));
+    } catch (cause) {
+      throw toError(cause);
+    }
+  }
+
+  return promiseLink(({ op }) =>
+    op.type === 'subscription' ? subscribe(op) : call(op),
+  );
 }

@@ -30,6 +30,12 @@ export {
   type TypedClientOptions,
 } from './client.ts';
 export {
+  promiseLink,
+  type PromiseLink,
+  type PromiseLinkOpts,
+  type PromiseLinkResult,
+} from './chain.ts';
+export {
   link,
   type AnyLink,
   type EffectLinkOpts,

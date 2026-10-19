@@ -35,6 +35,8 @@ import {
   type LinksTypes,
   type RouterOf,
   type TrpcLink,
+  type PromiseLink,
+  type AnyLink,
   type TypedClientOptions,
 } from '@trpc12/trpc/client';
 import { createEffectClient, type EffectClient } from '@trpc12/trpc/effect';
@@ -148,7 +150,9 @@ export type AtomClient<TEffectClient> = AtomProcedures<TEffectClient> & {
  */
 export type AtomClientOptions<
   TSource,
-  TLinks extends ReadonlyArray<TrpcLink<any, RouterOf<TSource>>>,
+  TLinks extends ReadonlyArray<
+    TrpcLink<any, RouterOf<TSource>> | PromiseLink<any, RouterOf<TSource>>
+  >,
 > = TypedClientOptions<TSource, TLinks> & {
   /**
    * How query results are encoded for `Hydration.dehydrate`. Must match the
@@ -247,7 +251,9 @@ const at = (client: unknown, path: string): any =>
  */
 export function createAtomClient<
   TSource,
-  const TLinks extends ReadonlyArray<TrpcLink<any, RouterOf<TSource>>>,
+  const TLinks extends ReadonlyArray<
+    TrpcLink<any, RouterOf<TSource>> | PromiseLink<any, RouterOf<TSource>>
+  >,
 >(
   opts: AtomClientOptions<TSource, TLinks>,
 ): AtomClient<
@@ -255,7 +261,7 @@ export function createAtomClient<
 >;
 export function createAtomClient(opts: {
   router: unknown;
-  links: ReadonlyArray<TrpcLink<any, any>>;
+  links: ReadonlyArray<AnyLink>;
   serializer?: AnySerializer | undefined;
 }): unknown {
   const client = createEffectClient(opts);
