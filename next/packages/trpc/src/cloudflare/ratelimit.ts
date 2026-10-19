@@ -146,8 +146,9 @@ export function experimental_durableRateLimitObject(
 
   const consume = Effect.fnUntraced(function* (request: Request) {
     const op = new URL(request.url).pathname;
-    const req = (yield* Effect.promise(() => request.json())) as FixedWindowRequest &
-      TokenBucketRequest;
+    const req = yield* Effect.promise(
+      () => request.json() as Promise<FixedWindowRequest & TokenBucketRequest>,
+    );
     const stored = yield* load;
     const now = yield* Clock.currentTimeMillis;
     let result: readonly [number, number];
