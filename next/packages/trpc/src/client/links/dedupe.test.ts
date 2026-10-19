@@ -293,6 +293,37 @@ test('a call made once every caller has left sends its own request', async () =>
   expect(stub.ops.at(-1)!.signal!.aborted).toBe(false);
 });
 
+test('a request that ends after an identical one opened leaves that one joinable', async () => {
+  const firstEnds = Deferred.makeUnsafe<void>();
+  const secondAnswers = Deferred.makeUnsafe<number>();
+  const stub = stubbed((op) => {
+    if (stub.ops.length === 1) {
+      return Stream.concat(
+        Stream.make(1),
+        Stream.drain(Stream.fromEffect(Deferred.await(firstEnds))),
+      );
+    }
+    op.context.onResponse?.({ status: 200, headers: new Headers() });
+    return Stream.fromEffect(Deferred.await(secondAnswers));
+  });
+  const a = stub.client.forever.subscribe()[Symbol.asyncIterator]();
+  expect(await a.next()).toEqual({ done: false, value: 1 });
+  const b = collect(stub.client.forever.subscribe());
+  await vi.waitFor(() => expect(stub.ops).toHaveLength(2));
+  Deferred.doneUnsafe(firstEnds, Effect.void);
+  expect(await a.next()).toEqual({ done: true, value: undefined });
+  const joined = Deferred.makeUnsafe<void>();
+  const c = collect(
+    stub.client.forever.subscribe(undefined, {
+      onResponse: () => Deferred.doneUnsafe(joined, Effect.void),
+    }),
+  );
+  await Effect.runPromise(Deferred.await(joined));
+  Deferred.doneUnsafe(secondAnswers, Effect.succeed(2));
+  await expect(Promise.all([b, c])).resolves.toEqual([[2], [2]]);
+  expect(stub.ops).toHaveLength(2);
+});
+
 test('a call made in the tick the request answers is told once and gets the value', async () => {
   const sent = Deferred.makeUnsafe<void>();
   const answer = Deferred.makeUnsafe<number>();
