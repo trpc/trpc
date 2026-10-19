@@ -93,6 +93,8 @@ export interface HttpLinkOptions<
    * ```
    */
   streams?: HttpStreams | undefined;
+  /** Moved to `streams: experimental_httpStreams({ binary: true })`. */
+  binary?: never;
   /** Subscription reconnects after a dropped connection. */
   reconnect?: {
     /** @default 5 */
