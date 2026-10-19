@@ -172,11 +172,14 @@ test.each(packages.map((opts) => [opts.name, opts.dir, opts.pkg] as const))(
           { concurrency: 4 },
         );
         return files
-          .filter((_, i) => outputs[i] !== '')
-          .map((file) => `${name}/${file}`);
+          .map((file, i) => [`${name}/${file}`, outputs[i]!] as const)
+          .filter(([, code]) => code !== '');
       }),
     );
-    expect(running).toEqual(
+    const unlisted = running
+      .filter(([key]) => !runsOnLoad.has(key))
+      .map(([key, code]) => `${key} keeps:\n${code}`);
+    expect(running.map(([key]) => key), unlisted.join('\n\n')).toEqual(
       [...runsOnLoad].filter((key) => key.startsWith(`${name}/`)),
     );
   },
