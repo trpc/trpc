@@ -35,6 +35,27 @@ createFetchHandler({
 });
 ```
 
+Write resolvers the way Effect code is written elsewhere: `Effect.fn` takes the resolver's options, and an Effect Schema validates the input, decoding with the services the procedure has:
+
+```ts twoslash
+// ---cut-start---
+import { t, type Post } from './server.ts';
+// ---cut-end---
+import { Context, Effect, Schema } from 'effect';
+
+class PostRepo extends Context.Service<
+  PostRepo,
+  { find: (id: string) => Effect.Effect<Post | undefined> }
+>()('PostRepo') {}
+
+const byId = t.procedure.input(Schema.Struct({ id: Schema.String })).query(
+  Effect.fn('post.byId')(function* (opts) {
+    const repo = yield* PostRepo;
+    return yield* repo.find(opts.input.id);
+  }),
+);
+```
+
 ## Errors clients may see
 
 A failure that isn't a `TrpcError` is a type error until it is mapped (`Effect.catchTag`), so internals like a database error's query never reach clients. Mark the errors clients may see by making them `TrpcError.Tagged` classes; yielding one sends it typed, with its `data` validated first. A thrown one (`Effect.die`, or a `throw` in a helper) has no type, so it's typed only once the procedure lists it, `.errors({ POST_NOT_FOUND: PostNotFound })`:
@@ -60,6 +81,35 @@ t.procedure.input(z.object({ id: z.string() })).query((opts) =>
   }),
 );
 ```
+
+## Services for some procedures
+
+`.provide(Service, make)` provides a service to everything after it: later inputs, `.provide()` calls, middleware and the resolver. `make` gets `ctx`, the input parsed so far, `meta` and `path`, and returns the service, a promise of it, or an Effect. The Effect may only fail with a `TrpcError`, which joins the procedure's error union, and what it needs joins the services the handler's `layer` provides:
+
+```ts twoslash
+// ---cut-start---
+import { Context, Effect } from 'effect';
+import { error } from '@trpc12/trpc/server';
+import { t, type User } from './server.ts';
+// ---cut-end---
+class CurrentUser extends Context.Service<CurrentUser, User>()(
+  'CurrentUser',
+) {}
+
+const authed = t.procedure.provide(CurrentUser, (opts) =>
+  opts.ctx.user
+    ? Effect.succeed(opts.ctx.user)
+    : Effect.fail(error({ code: 'UNAUTHORIZED' })),
+);
+
+const me = authed.query(() =>
+  Effect.gen(function* () {
+    return (yield* CurrentUser).name;
+  }),
+);
+```
+
+A service a procedure provides isn't one the handler's `layer` has to.
 
 ## Middleware that provides services
 
@@ -106,6 +156,19 @@ const create = inTx.mutation(() =>
   }),
 );
 ```
+
+## The services a router needs
+
+`inferRouterServices<typeof router>` is what every entry point's `layer` must provide; leaving one out is a type error that names it.
+
+| entry point                                          | the `layer` is built                                    |
+| ---------------------------------------------------- | ------------------------------------------------------- |
+| `createFetchHandler({ router, layer })`              | once, on the first call; `handler.dispose()` releases it |
+| `createRouterClient(router, { ctx, layer })`         | once per client, on its first call, and kept            |
+| `localLink({ router, layer })`                       | once per link, on its first call, and kept              |
+| `call(procedure, input, { ctx, layer })`             | for the call, and released after it                     |
+
+Build long-lived resources (connection pools) into the handler's `layer`, not per `call()`.
 
 ## Tracing
 
