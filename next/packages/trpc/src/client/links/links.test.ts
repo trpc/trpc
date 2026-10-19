@@ -1,4 +1,4 @@
-import { Duration, Effect, Schema, Stream } from 'effect';
+import { Duration, Effect, Exit, Schema, Stream } from 'effect';
 import {
   createTrpcClient,
   httpLink,
@@ -11,6 +11,7 @@ import {
   type LoggerEvent,
   routerType,
 } from '@trpc12/trpc/client';
+import { createEffectClient } from '@trpc12/trpc/effect';
 import { createUntypedClient } from '@trpc12/trpc/extend';
 import { createV11Handler } from '@trpc12/trpc/interop';
 import {
@@ -282,6 +283,30 @@ test('localLink runs the router in-process, through the serializer', async () =>
   // @ts-expect-error -- the router's procedures read `ctx.token`
   localLink({ router });
   localLink({ router: { ping: initTrpc().procedure.query(() => 'pong') } });
+});
+
+test("interrupting a localLink call aborts the procedure's signal", async () => {
+  const seen = { aborted: 0 };
+  const local = {
+    wait: initTrpc().procedure.query(
+      (opts) =>
+        new Promise<string>((resolve) =>
+          opts.signal.addEventListener('abort', () => {
+            seen.aborted++;
+            resolve('aborted');
+          }),
+        ),
+    ),
+  };
+  const client = createEffectClient({
+    router: routerType<typeof local>(),
+    links: [localLink({ router: local })],
+  });
+  const exit = await Effect.runPromiseExit(
+    client.wait.query().pipe(Effect.timeout('20 millis')),
+  );
+  expect(Exit.isFailure(exit)).toBe(true);
+  await vi.waitFor(() => expect(seen.aborted).toBe(1));
 });
 
 test('localLink fails unknown paths and wrong methods; deferred failures arrive as errors', async () => {

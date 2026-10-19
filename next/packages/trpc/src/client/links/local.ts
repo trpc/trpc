@@ -1,4 +1,4 @@
-import { Effect, Stream, type ManagedRuntime } from 'effect';
+import { Effect, Fiber, Stream, type ManagedRuntime } from 'effect';
 import {
   fromWireError,
   isTrpcError,
@@ -56,6 +56,21 @@ type LocalContextOption<TCtx> = {} extends TCtx
       /** Runs once per call. */
       createContext: () => MaybePromise<TCtx>;
     };
+
+/**
+ * Runs `f` on its own fiber with a signal that aborts if the caller is
+ * interrupted before `f` ends; a streamed output read after it ends isn't cut.
+ */
+const withSignal = <A, E>(
+  f: (signal: AbortSignal) => Effect.Effect<A, E>,
+): Effect.Effect<A, E> =>
+  Effect.withFiber((parent) =>
+    Effect.callback<A, E>((resume, signal) => {
+      const fiber = Effect.runForkWith(parent.context)(f(signal));
+      fiber.addObserver(resume);
+      return Fiber.interrupt(fiber);
+    }),
+  );
 
 /**
  * Runs calls in-process, without HTTP. For tests and SSR. The router's
@@ -126,18 +141,22 @@ export function localLink<TRouter extends AnyRouter>(
             async () => (await opts.createContext?.()) ?? {},
           );
           const response = createResponseHandle();
-          const data = yield* callProcedure({
-            procedure,
-            path: op.path,
-            ctx,
-            input: roundtrip(op.input, true),
-            signal: op.signal ?? new AbortController().signal,
-            lastEventId: op.lastEventId,
-            response,
-            allowResponse: true,
-          }).pipe(
-            Effect.flatMap((value) => inProcessOutput(value, response)),
-            Effect.provideContext(context),
+          const data = yield* withSignal((interrupted) =>
+            callProcedure({
+              procedure,
+              path: op.path,
+              ctx,
+              input: roundtrip(op.input, true),
+              signal: op.signal
+                ? AbortSignal.any([op.signal, interrupted])
+                : interrupted,
+              lastEventId: op.lastEventId,
+              response,
+              allowResponse: true,
+            }).pipe(
+              Effect.flatMap((value) => inProcessOutput(value, response)),
+              Effect.provideContext(context),
+            ),
           );
 
           if (op.type === 'subscription') {
