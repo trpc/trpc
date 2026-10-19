@@ -116,7 +116,7 @@ const isDeferred = (value: unknown) =>
 const running = new WeakMap<object, Map<string, Deferred.Deferred<Ran>>>();
 
 /** A SHA-256 of the serialized input; `''` for inputs with files. */
-const fingerprint = Effect.fnUntraced(function* (
+const fingerprint = /* @__PURE__ */ Effect.fnUntraced(function* (
   serializer: Pick<Serializer, 'serialize'>,
   input: unknown,
 ) {
