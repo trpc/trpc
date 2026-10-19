@@ -61,11 +61,12 @@ export function isBuiltinCode(code: string): code is BuiltinErrorCode {
 }
 
 /**
- * The category of each built-in code, which `matchError()` handles as one:
+ * The category of each built-in code, for code that treats a category's
+ * codes alike, like a `matchError()` `unexpected` handler:
  *
  * - `rejected`: the server refused the call: a built-in 4xx it threw, a
- *   request it couldn't take, or a link's own failure. `matchError()` also
- *   gives it the custom codes a procedure without `.errors()` threw.
+ *   request it couldn't take, or a link's own failure. Undeclared errors,
+ *   the custom codes a procedure without `.errors()` threw, are too.
  * - `unavailable`: no usable answer came back; trying later may work.
  * - `failed`: the server broke. The message is masked in production.
  * - `aborted`: the call's `signal` stopped it.

@@ -63,20 +63,28 @@ declare const now: Now;
 declare const owned: Exclude<Now, { readonly defined: false }>;
 
 describe('matchError', () => {
-  test('every defined code and builtin are required', () => {
+  test('every defined code, link code and unexpected are required', () => {
     const message = matchError(now, {
       NOT_FOUND: (err) => `no post ${err.data.id}`,
       BAD_REQUEST: (err) => err.message,
-      builtin: (err) => {
+      NETWORK_ERROR: () => 'offline',
+      BAD_RESPONSE: (err) => err.message,
+      STREAM_INTERRUPTED: (err) => err.message,
+      unexpected: (err) => {
         expectTypeOf(err.defined).toEqualTypeOf<false>();
         return err.code;
       },
     });
     expectTypeOf(message).toBeString();
+    const links = {
+      NETWORK_ERROR: () => 1,
+      BAD_RESPONSE: () => 1,
+      STREAM_INTERRUPTED: () => 1,
+    };
     // @ts-expect-error: BAD_REQUEST is missing
-    matchError(now, { NOT_FOUND: () => 1, builtin: () => 1 });
-    // @ts-expect-error: builtin is missing
-    matchError(now, { NOT_FOUND: () => 1, BAD_REQUEST: () => 1 });
+    matchError(now, { ...links, NOT_FOUND: () => 1, unexpected: () => 1 });
+    // @ts-expect-error: unexpected is missing
+    matchError(now, { ...links, NOT_FOUND: () => 1, BAD_REQUEST: () => 1 });
   });
 
   test('with the built-in errors owned above, only defined codes remain', () => {
@@ -84,8 +92,8 @@ describe('matchError', () => {
     matchError(owned, {
       NOT_FOUND: () => 1,
       BAD_REQUEST: () => 1,
-      // @ts-expect-error: nothing built-in is left to handle
-      builtin: () => 1,
+      // @ts-expect-error: nothing else is left to handle
+      unexpected: () => 1,
     });
   });
 });

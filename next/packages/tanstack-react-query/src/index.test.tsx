@@ -163,10 +163,10 @@ test("each hook's error is what the call fails with, network and aborts included
         {matchError(post.error, {
           NOT_FOUND: (err) => `missing ${err.data.id}`,
           BAD_REQUEST: (err) => `invalid ${err.data.issues.length}`,
-          rejected: (err) => `rejected ${err.code}`,
-          unavailable: (err) => `unavailable ${err.code}`,
-          failed: (err) => `failed ${err.code}`,
-          aborted: () => 'aborted',
+          NETWORK_ERROR: () => 'offline',
+          BAD_RESPONSE: (err) => `unreadable ${err.message}`,
+          STREAM_INTERRUPTED: () => 'interrupted',
+          unexpected: (err) => `unexpected ${err.code}`,
         })}
       </p>
     );
@@ -180,9 +180,7 @@ test("each hook's error is what the call fails with, network and aborts included
     links: [httpLink({ url: 'http://127.0.0.1:1/trpc', serializer })],
   });
   using view = mount(<Post id="1" />, down);
-  await waitFor(() =>
-    expect(text(view.el, '.error')).toBe('unavailable NETWORK_ERROR'),
-  );
+  await waitFor(() => expect(text(view.el, '.error')).toBe('offline'));
 });
 
 test('useMutation invalidates with pathFilter', async () => {

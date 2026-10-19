@@ -73,7 +73,7 @@ export type BuiltinError<TCode extends BuiltinErrorCode = BuiltinErrorCode> =
 /**
  * A `TrpcError` with a custom code that a procedure without `.errors()`
  * threw rather than returned: `defined: false`, its code and `data`
- * untyped. `matchError()` handles it as `rejected`.
+ * untyped. `matchError()` hands it to `unexpected`.
  * @since 0.1.0
  * @stability stable
  */

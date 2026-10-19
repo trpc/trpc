@@ -51,7 +51,7 @@ test("useQuery's error has only the link codes of the client's links", async () 
       <p className="error">
         {matchError(query.error, {
           NOT_FOUND: () => 'missing',
-          builtin: (e) => e.code,
+          unexpected: (e) => e.code,
         })}
       </p>
     );
@@ -69,7 +69,9 @@ test("useQuery's error has only the link codes of the client's links", async () 
         {matchError(query.error, {
           NOT_FOUND: () => 'missing',
           NETWORK_ERROR: () => 'offline',
-          builtin: (e) => e.code,
+          BAD_RESPONSE: (e) => e.code,
+          STREAM_INTERRUPTED: (e) => e.code,
+          unexpected: (e) => e.code,
         })}
       </p>
     );

@@ -1,14 +1,11 @@
 import { Effect, Exit } from 'effect';
 import { toAsyncIterable } from '../internal/effects.ts';
 import {
-  ERROR_CATEGORY,
   ERROR_STATUS,
   frameworkError,
   hasDigest,
   isBuiltinCode,
   type AnyTrpcError,
-  type CategoryCode,
-  type ErrorCategory,
 } from '../internal/error.ts';
 import type { ProcedureType } from '../internal/types.ts';
 import type { AnySerializer } from '../serializer/index.ts';
@@ -361,78 +358,35 @@ export function createSafeClient<TClient extends object>(
   });
 }
 
-type DefinedOf<E> = Extract<E, { readonly defined: true }>;
-type BuiltinOf<E> = Exclude<E, { readonly defined: true }>;
-type LinkOf<E> = Extract<BuiltinOf<E>, { readonly code: LinkErrorCode }>;
-type CodeOf<E> = E extends { readonly code: infer C extends string }
-  ? C
-  : never;
-
-/** The built-in errors left for the categories: those no key in `TKeys` takes. */
-type RestOf<E, TKeys> = Exclude<
-  BuiltinOf<E>,
-  { readonly code: TKeys & LinkErrorCode }
->;
-
-type CategoriesOf<R> = {
-  [K in ErrorCategory]: [
-    Extract<R, { readonly code: CategoryCode<K> }>,
-  ] extends [never]
-    ? never
-    : K;
-}[ErrorCategory];
-
-type CategoryHandlers<R> = {
-  readonly [K in CategoriesOf<R>]: (
-    err: Extract<R, { readonly code: CategoryCode<K> }>,
-  ) => unknown;
-};
-
-type BuiltinHandlers<R> = [R] extends [never]
-  ? { readonly builtin?: never }
-  :
-      | (CategoryHandlers<R> & { readonly builtin?: never })
-      | (Partial<CategoryHandlers<R>> & {
-          readonly builtin: (err: R) => unknown;
-        });
+/** The errors with a key of their own: the defined ones and the links'. */
+type Keyed = { readonly defined: true } | { readonly code: LinkErrorCode };
+type KeyedOf<E extends AnyTrpcError> = Extract<E, Keyed>;
+type UnexpectedOf<E> = Exclude<E, Keyed>;
 
 /**
- * The handlers {@link matchError} takes for errors `E`: one per defined
- * code, each getting that error; optionally one per code a link declares
- * (`NETWORK_ERROR`, `BAD_RESPONSE`, `STREAM_INTERRUPTED`), which takes it
- * from its category; and one per category of the built-in errors left
- * (`rejected`, `unavailable`, `failed`, `aborted`, see `ERROR_CATEGORY`),
- * each getting that category's codes. `builtin` takes the categories not
- * listed; once no built-in error is left, both are type errors. `TKeys`
- * are the keys given, which take their codes from the categories.
+ * The handlers {@link matchError} takes for errors `E`, all required: one
+ * per defined code and one per code the client's links declare
+ * (`NETWORK_ERROR`, `BAD_RESPONSE`, `STREAM_INTERRUPTED`), each getting
+ * that error; and `unexpected`, which gets every other one: built-in codes
+ * nothing declared (a crash, an abort, a proxy's status, a procedure the
+ * server lacks) and undeclared errors. Once no other error is left,
+ * `unexpected` is a type error too.
  * @since 0.1.0
  * @stability stable
  */
-export type ErrorHandlers<E, TKeys = never> = {
-  readonly [C in CodeOf<DefinedOf<E>>]: (
-    err: Extract<DefinedOf<E> | LinkOf<E>, { readonly code: C }>,
-  ) => unknown;
-} & {
-  readonly [C in Exclude<CodeOf<LinkOf<E>>, CodeOf<DefinedOf<E>>>]?: (
-    err: Extract<LinkOf<E>, { readonly code: C }>,
-  ) => unknown;
-} & BuiltinHandlers<RestOf<E, TKeys>>;
+export type ErrorHandlers<E extends AnyTrpcError> = {
+  // Members sharing a code map to one key, whose handler gets their union.
+  readonly [K in KeyedOf<E> as K['code']]: (err: K) => unknown;
+} & ([UnexpectedOf<E>] extends [never]
+  ? {}
+  : { readonly unexpected: (err: UnexpectedOf<E>) => unknown });
 
-type HandlerKey<E, TKeys> =
-  | CodeOf<DefinedOf<E>>
-  | CodeOf<LinkOf<E>>
-  | ([RestOf<E, TKeys>] extends [never]
-      ? never
-      : CategoriesOf<RestOf<E, TKeys>> | 'builtin');
-
-type HandlerResult<H> = {
-  [K in keyof H]-?: H[K] extends (err: never) => infer R ? R : never;
-}[keyof H];
+type HandlerResult<H> = H[keyof H] extends (err: never) => infer R ? R : never;
 
 /**
  * Handles every error a call can fail with, or fails to compile: each
- * defined code needs its handler, and `builtin` takes the rest. Returns
- * what the handler returns.
+ * defined code and each code the links declare needs its handler, and
+ * `unexpected` takes the rest. Returns what the handler returns.
  *
  * @example
  * ```ts
@@ -441,8 +395,10 @@ type HandlerResult<H> = {
  *   return matchError(err, {
  *     BAD_REQUEST: (e) => e.data.issues.map((issue) => issue.message),
  *     TITLE_TAKEN: (e) => [`"${e.data.title}" is taken`],
- *     builtin: (e) =>
- *       e.code === 'NETWORK_ERROR' ? ['You are offline'] : [e.message],
+ *     NETWORK_ERROR: () => ['You are offline'],
+ *     BAD_RESPONSE: () => ['Try again later'],
+ *     STREAM_INTERRUPTED: () => ['Try again later'],
+ *     unexpected: (e) => [e.message],
  *   });
  * }
  * ```
@@ -451,26 +407,22 @@ type HandlerResult<H> = {
  */
 export function matchError<
   E extends AnyTrpcError,
-  H extends ErrorHandlers<E, keyof H> & {
-    readonly [K in keyof H]: K extends HandlerKey<E, keyof H> ? unknown : never;
-  },
+  H extends ErrorHandlers<E> &
+    Record<Exclude<keyof H, keyof ErrorHandlers<E>>, never>,
 >(err: E, handlers: H): HandlerResult<H> {
   const table = handlers as unknown as Record<
     string,
     ((err: E) => HandlerResult<H>) | undefined
   >;
-  const own = (key: string | false) =>
-    key && Object.hasOwn(table, key) ? table[key] : undefined;
+  const own = (key: string) =>
+    Object.hasOwn(table, key) ? table[key] : undefined;
   const { code } = err;
-  const builtin = isBuiltinCode(code);
-  const handler =
-    (err.defined
-      ? own(code)
-      : (builtin &&
-          ERROR_STATUS[code] === 0 &&
-          code !== 'CLIENT_ERROR' &&
-          own(code)) ||
-        own(builtin ? ERROR_CATEGORY[code] : 'rejected')) ?? table['builtin'];
+  const keyed =
+    err.defined ||
+    (isBuiltinCode(code) &&
+      ERROR_STATUS[code] === 0 &&
+      code !== 'CLIENT_ERROR');
+  const handler = (keyed ? own(code) : undefined) ?? own('unexpected');
   if (!handler) throw err;
   return handler(err);
 }

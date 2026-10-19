@@ -104,10 +104,10 @@ if (post.error) {
   const message = matchError(post.error, {
     NOT_FOUND: (err) => `No post ${err.data.id}`,
     BAD_REQUEST: () => 'Invalid id',
-    rejected: (err) => err.message,
-    unavailable: () => 'Offline, retrying soon',
-    failed: () => 'Something broke',
-    aborted: () => null,
+    NETWORK_ERROR: () => 'Offline, retrying soon',
+    BAD_RESPONSE: () => 'Try again later',
+    STREAM_INTERRUPTED: () => 'Try again later',
+    unexpected: (err) => err.message,
   });
 }
 ```

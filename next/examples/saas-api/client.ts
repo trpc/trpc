@@ -139,7 +139,10 @@ export async function main(url: string) {
         TENANT_REQUIRED: () => 'no tenant',
         UNAUTHORIZED: () => 'log in',
         BAD_REQUEST: (e) => `invalid: ${e.data.issues.length} issues`,
-        builtin: (e) => `${e.code}: ${e.message}`,
+        NETWORK_ERROR: () => 'offline',
+        BAD_RESPONSE: (e) => `unreadable: ${e.message}`,
+        STREAM_INTERRUPTED: () => 'interrupted',
+        unexpected: (e) => `${e.code}: ${e.message}`,
       }),
     );
   }

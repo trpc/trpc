@@ -69,7 +69,7 @@ The first three codes, the `LinkErrorCode` type, are made only by links, so a ca
 
 `createRouterClient` declares none, since it calls the router in-process. A client typed without its links, like `TrpcClient<AppRouter>`, has all three, so it accepts a client with any links. [Custom links](./custom-links.md#errors-and-unsupported-types) declare theirs with `builtinErrors`.
 
-Built-in errors fall into four categories (`ERROR_CATEGORY` maps each code to one), since a call site usually does the same for every code in one. Undeclared errors are `rejected`:
+The other built-in codes fall into four categories, which `ERROR_CATEGORY` maps each code to, since a call site usually does the same for every code in one. Undeclared errors are `rejected`:
 
 | Category      | Codes                                                                                                                                                                                | Usually                     |
 | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------- |
@@ -105,9 +105,9 @@ async function title(id: string) {
 }
 ```
 
-## Handling every defined code
+## Handling every error
 
-`matchError(err, handlers)` takes a handler per defined code, each getting that error with its `data`, and one per category of built-in errors, each getting that category's codes, which a `switch` on `e.code` narrows further. It returns what the handler returns:
+`matchError(err, handlers)` takes a handler for each error the call's type lists by code, all required: each defined code, getting that error with its `data`, and each link code the client's links declare. `unexpected` takes the rest, and is required too: the built-in codes nothing declared (a crash, an abort, a proxy's status) and undeclared errors, which a `switch` on `e.code` narrows further. It returns what the handler returns:
 
 ```ts twoslash
 // ---cut-start---
@@ -122,38 +122,44 @@ async function title(id: string) {
     return matchError(err, {
       NOT_FOUND: (e) => `No post ${e.data.id}`,
       BAD_REQUEST: (e) => e.data.issues[0]?.message ?? 'Invalid id',
-      rejected: (e) => e.message,
-      unavailable: (e) =>
-        e.code === 'NETWORK_ERROR' ? 'You are offline' : 'Try again later',
-      failed: () => 'Something went wrong',
-      aborted: () => 'Cancelled',
+      NETWORK_ERROR: () => 'You are offline',
+      BAD_RESPONSE: () => 'Try again later',
+      STREAM_INTERRUPTED: () => 'Try again later',
+      unexpected: (e) =>
+        e.code === 'CLIENT_CLOSED_REQUEST' ? 'Cancelled' : e.message,
     });
   }
   return post.title;
 }
 ```
 
-`builtin` handles the categories you don't list, so `builtin: (e) => e.message` alone takes every built-in error.
+Errors that share a code share its handler, which gets their union: a defined `NETWORK_ERROR` and the link's, or two `NOT_FOUND`s with different `data`. A built-in error with a defined code, like the `NOT_FOUND` of a procedure the server lacks, goes to `unexpected`.
 
-A link code the call can fail with can have its own handler, which takes it from its category: `NETWORK_ERROR: () => 'You are offline'` beside `unavailable`, which then gets the rest. When every code of a category has its own handler, the category's key is a type error, and so is a key for a link code the client's links don't declare:
+The link codes are the same for every call through a client, so one object of their handlers can be spread into each `matchError()`:
 
 ```ts twoslash
 // ---cut-start---
 import { client } from './client.ts';
 import { matchError, safe } from '@trpc12/trpc/client';
 // ---cut-end---
+const offline = {
+  NETWORK_ERROR: () => 'You are offline',
+  BAD_RESPONSE: () => 'Try again later',
+  STREAM_INTERRUPTED: () => 'Try again later',
+};
+
 const [, err] = await safe(client.post.byId.query({ id: '1' }));
 if (err) {
   matchError(err, {
+    ...offline,
     NOT_FOUND: (e) => `No post ${e.data.id}`,
     BAD_REQUEST: (e) => e.data.issues[0]?.message ?? 'Invalid id',
-    NETWORK_ERROR: () => 'You are offline',
-    builtin: (e) => e.message,
+    unexpected: (e) => e.message,
   });
 }
 ```
 
-A handler missing for one of the procedure's codes, or left over for a code it no longer has, is a type error, so adding an error on the server shows every place that must handle it:
+A handler missing for one of the call's codes, or left over for a code it no longer has, is a type error, so adding an error on the server, or a link that can fail in a new way, shows every place that must handle it. So is a key for a link code the client's links don't declare (`NETWORK_ERROR` with only `localLink`), and `unexpected` once every error has its own key. The catch-all is never implied:
 
 ```ts twoslash
 // @errors: 2345
@@ -165,12 +171,10 @@ const [, err] = await safe(client.post.byId.query({ id: '1' }));
 if (err) {
   matchError(err, {
     NOT_FOUND: (e) => `No post ${e.data.id}`,
-    builtin: (e) => e.message,
+    unexpected: (e) => e.message,
   });
 }
 ```
-
-A built-in error with a defined code, like the `NOT_FOUND` of a procedure the server lacks, goes to its category (`rejected`), or `builtin`.
 
 ## Checking a caught value
 

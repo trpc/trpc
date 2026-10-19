@@ -67,7 +67,7 @@ const byId = t.procedure
 On the client, the errors in the union are `defined: true`, with their `data`, whether they were returned, failed or declared. A thrown error with a declared code is too: its `data` is validated like a returned one's. Anything else arrives with `defined: false`:
 
 - A thrown error with a built-in code (`throw new TrpcError({ code: 'CONFLICT', data })`) keeps its code and loses its `data`, which no schema checked.
-- A thrown error with a custom code keeps its code and `data`, untyped, when the procedure declares no errors. On the client it is an `UndeclaredError`, which `matchError()` hands to `rejected` (or `builtin`). With `.errors()` that don't list it, it is an `INTERNAL_SERVER_ERROR`.
+- A thrown error with a custom code keeps its code and `data`, untyped, when the procedure declares no errors. On the client it is an `UndeclaredError`, which `matchError()` hands to `unexpected`. With `.errors()` that don't list it, it is an `INTERNAL_SERVER_ERROR`.
 - A crash is an `INTERNAL_SERVER_ERROR`. Its message is masked unless `NODE_ENV` is `development` or `test`, or `exposeUnexpectedErrors: true`.
 
 `onError` still sees the original error. Return a thrown error, or declare it, to make it typed on the client. There is no `errorFormatter`.
@@ -84,7 +84,10 @@ if (err) {
     NOT_FOUND: (e) => console.log(e.data),
     //                              ^?
     BAD_REQUEST: (e) => console.log(e.data.issues),
-    builtin: (e) => console.log(e.code), // rejected, unavailable, failed, aborted
+    NETWORK_ERROR: () => console.log('offline'),
+    BAD_RESPONSE: (e) => console.log(e.message),
+    STREAM_INTERRUPTED: (e) => console.log(e.message),
+    unexpected: (e) => console.log(e.code), // crashes, aborts, thrown errors
   });
 }
 ```

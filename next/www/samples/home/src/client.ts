@@ -23,7 +23,10 @@ if (err) {
     NOT_FOUND: (e) => console.log(`No post ${e.data.id}`),
     //                                              ^?
     BAD_REQUEST: (e) => console.log(e.data.issues),
-    builtin: (e) => console.log(e.code, e.message),
+    NETWORK_ERROR: () => console.log('You are offline'),
+    BAD_RESPONSE: () => console.log('Try again later'),
+    STREAM_INTERRUPTED: () => console.log('Try again later'),
+    unexpected: (e) => console.log(e.code, e.message),
   });
 } else {
   console.log(found.title);
