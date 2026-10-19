@@ -6,7 +6,8 @@
  * half queries and half mutations, every field name unique so nothing is
  * shared), a fetch handler over the router, and a client file per router
  * file that calls each procedure with its result annotated (`match`: through
- * `safe()` and an exhaustive `matchError()`). Each project is
+ * `safe()` and an exhaustive `matchError()`; `links`: through an app's
+ * chain of links, passing call options). Each project is
  * checked twice with tsc 7 (`--singleThreaded`, v12 from its `.d.ts`): the
  * server half alone (routers and handler), then with the client calls.
  * "per procedure" subtracts a project with an empty router.
@@ -42,7 +43,37 @@ interface Shape {
   readonly contract?: (i: number, kind: string) => string;
   /** The client's use of procedure `i`, `call` its call; annotated by default. */
   readonly consume?: (i: number, call: string) => string;
+  /** The client's `links`, with their imports; one `httpLink` by default. */
+  readonly links?: { readonly imports: string; readonly links: string };
+  /** The call options each call passes. */
+  readonly callOptions?: string;
 }
+
+/** A chain like an app's: every built-in kind of link, and a custom one. */
+const appLinks = {
+  imports: `import { Schema, Stream } from 'effect';
+import { dedupeLink, link, loggerLink, retryLink, splitLink, TrpcError, wsLink } from '@trpc12/trpc/client';
+
+class RateLimited extends TrpcError.Tagged('RATE_LIMITED', {
+  status: 429,
+  data: Schema.Struct({ retryAfter: Schema.Number }),
+}) {}
+const tenantLink = link<{ context: { tenant?: string }; errors: RateLimited }>((opts) =>
+  opts.op.context.tenant === '' ? Stream.fail(new RateLimited({ retryAfter: 1 })) : opts.next(opts.op),
+);
+`,
+  links: `[
+    loggerLink(),
+    retryLink(),
+    dedupeLink(),
+    tenantLink,
+    splitLink({
+      condition: (op) => op.type === 'subscription',
+      true: wsLink({ url: 'ws://localhost:3000/trpc' }),
+      false: httpLink({ url: 'http://localhost:3000/trpc', batch: true }),
+    }),
+  ]`,
+};
 
 /** `match`'s handlers: the procedure's codes, `httpLink`'s, and the rest. */
 const handlers = [
@@ -92,6 +123,12 @@ const shapeList = {
     impl: (i, kind) => `t.procedure${input(i)}.${kind}(${body(i, returned)})`,
     consume: (i, call) =>
       `const [d${i}, e${i}] = await safe(${call});\nexport const r${i}: string = e${i} ? matchError(e${i}, { ${handlers} }) : d${i}.v_${i};`,
+  },
+  links: {
+    // `plain`, through the chain in `appLinks`, each call passing options.
+    impl: (i, kind) => `t.procedure${input(i)}.${kind}(${body(i, returned)})`,
+    links: appLinks,
+    callOptions: `{ tenant: 't', dedupe: false, headers: { 'x-a': '1' } }`,
   },
 } satisfies Record<string, Shape>;
 
@@ -160,8 +197,9 @@ const fixture = (
             .map((i) => `  p${i}: ${shape!.impl(i, kind(i))},`)
             .join('\n')}\n};\n`,
     ]);
+    const callOptions = shape?.callOptions ? `, ${shape.callOptions}` : '';
     const call = (i: number) =>
-      `client.f${f}.p${i}.${kind(i) === 'query' ? 'query' : 'mutate'}({ a_${i}: 'x' })`;
+      `client.f${f}.p${i}.${kind(i) === 'query' ? 'query' : 'mutate'}({ a_${i}: 'x' }${callOptions})`;
     files.push([
       `consume/f${f}.ts`,
       `${shape?.consume ? "import { matchError, safe } from '@trpc12/trpc/client';\n" : ''}import { client } from '../client';\n\n${inFile(
@@ -201,9 +239,13 @@ const fixture = (
     'server.ts',
     `import { createFetchHandler } from '@trpc12/trpc/server';\nimport { router } from './router';\n\nexport const handler = createFetchHandler({\n  router,\n  createContext: () => ({ user: null }),\n});\n`,
   ]);
+  const links = shape?.links ?? {
+    imports: '',
+    links: `[httpLink({ url: 'http://localhost:3000/trpc' })]`,
+  };
   files.push([
     'client.ts',
-    `import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';\nimport type { router } from './router';\n\nexport const client = createTrpcClient({\n  router: routerType<typeof router>(),\n  links: [httpLink({ url: 'http://localhost:3000/trpc' })],\n});\n`,
+    `import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';\n${links.imports}import type { router } from './router';\n\nexport const client = createTrpcClient({\n  router: routerType<typeof router>(),\n  links: ${links.links},\n});\n`,
   ]);
   files.push([
     'tsconfig.server.json',
