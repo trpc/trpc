@@ -9,6 +9,7 @@ import {
   toLambdaStreamingHandler,
   type LambdaPlatform,
   type LambdaResponseStream,
+  type LambdaV1Event,
   type LambdaV1Result,
   type LambdaV2Result,
   type LambdaEdgeResult,
@@ -136,6 +137,33 @@ test('ALB events keep the query string as sent and get a status line', async () 
   })) as LambdaV1Result;
   expect(result.statusDescription).toBe('200');
   expect(JSON.parse(result.body).json.hi).toBe('alb x');
+});
+
+test('ALB results use the header fields the target group reads', async () => {
+  const login: LambdaV1Event = {
+    httpMethod: 'POST',
+    path: '/trpc/login',
+    body: '{}',
+    requestContext: { elb: { targetGroupArn: 'arn' } },
+  };
+  const single = (await lambda({
+    ...login,
+    headers: { 'content-type': 'application/json' },
+  })) as LambdaV1Result;
+  expect(single.headers['content-type']).toBe('application/json');
+  expect(single.headers['set-cookie']).toBe('b=2');
+  expect(single.multiValueHeaders).toEqual({});
+
+  const multi = (await lambda({
+    ...login,
+    multiValueHeaders: { 'content-type': ['application/json'] },
+  })) as LambdaV1Result;
+  expect(multi.headers).toEqual({});
+  expect(multi.multiValueHeaders['content-type']).toEqual(['application/json']);
+  expect(multi.multiValueHeaders['set-cookie']).toEqual([
+    'a=1; HttpOnly',
+    'b=2',
+  ]);
 });
 
 test('Lambda@Edge events', async () => {

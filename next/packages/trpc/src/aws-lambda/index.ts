@@ -415,16 +415,29 @@ const toResult = (
     }
     const multiValueHeaders: Record<string, Array<string>> = {};
     if (cookies.length > 0) multiValueHeaders['set-cookie'] = cookies;
+    if (!isAlb(event)) {
+      return {
+        statusCode: response.status,
+        headers,
+        multiValueHeaders,
+        body,
+        isBase64Encoded: !text,
+      } satisfies LambdaV1Result;
+    }
+    // An ALB reads only `multiValueHeaders` when the target group enables
+    // them (its events then carry `multiValueHeaders`), and only `headers`
+    // otherwise, which holds one `set-cookie`.
+    const multi = event.multiValueHeaders != null;
+    if (multi) {
+      for (const [k, v] of Object.entries(headers)) multiValueHeaders[k] = [v];
+    } else if (cookies.length > 0) {
+      headers['set-cookie'] = cookies.at(-1)!;
+    }
     return {
       statusCode: response.status,
-      ...(isAlb(event)
-        ? {
-            statusDescription:
-              `${response.status} ${response.statusText}`.trim(),
-          }
-        : {}),
-      headers,
-      multiValueHeaders,
+      statusDescription: `${response.status} ${response.statusText}`.trim(),
+      headers: multi ? {} : headers,
+      multiValueHeaders: multi ? multiValueHeaders : {},
       body,
       isBase64Encoded: !text,
     } satisfies LambdaV1Result;

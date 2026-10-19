@@ -28,7 +28,7 @@ export const main = toLambdaHandler(handler);
 ```
 
 - Text bodies (JSON, JSONL, forms, `text/*`) stay text. Others, such as a `File` output, are base64 with `isBase64Encoded`.
-- Set-cookie headers go where each event type expects them: `multiValueHeaders` (REST, ALB), `cookies` (HTTP API) or CloudFront headers (Edge).
+- Set-cookie headers go where each event type expects them: `multiValueHeaders` (REST), `cookies` (HTTP API) or CloudFront headers (Edge). An ALB reads only `multiValueHeaders` when the target group has `lambda.multi_value_headers.enabled`, and only `headers` otherwise, so the result follows the event; without multi-value headers an ALB response carries one `Set-Cookie`, the last.
 - The call's `signal` aborts `timeoutMarginMs` (default 1000) before Lambda's deadline (`context.getRemainingTimeInMillis()`), so a slow call ends with an error response instead of a Lambda timeout.
 
 ## Response streaming
