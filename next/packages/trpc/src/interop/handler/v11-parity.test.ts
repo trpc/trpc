@@ -9,7 +9,10 @@ import {
   tracked as tracked11,
   type TRPCDefaultErrorShape,
 } from '@trpc/server';
+import { EventEmitter } from 'node:events';
+import type { IncomingMessage } from 'node:http';
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
+import { getWSConnectionHandler } from '@trpc/server/adapters/ws';
 import superjson from 'superjson';
 import { createV11Handler } from '@trpc12/trpc/interop';
 import { error, initTrpc, tracked, type AnyRouter } from '@trpc12/trpc/server';
@@ -120,6 +123,16 @@ const v11Router = (config: V11Config) => {
       yield 1;
       throw new TRPCError({ code: 'CONFLICT', message: 'Gone' });
     }),
+    idle: t.procedure.subscription(async function* (o) {
+      try {
+        yield 0;
+        await new Promise((resolve) =>
+          o.signal?.addEventListener('abort', resolve),
+        );
+      } finally {
+        o.ctx.finished.push('idle');
+      }
+    }),
   });
 };
 
@@ -196,6 +209,16 @@ const v12Router = {
   failing: t.procedure.subscription(async function* () {
     yield 1;
     throw error({ code: 'CONFLICT', message: 'Gone' });
+  }),
+  idle: t.procedure.subscription(async function* (o) {
+    try {
+      yield 0;
+      await new Promise((resolve) =>
+        o.signal.addEventListener('abort', resolve),
+      );
+    } finally {
+      o.ctx.finished.push('idle');
+    }
   }),
 } satisfies AnyRouter;
 
@@ -755,3 +778,221 @@ test.each(servers)(
     ).toMatchObject([20, new Date(0), { title: 'Report' }]);
   },
 );
+
+// WebSocket: the same messages to v11's `getWSConnectionHandler` and to the
+// interop's `websocket()`. The replies to each id must match, but for the
+// divergences listed in `wsKnown`.
+
+/** The parts of a `ws` socket v11's handler uses. */
+class WsSocket extends EventEmitter {
+  readyState = 1;
+  readonly sent: Array<unknown> = [];
+  send(data: string) {
+    this.sent.push(JSON.parse(data));
+  }
+  close() {
+    this.readyState = 3;
+    this.emit('close');
+  }
+  terminate() {
+    this.close();
+  }
+  receive(message: string) {
+    this.emit('message', Buffer.from(message), false);
+  }
+}
+
+/** A WHATWG socket, as `websocket()` takes it. */
+class StandardSocket extends EventTarget {
+  readyState = 1;
+  readonly sent: Array<unknown> = [];
+  send(data: string) {
+    this.sent.push(JSON.parse(data));
+  }
+  close() {
+    this.readyState = 3;
+    this.dispatchEvent(new Event('close'));
+  }
+  receive(message: string) {
+    this.dispatchEvent(new MessageEvent('message', { data: message }));
+  }
+}
+
+const wsPair = (config: V11Config) => {
+  const v11 = getWSConnectionHandler({
+    router: v11Router(config),
+    createContext: () => who(null),
+    // Only `applyWSSHandler` reads it.
+    wss: undefined as never,
+  });
+  const interop = createV11Handler({
+    router: v12Router,
+    createContext: (o) => who12(o.request.headers['x-fail']),
+    exposeUnexpectedErrors: true,
+    ...(config.transformer ? { transformer: config.transformer } : {}),
+    ...(config.errorFormatter ? { errorFormatter: custom } : {}),
+  });
+  return {
+    v11: () => {
+      const socket = new WsSocket();
+      v11(socket as never, {
+        url: '/trpc',
+        headers: { host: 'localhost' },
+      } as IncomingMessage);
+      return socket;
+    },
+    v12: () => {
+      const socket = new StandardSocket();
+      interop.websocket(socket, {
+        request: new Request('http://localhost/trpc'),
+      });
+      return socket;
+    },
+  };
+};
+
+const wsSetups = {
+  plain: wsPair({}),
+  superjson: wsPair({ transformer: superjson }),
+  formatted: wsPair({ errorFormatter: custom }),
+};
+
+/** Messages to send, then how many replies to wait for, in all. */
+type WsStep = [messages: Array<unknown>, replies: number];
+
+const call = (
+  id: number,
+  method: string,
+  path: string,
+  input?: unknown,
+  extra: object = {},
+) => ({ id, jsonrpc: '2.0', method, params: { path, input, ...extra } });
+
+const wsCases: Array<[keyof typeof wsSetups, string, Array<WsStep>]> = [
+  ['plain', 'ws query', [[[call(1, 'query', 'greet', { name: 'a' })], 1]]],
+  ['plain', 'ws mutation', [[[call(1, 'mutation', 'add', { title: 'x' })], 1]]],
+  ['plain', 'ws undefined', [[[call(1, 'query', 'nothing')], 1]]],
+  ['plain', 'ws error', [[[call(1, 'query', 'missing')], 1]]],
+  ['plain', 'ws unexpected error', [[[call(1, 'query', 'boom')], 1]]],
+  ['plain', 'ws missing path', [[[call(1, 'query', 'nowhere')], 1]]],
+  ['plain', 'ws wrong method', [[[call(1, 'mutation', 'greet')], 1]]],
+  ['plain', 'ws bad input', [[[call(1, 'query', 'greet', { name: 1 })], 1]]],
+  [
+    'plain',
+    'ws batch',
+    [
+      [
+        [
+          [
+            call(1, 'query', 'greet', { name: 'a' }),
+            call(2, 'mutation', 'add', { title: 'x' }),
+          ],
+        ],
+        2,
+      ],
+    ],
+  ],
+  ['plain', 'ws subscription', [[[call(1, 'subscription', 'events')], 4]]],
+  [
+    'plain',
+    'ws subscription with input',
+    [[[call(1, 'subscription', 'counted', { from: 3 })], 3]],
+  ],
+  [
+    'plain',
+    'ws tracked, from lastEventId',
+    [
+      [
+        [
+          call(1, 'subscription', 'trackedEvents', undefined, {
+            lastEventId: '1',
+          }),
+        ],
+        4,
+      ],
+    ],
+  ],
+  [
+    'plain',
+    'ws subscription error',
+    [[[call(1, 'subscription', 'failing')], 3]],
+  ],
+  [
+    'plain',
+    'ws subscription.stop',
+    [
+      [[call(1, 'subscription', 'idle')], 2],
+      [[{ id: 1, jsonrpc: '2.0', method: 'subscription.stop' }], 3],
+    ],
+  ],
+  [
+    'plain',
+    'ws unknown method',
+    [[[{ id: 1, jsonrpc: '2.0', method: 'delete' }], 1]],
+  ],
+  ['plain', 'ws invalid JSON', [[['{nope'], 1]]],
+  [
+    'plain',
+    'ws params not an object',
+    [[[{ id: 1, jsonrpc: '2.0', method: 'query', params: 'nope' }], 1]],
+  ],
+  [
+    'superjson',
+    'ws superjson query',
+    [[[call(1, 'query', 'date', superjson.serialize(undefined))], 1]],
+  ],
+  [
+    'superjson',
+    'ws superjson subscription',
+    [[[call(1, 'subscription', 'events', superjson.serialize(undefined))], 4]],
+  ],
+  ['formatted', 'ws formatted error', [[[call(1, 'query', 'missing')], 1]]],
+];
+
+/** Where the interop answers differently on purpose. */
+const wsKnown: Record<string, string> = {
+  'ws bad input': 'As "bad input".',
+  'ws unknown method':
+    'v11 answers with id null and "Invalid procedure type"; the interop answers by id, with the method it got. v11 clients send only the methods they know.',
+  'ws params not an object':
+    'v11 answers with id null and "Not an object"; the interop answers by id, as a call to path "". v11 clients always send params.',
+  'ws invalid JSON':
+    "v11's message is `JSON.parse`'s, which varies by runtime; the interop's is \"Invalid JSON\".",
+};
+
+/** Each id's replies, in the order they were sent. */
+const byId = (sent: Array<unknown>) => {
+  const replies = new Map<string, Array<unknown>>();
+  for (const reply of sent) {
+    const id = JSON.stringify((reply as { id?: unknown }).id ?? null);
+    replies.set(id, [...(replies.get(id) ?? []), reply]);
+  }
+  return Object.fromEntries(replies);
+};
+
+test.each(wsCases)('%s: %s', async (setup, name, steps) => {
+  const run = async (socket: WsSocket | StandardSocket) => {
+    for (const [messages, replies] of steps) {
+      for (const message of messages) {
+        socket.receive(
+          typeof message === 'string' ? message : JSON.stringify(message),
+        );
+      }
+      await vi.waitFor(() =>
+        expect(socket.sent.length).toBeGreaterThanOrEqual(replies),
+      );
+    }
+    await sleep(20);
+    socket.close();
+    return byId(socket.sent);
+  };
+  const left = await run(wsSetups[setup].v11());
+  const right = await run(wsSetups[setup].v12());
+  if (wsKnown[name]) expect(right).not.toEqual(left);
+  else expect(right).toEqual(left);
+});
+
+test('every known WebSocket divergence names a case', () => {
+  const names = new Set(wsCases.map(([, name]) => name));
+  expect(Object.keys(wsKnown).filter((name) => !names.has(name))).toEqual([]);
+});

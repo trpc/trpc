@@ -118,19 +118,20 @@ test('calls to missing paths, or with the wrong method, fail by id', async () =>
       expect.objectContaining({
         id: 1,
         error: expect.objectContaining({
-          message: 'No procedure found on path "nowhere"',
+          message: 'No "query"-procedure on path "nowhere"',
         }),
       }),
       expect.objectContaining({
         id: 2,
         error: expect.objectContaining({
-          message: '"whoami" is a query, not a mutation',
+          message: 'No "mutation"-procedure on path "whoami"',
+          data: expect.objectContaining({ code: 'NOT_FOUND' }),
         }),
       }),
       expect.objectContaining({
         id: 3,
         error: expect.objectContaining({
-          message: 'No procedure found on path ""',
+          message: 'No "query"-procedure on path ""',
         }),
       }),
     ]),

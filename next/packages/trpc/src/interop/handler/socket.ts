@@ -117,18 +117,11 @@ function v11Session(
     const abort = Effect.sync(() => controller.abort());
     return Effect.gen(function* () {
       const procedure = yield* resolveProcedureEffect(core.router, path);
-      if (!procedure) {
+      // v11's sockets answer a missing path and a wrong type alike.
+      if (!procedure || procedure['~trpc'].type !== method) {
         return yield* Effect.fail(
           new TrpcError.NotFound({
-            message: `No procedure found on path "${path}"`,
-          }),
-        );
-      }
-      const type = procedure['~trpc'].type;
-      if (type !== method) {
-        return yield* Effect.fail(
-          new TrpcError.MethodNotSupported({
-            message: `"${path}" is a ${type}, not a ${method}`,
+            message: `No "${method}"-procedure on path "${path}"`,
           }),
         );
       }
@@ -147,7 +140,7 @@ function v11Session(
       const ctx = yield* base.makeContext({
         request,
         platform: opts.platform,
-        calls: [{ path, type }],
+        calls: [{ path, type: method }],
         signal: controller.signal,
         transport: 'websocket',
         connectionParams: callParams,
@@ -165,7 +158,7 @@ function v11Session(
       if (Exit.isFailure(exit)) {
         return yield* Effect.fail(normalizeCause(exit.cause));
       }
-      if (type !== 'subscription') {
+      if (method !== 'subscription') {
         const data = yield* core.settle(exit.value);
         yield* send({
           ...head,
@@ -197,7 +190,7 @@ function v11Session(
         Effect.catchCause((cause) =>
           Cause.hasInterruptsOnly(cause)
             ? Effect.failCause(cause)
-            : sendError(id, jsonrpc, normalizeCause(cause), path, type),
+            : sendError(id, jsonrpc, normalizeCause(cause), path, method),
         ),
         Effect.ensuring(send({ ...head, result: { type: 'stopped' } })),
       );
