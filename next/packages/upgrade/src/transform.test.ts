@@ -645,7 +645,7 @@ const app = <TRPCProvider {...props} trpcClient={client} />;
     `);
   });
 
-  test('helpers whose input moved into their options are notes', () => {
+  test('helpers whose input moved into their options, or whose name is gone, are notes', () => {
     const source = `import { useTRPC } from './trpc';
 function Posts() {
   const trpc = useTRPC();
@@ -655,6 +655,8 @@ function Posts() {
   trpc.post.byId.queryFilter({ id: '1' });
   trpc.post.feed.infiniteQueryOptions({ limit: 10 });
   trpc.post.feed.infiniteQueryKey({ limit: 10 });
+  trpc.post.feed.infiniteQueryFilter({ limit: 10 });
+  trpc.post.feed.infiniteQueryFilter();
   trpc.post.onAdd.subscriptionOptions(undefined, { onData });
   useMutation(trpc.post.add.mutationOptions({ onSuccess }));
 }
@@ -666,7 +668,9 @@ function Posts() {
         "7:18 queryFilter(input, filters) is queryFilter({ input, ...filters }) in v12",
         "8:18 infiniteQueryOptions(input, opts) is infiniteOptions({ input: (cursor) => ({ ...input, cursor }), ...opts }) in v12",
         "9:18 infiniteQueryKey(input) is infiniteKey({ input, initialPageParam }) in v12",
-        "10:19 subscriptionOptions(input, opts) is subscriptionOptions({ input, ...opts }) in v12",
+        "10:18 infiniteQueryFilter(input, filters) has no v12 form; pathFilter(filters) matches the path's queries, infinite ones included",
+        "11:18 infiniteQueryFilter(input, filters) has no v12 form; pathFilter(filters) matches the path's queries, infinite ones included",
+        "12:19 subscriptionOptions(input, opts) is subscriptionOptions({ input, ...opts }) in v12",
       ]
     `);
     // Without v11's TanStack integration, queryOptions() is someone else's.

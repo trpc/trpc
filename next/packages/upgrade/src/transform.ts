@@ -119,7 +119,10 @@ const KEPT: Readonly<Record<string, ReadonlySet<string>>> = {
   '@trpc/client': new Set(['TRPCLink']),
 };
 
-/** TanStack helpers whose input moved into their options: `queryOptions({ input })`. */
+/**
+ * TanStack helpers whose input moved into their options
+ * (`queryOptions({ input })`), or whose name is gone.
+ */
 const QUERY_HELPERS: Readonly<Record<string, string>> = {
   queryOptions:
     'queryOptions(input, opts) is queryOptions({ input, ...opts }) in v12',
@@ -132,7 +135,16 @@ const QUERY_HELPERS: Readonly<Record<string, string>> = {
     'infiniteQueryOptions(input, opts) is infiniteOptions({ input: (cursor) => ({ ...input, cursor }), ...opts }) in v12',
   infiniteQueryKey:
     'infiniteQueryKey(input) is infiniteKey({ input, initialPageParam }) in v12',
+  infiniteQueryFilter:
+    "infiniteQueryFilter(input, filters) has no v12 form; pathFilter(filters) matches the path's queries, infinite ones included",
 };
+
+/** Helpers v12 has no method of that name for, so a call without arguments breaks too. */
+const GONE_HELPERS: ReadonlySet<string> = new Set([
+  'infiniteQueryOptions',
+  'infiniteQueryKey',
+  'infiniteQueryFilter',
+]);
 
 const OLD_CLIENTS =
   'old clients: createV11Handler on this endpoint, createFetchHandler on another (docs/migrations/from-v11/serve-v11-clients.md)';
@@ -664,7 +676,10 @@ export function upgradeSource(
       }
       const helperNote =
         usesQueryHelpers && method && own(QUERY_HELPERS, method);
-      if (helperNote && node['arguments'].length > 0) {
+      if (
+        helperNote &&
+        (node['arguments'].length > 0 || GONE_HELPERS.has(method))
+      ) {
         note(callee['property'].start, helperNote);
       }
       if (method === 'createCallerFactory' && imported.size > 0) {
