@@ -72,6 +72,7 @@ export type {
   EffectMiddlewareFactory,
   EffectMiddlewareOpts,
   EffectNextFn,
+  MiddlewareErrors,
   MiddlewareFunction,
   MiddlewareOpts,
   MiddlewareRequirements,

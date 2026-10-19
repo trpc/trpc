@@ -16,6 +16,7 @@ import type {
 import {
   isEffectMiddleware,
   type EffectMiddleware,
+  type MiddlewareErrors,
   type MiddlewareFunction,
   type NextInput,
   type ResponseHandle,
@@ -667,7 +668,7 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
    */
   use<
     $Ctx extends object = {},
-    $Err extends AnyTrpcError = never,
+    $Err extends MiddlewareErrors = never,
     $Ok = never,
     $Input = Unset,
     $Needs extends object = {},
@@ -689,7 +690,7 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
         ctx: WithNeeds<TDef, $Needs>;
         ctxAdded: Overwrite<TDef['ctxAdded'], $Ctx>;
         inputOut: NextInput<TDef['inputOut'], $Input>;
-        errors: TDef['errors'] | $Err;
+        errors: TDef['errors'] | Extract<$Err, AnyTrpcError>;
         shorts: TDef['shorts'] | $Ok;
       }
     >

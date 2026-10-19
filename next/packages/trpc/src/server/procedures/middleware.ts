@@ -131,12 +131,24 @@ export type MiddlewareFunction<
   TInput,
   TMeta,
   $Ctx extends object,
-  $Err extends AnyTrpcError,
+  $Err extends MiddlewareErrors,
   $Ok = never,
   $Input = Unset,
 > = (
   opts: MiddlewareOpts<TCtx, TInput, TMeta>,
 ) => MaybePromise<MiddlewareResult<$Ctx, $Input> | $Err | OkResult<$Ok>>;
+
+/**
+ * The bound of a middleware's `$Err`. When every branch returns `next()` or
+ * `ok()`, TypeScript still infers the whole return type into `$Err`; with an
+ * `AnyTrpcError` bound that candidate fails and `$Err` widens to
+ * `AnyTrpcError`. Accepting it here and taking `Extract<$Err, AnyTrpcError>`
+ * keeps such a middleware from adding errors.
+ * @internal
+ */
+export type MiddlewareErrors =
+  | AnyTrpcError
+  | MaybePromise<MiddlewareResult<any, any> | OkResult<any>>;
 
 /**
  * What a standalone middleware needs from the procedure it is used on.
@@ -304,7 +316,7 @@ interface MiddlewareFactory {
    */
   <TReq extends MiddlewareRequirements = {}>(): <
     $Ctx extends object = {},
-    $Err extends AnyTrpcError = never,
+    $Err extends MiddlewareErrors = never,
     $Ok = never,
     $Input = Unset,
   >(
@@ -322,7 +334,7 @@ interface MiddlewareFactory {
     ReqInput<TReq>,
     ReqMeta<TReq>,
     $Ctx,
-    $Err,
+    Extract<$Err, AnyTrpcError>,
     $Ok,
     $Input
   >;

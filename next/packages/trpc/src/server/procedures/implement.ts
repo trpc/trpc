@@ -24,6 +24,7 @@ import {
 } from './builder.ts';
 import type {
   EffectMiddleware,
+  MiddlewareErrors,
   MiddlewareFunction,
   NextInput,
 } from './middleware.ts';
@@ -413,7 +414,11 @@ export interface ImplementerRoot<
    * const impl = t.implement(appContract).use(authed);
    * ```
    */
-  use<$Ctx extends object = {}, $Err extends AnyTrpcError = never, $Ok = never>(
+  use<
+    $Ctx extends object = {},
+    $Err extends MiddlewareErrors = never,
+    $Ok = never,
+  >(
     fn: MiddlewareFunction<
       CurrentCtx<TRoot>,
       unknown,
@@ -422,7 +427,7 @@ export interface ImplementerRoot<
       $Err,
       $Ok
     > &
-      EveryLeafDeclares<TContract, $Err>,
+      EveryLeafDeclares<TContract, Extract<$Err, AnyTrpcError>>,
   ): ImplementResult<
     With<
       TRoot,

@@ -17,6 +17,7 @@ import {
   TrpcError,
   type inferInputIssue,
   type InputValidationErrorData,
+  type inferProcedureErrors,
   type TrackedEnvelope,
 } from '@trpc12/trpc/server';
 import { callProcedure } from '@trpc12/trpc/extend';
@@ -312,6 +313,33 @@ test('ok() short-circuits the chain; output validation still runs', async () => 
   // @ts-expect-error -- the middleware may short-circuit with a number
   numeric.output(z.string()).query(() => 'text');
   numeric.output(z.number()).query(() => 2);
+});
+
+test('a middleware that only calls next() adds no errors', () => {
+  const shared = t.middleware((opts) => opts.next({ ctx: { b: 1 } }));
+  const standalone = middleware()((opts) => opts.next());
+  const sync = t.procedure
+    .use((opts) => opts.next({ ctx: { a: 1 } }))
+    .query(() => 1);
+  const async = t.procedure.use(async (opts) => opts.next()).query(() => 1);
+  const viaT = t.procedure.use(shared).query(() => 1);
+  const viaStandalone = t.procedure.use(standalone).query(() => 1);
+  expectTypeOf<inferProcedureErrors<typeof sync>>().toBeNever();
+  expectTypeOf<inferProcedureErrors<typeof async>>().toBeNever();
+  expectTypeOf<inferProcedureErrors<typeof viaT>>().toBeNever();
+  expectTypeOf<inferProcedureErrors<typeof viaStandalone>>().toBeNever();
+
+  const guarded = t.procedure
+    .use(shared)
+    .use((opts) =>
+      opts.ctx.user ? opts.next() : error({ code: 'UNAUTHORIZED' }),
+    )
+    .query(() => 1);
+  expectTypeOf<
+    inferProcedureErrors<typeof guarded>['code']
+  >().toEqualTypeOf<'UNAUTHORIZED'>();
+  // @ts-expect-error -- a middleware returns next(), ok() or a TrpcError
+  t.procedure.use((opts) => (opts.ctx.user ? opts.next() : 1));
 });
 
 test('lifecycle helpers observe the chain', async () => {

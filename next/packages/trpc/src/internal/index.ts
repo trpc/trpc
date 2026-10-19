@@ -26,6 +26,7 @@ export type {
   UndeclaredCheck,
   EffectBodyCheck,
   EffectMiddlewareFactory,
+  MiddlewareErrors,
   ReqCtx,
   ReqInput,
   ReqMeta,

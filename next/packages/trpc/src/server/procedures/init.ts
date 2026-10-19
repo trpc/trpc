@@ -35,6 +35,7 @@ import {
 import {
   makeEffectMiddleware,
   type EffectMiddlewareFactory,
+  type MiddlewareErrors,
   type MiddlewareFunction,
 } from './middleware.ts';
 
@@ -279,12 +280,20 @@ export type ExtendedDef<
 export interface RootMiddleware<TCtx extends object, TMeta extends object> {
   <
     $Ctx extends object = {},
-    $Err extends AnyTrpcError = never,
+    $Err extends MiddlewareErrors = never,
     $Ok = never,
     $Input = Unset,
   >(
     fn: MiddlewareFunction<TCtx, unknown, TMeta, $Ctx, $Err, $Ok, $Input>,
-  ): MiddlewareFunction<TCtx, unknown, TMeta, $Ctx, $Err, $Ok, $Input>;
+  ): MiddlewareFunction<
+    TCtx,
+    unknown,
+    TMeta,
+    $Ctx,
+    Extract<$Err, AnyTrpcError>,
+    $Ok,
+    $Input
+  >;
   /**
    * An Effect middleware (06 M-A): `next()` returns an `Effect`. Declare the
    * services it provides with `t.middleware.effect<{ provides: S }>()(fn)`.

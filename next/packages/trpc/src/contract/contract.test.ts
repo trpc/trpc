@@ -291,6 +291,7 @@ test('impl.use() and impl.provide() run for every procedure of the contract', as
   void (() => {
     // @ts-expect-error -- Q9.3: health and post.* don't declare UNAUTHORIZED
     t.implement(appContract).use(authed);
+    t.implement(appContract).use((opts) => opts.next({ ctx: { a: 1 } }));
   });
 });
 
