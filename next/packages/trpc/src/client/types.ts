@@ -268,6 +268,13 @@ export type Carries<T, TLinks extends ChainTypes> = TLinks extends {
   : true;
 
 /**
+ * A procedure of type `_T` on a client whose links can't carry it: no
+ * methods, and the name says why in the error when one is called.
+ * @internal
+ */
+export interface NoLinkCarries<_T extends ProcedureType> {}
+
+/**
  * The client methods for one procedure.
  * @since 0.1.0
  * @stability stable
@@ -288,7 +295,7 @@ type DecorateDef<
   TLinks extends ChainTypes,
 > =
   Carries<D['type'], TLinks> extends false
-    ? {}
+    ? NoLinkCarries<D['type']>
     : DecorateCarried<D, TContext, TForm, TLinks>;
 
 type DecorateCarried<

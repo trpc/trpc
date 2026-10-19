@@ -44,6 +44,7 @@ import type {
   DuplicateSwitchCheck,
   LinksContext,
   LinksTypes,
+  NoLinkCarries,
   ProcedureCallArgs,
   ResultForm,
   RouterOf,
@@ -79,7 +80,7 @@ type DecorateEffectDef<
   TLinks extends ChainTypes,
 > =
   Carries<D['type'], TLinks> extends false
-    ? {}
+    ? NoLinkCarries<D['type']>
     : DecorateEffectCarried<D, TContext, TLinks>;
 
 type DecorateEffectCarried<
