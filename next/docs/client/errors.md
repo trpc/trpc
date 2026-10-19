@@ -38,10 +38,11 @@ const [post, err] = await safeClient.post.byId.query({ id: '1' });
 
 ## What a call can fail with
 
-`error` is a `TrpcError`, and its type lists every way the call can fail. Each member has a literal `code`, in one of two groups:
+`error` is a `TrpcError`, and its type lists every way the call can fail, in three groups:
 
 - **Defined errors** (`defined: true`): the procedure's own. They're the errors it returns, fails with or declares on the server ([Errors](../server/errors.md)), its input's `BAD_REQUEST` with `data.issues`, and errors links declare ([Custom links](./custom-links.md#errors-and-unsupported-types)). Each code has its `data` type.
 - **Built-in errors** (`defined: false`, the `BuiltinError` type): one member per built-in code, and they never have `data`.
+- **Undeclared errors** (`defined: false`, the `UndeclaredError` type): a custom code thrown by a procedure that declares no errors, with its `data`, both untyped. No literal matches its code type, so `switch` cases skip it.
 
 | Built-in code               | When                                                                                                                                                   |
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -50,7 +51,7 @@ const [post, err] = await safeClient.post.byId.query({ id: '1' });
 | `STREAM_INTERRUPTED`        | A stream stopped without an end or an error. Only from links that read streams.                                                                        |
 | `CLIENT_CLOSED_REQUEST`     | The call's `signal` aborted it.                                                                                                                        |
 | `CLIENT_ERROR`              | A link failed, or failed with a custom code it didn't declare.                                                                                         |
-| `INTERNAL_SERVER_ERROR`     | The server crashed, or threw a custom code it didn't declare. The message is masked in production.                                                     |
+| `INTERNAL_SERVER_ERROR`     | The server crashed, or threw a custom code that its `.errors()` don't list. The message is masked in production.                                       |
 | Any other code (`CONFLICT`) | The server threw it without declaring it, a proxy answered with its status (`401` is `UNAUTHORIZED`), or the server lacks the procedure (`NOT_FOUND`). |
 
 ### Errors from the links
@@ -68,14 +69,14 @@ The first three codes, the `LinkErrorCode` type, are made only by links, so a ca
 
 `createRouterClient` declares none, since it calls the router in-process. A client typed without its links, like `TrpcClient<AppRouter>`, has all three, so it accepts a client with any links. [Custom links](./custom-links.md#errors-and-unsupported-types) declare theirs with `builtinErrors`.
 
-Built-in errors fall into four categories (`ERROR_CATEGORY` maps each code to one), since a call site usually does the same for every code in one:
+Built-in errors fall into four categories (`ERROR_CATEGORY` maps each code to one), since a call site usually does the same for every code in one. Undeclared errors are `rejected`:
 
-| Category      | Codes                                                                                                                                                             | Usually                     |
-| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------- |
-| `rejected`    | Built-in 4xx codes (`UNAUTHORIZED`, `NOT_FOUND`, `BAD_REQUEST`, …), requests the server couldn't take (`PARSE_ERROR`, `PAYLOAD_TOO_LARGE`, …), and `CLIENT_ERROR` | Show the message, or reload |
-| `unavailable` | `NETWORK_ERROR`, `BAD_RESPONSE`, `STREAM_INTERRUPTED`, `TIMEOUT`, `TOO_MANY_REQUESTS`, `BAD_GATEWAY`, `SERVICE_UNAVAILABLE`, `GATEWAY_TIMEOUT`                    | Try again later             |
-| `failed`      | `INTERNAL_SERVER_ERROR`, `NOT_IMPLEMENTED`                                                                                                                        | Report it                   |
-| `aborted`     | `CLIENT_CLOSED_REQUEST`                                                                                                                                           | Ignore it                   |
+| Category      | Codes                                                                                                                                                                                | Usually                     |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------- |
+| `rejected`    | Built-in 4xx codes (`UNAUTHORIZED`, `NOT_FOUND`, `BAD_REQUEST`, …), requests the server couldn't take (`PARSE_ERROR`, `PAYLOAD_TOO_LARGE`, …), `CLIENT_ERROR`, and undeclared errors | Show the message, or reload |
+| `unavailable` | `NETWORK_ERROR`, `BAD_RESPONSE`, `STREAM_INTERRUPTED`, `TIMEOUT`, `TOO_MANY_REQUESTS`, `BAD_GATEWAY`, `SERVICE_UNAVAILABLE`, `GATEWAY_TIMEOUT`                                       | Try again later             |
+| `failed`      | `INTERNAL_SERVER_ERROR`, `NOT_IMPLEMENTED`                                                                                                                                           | Report it                   |
+| `aborted`     | `CLIENT_CLOSED_REQUEST`                                                                                                                                                              | Ignore it                   |
 
 ## Switching on the code
 

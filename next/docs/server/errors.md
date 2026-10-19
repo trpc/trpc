@@ -41,6 +41,8 @@ const me = t.procedure.query(
 
 Declaring errors with `.errors()` is optional. It adds typed constructors and `data` schemas. It also types what inference can't see: errors thrown from helpers, since a `throw` has no type.
 
+Once a procedure declares errors, the list is exhaustive. Returning an error it doesn't list, or one whose `data` doesn't match, is a type error, and a thrown custom code it doesn't list reaches the client as an `INTERNAL_SERVER_ERROR`. Errors from middleware aren't checked against the list.
+
 ```ts twoslash
 // ---cut-start---
 import { db, t } from './server.ts';
@@ -62,12 +64,13 @@ const byId = t.procedure
 
 ## On the client
 
-On the client, the errors in the union are `defined: true`, with their `data`, whether they were returned, failed or declared. Anything else arrives as a built-in error (`defined: false`), and it never has `data`:
+On the client, the errors in the union are `defined: true`, with their `data`, whether they were returned, failed or declared. A thrown error with a declared code is too: its `data` is validated like a returned one's. Anything else arrives with `defined: false`:
 
-- An undeclared thrown error with a built-in code (`throw new TrpcError({ code: 'CONFLICT', data })`) keeps its code and loses its `data`.
-- An undeclared thrown error with a custom code, or a crash, is an `INTERNAL_SERVER_ERROR`. Its message is masked unless `NODE_ENV` is `development` or `test`, or `exposeUnexpectedErrors: true`.
+- A thrown error with a built-in code (`throw new TrpcError({ code: 'CONFLICT', data })`) keeps its code and loses its `data`, which no schema checked.
+- A thrown error with a custom code keeps its code and `data`, untyped, when the procedure declares no errors. On the client it is an `UndeclaredError`, which `matchError()` hands to `rejected` (or `builtin`). With `.errors()` that don't list it, it is an `INTERNAL_SERVER_ERROR`.
+- A crash is an `INTERNAL_SERVER_ERROR`. Its message is masked unless `NODE_ENV` is `development` or `test`, or `exposeUnexpectedErrors: true`.
 
-So the client's union only has codes it can handle, and `onError` still sees the original error. Declare a thrown error (or return it) to give it a custom code or `data` on the client. There is no `errorFormatter`.
+`onError` still sees the original error. Return a thrown error, or declare it, to make it typed on the client. There is no `errorFormatter`.
 
 ```ts twoslash
 // ---cut-start---
@@ -87,6 +90,16 @@ if (err) {
 ```
 
 See [Errors without try/catch](../client/errors.md) for `safe()`, `matchError()` and the built-in codes.
+
+## Thrown errors
+
+v11 code throws its errors (`throw new TRPCError({ code })`). In v12 that still works, but a thrown error is untyped on the client, so return it instead: `return error({ code })`, or `yield*` it in an Effect. When `NODE_ENV` is `development`, a procedure that throws a `TrpcError` it could return logs a warning, once per procedure and code. Errors made by the declared constructors (`opts.errors.NOT_FOUND()`), `TrpcError.Tagged` classes and declared codes are typed, so they don't warn. A thrown code that `.errors()` doesn't list always warns in development, since it becomes an `INTERNAL_SERVER_ERROR`.
+
+Turn the warning off for every procedure of a root:
+
+```ts
+const t = initTrpc({ warnThrownErrors: false });
+```
 
 ## Codes and statuses
 
