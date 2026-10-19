@@ -163,7 +163,13 @@ export const client = createTrpcClient({
 
 export const localClient = createTrpcClient({
   router: routerType<AppRouter>(),
-  links: [localLink({ router: appRouter, layer: PostRepoLive })],
+  links: [
+    localLink({
+      router: appRouter,
+      createContext: () => ({ user: null }),
+      layer: PostRepoLive,
+    }),
+  ],
 });
 
 export const effectClient = createEffectClient({

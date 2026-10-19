@@ -272,6 +272,9 @@ test('localLink runs the router in-process, through the serializer', async () =>
   expect(today).toBe('2026-10-10T00:00:00.000Z');
   const [, err] = await safe(client.find.query({ id: 'x' }));
   expect(err).toMatchObject({ code: 'NOT_FOUND', defined: true });
+  // @ts-expect-error -- the router's procedures read `ctx.token`
+  localLink({ router });
+  localLink({ router: { ping: initTrpc().procedure.query(() => 'pong') } });
 });
 
 test('localLink fails unknown paths and wrong methods; deferred failures arrive as errors', async () => {

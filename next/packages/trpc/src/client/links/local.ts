@@ -34,15 +34,25 @@ import { isByteStreamInput } from './events.ts';
  */
 export type LocalLinkOptions<TRouter extends AnyRouter> = {
   router: TRouter;
-  /** Runs once per call. */
-  createContext?: () => MaybePromise<inferRouterContext<TRouter>>;
   /**
    * Round-trip inputs and outputs through a serializer, as over the wire.
    * `false` passes values by reference, with native types.
    * @default jsonSerializer
    */
   serializer?: AnySerializer | false;
-} & LayerOption<inferRouterServices<TRouter>>;
+} & LocalContextOption<inferRouterContext<TRouter>> &
+  LayerOption<inferRouterServices<TRouter>>;
+
+/** `createContext` is required when the router's procedures need a `ctx`. */
+type LocalContextOption<TCtx> = {} extends TCtx
+  ? {
+      /** Runs once per call. */
+      createContext?: () => MaybePromise<TCtx>;
+    }
+  : {
+      /** Runs once per call. */
+      createContext: () => MaybePromise<TCtx>;
+    };
 
 /**
  * Runs calls in-process, without HTTP. For tests and SSR.

@@ -25,7 +25,7 @@ const posts = await client.post.list.query();
 ```
 
 - `router`: the router to call.
-- `createContext()`: makes the `ctx` of each call. The handler's `createContext` doesn't run, since there is no request ([Server-side calls](../../server/server-side-calls.md)).
+- `createContext()`: makes the `ctx` of each call, required when the router's procedures need one. The handler's `createContext` doesn't run, since there is no request ([Server-side calls](../../server/server-side-calls.md)).
 - `layer`: provides the Effect services the router needs, as the handler's `layer` does.
 - `serializer`: inputs and outputs round-trip through it as over the wire, `jsonSerializer` by default. `false` passes values by reference, so they keep native types.
 
