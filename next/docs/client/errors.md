@@ -44,15 +44,15 @@ const [post, err] = await safeClient.post.byId.query({ id: '1' });
 - **Built-in errors** (`defined: false`, the `BuiltinError` type): one member per built-in code, and they never have `data`.
 - **Undeclared errors** (`defined: false`, the `UndeclaredError` type): a custom code thrown by a procedure that declares no errors, with its `data`, both untyped. No literal matches its code type, so `switch` cases skip it.
 
-| Built-in code               | When                                                                                                                                                   |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `NETWORK_ERROR`             | The request got no response, or the connection dropped. Only from links that send requests.                                                            |
+| Built-in code               | When                                                                                                                                                                   |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `NETWORK_ERROR`             | The request got no response, or the connection dropped. Only from links that send requests.                                                                            |
 | `BAD_RESPONSE`              | The response wasn't a tRPC one and its status names no code (an HTML page or an empty body sent with `200`), or it didn't decode. Only from links that read responses. |
-| `STREAM_INTERRUPTED`        | A stream stopped without an end or an error. Only from links that read streams.                                                                        |
-| `CLIENT_CLOSED_REQUEST`     | The call's `signal` aborted it.                                                                                                                        |
-| `CLIENT_ERROR`              | A link failed, or failed with a custom code it didn't declare.                                                                                         |
-| `INTERNAL_SERVER_ERROR`     | The server crashed, or threw a custom code that its `.errors()` don't list. The message is masked in production.                                       |
-| Any other code (`CONFLICT`) | The server threw it without declaring it, a proxy answered with its status (`401` is `UNAUTHORIZED`), or the server lacks the procedure (`NOT_FOUND`). |
+| `STREAM_INTERRUPTED`        | A stream stopped without an end or an error. Only from links that read streams.                                                                                        |
+| `CLIENT_CLOSED_REQUEST`     | The call's `signal` aborted it.                                                                                                                                        |
+| `CLIENT_ERROR`              | A link failed, or failed with a custom code it didn't declare.                                                                                                         |
+| `INTERNAL_SERVER_ERROR`     | The server crashed, or threw a custom code that its `.errors()` don't list. The message is masked in production.                                                       |
+| Any other code (`CONFLICT`) | The server threw it without declaring it, a proxy answered with its status (`401` is `UNAUTHORIZED`), or the server lacks the procedure (`NOT_FOUND`).                 |
 
 ### Errors from the links
 
