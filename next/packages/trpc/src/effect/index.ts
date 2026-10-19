@@ -187,13 +187,16 @@ export function createEffectClient(opts: TrpcClientOptions): unknown {
       unknown,
       SubscribeOptions<object> | undefined,
     ];
-    const op = makeOperation(
-      type,
-      path.slice(0, -1).join('.'),
-      input,
-      splitCallOptions(callOpts),
+    const procedurePath = path.slice(0, -1).join('.');
+    const callOptions = splitCallOptions(callOpts);
+    // Each run is its own operation, with its own id: socket links match
+    // responses by id, and an Effect may run more than once (`Effect.retry`).
+    const stream = Stream.suspend(() =>
+      runOperation(
+        opts.links,
+        makeOperation(type, procedurePath, input, callOptions),
+      ),
     );
-    const stream = Stream.suspend(() => runOperation(opts.links, op));
     return type === 'subscription' ? stream : firstValue(stream);
   });
 }

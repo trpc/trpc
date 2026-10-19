@@ -3,6 +3,7 @@ import {
   createTrpcClient,
   httpLink,
   routerType,
+  wsLink,
   type ClientError,
 } from '@trpc12/trpc/client';
 import { createEffectClient } from '@trpc12/trpc/effect';
@@ -201,6 +202,20 @@ test('a call fails with the Promise client\'s errors, data in the wire form', ()
   expectTypeOf<
     Extract<PromiseError, { defined: true }>['data']
   >().toEqualTypeOf<{ at: string }>();
+});
+
+test('one Effect run twice at once makes two calls', async () => {
+  await using ctx = await setup();
+  await using ws = wsLink({ url: ctx.server.wsUrl });
+  const client = createEffectClient({
+    router: routerType<AppRouter>(),
+    links: [ws],
+  });
+  const post = client.post.byId.query({ id: '1' });
+  const posts = await Effect.runPromise(
+    Effect.all([post, post], { concurrency: 'unbounded' }),
+  );
+  expect(posts).toEqual([seed[0], seed[0]]);
 });
 
 test('.provide() supplies a service from ctx, and its failure is typed', async () => {
