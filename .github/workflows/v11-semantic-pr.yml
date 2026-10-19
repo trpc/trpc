@@ -6,6 +6,10 @@ on:
       - opened
       - edited
       - synchronize
+    # The scopes are v11's packages; a PR that only changes vNext isn't judged by them.
+    paths:
+      - 'v11/**'
+      - '.github/workflows/v11-semantic-pr.yml'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
