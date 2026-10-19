@@ -49,6 +49,8 @@ queryClient.setQueryData(key, (old) =>
 );
 ```
 
+`queryFilter()` covers a procedure's plain queries. For its infinite queries, use `trpc.post.list.pathFilter()`, which covers every kind, or `{ queryKey: trpc.post.list.infiniteKey(…) }` for one input.
+
 ## Two APIs, one `QueryClient`
 
 Keys start with the procedure path, so two tRPC APIs with a `post.byId` would share cache entries. Give one a `keyPrefix`:
@@ -71,6 +73,8 @@ const billing = createTrpcQueryUtils({
 billing.post.byId.queryKey({ input: { id } }); // [['billing', 'post', 'byId'], { input: { id }, type: 'query' }]
 billing.pathFilter(); // matches only billing's queries
 ```
+
+The prefix is the path's first segment, so the other API's root `trpc.pathFilter()` matches billing's queries too, and so would a top-level `billing` router of its own. Filter that API under a path instead, like `trpc.post.pathFilter()`.
 
 Every framework's `createTrpcContext({ keyPrefix: 'billing' })` and `createTrpcRsc({ keyPrefix })` take it too; the server and browser must use the same one.
 
