@@ -83,14 +83,14 @@ While a subscription is quiet, the handler sends a `: ping` comment every 15 sec
 
 ## Reading with `EventSource`
 
-The stream is standard SSE, so a browser `EventSource` (or `curl`) can read a subscription without the client. Input goes in the query string as `httpLink` sends it (`/trpc/onPost?input={"channel":"news"}`, URL-encoded). Each `message` event's `data` is a serialized value: for a `tracked()` event, its `{ id, data }`, with the id also in `event.lastEventId`. An `EventSource` reconnects with `Last-Event-ID` by itself, so close it on the `done` event, or it reconnects when the stream ends. Failures arrive as `error` events with `data`:
+The stream is standard SSE, so a browser `EventSource` (or `curl`) can read a subscription without the client. Input goes in the query string as `httpLink` sends it (`/trpc/onPost?input={"channel":"news"}`, URL-encoded). Each `message` event's `data` is a serialized value, as a query's response body is (`{"json":…}` with the default serializer): for a `tracked()` event, its `{ id, data }`, with the id also in `event.lastEventId`. An `EventSource` reconnects with `Last-Event-ID` by itself, so close it on the `done` event, or it reconnects when the stream ends. Failures arrive as `error` events with `data`:
 
 ```ts twoslash
 // ---cut-start---
 declare function render(data: unknown): void;
 // ---cut-end---
 const source = new EventSource('/trpc/onPost');
-source.onmessage = (event) => render(JSON.parse(event.data));
+source.onmessage = (event) => render(JSON.parse(event.data).json);
 source.addEventListener('done', () => source.close());
 ```
 
