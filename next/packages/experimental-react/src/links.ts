@@ -195,10 +195,11 @@ export function invalidateOnMutationLink(
       ? out
       : out.pipe(
           Stream.tap(() =>
-            Effect.promise(() =>
-              Promise.all(
-                [...stores].map((store) => store.invalidate(invalidates(op))),
-              ),
+            Effect.forEach(
+              [...stores],
+              (store) =>
+                Effect.promise(() => store.invalidate(invalidates(op))),
+              { concurrency: 'unbounded', discard: true },
             ),
           ),
         );
