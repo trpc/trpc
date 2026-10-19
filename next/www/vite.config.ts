@@ -85,6 +85,11 @@ export default defineConfig({
       process.env['VERCEL_ENV'] ?? '',
     ),
   },
+  // The prerender fetches each page from this server in the build's own
+  // process. `localhost` binds `::1` only, and a render that holds the event
+  // loop past Node's 250ms per-address connect timer turns the fetch into
+  // `ETIMEDOUT ::1`, then `ECONNREFUSED 127.0.0.1`; an IP has one address.
+  preview: { host: '127.0.0.1' },
   plugins: [
     docsContent({
       agentFiles: true,
