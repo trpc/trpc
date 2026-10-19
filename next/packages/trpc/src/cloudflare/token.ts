@@ -79,77 +79,77 @@ export function experimental_connectionToken<S extends Schema.Codec<any, any>>(
 ): ConnectionToken<S['Type']> {
   const ttlMs = Duration.toMillis(opts.ttl ?? '1 hour');
   const codec = Schema.fromJsonString(schema);
-  let key: Promise<CryptoKey> | undefined;
-  const cryptoKey = Effect.promise(
-    () =>
-      (key ??= crypto.subtle.importKey(
-        'raw',
-        encoder.encode(
-          Redacted.isRedacted(opts.secret)
-            ? Redacted.value(opts.secret)
-            : opts.secret,
+  const cryptoKey = Effect.runSync(
+    Effect.cached(
+      Effect.promise(() =>
+        crypto.subtle.importKey(
+          'raw',
+          encoder.encode(
+            Redacted.isRedacted(opts.secret)
+              ? Redacted.value(opts.secret)
+              : opts.secret,
+          ),
+          { name: 'HMAC', hash: 'SHA-256' },
+          false,
+          ['sign', 'verify'],
         ),
-        { name: 'HMAC', hash: 'SHA-256' },
-        false,
-        ['sign', 'verify'],
-      )),
+      ),
+    ),
   );
 
-  const sign = (claims: S['Type']) =>
-    Effect.gen(function* () {
-      const now = yield* Clock.currentTimeMillis;
-      const json = yield* Schema.encodeEffect(codec)(claims).pipe(Effect.orDie);
-      const body = Base64Url.encode(
-        JSON.stringify({ c: json, exp: now + ttlMs }),
-      );
-      const k = yield* cryptoKey;
-      const mac = yield* Effect.promise(() =>
-        crypto.subtle.sign('HMAC', k, encoder.encode(body)),
-      );
-      return `${body}.${Base64Url.encode(new Uint8Array(mac))}`;
-    });
+  const sign = Effect.fnUntraced(function* (claims: S['Type']) {
+    const now = yield* Clock.currentTimeMillis;
+    const json = yield* Schema.encodeEffect(codec)(claims).pipe(Effect.orDie);
+    const body = Base64Url.encode(
+      JSON.stringify({ c: json, exp: now + ttlMs }),
+    );
+    const k = yield* cryptoKey;
+    const mac = yield* Effect.promise(() =>
+      crypto.subtle.sign('HMAC', k, encoder.encode(body)),
+    );
+    return `${body}.${Base64Url.encode(new Uint8Array(mac))}`;
+  });
 
-  const verify = (token: unknown) =>
-    Effect.gen(function* () {
-      if (typeof token !== 'string') {
-        return yield* Effect.fail(unauthorized('Missing connection token'));
-      }
-      const [body, mac, ...rest] = token.split('.');
-      const signature = mac === undefined ? undefined : Base64Url.decode(mac);
-      const decoded = body ? Base64Url.decodeString(body) : undefined;
-      if (
-        decoded === undefined ||
-        Result.isFailure(decoded) ||
-        rest.length > 0 ||
-        signature === undefined ||
-        Result.isFailure(signature)
-      ) {
-        return yield* Effect.fail(unauthorized('Malformed connection token'));
-      }
-      const k = yield* cryptoKey;
-      const valid = yield* Effect.promise(() =>
-        crypto.subtle.verify(
-          'HMAC',
-          k,
-          signature.success as Uint8Array<ArrayBuffer>,
-          encoder.encode(body),
-        ),
-      );
-      if (!valid) {
-        return yield* Effect.fail(unauthorized('Invalid connection token'));
-      }
-      const payload = JSON.parse(decoded.success) as {
-        c?: unknown;
-        exp?: unknown;
-      };
-      const now = yield* Clock.currentTimeMillis;
-      if (typeof payload.exp !== 'number' || payload.exp <= now) {
-        return yield* Effect.fail(unauthorized('Expired connection token'));
-      }
-      return yield* Schema.decodeUnknownEffect(codec)(payload.c).pipe(
-        Effect.mapError(() => unauthorized('Invalid connection token claims')),
-      );
-    });
+  const verify = Effect.fnUntraced(function* (token: unknown) {
+    if (typeof token !== 'string') {
+      return yield* Effect.fail(unauthorized('Missing connection token'));
+    }
+    const [body, mac, ...rest] = token.split('.');
+    const signature = mac === undefined ? undefined : Base64Url.decode(mac);
+    const decoded = body ? Base64Url.decodeString(body) : undefined;
+    if (
+      decoded === undefined ||
+      Result.isFailure(decoded) ||
+      rest.length > 0 ||
+      signature === undefined ||
+      Result.isFailure(signature)
+    ) {
+      return yield* Effect.fail(unauthorized('Malformed connection token'));
+    }
+    const k = yield* cryptoKey;
+    const valid = yield* Effect.promise(() =>
+      crypto.subtle.verify(
+        'HMAC',
+        k,
+        signature.success as Uint8Array<ArrayBuffer>,
+        encoder.encode(body),
+      ),
+    );
+    if (!valid) {
+      return yield* Effect.fail(unauthorized('Invalid connection token'));
+    }
+    const payload = JSON.parse(decoded.success) as {
+      c?: unknown;
+      exp?: unknown;
+    };
+    const now = yield* Clock.currentTimeMillis;
+    if (typeof payload.exp !== 'number' || payload.exp <= now) {
+      return yield* Effect.fail(unauthorized('Expired connection token'));
+    }
+    return yield* Schema.decodeUnknownEffect(codec)(payload.c).pipe(
+      Effect.mapError(() => unauthorized('Invalid connection token claims')),
+    );
+  });
 
   return { sign, verify };
 }
