@@ -20,8 +20,8 @@ export type {
 } from './basic.ts';
 export { dedupeLink } from './dedupe.ts';
 export type { DedupeContext, DedupeLinkOptions } from './dedupe.ts';
-export { httpLink } from './http.ts';
-export type { HttpLinkOptions } from './http.ts';
+export { httpLink } from './http/link.ts';
+export type { HttpLinkOptions } from './http/link.ts';
 export { localLink } from './local.ts';
 export type { LocalLinkOptions } from './local.ts';
 export {

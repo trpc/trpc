@@ -16,7 +16,7 @@ import {
   streamErrors,
   TrpcError,
   type AnyTrpcError,
-} from '../../internal/error.ts';
+} from '../../../internal/error.ts';
 import {
   CONTENT_TYPE,
   HEADER,
@@ -28,15 +28,15 @@ import {
   SSE_EVENT,
   type BatchCall,
   type BatchLine,
-} from '../../internal/protocol.ts';
-import { decodeRecords } from '../../internal/frames.ts';
-import type { FormOfOptions, MaybePromise } from '../../internal/types.ts';
+} from '../../../internal/protocol.ts';
+import { decodeRecords } from '../../../internal/frames.ts';
+import type { FormOfOptions, MaybePromise } from '../../../internal/types.ts';
 import {
   jsonSerializer,
   type Frame,
   type SerializeReturn,
   type AnySerializer,
-} from '../../serializer/index.ts';
+} from '../../../serializer/index.ts';
 import {
   toClientError,
   withSerializer,
@@ -44,14 +44,14 @@ import {
   type OperationStream,
   type TrpcLink,
   type TrpcRequestInit,
-} from '../link.ts';
+} from '../../link.ts';
 import {
   makeDeferredDecoder,
   badResponse,
   serializeInput,
   type DeferredDecoder,
-} from './events.ts';
-import { resumeOf, retrying, type Retries } from './resume.ts';
+} from '../events.ts';
+import { resumeOf, retrying, type Retries } from '../resume.ts';
 
 /**
  * Options for {@link httpLink}.
