@@ -43,6 +43,8 @@ interface Shape {
   readonly contract?: (i: number, kind: string) => string;
   /** The client's use of procedure `i`, `call` its call; annotated by default. */
   readonly consume?: (i: number, call: string) => string;
+  /** What each client file starts with, for `consume`. */
+  readonly consumeHeader?: string;
   /** The client's `links`, with their imports; one `httpLink` by default. */
   readonly links?: { readonly imports: string; readonly links: string };
   /** The call options each call passes. */
@@ -195,6 +197,13 @@ const shapeList = {
     consume: (i, call) =>
       `const [d${i}, e${i}] = await safe(${call});\nexport const r${i}: string = e${i} ? matchError(e${i}, { ${handlers} }) : d${i}.v_${i};`,
   },
+  infer: {
+    // `plain`, each result annotated with `inferRouterOutputs` of the client.
+    impl: (i, kind) => `t.procedure${input(i)}.${kind}(${body(i, returned)})`,
+    consumeHeader: `import type { inferRouterOutputs } from '@trpc12/trpc/server';\n\ntype Outputs = inferRouterOutputs<typeof client>;\n`,
+    consume: (i, call) =>
+      `export const r${i}: Outputs['f${Math.floor(i / PER_FILE)}']['p${i}'] = await ${call};`,
+  },
   links: {
     // `plain`, through the chain in `appLinks`, each call passing options.
     impl: (i, kind) => `t.procedure${input(i)}.${kind}(${body(i, returned)})`,
@@ -285,7 +294,7 @@ const fixture = (
       `client.f${f}.p${i}.${kind(i) === 'query' ? 'query' : 'mutate'}({ a_${i}: 'x' }${callOptions})`;
     files.push([
       `consume/f${f}.ts`,
-      `${own?.client ? "import { Effect } from 'effect';\n" : shape?.consume ? "import { matchError, safe } from '@trpc12/trpc/client';\n" : ''}import { client } from '../client';\n\n${inFile(
+      `${own?.client ? "import { Effect } from 'effect';\n" : shape?.consume && !shape.consumeHeader ? "import { matchError, safe } from '@trpc12/trpc/client';\n" : ''}import { client } from '../client';\n${shape?.consumeHeader ?? ''}\n${inFile(
         f,
       )
         .map((i) =>
