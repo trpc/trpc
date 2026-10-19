@@ -1,4 +1,4 @@
-import { Effect, Stream } from 'effect';
+import { type Effect, Stream } from 'effect';
 import { TrpcError } from '../../../internal/error.ts';
 import type { FormOfOptions, MaybePromise } from '../../../internal/types.ts';
 import {
