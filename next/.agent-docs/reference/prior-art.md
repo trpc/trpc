@@ -124,7 +124,7 @@ Verified from source. Many v3-era and v4-beta assumptions are **wrong** for 4.0.
 
 ## oRPC (`v1.15.5`)
 
-Designs worth borrowing (see `orpc-parity.md` for the full feature list). Written against v1.15.5; `.repos/orpc` now vendors v2, and `apps/content/docs/migrations/from-v1.mdx` there lists what changed (several names below are gone).
+Designs worth borrowing (see `orpc-parity.md` for the full feature list). Written against v1.15.5; v2's [`apps/content/docs/migrations/from-v1.mdx`](https://github.com/middleapi/orpc/blob/v2.0.0-beta.44/apps/content/docs/migrations/from-v1.mdx) lists what changed (several names below are gone).
 
 - **Builder:** `os.$context<T>()`, `.$meta`, `.$route`, `.$input`, `.$config`; `.errors(map)`, `.use(mw, mapInput)`, `.route()`, `.prefix()`, `.tag()`, `.router()`, `.lazy()`, `.handler()`, `.callable()`, `.actionable()` (`packages/server/src/builder.ts`). There are no query/mutation/subscription types; everything is `.handler()`.
 - **Errors:** `.errors({ CODE: { status?, message?, data?: schema } })`, `errors.CODE({ data })` constructors in handler and middleware options, `ORPCError`, `isDefinedError`, `safe()` returning `[error, data, isDefined]` or the object form, `createSafeClient`.

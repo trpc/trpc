@@ -2,7 +2,7 @@
 
 **Goal from the [brief](../decisions/brief.md):** feature parity with [orpc.dev/docs/comparison](https://orpc.dev/docs/comparison). Any API decision that could stop us from getting there must be flagged and confirmed by a human before it is accepted. Since round two, parity tracks oRPC v2's table ([orpc-v2-parity](../decisions/orpc-v2-parity.md)).
 
-Source: oRPC v2's `apps/content/docs/comparison.mdx` (vendored at `.repos/orpc`), row for row and in its groups. The oRPC and tRPC v11 columns are copied from it; the v11 column is oRPC's assessment and may lag behind v11. The v12 column is what `next/` ships, each row covered by integration tests with real clients. Unreviewed calls are the `(agent)` decisions: `pnpm decisions --who agent`.
+Source: oRPC v2's [`apps/content/docs/comparison.mdx`](https://github.com/middleapi/orpc/blob/v2.0.0-beta.44/apps/content/docs/comparison.mdx), row for row and in its groups. The oRPC and tRPC v11 columns are copied from it; the v11 column is oRPC's assessment and may lag behind v11. The v12 column is what `next/` ships, each row covered by integration tests with real clients. Unreviewed calls are the `(agent)` decisions: `pnpm decisions --who agent`.
 
 Legend: ✅ first-class · 🟡 partial / third-party · 🛑 not supported. `experimental_` exports may still change ([stability-jsdoc-tags](../decisions/stability-jsdoc-tags.md)).
 

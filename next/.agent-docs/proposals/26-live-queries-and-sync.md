@@ -29,7 +29,7 @@ The [live-queries](../notes/live-queries.md) spike backs this: 7 tests over SSE 
   - TanStack DB query collections from `queryOptions()` as they are ([tanstack-db-collections](../decisions/tanstack-db-collections.md)): refetch-based, no streaming.
   - TanStack Query `liveOptions`/`streamedOptions`, shared per key by `SubscriptionCache` ([tanstack-query-subscriptions](../decisions/tanstack-query-subscriptions.md)): the latest event or all events, not rows.
   - The `onResponse` call option, so a link before `httpLink` can read response headers ([declared-invalidation-later](../decisions/declared-invalidation-later.md)).
-- **oRPC** has `experimental_liveOptions` (the latest event into TanStack Query's cache, `.repos/orpc/packages/tanstack-query/src/live-query.ts`), and no row protocol or TanStack DB adapter.
+- **oRPC** has `experimental_liveOptions` (the latest event into TanStack Query's cache, [`packages/tanstack-query/src/live-query.ts`](https://github.com/middleapi/orpc/blob/v2.0.0-beta.44/packages/tanstack-query/src/live-query.ts)), and no row protocol or TanStack DB adapter.
 - **Sync engines** (Electric, Zero, PowerSync, Replicache) each define this contract themselves: shapes or queries, a snapshot, ordered changes, a cursor to resume from, and a way to wait for a write (Electric's `awaitTxId`).
 
 ## Goals
