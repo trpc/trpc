@@ -9,7 +9,7 @@
 import assert from 'node:assert/strict';
 import {
   createTrpcClient,
-  httpLink,
+  httpStreamLink,
   isTrpcError,
   routerType,
   splitLink,
@@ -42,7 +42,7 @@ function connect(
       splitLink({
         condition: (op) => op.type === 'subscription',
         true: ws,
-        false: httpLink({
+        false: httpStreamLink({
           url,
           serializer,
           headers:

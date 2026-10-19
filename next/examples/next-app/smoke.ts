@@ -5,7 +5,11 @@
  */
 import { spawn, spawnSync } from 'node:child_process';
 import { createServer } from 'node:net';
-import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import {
+  createTrpcClient,
+  httpStreamLink,
+  routerType,
+} from '@trpc12/trpc/client';
 import { chromium } from 'playwright-core';
 import type { AppRouter } from './src/server/router.ts';
 import { serializer } from './src/trpc/serializer.ts';
@@ -61,7 +65,9 @@ try {
 
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: `${origin}/api/trpc`, batch: true, serializer })],
+    links: [
+      httpStreamLink({ url: `${origin}/api/trpc`, batch: true, serializer }),
+    ],
   });
 
   const [first] = await client.post.list.query();
