@@ -124,7 +124,6 @@ jobs:
       matrix:
         dir: [
             .experimental/next-app-dir,
-            .test/diagnostics-big-router,
             .test/internal-types-export,
             .test/ssg,
             cloudflare-workers,
