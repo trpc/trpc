@@ -48,7 +48,8 @@ const collect = (
     collect(out, resolve(dirname(file), from!), names, seen);
 };
 
-const packageRoot = (file: string): string | undefined => {
+/** The directory of `file`'s package: the nearest `package.json` with `exports`. */
+export const packageRoot = (file: string): string | undefined => {
   for (let dir = dirname(file); dir !== dirname(dir); dir = dirname(dir)) {
     const manifest = join(dir, 'package.json');
     if (existsSync(manifest) && 'exports' in JSON.parse(read(manifest)))

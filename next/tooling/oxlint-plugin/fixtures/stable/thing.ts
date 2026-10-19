@@ -7,3 +7,7 @@ export interface Shape {}
 export class Service {}
 export const unstable_draft = () => {};
 export const unstable_done = () => {};
+export const hiddenThing = () => {};
+export const shared = () => {};
+export const mentioned = () => {};
+export const experimental_hiddenDraft = () => {};

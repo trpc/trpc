@@ -68,8 +68,56 @@ tester.run('jsdoc', plugin.rules['jsdoc']!, {
       filename: thing,
       code: `${doc('@since 12.0.0', '@stability stable', '@deprecated Use `createThing`')}\nexport const unstable_done = createThing;`,
     },
+    // Imported on a hidden page and on a listed one, or named in a listed page's prose.
+    { filename: thing, code: `${stable}\nexport const shared = () => {};` },
+    { filename: thing, code: `${stable}\nexport const mentioned = () => {};` },
+    {
+      filename: thing,
+      code: `${draft}\nexport const experimental_hiddenDraft = () => {};`,
+    },
+    // Types follow their value.
+    { filename: thing, code: `${stable}\nexport interface Shape {}` },
+    { filename: experimental, code: `${draft}\nexport const thing = 1;` },
   ],
   invalid: [
+    {
+      filename: thing,
+      code: `${stable}\nexport const hiddenThing = () => {};`,
+      errors: [
+        {
+          messageId: 'hidden',
+          data: { name: 'hiddenThing', experiments: 'demo' },
+        },
+      ],
+    },
+    {
+      filename: thing,
+      code: `${unstable}\nexport const hiddenThing = () => {};`,
+      errors: [
+        {
+          messageId: 'hidden',
+          data: { name: 'hiddenThing', experiments: 'demo' },
+        },
+      ],
+    },
+    {
+      filename: fixture('hidden/index.ts'),
+      code: `${stable}\nexport const atom = 1;\n${stable}\nexport const other = 1;`,
+      errors: [
+        {
+          messageId: 'hiddenPackage',
+          data: {
+            pkg: '@fixture/hidden-thing',
+            experiments: 'demo',
+            next: '@fixture/experimental-hidden-thing',
+          },
+        },
+        {
+          messageId: 'hidden',
+          data: { name: 'atom', experiments: 'demo' },
+        },
+      ],
+    },
     {
       filename: thing,
       code: `export const createThing = () => {};`,
