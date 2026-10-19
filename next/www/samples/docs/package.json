@@ -35,6 +35,7 @@
     "@trpc12/experimental-react": "workspace:*",
     "@trpc12/experimental-react-atom": "workspace:*",
     "@trpc12/experimental-tanstack-angular-query": "workspace:*",
+    "@trpc12/experimental-tanstack-db": "workspace:*",
     "@trpc12/experimental-tanstack-lit-query": "workspace:*",
     "@trpc12/experimental-tanstack-preact-query": "workspace:*",
     "@trpc12/experimental-tanstack-solid-query": "workspace:*",

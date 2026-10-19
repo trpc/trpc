@@ -37,7 +37,7 @@ export const experiments = {
   },
   'tanstack-db': {
     description:
-      "A TanStack DB collection over a procedure's `queryOptions()`.",
+      "TanStack DB collections over a procedure's `queryOptions()`, and real-time ones synced by a subscription.",
     label: 'TanStack DB',
   },
   'experimental-react': {

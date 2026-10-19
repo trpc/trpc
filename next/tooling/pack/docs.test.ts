@@ -143,7 +143,7 @@ const experimentPages = await run(
 );
 
 /** Experiments of recipes: stable APIs with another library, hidden until reviewed. */
-const recipes = new Set(['integrations', 'tanstack-db']);
+const recipes = new Set(['integrations']);
 
 test.each([...experimentPages.keys()].sort().map((id) => [id] as const))(
   'the %s experiment documents experimental_ exports or experimental- packages, unless it is recipes',
