@@ -301,19 +301,27 @@ export type SafeResult<T, E> =
  * @since 0.1.0
  * @stability stable
  */
-export async function safe<T, E = unknown>(
+export function safe<T, E>(
+  promise: TrpcPromise<T, E>,
+): Promise<SafeResult<T, E>>;
+// A call's `TrpcPromise` matches the first overload by reference; inferring
+// `T` through `then` here costs several times as many instantiations.
+export function safe<T, E = unknown>(
   promise: PromiseLike<T> & { readonly '~error'?: E },
-): Promise<SafeResult<T, E>> {
+): Promise<SafeResult<T, E>>;
+export async function safe(
+  promise: PromiseLike<unknown>,
+): Promise<SafeResult<unknown, unknown>> {
   try {
     const data = await promise;
-    return Object.assign([data, undefined] as [T, undefined], {
+    return Object.assign([data, undefined] as [unknown, undefined], {
       data,
       error: undefined,
     });
   } catch (cause) {
     if (hasDigest(cause)) throw cause;
-    const error = cause as E;
-    return Object.assign([undefined, error] as [undefined, E], {
+    const error: unknown = cause;
+    return Object.assign([undefined, error] as [undefined, unknown], {
       data: undefined,
       error,
     });
