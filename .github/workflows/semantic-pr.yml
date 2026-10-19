@@ -6,6 +6,8 @@ on:
       - opened
       - edited
       - synchronize
+  # the title is already validated on the PR; this only reports the required check
+  merge_group:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -17,6 +19,7 @@ permissions:
 jobs:
   test:
     name: test title
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
