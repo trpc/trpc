@@ -11,7 +11,13 @@ function Switch({
   size?: 'sm' | 'default';
 }) {
   return (
+    // A native button is what a wrapping or `htmlFor` label clicks and
+    // focuses, rather than the hidden checkbox: that's `position: fixed` at
+    // the top, which, under a transformed ancestor such as a popover's
+    // positioner, is no longer the viewport's, so focusing it scrolls the page.
     <SwitchPrimitive.Root
+      nativeButton
+      render={<button type="button" />}
       data-slot="switch"
       data-size={size}
       className={cn(

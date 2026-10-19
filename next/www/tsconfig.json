@@ -10,5 +10,5 @@
     },
     "types": ["node", "vite/client"]
   },
-  "include": ["src", "build", "vite.config.ts"]
+  "include": ["src", "build", "smoke.ts", "vite.config.ts"]
 }

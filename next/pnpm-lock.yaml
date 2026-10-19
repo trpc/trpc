@@ -2206,6 +2206,9 @@ importers:
       hast-util-to-string:
         specifier: 3.0.1
         version: 3.0.1
+      playwright-core:
+        specifier: 1.64.1
+        version: 1.64.1
       rehype-raw:
         specifier: 7.0.0
         version: 7.0.0
