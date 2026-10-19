@@ -1,0 +1,111 @@
+name: next-sponsors
+
+# Syncs next/www/sponsors.json and the README's sponsors section from GitHub
+# Sponsors, and pushes a commit only when a sponsor joined or left (new
+# weights alone wait for the next such commit).
+
+on:
+  schedule:
+    # GitHub only runs schedules from the default branch: this fires once
+    # v12 is `main`.
+    - cron: '23 5 * * *'
+  # Until then, pushes to v12 stand in for the schedule, at most one sync a
+  # day (the marker at the end). The bot's own push uses GITHUB_TOKEN, which
+  # starts no workflow, so it can't loop.
+  push:
+    branches: [v12]
+  workflow_dispatch:
+
+concurrency:
+  group: next-sponsors
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      # A classic token of KATT's with read:user and read:org.
+      SPONSORS_SYNC_GITHUB_TOKEN: ${{ secrets.SPONSORS_SYNC_GITHUB_TOKEN }}
+    steps:
+      - name: Today's marker
+        id: day
+        run: echo "key=next-sponsors-synced-$(date -u +%F)" >> "$GITHUB_OUTPUT"
+      - name: Synced today already?
+        if: github.event_name == 'push'
+        id: synced
+        uses: actions/cache/restore@v6
+        with:
+          path: .sponsors-synced
+          key: ${{ steps.day.outputs.key }}
+          lookup-only: true
+      - name: Decide
+        id: go
+        run: |
+          if [ -z "$SPONSORS_SYNC_GITHUB_TOKEN" ]; then
+            echo "::warning::No SPONSORS_SYNC_GITHUB_TOKEN secret; skipping the sync."
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          elif [ "${{ steps.synced.outputs.cache-hit }}" = "true" ]; then
+            echo "Synced today already; skipping."
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - if: steps.go.outputs.run == 'true'
+        uses: actions/checkout@v7
+        with:
+          # The branch's tip, not the pushed commit: a later push may be in.
+          ref: ${{ github.ref }}
+      - if: steps.go.outputs.run == 'true'
+        uses: pnpm/action-setup@v6
+        with:
+          package_json_file: next/package.json
+      - if: steps.go.outputs.run == 'true'
+        uses: actions/setup-node@v7
+        with:
+          node-version-file: next/.nvmrc
+          cache: pnpm
+          cache-dependency-path: next/pnpm-lock.yaml
+      - if: steps.go.outputs.run == 'true'
+        working-directory: next
+        run: pnpm install --frozen-lockfile
+        env:
+          VP_GIT_HOOKS: '0'
+      - if: steps.go.outputs.run == 'true'
+        working-directory: next/www
+        run: node build/sponsors-sync.ts --only-when-joined-or-left
+
+      - if: steps.go.outputs.run == 'true'
+        name: Commit and push if a sponsor joined or left
+        run: |
+          if git diff --quiet -- next/www/sponsors.json README.md; then
+            echo "No sponsor joined or left."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- next/www/sponsors.json README.md
+          git commit -m "chore(sponsors): sync who sponsors from GitHub Sponsors"
+          branch="${GITHUB_REF#refs/heads/}"
+          for _ in 1 2 3; do
+            if git push origin "HEAD:$branch"; then
+              exit 0
+            fi
+            git pull --rebase origin "$branch"
+          done
+          echo "::error::Couldn't push the sponsors commit to $branch."
+          exit 1
+
+      # A failed sync counts too: a broken token fails once a day, not on
+      # every push.
+      - if: always() && steps.go.outputs.run == 'true'
+        run: touch .sponsors-synced
+      - if: always() && steps.go.outputs.run == 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: .sponsors-synced
+          key: ${{ steps.day.outputs.key }}
