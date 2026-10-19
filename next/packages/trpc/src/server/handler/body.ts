@@ -1,4 +1,4 @@
-import { Effect, Stream } from 'effect';
+import { Cause, Effect, Exit, Scope, Stream } from 'effect';
 import { Cookies, type HttpServerRequest } from 'effect/http';
 import { TrpcError, type CodeError } from '../../internal/error.ts';
 import { isJsonContentType } from '../../internal/protocol.ts';
@@ -44,6 +44,89 @@ export const consumedError = (): CodeError<'INTERNAL_SERVER_ERROR'> =>
   new TrpcError.InternalServerError({
     message:
       'The request body was already read by another middleware. Mount tRPC before body parsers, or use one that sets req.body.',
+  });
+
+/**
+ * `bytes` as a web stream that starts reading at the first read and, when
+ * cancelled, reads the rest and drops it: Node drops the connection before
+ * the response is sent when a request body is destroyed half-read.
+ */
+const drainingStream = (
+  bytes: Stream.Stream<Uint8Array, unknown>,
+): ReadableStream<Uint8Array> => {
+  const scope = Scope.makeUnsafe();
+  const close = Scope.close(scope, Exit.void);
+  let opened: Effect.Effect<ReadonlyArray<Uint8Array>, unknown> | undefined;
+  const open = Effect.suspend(() =>
+    opened
+      ? Effect.succeed(opened)
+      : Stream.toPull(bytes).pipe(
+          Scope.provide(scope),
+          Effect.tap((pull) =>
+            Effect.sync(() => {
+              opened = pull;
+            }),
+          ),
+        ),
+  );
+  return new ReadableStream<Uint8Array>(
+    {
+      pull: (controller) =>
+        Effect.runPromise(
+          open.pipe(
+            Effect.flatten,
+            Effect.matchEffect({
+              onSuccess: (chunks) =>
+                Effect.sync(() => {
+                  for (const chunk of chunks) controller.enqueue(chunk);
+                }),
+              onFailure: (error) =>
+                Effect.andThen(
+                  close,
+                  Effect.sync(() =>
+                    Cause.isDone(error)
+                      ? controller.close()
+                      : controller.error(error),
+                  ),
+                ),
+            }),
+          ),
+        ),
+      cancel: () => {
+        Effect.runFork(
+          Effect.ignore(Effect.forever(Effect.flatten(open))).pipe(
+            Effect.ensuring(close),
+          ),
+        );
+      },
+    },
+    { highWaterMark: 0 },
+  );
+};
+
+/**
+ * The body as a web stream, unread, for a byte stream input to pull. A body
+ * a Node parser already read (`express.raw()`) is replayed.
+ * @internal
+ */
+export const bodyStream = (
+  request: HttpServerRequest.HttpServerRequest,
+): Effect.Effect<
+  ReadableStream<Uint8Array>,
+  CodeError<'INTERNAL_SERVER_ERROR'>
+> =>
+  Effect.suspend(() => {
+    const replayed = parsedBody(request);
+    if (replayed === 'consumed') return Effect.fail(consumedError());
+    if (replayed) {
+      return Effect.succeed(Stream.toReadableStream(Stream.make(replayed)));
+    }
+    if (request.source instanceof Request) {
+      return Effect.succeed(
+        request.source.body ?? Stream.toReadableStream(Stream.empty),
+      );
+    }
+    return Effect.succeed(drainingStream(request.stream));
   });
 
 /**

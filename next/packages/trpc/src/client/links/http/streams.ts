@@ -8,7 +8,7 @@ import { decodeRecords } from '../../../internal/frames.ts';
 import { CONTENT_TYPE, HEADER } from '../../../internal/protocol.ts';
 import type { Frame } from '../../../serializer/index.ts';
 import type { Operation } from '../../link.ts';
-import { badResponse } from '../events.ts';
+import { badResponse, isByteStreamInput } from '../events.ts';
 import { resumeOf, retrying, type Retries } from '../resume.ts';
 import {
   abortOnInterrupt,
@@ -131,7 +131,10 @@ export function experimental_httpStreams(
       frames,
       read: (transport, reply, op) => {
         const first = linesOf(reply);
-        const resume = resumeOf(op.context);
+        // A byte stream input is sent once, so its call can't be asked again.
+        const resume = isByteStreamInput(op.input)
+          ? undefined
+          : resumeOf(op.context);
         return transport.serializer
           .deserializeStream(
             resume ? resumable(transport, op, resume, first) : first,

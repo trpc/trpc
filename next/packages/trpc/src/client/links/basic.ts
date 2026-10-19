@@ -14,6 +14,7 @@ import {
   withSerializer,
 } from '../link.ts';
 import type { RouterPaths } from '../types.ts';
+import { isByteStreamInput } from './events.ts';
 import { retrying, withResume, type Retries } from './resume.ts';
 
 /** @internal */
@@ -220,7 +221,8 @@ export interface RetryLinkOptions {
   delayMs?: (attempt: number, error: AnyTrpcError) => number;
   /**
    * Whether to retry. By default: queries only, and only errors outside the
-   * typed union (network failures, 5xx), never aborts.
+   * typed union (network failures, 5xx), never aborts, and never a call whose
+   * input is a byte stream, which is read once.
    */
   retry?: (opts: {
     op: Operation;
@@ -231,6 +233,7 @@ export interface RetryLinkOptions {
 
 const defaultRetry: NonNullable<RetryLinkOptions['retry']> = (opts) =>
   opts.op.type === 'query' &&
+  !isByteStreamInput(opts.op.input) &&
   !opts.error.defined &&
   opts.error.code !== 'CLIENT_CLOSED_REQUEST' &&
   serverFailure(opts.error);

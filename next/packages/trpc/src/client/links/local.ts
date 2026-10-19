@@ -23,6 +23,7 @@ import {
   type inferRouterContext,
 } from '../../server/procedures/index.ts';
 import { link, withSerializer, type TrpcLink } from '../link.ts';
+import { isByteStreamInput } from './events.ts';
 
 /**
  * Options for {@link localLink}.
@@ -74,7 +75,8 @@ export function localLink<TRouter extends AnyRouter>(
     ? Effect.orDie(ManagedRuntime.make(layer).contextEffect)
     : Effect.succeed(Context.empty() as Context.Context<any>);
   const roundtrip = (value: unknown, input?: boolean) => {
-    if (!serializer) return value;
+    // A byte stream input is the request body over HTTP, not serialized.
+    if (!serializer || (input && isByteStreamInput(value))) return value;
     const parts: Blob[] | undefined = input ? [] : undefined;
     return serializer.deserialize(serializer.serialize(value, { parts }), {
       input,

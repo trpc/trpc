@@ -33,7 +33,7 @@ import type {
   SerializeReturn,
 } from '../../../serializer/index.ts';
 import { toClientError, type Operation } from '../../link.ts';
-import { badResponse, serializeInput } from '../events.ts';
+import { badResponse, isByteStreamInput, serializeInput } from '../events.ts';
 import type { Batch } from './batch.ts';
 import type { HttpStreams } from './streams.ts';
 import type { HttpLinkOptions } from './link.ts';
@@ -316,9 +316,12 @@ export function makeTransport(
     }
     return encoded;
   };
-  /** Blobs need a multipart request of their own; a bad input fails alone. */
+  /**
+   * Blobs need a multipart request of their own, and a byte stream is the
+   * body of its own; a bad input fails alone.
+   */
   const unbatchable = (op: Operation) => {
-    if (op.context.batch === false) return true;
+    if (op.context.batch === false || isByteStreamInput(op.input)) return true;
     try {
       return encode(op).parts.length > 0 || initKey(op) === undefined;
     } catch {
@@ -368,12 +371,24 @@ export function makeTransport(
   ): Effect.Effect<Reply, AnyTrpcError, Scope.Scope> =>
     Effect.gen(function* () {
       const url = `${baseUrl}/${op.path}`;
+      const headers: Record<string, string> = { accept, ...extra };
+      if (isByteStreamInput(op.input)) {
+        return yield* execute(
+          yield* prepare(
+            [op],
+            'POST',
+            url,
+            headers,
+            HttpBody.raw(op.input, { contentType: CONTENT_TYPE.octet }),
+          ),
+          op.signal,
+        );
+      }
       const encoded = yield* Effect.try({
         try: () => encode(op),
         catch: toHttpError,
       });
       const { json } = encoded;
-      const headers: Record<string, string> = { accept, ...extra };
       if (encoded.parts.length > 0) {
         const form = new FormData();
         form.append('input', JSON.stringify(json));

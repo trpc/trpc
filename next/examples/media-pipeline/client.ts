@@ -17,7 +17,7 @@ import {
 } from '@trpc12/trpc/client';
 import { createEffectClient } from '@trpc12/trpc/effect';
 import { danson, Money, sync } from './money.ts';
-import { STEP_LATENCY } from './photos.ts';
+import { MAX_ORIGINAL_BYTES, STEP_LATENCY } from './photos.ts';
 import type { AppRouter } from './server.ts';
 
 const DAY = 24 * 60 * 60 * 1000;
@@ -322,6 +322,59 @@ export async function main(url: string) {
   console.log('aborted upload:', upload);
   assert.equal(upload.status, 'stopped');
   assert.ok(upload.stored < upload.total);
+
+  // --- byte stream in: the request body is the input (experimental) ------------------------
+
+  const panorama = new File(
+    [
+      await png('panorama.png', 12000, 3000).arrayBuffer(),
+      new Uint8Array(300_000),
+    ],
+    'panorama.png',
+    { type: 'image/png' },
+  );
+  const received: number[] = [];
+  let storedId: string | undefined;
+  for await (const item of await client.photos.uploadOriginal.mutate(
+    panorama.stream(),
+  )) {
+    if (item.kind === 'received') received.push(item.bytes);
+    else {
+      storedId = item.id;
+      assert.equal(item.bytes, panorama.size);
+    }
+  }
+  console.log(
+    'photos.uploadOriginal:',
+    `${received.length} chunks, ${received.at(-1)} bytes, stored as ${storedId}`,
+  );
+  assert.ok(storedId);
+  // Progress for each chunk the server read, while the body was still coming.
+  assert.ok(received.length > 1, 'the body arrived as one chunk');
+  assert.ok(received.every((bytes, i) => i === 0 || bytes > received[i - 1]!));
+  assert.equal(received.at(-1), panorama.size);
+  // Never batched: the stream is the whole POST body.
+  assert.deepEqual(
+    sentTo('/trpc/photos.uploadOriginal').map((r) => r.method),
+    ['POST'],
+  );
+  const storedReport = await client.photos.report.query({ id: storedId });
+  const storedMetadata = await storedReport.metadata;
+  assert.deepEqual(
+    [storedMetadata.width, storedMetadata.height],
+    [12000, 3000],
+  );
+  assert.equal(storedReport.bytes, panorama.size);
+
+  // Past `maxBytes` the input stream fails, and so does the call.
+  await assert.rejects(
+    async () => {
+      const huge = new Blob([new Uint8Array(MAX_ORIGINAL_BYTES + 1)]);
+      const items = await client.photos.uploadOriginal.mutate(huge.stream());
+      for await (const item of items) assert.equal(item.kind, 'received');
+    },
+    (err) => err instanceof TrpcError && err.code === 'PAYLOAD_TOO_LARGE',
+  );
 
   // --- query URLs and serializers: rich input over GET, danSON and superjson ---------------
 
