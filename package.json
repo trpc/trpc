@@ -1,0 +1,9 @@
+{
+  "name": "trpc-repo",
+  "private": true,
+  "packageManager": "pnpm@12.4.1",
+  "scripts": {
+    "next": "pnpm -C next",
+    "v11": "pnpm -C v11"
+  }
+}

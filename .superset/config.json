@@ -1,4 +1,4 @@
 {
-  "setup": ["pnpm install"],
+  "setup": ["pnpm -C next install"],
   "teardown": []
 }

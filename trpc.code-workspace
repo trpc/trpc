@@ -3,7 +3,8 @@
   // `vite.config.ts`) only from a workspace folder's root.
   "folders": [
     { "name": "next", "path": "next" },
-    { "name": "root (v11)", "path": "." }
+    { "name": "v11", "path": "v11" },
+    { "name": "root", "path": "." }
   ],
   "settings": {
     "editor.defaultFormatter": "oxc.oxc-vscode",
@@ -27,6 +28,7 @@
     "js/ts.preferences.autoImportFileExcludePatterns": ["**/.repos/**"],
     "files.exclude": {
       "next": true,
+      "v11": true,
       "**/.repos": true
     },
     "files.watcherExclude": {
@@ -34,6 +36,7 @@
     },
     "search.exclude": {
       "next": true,
+      "v11": true,
       "**/.repos": true,
       "**/dist": true,
       "**/coverage": true,

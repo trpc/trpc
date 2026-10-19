@@ -1,18 +1,30 @@
-name: main
+name: v11 ci
 on:
   pull_request:
     types: [synchronize, opened, reopened]
+    paths:
+      - 'v11/**'
+      - '.github/actions/v11-setup/**'
+      - '.github/workflows/v11-ci.yml'
   push:
-    branches: [main, next, canary]
+    branches: [main, v12]
+    paths:
+      - 'v11/**'
+      - '.github/actions/v11-setup/**'
+      - '.github/workflows/v11-ci.yml'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
+defaults:
+  run:
+    working-directory: v11
+
 jobs:
   build:
-    # only run on PRs
-    if: github.event_name == 'pull_request'
+    # only run on PRs and on v12, which has no PRs
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/v12'
     timeout-minutes: 10
     env:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
@@ -24,13 +36,13 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - uses: ./.github/setup
+      - uses: ./.github/actions/v11-setup
 
       - run: pnpm build
 
   typecheck:
-    # only run on PRs
-    if: github.event_name == 'pull_request'
+    # only run on PRs and on v12, which has no PRs
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/v12'
     timeout-minutes: 10
     env:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
@@ -42,13 +54,13 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - uses: ./.github/setup
+      - uses: ./.github/actions/v11-setup
 
       - run: pnpm typecheck-packages
 
   typecheck-www:
-    # only run on PRs
-    if: github.event_name == 'pull_request'
+    # only run on PRs and on v12, which has no PRs
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/v12'
     timeout-minutes: 10
     env:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
@@ -59,7 +71,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - uses: ./.github/setup
+      - uses: ./.github/actions/v11-setup
 
       - run: pnpm typecheck-www
 
@@ -76,7 +88,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - uses: ./.github/setup
+      - uses: ./.github/actions/v11-setup
 
       - run: MUTE_REACT_ACT_WARNINGS=1 pnpm test --coverage
 
@@ -92,15 +104,18 @@ jobs:
             exit 1
           fi
 
+      # v12's coverage would land on main's Codecov baseline
       - uses: codecov/codecov-action@v7
+        if: github.ref != 'refs/heads/v12'
         with:
+          directory: v11
           fail_ci_if_error: true
           # only use token if not a fork PR
           token: ${{ github.event.pull_request.head.repo.fork == false && secrets.CODECOV_TOKEN || '' }}
 
   e2e:
-    # only run on PRs
-    if: github.event_name == 'pull_request'
+    # only run on PRs and on v12, which has no PRs
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/v12'
     name: 'E2E-tests'
     needs: [build]
     services:
@@ -148,7 +163,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - uses: ./.github/setup
+      - uses: ./.github/actions/v11-setup
 
       - run: pnpm build
 
@@ -159,8 +174,8 @@ jobs:
       - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
 
   e2e-deno:
-    # only run on PRs
-    if: github.event_name == 'pull_request'
+    # only run on PRs and on v12, which has no PRs
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/v12'
     name: 'E2E-tests (Deno)'
     needs: [build]
     env:
@@ -179,7 +194,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - uses: ./.github/setup
+      - uses: ./.github/actions/v11-setup
 
       - run: pnpm build
 
@@ -194,8 +209,8 @@ jobs:
           pnpm dlx start-server-and-test "deno run --allow-net=:8000 --allow-env ./src/index.ts" http://127.0.0.1:8000 "deno run --allow-net --allow-env ./src/client.ts"
 
   e2e-bun:
-    # only run on PRs
-    if: github.event_name == 'pull_request'
+    # only run on PRs and on v12, which has no PRs
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/v12'
     name: 'E2E-tests (Bun)'
     needs: [build]
     env:
@@ -214,7 +229,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - uses: ./.github/setup
+      - uses: ./.github/actions/v11-setup
 
       - run: pnpm build
 
@@ -229,8 +244,8 @@ jobs:
       - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
 
   e2e-legacy-node:
-    # only run on PRs
-    if: github.event_name == 'pull_request'
+    # only run on PRs and on v12, which has no PRs
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/v12'
     needs: [build]
     services:
       postgres:
@@ -261,7 +276,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - uses: ./.github/setup
+      - uses: ./.github/actions/v11-setup
 
       - run: pnpm build
 
@@ -269,6 +284,7 @@ jobs:
         with:
           node-version: ${{ matrix.node-start }}
           cache: 'pnpm'
+          cache-dependency-path: v11/pnpm-lock.yaml
       - run: node -v
       - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
       - run: pnpm turbo --filter ./examples/${{ matrix.dir }} build
@@ -287,7 +303,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - uses: ./.github/setup
+      - uses: ./.github/actions/v11-setup
 
       - run: pnpm build
       - run: pnpx pkg-pr-new publish './packages/*'
@@ -300,5 +316,5 @@ jobs:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - uses: ./.github/setup
+      - uses: ./.github/actions/v11-setup
       - run: pnpm monotest-build

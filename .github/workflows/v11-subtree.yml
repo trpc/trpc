@@ -1,4 +1,4 @@
-name: subtree-matrix
+name: v11 subtree-matrix
 on:
   workflow_dispatch:
   push:
@@ -46,14 +46,17 @@ jobs:
         run: echo "The replaced value is ${{ steps.findandreplace.outputs.value }}"
 
       - uses: pnpm/action-setup@v6
+        with:
+          package_json_file: v11/package.json
       - uses: actions/setup-node@v7
         with:
           node-version: 24.x
           cache: 'pnpm'
+          cache-dependency-path: v11/pnpm-lock.yaml
 
       - name: Install dependencies and create separate lockfile
         run: |
-          cd ./examples/${{ matrix.path }}
+          cd ./v11/examples/${{ matrix.path }}
           # replace all instances of "@trpc/<<anything but a quote>>": "<<anything but a quote>>" with "@trpc/*": "canary" in the package.json
           find . -name 'package.json' -print0 | xargs -0 sed -i 's/\("@trpc\/[^"]*"\): "[^"]*"/\1: "canary"/g'
           pnpm install --no-frozen-lockfile --ignore-scripts --ignore-workspace
@@ -69,7 +72,7 @@ jobs:
         uses: nxtlvlsoftware/git-subtree-action@1.1
         with:
           repo: 'trpc/examples-${{ steps.findandreplace.outputs.value }}'
-          path: 'examples/${{ matrix.path }}'
+          path: 'v11/examples/${{ matrix.path }}'
           deploy_key: ${{ secrets.TRPC_DEPLOY_TOKEN }}
           force: true # will force push to the downstream repository
           branch: main # will push to the main branch of the downstream repository

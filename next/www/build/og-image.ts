@@ -1,7 +1,7 @@
 /**
  * Each page's social card (`og:image`), rendered at build time: satori lays
  * out the card as SVG and resvg rasterizes it. A modern take on trpc.io's
- * cards (`www/og-image` at the repo root), with its pattern and per-page
+ * cards (`v11/www/og-image`), with its pattern and per-page
  * title, description and URL, and without its network calls.
  */
 import { NodeServices } from '@effect/platform-node';

@@ -1,4 +1,4 @@
-name: Semantic PR title
+name: v11 semantic PR title
 
 on:
   pull_request:
@@ -35,7 +35,7 @@ jobs:
           TYPES: feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert
         run: |
           # Extract package names and combine with additional scopes
-          ALL_SCOPES=$(find packages -maxdepth 2 -name "package.json" -type f \
+          ALL_SCOPES=$(find v11/packages -maxdepth 2 -name "package.json" -type f \
               | xargs -I {} jq -r '.name // empty' {} \
               | sed 's/^@trpc\///' \
               | grep -v '^$' \

@@ -1,5 +1,5 @@
 /**
- * Copies the docs trpc.io serves (the repo root's `www`: v11 in `docs/`,
+ * Copies the docs trpc.io serves (`v11/www` in the repo: v11 in `docs/`,
  * v10 and v9 in `versioned_docs/`) into `<version>/docs` as pages of this
  * site, in each version's sidebar sections and order, and its blog's posts
  * into `blog/`. The copies are committed and nobody edits them: after the
@@ -642,30 +642,30 @@ const readme = (
   from: string,
 ) => `# The ${version.id} docs
 
-A copy of the [${version.id} docs](../../../../www/${from}), which [trpc.io](${version.url}${version.trpcPath}) renders. The site serves it at \`${version.basePath}\`, for ${version.id} users while v12 is experimental.
+A copy of the [${version.id} docs](../../../../v11/www/${from}), which [trpc.io](${version.url}${version.trpcPath}) renders. The site serves it at \`${version.basePath}\`, for ${version.id} users while v12 is experimental.
 
-Don't edit these files: \`www/build/old-docs-copy.ts\` writes them. Change the docs in the repo root's \`www/${from}\`, then run \`pnpm --filter @trpc12/www old-docs:copy\`.
+Don't edit these files: \`www/build/old-docs-copy.ts\` writes them. Change the docs in \`v11/www/${from}\`, then run \`pnpm --filter @trpc12/www old-docs:copy\`.
 `;
 
 const blogReadme = `# The blog
 
-A copy of [trpc.io's blog](../../../www/blog), which [trpc.io](https://trpc.io/blog) renders. The site serves it at \`/blog\`.
+A copy of [trpc.io's blog](../../../v11/www/blog), which [trpc.io](https://trpc.io/blog) renders. The site serves it at \`/blog\`.
 
-Don't edit these files: \`www/build/old-docs-copy.ts\` writes them. Change the posts in the repo root's \`www/blog\`, then run \`pnpm --filter @trpc12/www old-docs:copy\`.
+Don't edit these files: \`www/build/old-docs-copy.ts\` writes them. Change the posts in \`v11/www/blog\`, then run \`pnpm --filter @trpc12/www old-docs:copy\`.
 `;
 
 const homeReadme = `# The home page's v11 intro
 
-A copy of the code of [trpc.io's home page's intro](../../../../www/docs/landing-intro), which the home page shows for v11 (\`src/routes/index.tsx\`).
+A copy of the code of [trpc.io's home page's intro](../../../../v11/www/docs/landing-intro), which the home page shows for v11 (\`src/routes/index.tsx\`).
 
-Don't edit these files: \`www/build/old-docs-copy.ts\` writes them. Change the steps in the repo root's \`www/docs/landing-intro\`, then run \`pnpm --filter @trpc12/www old-docs:copy\`.
+Don't edit these files: \`www/build/old-docs-copy.ts\` writes them. Change the steps in \`v11/www/docs/landing-intro\`, then run \`pnpm --filter @trpc12/www old-docs:copy\`.
 `;
 
 /** Where each file under `contentDirs` went, under `CopyDirs.to`. */
 const manifestFile = 'old-docs.json';
 
 export interface CopyDirs {
-  /** trpc.io's site: the repo root's `www`. */
+  /** trpc.io's site: `v11/www` in the repo. */
   readonly from: string;
   /** Where the copies go: `<version>/` holds `docs/` and `sections.json`, and `blog/` the posts. */
   readonly to: string;
@@ -989,7 +989,7 @@ if (import.meta.main) {
   const here = (relative: string) =>
     fileURLToPath(new URL(relative, import.meta.url));
   const dirs: CopyDirs = {
-    from: here('../../../www'),
+    from: here('../../../v11/www'),
     images: here('../public'),
     to: here('..'),
   };

@@ -3,5 +3,5 @@
 
 * @trpc/trpc-core
 
-www/**/* @trpc/trpc-website-docs
+v11/www/**/* @trpc/trpc-website-docs
 

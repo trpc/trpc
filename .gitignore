@@ -1,0 +1,14 @@
+# Repo-wide. v11/ and next/ each have their own .gitignore.
+*.log
+.DS_Store
+dist/
+.next/
+.turbo/
+.vercel/
+.vinxi/
+.output/
+.eslintcache
+*.tsbuildinfo
+node_modules/
+coverage/
+.claude/

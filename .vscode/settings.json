@@ -16,9 +16,9 @@
   "eslint.enable": false,
   "prettier.enable": false,
   "search.exclude": {
-    "/www/versioned_docs": true,
-    "/www/.docusaurus": true,
-    "/www/build": true,
+    "/v11/www/versioned_docs": true,
+    "/v11/www/.docusaurus": true,
+    "/v11/www/build": true,
     "**/dist": true,
     "**/.repos": true
   },

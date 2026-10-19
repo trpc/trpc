@@ -3,6 +3,16 @@ permissions:
   contents: read
 on:
   pull_request:
+    paths:
+      - 'v11/**'
+      - '.github/actions/v11-setup/**'
+      - '.github/workflows/v11-lint.yml'
+  push:
+    branches: [v12]
+    paths:
+      - 'v11/**'
+      - '.github/actions/v11-setup/**'
+      - '.github/workflows/v11-lint.yml'
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -11,6 +21,10 @@ concurrency:
 env:
   TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
   TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+
+defaults:
+  run:
+    working-directory: v11
 
 jobs:
   autofix:
@@ -21,7 +35,7 @@ jobs:
         uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - uses: ./.github/setup
+      - uses: ./.github/actions/v11-setup
 
       - name: Run ts-prune
         run: pnpm lint-prune
@@ -37,7 +51,12 @@ jobs:
 
       # commit autofixes
       - uses: autofix-ci/action@551dded8c6cc8a1054039c8bc0b8b48c51dfc6ef
-        if: ${{ failure() || success() }}
+        if: ${{ github.event_name == 'pull_request' && (failure() || success()) }}
         with:
           commit-message: 'chore: apply lint and formatting fixes'
           fail-fast: false
+
+      # autofix.ci only commits to PRs, so on a push any fix means failure
+      - name: Ensure no autofixes are needed
+        if: ${{ github.event_name == 'push' && (failure() || success()) }}
+        run: git diff --exit-code
