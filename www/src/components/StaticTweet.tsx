@@ -1,18 +1,20 @@
 import React from 'react';
 
 /**
- * Renders a tweet from static data, for tweets that can no longer be embedded
- * (e.g. deleted ones) but that we still want to show in published posts.
+ * Renders a tweet from static data, so posts and pages don't depend on X's
+ * embeds, which break when a tweet is deleted or its account goes private.
  */
 export function StaticTweet(props: {
   name: string;
   username: string;
   avatarUrl: string;
+  /** URLs and @mentions in it become links */
   text: string;
   /** ISO 8601 timestamp */
   createdAt: string;
   url: string;
-  archiveUrl: string;
+  /** For tweets that are gone from X */
+  archiveUrl?: string;
 }) {
   const date = new Date(props.createdAt);
   return (
@@ -35,7 +37,23 @@ export function StaticTweet(props: {
         className="my-3 whitespace-pre-wrap border-none p-0 text-lg"
         cite={props.url}
       >
-        {props.text}
+        {props.text.split(/(https?:\/\/\S+|@\w+)/).map((part, index) => {
+          if (part.startsWith('@')) {
+            return (
+              <a key={index} href={`https://x.com/${part.slice(1)}`}>
+                {part}
+              </a>
+            );
+          }
+          if (/^https?:\/\//.test(part)) {
+            return (
+              <a key={index} href={part}>
+                {part.replace(/^https?:\/\//, '')}
+              </a>
+            );
+          }
+          return part;
+        })}
       </blockquote>
       <div className="flex flex-wrap justify-between gap-x-4 gap-y-1 text-sm text-zinc-600 dark:text-zinc-400">
         <a href={props.url}>
@@ -48,7 +66,7 @@ export function StaticTweet(props: {
             })}
           </time>
         </a>
-        <a href={props.archiveUrl}>Archived copy</a>
+        {props.archiveUrl && <a href={props.archiveUrl}>Archived copy</a>}
       </div>
     </figure>
   );
