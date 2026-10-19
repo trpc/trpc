@@ -20,6 +20,8 @@ import type {
   ClientTypes,
   RouterOf,
   TrpcClient,
+  TrpcPromise,
+  TrpcSubscription,
 } from '@trpc12/trpc/client';
 import { createRecursiveProxy } from '@trpc12/trpc/extend';
 import {
@@ -48,17 +50,25 @@ type InputOf<F> = F extends (input: infer I, ...rest: any[]) => any ? I : never;
 type ContextOf<F> = F extends (input: any, opts?: infer O) => any
   ? Omit<NonNullable<O>, 'signal' | 'lastEventId'>
   : never;
-type OutputOf<F> = F extends (...args: any[]) => PromiseLike<infer T>
+type OutputOf<F> = F extends (...args: any[]) => TrpcPromise<infer T, any>
   ? T
-  : never;
-type ErrorOf<F> = F extends (...args: any[]) => infer R
-  ? R extends { readonly '~error'?: infer E }
-    ? NonNullable<E>
-    : unknown
-  : unknown;
-type EventOf<F> = F extends (...args: any[]) => AsyncIterable<infer T>
+  : F extends (...args: any[]) => PromiseLike<infer T>
+    ? T
+    : never;
+type ErrorOf<F> = F extends (
+  ...args: any[]
+) => TrpcPromise<any, infer E> | TrpcSubscription<any, infer E>
+  ? NonNullable<E>
+  : F extends (...args: any[]) => infer R
+    ? R extends { readonly '~error'?: infer E }
+      ? NonNullable<E>
+      : unknown
+    : unknown;
+type EventOf<F> = F extends (...args: any[]) => TrpcSubscription<infer T, any>
   ? T
-  : never;
+  : F extends (...args: any[]) => AsyncIterable<infer T>
+    ? T
+    : never;
 
 /**
  * The data a query caches: its output, or the chunks so far when the output
