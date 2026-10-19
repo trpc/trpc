@@ -1,5 +1,10 @@
 import { Context, Effect, Exit, Layer, Option, Stream, Tracer } from 'effect';
-import { httpLink, routerType, type ClientError } from '@trpc12/trpc/client';
+import {
+  createTrpcClient,
+  httpLink,
+  routerType,
+  type ClientError,
+} from '@trpc12/trpc/client';
 import { createEffectClient } from '@trpc12/trpc/effect';
 import {
   type AnyRouter,
@@ -147,12 +152,14 @@ test('a missing layer is a type error', () => {
 test('typed errors land in the Effect error channel', async () => {
   await using ctx = await setup();
   const program = ctx.client.post.byId.query({ id: 'nope' }).pipe(
-    Effect.catchIf(
-      (err) => err.defined && err.code === 'NOT_FOUND',
-      (err) => Effect.succeed(`missing ${err.data.id}`),
+    Effect.catchTag('NOT_FOUND', (err) =>
+      Effect.succeed(err.defined ? `missing ${err.data.id}` : err.message),
     ),
   );
   expect(await Effect.runPromise(program)).toBe('missing nope');
+  expectTypeOf<
+    Extract<Effect.Error<typeof program>, { code: 'NOT_FOUND' }>
+  >().toBeNever();
 
   const exit = await Effect.runPromiseExit(
     ctx.client.post.byId.query({ id: 'nope' }),
@@ -172,6 +179,28 @@ test('typed errors land in the Effect error channel', async () => {
     >
   >();
   expect(Exit.isFailure(exit)).toBe(true);
+});
+
+test('a call fails with the Promise client\'s errors, data in the wire form', () => {
+  const t = initTrpc();
+  const router = {
+    byId: t.procedure.query(() =>
+      error({ code: 'NOT_FOUND', data: { at: new Date(0) } }),
+    ),
+  };
+  const opts = {
+    router: routerType<typeof router>(),
+    links: [httpLink({ url: 'http://localhost' })],
+  };
+  const promise = createTrpcClient(opts).byId;
+  const effect = createEffectClient(opts).byId;
+  type PromiseError = NonNullable<ReturnType<typeof promise.query>['~error']>;
+  expectTypeOf<
+    Effect.Error<ReturnType<typeof effect.query>>
+  >().toEqualTypeOf<PromiseError>();
+  expectTypeOf<
+    Extract<PromiseError, { defined: true }>['data']
+  >().toEqualTypeOf<{ at: string }>();
 });
 
 test('.provide() supplies a service from ctx, and its failure is typed', async () => {

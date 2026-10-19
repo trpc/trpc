@@ -147,7 +147,10 @@ const METHODS = {
 
 /**
  * Creates a client whose calls are Effects. Interrupting the fiber aborts the
- * request.
+ * request. A call fails with the same errors as the Promise client's, and
+ * an error's `_tag` is its code, so `Effect.catchTag` takes a code out of
+ * the union. It also catches the built-in error with that code, whose
+ * `defined` is `false`.
  *
  * @example
  * ```ts
@@ -156,7 +159,7 @@ const METHODS = {
  *   links: [httpLink({ url })],
  * });
  * const post = yield* client.post.byId.query({ id: '1' }).pipe(
- *   Effect.catchIf((e) => e.defined && e.code === 'NOT_FOUND', () => Effect.succeed(null)),
+ *   Effect.catchTag('NOT_FOUND', () => Effect.succeed(null)),
  * );
  * ```
  * @since 0.1.0
