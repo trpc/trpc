@@ -7,6 +7,7 @@ import {
   httpLink,
   link,
   routerType,
+  sse,
   type Operation,
 } from '@trpc12/trpc/client';
 import { fromV11Link } from '@trpc12/trpc/interop';
@@ -150,7 +151,10 @@ test('subscriptions pass through v11 operators, and stop when the loop ends', as
     );
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [fromV11Link(timesTen), httpLink({ url: server.url })],
+    links: [
+      fromV11Link(timesTen),
+      httpLink({ url: server.url, subscriptions: sse() }),
+    ],
   });
   const ticks: number[] = [];
   for await (const n of client.ticks.subscribe()) ticks.push(n);

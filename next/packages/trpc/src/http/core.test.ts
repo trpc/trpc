@@ -1,6 +1,11 @@
 import { Effect, Layer } from 'effect';
 import { HttpMiddleware, HttpRouter, HttpServerResponse } from 'effect/http';
-import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import {
+  batching,
+  createTrpcClient,
+  httpLink,
+  routerType,
+} from '@trpc12/trpc/client';
 import { cors } from '@trpc12/trpc/http';
 import {
   createFetchHandler,
@@ -197,7 +202,7 @@ test('a procedure can return its own response on unbatched HTTP calls (04 Q4.3)'
 
   const batched = createTrpcClient({
     router: routerType<Router>(),
-    links: [httpLink({ url: server.url, batch: true })],
+    links: [httpLink({ url: server.url, batch: batching() })],
   });
   const [ok, raw] = await Promise.allSettled([
     batched.whoami.query(),

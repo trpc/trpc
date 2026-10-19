@@ -1,5 +1,6 @@
 import { Effect, Schema, Stream } from 'effect';
 import {
+  batching,
   createTrpcClient,
   httpLink,
   link,
@@ -9,6 +10,7 @@ import {
   safe,
   splitLink,
   type LoggerEvent,
+  sse,
   routerType,
 } from '@trpc12/trpc/client';
 import { createUntypedClient } from '@trpc12/trpc/extend';
@@ -123,7 +125,7 @@ test('a link can replace a result or a subscription', async () => {
   });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [cacheLink, httpLink({ url: server.url })],
+    links: [cacheLink, httpLink({ url: server.url, subscriptions: sse() })],
   });
   expect(await client.whoami.query()).toBe('cached');
   const ticks: number[] = [];
@@ -158,8 +160,8 @@ test('splitLink routes subscriptions and batched calls differently', async () =>
     links: [
       splitLink({
         condition: (op) => op.type === 'subscription',
-        true: httpLink({ url: server.url }),
-        false: httpLink({ url: server.url, batch: true }),
+        true: httpLink({ url: server.url, subscriptions: sse() }),
+        false: httpLink({ url: server.url, batch: batching() }),
       }),
     ],
   });
@@ -341,7 +343,7 @@ test('createRouterClient and call() skip the network and the serializer', async 
 test('the untyped client takes paths as strings', async () => {
   await using server = await serve();
   const client = createUntypedClient({
-    links: [httpLink({ url: server.url })],
+    links: [httpLink({ url: server.url, subscriptions: sse() })],
   });
   expect(
     await client.request({ type: 'query', path: 'find', input: { id: '1' } }),
@@ -401,7 +403,7 @@ test('httpLink init: a per-request default, merged with each call’s init', asy
     links: [
       httpLink({
         url: server.url,
-        batch: true,
+        batch: batching(),
         headers: { authorization: 'link' },
         init: (opts) => {
           opsPerInit.push(opts.ops.map((op) => op.path));

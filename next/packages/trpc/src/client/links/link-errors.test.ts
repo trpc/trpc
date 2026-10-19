@@ -10,6 +10,7 @@ import {
   routerType,
   safe,
   splitLink,
+  sse,
   TrpcError,
   wsLink,
   type BuiltinError,
@@ -45,7 +46,7 @@ type CodesOf<E> = E extends { readonly code: infer C } ? C : never;
 type LinkCodesIn<E> = Extract<CodesOf<E>, LinkErrorCode>;
 
 const typed = <T>(links: T) => links;
-const http = httpLink({ url: 'http://localhost/trpc' });
+const http = httpLink({ url: 'http://localhost/trpc', subscriptions: sse() });
 const local = localLink({ router });
 
 test("a call's union has the link codes its links declare, and no others", () => {

@@ -122,7 +122,7 @@ export interface SplitLinkOptions<
  * splitLink({
  *   condition: (op) => op.type === 'subscription',
  *   true: wsLink({ url }),
- *   false: httpLink({ url, batch: true }),
+ *   false: httpLink({ url, batch: batching() }),
  * });
  * ```
  * @since 0.1.0
@@ -310,7 +310,7 @@ const lostResponse = (error: AnyTrpcError) =>
  * ```ts
  * createTrpcClient({
  *   router: routerType<AppRouter>(),
- *   links: [experimental_durableLink(), httpLink({ url, batch: true })],
+ *   links: [experimental_durableLink(), httpLink({ url, batch: batching() })],
  * });
  * ```
  * @since 0.1.0

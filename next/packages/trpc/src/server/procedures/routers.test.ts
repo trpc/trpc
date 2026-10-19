@@ -1,5 +1,10 @@
 import { Effect } from 'effect';
-import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import {
+  batching,
+  createTrpcClient,
+  httpLink,
+  routerType,
+} from '@trpc12/trpc/client';
 import { experimental_toContract } from '@trpc12/trpc/contract';
 import { getProcedure, resolveProcedure } from '@trpc12/trpc/extend';
 import {
@@ -99,7 +104,7 @@ test('lazy() loads a subtree on its first call, once (08 Q8.4)', async () => {
   await using server = await createTestServer({ router, batch: true });
   const client = createTrpcClient({
     router: routerType<typeof router>(),
-    links: [httpLink({ url: server.url, batch: true })],
+    links: [httpLink({ url: server.url, batch: batching() })],
   });
   expectTypeOf<
     Parameters<typeof client.billing.invoice.query>[0]

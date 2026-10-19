@@ -1,19 +1,21 @@
-import { Stream } from 'effect';
+import { Effect, Stream } from 'effect';
 import { TrpcError } from '../../../internal/error.ts';
 import type { FormOfOptions, MaybePromise } from '../../../internal/types.ts';
 import {
   jsonSerializer,
   type AnySerializer,
 } from '../../../serializer/index.ts';
+import type { AnyTrpcError } from '../../../internal/error.ts';
 import {
   withSerializer,
   type Operation,
+  type OperationStream,
   type TrpcLink,
   type TrpcRequestInit,
 } from '../../link.ts';
-import { makeBatcher } from './batch.ts';
-import { makeSubscriptions } from './sse.ts';
-import { makeTransport } from './transport.ts';
+import type { HttpBatching } from './batch.ts';
+import type { HttpSse } from './sse.ts';
+import { makeTransport, type HttpFeature } from './transport.ts';
 
 /**
  * Options for {@link httpLink}.
@@ -67,18 +69,28 @@ export interface HttpLinkOptions<
    */
   longQuery?: 'post' | 'query';
   /**
-   * Batch queries (and, separately, mutations) made in the same tick into
-   * one request. The server must enable batching too. A call opts out with
-   * `{ batch: false }`.
-   * @default false
+   * `batching()` batches queries (and, separately, mutations) made in the
+   * same tick into one request. The server must enable batching too. A
+   * call opts out with `{ batch: false }`. Without it every call is its own
+   * request, and batching's code isn't bundled.
+   *
+   * @example
+   * ```ts
+   * httpLink({ url, batch: batching({ maxItems: 20 }) });
+   * ```
    */
-  batch?: boolean | { maxItems?: number };
+  batch?: HttpBatching | undefined;
   /**
-   * `false` turns subscriptions (SSE) off: procedures lose `.subscribe()`,
-   * for a link that should only carry queries and mutations.
-   * @default true
+   * `sse()` carries subscriptions over server-sent events. Without it
+   * procedures have no `.subscribe()` on this link, and SSE's code isn't
+   * bundled.
+   *
+   * @example
+   * ```ts
+   * httpLink({ url, subscriptions: sse({ reconnect: { attempts: 3 } }) });
+   * ```
    */
-  subscriptions?: boolean;
+  subscriptions?: HttpSse | undefined;
   /**
    * Ask for streamed outputs as binary frames instead of JSONL, so `File`
    * and `Blob` bytes in them arrive unencoded rather than as base64 (a
@@ -86,13 +98,6 @@ export interface HttpLinkOptions<
    * @default false
    */
   binary?: boolean;
-  /** Subscription reconnects after a dropped connection. */
-  reconnect?: {
-    /** @default 5 */
-    attempts?: number;
-    /** @default attempt => Math.min(1000 * 2 ** (attempt - 1), 30_000) */
-    delayMs?: (attempt: number) => number;
-  };
 }
 
 /**
@@ -100,7 +105,8 @@ export interface HttpLinkOptions<
  * to `onResponse`, the errors it makes (`NETWORK_ERROR` when `fetch`
  * fails or a connection drops, `BAD_RESPONSE` for a page that isn't tRPC's
  * or a body that doesn't decode, `STREAM_INTERRUPTED` for a stream that
- * stops early), batching when on, and no subscriptions when they're off.
+ * stops early), batching with `batching()`, and subscriptions only with
+ * `sse()`.
  * @since 0.1.0
  * @stability stable
  */
@@ -108,24 +114,30 @@ export type HttpLinkDecl<TOpts> = {
   form: FormOfOptions<TOpts>;
   provides: 'response';
   builtinErrors: 'NETWORK_ERROR' | 'BAD_RESPONSE' | 'STREAM_INTERRUPTED';
-} & (TOpts extends { batch: true | { maxItems?: number } }
-  ? { batches: true }
-  : {}) &
-  (TOpts extends { subscriptions: false }
-    ? { unsupported: 'subscription' }
-    : {});
+} & (TOpts extends { batch: HttpBatching } ? { batches: true } : {}) &
+  (TOpts extends { subscriptions: HttpSse }
+    ? {}
+    : { unsupported: 'subscription' });
 
 /**
  * Sends calls over HTTP (17: one link for every HTTP transport). Queries use
- * `GET` with an `?input=` param, mutations `POST`, subscriptions SSE.
- * Outputs with nested `Promise`s or `AsyncIterable`s stream as JSONL. A call
- * whose input holds a `File` or `Blob` is sent alone as `multipart/form-data`.
+ * `GET` with an `?input=` param, mutations `POST`. Outputs with nested
+ * `Promise`s or `AsyncIterable`s stream as JSONL. A call whose input holds a
+ * `File` or `Blob` is sent alone as `multipart/form-data`. Batching
+ * (`batching()`) and subscriptions over SSE (`sse()`) are imports of their
+ * own, so a client bundles only the ones it passes.
  *
  * @example
  * ```ts
  * createTrpcClient({
  *   router: routerType<AppRouter>(),
- *   links: [httpLink({ url: 'http://localhost:3000/trpc', batch: true })],
+ *   links: [
+ *     httpLink({
+ *       url: 'http://localhost:3000/trpc',
+ *       batch: batching(),
+ *       subscriptions: sse(),
+ *     }),
+ *   ],
  * });
  * ```
  * @since 0.1.0
@@ -137,34 +149,48 @@ export function httpLink<TOpts extends HttpLinkOptions>(
 export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
   const serializer = opts.serializer ?? jsonSerializer;
   const transport = makeTransport(opts, serializer);
-  const maxItems =
-    opts.batch === true ? 10 : opts.batch ? (opts.batch.maxItems ?? 10) : 0;
-  const batched = makeBatcher<Operation>({
-    // Calls without an `initKey` are unbatchable, so they never get here.
-    key: transport.batchKey,
-    maxItems,
-    send: transport.sendBatch,
-  });
-  const subscription = makeSubscriptions(transport, opts);
+  const feature = <F>(
+    value: object | undefined,
+    option: string,
+    name: string,
+  ): F | undefined => {
+    // `false`, as before these were imports, still leaves the feature out.
+    if (!value) return undefined;
+    const given = value as Partial<HttpFeature<F>>;
+    if (typeof given.build !== 'function') {
+      throw new TypeError(
+        `httpLink's \`${option}\` option takes \`${name}()\`, imported from '@trpc12/trpc/client'`,
+      );
+    }
+    return given.build(transport);
+  };
+  const send =
+    feature<(op: Operation) => Effect.Effect<unknown, AnyTrpcError>>(
+      opts.batch,
+      'batch',
+      'batching',
+    ) ?? transport.single;
+  const subscription = feature<(op: Operation) => OperationStream>(
+    opts.subscriptions,
+    'subscriptions',
+    'sse',
+  );
 
   return withSerializer(
     (({ op }) => {
       if (op.type === 'subscription') {
-        if (opts.subscriptions === false) {
+        if (!subscription) {
           return Stream.fail(
             new TrpcError({
               code: 'METHOD_NOT_SUPPORTED',
-              message: 'This httpLink has subscriptions turned off',
+              message:
+                'This httpLink carries no subscriptions: pass `subscriptions: sse()` to it',
             }),
           );
         }
         return subscription(op);
       }
-      return Stream.fromEffect(
-        maxItems > 0 && !transport.unbatchable(op)
-          ? batched(op)
-          : transport.single(op),
-      );
+      return Stream.fromEffect(send(op));
     }) as TrpcLink<any>,
     serializer,
   );

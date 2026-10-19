@@ -4,7 +4,12 @@ import { NodeRedis } from '@effect/platform-node';
 import { Effect, Layer, Redacted, Stream } from 'effect';
 import type { SqlError } from 'effect/sql/SqlError';
 import { Redis } from 'effect/persistence';
-import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import {
+  createTrpcClient,
+  httpLink,
+  routerType,
+  sse,
+} from '@trpc12/trpc/client';
 import { createSerializer } from '@trpc12/trpc/serializer';
 import {
   initTrpc,
@@ -260,7 +265,9 @@ test('the Redis publisher recipe delivers live events and resumes from lastEvent
   });
   const client = createTrpcClient({
     router: routerType<typeof router>(),
-    links: [httpLink({ url: server.url, serializer: danson })],
+    links: [
+      httpLink({ url: server.url, serializer: danson, subscriptions: sse() }),
+    ],
   });
 
   const first = await client.create.mutate({ id: 'a' });

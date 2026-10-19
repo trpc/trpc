@@ -1,9 +1,11 @@
 import {
+  batching,
   createTrpcClient,
   httpLink,
   link,
   safe,
   splitLink,
+  sse,
   TrpcError,
   routerType,
   type BuiltinCallOptions,
@@ -69,7 +71,12 @@ async function setup(opts: { serverBatch?: boolean; clientBatch?: boolean }) {
   });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: server.url, batch: opts.clientBatch ?? true })],
+    links: [
+      httpLink({
+        url: server.url,
+        batch: opts.clientBatch === false ? undefined : batching(),
+      }),
+    ],
   });
   return { server, client, [Symbol.asyncDispose]: () => server.close() };
 }
@@ -117,7 +124,7 @@ test('the client splits batches above maxItems', async () => {
   await using server = await createTestServer({ router, batch: true });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: server.url, batch: { maxItems: 2 } })],
+    links: [httpLink({ url: server.url, batch: batching({ maxItems: 2 }) })],
   });
   const results = await Promise.all(
     [1, 2, 3, 4, 5].map((n) => client.double.query({ n })),
@@ -260,7 +267,10 @@ test('a link before httpLink reads each response through onResponse', async () =
   let version: string | null = null;
   const client = createTrpcClient({
     router: routerType<typeof versioned>(),
-    links: [responsesLink(seen), httpLink({ url: server.url })],
+    links: [
+      responsesLink(seen),
+      httpLink({ url: server.url, subscriptions: sse() }),
+    ],
   });
   expect(
     await client.version.query(undefined, {
@@ -283,7 +293,10 @@ test('each call in a batch gets its own line status with the batch headers', asy
   const seen: Array<{ path: string; status: number }> = [];
   const client = createTrpcClient({
     router: routerType<typeof versioned>(),
-    links: [responsesLink(seen), httpLink({ url: server.url, batch: true })],
+    links: [
+      responsesLink(seen),
+      httpLink({ url: server.url, batch: batching() }),
+    ],
   });
   const headers: Headers[] = [];
   const onResponse = (meta: { headers: Headers }) => headers.push(meta.headers);
@@ -306,7 +319,10 @@ test('each call in a batch gets its own line status with the batch headers', asy
   seen.length = 0;
   const rejected = createTrpcClient({
     router: routerType<typeof versioned>(),
-    links: [responsesLink(seen), httpLink({ url: unbatched.url, batch: true })],
+    links: [
+      responsesLink(seen),
+      httpLink({ url: unbatched.url, batch: batching() }),
+    ],
   });
   const [, err] = await safe(rejected.version.query());
   expect(err).toMatchObject({ code: 'BAD_REQUEST' });
@@ -324,7 +340,7 @@ test('an onResponse that throws fails its call with CLIENT_ERROR', async () => {
     },
   };
   const failure = { code: 'CLIENT_ERROR', message: 'no thanks' };
-  for (const batch of [false, true]) {
+  for (const batch of [undefined, batching()]) {
     const client = createTrpcClient({
       router: routerType<typeof versioned>(),
       links: [httpLink({ url: server.url, batch })],
@@ -338,7 +354,9 @@ test('an onResponse that throws fails its call with CLIENT_ERROR', async () => {
   }
   const client = createTrpcClient({
     router: routerType<typeof versioned>(),
-    links: [httpLink({ url: server.url, batch: true })],
+    links: [
+      httpLink({ url: server.url, batch: batching(), subscriptions: sse() }),
+    ],
   });
   await using unbatched = await createTestServer({
     router: versioned,
@@ -346,7 +364,7 @@ test('an onResponse that throws fails its call with CLIENT_ERROR', async () => {
   });
   const rejected = createTrpcClient({
     router: routerType<typeof versioned>(),
-    links: [httpLink({ url: unbatched.url, batch: true })],
+    links: [httpLink({ url: unbatched.url, batch: batching() })],
   });
   const [, rejectedErr] = await safe(
     rejected.version.query(undefined, throwing),

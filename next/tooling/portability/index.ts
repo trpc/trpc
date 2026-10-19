@@ -7,6 +7,7 @@
  */
 import { Context, Effect, Layer, Schema, Stream } from 'effect';
 import {
+  batching,
   createTrpcClient,
   dedupeLink,
   httpLink,
@@ -14,6 +15,7 @@ import {
   localLink,
   routerType,
   splitLink,
+  sse,
   wsLink,
 } from '@trpc12/trpc/client';
 import {
@@ -159,6 +161,11 @@ export const handler = createFetchHandler({
 export const client = createTrpcClient({
   router: routerType<AppRouter>(),
   links: [link((opts) => opts.next(opts.op)), httpLink({ url: '/trpc' })],
+});
+
+export const batchedClient = createTrpcClient({
+  router: routerType<AppRouter>(),
+  links: [httpLink({ url: '/trpc', batch: batching(), subscriptions: sse() })],
 });
 
 export const localClient = createTrpcClient({

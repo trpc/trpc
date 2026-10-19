@@ -6,6 +6,7 @@ import {
   createTrpcClient,
   httpLink,
   routerType,
+  sse,
   wsLink,
 } from '@trpc12/trpc/client';
 import { TestServer } from '@trpc12/trpc/internal/testing';
@@ -154,7 +155,9 @@ function setup() {
   };
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: 'http://localhost/trpc', fetch })],
+    links: [
+      httpLink({ url: 'http://localhost/trpc', fetch, subscriptions: sse() }),
+    ],
   });
   return {
     client,

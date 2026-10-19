@@ -5,6 +5,7 @@ import {
   createTrpcClient,
   httpLink,
   type TrpcClient,
+  sse,
   routerType,
 } from '@trpc12/trpc/client';
 import {
@@ -132,7 +133,12 @@ async function setup(user: string | null = 'ada') {
   current = server;
   const client: TrpcClient<AppRouter> = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: server.url, reconnect: { delayMs: () => 10 } })],
+    links: [
+      httpLink({
+        url: server.url,
+        subscriptions: sse({ reconnect: { delayMs: () => 10 } }),
+      }),
+    ],
   });
   return { server, client, [Symbol.asyncDispose]: () => server.close() };
 }
@@ -403,7 +409,7 @@ test('quiet subscriptions send keep-alive comments', async () => {
   expect(text).toContain(': ping\n\n');
   const client = createTrpcClient({
     router: routerType<typeof pinged>(),
-    links: [httpLink({ url: server.url })],
+    links: [httpLink({ url: server.url, subscriptions: sse() })],
   });
   expect(await collect(client.slow.subscribe())).toEqual(['a', 'b']);
 });
