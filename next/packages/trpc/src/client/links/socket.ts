@@ -184,6 +184,11 @@ function makeSocketLink(
   opts: SocketLinkOptions,
 ): SocketLink<any> {
   const serializer = opts.serializer ?? jsonSerializer;
+  /**
+   * The link's lifetime: it holds the shared connection and the fibers the
+   * link starts outside a call's own (drops, calls whose output streams on).
+   */
+  const scope = Scope.makeUnsafe();
   /** Every call's inbox, so `close()` can fail them wherever they are. */
   const live = new Set<Queue.Queue<Signal>>();
   let current: Connection | undefined;
@@ -198,38 +203,39 @@ function makeSocketLink(
     }
   };
 
-  function dispatch(conn: Connection, raw: unknown) {
-    if (typeof raw !== 'object' || raw === null) return;
-    const message = raw as ServerMessage;
-    conn.received++;
-    if (message.type === 'pong') return;
-    if (message.type === 'init') {
-      if (message.serializer === serializer.name) return;
-      const error = new TrpcError({
-        code: 'UNSUPPORTED_PROTOCOL',
-        message: `The server uses the '${message.serializer}' serializer, but this ${transport.name} uses '${serializer.name}'. Pass the same serializer to the handler and ${transport.name}.`,
-      });
-      conn.refused = error;
-      for (const { inbox } of conn.calls.values())
-        Queue.offerUnsafe(inbox, Signal.Fail({ error }));
-      conn.calls.clear();
-      return;
-    }
-    if (message.type === 'reconnect') {
-      if (transport.reconnect) retire(conn);
-      return;
-    }
-    if (message.id === null) {
-      if (message.type !== 'error') return;
-      const signal = Signal.Fail({ error: revive(message) });
-      for (const { inbox } of conn.calls.values())
-        Queue.offerUnsafe(inbox, signal);
-      conn.calls.clear();
-      return;
-    }
-    const entry = conn.calls.get(message.id);
-    if (entry) Queue.offerUnsafe(entry.inbox, Signal.Message({ message }));
-  }
+  const dispatch = (conn: Connection, raw: unknown): Effect.Effect<void> =>
+    Effect.suspend(() => {
+      if (typeof raw !== 'object' || raw === null) return Effect.void;
+      const message = raw as ServerMessage;
+      conn.received++;
+      if (message.type === 'pong') return Effect.void;
+      if (message.type === 'init') {
+        if (message.serializer === serializer.name) return Effect.void;
+        const error = new TrpcError({
+          code: 'UNSUPPORTED_PROTOCOL',
+          message: `The server uses the '${message.serializer}' serializer, but this ${transport.name} uses '${serializer.name}'. Pass the same serializer to the handler and ${transport.name}.`,
+        });
+        conn.refused = error;
+        for (const { inbox } of conn.calls.values())
+          Queue.offerUnsafe(inbox, Signal.Fail({ error }));
+        conn.calls.clear();
+        return Effect.void;
+      }
+      if (message.type === 'reconnect') {
+        return transport.reconnect ? retire(conn) : Effect.void;
+      }
+      if (message.id === null) {
+        if (message.type !== 'error') return Effect.void;
+        const signal = Signal.Fail({ error: revive(message) });
+        for (const { inbox } of conn.calls.values())
+          Queue.offerUnsafe(inbox, signal);
+        conn.calls.clear();
+        return Effect.void;
+      }
+      const entry = conn.calls.get(message.id);
+      if (entry) Queue.offerUnsafe(entry.inbox, Signal.Message({ message }));
+      return Effect.void;
+    });
 
   /**
    * Invalidates the shared connection if it's still `conn`, so the next
@@ -243,13 +249,22 @@ function makeSocketLink(
       return RcRef.invalidate(connection);
     });
 
-  function lose(conn: Connection) {
-    if (conn.lost) return;
-    conn.lost = true;
-    for (const { inbox } of conn.calls.values()) Queue.offerUnsafe(inbox, LOST);
-    conn.calls.clear();
-    Effect.runFork(drop(conn));
-  }
+  /**
+   * Drops `conn` on a fiber of the link's: a connection's own fiber can't
+   * close the scope it runs in.
+   */
+  const forkDrop = (conn: Connection) =>
+    Effect.asVoid(Effect.forkIn(drop(conn), scope, { startImmediately: true }));
+
+  const lose = (conn: Connection): Effect.Effect<void> =>
+    Effect.suspend(() => {
+      if (conn.lost) return Effect.void;
+      conn.lost = true;
+      for (const { inbox } of conn.calls.values())
+        Queue.offerUnsafe(inbox, LOST);
+      conn.calls.clear();
+      return forkDrop(conn);
+    });
 
   /**
    * The server's `reconnect`: subscriptions are aborted here and sent again
@@ -257,17 +272,18 @@ function makeSocketLink(
    * dropped, so they resume from the last event they handled. Queries and
    * mutations finish here; nothing sent is sent again.
    */
-  function retire(conn: Connection) {
-    if (conn.retired || conn.lost) return;
-    conn.retired = true;
-    for (const [id, { inbox, moves }] of conn.calls) {
-      if (!moves) continue;
-      conn.calls.delete(id);
-      conn.socket.send({ id, type: 'abort' });
-      Queue.offerUnsafe(inbox, MOVED);
-    }
-    Effect.runFork(drop(conn));
-  }
+  const retire = (conn: Connection): Effect.Effect<void> =>
+    Effect.suspend(() => {
+      if (conn.retired || conn.lost) return Effect.void;
+      conn.retired = true;
+      for (const [id, { inbox, moves }] of conn.calls) {
+        if (!moves) continue;
+        conn.calls.delete(id);
+        conn.socket.send({ id, type: 'abort' });
+        Queue.offerUnsafe(inbox, MOVED);
+      }
+      return forkDrop(conn);
+    });
 
   /**
    * Pings every `interval`. A connection that answers nothing within
@@ -277,11 +293,14 @@ function makeSocketLink(
     const answered = (received: number) =>
       Effect.sleep(timing.timeout).pipe(
         Effect.andThen(
-          Effect.sync(() => {
-            if (conn.lost || conn.received !== received) return;
-            lose(conn);
-            conn.socket.close();
-          }),
+          Effect.suspend(() =>
+            conn.lost || conn.received !== received
+              ? Effect.void
+              : Effect.andThen(
+                  lose(conn),
+                  Effect.sync(() => conn.socket.close()),
+                ),
+          ),
         ),
       );
     return Effect.gen(function* () {
@@ -324,13 +343,11 @@ function makeSocketLink(
       return conn;
     }
     yield* socket.messages.pipe(
-      Stream.runForEach((message) =>
-        Effect.sync(() => dispatch(conn, message)),
-      ),
+      Stream.runForEach((message) => dispatch(conn, message)),
       Effect.ignore,
       // The messages ended on their own; a released connection interrupts
       // this fiber instead.
-      Effect.andThen(Effect.sync(() => lose(conn))),
+      Effect.andThen(lose(conn)),
       Effect.forkScoped,
     );
     socket.send({
@@ -356,7 +373,7 @@ function makeSocketLink(
     RcRef.make({
       acquire,
       idleTimeToLive: transport.idleTimeout ?? Duration.infinity,
-    }).pipe(Scope.provide(Scope.makeUnsafe())),
+    }).pipe(Scope.provide(scope)),
   );
 
   /**
@@ -529,7 +546,7 @@ function makeSocketLink(
                         Effect.flatMap((exit) => Deferred.done(result, exit)),
                       );
                       return message.deferred
-                        ? Effect.asVoid(Effect.forkDetach(settle))
+                        ? Effect.asVoid(Effect.forkIn(settle, scope))
                         : settle;
                     }),
                     Effect.as(!message.deferred),
@@ -548,7 +565,7 @@ function makeSocketLink(
         const fiber = yield* run(call).pipe(
           Effect.onError((cause) => Deferred.failCause(result, cause)),
           Effect.ensuring(decoder.close),
-          Effect.forkDetach,
+          Effect.forkIn(scope),
         );
         return yield* Deferred.await(result).pipe(
           Effect.onInterrupt(() => Fiber.interrupt(fiber)),
@@ -885,24 +902,28 @@ export function experimental_messagePortLink(
   const { port } = opts;
   // A port can't drop its listeners, so they're added once, on the first
   // connection, and every connection subscribes to what they hear.
-  const received = Effect.runSync(PubSub.unbounded<unknown>());
-  const portClosed = Deferred.makeUnsafe<void>();
-  const listen = () => {
-    const deliver = (message: unknown) =>
-      PubSub.publishUnsafe(received, message);
-    const closed = () => Deferred.doneUnsafe(portClosed, Effect.void);
-    if (port.on) {
-      port.on('message', deliver);
-      port.on('close', closed);
-    } else {
-      port.addEventListener?.('message', (event: { data: unknown }) =>
-        deliver(event.data),
-      );
-      port.addEventListener?.('close', closed);
-    }
-    port.start?.();
-  };
-  let listening = false;
+  const listening = Effect.runSync(
+    Effect.cached(
+      Effect.gen(function* () {
+        const received = yield* PubSub.unbounded<unknown>();
+        const closed = yield* Deferred.make<void>();
+        const deliver = (message: unknown) =>
+          PubSub.publishUnsafe(received, message);
+        const close = () => Deferred.doneUnsafe(closed, Effect.void);
+        if (port.on) {
+          port.on('message', deliver);
+          port.on('close', close);
+        } else {
+          port.addEventListener?.('message', (event: { data: unknown }) =>
+            deliver(event.data),
+          );
+          port.addEventListener?.('close', close);
+        }
+        port.start?.();
+        return { received, closed };
+      }),
+    ),
+  );
   return makeSocketLink(
     {
       name: 'experimental_messagePortLink',
@@ -910,11 +931,8 @@ export function experimental_messagePortLink(
       idleTimeout: undefined,
       keepAlive: undefined,
       connect: Effect.gen(function* () {
-        const messages = yield* PubSub.subscribe(received);
-        if (!listening) {
-          listening = true;
-          listen();
-        }
+        const heard = yield* listening;
+        const messages = yield* PubSub.subscribe(heard.received);
         const closed = yield* Deferred.make<void>();
         return {
           send: (message) => port.postMessage(message),
@@ -923,7 +941,7 @@ export function experimental_messagePortLink(
             Stream.interruptWhen(
               Effect.raceFirst(
                 Deferred.await(closed),
-                Deferred.await(portClosed),
+                Deferred.await(heard.closed),
               ),
             ),
           ),
