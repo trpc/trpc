@@ -9,6 +9,10 @@ import {
 } from 'effect';
 import { timerOption } from '../../internal/duration.ts';
 import {
+  interruptSignal,
+  type InterruptSignal,
+} from '../../internal/effects.ts';
+import {
   HttpEffect,
   HttpServerRequest,
   HttpServerResponse,
@@ -314,24 +318,6 @@ const parseJson = (text: string) =>
         cause,
       }),
   });
-
-/** Aborted when the fiber handling the request is interrupted (the client left). */
-const callSignal = Effect.acquireRelease(
-  Effect.sync(() => new AbortController()),
-  (controller, exit) =>
-    Exit.hasInterrupts(exit)
-      ? Effect.sync(() => controller.abort())
-      : Effect.void,
-);
-
-const abortOnInterrupt =
-  (controller: AbortController) =>
-  <A, E>(stream: Stream.Stream<A, E>): Stream.Stream<A, E> =>
-    Stream.onExit(stream, (exit) =>
-      Exit.hasInterrupts(exit)
-        ? Effect.sync(() => controller.abort())
-        : Effect.void,
-    );
 
 /**
  * Serves a v12 router to v11 clients (`@trpc/client` 11), so the server
@@ -651,7 +637,7 @@ export function createV11Handler<
     url: URL,
     call: Call & { procedure: AnyProcedure },
     prepared: Exit.Exit<{ ctx: object; input: unknown }, AnyTrpcError>,
-    controller: AbortController,
+    interrupt: InterruptSignal,
   ) =>
     Effect.gen(function* () {
       const response = createResponseHandle();
@@ -666,7 +652,7 @@ export function createV11Handler<
               path: call.path,
               ctx: prepared.value.ctx,
               input: prepared.value.input,
-              signal: controller.signal,
+              signal: interrupt.signal,
               response,
               lastEventId:
                 request.headers['last-event-id'] ??
@@ -713,7 +699,7 @@ export function createV11Handler<
       const frames = Stream.concat(
         Stream.make(frame('connected', '{}')),
         events,
-      ).pipe(abortOnInterrupt(controller));
+      ).pipe((self) => interrupt.abortOnInterrupt(self));
       const body =
         ssePing === undefined
           ? frames
@@ -745,9 +731,8 @@ export function createV11Handler<
     calls: ReadonlyArray<Call>,
     isBatch: boolean,
   ): Effect.Effect<HttpServerResponse.HttpServerResponse, AnyTrpcError> =>
-    Effect.scoped(
+    Effect.flatMap(interruptSignal(), (interrupt) =>
       Effect.gen(function* () {
-        const controller = yield* callSignal;
         const prepared = yield* Effect.exit(
           Effect.gen(function* () {
             const inputs = yield* readInputs(
@@ -763,7 +748,7 @@ export function createV11Handler<
               calls: calls.flatMap((c) =>
                 c.type === 'unknown' ? [] : [{ path: c.path, type: c.type }],
               ),
-              signal: controller.signal,
+              signal: interrupt.signal,
             });
             return { inputs, ctx };
           }),
@@ -779,7 +764,7 @@ export function createV11Handler<
                 calls[i]!,
                 prepared.value.ctx,
                 prepared.value.inputs[i],
-                controller.signal,
+                interrupt.signal,
                 !isBatch,
               );
 
@@ -796,7 +781,7 @@ export function createV11Handler<
                     ctx: prepared.value.ctx,
                     input: prepared.value.inputs[0],
                   }),
-              controller,
+              interrupt,
             );
           }
           const result = yield* outcome(0);
@@ -850,7 +835,7 @@ export function createV11Handler<
             },
           });
           return HttpServerResponse.stream(
-            Stream.encodeText(lines.pipe(abortOnInterrupt(controller))),
+            Stream.encodeText(interrupt.abortOnInterrupt(lines)),
             { status: 200, contentType: 'application/json' },
           );
         }
@@ -883,7 +868,7 @@ export function createV11Handler<
           `[${results.map((r) => r.text).join(',')}]`,
           headers,
         );
-      }),
+      }).pipe((self) => interrupt.abortOnInterrupt(self)),
     );
 
   const app: Effect.Effect<

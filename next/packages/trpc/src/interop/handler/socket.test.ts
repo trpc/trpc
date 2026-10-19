@@ -404,3 +404,17 @@ test('dispose() closes the sockets handed to websocket() and ends their subscrip
     expect(late.closed).toEqual({ code: 1012, reason: 'Service restart' }),
   );
 });
+
+test('dispose() leaves a socket still connecting to be refused once it opens', async () => {
+  const handler = createV11Handler({
+    router,
+    createContext: () => ({ user: null }),
+  });
+  const socket = new StandardSocket();
+  handler.websocket(socket, { request: new Request('http://localhost/trpc') });
+  await handler.dispose();
+  socket.open();
+  await vi.waitFor(() =>
+    expect(socket.closed).toEqual({ code: 1012, reason: 'Service restart' }),
+  );
+});
