@@ -835,10 +835,13 @@ const wsPair = (config: V11Config) => {
   return {
     v11: () => {
       const socket = new WsSocket();
-      v11(socket as never, {
-        url: '/trpc',
-        headers: { host: 'localhost' },
-      } as IncomingMessage);
+      v11(
+        socket as never,
+        {
+          url: '/trpc',
+          headers: { host: 'localhost' },
+        } as IncomingMessage,
+      );
       return socket;
     },
     v12: () => {
