@@ -27,7 +27,7 @@ runs:
     - run: pnpm install
       shell: bash
       working-directory: v11
-    # Only pushes to v12 save, so a PR, a fork's included, can't write a store v12 restores.
+    # Only pushes to v12 save: a PR's cache is restorable only by that PR.
     - uses: actions/cache/save@v6
       name: Save pnpm cache
       if: github.event_name == 'push' && github.ref == 'refs/heads/v12' && steps.restore-pnpm-cache.outputs.cache-hit != 'true'

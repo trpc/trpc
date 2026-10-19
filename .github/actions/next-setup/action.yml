@@ -5,7 +5,7 @@ inputs:
     description: Run `pnpm install --frozen-lockfile` in next/
     default: 'true'
   save-cache:
-    # Only pushes to v12 save, so a PR, a fork's included, can't write a store v12 restores.
+    # Only pushes to v12 save: a PR's cache is restorable only by that PR.
     description: On a push to v12, save the store after installing when the lockfile has no cache yet
     default: 'false'
 outputs:
