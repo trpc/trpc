@@ -122,6 +122,47 @@ export const serializer = createSerializer({ types: { Decimal: decimal } });
 
 The [`examples/media-pipeline`](../../examples/media-pipeline/README.md) app keeps a `Money` class this way, and with superjson's `registerCustom` on a second endpoint, in query URLs and outputs.
 
+## Your own serializer
+
+A serializer is a name, a kind and two whole-value functions. Deferred values aren't its job: the handler and the links frame them around `serialize` and `deserialize`, so a serializer like this one streams promises and generators like `jsonSerializer` does:
+
+```ts twoslash
+import type { JsonForm, Serializer } from '@trpc12/trpc/serializer';
+
+export const serializer: Serializer<JsonForm> = {
+  name: 'my-json',
+  kind: 'none',
+  serialize: (value) => ({ json: JSON.parse(JSON.stringify(value)) }),
+  deserialize: (value) => value.json as never,
+};
+```
+
+To carry a streamed output over a transport of your own, `serializeDeferred(serializer, value)` turns it into a head and a stream of chunks, and `deserializeStream(serializer, frames)` rebuilds it. Both are in `@trpc12/trpc/serializer`, apart from the serializer, so a client that never streams doesn't bundle the encoder:
+
+```ts twoslash
+// ---cut-start---
+import { Effect, Stream } from 'effect';
+// ---cut-end---
+import {
+  createSerializer,
+  deserializeStream,
+  serializeDeferred,
+  type Frame,
+} from '@trpc12/trpc/serializer';
+
+const serializer = createSerializer();
+const serialized = serializeDeferred(serializer, {
+  user: Promise.resolve({ at: new Date() }),
+});
+const frames = Stream.concat(
+  Stream.make(serialized.head as Frame),
+  serialized.chunks ? Stream.orDie(serialized.chunks) : Stream.empty,
+);
+const value = await Effect.runPromise(
+  deserializeStream<{ user: Promise<{ at: Date }> }, never>(serializer, frames),
+);
+```
+
 ## Hydration
 
 `hydrationOptions({ client })` serializes TanStack Query data with the client's serializer (the first link that has one), so server-rendered data hydrates with the same types the client sees. Type the query context from the client, and it takes the links' form too:
