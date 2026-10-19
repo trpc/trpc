@@ -242,6 +242,45 @@ const objectProperties = (
   });
 };
 
+const isBinary = (node: Schema) =>
+  node['format'] === 'binary' ||
+  node['contentEncoding'] === 'binary' ||
+  (typeof node['contentMediaType'] === 'string' &&
+    !/json|^text\//.test(node['contentMediaType']));
+
+const hasBinary = (
+  node: unknown,
+  components: Record<string, JsonSchema>,
+  seen = new Set<unknown>(),
+): boolean => {
+  if (typeof node !== 'object' || node === null || seen.has(node)) return false;
+  seen.add(node);
+  if (Array.isArray(node))
+    return node.some((n) => hasBinary(n, components, seen));
+  const schema = node as Schema;
+  const ref = schema['$ref'];
+  if (typeof ref === 'string' && ref.startsWith('#/components/schemas/')) {
+    const target = components[ref.slice('#/components/schemas/'.length)];
+    if (hasBinary(target, components, seen)) return true;
+  }
+  return (
+    isBinary(schema) ||
+    Object.entries(schema).some(
+      ([key, value]) =>
+        key !== 'not' && key !== '$ref' && hasBinary(value, components, seen),
+    )
+  );
+};
+
+/** JSON can't carry a file, so a body with one is `multipart/form-data`, which the handler reads as bracket notation. */
+const bodyContent = (
+  schema: JsonSchema | undefined,
+  components: Record<string, JsonSchema>,
+) => ({
+  [hasBinary(schema, components) ? 'multipart/form-data' : 'application/json']:
+    { schema },
+});
+
 const isStructured = (schema: JsonSchema) =>
   typeof schema === 'object' &&
   (schema['type'] === 'object' || schema['properties'] !== undefined);
@@ -486,7 +525,7 @@ export function generateDocument(
       if (body !== undefined && !usesQuery(route.method)) {
         requestBody = {
           required: true,
-          content: { 'application/json': { schema: body } },
+          content: bodyContent(body, components),
         };
       }
     } else {
@@ -523,7 +562,7 @@ export function generateDocument(
             required: Boolean(
               ((body as Schema)['required'] as unknown[] | undefined)?.length,
             ),
-            content: { 'application/json': { schema: body } },
+            content: bodyContent(body, components),
           };
       }
     }

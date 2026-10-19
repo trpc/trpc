@@ -119,7 +119,7 @@ With the default `inputStructure: 'compact'`, path params merge with the query s
 
 - Query strings and forms use bracket notation (`?tags[]=a&author[name]=x`) and are coerced by the input's JSON Schema, so `?limit=10&published=true` gives a number and a boolean.
 - JSON bodies are taken as they are.
-- `multipart/form-data` fields can hold `File`s.
+- `multipart/form-data` fields can hold `File`s. The document describes a body with a `z.file()`, `z.instanceof(File)` or `z.instanceof(Blob)` in it as `multipart/form-data`, with the file as `format: binary`, so generated clients send a form. Repeat a field for an array; one value for an array field is an array of one.
 - Forms from another origin are refused unless it's trusted ([Cross-site forms](#cross-site-forms)).
 
 `inputStructure: 'detailed'` passes `{ params, query, headers, body }`, each with its own schema. `outputStructure: 'detailed'` lets the resolver return `{ status?, headers?, body }`.

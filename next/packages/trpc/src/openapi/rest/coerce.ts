@@ -134,6 +134,7 @@ export function experimental_coerceBySchema(
     }
     return coerceString(value, types);
   }
+  if (value instanceof Blob && types.includes('array')) return [value];
   if (Array.isArray(value)) {
     const prefixItems = current['prefixItems'] as JsonSchema[] | undefined;
     return value.map((item, i) =>

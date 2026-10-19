@@ -859,3 +859,82 @@ test('security schemes, document-level security and tags', () => {
   expect(doc.tags).toEqual([{ name: 'posts', description: 'Blog posts' }]);
   expect(doc.paths['/api/health']!['get']?.security).toEqual([]);
 });
+
+test('a body with a file is documented as multipart/form-data, and served', async () => {
+  const router = {
+    upload: t.procedure
+      .meta({ route: { method: 'POST', path: '/files' } })
+      .input(z.object({ name: z.string(), file: z.file() }))
+      .mutation(() => 'ok'),
+    gallery: t.procedure
+      .meta({ route: { method: 'POST', path: '/galleries/{id}' } })
+      .input(
+        z.object({
+          id: z.string(),
+          photos: z.array(z.instanceof(Blob)).optional(),
+        }),
+      )
+      .mutation((opts) => ({
+        id: opts.input.id,
+        sizes: opts.input.photos?.map((p) => p.size),
+      })),
+    avatar: t.procedure
+      .meta({
+        route: {
+          method: 'PUT',
+          path: '/avatar',
+          inputStructure: 'detailed',
+        },
+      })
+      .input(z.object({ body: z.object({ image: z.instanceof(File) }) }))
+      .mutation(() => 'ok'),
+    post: t.procedure
+      .meta({ route: { method: 'POST', path: '/posts' } })
+      .input(z.object({ title: z.string() }))
+      .mutation(() => 'ok'),
+  } satisfies AnyRouter;
+  const doc = experimental_generateOpenApi(router, {
+    info: { title: 'x', version: '1' },
+  });
+  const body = (path: string, method: string) =>
+    (
+      doc.paths[path]![method]!.requestBody as {
+        content: Record<string, { schema: Record<string, unknown> }>;
+      }
+    ).content;
+  const binary = { type: 'string', format: 'binary' };
+
+  const upload = body('/api/files', 'post');
+  expect(Object.keys(upload)).toEqual(['multipart/form-data']);
+  expect(upload['multipart/form-data']!.schema).toMatchObject({
+    properties: { name: { type: 'string' }, file: binary },
+  });
+  expect(
+    body('/api/galleries/{id}', 'post')['multipart/form-data']!.schema,
+  ).toMatchObject({ properties: { photos: { items: binary } } });
+  expect(body('/api/avatar', 'put')['multipart/form-data']!.schema).toEqual({
+    type: 'object',
+    properties: { image: binary },
+    required: ['image'],
+  });
+  expect(Object.keys(body('/api/posts', 'post'))).toEqual(['application/json']);
+
+  const handler = experimental_createOpenApiHandler({
+    router,
+    createContext: () => ({ user: null }),
+  });
+  const send = async (photos: string[]) => {
+    const form = new FormData();
+    for (const photo of photos) form.append('photos', new Blob([photo]));
+    const res = await handler.fetch(
+      new Request('http://localhost/api/galleries/g1', {
+        method: 'POST',
+        body: form,
+      }),
+    );
+    return res.json();
+  };
+  expect(await send(['ab', 'cde'])).toEqual({ id: 'g1', sizes: [2, 3] });
+  expect(await send(['ab'])).toEqual({ id: 'g1', sizes: [2] });
+  await handler.dispose();
+});

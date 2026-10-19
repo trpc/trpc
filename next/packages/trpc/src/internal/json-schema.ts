@@ -40,10 +40,28 @@ export function toJsonSchema(
     if (!convert) return undefined;
     const { $schema: _, ...json } = convert({
       target: 'draft-2020-12',
-      libraryOptions: { unrepresentable: 'any' },
+      libraryOptions: { unrepresentable: unrepresentable(io) },
     });
     return json;
   } catch {
     return undefined;
   }
 }
+
+interface ZodUnrepresentable {
+  readonly zodSchema: {
+    readonly _zod?: { readonly bag?: { Class?: unknown } };
+  };
+}
+
+/** zod's `unrepresentable` hook: `z.instanceof(File)` or `Blob` inputs are binary, as forms send them. */
+const unrepresentable =
+  (io: 'input' | 'output') =>
+  (ctx: ZodUnrepresentable): JsonSchema | 'any' => {
+    const Class = ctx.zodSchema._zod?.bag?.Class;
+    return io === 'input' &&
+      typeof Class === 'function' &&
+      (Class === Blob || Class.prototype instanceof Blob)
+      ? { type: 'string', format: 'binary' }
+      : 'any';
+  };
