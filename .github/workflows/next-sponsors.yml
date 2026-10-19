@@ -1,8 +1,8 @@
 name: next-sponsors
 
 # Syncs next/www/sponsors.json and the README's sponsors section from GitHub
-# Sponsors, and pushes a commit only when a sponsor joined or left (new
-# weights alone wait for the next such commit).
+# Sponsors, and pushes a commit only when a sponsor joined, left or
+# changed tier (new weights or ranks alone wait for the next such commit).
 
 on:
   schedule:
@@ -77,13 +77,13 @@ jobs:
           VP_GIT_HOOKS: '0'
       - if: steps.go.outputs.run == 'true'
         working-directory: next/www
-        run: node build/sponsors-sync.ts --only-when-joined-or-left
+        run: node build/sponsors-sync.ts --only-when-sponsors-change
 
       - if: steps.go.outputs.run == 'true'
-        name: Commit and push if a sponsor joined or left
+        name: Commit and push if a sponsor joined, left or changed tier
         run: |
           if git diff --quiet -- next/www/sponsors.json README.md; then
-            echo "No sponsor joined or left."
+            echo "No sponsor joined, left or changed tier."
             exit 0
           fi
           git config user.name "github-actions[bot]"

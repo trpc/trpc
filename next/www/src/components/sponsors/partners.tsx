@@ -3,29 +3,50 @@ import { ArrowUpRight } from 'lucide-react';
 import type { CSSProperties, JSX } from 'react';
 
 import {
+  avatarUrl,
   type Partner,
-  type PartnerLogin,
   partners,
+  sponsorTiers,
   sponsorUrl,
 } from '~/sponsors.ts';
 
 import { CodeRabbitLogo, GreptileLogo, SerpApiLogo } from './partner-logos.tsx';
 
-const logos = {
+const logos: Partial<
+  Record<
+    string,
+    (props: { readonly className?: string | undefined }) => JSX.Element
+  >
+> = {
   coderabbitai: CodeRabbitLogo,
   greptileai: GreptileLogo,
   SerpApi: SerpApiLogo,
-} as const satisfies Record<
-  PartnerLogin,
-  (props: { readonly className?: string | undefined }) => JSX.Element
->;
+};
 
+/** The partner's logo, or for one without a drawn logo their avatar and name. */
 export function PartnerLogo(props: {
   readonly className?: string;
   readonly partner: Partner;
 }) {
   const Logo = logos[props.partner.login];
-  return <Logo className={props.className} />;
+  if (Logo !== undefined) {
+    return <Logo className={props.className} />;
+  }
+  return (
+    <span
+      className={cn(
+        'inline-flex items-center gap-2 font-semibold',
+        props.className,
+      )}
+    >
+      <img
+        alt=""
+        className="aspect-square h-full rounded-full"
+        src={avatarUrl(props.partner, 64)}
+      />
+      {props.partner.name}
+    </span>
+  );
 }
 
 const accentOf = (partner: Partner) =>
@@ -34,13 +55,35 @@ const accentOf = (partner: Partner) =>
 const label =
   'text-xs font-semibold tracking-wide text-muted-foreground uppercase';
 
-/** The partners as cards, for the home page's sponsors section. */
+/** The partners as cards, a row per tier, for the home page's sponsors section. */
 export function PartnerCards() {
   return (
+    <div className="grid gap-8">
+      {sponsorTiers.map((entry) => {
+        const inTier = partners.filter(
+          (partner) => partner.tier === entry.tier,
+        );
+        return inTier.length === 0 ? null : (
+          <PartnerCardRow
+            key={entry.tier}
+            partners={inTier}
+            title={`${entry.label} partners`}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+function PartnerCardRow(props: {
+  readonly partners: ReadonlyArray<Partner>;
+  readonly title: string;
+}) {
+  return (
     <div className="grid gap-3">
-      <p className={label}>Partners</p>
+      <p className={label}>{props.title}</p>
       <ul className="grid gap-4 md:grid-cols-3">
-        {partners.map((partner) => (
+        {props.partners.map((partner) => (
           <li key={partner.login}>
             <a
               className="group relative grid h-full content-between gap-6 overflow-hidden rounded-xl border bg-card p-6 transition-[border-color,box-shadow,translate] duration-300 hover:-translate-y-0.5 hover:border-(--accent)/50 hover:shadow-[0_12px_40px_-12px_var(--accent)]"

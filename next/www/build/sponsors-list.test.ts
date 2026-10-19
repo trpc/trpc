@@ -201,9 +201,51 @@ describe('sponsorsList', () => {
         link: 'https://serpapi.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc',
         login: 'SerpApi',
         name: 'SerpApi',
+        rank: 1,
+        tier: 'silver',
         weight: 100,
       },
     ]);
+  });
+
+  it('tiers sponsors by what they give a month across accounts, ranked by that, then by what they paid in all', () => {
+    const sponsors = sponsorsList({
+      config: { ...noConfig, direct: [serpApi] },
+      lifetimeValues: [
+        { cents: 100_000, login: 'newSilver' },
+        { cents: 500_000, login: 'oldSilver' },
+        { cents: 900_000, login: 'gold' },
+        { cents: 900_000, login: 'once' },
+      ],
+      now,
+      sponsorships: [
+        sponsorship('backer', { monthlyDollars: 249 }),
+        sponsorship('bronze', { monthlyDollars: 250 }),
+        sponsorship('gold', { monthlyDollars: 600 }),
+        sponsorship('gold', { monthlyDollars: 400 }),
+        sponsorship('newSilver', { monthlyDollars: 500 }),
+        sponsorship('oldSilver', { monthlyDollars: 500 }),
+        sponsorship('once', { monthlyDollars: 0 }),
+      ],
+    });
+    expect(
+      sponsors
+        .filter((sponsor) => sponsor.rank !== undefined)
+        .toSorted((a, b) => (a.rank ?? 0) - (b.rank ?? 0))
+        .map((sponsor) => [sponsor.rank, sponsor.login, sponsor.tier]),
+    ).toEqual([
+      [1, 'gold', 'gold'],
+      [2, 'SerpApi', 'silver'],
+      [3, 'oldSilver', 'silver'],
+      [4, 'newSilver', 'silver'],
+      [5, 'bronze', 'bronze'],
+    ]);
+    const untiered = sponsors.filter((sponsor) => sponsor.tier === undefined);
+    expect(untiered.map((sponsor) => sponsor.login).toSorted()).toEqual([
+      'backer',
+      'once',
+    ]);
+    expect(untiered.every((sponsor) => !('rank' in sponsor))).toBe(true);
   });
 
   it("adds a direct sponsor's payments to their GitHub sponsorship", () => {

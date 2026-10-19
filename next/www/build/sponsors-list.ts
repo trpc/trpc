@@ -7,7 +7,7 @@
  */
 import { Order } from 'effect';
 
-import type { Sponsor } from '../src/sponsors.ts';
+import { type Sponsor, tierFor } from '../src/sponsors.ts';
 import type { LifetimeValue, Sponsorship } from './sponsors-github.ts';
 
 /** Someone who sponsors outside GitHub Sponsors, paying up front. */
@@ -142,13 +142,15 @@ export function sponsorsList(opts: {
     const dollars = directDollars(direct, opts.now);
     const createdAt = Date.parse(direct.since);
     const known = tallies.get(direct.login);
+    const monthlyDollars =
+      direct.every === 'year' ? direct.dollars / 12 : direct.dollars;
     if (known === undefined) {
       tallies.set(direct.login, {
         avatarUrl: direct.avatarUrl,
         createdAt,
         dollars,
         login: direct.login,
-        monthlyDollars: 0,
+        monthlyDollars,
         name: direct.name,
         websiteUrl: direct.websiteUrl,
       });
@@ -156,6 +158,7 @@ export function sponsorsList(opts: {
     }
     known.createdAt = Math.min(known.createdAt, createdAt);
     known.dollars += dollars;
+    known.monthlyDollars += monthlyDollars;
   }
   for (const extra of opts.config.extra) {
     const known = tallies.get(extra.login);
@@ -165,24 +168,43 @@ export function sponsorsList(opts: {
   }
 
   const most = Math.max(0, ...[...tallies.values()].map((t) => t.dollars));
+  const ranks = new Map(
+    [...tallies.values()]
+      .filter((tally) => tierFor(tally.monthlyDollars) !== undefined)
+      .toSorted(byMonthlyThenPaid)
+      .map((tally, index) => [tally.login, index + 1]),
+  );
   return [...tallies.values()]
-    .map((tally): Sponsor => ({
-      createdAt: tally.createdAt,
-      imgSrc: tally.avatarUrl,
-      link:
-        (tally.websiteUrl === null
-          ? undefined
-          : trackingLink(tally.websiteUrl)) ??
-        `https://github.com/${tally.login}`,
-      login: tally.login,
-      name: tally.name,
-      weight:
-        most === 0
-          ? 1
-          : Math.max(1, Math.round((maxWeight * tally.dollars) / most)),
-    }))
+    .map((tally): Sponsor => {
+      const tier = tierFor(tally.monthlyDollars);
+      const rank = ranks.get(tally.login);
+      return {
+        createdAt: tally.createdAt,
+        imgSrc: tally.avatarUrl,
+        link:
+          (tally.websiteUrl === null
+            ? undefined
+            : trackingLink(tally.websiteUrl)) ??
+          `https://github.com/${tally.login}`,
+        login: tally.login,
+        name: tally.name,
+        ...(tier === undefined || rank === undefined ? {} : { rank, tier }),
+        weight:
+          most === 0
+            ? 1
+            : Math.max(1, Math.round((maxWeight * tally.dollars) / most)),
+      };
+    })
     .toSorted(byStartThenLogin);
 }
+
+const byMonthlyThenPaid = Order.combine(
+  Order.combine(
+    Order.flip(Order.mapInput(Order.Number, (t: Tally) => t.monthlyDollars)),
+    Order.flip(Order.mapInput(Order.Number, (t: Tally) => t.dollars)),
+  ),
+  Order.mapInput(Order.String, (t: Tally) => t.login),
+);
 
 const byStartThenLogin = Order.combine(
   Order.mapInput(Order.Number, (sponsor: Sponsor) => sponsor.createdAt),

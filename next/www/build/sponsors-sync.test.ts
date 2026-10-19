@@ -90,6 +90,7 @@ describe('syncSponsors', () => {
           ? [
               sponsorshipNode('coderabbitai', {
                 createdAt: '2025-01-23T15:14:59Z',
+                tier: { isOneTime: false, monthlyPriceInDollars: 500 },
               }),
               sponsorshipNode('fan', { createdAt: '2021-09-20T13:12:22Z' }),
               sponsorshipNode('shy', { privacyLevel: 'PRIVATE' }),
@@ -97,6 +98,7 @@ describe('syncSponsors', () => {
           : [
               sponsorshipNode('coderabbitai', {
                 createdAt: '2025-03-01T00:00:00Z',
+                tier: { isOneTime: false, monthlyPriceInDollars: 500 },
               }),
             ];
       });
@@ -122,9 +124,16 @@ describe('syncSponsors', () => {
           expect.objectContaining({
             createdAt: Date.parse('2025-01-23T15:14:59Z'),
             login: 'coderabbitai',
+            rank: 1,
+            tier: 'gold',
             weight: 100,
           }),
-          expect.objectContaining({ login: 'SerpApi', weight: 100 }),
+          expect.objectContaining({
+            login: 'SerpApi',
+            rank: 2,
+            tier: 'silver',
+            weight: 100,
+          }),
         ]);
         const written = yield* fs.readFileString(files.readme);
         expect(written.startsWith('# tRPC\n\n## Sponsors\n\n')).toBe(true);
@@ -132,52 +141,73 @@ describe('syncSponsors', () => {
           true,
         );
         expect(written).not.toContain('the old list');
-        const partners = written.indexOf('### Partners');
-        const backers = written.indexOf('### Backers');
-        expect(partners).toBeGreaterThan(-1);
-        expect(backers).toBeGreaterThan(partners);
-        expect(written.indexOf('alt="CODERABBITAI"')).toBeLessThan(backers);
-        expect(written.indexOf('alt="SerpApi"')).toBeLessThan(backers);
-        expect(written.indexOf('alt="FAN"')).toBeGreaterThan(backers);
+        const at = (text: string) => written.indexOf(text);
+        expect(at('### Gold partners')).toBeGreaterThan(-1);
+        expect(at('alt="CODERABBITAI"')).toBeGreaterThan(
+          at('### Gold partners'),
+        );
+        expect(at('### Silver partners')).toBeGreaterThan(
+          at('alt="CODERABBITAI"'),
+        );
+        expect(at('alt="SerpApi"')).toBeGreaterThan(at('### Silver partners'));
+        expect(at('### Backers')).toBeGreaterThan(at('alt="SerpApi"'));
+        expect(at('alt="FAN"')).toBeGreaterThan(at('### Backers'));
         expect(fake.sent).toHaveLength(4);
       }).pipe(Effect.provide(Layer.mergeAll(NodeServices.layer, fake.layer)));
     },
   );
 
   it.effect(
-    'with onlyWhenJoinedOrLeft, writes only when a sponsor joined or left',
+    'with onlyWhenSponsorsChange, writes only when a sponsor joined, left or changed tier',
     () => {
       let logins = ['coderabbitai', 'fan'];
       let fanCents = 2_000;
+      let fanMonthly = 10;
       const fake = github((sent) =>
         isPaymentsQuery(sent)
           ? [paymentNode('coderabbitai', 300_000), paymentNode('fan', fanCents)]
-          : logins.map((login) => sponsorshipNode(login)),
+          : logins.map((login) =>
+              sponsorshipNode(login, {
+                tier: {
+                  isOneTime: false,
+                  monthlyPriceInDollars: login === 'fan' ? fanMonthly : 500,
+                },
+              }),
+            ),
       );
       return Effect.gen(function* () {
         const files = yield* fixture;
         const fs = yield* FileSystem.FileSystem;
-        const syncWhenJoinedOrLeft = syncSponsors({
+        const syncWhenSponsorsChange = syncSponsors({
           ...files,
           accounts: [{ kind: 'user', login: 'KATT' }],
           config: { ...config, direct: [] },
-          onlyWhenJoinedOrLeft: true,
+          onlyWhenSponsorsChange: true,
           token: Redacted.make('test-token'),
         });
-        yield* syncWhenJoinedOrLeft;
+        yield* syncWhenSponsorsChange;
         const json = yield* fs.readFileString(files.sponsorsFile);
         const written = yield* fs.readFileString(files.readme);
         expect(JSON.parse(json)).toHaveLength(2);
 
-        fanCents = 150_000;
-        expect(yield* syncWhenJoinedOrLeft).toBe(
-          `No sponsor joined or left the 2 in ${files.sponsorsFile}; wrote nothing.`,
+        fanCents = 1_500_000;
+        fanMonthly = 20;
+        expect(yield* syncWhenSponsorsChange).toBe(
+          `No sponsor joined, left or changed tier among the 2 in ${files.sponsorsFile}; wrote nothing.`,
         );
         expect(yield* fs.readFileString(files.sponsorsFile)).toBe(json);
         expect(yield* fs.readFileString(files.readme)).toBe(written);
 
+        fanMonthly = 250;
+        expect(yield* syncWhenSponsorsChange).toBe(
+          `Wrote 2 sponsors to ${files.sponsorsFile} and ${files.readme}.`,
+        );
+        expect(yield* fs.readFileString(files.sponsorsFile)).toContain(
+          '"tier": "bronze"',
+        );
+
         logins = ['coderabbitai', 'newcomer'];
-        expect(yield* syncWhenJoinedOrLeft).toBe(
+        expect(yield* syncWhenSponsorsChange).toBe(
           `Wrote 2 sponsors to ${files.sponsorsFile} and ${files.readme}.`,
         );
         const after: ReadonlyArray<{ login: string }> = JSON.parse(

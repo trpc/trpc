@@ -42,7 +42,7 @@ describe('fetchSponsorships', () => {
                     name: 'First Co',
                     websiteUrl: 'first.dev',
                   },
-                  tier: { monthlyPriceInDollars: 100 },
+                  tier: { isOneTime: false, monthlyPriceInDollars: 100 },
                 }),
               ],
               'page-2',
@@ -51,6 +51,9 @@ describe('fetchSponsorships', () => {
         : {
             body: connectionPage([
               sponsorshipNode('second', { privacyLevel: 'PRIVATE' }),
+              sponsorshipNode('once', {
+                tier: { isOneTime: true, monthlyPriceInDollars: 6000 },
+              }),
             ]),
           },
     );
@@ -67,6 +70,7 @@ describe('fetchSponsorships', () => {
           websiteUrl: 'first.dev',
         },
         expect.objectContaining({ isPublic: false, login: 'second' }),
+        expect.objectContaining({ login: 'once', monthlyDollars: 0 }),
       ]);
       expect(github.sent.map((sent) => sent.variables)).toEqual([
         { cursor: null, login: 'trpc' },

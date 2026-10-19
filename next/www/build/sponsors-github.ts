@@ -26,6 +26,7 @@ export interface Sponsorship {
   readonly createdAt: number;
   readonly isPublic: boolean;
   readonly login: string;
+  /** What they give a month; 0 for a one-time payment. */
   readonly monthlyDollars: number;
   readonly name: string | null;
   readonly websiteUrl: string | null;
@@ -74,7 +75,12 @@ const SponsorshipNode = Schema.Struct({
     }),
   ),
   // `null` when the token isn't the account owner's.
-  tier: Schema.NullOr(Schema.Struct({ monthlyPriceInDollars: Schema.Number })),
+  tier: Schema.NullOr(
+    Schema.Struct({
+      isOneTime: Schema.Boolean,
+      monthlyPriceInDollars: Schema.Number,
+    }),
+  ),
 });
 
 const Tier = Schema.Struct({
@@ -122,7 +128,7 @@ const sponsorshipsQuery = (account: SponsoredAccount) =>
     account,
     args: 'includePrivate: true',
     connection: 'sponsorshipsAsMaintainer',
-    nodes: `createdAt privacyLevel tier { monthlyPriceInDollars } sponsorEntity { ... on User { ${sponsorFields} } ... on Organization { ${sponsorFields} } }`,
+    nodes: `createdAt privacyLevel tier { isOneTime monthlyPriceInDollars } sponsorEntity { ... on User { ${sponsorFields} } ... on Organization { ${sponsorFields} } }`,
   });
 
 const activitiesQuery = (account: SponsoredAccount) =>
@@ -253,7 +259,7 @@ export const fetchSponsorships = Effect.fn('fetchSponsorships')(function* (
       createdAt: Date.parse(node.createdAt),
       isPublic: node.privacyLevel === 'PUBLIC',
       login: entity.login,
-      monthlyDollars: node.tier.monthlyPriceInDollars,
+      monthlyDollars: node.tier.isOneTime ? 0 : node.tier.monthlyPriceInDollars,
       name: entity.name,
       websiteUrl: entity.websiteUrl,
     });

@@ -142,7 +142,7 @@ If you enjoy working with tRPC and want to support us, consider giving a token a
 <!-- prettier-ignore-start -->
 <!-- markdownlint-disable -->
 
-### Partners
+### Silver partners
 
 <table>
   <tr>

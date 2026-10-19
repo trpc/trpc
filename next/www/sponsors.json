@@ -117,6 +117,8 @@
     "link": "https://www.coderabbit.ai/?utm_source=github&utm_medium=referral&ref=trpc&utm_campaign=trpc",
     "login": "coderabbitai",
     "name": "CodeRabbit",
+    "rank": 1,
+    "tier": "silver",
     "weight": 100
   },
   {
@@ -125,6 +127,8 @@
     "link": "https://greptile.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "login": "greptileai",
     "name": "Greptile",
+    "rank": 2,
+    "tier": "silver",
     "weight": 86
   },
   {
@@ -149,6 +153,8 @@
     "link": "https://serpapi.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "login": "SerpApi",
     "name": "SerpApi",
+    "rank": 3,
+    "tier": "silver",
     "weight": 55
   },
   {

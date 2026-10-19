@@ -7,12 +7,13 @@
  * token with `read:user` and `read:org`, from `SPONSORS_SYNC_GITHUB_TOKEN` or, in a
  * terminal, asked for when that isn't set.
  *
- * `--only-when-joined-or-left` writes nothing while the same sponsors are
- * listed, so the daily CI run (`.github/workflows/next-sponsors.yml`)
- * commits only when one joined or left.
+ * `--only-when-sponsors-change` writes nothing while the same sponsors are
+ * listed in the same tiers, so the daily CI run
+ * (`.github/workflows/next-sponsors.yml`) commits only when one joined,
+ * left or changed tier.
  *
  * `--readme-only` rewrites the README from `sponsors.json` without GitHub,
- * for after changing the partners (`partnerLogins` in `src/sponsors.ts`).
+ * for after changing how it's laid out (`sponsors-readme.ts`).
  *
  * The weighing is in `sponsors-list.ts`; who sponsors outside GitHub, and
  * money GitHub doesn't attribute, is `sponsorsConfig` here.
@@ -34,7 +35,7 @@ import {
 import { Command, Flag, Prompt } from 'effect/cli';
 import { FetchHttpClient } from 'effect/http';
 
-import { partnerLogins, type Sponsor } from '../src/sponsors.ts';
+import { type Sponsor, sponsorTiers } from '../src/sponsors.ts';
 import {
   fetchLifetimeValues,
   fetchSponsorships,
@@ -72,6 +73,10 @@ const SponsorSchema = Schema.Struct({
   link: Schema.String,
   login: Schema.String,
   name: Schema.String,
+  rank: Schema.optionalKey(Schema.Number),
+  tier: Schema.optionalKey(
+    Schema.Literals(sponsorTiers.map((entry) => entry.tier)),
+  ),
   weight: Schema.Number,
 });
 
@@ -91,10 +96,7 @@ export const writeReadme = Effect.fn('writeReadme')(function* (opts: {
 }) {
   const fs = yield* FileSystem.FileSystem;
   const before = yield* fs.readFileString(opts.readme);
-  const after = withSponsorsBlock(
-    before,
-    sponsorsMarkdown({ partners: partnerLogins, sponsors: opts.sponsors }),
-  );
+  const after = withSponsorsBlock(before, sponsorsMarkdown(opts.sponsors));
   if (after === undefined) {
     return yield* new SponsorsSyncError({
       message: `${opts.readme} has no <!-- SPONSORS:LIST:START --> followed by <!-- SPONSORS:LIST:END --> to write the sponsors between`,
@@ -141,14 +143,15 @@ export const readmeFromSponsorsFile = Effect.fn('readmeFromSponsorsFile')(
  * Fetches the accounts' sponsors, then writes them to `sponsorsFile` and
  * `readme`. Writes nothing when GitHub reports no sponsors or no payments,
  * which means the token can't see them, rather than emptying the list.
- * With `onlyWhenJoinedOrLeft`, also writes nothing while `sponsorsFile`
- * lists the same sponsors, however their weights or details changed.
+ * With `onlyWhenSponsorsChange`, also writes nothing while `sponsorsFile`
+ * lists the same sponsors in the same tiers, however their weights, ranks
+ * or details changed.
  */
 export const syncSponsors = Effect.fn('syncSponsors')(function* (
   opts: SponsorsFiles & {
     readonly accounts: ReadonlyArray<SponsoredAccount>;
     readonly config: SponsorsConfig;
-    readonly onlyWhenJoinedOrLeft?: boolean;
+    readonly onlyWhenSponsorsChange?: boolean;
     readonly token: Redacted.Redacted;
   },
 ) {
@@ -183,17 +186,17 @@ export const syncSponsors = Effect.fn('syncSponsors')(function* (
     now: yield* Clock.currentTimeMillis,
     sponsorships,
   });
-  if (opts.onlyWhenJoinedOrLeft === true) {
+  if (opts.onlyWhenSponsorsChange === true) {
+    const lineup = (sponsor: Sponsor) =>
+      `${sponsor.login} ${sponsor.tier ?? ''}`;
     const listed = new Set(
-      (yield* readSponsorsFile(opts.sponsorsFile)).map(
-        (sponsor) => sponsor.login,
-      ),
+      (yield* readSponsorsFile(opts.sponsorsFile)).map(lineup),
     );
     if (
       listed.size === sponsors.length &&
-      sponsors.every((sponsor) => listed.has(sponsor.login))
+      sponsors.every((sponsor) => listed.has(lineup(sponsor)))
     ) {
-      return `No sponsor joined or left the ${sponsors.length} in ${opts.sponsorsFile}; wrote nothing.`;
+      return `No sponsor joined, left or changed tier among the ${sponsors.length} in ${opts.sponsorsFile}; wrote nothing.`;
     }
   }
   const fs = yield* FileSystem.FileSystem;
@@ -249,9 +252,9 @@ if (import.meta.main) {
   const command = Command.make(
     'sponsors-sync',
     {
-      onlyWhenJoinedOrLeft: Flag.Boolean('only-when-joined-or-left').pipe(
+      onlyWhenSponsorsChange: Flag.Boolean('only-when-sponsors-change').pipe(
         Flag.withDescription(
-          'Write nothing unless a sponsor joined or left (what CI runs), not for new weights or details',
+          'Write nothing unless a sponsor joined, left or changed tier (what CI runs), not for new weights, ranks or details',
         ),
         Flag.withDefault(false),
       ),
@@ -271,7 +274,7 @@ if (import.meta.main) {
                 ...paths,
                 accounts: sponsoredAccounts,
                 config: sponsorsConfig,
-                onlyWhenJoinedOrLeft: opts.onlyWhenJoinedOrLeft,
+                onlyWhenSponsorsChange: opts.onlyWhenSponsorsChange,
                 token: value,
               }),
             ),

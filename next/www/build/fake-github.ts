@@ -52,7 +52,7 @@ export function sponsorshipNode(
       name: login.toUpperCase(),
       websiteUrl: null,
     },
-    tier: { monthlyPriceInDollars: 10 },
+    tier: { isOneTime: false, monthlyPriceInDollars: 10 },
     ...overrides,
   };
 }
