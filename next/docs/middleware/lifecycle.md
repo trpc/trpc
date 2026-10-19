@@ -20,7 +20,7 @@ const observed = t.procedure
   .use(onError((err, opts) => log.warn(opts.path, err.code)));
 ```
 
-`opts.meta` and `opts.input` are typed from the procedure. `opts.ctx` is `unknown` unless you pass its type, `onError<{ user: User }>((err, opts) => …)`; a key the procedure's ctx lacks then becomes a requirement, as for [middleware from a package](../server/middleware.md#middleware-for-packages).
+`opts.meta` and `opts.input` are typed from the procedure. `opts.ctx` is `unknown` unless you pass its type, `onError<{ user: User }>((err, opts) => …)`; a key the procedure's `ctx` lacks then becomes a requirement, as for [middleware from a package](../server/middleware.md#middleware-for-packages).
 
 `onStart` runs before the rest of the chain, `onSuccess` with the result when the rest succeeds (for a subscription, once the stream is set up), `onError` with the error when it fails, and `onFinish` with the outcome either way. Put them on a base procedure to cover every procedure built from it ([Middleware](../server/middleware.md)).
 
