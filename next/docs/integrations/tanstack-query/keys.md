@@ -17,7 +17,7 @@ You rarely write a key: each helper makes its own, and has a function that retur
 | `trpc.pathKey()`, `trpc.post.pathKey()`                   | everything under a path: queries, infinite, streamed and live queries, mutations |
 | `trpc.post.pathFilter(filters?)`                          | the same, as filters for `invalidateQueries`, `cancelQueries`, `removeQueries` … |
 | `trpc.post.byId.queryKey({ input })`                      | the exact key `queryOptions()` uses, typed for `getQueryData`                    |
-| `trpc.post.byId.queryFilter({ input? })`                  | a procedure's queries, every input or one                                        |
+| `trpc.post.byId.queryFilter({ input? })`                  | a procedure's queries: every input, or those matching part of one                |
 | `trpc.post.list.infiniteKey({ input, initialPageParam })` | the exact key `infiniteOptions()` uses                                           |
 | `trpc.post.create.mutationKey()`, `mutationFilter()`      | a procedure's mutations, for `useIsMutating` and `useMutationState`              |
 | `trpc.x.streamedKey()`, `trpc.x.liveKey()`                | a subscription's query-cache forms                                               |

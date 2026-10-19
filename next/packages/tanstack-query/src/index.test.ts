@@ -236,6 +236,32 @@ test('pathFilter and queryFilter invalidate what they match', async () => {
   expect(app.trpc.post.pathKey()).toEqual([['post']]);
 });
 
+test('queryFilter takes part of the input and matches every query it fits', async () => {
+  await using app = await createApp({ posts: 5 });
+  const queryClient = new QueryClient();
+  await Promise.all(
+    [{ limit: 2 }, { limit: 2, cursor: 2 }, { limit: 3, cursor: 2 }].map(
+      (input) => queryClient.query(app.trpc.post.list.queryOptions({ input })),
+    ),
+  );
+  const stale = () =>
+    queryClient
+      .getQueryCache()
+      .findAll({ stale: true })
+      .map((q) => q.queryKey[1]?.input);
+
+  await queryClient.invalidateQueries({
+    ...app.trpc.post.list.queryFilter({ input: { cursor: 2 } }),
+    refetchType: 'none',
+  });
+  expect(stale()).toEqual([
+    { limit: 2, cursor: 2 },
+    { limit: 3, cursor: 2 },
+  ]);
+  // @ts-expect-error a field the input doesn't have
+  app.trpc.post.list.queryFilter({ input: { page: 1 } });
+});
+
 test('keyPrefix keeps two APIs apart in one QueryClient', async () => {
   await using app = await createApp();
   const queryClient = new QueryClient();

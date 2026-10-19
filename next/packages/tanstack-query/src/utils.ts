@@ -326,14 +326,20 @@ export interface QueryProcedureUtils<
     ...args: KeyArgs<TInput>
   ): TrpcQueryKeyFor<QueryData<TOutput>, TError>;
   /**
-   * Filters for this procedure's queries: every input, or just `input`.
+   * Filters for this procedure's queries: every input, or those whose input
+   * matches `input`, which can leave fields out.
    *
    * @example
    * ```ts
    * await queryClient.invalidateQueries(trpc.post.byId.queryFilter());
+   * await queryClient.invalidateQueries(
+   *   trpc.post.list.queryFilter({ input: { authorId } }),
+   * );
    * ```
    */
-  queryFilter(opts?: { input?: TInput } & QueryFiltersIn): QueryFiltersIn & {
+  queryFilter(
+    opts?: { input?: Partial<TInput> } & QueryFiltersIn,
+  ): QueryFiltersIn & {
     queryKey: TrpcQueryKeyFor<QueryData<TOutput>, TError>;
   };
   /**
