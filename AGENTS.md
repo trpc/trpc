@@ -2,6 +2,8 @@
 
 This repo is a **from-scratch rewrite** of tRPC (vNext / `v12` branch), not maintenance of current tRPC. All new work happens in [`next/`](./next/); read [`next/AGENTS.md`](./next/AGENTS.md) first.
 
+Push commits straight to `v12`; don't open pull requests against it ([Landing on `v12`](./next/AGENTS.md#landing-on-v12)).
+
 - Brief and constraints: `next/ideas.md`
 - Design docs (proposals, decisions, notes): `next/.agent-docs/`
 - Vendored dependency source (read-only reference): `next/.repos/`
