@@ -472,7 +472,7 @@ export function makeTransport(
         Effect.try({
           try: () =>
             text ? serializer.deserialize(JSON.parse(text)) : undefined,
-          catch: toHttpError,
+          catch: badResponse('Invalid response body'),
         }),
       ),
       Effect.mapError(toHttpError),
