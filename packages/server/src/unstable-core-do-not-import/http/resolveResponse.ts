@@ -21,13 +21,30 @@ import {
   isObject,
   run,
 } from '../utils';
-import { getAcceptHeader, getRequestInfo } from './contentType';
+import { getAcceptHeader, getLastEventId, getRequestInfo } from './contentType';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
 import type {
   HTTPBaseHandlerOptions,
   ResolveHTTPRequestOptionsContextFn,
   TRPCRequestInfo,
 } from './types';
+
+/**
+ * `decodeURIComponent` throws a plain `URIError` on malformed escape sequences,
+ * which would otherwise surface as an `INTERNAL_SERVER_ERROR` even though the
+ * request itself is at fault
+ */
+function decodePath(path: string) {
+  try {
+    return decodeURIComponent(path);
+  } catch (cause) {
+    throw new TRPCError({
+      code: 'BAD_REQUEST',
+      message: `Invalid URL-encoding in path "${path}"`,
+      cause,
+    });
+  }
+}
 
 function errorToAsyncIterable(err: TRPCError): AsyncIterable<never> {
   return run(async function* () {
@@ -263,7 +280,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
         undefined,
         await getRequestInfo({
           req,
-          path: decodeURIComponent(opts.path),
+          path: decodePath(opts.path),
           router,
           searchParams: url.searchParams,
           headers: opts.req.headers,
@@ -525,6 +542,10 @@ export async function resolveResponse<TRouter extends AnyRouter>(
 
           const stream = sseStreamProducer({
             ...config.sse,
+            lastEventId: getLastEventId({
+              headers: req.headers,
+              searchParams: url.searchParams,
+            }),
             data: iterable,
             serialize: (v) => config.transformer.output.serialize(v),
             formatError(errorOpts) {
@@ -622,7 +643,10 @@ export async function resolveResponse<TRouter extends AnyRouter>(
     // batch response handlers
     if (info.accept === 'application/jsonl') {
       // httpBatchStreamLink
-      headers.set('content-type', 'application/json');
+      headers.set(
+        'content-type',
+        config.jsonl?.contentType ?? 'application/json',
+      );
       headers.set('transfer-encoding', 'chunked');
       const headResponse = initResponse({
         ctx: ctxManager.valueOrUndefined(),
