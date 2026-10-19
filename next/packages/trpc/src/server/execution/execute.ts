@@ -458,6 +458,14 @@ export function callProcedure(
     );
   };
 
+  // As in `effect/rpc`, Effect code gets a `Scope`; in a query or mutation
+  // it closes when the step that asked for it ends. A subscription's would
+  // have to outlive the call, so it gets none.
+  const scoped = <A, E>(
+    effect: Effect.Effect<A, E, any>,
+  ): Effect.Effect<A, E, any> =>
+    type === 'subscription' ? effect : Effect.scoped(effect);
+
   type NextOpts = { ctx?: object; input?: unknown };
   type Out = Resolved | Effect.Effect<unknown, AnyTrpcError, any>;
   const lift = (out: Out): Effect.Effect<unknown, AnyTrpcError, any> =>
@@ -513,9 +521,11 @@ export function callProcedure(
           );
         const provide = (made: unknown) =>
           Effect.isEffect(made)
-            ? Effect.flatMap(
-                refail(made as Effect.Effect<unknown, unknown, any>),
-                withValue,
+            ? scoped(
+                Effect.flatMap(
+                  refail(made as Effect.Effect<unknown, unknown, any>),
+                  withValue,
+                ),
               )
             : withValue(made);
         let made: unknown;
@@ -547,17 +557,19 @@ export function callProcedure(
         if (step.effect) {
           const next = (o?: NextOpts) =>
             Effect.map(Effect.exit(rest(o)), toResult);
-          return Effect.flatMap(
-            Effect.suspend(() =>
-              refail(
-                step.fn({ ...base, ctx, input, next }) as Effect.Effect<
-                  unknown,
-                  unknown,
-                  any
-                >,
+          return scoped(
+            Effect.flatMap(
+              Effect.suspend(() =>
+                refail(
+                  step.fn({ ...base, ctx, input, next }) as Effect.Effect<
+                    unknown,
+                    unknown,
+                    any
+                  >,
+                ),
               ),
+              fromResult,
             ),
-            fromResult,
           );
         }
         const runNext = Effect.runPromiseExitWith(services);
@@ -587,7 +599,7 @@ export function callProcedure(
     if (isTrpcError(ret)) return fail(ret);
     if (Effect.isEffect(ret)) {
       return Effect.flatMap(
-        refail(ret as Effect.Effect<unknown, unknown, any>),
+        refail(scoped(ret as Effect.Effect<unknown, unknown, any>)),
         (value) =>
           isTrpcError(value)
             ? fail(value)

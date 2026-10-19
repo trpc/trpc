@@ -78,6 +78,35 @@ const withUser = t.middleware.effect<{ provides: CurrentUser }>()((opts) =>
 );
 ```
 
+## Resources
+
+Effect code in a query or mutation has a `Scope`, as in `effect/rpc`: what an Effect resolver, a `.provide()` factory or an Effect middleware acquires with `Effect.acquireRelease` is released when that step ends, so a transaction a `.provide()` opens lives until the resolver is done. A subscription's code gets none; acquire in its `Stream` (`Stream.acquireRelease`, or `Stream.unwrap` of an Effect that acquires), which releases when the subscription ends.
+
+```ts twoslash
+// ---cut-start---
+import { Context, Effect } from 'effect';
+import { t } from './server.ts';
+declare const db: {
+  begin: Effect.Effect<{ insert: (title: string) => Effect.Effect<string> }>;
+  commit: Effect.Effect<void>;
+};
+// ---cut-end---
+class Tx extends Context.Service<
+  Tx,
+  { insert: (title: string) => Effect.Effect<string> }
+>()('Tx') {}
+
+const inTx = t.procedure.provide(Tx, () =>
+  Effect.acquireRelease(db.begin, () => db.commit),
+);
+
+const create = inTx.mutation(() =>
+  Effect.gen(function* () {
+    return yield* (yield* Tx).insert('Hello');
+  }),
+);
+```
+
 ## Tracing
 
 Tracing is opt-in: put a tracer in the handler's `layer` (`@effect/opentelemetry`) and every call runs in an Effect span named `trpc.<path>`, with `rpc.system`, `rpc.method` and `trpc.type` attributes, plus `trpc.error.code` when it fails. Spans opened in middlewares and resolvers nest under it. Without a tracer, calls open no span, so requests don't pay for one.

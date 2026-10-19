@@ -14,6 +14,7 @@ import {
   createRouterClient,
   error,
   type inferInputIssue,
+  type inferRouterServices,
   initTrpc,
   type InputValidationErrorData,
   type TrpcError,
@@ -288,6 +289,47 @@ test('calling a path instead of .query(), .mutate() or .subscribe() throws', asy
     'Call .query(), .mutate() or .subscribe() on a procedure, not post.byId()',
   );
   expect(() => untyped()).toThrow(TypeError);
+});
+
+test('Effect code in a query or mutation gets a Scope that closes with it', async () => {
+  const t = initTrpc();
+  const log: string[] = [];
+  const resource = (name: string) =>
+    Effect.acquireRelease(
+      Effect.sync(() => {
+        log.push(`open ${name}`);
+        return name;
+      }),
+      () => Effect.sync(() => log.push(`close ${name}`)),
+    );
+  class Tx extends Context.Service<Tx, string>()('Tx') {}
+  const router = {
+    read: t.procedure.query(() =>
+      Effect.gen(function* () {
+        const name = yield* resource('file');
+        log.push(`read ${name}`);
+        return name;
+      }),
+    ),
+    write: t.procedure
+      .provide(Tx, () => resource('tx'))
+      .mutation(() =>
+        Effect.gen(function* () {
+          log.push(`write in ${yield* Tx}`);
+          return 'ok';
+        }),
+      ),
+  };
+  expectTypeOf<inferRouterServices<typeof router>>().toBeNever();
+  const handler = createFetchHandler({ router });
+  const res = await handler.fetch(new Request('http://localhost/trpc/read'));
+  expect(await res.json()).toEqual({ json: 'file' });
+  expect(log.splice(0)).toEqual(['open file', 'read file', 'close file']);
+
+  const client = createRouterClient(router);
+  expect(await client.write.mutate()).toBe('ok');
+  expect(log.splice(0)).toEqual(['open tx', 'write in tx', 'close tx']);
+  await handler.dispose();
 });
 
 test('a layer that provides no services, like a tracer, is accepted', async () => {

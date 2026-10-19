@@ -1,4 +1,10 @@
-import { Match, type Context, type Effect, type Stream } from 'effect';
+import {
+  Match,
+  type Context,
+  type Effect,
+  type Scope,
+  type Stream,
+} from 'effect';
 import type { AnyTrpcError, TrpcError } from '../../internal/error.ts';
 import type {
   IsAny,
@@ -957,8 +963,8 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
       : StreamedOutput<TDef['outputOut']>;
     errors: TDef['errors'] | SplitReturn<$Ret>['errors'];
     services:
-      | TDef['requires']
-      | Exclude<SplitReturn<$Ret>['services'], TDef['provided']>;
+      | Exclude<TDef['requires'], Scope.Scope>
+      | Exclude<SplitReturn<$Ret>['services'], TDef['provided'] | Scope.Scope>;
   }>;
 
   /**
@@ -981,8 +987,8 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
       : StreamedOutput<TDef['outputOut']>;
     errors: TDef['errors'] | SplitReturn<$Ret>['errors'];
     services:
-      | TDef['requires']
-      | Exclude<SplitReturn<$Ret>['services'], TDef['provided']>;
+      | Exclude<TDef['requires'], Scope.Scope>
+      | Exclude<SplitReturn<$Ret>['services'], TDef['provided'] | Scope.Scope>;
   }>;
 
   /**
