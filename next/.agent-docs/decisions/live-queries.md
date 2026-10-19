@@ -13,5 +13,5 @@
   - every rule of the contract is load-bearing: empty batches move cursors, gaps are read from the log, a feed subscribes after the last publisher id it read, and `awaitVersion` resolves when TanStack DB accepts the commit, not on its receipt;
   - without the version wait, an optimistic row blinks out on a slow feed.
 - Lost: a `live` procedure type that is a query and a subscription at once; opaque database positions as versions; pooling without a reconnect per set change.
-- Open: awaiting the human's answers to proposal 26. Nothing in `packages/` has changed.
+- Open: awaiting the human's answers to proposal 26. Q26.4's client half shipped on its own as [tanstack-db-live-collections](./tanstack-db-live-collections.md).
 - Lives in: `proposals/26-live-queries-and-sync.md`, `notes/live-queries.md`, `spikes/live-queries/`.
