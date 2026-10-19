@@ -98,7 +98,8 @@ test('useMutation invalidates; useInfiniteQuery pages', async () => {
     );
     const create = useMutation(
       trpc.post.create.mutationOptions({
-        onSuccess: () => queryClient.invalidateQueries(trpc.post.pathFilter()),
+        onSuccess: () =>
+          queryClient.invalidateQueries(trpc.post.list.infiniteFilter()),
       }),
     );
     return () => {

@@ -17,7 +17,7 @@
   );
   const create = createMutation(() =>
     trpc.post.create.mutationOptions({
-      onSuccess: () => queryClient.invalidateQueries(trpc.post.pathFilter()),
+      onSuccess: () => queryClient.invalidateQueries(trpc.post.list.infiniteFilter()),
     }),
   );
   const posts = $derived(feed.data?.pages.flatMap((page) => page.items) ?? []);

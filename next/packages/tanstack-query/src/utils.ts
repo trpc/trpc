@@ -368,6 +368,20 @@ export interface QueryProcedureUtils<
     input: ((pageParam: TPageParam) => TInput) | SkipToken;
     initialPageParam: TPageParam;
   }): InfiniteKey<TOutput, TError, TPageParam>;
+  /**
+   * Filters for this procedure's infinite queries: every input, or those
+   * whose first page's input matches `input`, which can leave fields out.
+   *
+   * @example
+   * ```ts
+   * await queryClient.invalidateQueries(trpc.post.list.infiniteFilter());
+   * ```
+   */
+  infiniteFilter(
+    opts?: { input?: Partial<TInput> } & QueryFiltersIn,
+  ): QueryFiltersIn & {
+    queryKey: InfiniteKey<TOutput, TError, unknown>;
+  };
 }
 
 /**
@@ -700,6 +714,8 @@ export function createTrpcQueryUtils<TClient extends object>(
         return procedureKey(path, input, 'query');
       case 'queryFilter':
         return { ...rest, queryKey: procedureKey(path, input, 'query') };
+      case 'infiniteFilter':
+        return { ...rest, queryKey: procedureKey(path, input, 'infinite') };
       case 'queryOptions': {
         const query = method(callPath, 'query');
         return {

@@ -79,7 +79,7 @@ useMutationState({
 
 | Procedure    | Helpers                                                                                                                                                                        |
 | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| query        | `queryOptions()`, `queryKey()`, `queryFilter()`, `infiniteOptions()`, `infiniteKey()`                                                                                          |
+| query        | `queryOptions()`, `queryKey()`, `queryFilter()`, `infiniteOptions()`, `infiniteKey()`, `infiniteFilter()`                                                                      |
 | mutation     | `mutationOptions()`, `mutationKey()`, `mutationFilter()`, and for a streamed output `streamedMutationOptions()` ([Streamed mutations](./tanstack-query/streamed-mutations.md)) |
 | subscription | `subscriptionOptions()`, `liveOptions()`, `streamedOptions()` ([Subscriptions](./tanstack-query/subscriptions.md))                                                             |
 

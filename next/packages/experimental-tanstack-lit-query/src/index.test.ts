@@ -111,7 +111,7 @@ class FeedView extends View {
   create = createMutationController(this, () =>
     this.trpc.post.create.mutationOptions({
       onSuccess: (_data, _vars, _result, opts) =>
-        opts.client.invalidateQueries(this.trpc.post.pathFilter()),
+        opts.client.invalidateQueries(this.trpc.post.list.infiniteFilter()),
     }),
   );
 

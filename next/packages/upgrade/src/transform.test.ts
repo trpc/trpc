@@ -684,8 +684,8 @@ function Posts() {
         "7:18 queryFilter(input, filters) is queryFilter({ input, ...filters }) in v12",
         "8:18 infiniteQueryOptions(input, opts) is infiniteOptions({ input: (cursor) => ({ ...input, cursor }), ...opts }) in v12",
         "9:18 infiniteQueryKey(input) is infiniteKey({ input, initialPageParam }) in v12",
-        "10:18 infiniteQueryFilter(input, filters) has no v12 form; pathFilter(filters) matches the path's queries, infinite ones included",
-        "11:18 infiniteQueryFilter(input, filters) has no v12 form; pathFilter(filters) matches the path's queries, infinite ones included",
+        "10:18 infiniteQueryFilter(input, filters) is infiniteFilter({ input, ...filters }) in v12",
+        "11:18 infiniteQueryFilter(input, filters) is infiniteFilter({ input, ...filters }) in v12",
         "12:19 subscriptionOptions(input, opts) is subscriptionOptions({ input, ...opts }) in v12",
       ]
     `);

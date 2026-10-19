@@ -122,7 +122,9 @@ const FeedView = Component({
     create = injectMutation(() =>
       this.trpc.post.create.mutationOptions({
         onSuccess: () =>
-          this.queryClient.invalidateQueries(this.trpc.post.pathFilter()),
+          this.queryClient.invalidateQueries(
+            this.trpc.post.list.infiniteFilter(),
+          ),
       }),
     );
     posts = computed(

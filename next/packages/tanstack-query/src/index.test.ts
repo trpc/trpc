@@ -299,6 +299,54 @@ test('queryFilter takes part of the input and matches every query it fits', asyn
   app.trpc.post.list.queryFilter({ input: { page: 1 } });
 });
 
+test("infiniteFilter matches only the procedure's infinite queries, by part of the input", async () => {
+  await using app = await createApp({ posts: 5 });
+  const queryClient = new QueryClient();
+  const pages = (limit: number) =>
+    app.trpc.post.list.infiniteOptions({
+      input: (cursor: number | undefined) => ({ limit, cursor }),
+      initialPageParam: undefined,
+      getNextPageParam: (page) => page.nextCursor,
+    });
+  await Promise.all([
+    queryClient.infiniteQuery(pages(2)),
+    queryClient.infiniteQuery(pages(3)),
+    queryClient.query(app.trpc.post.list.queryOptions({ input: { limit: 2 } })),
+    queryClient.query(app.trpc.post.byId.queryOptions({ input: { id: '1' } })),
+  ]);
+  const stale = () =>
+    queryClient
+      .getQueryCache()
+      .findAll({ stale: true })
+      .map((q) => q.queryKey);
+
+  expect(app.trpc.post.list.infiniteFilter()).toEqual({
+    queryKey: [['post', 'list'], { type: 'infinite' }],
+  });
+  await queryClient.invalidateQueries({
+    ...app.trpc.post.list.infiniteFilter({ input: { limit: 3 } }),
+    refetchType: 'none',
+  });
+  expect(stale()).toEqual([
+    [['post', 'list'], { input: { limit: 3 }, type: 'infinite' }],
+  ]);
+  await queryClient.invalidateQueries({
+    ...app.trpc.post.list.infiniteFilter(),
+    refetchType: 'none',
+  });
+  expect(stale()).toEqual([
+    [['post', 'list'], { input: { limit: 2 }, type: 'infinite' }],
+    [['post', 'list'], { input: { limit: 3 }, type: 'infinite' }],
+  ]);
+
+  const filter = app.trpc.post.list.infiniteFilter();
+  expectTypeOf(queryClient.getQueryData(filter.queryKey)?.pages).toEqualTypeOf<
+    { items: Post[]; nextCursor: number | undefined }[] | undefined
+  >();
+  // @ts-expect-error a field the input doesn't have
+  app.trpc.post.list.infiniteFilter({ input: { page: 1 } });
+});
+
 test('keyPrefix keeps two APIs apart in one QueryClient', async () => {
   await using app = await createApp();
   const queryClient = new QueryClient();

@@ -277,6 +277,57 @@ test('useInfiniteQuery loads pages on demand', async () => {
   expect(view.el.querySelector('button')).toBeNull();
 });
 
+test('useMutation invalidates infinite queries with infiniteFilter', async () => {
+  await using app = await createApp({ posts: 3 });
+  function Feed() {
+    const trpc = useTrpc();
+    const queryClient = useQueryClient();
+    const feed = useInfiniteQuery(
+      trpc.post.list.infiniteOptions({
+        input: (cursor: number | undefined) => ({ limit: 2, cursor }),
+        initialPageParam: undefined,
+        getNextPageParam: (page) => page.nextCursor,
+      }),
+    );
+    const create = useMutation(
+      trpc.post.create.mutationOptions({
+        onSuccess: () =>
+          queryClient.invalidateQueries(
+            trpc.post.list.infiniteFilter({ input: { limit: 2 } }),
+          ),
+      }),
+    );
+    return (
+      <>
+        <ul>
+          {feed.data?.pages
+            .flatMap((page) => page.items)
+            .map((post) => (
+              <li key={post.id}>{post.title}</li>
+            ))}
+        </ul>
+        <button className="more" onClick={() => void feed.fetchNextPage()}>
+          more
+        </button>
+        <button
+          className="add"
+          onClick={() => create.mutate({ title: 'From React' })}
+        >
+          add
+        </button>
+      </>
+    );
+  }
+  using view = mount(<Feed />, app.client);
+  await waitFor(() => expect(view.el.querySelectorAll('li')).toHaveLength(2));
+  click(view.el, '.more');
+  await waitFor(() => expect(view.el.querySelectorAll('li')).toHaveLength(3));
+  click(view.el, '.add');
+  await waitFor(() =>
+    expect(text(view.el, 'li:last-child')).toBe('From React'),
+  );
+});
+
 test('useSuspenseInfiniteQuery takes select, typed by what it returns', async () => {
   await using app = await createApp({ posts: 3 });
   function PageSizes() {

@@ -136,7 +136,7 @@ const QUERY_HELPERS: Readonly<Record<string, string>> = {
   infiniteQueryKey:
     'infiniteQueryKey(input) is infiniteKey({ input, initialPageParam }) in v12',
   infiniteQueryFilter:
-    "infiniteQueryFilter(input, filters) has no v12 form; pathFilter(filters) matches the path's queries, infinite ones included",
+    'infiniteQueryFilter(input, filters) is infiniteFilter({ input, ...filters }) in v12',
 };
 
 /** Helpers v12 has no method of that name for, so a call without arguments breaks too. */

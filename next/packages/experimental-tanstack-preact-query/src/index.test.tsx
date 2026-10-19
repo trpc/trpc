@@ -92,15 +92,22 @@ test('useQuery and useMutation through the provider', async () => {
   );
 });
 
-test('useInfiniteQuery loads pages on demand', async () => {
+test('useInfiniteQuery loads pages on demand; infiniteFilter invalidates them', async () => {
   await using app = await createApp({ posts: 3 });
   function Feed() {
     const trpc = useTrpc();
+    const queryClient = useQueryClient();
     const feed = useInfiniteQuery(
       trpc.post.list.infiniteOptions({
         input: (cursor: number | undefined) => ({ limit: 2, cursor }),
         initialPageParam: undefined,
         getNextPageParam: (page) => page.nextCursor,
+      }),
+    );
+    const create = useMutation(
+      trpc.post.create.mutationOptions({
+        onSuccess: () =>
+          queryClient.invalidateQueries(trpc.post.list.infiniteFilter()),
       }),
     );
     return (
@@ -113,16 +120,28 @@ test('useInfiniteQuery loads pages on demand', async () => {
             ))}
         </ul>
         {feed.hasNextPage && (
-          <button onClick={() => void feed.fetchNextPage()}>more</button>
+          <button class="more" onClick={() => void feed.fetchNextPage()}>
+            more
+          </button>
         )}
+        <button
+          class="add"
+          onClick={() => create.mutate({ title: 'From Preact' })}
+        >
+          add
+        </button>
       </>
     );
   }
   using view = mount(<Feed />, app.client);
   await waitFor(() => expect(view.el.querySelectorAll('li')).toHaveLength(2));
-  click(view.el, 'button');
+  click(view.el, '.more');
   await waitFor(() => expect(view.el.querySelectorAll('li')).toHaveLength(3));
-  expect(view.el.querySelector('button')).toBeNull();
+  expect(view.el.querySelector('.more')).toBeNull();
+  click(view.el, '.add');
+  await waitFor(() =>
+    expect(text(view.el, 'li:last-child')).toBe('From Preact'),
+  );
 });
 
 test('useSubscription and live queries update the UI', async () => {

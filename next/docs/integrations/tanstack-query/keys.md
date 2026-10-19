@@ -19,6 +19,7 @@ You rarely write a key: each helper makes its own, and has a function that retur
 | `trpc.post.byId.queryKey({ input })`                      | the exact key `queryOptions()` uses, typed for `getQueryData`                    |
 | `trpc.post.byId.queryFilter({ input? })`                  | a procedure's queries: every input, or those matching part of one                |
 | `trpc.post.list.infiniteKey({ input, initialPageParam })` | the exact key `infiniteOptions()` uses                                           |
+| `trpc.post.list.infiniteFilter({ input? })`               | a procedure's infinite queries: every input, or those matching part of one       |
 | `trpc.post.create.mutationKey()`, `mutationFilter()`      | a procedure's mutations, for `useIsMutating` and `useMutationState`              |
 | `trpc.x.streamedKey()`, `trpc.x.liveKey()`                | a subscription's query-cache forms                                               |
 
@@ -39,6 +40,8 @@ await queryClient.invalidateQueries(trpc.post.pathFilter());
 await queryClient.invalidateQueries(
   trpc.post.byId.queryFilter({ input: { id } }),
 );
+// post.list's infinite queries, every input
+await queryClient.invalidateQueries(trpc.post.list.infiniteFilter());
 
 // typed by the key: the procedure's output
 const key = trpc.post.byId.queryKey({ input: { id } });
@@ -49,7 +52,7 @@ queryClient.setQueryData(key, (old) =>
 );
 ```
 
-`queryFilter()` covers a procedure's plain queries. For its infinite queries, use `trpc.post.list.pathFilter()`, which covers every kind, or `{ queryKey: trpc.post.list.infiniteKey(…) }` for one input.
+`queryFilter()` covers a procedure's plain queries and `infiniteFilter()` its infinite ones; an `infiniteFilter({ input })` matches by the first page's input (what `input` returns for `initialPageParam`), so a field such as the cursor can be left out. `trpc.post.list.pathFilter()` covers every kind.
 
 ## Two APIs, one `QueryClient`
 
