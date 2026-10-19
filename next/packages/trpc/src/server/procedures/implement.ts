@@ -21,7 +21,6 @@ import {
   type SplitStream,
   type StrictErrors,
   type SubscriptionResolverOpts,
-  type ValueOf,
   type With,
   type Yields,
 } from './builder.ts';
@@ -117,7 +116,7 @@ type ContractReturns<TDef extends BuilderDef> = TDef['outputIn'] extends Unset
     ? unknown
     : ShortsCheck<TDef, ResultOf<TDef['outputIn']>> extends TypeError<any, any>
       ? ShortsCheck<TDef, ResultOf<TDef['outputIn']>>
-      : Returns<ValueOf<TDef['outputIn']>, TDef['errors']>;
+      : Returns<TDef['outputIn'], TDef['errors']>;
 
 type ContractYields<
   TDef extends BuilderDef,

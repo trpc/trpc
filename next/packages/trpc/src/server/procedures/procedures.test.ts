@@ -399,6 +399,16 @@ test('a typed output keeps literals in async resolvers and generators', () => {
   });
   // @ts-expect-error -- DbError is not a TrpcError, whatever the output
   t.procedure.output(z.unknown()).query(() => findPost('1'));
+  declared.query(() =>
+    // @ts-expect-error -- an Effect fails only with a declared TrpcError
+    Effect.fail(new Error('x')).pipe(Effect.as({ status: 'a' as const, n: 1 })),
+  );
+  declared.query(() =>
+    // @ts-expect-error -- CONFLICT is not declared, in a failure either
+    Effect.fail(error({ code: 'CONFLICT' })).pipe(
+      Effect.as({ status: 'a' as const, n: 1 }),
+    ),
+  );
 });
 
 test('lifecycle helpers observe the chain', async () => {

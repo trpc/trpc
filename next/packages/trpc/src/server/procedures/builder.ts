@@ -257,49 +257,56 @@ export type SplitStream<R> =
 // take the bound's members as their contextual type. `$Ret & …` there
 // loses literals in both, and a check on `$Ret` beside the bound fixes
 // `$Ret` to the bound before the resolver is inferred, so every check of a
-// typed output lives in the bound. Its `TypeError`s are spelled out so that
-// a failing return names them.
+// typed output lives in the bound. Its hints are interfaces nothing real
+// matches, keyed by their text so a message ends on "Property '<hint>' is
+// missing". TypeScript reports a wrong union member against the members
+// whose literal `code` and `name` it matches: an undeclared error's `code`
+// matches only `UnlistedError`'s, and a failure that isn't a `TrpcError`
+// has a `name` other than `'TrpcError'`, which leaves `UnmappedFailure`.
+
+type Listed<TErrors> = AnyTrpcError extends TErrors
+  ? TErrors
+  : TErrors | UnlistedError;
 
 /**
- * What a resolver may return for an output `TValue`: the value or an error
- * as they are, in a `Promise`, or as an `Effect` that fails only with
- * those errors.
+ * Names the hint for a returned error the procedure doesn't list. It has
+ * every key of a `TrpcError` but `data`, which `error()` would infer from.
+ */
+interface UnlistedError extends Omit<AnyTrpcError, 'data'> {
+  readonly '.errors() lists every error the resolver may return: declare this one, or return a declared one': true;
+}
+
+type Mapped<TErrors> = Listed<TErrors> | UnmappedFailure;
+
+/** Names the hint for an Effect or Stream failure that isn't a `TrpcError`. */
+interface UnmappedFailure extends Error {
+  readonly 'Map Effect failures to a TrpcError (e.g. Effect.catchTag) before returning them': true;
+}
+
+/**
+ * What a resolver may return for an output schema type `TOutput`: the
+ * value or an error as they are, in a `Promise`, or as an `Effect` that
+ * fails only with those errors.
  * @internal
  */
-export type Returns<TValue, TErrors> =
-  | TValue
-  | TErrors
-  | Promise<TValue | TErrors>
-  | Effect.Effect<
-      TValue | TErrors,
-      | TErrors
-      | TypeError<'Map Effect failures to a TrpcError (e.g. Effect.catchTag) before returning them'>,
-      any
-    >;
+export type Returns<TOutput, TErrors> =
+  | ValueOf<TOutput>
+  | Listed<TErrors>
+  | Promise<ValueOf<TOutput> | Listed<TErrors>>
+  | Effect.Effect<ValueOf<TOutput> | Listed<TErrors>, Mapped<TErrors>, any>
+  | (TOutput extends StreamOutput<any, any> ? never : StreamWithoutStreamSchema);
 
 /** What a subscription may return for an event `TEvent`. @internal */
 export type Yields<TEvent, TErrors> =
   | AsyncIterable<TEvent, any, any>
-  | Stream.Stream<
-      TEvent,
-      | TErrors
-      | TypeError<'Map Effect failures to a TrpcError (e.g. Effect.catchTag) before returning them'>,
-      any
-    >
-  | TErrors;
+  | Stream.Stream<TEvent, Mapped<TErrors>, any>
+  | Listed<TErrors>;
 
-/** The value a query or mutation resolves to for an output schema. @internal */
-export type ValueOf<TOut> =
+/** The value a query or mutation resolves to for an output schema. */
+type ValueOf<TOut> =
   TOut extends StreamOutput<infer I, infer R>
-    ?
-        | AsyncIterable<I, R, any>
-        | Stream.Stream<
-            I,
-            | AnyTrpcError
-            | TypeError<'Map Effect failures to a TrpcError (e.g. Effect.catchTag) before returning them'>,
-            any
-          >
-    : TOut | StreamWithoutStreamSchema;
+    ? AsyncIterable<I, R, any> | Stream.Stream<I, Mapped<AnyTrpcError>, any>
+    : TOut;
 
 /** Names the hint for a stream returned for a plain output schema. */
 interface StreamWithoutStreamSchema extends AsyncIterable<
@@ -319,7 +326,7 @@ type ReturnsFor<TDef extends BuilderDef> = TDef['outputIn'] extends Unset
     ? unknown
     : ShortsCheck<TDef, ResultOf<TDef['outputIn']>> extends TypeError<any, any>
       ? ShortsCheck<TDef, ResultOf<TDef['outputIn']>>
-      : Returns<ValueOf<TDef['outputIn']>, Returnable<TDef>>;
+      : Returns<TDef['outputIn'], Returnable<TDef>>;
 
 type YieldsFor<TDef extends BuilderDef> = TDef['outputIn'] extends Unset
   ? unknown
