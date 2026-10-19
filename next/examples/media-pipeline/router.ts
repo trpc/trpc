@@ -4,9 +4,19 @@
  * pipeline events.
  */
 import { Effect, Exit, Schema, Stream } from 'effect';
-import { error, initTrpc, stream } from '@trpc12/trpc/server';
+import {
+  error,
+  experimental_byteStream,
+  initTrpc,
+  stream,
+} from '@trpc12/trpc/server';
 import { Money } from './money.ts';
-import { PipelineEvent, Photos, type Photo } from './photos.ts';
+import {
+  MAX_ORIGINAL_BYTES,
+  PipelineEvent,
+  Photos,
+  type Photo,
+} from './photos.ts';
 
 const t = initTrpc();
 
@@ -19,6 +29,16 @@ const UploadProgress = Schema.Struct({
   done: Schema.Int,
   total: Schema.Int,
 });
+
+/** Bytes so far while the body streams in, then the stored photo. */
+const OriginalProgress = Schema.Union([
+  Schema.Struct({ kind: Schema.Literal('received'), bytes: Schema.Int }),
+  Schema.Struct({
+    kind: Schema.Literal('stored'),
+    id: Schema.String,
+    bytes: Schema.Int,
+  }),
+]);
 
 const ExportedPhoto = Schema.Struct({
   id: Schema.String,
@@ -88,6 +108,42 @@ export const appRouter = {
                 }),
               ),
             );
+          }),
+        ),
+      ),
+    /**
+     * The request body itself is the input: an Effect `Stream` of its chunks,
+     * read as it arrives, so progress streams back while the upload runs.
+     */
+    uploadOriginal: t.procedure
+      .input(experimental_byteStream({ maxBytes: MAX_ORIGINAL_BYTES }))
+      .output(stream(OriginalProgress))
+      .mutation((opts) =>
+        Stream.unwrap(
+          Effect.gen(function* () {
+            const photos = yield* Photos;
+            const chunks: Uint8Array<ArrayBuffer>[] = [];
+            let bytes = 0;
+            const received = opts.input.pipe(
+              Stream.map((chunk) => {
+                chunks.push(new Uint8Array(chunk));
+                bytes += chunk.byteLength;
+                return { kind: 'received', bytes } as const;
+              }),
+            );
+            const stored = Stream.fromEffect(
+              Effect.suspend(() =>
+                photos.add(
+                  'originals',
+                  new File(chunks, 'original.png', { type: 'image/png' }),
+                ),
+              ).pipe(
+                Effect.map(
+                  (photo) => ({ kind: 'stored', id: photo.id, bytes }) as const,
+                ),
+              ),
+            );
+            return Stream.concat(received, stored);
           }),
         ),
       ),

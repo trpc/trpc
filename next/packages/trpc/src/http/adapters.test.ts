@@ -174,8 +174,15 @@ test("another handler's websocket() counts what it sent but the socket hasn't ta
     fetch: () => Promise.resolve(new Response(null, { status: 404 })),
     websocket(ws) {
       accepted = ws;
-      ws.addEventListener('message', () => {
-        for (let i = 0; i < 100; i++) ws.send('x'.repeat(1024));
+      ws.addEventListener('message', (event: { data: unknown }) => {
+        if (event.data === 'bye') {
+          ws.close();
+          ws.close(4000);
+          ws.send('dropped');
+          return;
+        }
+        for (let i = 0; i < 50; i++) ws.send('x'.repeat(1024));
+        for (let i = 0; i < 50; i++) ws.send(new Uint8Array(1024));
         afterSend = ws.bufferedAmount;
       });
     },
@@ -189,7 +196,10 @@ test("another handler's websocket() counts what it sent but the socket hasn't ta
   await vi.waitFor(() => expect(received).toBe(100));
   expect(afterSend).toBeGreaterThanOrEqual(100 * 1024);
   await vi.waitFor(() => expect(accepted?.bufferedAmount).toBe(0));
-  socket.close();
+  socket.send('bye');
+  const [event] = (await once(socket, 'close')) as [CloseEvent];
+  expect(event.code).toBe(1000);
+  expect(received).toBe(100);
 });
 
 test("serve() serves a createFetchHandler()'s routes, with its middleware; cors() takes a predicate", async () => {

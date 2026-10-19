@@ -146,7 +146,9 @@ const unsupported: AsyncIterable<never> = {
  * Sends queries and mutations over HTTP with `fetch`, and no Effect: a
  * query is a `GET` with an `?input=` param (a body past `maxUrlLength`), a
  * mutation a `POST`. A call whose input holds a `File` or `Blob` (with a
- * serializer that writes them) is sent as `multipart/form-data`. For
+ * serializer that writes them) is sent as `multipart/form-data`, and a
+ * `ReadableStream` input (for `experimental_byteStream()`) as the raw
+ * `application/octet-stream` body. For
  * batching, subscriptions and outputs that stream, use `httpStreamLink`.
  *
  * @example
@@ -226,12 +228,19 @@ export function httpLink(opts: HttpLinkOptions): PromiseLink<any> {
       method,
       headers,
       ...(body === undefined ? {} : { body }),
+      ...(contentType === CONTENT_TYPE.octet ? { duplex: 'half' } : {}),
       signal: op.signal ?? null,
     } as RequestInit);
   };
 
-  const send = async (op: Operation): Promise<unknown> => {
+  const send = async (op: Operation): Promise<Response> => {
     const url = `${baseUrl}/${op.path}`;
+    if (
+      typeof ReadableStream !== 'undefined' &&
+      op.input instanceof ReadableStream
+    ) {
+      return request(op, 'POST', url, op.input, CONTENT_TYPE.octet);
+    }
     const parts: Blob[] = [];
     let input: SerializeReturn | undefined;
     try {
@@ -246,31 +255,29 @@ export function httpLink(opts: HttpLinkOptions): PromiseLink<any> {
         cause,
       });
     }
-    let res: Response;
     if (parts.length > 0) {
       const form = new FormData();
       form.append('input', JSON.stringify(input));
       for (const [i, blob] of parts.entries()) {
         form.append(String(i), blob, blob instanceof File ? blob.name : 'blob');
       }
-      res = await request(op, 'POST', url, form);
-    } else {
-      const search =
-        op.type === 'query' && input !== undefined ? toInputSearch(input) : '';
-      const full = search ? `${url}?${search}` : url;
-      res =
-        op.type === 'query' && full.length <= maxUrlLength
-          ? await request(op, 'GET', full, undefined)
-          : await request(
-              op,
-              op.type === 'query' && opts.longQuery === 'query'
-                ? 'QUERY'
-                : 'POST',
-              url,
-              input === undefined ? '' : JSON.stringify(input),
-              CONTENT_TYPE.json,
-            );
+      return request(op, 'POST', url, form);
     }
+    const search =
+      op.type === 'query' && input !== undefined ? toInputSearch(input) : '';
+    const full = search ? `${url}?${search}` : url;
+    return op.type === 'query' && full.length <= maxUrlLength
+      ? request(op, 'GET', full, undefined)
+      : request(
+          op,
+          op.type === 'query' && opts.longQuery === 'query' ? 'QUERY' : 'POST',
+          url,
+          input === undefined ? '' : JSON.stringify(input),
+          CONTENT_TYPE.json,
+        );
+  };
+
+  const read = async (op: Operation, res: Response): Promise<unknown> => {
     const theirs = res.headers.get(HEADER.serializer);
     if (theirs !== null && theirs !== serializer.name) {
       await res.body?.cancel().catch(() => {});
@@ -317,9 +324,9 @@ export function httpLink(opts: HttpLinkOptions): PromiseLink<any> {
     promiseLink((args) =>
       args.op.type === 'subscription'
         ? unsupported
-        : send(args.op).catch((cause: unknown) =>
-            Promise.reject(toHttpError(cause)),
-          ),
+        : send(args.op)
+            .then((res) => read(args.op, res))
+            .catch((cause: unknown) => Promise.reject(toHttpError(cause))),
     ),
     opts.serializer,
   );

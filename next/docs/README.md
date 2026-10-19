@@ -19,6 +19,7 @@ Pages marked (experimental) belong to an experiment, unlisted on the site until 
 - [Context](./server/context.md): What every call gets as ctx, where it comes from, and how middleware adds to it.
 - [Streaming](./server/streaming.md): Return async generators, Effect streams and nested promises; validate each item with stream().
 - [Files](./server/files.md): File and Blob values in inputs and outputs, sent as multipart, raw bodies or streamed chunks.
+- [Byte stream inputs](./server/byte-streams.md) (experimental): experimental_byteStream() takes a ReadableStream<Uint8Array> as the request body, and the resolver reads it as an Effect Stream while it arrives.
 - [Responses](./server/responses.md): Set headers and status from a resolver, or return a response of your own.
 - [Effect](./server/effect.md): Resolvers that return Effects, services from the handler's layer, typed failures and tracing.
 - [Extensions](./server/extensions.md): Packages that add middleware, ctx, meta keys, errors and services to every procedure with t.concat().
