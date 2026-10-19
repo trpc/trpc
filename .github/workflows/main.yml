@@ -221,6 +221,7 @@ jobs:
       - uses: oven-sh/setup-bun@v2
         with:
           bun-version: 1.4.3
+          no-cache: true
 
       - run: bun --version
       - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
@@ -268,7 +269,6 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: ${{ matrix.node-start }}
-          cache: 'pnpm'
       - run: node -v
       - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
       - run: pnpm turbo --filter ./examples/${{ matrix.dir }} build
