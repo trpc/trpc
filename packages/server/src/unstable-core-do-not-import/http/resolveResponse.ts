@@ -21,7 +21,7 @@ import {
   isObject,
   run,
 } from '../utils';
-import { getAcceptHeader, getRequestInfo } from './contentType';
+import { getAcceptHeader, getLastEventId, getRequestInfo } from './contentType';
 import { getHTTPStatusCode } from './getHTTPStatusCode';
 import type {
   HTTPBaseHandlerOptions,
@@ -531,6 +531,10 @@ export async function resolveResponse<TRouter extends AnyRouter>(
 
           const stream = sseStreamProducer({
             ...config.sse,
+            lastEventId: getLastEventId({
+              headers: req.headers,
+              searchParams: url.searchParams,
+            }),
             data: iterable,
             serialize: (v) => config.transformer.output.serialize(v),
             formatError(errorOpts) {

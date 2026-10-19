@@ -17,6 +17,17 @@ export function getAcceptHeader(headers: Headers): TRPCAcceptHeader | null {
   );
 }
 
+export function getLastEventId(opts: {
+  headers: Headers;
+  searchParams: URLSearchParams;
+}): string | null {
+  return (
+    opts.headers.get('last-event-id') ??
+    opts.searchParams.get('lastEventId') ??
+    opts.searchParams.get('Last-Event-Id')
+  );
+}
+
 type GetRequestInfoOptions = {
   path: string;
   req: Request;
@@ -158,10 +169,7 @@ const jsonContentTypeHandler: ContentTypeHandler = {
               let input = inputs[index];
 
               if (procedure?._def.type === 'subscription') {
-                const lastEventId =
-                  opts.headers.get('last-event-id') ??
-                  opts.searchParams.get('lastEventId') ??
-                  opts.searchParams.get('Last-Event-Id');
+                const lastEventId = getLastEventId(opts);
 
                 if (lastEventId) {
                   if (isObject(input)) {
