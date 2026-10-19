@@ -72,6 +72,7 @@ import { strictestCacheControl } from './cache-control.ts';
 import { httpParts } from './routes.ts';
 import {
   fromWebSocketLike,
+  HandlerDrains,
   makeSocketDrains,
   serveMessagePort,
   serveSocketConnection,
@@ -1401,6 +1402,7 @@ export function createFetchHandler<
   setHandlerContext(
     handler,
     Context.make(SocketCore, core).pipe(
+      Context.add(HandlerDrains, drains),
       Context.add(UpgradeServer, serveWebSocket),
       Context.add(HttpApp, { app, middleware }),
     ),

@@ -4,7 +4,7 @@
  *
  * @module
  */
-export { makeSocketDrains } from './drain.ts';
+export { HandlerDrains, makeSocketDrains } from './drain.ts';
 export type { DrainConnection, SocketDrains } from './drain.ts';
 export {
   fromWebSocketLike,

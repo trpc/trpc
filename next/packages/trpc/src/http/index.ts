@@ -43,9 +43,9 @@ import {
 } from '../server/handler/index.ts';
 import {
   type WebSocketLike,
+  HandlerDrains,
   isUpgrade,
   serveAsWebSocket,
-  SocketCore,
   UpgradeServer,
   upgradeTo,
 } from '../server/sockets/index.ts';
@@ -156,7 +156,7 @@ export function toHttpEffect(
   const services = handlerContext(handler);
   const own = Context.getOrUndefined(services, HttpApp);
   const serveSocket = Context.getOrUndefined(services, UpgradeServer);
-  const drains = Context.getOrUndefined(services, SocketCore)?.drains;
+  const drains = Context.getOrUndefined(services, HandlerDrains);
   const fetch =
     own?.app ??
     Effect.flatMap(HttpServerRequest.HttpServerRequest, (request) =>
@@ -248,10 +248,7 @@ export function serve(
           disableListenLog: true,
         })
       : HttpServer.serve(toHttpEffect(handler, opts));
-  const drains = Context.getOrUndefined(
-    handlerContext(handler),
-    SocketCore,
-  )?.drains;
+  const drains = Context.getOrUndefined(handlerContext(handler), HandlerDrains);
   if (!drains) return served;
   // The drain is built after `served`, so it's released first: the server
   // waits on open WebSockets when it stops, so they're moved off before.

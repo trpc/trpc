@@ -56,6 +56,9 @@ import {
 } from '../../server/procedures/index.ts';
 import {
   fromWebSocketLike,
+  HandlerDrains,
+  makeSocketDrains,
+  type SocketDrains,
   type WebSocketLike,
   UpgradeServer,
 } from '../../server/sockets/index.ts';
@@ -183,7 +186,11 @@ export interface V11Handler<TPlatform = undefined> {
     socket: WebSocketLike,
     opts: { request: Request } & PlatformField<TPlatform>,
   ): void;
-  /** Releases the `layer`'s resources. */
+  /**
+   * Closes the open WebSockets (1012, "service restart"), so `wsLink`
+   * reconnects elsewhere and resends its subscriptions, then releases the
+   * `layer`'s resources. The handler takes no WebSockets after.
+   */
   dispose(): Promise<void>;
 }
 
@@ -201,6 +208,8 @@ export interface V11Core {
   ) => V11ErrorShape;
   /** A query's or mutation's output with its promises settled. */
   readonly settle: (value: unknown) => Effect.Effect<unknown, AnyTrpcError>;
+  /** The open WebSockets, which `dispose()` closes. */
+  readonly drains: SocketDrains;
 }
 
 interface Call {
@@ -384,6 +393,7 @@ export function createV11Handler<
     output,
     errorShape,
     settle,
+    drains: makeSocketDrains(0),
   };
 
   const json = (
@@ -983,11 +993,15 @@ export function createV11Handler<
         ),
       );
     },
-    dispose: base.dispose,
+    async dispose() {
+      await Effect.runPromise(core.drains.drain({ final: true }));
+      await base.dispose();
+    },
   };
   setHandlerContext(
     handler,
     Context.make(HttpApp, { app, middleware }).pipe(
+      Context.add(HandlerDrains, core.drains),
       Context.add(UpgradeServer, (socket, request) =>
         serveV11Socket(core, socket, {
           request,

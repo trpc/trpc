@@ -54,9 +54,20 @@ export const serveV11Socket = (
     frames: socketFrames(socket),
     idleTimeoutMs: opts.idleTimeoutMs,
     open: (outbox) =>
-      Effect.map(FiberMap.make<RequestId, void, never>(), (calls) =>
-        v11Session(core, outbox, calls, opts),
-      ),
+      Effect.gen(function* () {
+        const calls = yield* FiberMap.make<RequestId, void, never>();
+        // Closed before its calls are interrupted, so no `stopped` result
+        // goes out: `wsLink` would end those subscriptions instead of
+        // resending them with their `lastEventId` once it reconnects.
+        const close = Effect.andThen(
+          Effect.sync(() => outbox.close(1012, 'Service restart')),
+          FiberMap.clear(calls),
+        );
+        const leave = core.drains.add(() => close);
+        if (leave) yield* Effect.addFinalizer(() => Effect.sync(leave));
+        else yield* close;
+        return v11Session(core, outbox, calls, opts);
+      }),
   });
 
 function v11Session(

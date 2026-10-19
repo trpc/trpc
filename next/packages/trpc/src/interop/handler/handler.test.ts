@@ -142,6 +142,12 @@ const router = {
     yield 1;
     throw error({ code: 'CONFLICT', message: 'Gone' });
   }),
+  // The event after `lastEventId`, then waits for the client to leave.
+  nextEvent: t.procedure.subscription(async function* (opts) {
+    const id = Number(opts.lastEventId ?? 0) + 1;
+    yield tracked(String(id), id);
+    await untilAborted(opts.signal);
+  }),
 };
 
 interface Running {
@@ -540,6 +546,35 @@ test('wsLink: calls, subscriptions, stop and connectionParams', async () => {
     await expect.poll(() => stopped).toBe(before + 1);
     await firstThenStop(client, 'waiting');
     await expect.poll(() => stopped).toBe(before + 2);
+  } finally {
+    await ws.close();
+  }
+});
+
+test('wsLink: a subscription moves to the next server when one shuts down, from its lastEventId', async () => {
+  const first = await start();
+  await using second = await start();
+  let url = first.wsUrl;
+  const ws = createWSClient({ url: () => url, retryDelayMs: () => 0 });
+  try {
+    const client = untyped([wsLink({ client: ws })]);
+    const events: unknown[] = [];
+    const ends: unknown[] = [];
+    const sub = client.subscription('nextEvent', undefined, {
+      onData: (event) => events.push(event),
+      onStopped: () => ends.push('stopped'),
+      onError: (err) => ends.push(err),
+    });
+    await expect.poll(() => events).toHaveLength(1);
+    url = second.wsUrl;
+    await first[Symbol.asyncDispose]();
+    await expect.poll(() => events.length + ends.length).toBe(2);
+    expect(ends).toEqual([]);
+    expect(events).toEqual([
+      { id: '1', data: 1 },
+      { id: '2', data: 2 },
+    ]);
+    sub.unsubscribe();
   } finally {
     await ws.close();
   }

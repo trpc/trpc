@@ -7,7 +7,7 @@ import { serve } from '@trpc12/trpc/http';
 import { createV11Handler, type V11HandlerOptions } from '@trpc12/trpc/interop';
 import { error, initTrpc, tracked } from '@trpc12/trpc/server';
 import superjson from 'superjson';
-import { expect, test } from 'vite-plus/test';
+import { expect, test, vi } from 'vite-plus/test';
 import { z } from 'zod';
 
 const t = initTrpc<{ ctx: { user: string | null } }>();
@@ -267,4 +267,74 @@ test('an idle connection closes; each message restarts the clock', async () => {
   expect(closed.reason).toBe('Idle timeout');
   expect(Date.now() - opened).toBeGreaterThanOrEqual(190);
   expect(ws.replies).toEqual(['PONG', 'PONG', 'PONG']);
+});
+
+/** A server-side `WebSocket` as `Deno.upgradeWebSocket` or Bun hand it over. */
+class StandardSocket extends EventTarget {
+  readyState = 0;
+  readonly sent: unknown[] = [];
+  closed: { code: number | undefined; reason: string | undefined } | undefined;
+  send(data: string | Uint8Array) {
+    if (this.readyState !== 1) throw new Error('send before open');
+    this.sent.push(typeof data === 'string' ? JSON.parse(data) : data);
+  }
+  close(code?: number, reason?: string) {
+    this.closed = { code, reason };
+    this.readyState = 3;
+    this.dispatchEvent(Object.assign(new Event('close'), { code, reason }));
+  }
+  open() {
+    this.readyState = 1;
+    this.dispatchEvent(new Event('open'));
+  }
+  receive(message: unknown) {
+    this.dispatchEvent(
+      new MessageEvent('message', { data: JSON.stringify(message) }),
+    );
+  }
+}
+
+test('dispose() closes the sockets handed to websocket() and ends their subscriptions, without a stopped result', async () => {
+  let ended = 0;
+  const handler = createV11Handler({
+    router: {
+      ...router,
+      forever: t.procedure.subscription(async function* (opts) {
+        try {
+          yield 1;
+          await new Promise((resolve) =>
+            opts.signal.addEventListener('abort', resolve),
+          );
+        } finally {
+          ended++;
+        }
+      }),
+    },
+    createContext: () => ({ user: null }),
+  });
+  const socket = new StandardSocket();
+  handler.websocket(socket, { request: new Request('http://localhost/trpc') });
+  socket.open();
+  socket.receive({
+    id: 1,
+    method: 'subscription',
+    params: { path: 'forever' },
+  });
+  await vi.waitFor(() => expect(socket.sent).toHaveLength(2));
+  await handler.dispose();
+  // A stopped result would end the subscription in wsLink, which instead
+  // resends it with its lastEventId once it reconnects.
+  expect(socket.sent).toEqual([
+    { id: 1, result: { type: 'started' } },
+    { id: 1, result: { type: 'data', data: 1 } },
+  ]);
+  expect(socket.closed).toEqual({ code: 1012, reason: 'Service restart' });
+  expect(ended).toBe(1);
+
+  const late = new StandardSocket();
+  handler.websocket(late, { request: new Request('http://localhost/trpc') });
+  late.open();
+  await vi.waitFor(() =>
+    expect(late.closed).toEqual({ code: 1012, reason: 'Service restart' }),
+  );
 });
