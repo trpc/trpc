@@ -20,7 +20,7 @@ const doc = experimental_generateOpenApi(await loadRouter(appRouter), {
 });
 ```
 
-The document has schemas for input, output and each declared error. `filter({ path, procedure })` drops operations. `target: 'rpc'` describes the RPC endpoint instead of the REST routes. `experimental_generateOpenApi` throws on a lazy subtree that hasn't loaded, so pass the result of `loadRouter()`.
+The document has schemas for input, output and each declared error. Each error's `code` is a constant. The `default` response covers the rest: untyped errors (`defined: false`, the `TrpcUntypedError` schema) and typed errors with any other built-in code. So a generated client narrows `error.defined && error.code === 'NOT_FOUND'` to the declared `NOT_FOUND` and its `data`. `filter({ path, procedure })` drops operations. `target: 'rpc'` describes the RPC endpoint instead of the REST routes. `experimental_generateOpenApi` throws on a lazy subtree that hasn't loaded, so pass the result of `loadRouter()`.
 
 ## Security and tags
 

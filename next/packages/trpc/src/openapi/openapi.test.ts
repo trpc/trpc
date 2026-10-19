@@ -854,7 +854,7 @@ test('security schemes, document-level security and tags', () => {
     bearer: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
     key: { type: 'apiKey', in: 'header', name: 'x-api-key' },
   });
-  expect(doc.components.schemas).toHaveProperty('TrpcError');
+  expect(doc.components.schemas).toHaveProperty('TrpcUntypedError');
   expect(doc.security).toEqual([{ bearer: [] }, { key: [] }]);
   expect(doc.tags).toEqual([{ name: 'posts', description: 'Blog posts' }]);
   expect(doc.paths['/api/health']!['get']?.security).toEqual([]);
@@ -937,4 +937,70 @@ test('a body with a file is documented as multipart/form-data, and served', asyn
   expect(await send(['ab', 'cde'])).toEqual({ id: 'g1', sizes: [2, 3] });
   expect(await send(['ab'])).toEqual({ id: 'g1', sizes: [2] });
   await handler.dispose();
+});
+
+test('the default error leaves out documented codes, so generated clients narrow on defined and code', () => {
+  const procedures = {
+    byId: t.procedure
+      .meta({ route: { path: '/posts/{id}' } })
+      .errors({ NOT_FOUND: { data: z.object({ id: z.string() }) } })
+      .input(z.object({ id: z.string() }))
+      .query(() => 'post'),
+  } satisfies AnyRouter;
+  const rest = experimental_generateOpenApi(procedures, {
+    info: { title: 'x', version: '1' },
+  });
+  const schema = (doc: typeof rest, path: string) =>
+    (
+      doc.paths[path]!['get']!.responses['default'] as {
+        content: Record<string, { schema: Record<string, unknown> }>;
+      }
+    ).content['application/json']!.schema;
+  const untyped = { $ref: '#/components/schemas/TrpcUntypedError' };
+  const fallback = schema(rest, '/api/posts/{id}');
+  expect(fallback).toEqual({
+    anyOf: [
+      untyped,
+      {
+        type: 'object',
+        properties: {
+          defined: { const: true },
+          code: { enum: expect.any(Array) },
+          message: { type: 'string' },
+          data: {},
+        },
+        required: ['defined', 'code', 'message'],
+      },
+    ],
+  });
+  const codes = (
+    fallback['anyOf'] as Record<string, Record<string, { enum: string[] }>>[]
+  )[1]!['properties']!['code']!.enum;
+  expect(codes).toContain('UNAUTHORIZED');
+  expect(codes).toContain('INTERNAL_SERVER_ERROR');
+  expect(codes).not.toContain('NOT_FOUND');
+  expect(codes).not.toContain('BAD_REQUEST');
+  expect(codes).not.toContain('NETWORK_ERROR');
+  expect(rest.components.schemas['TrpcUntypedError']).toEqual({
+    type: 'object',
+    properties: {
+      defined: { const: false },
+      code: { type: 'string' },
+      message: { type: 'string' },
+      data: {},
+    },
+    required: ['defined', 'code', 'message'],
+  });
+
+  const rpc = experimental_generateOpenApi(procedures, {
+    info: { title: 'x', version: '1' },
+    target: 'rpc',
+  });
+  expect(schema(rpc, '/trpc/byId')).toEqual({
+    type: 'object',
+    properties: {
+      json: { type: 'object', properties: { error: fallback } },
+    },
+    required: ['json'],
+  });
 });

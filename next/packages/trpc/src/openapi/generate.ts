@@ -169,7 +169,12 @@ export interface GenerateOpenApiOptions {
   filter?: (opts: { path: string; procedure: AnyProcedure }) => boolean;
 }
 
-const ERROR_SCHEMA = 'TrpcError';
+const UNTYPED_ERROR = 'TrpcUntypedError';
+
+/** The built-in codes a server can answer with; the rest are client-side only. */
+const SERVER_CODES = Object.entries(ERROR_STATUS)
+  .filter(([, status]) => status > 0)
+  .map(([code]) => code);
 
 /** Moves `$defs` into `components.schemas` and rewrites their `$ref`s. */
 function hoist(
@@ -384,19 +389,36 @@ function errorResponses(
       },
     };
   }
+  // Typed errors this operation doesn't document can only have the other
+  // built-in codes, so `defined && code === 'NOT_FOUND'` narrows to the 404.
+  const others = SERVER_CODES.filter((code) => !codes.has(code));
+  const fallback: Schema = {
+    anyOf: [
+      { $ref: `#/components/schemas/${UNTYPED_ERROR}` },
+      ...(others.length
+        ? [
+            {
+              type: 'object',
+              properties: {
+                defined: { const: true },
+                code: { enum: others },
+                message: { type: 'string' },
+                data: {},
+              },
+              required: ['defined', 'code', 'message'],
+            },
+          ]
+        : []),
+    ],
+  };
   responses['default'] = {
-    description: 'An error outside the typed union',
+    description: 'An untyped error, or a typed one with another built-in code',
     content: {
       'application/json': {
         schema:
           target === 'rpc'
-            ? rpcWrap({
-                type: 'object',
-                properties: {
-                  error: { $ref: `#/components/schemas/${ERROR_SCHEMA}` },
-                },
-              })
-            : { $ref: `#/components/schemas/${ERROR_SCHEMA}` },
+            ? rpcWrap({ type: 'object', properties: { error: fallback } })
+            : fallback,
       },
     },
   };
@@ -442,10 +464,10 @@ export function generateDocument(
       ? normalizePrefix(opts.prefix ?? '/trpc')
       : normalizePrefix(opts.prefix);
   const components: Record<string, JsonSchema> = {
-    [ERROR_SCHEMA]: {
+    [UNTYPED_ERROR]: {
       type: 'object',
       properties: {
-        defined: { type: 'boolean' },
+        defined: { const: false },
         code: { type: 'string' },
         message: { type: 'string' },
         data: {},
