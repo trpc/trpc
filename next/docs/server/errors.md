@@ -62,6 +62,29 @@ const byId = t.procedure
   );
 ```
 
+An error several procedures share can be a `TrpcError.Tagged` class, which carries its code, `status` and `data` schema. Returning an instance types it like `error()`, and listing the class in `.errors()` declares it:
+
+```ts twoslash
+// ---cut-start---
+import { db, t } from './server.ts';
+// ---cut-end---
+import { TrpcError } from '@trpc12/trpc/server';
+import { z } from 'zod';
+
+class PostNotFound extends TrpcError.Tagged('POST_NOT_FOUND', {
+  status: 404,
+  data: z.object({ id: z.string() }),
+}) {}
+
+const post = t.procedure
+  .errors({ POST_NOT_FOUND: PostNotFound })
+  .input(z.object({ id: z.string() }))
+  .query(
+    (opts) =>
+      db.post.find(opts.input.id) ?? new PostNotFound({ id: opts.input.id }),
+  );
+```
+
 ## On the client
 
 On the client, the errors in the union are `defined: true`, with their `data`, whether they were returned, failed or declared. A thrown error with a declared code is too: its `data` is validated like a returned one's. Anything else arrives with `defined: false`:
