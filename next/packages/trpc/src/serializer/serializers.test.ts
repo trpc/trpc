@@ -13,6 +13,7 @@ import { createRouterClient, initTrpc, TrpcError } from '@trpc12/trpc/server';
 import {
   createSerializer,
   createSyncSerializer,
+  jsonSerializer,
   type JsonOf,
 } from '@trpc12/trpc/serializer';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
@@ -77,6 +78,39 @@ test('JsonOf is the JSON round trip of a type', () => {
   expectTypeOf<JsonOf<Date | Set<number>, Date>>().toEqualTypeOf<
     Date | Record<string, never>
   >();
+});
+
+test('jsonSerializer writes what JSON.stringify writes, and skips the copy when a value is JSON already', () => {
+  const roundtrip = (value: unknown) =>
+    JSON.parse(JSON.stringify(value) ?? 'null') as unknown;
+  const pure = { id: '1', n: 2.5, ok: true, none: null, tags: ['a', { b: 1 }] };
+  const sparse: unknown[] = [1];
+  sparse[2] = 3;
+  const values: unknown[] = [
+    pure,
+    'text',
+    [1, 'two', [false]],
+    { at, missing: undefined, nan: NaN, inf: -Infinity },
+    { list: [undefined, () => 1, Symbol('s')] },
+    sparse,
+    { custom: { toJSON: (key: string) => `custom:${key}` } },
+    { map: new Map([['a', 1]]), set: new Set([1]), date: new Date(Number.NaN) },
+  ];
+  for (const value of values) {
+    expect(jsonSerializer.serialize(value).json).toEqual(roundtrip(value));
+  }
+  expect(jsonSerializer.serialize(pure).json).toBe(pure);
+  const dated = { at };
+  expect(jsonSerializer.serialize(dated).json).not.toBe(dated);
+  expect(jsonSerializer.serialize(undefined)).toEqual({});
+
+  const loop: Record<string, unknown> = { a: 1 };
+  loop['self'] = loop;
+  expect(() => jsonSerializer.serialize(loop)).toThrow(/circular/);
+  expect(() => jsonSerializer.serialize({ n: 1n })).toThrow(/BigInt/);
+  expect(() =>
+    jsonSerializer.serialize({ files: new Map([['f', new Blob(['x'])]]) }),
+  ).toThrow(/streaming serializer/);
 });
 
 test('ReadableStream outputs arrive as ReadableStreams; unknown stays unknown', async () => {
