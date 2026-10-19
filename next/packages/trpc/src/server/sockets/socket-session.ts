@@ -1,6 +1,7 @@
 import {
   Cause,
   Channel,
+  type Duration,
   Effect,
   FiberHandle,
   Predicate,
@@ -100,7 +101,7 @@ const closeOf = (err: unknown): Socket.CloseEvent =>
 
 /**
  * Runs a session on `socket` until it closes: `open` gets the outbox, and
- * the session it returns gets each of `frames`. With `idleTimeoutMs`, a
+ * the session it returns gets each of `frames`. With `idleTimeout`, a
  * socket that sends nothing for that long is closed with 1001 ("going
  * away"), and its session closes then rather than when the peer answers.
  * Sends wait for a slow client (see `SocketOutbox.send`) when the socket's
@@ -110,7 +111,7 @@ const closeOf = (err: unknown): Socket.CloseEvent =>
 export const runSocket = <A>(opts: {
   readonly socket: Socket.Socket;
   readonly frames: Stream.Stream<A, unknown>;
-  readonly idleTimeoutMs: number | false;
+  readonly idleTimeout: Duration.Duration | undefined;
   readonly open: (
     outbox: SocketOutbox,
   ) => Effect.Effect<SocketSession<A>, never, Scope.Scope>;
@@ -161,12 +162,12 @@ export const runSocket = <A>(opts: {
         ended = true;
         return session.close(event);
       });
-    const idleMs = opts.idleTimeoutMs;
+    const idleTimeout = opts.idleTimeout;
     const idle = yield* FiberHandle.make();
-    const arm = idleMs
+    const arm = idleTimeout
       ? FiberHandle.run(
           idle,
-          Effect.sleep(idleMs).pipe(
+          Effect.sleep(idleTimeout).pipe(
             Effect.andThen(
               Effect.sync(() => outbox.close(1001, 'Idle timeout')),
             ),

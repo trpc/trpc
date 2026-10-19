@@ -92,7 +92,7 @@ test('the error is typed on the client, and retryLink can wait for retryAfter', 
       retryLink({
         retries: 1,
         retry: (opts) => opts.error.code === 'TOO_MANY_REQUESTS',
-        delayMs: (_, error) => {
+        delay: (_, error) => {
           const after = (error.data as { retryAfter?: number }).retryAfter;
           delays.push(after ?? -1);
           return 0;

@@ -3,6 +3,7 @@ import {
   Cause,
   Context,
   Deferred,
+  type Duration,
   Effect,
   Exit,
   FiberMap,
@@ -170,7 +171,7 @@ export const serveSocketConnection = (
     readonly platform?: unknown;
     readonly transport: Transport;
     /** Close the socket after this long without a message. */
-    readonly idleTimeoutMs: number | false;
+    readonly idleTimeout: Duration.Duration | undefined;
     readonly messages?: Stream.Stream<unknown, Socket.SocketError>;
     /** `binary` is set once the client's `init` asks for binary messages. */
     readonly encode?: (
@@ -184,7 +185,7 @@ export const serveSocketConnection = (
     socket,
     frames:
       opts.messages ?? Stream.map(socketFrames(socket), parseSocketMessage),
-    idleTimeoutMs: opts.idleTimeoutMs,
+    idleTimeout: opts.idleTimeout,
     open: (outbox) =>
       Effect.gen(function* () {
         let binary = false;

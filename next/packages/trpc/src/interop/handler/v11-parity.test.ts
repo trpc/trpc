@@ -249,7 +249,7 @@ const pair = (
     router: v12Router,
     createContext: (o) => who12(o.request.headers['x-fail']),
     exposeUnexpectedErrors: true,
-    sse: { pingMs: false },
+    sse: { pingInterval: false },
     ...(config.transformer ? { transformer: config.transformer } : {}),
     ...(config.errorFormatter ? { errorFormatter: custom } : {}),
     ...(config.allowBatching === false ? { batch: false } : {}),

@@ -178,7 +178,7 @@ const ROOT_OPTION_NOTES: Readonly<Record<string, string>> = {
   isDev: 'isDev: use the handler option exposeUnexpectedErrors',
   isServer: 'isServer is gone',
   allowOutsideOfServer: 'allowOutsideOfServer is gone',
-  sse: 'sse: a handler option, createFetchHandler({ sse: { pingMs } })',
+  sse: 'sse: a handler option, createFetchHandler({ sse: { pingInterval } })',
   jsonl: 'jsonl: streaming needs no options in v12',
 };
 

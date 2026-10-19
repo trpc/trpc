@@ -1,4 +1,4 @@
-import { Effect, Stream } from 'effect';
+import { Duration, Effect, Stream } from 'effect';
 import {
   link,
   retryLink,
@@ -29,17 +29,18 @@ const refetchObserved = (store: QueryStore) => {
  */
 export interface CacheLinkOptions {
   /**
-   * How long data counts as fresh, in ms: `.query()` returns it without a
+   * How long data counts as fresh: `.query()` returns it without a
    * request. Stale data is still returned, and refetched in the background.
+   * Milliseconds, a string like `'30 seconds'` or a `Duration`.
    * @default 0
    */
-  staleTime?: number;
+  staleTime?: Duration.Input;
   /**
-   * How long an entry no component reads is kept, in ms. `Infinity` keeps
-   * it. A server's store never drops entries.
-   * @default 300_000
+   * How long an entry no component reads is kept. `Infinity` keeps it. A
+   * server's store never drops entries.
+   * @default '5 minutes'
    */
-  gcTime?: number;
+  gcTime?: Duration.Input;
 }
 
 /**
@@ -59,8 +60,8 @@ export interface CacheLinkOptions {
  */
 export function cacheLink(opts: CacheLinkOptions = {}): TrpcLink {
   return withQueryFeature(passThrough(), {
-    staleTime: opts.staleTime ?? 0,
-    gcTime: opts.gcTime ?? 300_000,
+    staleTime: Duration.toMillis(opts.staleTime ?? 0),
+    gcTime: Duration.toMillis(opts.gcTime ?? '5 minutes'),
   });
 }
 

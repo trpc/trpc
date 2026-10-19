@@ -1,5 +1,5 @@
 import { request as httpRequest } from 'node:http';
-import { Stream } from 'effect';
+import { Duration, Stream } from 'effect';
 import { cors } from '@trpc12/trpc/http';
 import {
   createTrpcClient,
@@ -125,7 +125,7 @@ const router = {
 type AppRouter = typeof router;
 
 async function setup(
-  opts: { user?: string; idleMs?: number; params?: boolean } = {},
+  opts: { user?: string; idleTimeout?: Duration.Input; params?: boolean } = {},
 ) {
   const server = await createTestServer({
     router,
@@ -143,8 +143,8 @@ async function setup(
   current = server;
   const link = wsLink({
     url: server.wsUrl,
-    reconnect: { delayMs: () => 10 },
-    idleMs: opts.idleMs,
+    reconnect: { delay: () => Duration.millis(10) },
+    idleTimeout: opts.idleTimeout,
     ...(opts.params
       ? { connectionParams: async () => ({ token: 'kim' }) }
       : {}),
@@ -272,7 +272,7 @@ test('close() fails a subscription waiting to reconnect at once', async () => {
   });
   const url = server.wsUrl;
   await server.close();
-  const link = wsLink({ url, reconnect: { delayMs: () => 60_000 } });
+  const link = wsLink({ url, reconnect: { delay: () => 60_000 } });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
     links: [link],
@@ -361,7 +361,7 @@ test('deferred values inside subscription events', async () => {
 });
 
 test('an idle connection closes and the next call reconnects', async () => {
-  await using ctx = await setup({ idleMs: 10 });
+  await using ctx = await setup({ idleTimeout: '10 millis' });
   const upgrades = countUpgrades(ctx.server);
   await ctx.client.whoami.query();
   await sleep(40);
@@ -562,7 +562,7 @@ test('wsLink replaces a connection that stops answering pings', async () => {
   await using link = wsLink({
     url: server.wsUrl,
     WebSocket: DeafSocket,
-    keepAlive: { intervalMs: 20, timeoutMs: 20 },
+    keepAlive: { interval: '20 millis', timeout: Duration.millis(20) },
   });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
@@ -578,11 +578,11 @@ test('wsLink replaces a connection that stops answering pings', async () => {
   expect(sockets).toHaveLength(2);
 });
 
-test('the server closes a socket that sends nothing for idleTimeoutMs, and pings keep it open', async () => {
+test('the server closes a socket that sends nothing for idleTimeout, and pings keep it open', async () => {
   await using server = await createTestServer({
     router,
     createContext: () => ({ user: null, transport: 'websocket' }),
-    websocket: { idleTimeoutMs: 80 },
+    websocket: { idleTimeout: '80 millis' },
   });
   const open = async () => {
     const socket = new WebSocket(server.wsUrl);
@@ -637,7 +637,7 @@ test('handler.websocket serves a standard socket that opens after the call, and 
   const handler = createFetchHandler({
     router,
     createContext: () => ({ user: 'deno', transport: 'websocket' }),
-    websocket: { idleTimeoutMs: 80 },
+    websocket: { idleTimeout: Duration.millis(80) },
   });
   const socket = new StandardSocket();
   handler.websocket(socket, { request: new Request('http://localhost/trpc') });

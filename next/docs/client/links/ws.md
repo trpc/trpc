@@ -30,9 +30,9 @@ await ws.close();
 
 - `url`: the handler's endpoint.
 - `connectionParams`: sent once per connection, before any call, or a function that makes them. `createContext` gets them as `info.connectionParams` ([Context](../../server/context.md)). Browsers can't set WebSocket headers, so send auth tokens here.
-- `reconnect`: how a dropped connection reconnects, `{ attempts: 5, delayMs }` by default.
+- `reconnect`: how a dropped connection reconnects, `{ attempts: 5, delay }` by default. `delay(attempt)` returns the wait before each attempt.
 - `keepAlive`: pings (below).
-- `idleMs`: close the connection after this long without calls; the next call opens a new one. By default it stays open until `close()`.
+- `idleTimeout`: close the connection after this long without calls; the next call opens a new one. By default it stays open until `close()`.
 - `binary`: file bytes in outputs as binary messages instead of base64 text. Servers that don't know binary messages keep sending text.
 - `serializer`: must match the handler's, and client types follow it ([Serializers](../../server/serializers.md)).
 - `WebSocket`: a `WebSocket` implementation, `globalThis.WebSocket` by default.
@@ -57,8 +57,8 @@ A subscription without `tracked()` ids has no event to resume from, so it **star
 
 ## Keep-alive
 
-The link pings every 30 s and treats a connection that answers nothing for 10 s as lost, so it reconnects instead of waiting for a close a dead network never delivers. The traffic also keeps proxies from dropping a quiet socket. `keepAlive: { intervalMs, timeoutMs }` changes the timings, and `false` sends no pings.
+The link pings every 30 s and treats a connection that answers nothing for 10 s as lost, so it reconnects instead of waiting for a close a dead network never delivers. The traffic also keeps proxies from dropping a quiet socket. `keepAlive: { interval: '15 seconds', timeout: '5 seconds' }` changes the timings, and `false` sends no pings.
 
-The server closes a socket that sends nothing for 60 s (code 1001) and stops its subscriptions; set `createFetchHandler({ websocket: { idleTimeoutMs } })`, or `false` to keep silent sockets open.
+The server closes a socket that sends nothing for 60 s (code 1001) and stops its subscriptions; set `createFetchHandler({ websocket: { idleTimeout } })`, or `false` to keep silent sockets open.
 
 The [`examples/realtime`](../../../examples/realtime/client.ts) app sends a token in `connectionParams`, restarts a server under its subscriptions, and has the server drop a client that sends no pings; each one resumes from its last event.

@@ -1,4 +1,13 @@
-import { Cause, Context, Effect, Exit, Stream, type Layer } from 'effect';
+import {
+  Cause,
+  Context,
+  Effect,
+  Exit,
+  Stream,
+  type Duration,
+  type Layer,
+} from 'effect';
+import { timerOption } from '../../internal/duration.ts';
 import {
   HttpEffect,
   HttpServerRequest,
@@ -148,9 +157,9 @@ export interface BaseV11HandlerOptions<TRouter extends AnyRouter> {
     /**
      * Send a v11 `ping` event this often while a subscription is quiet.
      * `false` sends none.
-     * @default 15_000
+     * @default '15 seconds'
      */
-    pingMs?: number | false;
+    pingInterval?: Duration.Input | false;
   };
   websocket?: {
     /**
@@ -158,7 +167,7 @@ export interface BaseV11HandlerOptions<TRouter extends AnyRouter> {
      * included, for this long. `false` keeps silent sockets open.
      * @default false
      */
-    idleTimeoutMs?: number | false;
+    idleTimeout?: Duration.Input | false;
   };
 }
 
@@ -378,7 +387,7 @@ export function createV11Handler<
         : transformer;
   const endpoint = `/${(opts.endpoint ?? '/trpc').replace(/^\/+|\/+$/g, '')}`;
   const maxBodySize = opts.maxBodySize ?? 1_048_576;
-  const ssePingMs = opts.sse?.pingMs ?? 15_000;
+  const ssePing = timerOption(opts.sse?.pingInterval, '15 seconds');
   const batch =
     opts.batch === false
       ? undefined
@@ -706,11 +715,11 @@ export function createV11Handler<
         events,
       ).pipe(abortOnInterrupt(controller));
       const body =
-        ssePingMs === false
+        ssePing === undefined
           ? frames
           : Stream.merge(
               frames,
-              Stream.tick(ssePingMs).pipe(
+              Stream.tick(ssePing).pipe(
                 Stream.drop(1),
                 Stream.map(() => frame('ping', '')),
               ),
@@ -974,7 +983,7 @@ export function createV11Handler<
   }) as never;
 
   const middleware = opts.middleware ?? [];
-  const idleTimeoutMs = opts.websocket?.idleTimeoutMs ?? false;
+  const idleTimeout = timerOption(opts.websocket?.idleTimeout, false);
   const served = middleware.reduceRight<
     Effect.Effect<HttpServerResponse.HttpServerResponse, any, any>
   >((inner, m) => m(inner), app);
@@ -997,7 +1006,7 @@ export function createV11Handler<
           serveV11Socket(core, effectSocket, {
             request: HttpServerRequest.fromWeb(o.request),
             platform: o.platform,
-            idleTimeoutMs,
+            idleTimeout,
           }),
         ),
       );
@@ -1015,7 +1024,7 @@ export function createV11Handler<
         serveV11Socket(core, socket, {
           request,
           platform: undefined,
-          idleTimeoutMs,
+          idleTimeout,
         }),
       ),
     ),

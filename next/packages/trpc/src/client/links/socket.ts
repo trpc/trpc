@@ -148,16 +148,21 @@ export interface SocketLink<TDecl extends LinkDecl = {}>
   close(): Promise<void>;
 }
 
+interface KeepAlive {
+  interval: Duration.Duration;
+  timeout: Duration.Duration;
+}
+
 interface SocketTransport {
   /** The link's name, for errors. */
   name: string;
   /** Opens a connection, which closes with the scope. */
   connect: Effect.Effect<SocketConnection, unknown, Scope.Scope>;
   reconnect:
-    | { attempts: number; delayMs: (attempt: number) => number }
+    | { attempts: number; delay: (attempt: number) => Duration.Input }
     | undefined;
-  idleMs: number | undefined;
-  keepAlive: { intervalMs: number; timeoutMs: number } | undefined;
+  idleTimeout: Duration.Duration | undefined;
+  keepAlive: KeepAlive | undefined;
   /** Ask the server for binary messages. */
   binary?: boolean;
 }
@@ -265,15 +270,12 @@ function makeSocketLink(
   }
 
   /**
-   * Pings every `intervalMs`. A connection that answers nothing within
-   * `timeoutMs` of a ping is lost.
+   * Pings every `interval`. A connection that answers nothing within
+   * `timeout` of a ping is lost.
    */
-  const keepAlive = (
-    conn: Connection,
-    timing: { intervalMs: number; timeoutMs: number },
-  ) => {
+  const keepAlive = (conn: Connection, timing: KeepAlive) => {
     const answered = (received: number) =>
-      Effect.sleep(timing.timeoutMs).pipe(
+      Effect.sleep(timing.timeout).pipe(
         Effect.andThen(
           Effect.sync(() => {
             if (conn.lost || conn.received !== received) return;
@@ -284,7 +286,7 @@ function makeSocketLink(
       );
     return Effect.gen(function* () {
       while (!conn.lost) {
-        yield* Effect.sleep(timing.intervalMs);
+        yield* Effect.sleep(timing.interval);
         const received = conn.received;
         conn.socket.send({ type: 'ping' });
         yield* Effect.forkChild(answered(received));
@@ -346,14 +348,14 @@ function makeSocketLink(
   });
 
   /**
-   * Shared by every call and released when the last one ends; `idleMs`
+   * Shared by every call and released when the last one ends; `idleTimeout`
    * later the connection closes. A lost connection is invalidated, so the
    * next call opens a new one.
    */
   const connection = Effect.runSync(
     RcRef.make({
       acquire,
-      idleTimeToLive: transport.idleMs ?? Duration.infinity,
+      idleTimeToLive: transport.idleTimeout ?? Duration.infinity,
     }).pipe(Scope.provide(Scope.makeUnsafe())),
   );
 
@@ -482,7 +484,7 @@ function makeSocketLink(
         yield* call.onReconnect;
         // `close()` can fail the call while it waits.
         const signal = yield* Queue.take(inbox).pipe(
-          Effect.timeoutOption(reconnect.delayMs(attempt)),
+          Effect.timeoutOption(reconnect.delay(attempt)),
         );
         if (Option.isSome(signal) && Signal.$is('Fail')(signal.value)) {
           return yield* Effect.fail(signal.value.error);
@@ -660,23 +662,27 @@ export interface ConnectionLinkOptions {
   reconnect?: {
     /** @default 5 */
     attempts?: number;
-    /** @default attempt => Math.min(1000 * 2 ** (attempt - 1), 30_000) */
-    delayMs?: (attempt: number) => number;
+    /**
+     * Delay before each reconnect: milliseconds, a string like `'2 seconds'`
+     * or a `Duration`.
+     * @default attempt => Math.min(1000 * 2 ** (attempt - 1), 30_000)
+     */
+    delay?: (attempt: number) => Duration.Input;
   };
   /**
    * Close the connection after this long without calls. The next call
    * reconnects.
    * @default undefined, stay open until `close()`
    */
-  idleMs?: number | undefined;
+  idleTimeout?: Duration.Input | undefined;
   /**
-   * Ping every `intervalMs`. A connection that answers nothing within
-   * `timeoutMs` of a ping is treated as lost, so it reconnects instead of waiting for
+   * Ping every `interval`. A connection that answers nothing within
+   * `timeout` of a ping is treated as lost, so it reconnects instead of waiting for
    * a close that a dead network never delivers. The traffic also keeps
    * proxies from dropping a quiet socket. `false` sends no pings.
-   * @default { intervalMs: 30_000, timeoutMs: 10_000 }
+   * @default { interval: '30 seconds', timeout: '10 seconds' }
    */
-  keepAlive?: false | { intervalMs?: number; timeoutMs?: number };
+  keepAlive?: false | { interval?: Duration.Input; timeout?: Duration.Input };
 }
 
 const connectionOptions = (
@@ -684,17 +690,24 @@ const connectionOptions = (
 ): Omit<SocketTransport, 'connect' | 'name'> => ({
   reconnect: {
     attempts: opts.reconnect?.attempts ?? 5,
-    delayMs:
-      opts.reconnect?.delayMs ??
+    delay:
+      opts.reconnect?.delay ??
       ((attempt) => Math.min(1000 * 2 ** (attempt - 1), 30_000)),
   },
-  idleMs: opts.idleMs,
+  idleTimeout:
+    opts.idleTimeout === undefined
+      ? undefined
+      : Duration.fromInputUnsafe(opts.idleTimeout),
   keepAlive:
     opts.keepAlive === false
       ? undefined
       : {
-          intervalMs: opts.keepAlive?.intervalMs ?? 30_000,
-          timeoutMs: opts.keepAlive?.timeoutMs ?? 10_000,
+          interval: Duration.fromInputUnsafe(
+            opts.keepAlive?.interval ?? '30 seconds',
+          ),
+          timeout: Duration.fromInputUnsafe(
+            opts.keepAlive?.timeout ?? '10 seconds',
+          ),
         },
 });
 
@@ -894,7 +907,7 @@ export function experimental_messagePortLink(
     {
       name: 'experimental_messagePortLink',
       reconnect: undefined,
-      idleMs: undefined,
+      idleTimeout: undefined,
       keepAlive: undefined,
       connect: Effect.gen(function* () {
         const messages = yield* PubSub.subscribe(received);

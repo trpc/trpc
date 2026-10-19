@@ -30,7 +30,7 @@ const client = createTrpcClient({
 - `maxUrlLength` and `longQuery`: when a query goes with a body (below).
 - `binary`: streamed outputs as binary frames (below).
 - `subscriptions: false`: no SSE, so procedures lose `.subscribe()`, for a link that only carries queries and mutations.
-- `reconnect`: how a dropped subscription reconnects, `{ attempts: 5, delayMs }` by default.
+- `reconnect`: how a dropped subscription reconnects, `{ attempts: 5, delay }` by default. `delay(attempt)` returns the wait before each attempt.
 
 ## Batching
 

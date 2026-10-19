@@ -38,6 +38,6 @@ const link = experimental_socketLink({
 });
 ```
 
-A connection speaks the WebSocket protocol, one JSON message per line, so everything that works over `wsLink` works here: `connectionParams`, subscriptions with resume, deferred values, aborts, keep-alive pings and reconnects. `createContext` gets `info.transport === 'socket'`. There are no headers, so authenticate with `connectionParams`. A connection that sends nothing for 60 s is closed (`experimental_serveSocket(handler, { idleTimeoutMs })`, or `false`).
+A connection speaks the WebSocket protocol, one JSON message per line, so everything that works over `wsLink` works here: `connectionParams`, subscriptions with resume, deferred values, aborts, keep-alive pings and reconnects. `createContext` gets `info.transport === 'socket'`. There are no headers, so authenticate with `connectionParams`. A connection that sends nothing for 60 s is closed (`experimental_serveSocket(handler, { idleTimeout: '5 minutes' })`, or `false`).
 
 WebTransport isn't supported: no server runtime that Effect has a platform for serves it yet.

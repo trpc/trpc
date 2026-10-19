@@ -1,4 +1,4 @@
-import { Cause, Effect, Exit, FiberMap, Stream } from 'effect';
+import { Cause, Effect, Exit, FiberMap, Stream, type Duration } from 'effect';
 import type { HttpServerRequest } from 'effect/http';
 import type { Socket } from 'effect/socket';
 import { TrpcError, type AnyTrpcError } from '../../internal/error.ts';
@@ -47,13 +47,13 @@ export const serveV11Socket = (
   opts: {
     readonly request: HttpServerRequest.HttpServerRequest;
     readonly platform: unknown;
-    readonly idleTimeoutMs: number | false;
+    readonly idleTimeout: Duration.Duration | undefined;
   },
 ): Effect.Effect<void> =>
   runSocket({
     socket,
     frames: socketFrames(socket),
-    idleTimeoutMs: opts.idleTimeoutMs,
+    idleTimeout: opts.idleTimeout,
     open: (outbox) =>
       Effect.gen(function* () {
         const calls = yield* FiberMap.make<RequestId, void, never>();

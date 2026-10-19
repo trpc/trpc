@@ -2,7 +2,7 @@ import { openAsBlob } from 'node:fs';
 import { mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { Schema } from 'effect';
+import { Duration, Schema } from 'effect';
 import {
   type LambdaContext,
   toLambdaHandler,
@@ -228,20 +228,27 @@ test('the streaming handler writes the prelude, then streams the body', async ()
   expect(body).toContain('data: {"json":2}');
 });
 
-test('the call is aborted before the Lambda deadline', async () => {
-  const started = Date.now();
-  const result = (await toLambdaHandler(handler, { timeoutMarginMs: 950 })(
-    {
-      version: '2.0',
-      rawPath: '/trpc/slow',
-      rawQueryString: '',
-      requestContext: { http: { method: 'GET' } },
-    },
-    { getRemainingTimeInMillis: () => 1000 },
-  )) as LambdaV2Result;
-  expect(Date.now() - started).toBeLessThan(1500);
-  expect(result.statusCode).not.toBe(200);
-});
+test.each([
+  ['milliseconds', 950],
+  ['a string', '950 millis'],
+  ['a Duration', Duration.millis(950)],
+] as const)(
+  'the call is aborted before the Lambda deadline, with a margin in %s',
+  async (_, timeoutMargin) => {
+    const started = Date.now();
+    const result = (await toLambdaHandler(handler, { timeoutMargin })(
+      {
+        version: '2.0',
+        rawPath: '/trpc/slow',
+        rawQueryString: '',
+        requestContext: { http: { method: 'GET' } },
+      },
+      { getRemainingTimeInMillis: () => 1000 },
+    )) as LambdaV2Result;
+    expect(Date.now() - started).toBeLessThan(1500);
+    expect(result.statusCode).not.toBe(200);
+  },
+);
 
 test('a handler without a platform type is accepted', () => {
   const plain = createFetchHandler({

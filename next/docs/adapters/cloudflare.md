@@ -103,7 +103,7 @@ export class Room extends DurableObject<Env> {
 
 - `sockets.upgrade()` runs the handler's `middleware` before it accepts the socket, so `cors()` answers an upgrade from another origin with a `403` and no socket is created ([Middleware and CORS](./overview.md#middleware-and-cors)). It returns a `Promise<Response>`.
 - When the object wakes, each socket's request URL, its `cookie` and `authorization` headers (`keepHeaders` to choose others) and its `connectionParams` are rebuilt from the socket's attachment, so `createContext` sees the same connection. The attachment has a 2 KB limit; past it, the headers are dropped with a `console.warn` (the connection stays). Browsers can't set WebSocket headers, so same-origin apps authenticate with cookies.
-- `wsLink`'s keep-alive pings are answered by the runtime (`setWebSocketAutoResponse`) without waking the object. The handler's `websocket.idleTimeoutMs` doesn't apply here: a timer would wake it.
+- `wsLink`'s keep-alive pings are answered by the runtime (`setWebSocketAutoResponse`) without waking the object. The handler's `websocket.idleTimeout` doesn't apply here: a timer would wake it.
 - A generator or `Stream` subscription keeps the object awake until it ends. Subscriptions to an `experimental_hibernatingPublisher` don't.
 - Already created the `WebSocketPair` yourself? `sockets.accept(server, request, platform)` instead of `upgrade()`. It skips `middleware`: check the origin before you create the pair.
 
@@ -344,7 +344,7 @@ import { experimental_connectionToken } from '@trpc12/trpc/cloudflare';
 
 const RoomToken = experimental_connectionToken(
   Schema.Struct({ room: Schema.String, user: Schema.String }),
-  { secret: env.TOKEN_SECRET, ttlSeconds: 600 },
+  { secret: env.TOKEN_SECRET, ttl: '10 minutes' },
 );
 
 // ---cut-start---
@@ -425,7 +425,7 @@ const link = wsLink({
 });
 ```
 
-- `verify` fails with `UNAUTHORIZED` when the token is missing, malformed, signed with another secret or past `ttlSeconds` (default an hour). It reads the time from Effect's `Clock`.
+- `verify` fails with `UNAUTHORIZED` when the token is missing, malformed, signed with another secret or past `ttl` (default `'1 hour'`). It reads the time from Effect's `Clock`.
 - The claims are encoded with the schema and readable by the client; keep secrets out of them.
 - Expiry is checked whenever `createContext` runs: on each call, and when a subscription starts. A parked subscription keeps getting events after the token expires, until the socket closes or the client reconnects.
 

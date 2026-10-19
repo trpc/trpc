@@ -101,7 +101,16 @@ test('an abort after the socket started closing is not sent', async () => {
   await connection.link.close();
 });
 
-test('keepAlive pings every intervalMs, and a connection silent for timeoutMs after a ping is dropped', async () => {
+test('a time option Duration cannot decode throws when the link is made', () => {
+  expect(() => wsLink({ url: 'ws://x', idleTimeout: 'soon' as never })).toThrow(
+    'Invalid Input: soon',
+  );
+  expect(() =>
+    wsLink({ url: 'ws://x', keepAlive: { interval: '1 fortnight' as never } }),
+  ).toThrow('Invalid Input: 1 fortnight');
+});
+
+test('keepAlive pings every interval, and a connection silent for timeout after a ping is dropped', async () => {
   ScriptedWebSocket.opened = [];
   const pings: number[] = [];
   let answering = true;
@@ -116,7 +125,7 @@ test('keepAlive pings every intervalMs, and a connection silent for timeoutMs af
   const link = wsLink({
     url: 'ws://scripted',
     WebSocket: PingTimingSocket as unknown as typeof WebSocket,
-    keepAlive: { intervalMs: 40, timeoutMs: 400 },
+    keepAlive: { interval: 40, timeout: 400 },
     reconnect: { attempts: 0 },
   });
   const client = createTrpcClient({

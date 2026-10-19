@@ -1,4 +1,4 @@
-import { Effect, Layer, Schema } from 'effect';
+import { Duration, Effect, Layer, Schema } from 'effect';
 import { Persistence } from 'effect/persistence';
 import {
   createTrpcClient,
@@ -183,7 +183,7 @@ test('experimental_durableLink retries a lost response with the same id', async 
   const client = createTrpcClient({
     router: app.router,
     links: [
-      experimental_durableLink({ delayMs: () => 0 }),
+      experimental_durableLink({ delay: () => Duration.zero }),
       httpLink({
         url: http.url,
         batch: true,
@@ -388,7 +388,7 @@ test('experimental_durableLink resumes a streamed output mid-stream, on another 
   const client = createTrpcClient({
     router: app.router,
     links: [
-      experimental_durableLink({ delayMs: () => 0 }),
+      experimental_durableLink({ delay: () => '0 millis' }),
       httpLink({
         url: 'http://localhost/trpc',
         fetch: async (url, init) => {
@@ -419,7 +419,7 @@ test('a resume that fails, then answers without frames, fails what was still ope
   const client = createTrpcClient({
     router: app.router,
     links: [
-      experimental_durableLink({ delayMs: () => 0 }),
+      experimental_durableLink({ delay: () => 0 }),
       httpLink({
         url: 'http://localhost/trpc',
         fetch: async (url, init) => {

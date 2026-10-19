@@ -124,7 +124,7 @@ export async function main(base: string) {
   const durable = createTrpcClient({
     router: routerType<AppRouter>(),
     links: [
-      experimental_durableLink({ delayMs: () => 50 }),
+      experimental_durableLink({ delay: () => 50 }),
       httpLink({
         url,
         fetch: async (input, init) => {

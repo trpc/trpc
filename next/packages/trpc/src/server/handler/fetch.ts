@@ -46,6 +46,7 @@ import type {
   TypeError,
 } from '../../internal/types.ts';
 import { jsonSerializer, type AnySerializer } from '../../serializer/index.ts';
+import { timerOption } from '../../internal/duration.ts';
 import { backpressure } from '../../internal/effects.ts';
 import { accepts, encodeRecord } from '../../internal/frames.ts';
 import type { Chunk, Frame } from '../../serializer/danson/index.ts';
@@ -266,18 +267,18 @@ export interface BaseHandlerOptions<TRouter extends AnyRouter> {
     /**
      * Send a comment line this often while a subscription is quiet, so
      * proxies don't close it as idle. `false` sends none.
-     * @default 15_000
+     * @default '15 seconds'
      */
-    pingMs?: number | false;
+    pingInterval?: Duration.Input | false;
   };
   websocket?: {
     /**
      * Close a WebSocket that sends nothing, `wsLink`'s pings included, for
      * this long, and stop its subscriptions. The close code is 1001, so a
      * live client reconnects. `false` keeps silent sockets open.
-     * @default 60_000
+     * @default '60 seconds'
      */
-    idleTimeoutMs?: number | false;
+    idleTimeout?: Duration.Input | false;
     /**
      * How long `dispose()`, a `drain()` without `timeout` and the end of
      * `serve()` give connections to move before closing them.
@@ -570,7 +571,7 @@ export function createFetchHandler<
   /** Procedure paths follow this. */
   const under = endpoint === '/' ? '/' : `${endpoint}/`;
   const maxBodySize = opts.maxBodySize ?? 1_048_576;
-  const ssePingMs = opts.sse?.pingMs ?? 15_000;
+  const ssePing = timerOption(opts.sse?.pingInterval, '15 seconds');
   const batch =
     opts.batch === true
       ? { maxItems: 20 }
@@ -1106,9 +1107,9 @@ export function createFetchHandler<
             // Servers that buffer headers until the first body chunk (Node) would
             // otherwise hold them back until the first event.
             yield* write(': open\n\n');
-            if (ssePingMs !== false) {
+            if (ssePing) {
               yield* write(': ping\n\n').pipe(
-                Effect.delay(ssePingMs),
+                Effect.delay(ssePing),
                 Effect.forever,
                 Effect.forkScoped,
               );
@@ -1340,12 +1341,12 @@ export function createFetchHandler<
     report,
     drains,
   };
-  const idleTimeoutMs = opts.websocket?.idleTimeoutMs ?? 60_000;
+  const idleTimeout = timerOption(opts.websocket?.idleTimeout, '60 seconds');
   const serveWebSocket: ServeSocket = (socket, request) =>
     serveSocketConnection(core, socket, {
       request,
       transport: 'websocket',
-      idleTimeoutMs,
+      idleTimeout,
     });
 
   const upgrade = opts.websocket?.upgrade;
@@ -1367,7 +1368,7 @@ export function createFetchHandler<
                       request,
                       platform,
                       transport: 'websocket',
-                      idleTimeoutMs,
+                      idleTimeout,
                     }),
                 ),
                 { startImmediately: true },
@@ -1395,7 +1396,7 @@ export function createFetchHandler<
             request: HttpServerRequest.fromWeb(o.request),
             platform: o.platform,
             transport: 'websocket',
-            idleTimeoutMs,
+            idleTimeout,
           }),
         ),
       );

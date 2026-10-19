@@ -82,7 +82,7 @@ Cloudflare's Rate Limiting binding (`env.LIMITER.limit({ key })`) isn't a store.
 
 ## On the client
 
-`experimental_RateLimited` is a typed error, so the client narrows on its code. `retryLink({ retry, delayMs })` gets the error, so it can wait `error.data.retryAfter` ([`retryLink`](../client/links/retry.md#waiting-out-a-rate-limit)).
+`experimental_RateLimited` is a typed error, so the client narrows on its code. `retryLink({ retry, delay })` gets the error, so it can wait `error.data.retryAfter` ([`retryLink`](../client/links/retry.md#waiting-out-a-rate-limit)).
 
 ## Credits
 

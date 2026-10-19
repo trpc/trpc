@@ -6,13 +6,13 @@
  *
  * @internal
  */
-import { Effect, Stream } from 'effect';
+import { Effect, Stream, type Duration } from 'effect';
 import type { AnyTrpcError } from '../../internal/error.ts';
 
 /** @internal */
 export interface Retries {
   readonly retries: number;
-  readonly delayMs: (attempt: number, error: AnyTrpcError) => number;
+  readonly delay: (attempt: number, error: AnyTrpcError) => Duration.Input;
   readonly retry: (error: AnyTrpcError, attempt: number) => boolean;
 }
 
@@ -30,7 +30,7 @@ export const retrying = <A>(
     Stream.catch(attempt(n), (error) =>
       n < opts.retries && opts.retry(error, n + 1)
         ? Stream.unwrap(
-            Effect.as(Effect.sleep(opts.delayMs(n + 1, error)), run(n + 1)),
+            Effect.as(Effect.sleep(opts.delay(n + 1, error)), run(n + 1)),
           )
         : Stream.fail(error),
     );

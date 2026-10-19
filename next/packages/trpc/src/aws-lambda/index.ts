@@ -17,7 +17,7 @@
  * ```
  * @module
  */
-import { Effect, Result, Stream } from 'effect';
+import { Duration, Effect, Result, Stream } from 'effect';
 import { Base64 } from 'effect/encoding';
 
 /**
@@ -234,7 +234,7 @@ export interface LambdaFetchHandler {
  * Options for {@link toLambdaHandler} and {@link toLambdaStreamingHandler}.
  * @example
  * ```ts
- * toLambdaHandler(handler, { timeoutMarginMs: 500 });
+ * toLambdaHandler(handler, { timeoutMargin: '500 millis' });
  * ```
  * @since 0.1.0
  * @stability stable
@@ -243,9 +243,9 @@ export interface LambdaHandlerOptions {
   /**
    * Abort the call this long before Lambda's deadline, so it ends with an
    * error response instead of a timeout.
-   * @default 1000
+   * @default '1 second'
    */
-  readonly timeoutMarginMs?: number;
+  readonly timeoutMargin?: Duration.Input;
 }
 
 const isV2 = (event: LambdaEvent): event is LambdaV2Event =>
@@ -360,6 +360,9 @@ const toRequest = (event: LambdaEvent, signal: AbortSignal): Request =>
       ? v2Request(event, signal)
       : v1Request(event, signal);
 
+const marginOf = (options: LambdaHandlerOptions) =>
+  Duration.toMillis(options.timeoutMargin ?? '1 second');
+
 const deadline = (
   context: LambdaContext,
   margin: number,
@@ -464,7 +467,7 @@ export function toLambdaHandler(
   handler: LambdaFetchHandler,
   options: LambdaHandlerOptions = {},
 ): (event: LambdaEvent, context?: LambdaContext) => Promise<LambdaResult> {
-  const margin = options.timeoutMarginMs ?? 1000;
+  const margin = marginOf(options);
   return (event, context = {}) =>
     Effect.runPromise(
       Effect.gen(function* () {
@@ -525,7 +528,7 @@ export function toLambdaStreamingHandler(
   stream: LambdaResponseStream,
   context?: LambdaContext,
 ) => Promise<void> {
-  const margin = options.timeoutMarginMs ?? 1000;
+  const margin = marginOf(options);
   return (event, stream, context = {}) =>
     Effect.runPromise(
       Effect.gen(function* () {

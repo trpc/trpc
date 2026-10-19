@@ -19,9 +19,10 @@
  * ```
  * @module
  */
-import { Context, Effect, Layer, Stream } from 'effect';
+import { Context, Effect, Layer, Stream, type Duration } from 'effect';
 import { HttpServerRequest } from 'effect/http';
 import { Socket, SocketServer } from 'effect/socket';
+import { timerOption } from '../internal/duration.ts';
 import { decodeLines, encodeLine } from '../internal/lines.ts';
 import {
   parseSocketMessage,
@@ -35,7 +36,7 @@ import { handlerContext } from '../server/handler/index.ts';
  * Options for {@link experimental_serveSocket}.
  * @example
  * ```ts
- * experimental_serveSocket(handler, { idleTimeoutMs: false });
+ * experimental_serveSocket(handler, { idleTimeout: false });
  * ```
  * @since 0.1.0
  * @stability experimental
@@ -44,9 +45,9 @@ export interface SocketOptions {
   /**
    * Close a connection that sends nothing for this long; `experimental_socketLink`'s
    * pings keep a live one open. `false` keeps silent connections.
-   * @default 60_000
+   * @default '60 seconds'
    */
-  readonly idleTimeoutMs?: number | false;
+  readonly idleTimeout?: Duration.Input | false;
 }
 
 /**
@@ -65,12 +66,12 @@ export interface SocketHandlerLike {
 const serveOne = (
   core: SocketCoreShape,
   socket: Socket.Socket,
-  opts: SocketOptions,
+  idleTimeout: Duration.Duration | undefined,
 ): Effect.Effect<void> =>
   serveSocketConnection(core, socket, {
     request: HttpServerRequest.fromWeb(new Request('http://localhost/')),
     transport: 'socket',
-    idleTimeoutMs: opts.idleTimeoutMs ?? 60_000,
+    idleTimeout,
     messages: decodeLines(Socket.toStream(socket)).pipe(
       Stream.map(parseSocketMessage),
     ),
@@ -105,11 +106,12 @@ export function experimental_serveSocket(
       'experimental_serveSocket() needs a handler from createFetchHandler()',
     );
   }
+  const idleTimeout = timerOption(opts.idleTimeout, '60 seconds');
   return Layer.effectDiscard(
     Effect.gen(function* () {
       const server = yield* SocketServer.SocketServer;
       yield* Effect.forkScoped(
-        server.run((socket) => serveOne(core, socket, opts)),
+        server.run((socket) => serveOne(core, socket, idleTimeout)),
       );
     }),
   );

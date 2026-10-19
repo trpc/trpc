@@ -33,8 +33,11 @@ function connect(
       return opts.token === undefined ? undefined : { token: opts.token };
     },
     // A ping 100 ms after each answer, which may take up to 400 ms.
-    keepAlive: opts.keepAlive ?? { intervalMs: 100, timeoutMs: 400 },
-    reconnect: { attempts: 50, delayMs: () => 100 },
+    keepAlive: opts.keepAlive ?? {
+      interval: '100 millis',
+      timeout: '400 millis',
+    },
+    reconnect: { attempts: 50, delay: () => 100 },
   });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),

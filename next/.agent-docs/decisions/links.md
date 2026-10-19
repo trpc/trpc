@@ -15,7 +15,7 @@
 - Built-in links:
   - `httpLink`: `batch`, streaming and SSE by negotiation; `longQuery: 'post' | 'query'` ([`wire-protocol.md`](./wire-protocol.md)).
   - `splitLink`, typed with the router's paths; `loggerLink`, `retryLink`, `localLink`.
-  - `wsLink`: connects lazily; reconnects with an exponential delay, 5 attempts by default; resends subscriptions with their `lastEventId`; fails in-flight queries and mutations with `NETWORK_ERROR`; optional `idleMs` close; `close()` and `Symbol.asyncDispose`.
+  - `wsLink`: connects lazily; reconnects with an exponential delay, 5 attempts by default; resends subscriptions with their `lastEventId`; fails in-flight queries and mutations with `NETWORK_ERROR`; optional `idleTimeout` close; `close()` and `Symbol.asyncDispose`.
   - `messagePortLink`: the same core, no reconnect.
   - (agent) `subscribe(input, { reconnect: false })` opts one subscription out of reconnecting, on `httpLink` and `wsLink`, for subscriptions with side effects that must not rerun. It's a `BuiltinCallOptions` field, next to `headers`, declared by the links that reconnect.
   - `dedupeLink`: shares in-flight queries, and aborts the shared request only when every caller has aborted. Mutations and subscriptions are never shared; `{ dedupe: false }` opts out. What counts as the same query, and how streams are shared: [`dedupe-link.md`](./dedupe-link.md).

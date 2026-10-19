@@ -78,7 +78,7 @@ const router = {
   }),
 };
 
-async function serve(opts: { idleTimeoutMs?: number | false } = {}) {
+async function serve(opts: { idleTimeout?: number | false } = {}) {
   const scope = Scope.makeUnsafe();
   const handler = createFetchHandler({
     router,
@@ -194,11 +194,11 @@ test('a client that stops reading pauses a subscription, which returns when the 
 });
 
 test('a dropped connection reconnects for the next call', async () => {
-  await using server = await serve({ idleTimeoutMs: 50 });
+  await using server = await serve({ idleTimeout: 50 });
   await using link = experimental_socketLink({
     socket: server.socket,
     keepAlive: false,
-    reconnect: { attempts: 3, delayMs: () => 10 },
+    reconnect: { attempts: 3, delay: () => 10 },
   });
   const client = createTrpcClient({
     router: routerType<typeof router>(),

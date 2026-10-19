@@ -290,7 +290,7 @@ test('a returned HttpServerResponse gains the handle’s headers and cookies', a
 });
 
 test('subscriptions: invalid input is an error event, cookies set, pings optional', async () => {
-  const quiet = make({ sse: { pingMs: false } });
+  const quiet = make({ sse: { pingInterval: false } });
   const invalid = await call(
     quiet,
     `/trpc/events?input=${encodeURIComponent('{"from":"x"}')}`,
@@ -305,7 +305,7 @@ test('subscriptions: invalid input is an error event, cookies set, pings optiona
   expect(await ok.text()).toContain('data: 1\n');
   await quiet.dispose();
 
-  const chatty = make({ sse: { pingMs: 10 } });
+  const chatty = make({ sse: { pingInterval: 10 } });
   const slow = await (await call(chatty, '/trpc/slow')).text();
   expect(slow).toContain('event: ping');
   expect(slow).toContain('data: "late"');

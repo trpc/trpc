@@ -692,7 +692,7 @@ test('quiet subscriptions send keep-alive comments', async () => {
       }),
     },
     createContext: () => ({ user: null }),
-    sse: { pingMs: 10 },
+    sse: { pingInterval: 10 },
   });
   const res = await handler.fetch(new Request('http://localhost/api/slow'));
   const text = await res.text();
@@ -716,7 +716,7 @@ test('a cancelled subscription sends no keep-alives while it winds down', async 
       }),
     },
     createContext: () => ({ user: null }),
-    sse: { pingMs: 5 },
+    sse: { pingInterval: 5 },
   });
   const res = await handler.fetch(new Request('http://localhost/api/slow'));
   const reader = res.body!.getReader();

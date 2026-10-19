@@ -452,7 +452,7 @@ test('live collections share one WebSocket and resume with changes after a drop'
   await using server = await serve();
   await using ws = wsLink({
     url: server.wsUrl,
-    reconnect: { delayMs: () => 10 },
+    reconnect: { delay: () => 10 },
   });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),

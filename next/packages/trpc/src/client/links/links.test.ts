@@ -1,4 +1,4 @@
-import { Effect, Schema, Stream } from 'effect';
+import { Duration, Effect, Schema, Stream } from 'effect';
 import {
   createTrpcClient,
   httpLink,
@@ -195,36 +195,43 @@ test('loggerLink sees requests, results and errors', async () => {
   expect(last.direction === 'error' && last.error.code).toBe('NOT_FOUND');
 });
 
-test('retryLink retries network failures on queries only', async () => {
-  await using server = await serve();
-  let failures = 2;
-  const attempts: string[] = [];
-  const flakyFetch: typeof fetch = (input, init) => {
-    attempts.push(init?.method ?? 'GET');
-    if (failures-- > 0) return Promise.reject(new TypeError('fetch failed'));
-    return fetch(input, init);
-  };
-  const client = createTrpcClient({
-    router: routerType<AppRouter>(),
-    links: [
-      retryLink({ retries: 3, delayMs: () => 1 }),
-      httpLink({ url: server.url, fetch: flakyFetch }),
-    ],
-  });
-  expect(await client.whoami.query()).toBe('anonymous');
-  expect(attempts).toEqual(['GET', 'GET', 'GET']);
+test.each([
+  ['milliseconds', (): Duration.Input => 1],
+  ['a string', (): Duration.Input => '1 millis'],
+  ['a Duration', (): Duration.Input => Duration.millis(1)],
+] as const)(
+  'retryLink retries network failures on queries only, with a delay in %s',
+  async (_, delay) => {
+    await using server = await serve();
+    let failures = 2;
+    const attempts: string[] = [];
+    const flakyFetch: typeof fetch = (input, init) => {
+      attempts.push(init?.method ?? 'GET');
+      if (failures-- > 0) return Promise.reject(new TypeError('fetch failed'));
+      return fetch(input, init);
+    };
+    const client = createTrpcClient({
+      router: routerType<AppRouter>(),
+      links: [
+        retryLink({ retries: 3, delay }),
+        httpLink({ url: server.url, fetch: flakyFetch }),
+      ],
+    });
+    expect(await client.whoami.query()).toBe('anonymous');
+    expect(attempts).toEqual(['GET', 'GET', 'GET']);
 
-  failures = 1;
-  attempts.length = 0;
-  const [, err] = await safe(client.add.mutate({ a: 1, b: 1 }));
-  expect(err).toMatchObject({ code: 'NETWORK_ERROR' });
-  expect(attempts).toEqual(['POST']);
+    failures = 1;
+    attempts.length = 0;
+    const [, err] = await safe(client.add.mutate({ a: 1, b: 1 }));
+    expect(err).toMatchObject({ code: 'NETWORK_ERROR' });
+    expect(attempts).toEqual(['POST']);
 
-  attempts.length = 0;
-  const [, notFound] = await safe(client.find.query({ id: 'x' }));
-  expect(notFound).toMatchObject({ code: 'NOT_FOUND' });
-  expect(attempts).toHaveLength(1);
-});
+    attempts.length = 0;
+    const [, notFound] = await safe(client.find.query({ id: 'x' }));
+    expect(notFound).toMatchObject({ code: 'NOT_FOUND' });
+    expect(attempts).toHaveLength(1);
+  },
+);
 
 test('aborting a call rejects with CLIENT_CLOSED_REQUEST and aborts the server', async () => {
   await using server = await serve();

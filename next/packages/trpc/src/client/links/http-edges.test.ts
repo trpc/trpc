@@ -275,7 +275,7 @@ test('subscriptions: turned off, malformed events, unknown events', async () => 
     'data: {not json\n\n',
   ]) {
     const broken = clientWith(async () => sse(event), {
-      reconnect: { attempts: 0, delayMs: () => 1 },
+      reconnect: { attempts: 0, delay: () => 1 },
     });
     await expect(collect(broken.ticks.subscribe())).rejects.toMatchObject({
       code: 'NETWORK_ERROR',
@@ -290,13 +290,13 @@ test('a subscription retries a failed connect, then reads the stream', async () 
       ++attempts < 3
         ? Promise.reject(new TypeError('refused'))
         : real(input, init),
-    { reconnect: { attempts: 5, delayMs: () => 1 } },
+    { reconnect: { attempts: 5, delay: () => '1 millis' } },
   );
   expect(await collect(flaky.ticks.subscribe())).toEqual([1, 2]);
   expect(attempts).toBe(3);
 
   const empty = clientWith(async () => sse(''), {
-    reconnect: { attempts: 1, delayMs: () => 1 },
+    reconnect: { attempts: 1, delay: () => 1 },
   });
   await expect(collect(empty.ticks.subscribe())).rejects.toMatchObject({
     code: 'NETWORK_ERROR',
@@ -317,7 +317,7 @@ test('a subscription retries a failed connect, then reads the stream', async () 
   expect(Date.now() - started).toBeGreaterThanOrEqual(900);
 
   const down = clientWith(() => Promise.reject(new TypeError('refused')), {
-    reconnect: { attempts: 1, delayMs: () => 1 },
+    reconnect: { attempts: 1, delay: () => 1 },
   });
   await expect(collect(down.ticks.subscribe())).rejects.toMatchObject({
     code: 'NETWORK_ERROR',
@@ -333,7 +333,7 @@ test('a stream that ends inside a UTF-8 character, after an event, is lost', asy
   const cut = clientWith(
     async () =>
       new Response(bytes, { headers: { 'content-type': 'text/event-stream' } }),
-    { reconnect: { attempts: 0, delayMs: () => 1 } },
+    { reconnect: { attempts: 0, delay: () => 1 } },
   );
   const seen: unknown[] = [];
   await expect(

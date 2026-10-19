@@ -80,7 +80,7 @@ export const serveAsWebSocket = (
   runSocket({
     socket,
     frames: socketFrames(socket),
-    idleTimeoutMs: false,
+    idleTimeout: undefined,
     open: (outbox) =>
       Effect.gen(function* () {
         const unsent = bufferedAmountOf(socket);

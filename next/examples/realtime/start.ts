@@ -9,7 +9,7 @@ for (const backend of ['redis', 'postgres'] as const) {
   console.log(`${backend}:`);
   let server = await listen(0, { backend });
   try {
-    await using other = await listen(0, { backend, idleTimeoutMs: 1000 });
+    await using other = await listen(0, { backend, idleTimeout: '1 second' });
     const port = Number(new URL(server.url).port);
     await main(server.url, {
       other: other.url,

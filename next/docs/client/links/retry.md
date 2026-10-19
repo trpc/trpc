@@ -28,13 +28,13 @@ const client = createTrpcClient({
 
 - `retries`: how many times to retry, 3 by default.
 - `retry({ op, error, attempt })`: whether to retry this failure. It replaces the default rule, so check `op.type` yourself before retrying mutations.
-- `delayMs(attempt, error)`: how long to wait before a retry, `2 ** attempt * 100` by default.
+- `delay(attempt, error)`: how long to wait before a retry, as an Effect `Duration.Input`: milliseconds, a string like `'2 seconds'` or a `Duration`. `2 ** attempt * 100` milliseconds by default.
 
 Put it before the terminating link, and after [`dedupeLink`](./dedupe.md), so a shared query is retried once for all its callers.
 
 ## Waiting out a rate limit
 
-`delayMs` gets the error, so a retry can wait as long as the server asks. A server that rate-limits can fail with `TOO_MANY_REQUESTS` and the wait in `data.retryAfter`, in milliseconds. Links see every error untyped, so `data` is `any` here:
+`delay` gets the error, so a retry can wait as long as the server asks. A server that rate-limits can fail with `TOO_MANY_REQUESTS` and the wait in `data.retryAfter`, in milliseconds. Links see every error untyped, so `data` is `any` here:
 
 ```ts twoslash
 // ---cut-start---
@@ -42,7 +42,7 @@ import { retryLink } from '@trpc12/trpc/client';
 // ---cut-end---
 retryLink({
   retry: (opts) => opts.error.code === 'TOO_MANY_REQUESTS',
-  delayMs: (attempt, error) =>
+  delay: (attempt, error) =>
     error.code === 'TOO_MANY_REQUESTS'
       ? error.data.retryAfter
       : 2 ** attempt * 100,

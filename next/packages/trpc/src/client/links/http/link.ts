@@ -1,4 +1,4 @@
-import { Stream } from 'effect';
+import { Stream, type Duration } from 'effect';
 import { TrpcError } from '../../../internal/error.ts';
 import type { FormOfOptions, MaybePromise } from '../../../internal/types.ts';
 import {
@@ -91,8 +91,12 @@ export interface HttpLinkOptions<
   reconnect?: {
     /** @default 5 */
     attempts?: number;
-    /** @default attempt => Math.min(1000 * 2 ** (attempt - 1), 30_000) */
-    delayMs?: (attempt: number) => number;
+    /**
+     * Delay before each reconnect: milliseconds, a string like `'2 seconds'`
+     * or a `Duration`.
+     * @default attempt => Math.min(1000 * 2 ** (attempt - 1), 30_000)
+     */
+    delay?: (attempt: number) => Duration.Input;
   };
 }
 

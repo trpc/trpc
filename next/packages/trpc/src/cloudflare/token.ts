@@ -1,4 +1,4 @@
-import { Clock, Effect, Redacted, Result, Schema } from 'effect';
+import { Clock, Duration, Effect, Redacted, Result, Schema } from 'effect';
 import { Base64Url } from 'effect/encoding';
 import { TrpcError, type CodeError } from '../internal/error.ts';
 
@@ -6,7 +6,7 @@ import { TrpcError, type CodeError } from '../internal/error.ts';
  * Options for {@link experimental_connectionToken}.
  * @example
  * ```ts
- * experimental_connectionToken(RoomClaims, { secret: env.TOKEN_SECRET, ttlSeconds: 600 });
+ * experimental_connectionToken(RoomClaims, { secret: env.TOKEN_SECRET, ttl: '10 minutes' });
  * ```
  * @since 0.1.0
  * @stability experimental
@@ -16,9 +16,9 @@ export interface ConnectionTokenOptions {
   readonly secret: string | Redacted.Redacted<string>;
   /**
    * How long a token is valid after `sign`.
-   * @default 3600
+   * @default '1 hour'
    */
-  readonly ttlSeconds?: number;
+  readonly ttl?: Duration.Input;
 }
 
 /**
@@ -32,7 +32,7 @@ export interface ConnectionTokenOptions {
  * @stability experimental
  */
 export interface ConnectionToken<A> {
-  /** A token with `claims` that expires after `ttlSeconds`. */
+  /** A token with `claims` that expires after `ttl`. */
   readonly sign: (claims: A) => Effect.Effect<string>;
   /**
    * The claims of a token this secret signed. Fails with `UNAUTHORIZED`
@@ -77,7 +77,7 @@ export function experimental_connectionToken<S extends Schema.Codec<any, any>>(
   schema: S,
   opts: ConnectionTokenOptions,
 ): ConnectionToken<S['Type']> {
-  const ttlMs = (opts.ttlSeconds ?? 3600) * 1000;
+  const ttlMs = Duration.toMillis(opts.ttl ?? '1 hour');
   const codec = Schema.fromJsonString(schema);
   let key: Promise<CryptoKey> | undefined;
   const cryptoKey = Effect.promise(

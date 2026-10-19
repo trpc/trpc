@@ -321,7 +321,7 @@ test('inputs the transformer cannot read, and createContext errors, fail the cal
 });
 
 test('an idle connection closes; each message restarts the clock', async () => {
-  await using app = await start({ websocket: { idleTimeoutMs: 80 } });
+  await using app = await start({ websocket: { idleTimeout: 80 } });
   const ws = await connect(app.url);
   const opened = Date.now();
   for (let i = 0; i < 3; i++) {

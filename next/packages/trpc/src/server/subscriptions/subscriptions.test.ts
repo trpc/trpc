@@ -1,4 +1,4 @@
-import { Effect, Fiber, Predicate, Schedule, Stream } from 'effect';
+import { Duration, Effect, Fiber, Predicate, Schedule, Stream } from 'effect';
 import { HttpRouter, HttpServerRequest } from 'effect/http';
 import { EventSource } from 'undici';
 import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
@@ -127,7 +127,12 @@ async function setup(user: string | null = 'ada') {
   current = server;
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: server.url, reconnect: { delayMs: () => 10 } })],
+    links: [
+      httpLink({
+        url: server.url,
+        reconnect: { delay: () => Duration.millis(10) },
+      }),
+    ],
   });
   return { server, client, [Symbol.asyncDispose]: () => server.close() };
 }
@@ -381,27 +386,34 @@ test('events can hold deferred values; their chunks stream after the event', asy
   expect(await collect(uploads[1]!.data.progress)).toEqual([50, 100]);
 });
 
-test('quiet subscriptions send keep-alive comments', async () => {
-  const pinged = {
-    slow: t.procedure.subscription(async function* () {
-      yield 'a';
-      await sleep(60);
-      yield 'b';
-    }),
-  };
-  await using server = await createTestServer({
-    router: pinged,
-    createContext: () => ({ user: null }),
-    sse: { pingMs: 10 },
-  });
-  const text = await (await fetch(`${server.url}/slow`)).text();
-  expect(text).toContain(': ping\n\n');
-  const client = createTrpcClient({
-    router: routerType<typeof pinged>(),
-    links: [httpLink({ url: server.url })],
-  });
-  expect(await collect(client.slow.subscribe())).toEqual(['a', 'b']);
-});
+test.each([
+  ['milliseconds', 10],
+  ['a string', '10 millis'],
+  ['a Duration', Duration.millis(10)],
+] as const)(
+  'quiet subscriptions send keep-alive comments, every pingInterval in %s',
+  async (_, pingInterval) => {
+    const pinged = {
+      slow: t.procedure.subscription(async function* () {
+        yield 'a';
+        await sleep(60);
+        yield 'b';
+      }),
+    };
+    await using server = await createTestServer({
+      router: pinged,
+      createContext: () => ({ user: null }),
+      sse: { pingInterval },
+    });
+    const text = await (await fetch(`${server.url}/slow`)).text();
+    expect(text).toContain(': ping\n\n');
+    const client = createTrpcClient({
+      router: routerType<typeof pinged>(),
+      links: [httpLink({ url: server.url })],
+    });
+    expect(await collect(client.slow.subscribe())).toEqual(['a', 'b']);
+  },
+);
 
 test('without keep-alives a subscription sends only its events; one that interrupts itself just ends', async () => {
   await using server = await createTestServer({
@@ -416,7 +428,7 @@ test('without keep-alives a subscription sends only its events; one that interru
       ),
     },
     createContext: () => ({ user: null }),
-    sse: { pingMs: false },
+    sse: { pingInterval: false },
   });
   const text = await (await fetch(`${server.url}/slow`)).text();
   expect(text).not.toContain(': ping');

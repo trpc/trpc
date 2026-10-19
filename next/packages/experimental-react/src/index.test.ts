@@ -17,7 +17,7 @@ import {
   type AnyLink,
 } from '@trpc12/trpc/client';
 import { createSerializer } from '@trpc12/trpc/serializer';
-import { Effect, Stream } from 'effect';
+import { Duration, Effect, Stream } from 'effect';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import {
   db,
@@ -74,16 +74,23 @@ test('without links, an entry lives only while something holds it', async () => 
   expect(trpc.store.entries()).toHaveLength(0);
 });
 
-test('cacheLink serves fresh data without a request and keeps unread entries', async () => {
-  using _db = freshDb();
-  const trpc = make([cacheLink({ staleTime: 60_000, gcTime: 20 })]);
-  const first = trpc.post.byId.query({ id: '1' });
-  await first;
-  expect(trpc.post.byId.query({ id: '1' })).toBe(first);
-  expect(db.calls).toEqual(['byId:1']);
-  await tick(40);
-  expect(trpc.store.entries()).toHaveLength(0);
-});
+test.each([
+  ['milliseconds', 60_000, 20],
+  ['strings', '1 minute', '20 millis'],
+  ['Durations', Duration.minutes(1), Duration.millis(20)],
+] as const)(
+  'cacheLink serves fresh data without a request and keeps unread entries, with times in %s',
+  async (_, staleTime, gcTime) => {
+    using _db = freshDb();
+    const trpc = make([cacheLink({ staleTime, gcTime })]);
+    const first = trpc.post.byId.query({ id: '1' });
+    await first;
+    expect(trpc.post.byId.query({ id: '1' })).toBe(first);
+    expect(db.calls).toEqual(['byId:1']);
+    await tick(40);
+    expect(trpc.store.entries()).toHaveLength(0);
+  },
+);
 
 test('stale data is returned at once and refetched; changed data gets a new promise', async () => {
   using _db = freshDb();

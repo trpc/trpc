@@ -32,7 +32,7 @@ export function makeSubscriptions(
 ): (op: Operation) => OperationStream {
   const reconnectAttempts = opts.reconnect?.attempts ?? 5;
   const reconnectDelay =
-    opts.reconnect?.delayMs ??
+    opts.reconnect?.delay ??
     ((attempt: number) => Math.min(1000 * 2 ** (attempt - 1), 30_000));
 
   return (op) =>
