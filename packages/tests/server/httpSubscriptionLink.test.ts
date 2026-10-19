@@ -790,6 +790,138 @@ describe('transformers / different serialize-deserialize', async () => {
   });
 });
 
+describe('tracked and untracked yields', () => {
+  type Yield = { id?: string; data: string };
+
+  function getCtx(sse?: RootConfig<any>['sse']) {
+    const ee = new EventEmitter();
+    const onConnection = vi.fn<(lastEventId: string | undefined) => void>();
+
+    const t = initTRPC.create({ sse });
+    const router = t.router({
+      mixed: t.procedure
+        .input(z.object({ lastEventId: z.string().optional() }).optional())
+        .subscription(async function* (opts) {
+          onConnection(opts.input?.lastEventId);
+          for await (const [value] of on(ee, 'data', {
+            signal: opts.signal,
+          })) {
+            const { id, data } = value as Yield;
+            yield id ? tracked(id, data) : data;
+          }
+        }),
+    });
+
+    const opts = testServerAndClientResource(router, {
+      clientLink: 'httpSubscriptionLink',
+    });
+
+    return {
+      ...opts,
+      onConnection,
+      emit: (value: Yield) => ee.emit('data', value),
+      listenerCount: () => ee.listenerCount('data'),
+    };
+  }
+
+  test('untracked yields after a tracked yield do not get its id', async () => {
+    await using ctx = getCtx();
+    const onData = vi.fn();
+    const sub = ctx.client.mixed.subscribe(undefined, { onData });
+
+    await vi.waitFor(() => {
+      expect(ctx.listenerCount()).toBe(1);
+    });
+    ctx.emit({ id: '1', data: 'first' });
+    ctx.emit({ data: 'second' });
+    ctx.emit({ id: '2', data: 'third' });
+    ctx.emit({ data: 'fourth' });
+    ctx.emit({ data: 'fifth' });
+
+    await vi.waitFor(() => {
+      expect(onData).toHaveBeenCalledTimes(5);
+    });
+    expect(onData.mock.calls.map((call) => call[0])).toEqual([
+      { id: '1', data: 'first' },
+      'second',
+      { id: '2', data: 'third' },
+      'fourth',
+      'fifth',
+    ]);
+
+    sub.unsubscribe();
+  });
+
+  test('EventSource reconnect after an untracked yield resumes from the last tracked id', async () => {
+    await using ctx = getCtx();
+    const onData = vi.fn();
+    const sub = ctx.client.mixed.subscribe(undefined, { onData });
+
+    await vi.waitFor(() => {
+      expect(ctx.listenerCount()).toBe(1);
+    });
+    ctx.emit({ id: '1', data: 'first' });
+    ctx.emit({ data: 'second' });
+    await vi.waitFor(() => {
+      expect(onData).toHaveBeenCalledTimes(2);
+    });
+
+    const release = suppressLogs();
+    ctx.destroyConnections();
+    await vi.waitFor(
+      () => {
+        expect(ctx.onConnection).toHaveBeenCalledTimes(2);
+      },
+      { timeout: 3_000 },
+    );
+    release();
+
+    expect(ctx.onConnection.mock.calls).toEqual([[undefined], ['1']]);
+
+    await vi.waitFor(() => {
+      expect(ctx.listenerCount()).toBe(1);
+    });
+    ctx.emit({ data: 'third' });
+    await vi.waitFor(() => {
+      expect(onData).toHaveBeenCalledTimes(3);
+    });
+    expect(onData.mock.calls.map((call) => call[0])).toEqual([
+      { id: '1', data: 'first' },
+      'second',
+      'third',
+    ]);
+
+    sub.unsubscribe();
+  });
+
+  test('reconnect after inactivity following an untracked yield resumes from the last tracked id', async () => {
+    await using ctx = getCtx({
+      client: { reconnectAfterInactivityMs: 300 },
+    });
+    const onData = vi.fn();
+    const sub = ctx.client.mixed.subscribe(undefined, { onData });
+
+    await vi.waitFor(() => {
+      expect(ctx.listenerCount()).toBe(1);
+    });
+    ctx.emit({ id: '1', data: 'first' });
+    ctx.emit({ data: 'second' });
+    await vi.waitFor(() => {
+      expect(onData).toHaveBeenCalledTimes(2);
+    });
+
+    await vi.waitFor(
+      () => {
+        expect(ctx.onConnection).toHaveBeenCalledTimes(2);
+      },
+      { timeout: 3_000 },
+    );
+    expect(ctx.onConnection.mock.calls[1]).toEqual(['1']);
+
+    sub.unsubscribe();
+  });
+});
+
 describe('timeouts', async () => {
   interface CtxOpts {
     sse?: RootConfig<any>['sse'];
