@@ -116,23 +116,21 @@ const isDeferred = (value: unknown) =>
 const running = new WeakMap<object, Map<string, Deferred.Deferred<Ran>>>();
 
 /** A SHA-256 of the serialized input; `''` for inputs with files. */
-const fingerprint = (
+const fingerprint = Effect.fnUntraced(function* (
   serializer: Pick<Serializer, 'serialize'>,
   input: unknown,
-) =>
-  Effect.promise(async () => {
-    let json: string;
-    try {
-      json = JSON.stringify(serializer.serialize(input));
-    } catch {
-      return '';
-    }
-    const digest = await crypto.subtle.digest(
-      'SHA-256',
-      new TextEncoder().encode(json),
-    );
-    return Base64.encode(new Uint8Array(digest));
-  });
+) {
+  let json: string;
+  try {
+    json = JSON.stringify(serializer.serialize(input));
+  } catch {
+    return '';
+  }
+  const digest = yield* Effect.promise(() =>
+    crypto.subtle.digest('SHA-256', new TextEncoder().encode(json)),
+  );
+  return Base64.encode(new Uint8Array(digest));
+});
 
 const conflict = () =>
   new TrpcError.Conflict({
