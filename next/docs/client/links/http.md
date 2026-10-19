@@ -82,7 +82,7 @@ A subscription is an SSE request. When the connection drops, the link reconnects
 `httpLink` declares the three [link codes](../errors.md#errors-from-the-links), so every call through it can fail with them, and every `matchError()` needs their handlers:
 
 - `NETWORK_ERROR`: `fetch` rejected, or a subscription lost its connection and ran out of reconnects.
-- `BAD_RESPONSE`: the response isn't a tRPC one and its status names no code (an HTML page sent with `200`), or it doesn't decode. A proxy's `401` or `502` page is an `UNAUTHORIZED` or `BAD_GATEWAY`.
+- `BAD_RESPONSE`: the response isn't a tRPC one and its status names no code (an HTML page or an empty body sent with `200`), or it doesn't decode. A proxy's `401` or `502` page is an `UNAUTHORIZED` or `BAD_GATEWAY`.
 - `STREAM_INTERRUPTED`: a [streamed output](#streamed-outputs-and-files) stopped before its end.
 
 A client over `localLink` has none of them ([Errors from the links](../errors.md#errors-from-the-links) shows both).

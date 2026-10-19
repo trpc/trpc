@@ -47,7 +47,7 @@ const [post, err] = await safeClient.post.byId.query({ id: '1' });
 | Built-in code               | When                                                                                                                                                   |
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `NETWORK_ERROR`             | The request got no response, or the connection dropped. Only from links that send requests.                                                            |
-| `BAD_RESPONSE`              | The response wasn't a tRPC one (a proxy's HTML page) or didn't decode. Only from links that read responses.                                            |
+| `BAD_RESPONSE`              | The response wasn't a tRPC one and its status names no code (an HTML page or an empty body sent with `200`), or it didn't decode. Only from links that read responses. |
 | `STREAM_INTERRUPTED`        | A stream stopped without an end or an error. Only from links that read streams.                                                                        |
 | `CLIENT_CLOSED_REQUEST`     | The call's `signal` aborted it.                                                                                                                        |
 | `CLIENT_ERROR`              | A link failed, or failed with a custom code it didn't declare.                                                                                         |

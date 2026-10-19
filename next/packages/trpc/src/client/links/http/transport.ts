@@ -39,6 +39,8 @@ import { resumeOf, retrying, type Retries } from '../resume.ts';
 import type { Batch } from './batch.ts';
 import type { HttpLinkOptions } from './link.ts';
 
+const NO_BODY_STATUSES = new Set([204, 205, 304]);
+
 const isAbort = (cause: unknown) =>
   cause instanceof Error && cause.name === 'AbortError';
 
@@ -487,11 +489,15 @@ export function makeTransport(
     }
     return reply.response.text.pipe(
       Effect.flatMap((text) =>
-        Effect.try({
-          try: () =>
-            text ? serializer.deserialize(JSON.parse(text)) : undefined,
-          catch: badResponse('Invalid response body'),
-        }),
+        // A tRPC server always writes a body (`{}` for `undefined`), except
+        // for a status that can't have one.
+        text === '' && !NO_BODY_STATUSES.has(reply.response.status)
+          ? Effect.fail(badResponse('Empty response body')())
+          : Effect.try({
+              try: () =>
+                text ? serializer.deserialize(JSON.parse(text)) : undefined,
+              catch: badResponse('Invalid response body'),
+            }),
       ),
       Effect.mapError(toHttpError),
     );

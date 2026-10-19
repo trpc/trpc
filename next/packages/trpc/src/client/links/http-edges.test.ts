@@ -136,8 +136,14 @@ test('fetch failures and pages that are not tRPC errors', async () => {
   expect(conflict).toMatchObject({ code: 'CONFLICT', message: 'taken' });
   expect(conflict?.data).toBeUndefined();
 
-  const empty = clientWith(async () => new Response(null, { status: 200 }));
-  expect(await empty.echo.query(1)).toBeUndefined();
+  // A tRPC server writes `{}` for `undefined`, so an empty 200 is someone else's.
+  const empty = (status: number) =>
+    clientWith(async () => new Response(null, { status })).echo.query(1);
+  expect((await safe(empty(200)))[1]).toMatchObject({
+    code: 'BAD_RESPONSE',
+    message: 'Empty response body',
+  });
+  expect(await empty(204)).toBeUndefined();
 });
 
 test('a relative url with no page to resolve it against fails before fetch, as an invalid URL', async () => {
