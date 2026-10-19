@@ -239,14 +239,15 @@ test('resolveProcedureEffect and loadRouterEffect load lazy subtrees as Effects'
 
 test('a router key no client can call is an error when it is served', async () => {
   const q = t.procedure.query(() => 1);
-  const reserved: string = 'then';
+  const withKey = (key: string, node: AnyRouter[string]): AnyRouter =>
+    Object.fromEntries([[key, node]]);
   expect(() =>
-    createFetchHandler({ router: { post: { [reserved]: q } } }),
+    createFetchHandler({ router: { post: withKey('then', q) } }),
   ).toThrow('Router key "post.then": "then" is reserved');
   expect(() => createRouterClient({ 'post.byId': q })).toThrow(
     'Router key "post.byId": "." separates path segments',
   );
-  const router: AnyRouter = { admin: lazy(async () => ({ [reserved]: q })) };
+  const router: AnyRouter = { admin: lazy(async () => withKey('then', q)) };
   await expect(resolveProcedure(router, 'admin.then')).rejects.toThrow(
     'Router key "then"',
   );

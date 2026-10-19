@@ -83,7 +83,13 @@ test('JsonOf is the JSON round trip of a type', () => {
 test('jsonSerializer writes what JSON.stringify writes, and skips the copy when a value is JSON already', () => {
   const roundtrip = (value: unknown) =>
     JSON.parse(JSON.stringify(value) ?? 'null') as unknown;
-  const pure = { id: '1', n: 2.5, ok: true, none: null, tags: ['a', { b: 1 }] };
+  const pure: Record<string, unknown> = {
+    id: '1',
+    n: 2.5,
+    ok: true,
+    none: null,
+    tags: ['a', { b: 1 }],
+  };
   const sparse: unknown[] = [1];
   sparse[2] = 3;
   const values: unknown[] = [
@@ -100,7 +106,7 @@ test('jsonSerializer writes what JSON.stringify writes, and skips the copy when 
     expect(jsonSerializer.serialize(value).json).toEqual(roundtrip(value));
   }
   expect(jsonSerializer.serialize(pure).json).toBe(pure);
-  const dated = { at };
+  const dated: { at: Date } = { at };
   expect(jsonSerializer.serialize(dated).json).not.toBe(dated);
   expect(jsonSerializer.serialize(undefined)).toEqual({});
 
