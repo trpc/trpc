@@ -24,7 +24,7 @@ The document has schemas for input, output and each declared error. Each error's
 
 ## Security and tags
 
-`components.securitySchemes` declares how clients authenticate, and `security` says which schemes every operation needs. Docs UIs show a login form for them, and generated clients attach the credentials. A procedure's `route.spec` overrides it, with `security: []` for a public route. `tags` describes the tags routes use, in the order docs UIs list them.
+`components.securitySchemes` declares how clients authenticate, and `security` says which schemes every operation needs. Docs UIs show a login form for them, and generated clients attach the credentials ([Generating a client with Hey API](./hey-api.md)). A procedure's `route.spec` overrides it, with `security: []` for a public route. `tags` describes the tags routes use, in the order docs UIs list them.
 
 ```ts twoslash
 // ---cut-start---

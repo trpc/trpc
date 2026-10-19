@@ -4,6 +4,7 @@
   "description": "The app the docs' code blocks compile in: their imports resolve here, and `sample` fences show regions of its files",
   "type": "module",
   "scripts": {
+    "generate:api": "node src/openapi.ts && pnpm dlx --package=@hey-api/openapi-ts@0.99.0 --package=typescript@6.0.3 openapi-ts",
     "typecheck": "tsc"
   },
   "dependencies": {
@@ -60,6 +61,7 @@
     "zod": "4.6.5"
   },
   "devDependencies": {
+    "@hey-api/openapi-ts": "0.99.0",
     "@types/bun": "1.4.3",
     "@types/node": "26.6.4",
     "@types/react": "19.3.0",

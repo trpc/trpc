@@ -66,6 +66,7 @@ Pages marked (experimental) belong to an experiment, unlisted on the site until 
 - [The document](./openapi/document.md): Generate an OpenAPI 3.1 document from the router's schemas, or from its types.
 - [Calling REST from the client](./openapi/client.md): `experimental_openApiLink` sends each call to its REST route, typed from a contract.
 - [A contract from OpenAPI](./openapi/from-document.md): Generate a typed contract module from any OpenAPI 3.0 or 3.1 document.
+- [Generating a client with Hey API](./openapi/hey-api.md): Generate a typed SDK of the REST routes from the OpenAPI document, with Hey API.
 - [Validating on the client](./client/validation.md): `experimental_validationLink` checks inputs before sending and results when they arrive, against a contract.
 
 ## Adapters

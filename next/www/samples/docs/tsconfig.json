@@ -13,5 +13,5 @@
     "allowImportingTsExtensions": true,
     "types": ["node"]
   },
-  "include": ["src"]
+  "include": ["src", "openapi-ts.config.ts"]
 }

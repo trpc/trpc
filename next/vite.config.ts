@@ -27,6 +27,9 @@ export default defineConfig({
       'packages/*/src/**/fixtures/generated/**',
       // TanStack Router writes these.
       '**/src/routeTree.gen.ts',
+      // `pnpm --filter @samples/docs generate:api` writes these.
+      'www/samples/docs/openapi.json',
+      'www/samples/docs/src/api/**',
       // `pnpm --filter @trpc12/www old-docs:copy` writes these.
       'www/v11/**',
       'www/v10/**',
@@ -46,6 +49,9 @@ export default defineConfig({
       'packages/*/src/**/fixtures/generated/**',
       // TanStack Router writes these.
       '**/src/routeTree.gen.ts',
+      // `pnpm --filter @samples/docs generate:api` writes these.
+      'www/samples/docs/openapi.json',
+      'www/samples/docs/src/api/**',
     ],
     options: {
       typeAware: true,
