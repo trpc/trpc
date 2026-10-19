@@ -94,3 +94,16 @@ test('lintDocs reports overzealous destructuring and unparseable blocks at their
     '8:22 trpc(no-overzealous-destructuring)',
   ]);
 });
+
+test('lintDocs reports bare code in the prose at its Markdown lines', async () => {
+  const prose = fileURLToPath(new URL('fixtures/prose.md', import.meta.url));
+  const result = await Effect.runPromise(
+    lintDocs([prose], 'unix').pipe(Effect.provide(NodeServices.layer)),
+  );
+  expect(result.exitCode).toBe(1);
+  expect(result.output.split('\n')).toEqual([
+    'tooling/docs-lint/fixtures/prose.md:3:32: `ctx` is an identifier: put it in backticks (pnpm lint:docs --fix) [Error/docs(bare-code)]',
+    'tooling/docs-lint/fixtures/prose.md:3:41: `t.concat()` is a call: put it in backticks (pnpm lint:docs --fix) [Error/docs(bare-code)]',
+    'tooling/docs-lint/fixtures/prose.md:6:24: `@trpc12/trpc/server` is a package or import path: put it in backticks (pnpm lint:docs --fix) [Error/docs(bare-code)]',
+  ]);
+});
