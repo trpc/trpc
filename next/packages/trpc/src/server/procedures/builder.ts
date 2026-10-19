@@ -294,7 +294,9 @@ export type Returns<TOutput, TErrors> =
   | Listed<TErrors>
   | Promise<ValueOf<TOutput> | Listed<TErrors>>
   | Effect.Effect<ValueOf<TOutput> | Listed<TErrors>, Mapped<TErrors>, any>
-  | (TOutput extends StreamOutput<any, any> ? never : StreamWithoutStreamSchema);
+  | (TOutput extends StreamOutput<any, any>
+      ? never
+      : StreamWithoutStreamSchema);
 
 /** What a subscription may return for an event `TEvent`. @internal */
 export type Yields<TEvent, TErrors> =
