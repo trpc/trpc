@@ -27,3 +27,4 @@ export type {
   SerializerOption,
 } from './fetch.ts';
 export { handlerContext, setHandlerContext } from './handler-context.ts';
+export { withMiddleware } from './routes.ts';

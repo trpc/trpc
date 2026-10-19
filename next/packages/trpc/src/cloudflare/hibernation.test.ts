@@ -6,6 +6,7 @@ import {
   experimental_hibernatingPublisher,
   type HibernatableWebSocket,
 } from '@trpc12/trpc/cloudflare';
+import { cors } from '@trpc12/trpc/http';
 import {
   createFetchHandler,
   initTrpc,
@@ -199,32 +200,85 @@ test('keep-alive pings are answered without waking the object', () => {
   );
 });
 
-test('upgrade() accepts one end of a WebSocketPair and returns the other', () => {
-  const client = new FakeSocket();
-  const server = new FakeSocket();
+/** Node's `Response` refuses the 101 with a `webSocket` that Workers send. */
+class WorkersResponse extends Response {
+  readonly webSocket: unknown;
+  constructor(
+    body?: BodyInit | null,
+    init?: ResponseInit & { webSocket?: unknown },
+  ) {
+    super(body, init?.status === 101 ? { ...init, status: 200 } : init);
+    this.webSocket = init?.webSocket;
+  }
+  override get status() {
+    return this.webSocket ? 101 : super.status;
+  }
+}
+
+/** Workers' `WebSocketPair` and `Response`; `pairs` lists each pair made. */
+const stubWorkers = () => {
+  const pairs: [FakeSocket, FakeSocket][] = [];
   vi.stubGlobal(
     'WebSocketPair',
     class {
-      0 = client;
-      1 = server;
-    },
-  );
-  vi.stubGlobal(
-    'Response',
-    class {
-      init: unknown;
-      constructor(_body: null, init: unknown) {
-        this.init = init;
+      0 = new FakeSocket();
+      1 = new FakeSocket();
+      constructor() {
+        pairs.push([this[0], this[1]]);
       }
     },
   );
+  vi.stubGlobal('Response', WorkersResponse);
+  return pairs;
+};
+
+test('upgrade() accepts one end of a WebSocketPair and returns the other', async () => {
+  const pairs = stubWorkers();
   const state = fakeState();
   const sockets = experimental_createHibernatingWebSockets(handler, { state });
-  const res = sockets.upgrade(request, platform) as unknown as {
-    init: { status: number; webSocket: unknown };
-  };
-  expect(res.init).toEqual({ status: 101, webSocket: client });
+  const res = (await sockets.upgrade(request, platform)) as WorkersResponse;
+  const [client, server] = pairs[0]!;
+  expect(res.status).toBe(101);
+  expect(res.webSocket).toBe(client);
   expect(state.accepted).toEqual([server]);
+});
+
+test("upgrade() runs the handler's middleware: cors() refuses another origin with a 403 before a socket exists", async () => {
+  const guarded = createFetchHandler<typeof router, { env: Env }>({
+    router,
+    createContext: () => ({
+      token: undefined,
+      cookie: null,
+      other: null,
+      region: undefined,
+    }),
+    middleware: [cors({ allowedOrigins: ['https://app.example'] })],
+  });
+  const pairs = stubWorkers();
+  const state = fakeState();
+  const sockets = experimental_createHibernatingWebSockets(guarded, { state });
+  const from = (origin: string) =>
+    new Request(request, { headers: { upgrade: 'websocket', origin } });
+
+  const refused = await sockets.upgrade(from('https://evil.example'), platform);
+  expect(refused.status).toBe(403);
+  expect(pairs).toEqual([]);
+  expect(state.accepted).toEqual([]);
+
+  const allowed = (await sockets.upgrade(
+    from('https://app.example'),
+    platform,
+  )) as WorkersResponse;
+  expect(allowed.status).toBe(101);
+  expect(allowed.headers.get('access-control-allow-origin')).toBe(
+    'https://app.example',
+  );
+  expect(state.accepted).toEqual([pairs[0]![1]]);
+
+  // Non-browser clients send no origin and pass.
+  const plain = await sockets.upgrade(request, platform);
+  expect(plain.status).toBe(101);
+  expect(state.accepted).toHaveLength(2);
 });
 
 test('a socket the adapter did not accept is closed', () => {
@@ -712,7 +766,7 @@ test('a Redacted secret, the default ttl of an hour, and claims an older schema 
   expect(malformed).toMatchObject({ message: 'Malformed connection token' });
 });
 
-test('a handler not from createFetchHandler, and upgrade() outside Workers, are refused', () => {
+test('a handler not from createFetchHandler, and upgrade() outside Workers, are refused', async () => {
   expect(() =>
     experimental_createHibernatingWebSockets({ fetch: () => {} } as never, {
       state: fakeState(),
@@ -721,7 +775,7 @@ test('a handler not from createFetchHandler, and upgrade() outside Workers, are 
   const sockets = experimental_createHibernatingWebSockets(handler, {
     state: fakeState(),
   });
-  expect(() => sockets.upgrade(request, platform)).toThrow(
+  await expect(sockets.upgrade(request, platform)).rejects.toThrow(
     'upgrade() needs WebSocketPair',
   );
 });

@@ -1,5 +1,5 @@
 import { Context, Effect, Exit, Scope, Stream } from 'effect';
-import { HttpServerRequest } from 'effect/http';
+import { HttpEffect, HttpServerRequest, HttpServerResponse } from 'effect/http';
 import {
   isTrpcError,
   toWireError,
@@ -15,7 +15,9 @@ import {
 import {
   type FetchHandler,
   type PlatformArgs,
+  HttpApp,
   handlerContext,
+  withMiddleware,
 } from '../server/handler/index.ts';
 import { resolveProcedureEffect } from '../server/procedures/index.ts';
 import {
@@ -80,9 +82,21 @@ export interface HibernatingWebSocketsOptions {
  * @stability experimental
  */
 export interface HibernatingWebSockets<TPlatform> {
-  /** Upgrades `request`: a `WebSocketPair`, accepted for hibernation, as a 101 response. */
-  upgrade(request: Request, ...platform: PlatformArgs<TPlatform>): Response;
-  /** Accepts a socket you created, for hibernation. */
+  /**
+   * Upgrades `request`: a `WebSocketPair`, accepted for hibernation, as a
+   * 101 response. It runs inside the handler's `middleware`, so `cors()`
+   * answers an upgrade from an origin it doesn't allow with a 403 before a
+   * socket exists. Rejects outside Workers, where there's no `WebSocketPair`.
+   */
+  upgrade(
+    request: Request,
+    ...platform: PlatformArgs<TPlatform>
+  ): Promise<Response>;
+  /**
+   * Accepts a socket you created, for hibernation. It's already open, so
+   * the handler's `middleware` doesn't run: check the origin before
+   * creating it, or use `upgrade()`.
+   */
   accept(
     socket: HibernatableWebSocket,
     request: Request,
@@ -186,11 +200,22 @@ const requestOf = (attachment: Attachment) =>
  * too, and its events are sent straight to the sockets, so the object
  * sleeps between them. Other subscriptions keep it awake until they end.
  *
+ * `upgrade()` runs the handler's `middleware`, so `cors({ allowedOrigins })`
+ * refuses cross-origin upgrades.
+ *
  * @example
  * ```ts
+ * const handler = createFetchHandler<AppRouter, { env: Env }>({
+ *   router,
+ *   middleware: [cors({ allowedOrigins: ['https://app.example.com'] })],
+ * });
+ *
  * export class Room extends DurableObject<Env> {
  *   sockets = experimental_createHibernatingWebSockets(handler, { state: this.ctx });
- *   fetch(request: Request) {
+ *   fetch(request: Request): Promise<Response> {
+ *     if (request.headers.get('upgrade') !== 'websocket') {
+ *       return handler.fetch(request, { env: this.env });
+ *     }
  *     return this.sockets.upgrade(request, { env: this.env });
  *   }
  *   webSocketMessage(ws: WebSocket, message: string | ArrayBuffer) {
@@ -208,12 +233,15 @@ export function experimental_createHibernatingWebSockets<TPlatform>(
   handler: FetchHandler<TPlatform>,
   opts: HibernatingWebSocketsOptions,
 ): HibernatingWebSockets<TPlatform> {
-  const core = Context.getOrUndefined(handlerContext(handler), SocketCore);
+  const services = handlerContext(handler);
+  const core = Context.getOrUndefined(services, SocketCore);
   if (!core) {
     throw new TypeError(
       'experimental_createHibernatingWebSockets needs a handler from createFetchHandler',
     );
   }
+  const middleware =
+    Context.getOrUndefined(services, HttpApp)?.middleware ?? [];
   const keep = new Set(
     (opts.keepHeaders ?? ['authorization', 'cookie']).map((h) =>
       h.toLowerCase(),
@@ -389,16 +417,23 @@ export function experimental_createHibernatingWebSockets<TPlatform>(
         }
       ).WebSocketPair;
       if (!WebSocketPair) {
-        throw new TypeError(
-          'upgrade() needs WebSocketPair (Cloudflare Workers)',
+        return Promise.reject(
+          new TypeError('upgrade() needs WebSocketPair (Cloudflare Workers)'),
         );
       }
-      const { 0: client, 1: server } = new WebSocketPair();
-      sockets.accept(server, request, ...platform);
-      return new Response(null, {
-        status: 101,
-        webSocket: client,
-      } as ResponseInit);
+      const accepted = Effect.sync(() => {
+        const { 0: client, 1: server } = new WebSocketPair();
+        sockets.accept(server, request, ...platform);
+        return HttpServerResponse.raw(
+          new Response(null, {
+            status: 101,
+            webSocket: client,
+          } as ResponseInit),
+        );
+      });
+      return HttpEffect.toWebHandler(withMiddleware(middleware, accepted))(
+        request,
+      );
     },
     accept(socket, request, ...platform) {
       const attachment: Attachment = {

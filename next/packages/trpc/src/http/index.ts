@@ -95,8 +95,10 @@ export type CorsOptions = NonNullable<
  * Browsers send cookies with cross-site WebSocket upgrades and CORS
  * doesn't cover them, so check the origin when you authenticate with
  * cookies. Upgrades without an `origin` (non-browser clients) pass. It sees
- * upgrades under `serve()`/`toHttpEffect`, and through `handler.fetch` with
- * `websocket.upgrade` (Deno); not sockets handed to `handler.websocket`.
+ * upgrades under `serve()`/`toHttpEffect`, through `handler.fetch` with
+ * `websocket.upgrade` (Deno), and through the Cloudflare hibernating
+ * sockets' `upgrade()`; not sockets handed to `handler.websocket` or
+ * `accept()`.
  *
  * @example
  * ```ts

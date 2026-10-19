@@ -37,7 +37,7 @@ The [`examples/runtime-matrix`](../../examples/runtime-matrix/README.md) app ser
 
 ## Middleware and CORS
 
-Request-level concerns are Effect `HttpMiddleware` in the handler's `middleware` option, outermost first. They wrap `handler.fetch` and WebSocket upgrades too: under `serve()`/`toHttpEffect`, and through `handler.fetch` with `websocket.upgrade` (Deno). A socket you accept yourself and hand to `handler.websocket` skips them. Call-level concerns are root `t.use()` [middleware](../server/middleware.md).
+Request-level concerns are Effect `HttpMiddleware` in the handler's `middleware` option, outermost first. They wrap `handler.fetch` and WebSocket upgrades too: under `serve()`/`toHttpEffect`, through `handler.fetch` with `websocket.upgrade` (Deno), and through Cloudflare's hibernating `sockets.upgrade()`. A socket you accept yourself and hand to `handler.websocket` or `sockets.accept()` skips them. Call-level concerns are root `t.use()` [middleware](../server/middleware.md).
 
 ```ts twoslash
 // ---cut-start---

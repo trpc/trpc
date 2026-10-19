@@ -65,11 +65,13 @@ declare function createContext(opts: CreateContextOpts<{ env: Env }>): Context;
 // ---cut-end---
 import { DurableObject } from 'cloudflare:workers';
 import { experimental_createHibernatingWebSockets } from '@trpc12/trpc/cloudflare';
+import { cors } from '@trpc12/trpc/http';
 import { createFetchHandler } from '@trpc12/trpc/server';
 
 const handler = createFetchHandler<AppRouter, { env: Env }>({
   router,
   createContext,
+  middleware: [cors({ allowedOrigins: ['https://app.example.com'] })],
 });
 
 export class Room extends DurableObject<Env> {
@@ -77,7 +79,7 @@ export class Room extends DurableObject<Env> {
     state: this.ctx,
   });
 
-  fetch(request: Request) {
+  fetch(request: Request): Promise<Response> {
     if (request.headers.get('upgrade') !== 'websocket') {
       return handler.fetch(request, { env: this.env });
     }
@@ -95,10 +97,11 @@ export class Room extends DurableObject<Env> {
 }
 ```
 
+- `sockets.upgrade()` runs the handler's `middleware` before it accepts the socket, so `cors()` answers an upgrade from another origin with a `403` and no socket is created ([Middleware and CORS](./overview.md#middleware-and-cors)). It returns a `Promise<Response>`.
 - When the object wakes, each socket's request URL, its `cookie` and `authorization` headers (`keepHeaders` to choose others) and its `connectionParams` are rebuilt from the socket's attachment, so `createContext` sees the same connection. The attachment has a 2 KB limit; past it, the headers are dropped with a `console.warn` (the connection stays). Browsers can't set WebSocket headers, so same-origin apps authenticate with cookies.
 - `wsLink`'s keep-alive pings are answered by the runtime (`setWebSocketAutoResponse`) without waking the object. The handler's `websocket.idleTimeoutMs` doesn't apply here: a timer would wake it.
 - A generator or `Stream` subscription keeps the object awake until it ends. Subscriptions to an `experimental_hibernatingPublisher` don't.
-- Already created the `WebSocketPair` yourself? `sockets.accept(server, request, platform)` instead of `upgrade()`.
+- Already created the `WebSocketPair` yourself? `sockets.accept(server, request, platform)` instead of `upgrade()`. It skips `middleware`: check the origin before you create the pair.
 
 ## Subscriptions that hibernate
 

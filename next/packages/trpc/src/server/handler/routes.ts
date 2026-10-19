@@ -10,6 +10,15 @@ type App = Effect.Effect<
 >;
 
 /**
+ * `app` inside a handler's `middleware`, outermost first, so `cors()` sees
+ * the WebSocket upgrades that go through it too. @internal
+ */
+export const withMiddleware = (
+  middleware: ReadonlyArray<(app: App) => App>,
+  app: App,
+): App => middleware.reduceRight<App>((inner, m) => m(inner), app);
+
+/**
  * A handler's `effect/http` side: its `HttpRouter` routes, and `fetch`
  * through `HttpRouter.toWebHandler`. @internal
  */
@@ -39,8 +48,7 @@ export function httpParts(opts: {
     | ((request: HttpServerRequest.HttpServerRequest) => App)
     | undefined;
 }): HttpParts {
-  const wrap = (app: App) =>
-    opts.middleware.reduceRight<App>((inner, m) => m(inner), app);
+  const wrap = (app: App) => withMiddleware(opts.middleware, app);
   const { endpoint } = opts;
   /** The middleware wrap upgrades too, so `cors()` can refuse them. */
   const upgrading = (
