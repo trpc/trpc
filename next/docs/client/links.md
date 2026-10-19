@@ -14,7 +14,7 @@ import type { AppRouter } from './server.ts';
 import {
   createTrpcClient,
   dedupeLink,
-  httpLink,
+  httpStreamLink,
   loggerLink,
   retryLink,
   routerType,
@@ -26,7 +26,7 @@ const client = createTrpcClient({
     loggerLink({ enabled: () => process.env.NODE_ENV === 'development' }),
     dedupeLink(),
     retryLink(),
-    httpLink({ url: 'http://localhost:3000/trpc', batch: true }),
+    httpStreamLink({ url: 'http://localhost:3000/trpc', batch: true }),
   ],
 });
 ```
@@ -35,11 +35,12 @@ An operation goes through the links in order and its results come back the other
 
 ## Terminating links
 
-| Link                            | Carries calls                                                          |
-| ------------------------------- | ---------------------------------------------------------------------- |
-| [`httpLink`](./links/http.md)   | Over HTTP: queries as `GET`, mutations as `POST`, subscriptions as SSE |
-| [`wsLink`](./links/ws.md)       | Over one WebSocket                                                     |
-| [`localLink`](./links/local.md) | To a router in the same process                                        |
+| Link                                               | Carries calls                                                                |
+| -------------------------------------------------- | ---------------------------------------------------------------------------- |
+| [`httpLink`](./links/http.md)                      | Over HTTP with `fetch`: queries as `GET`, mutations as `POST`                |
+| [`httpStreamLink`](./links/http.md#httpstreamlink) | Over HTTP, with batching, streamed outputs and subscriptions as SSE (Effect) |
+| [`wsLink`](./links/ws.md)                          | Over one WebSocket                                                           |
+| [`localLink`](./links/local.md)                    | To a router in the same process                                              |
 
 ## Links in the middle
 
@@ -55,4 +56,8 @@ An operation goes through the links in order and its results come back the other
 
 A link declares the call options it reads (`dedupe` for `dedupeLink`, a `switchLink`'s name), and a client made with `router:` types them on every call, next to the built-in `signal`, `headers`, `init`, `batch` and `reconnect` ([The client](./overview.md#call-options)).
 
-`link(({ op, next }) => stream)` writes a link of your own, with the call options it reads, the errors it fails with and what it needs from the links after it ([Custom links](./custom-links.md)).
+## Promise links and Effect links
+
+`httpLink` is a Promise link: it returns a `Promise`, and a chain of Promise links bundles no Effect. The other built-in links are Effect links, which return an Effect `Stream`; the first one in a chain brings the Effect runtime, for it and the links after it. The two kinds mix in any order, in `createTrpcClient` and in [`createEffectClient`](./effect.md).
+
+`link(({ op, next }) => stream)` writes a link of your own, with the call options it reads, the errors it fails with and what it needs from the links after it, and `promiseLink(({ op, next }) => promise)` one without Effect ([Custom links](./custom-links.md)).

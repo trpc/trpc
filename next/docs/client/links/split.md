@@ -15,7 +15,7 @@ import type { AppRouter } from './server.ts';
 // ---cut-end---
 import {
   createTrpcClient,
-  httpLink,
+  httpStreamLink,
   routerType,
   splitLink,
   wsLink,
@@ -27,7 +27,7 @@ const client = createTrpcClient({
     splitLink({
       condition: (op) => op.type === 'subscription',
       true: wsLink({ url: 'ws://localhost:3000/trpc' }),
-      false: httpLink({ url: 'http://localhost:3000/trpc', batch: true }),
+      false: httpStreamLink({ url: 'http://localhost:3000/trpc', batch: true }),
     }),
   ],
 });
@@ -43,7 +43,7 @@ A link can change the operation it passes on. That lets one client cover routers
 // ---cut-start---
 import {
   createTrpcClient,
-  httpLink,
+  httpStreamLink,
   link,
   routerType,
   splitLink,
@@ -67,8 +67,8 @@ createTrpcClient({
   links: [
     splitLink({
       condition: (op) => op.path.startsWith('shop.'),
-      true: [unprefix('shop'), httpLink({ url: shopUrl })],
-      false: [unprefix('blog'), httpLink({ url: blogUrl })],
+      true: [unprefix('shop'), httpStreamLink({ url: shopUrl })],
+      false: [unprefix('blog'), httpStreamLink({ url: blogUrl })],
     }),
   ],
 });

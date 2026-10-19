@@ -20,7 +20,8 @@ What each v11 API is in v12. [The codemod](./codemod.md) rewrites the ones with 
 | `createContext({ req, resHeaders })`                               | `createContext({ request, info })`; headers go on the procedure's `response` handle                                               |
 | adapters (standalone, express, next, aws-lambda, ws)               | one handler: see [Adapters](../../adapters/overview.md)                                                                           |
 | `createTRPCClient<AppRouter>({ links })`                           | `createTrpcClient({ router: routerType<AppRouter>(), links })`                                                                    |
-| `httpBatchLink`, `httpBatchStreamLink`, `httpSubscriptionLink`     | `httpLink({ url, batch: true })` streams and subscribes too                                                                       |
+| `httpLink`                                                         | `httpLink({ url })`: queries and mutations with `fetch`, no Effect                                                                |
+| `httpBatchLink`, `httpBatchStreamLink`, `httpSubscriptionLink`     | `httpStreamLink({ url, batch: true })` streams and subscribes too                                                                 |
 | `createWSClient` + `wsLink({ client })`                            | `wsLink({ url })`                                                                                                                 |
 | `TRPCClientError`                                                  | `TrpcError`; `safe()` for `[data, error]`                                                                                         |
 | `t.createCallerFactory(router)(ctx)`                               | `createRouterClient(router, { ctx })`                                                                                             |

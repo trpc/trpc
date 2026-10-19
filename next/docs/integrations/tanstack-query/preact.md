@@ -26,14 +26,18 @@ import {
   useQuery,
 } from '@tanstack/preact-query';
 import { createTrpcContext } from '@trpc12/tanstack-preact-query';
-import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import {
+  createTrpcClient,
+  httpStreamLink,
+  routerType,
+} from '@trpc12/trpc/client';
 import type { ComponentChildren } from 'preact';
 import type { AppRouter } from './server.ts';
 // ---cut-end---
 const makeClient = () =>
   createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: '/trpc' })],
+    links: [httpStreamLink({ url: '/trpc' })],
   });
 export const [TrpcProvider, useTrpc] = createTrpcContext<typeof makeClient>();
 

@@ -28,11 +28,15 @@ const onPost = t.procedure.subscription(async function* (opts) {
 // ---cut-start---
 export const router = { onPost };
 // @filename: client.ts
-import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import {
+  createTrpcClient,
+  httpStreamLink,
+  routerType,
+} from '@trpc12/trpc/client';
 import type { router } from './server.ts';
 const client = createTrpcClient({
   router: routerType<typeof router>(),
-  links: [httpLink({ url: '/trpc' })],
+  links: [httpStreamLink({ url: '/trpc' })],
 });
 // ---cut-end---
 
@@ -66,11 +70,15 @@ const onPost = t.procedure.subscription(async function* (opts) {
 // ---cut-start---
 export const router = { onPost };
 // @filename: client.ts
-import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import {
+  createTrpcClient,
+  httpStreamLink,
+  routerType,
+} from '@trpc12/trpc/client';
 import type { router } from './server.ts';
 const client = createTrpcClient({
   router: routerType<typeof router>(),
-  links: [httpLink({ url: '/trpc' })],
+  links: [httpStreamLink({ url: '/trpc' })],
 });
 // ---cut-end---
 

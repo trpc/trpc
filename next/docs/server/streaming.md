@@ -51,7 +51,11 @@ const chat = t.procedure
 
 ```ts twoslash
 // ---cut-start---
-import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import {
+  createTrpcClient,
+  httpStreamLink,
+  routerType,
+} from '@trpc12/trpc/client';
 import { stream } from '@trpc12/trpc/server';
 import { z } from 'zod';
 import { t } from './server.ts';
@@ -66,7 +70,7 @@ const chat = t.procedure
   });
 const client = createTrpcClient({
   router: routerType<{ chat: typeof chat }>(),
-  links: [httpLink({ url: 'http://localhost:3000/trpc' })],
+  links: [httpStreamLink({ url: 'http://localhost:3000/trpc' })],
 });
 // ---cut-end---
 const it = await client.chat.mutate(); // AsyncIterable<Token, Summary>

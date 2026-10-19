@@ -25,7 +25,11 @@ import {
   QueryClient,
 } from '@tanstack/angular-query-experimental';
 import { createTrpcContext } from '@trpc12/tanstack-angular-query';
-import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import {
+  createTrpcClient,
+  httpStreamLink,
+  routerType,
+} from '@trpc12/trpc/client';
 import type { AppRouter } from './server.ts';
 declare class App {}
 // ---cut-end---
@@ -33,7 +37,7 @@ declare class App {}
 const makeClient = () =>
   createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: '/trpc' })],
+    links: [httpStreamLink({ url: '/trpc' })],
   });
 export const { provideTrpc, injectTrpc, injectTrpcClient } =
   createTrpcContext<typeof makeClient>();

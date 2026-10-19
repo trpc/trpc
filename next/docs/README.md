@@ -38,7 +38,7 @@ Pages marked (experimental) belong to an experiment, unlisted on the site until 
 
 - [The client](./client/overview.md): createTrpcClient types every call from the router's type, and the call options from its links.
 - [Links](./client/links.md): A client's chain of links, the built-in ones, and the order they go in.
-  - [httpLink](./client/links/http.md): Queries as GET, mutations as POST and subscriptions as SSE, with batching, streamed outputs and files.
+  - [httpLink](./client/links/http.md): httpLink sends queries and mutations with fetch; httpStreamLink adds batching, streamed outputs and subscriptions as SSE.
   - [wsLink](./client/links/ws.md): Every call over one WebSocket, with connection params, keep-alive pings and reconnects that resume subscriptions.
   - [splitLink](./client/links/split.md): Send each call down one of two chains, picked from its path, type or input.
   - [switchLink](./client/links/switch.md): Pick one of several named chains per call, and let a call force one with a typed call option.

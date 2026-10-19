@@ -12,7 +12,11 @@ A mutation that returns an async iterable (an AI reply, say) can fill in as it s
 // ---cut-start---
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { createTrpcQueryUtils } from '@trpc12/tanstack-query';
-import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import {
+  createTrpcClient,
+  httpStreamLink,
+  routerType,
+} from '@trpc12/trpc/client';
 import { z } from 'zod';
 import { t } from './server.ts';
 const router = {
@@ -28,7 +32,7 @@ const router = {
 const trpc = createTrpcQueryUtils({
   client: createTrpcClient({
     router: routerType<typeof router>(),
-    links: [httpLink({ url: '/trpc' })],
+    links: [httpStreamLink({ url: '/trpc' })],
   }),
 });
 declare const text: string;
@@ -50,7 +54,11 @@ Resetting the mutation doesn't stop the stream on the server. Two options do, an
 // ---cut-start---
 import { useRef } from 'react';
 import { createTrpcQueryUtils } from '@trpc12/tanstack-query';
-import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import {
+  createTrpcClient,
+  httpStreamLink,
+  routerType,
+} from '@trpc12/trpc/client';
 import { z } from 'zod';
 import { t } from './server.ts';
 const router = {
@@ -65,7 +73,7 @@ const router = {
 const trpc = createTrpcQueryUtils({
   client: createTrpcClient({
     router: routerType<typeof router>(),
-    links: [httpLink({ url: '/trpc' })],
+    links: [httpStreamLink({ url: '/trpc' })],
   }),
 });
 // ---cut-end---
@@ -91,7 +99,11 @@ import {
   createTrpcQueryUtils,
   useSubscription,
 } from '@trpc12/tanstack-react-query';
-import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import {
+  createTrpcClient,
+  httpStreamLink,
+  routerType,
+} from '@trpc12/trpc/client';
 import { tracked } from '@trpc12/trpc/server';
 import { z } from 'zod';
 import { t } from './server.ts';
@@ -122,7 +134,7 @@ const job = {
 const trpc = createTrpcQueryUtils({
   client: createTrpcClient({
     router: routerType<{ job: typeof job }>(),
-    links: [httpLink({ url: '/trpc' })],
+    links: [httpStreamLink({ url: '/trpc' })],
   }),
 });
 // ---cut-end---

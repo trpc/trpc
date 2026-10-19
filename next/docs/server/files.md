@@ -22,7 +22,11 @@ const setCover = t.procedure
 
 ```ts twoslash
 // ---cut-start---
-import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import {
+  createTrpcClient,
+  httpStreamLink,
+  routerType,
+} from '@trpc12/trpc/client';
 import { z } from 'zod';
 import { t } from './server.ts';
 declare const storage: { put(id: string, file: File): Promise<void> };
@@ -33,7 +37,7 @@ const router = {
 };
 const client = createTrpcClient({
   router: routerType<typeof router>(),
-  links: [httpLink({ url: 'http://localhost:3000/trpc' })],
+  links: [httpStreamLink({ url: 'http://localhost:3000/trpc' })],
 });
 declare const file: File;
 // ---cut-end---
@@ -65,7 +69,11 @@ const report = t.procedure
 
 ```ts twoslash
 // ---cut-start---
-import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import {
+  createTrpcClient,
+  httpStreamLink,
+  routerType,
+} from '@trpc12/trpc/client';
 import { z } from 'zod';
 import { t } from './server.ts';
 declare function csv(id: string): string;
@@ -79,7 +87,7 @@ const router = {
 };
 const client = createTrpcClient({
   router: routerType<typeof router>(),
-  links: [httpLink({ url: 'http://localhost:3000/trpc' })],
+  links: [httpStreamLink({ url: 'http://localhost:3000/trpc' })],
 });
 declare const id: string;
 // ---cut-end---
@@ -91,7 +99,7 @@ const report = await client.report.query({ id }); // File
 
 ## Binary frames
 
-Those chunks are base64 in JSONL, SSE and WebSocket messages. `httpLink({ binary: true })` asks for binary frames instead (`application/vnd.trpc.frames`: the same lines, length-prefixed, with the bytes unencoded), a third smaller; servers answer with JSONL to clients that don't ask. `wsLink({ binary: true })` gets each chunk of bytes as a binary message. `localLink` always passes the bytes as they are.
+Those chunks are base64 in JSONL, SSE and WebSocket messages. `httpStreamLink({ binary: true })` asks for binary frames instead (`application/vnd.trpc.frames`: the same lines, length-prefixed, with the bytes unencoded), a third smaller; servers answer with JSONL to clients that don't ask. `wsLink({ binary: true })` gets each chunk of bytes as a binary message. `localLink` always passes the bytes as they are.
 
 ## Serializers
 

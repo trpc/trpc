@@ -32,7 +32,11 @@ import {
   useQueries,
   useQuery,
 } from '@tanstack/react-query';
-import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import {
+  createTrpcClient,
+  httpStreamLink,
+  routerType,
+} from '@trpc12/trpc/client';
 import { z } from 'zod';
 import { appRouter, db, t } from './server.ts';
 const router = {
@@ -48,7 +52,7 @@ const router = {
 };
 const client = createTrpcClient({
   router: routerType<typeof router>(),
-  links: [httpLink({ url: '/trpc' })],
+  links: [httpStreamLink({ url: '/trpc' })],
 });
 declare const queryClient: QueryClient;
 declare const id: string;

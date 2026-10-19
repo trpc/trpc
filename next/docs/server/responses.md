@@ -35,14 +35,18 @@ A procedure can also return its own response, an `HttpServerResponse` from `effe
 
 ```ts twoslash
 // ---cut-start---
-import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import {
+  createTrpcClient,
+  httpStreamLink,
+  routerType,
+} from '@trpc12/trpc/client';
 import { HttpServerResponse } from 'effect/http';
 import { t } from './server.ts';
 declare const rows: string[][];
 declare function toCsv(rows: string[][]): string;
 const client = createTrpcClient({
   router: routerType<{ report: typeof report }>(),
-  links: [httpLink({ url: 'http://localhost:3000/trpc' })],
+  links: [httpStreamLink({ url: 'http://localhost:3000/trpc' })],
 });
 // ---cut-end---
 const report = t.procedure.query(() =>
@@ -51,7 +55,7 @@ const report = t.procedure.query(() =>
 const res = await client.report.query(); // Response
 ```
 
-Only an unbatched HTTP call can carry one: in a batch, over WebSockets or in-process, the call fails with `BAD_REQUEST`. With `httpLink({ batch: true })`, the client's types require `{ batch: false }` on calls to procedures that may return a response, and the link sends them alone: `client.report.query(undefined, { batch: false })`.
+Only an unbatched HTTP call can carry one: in a batch, over WebSockets or in-process, the call fails with `BAD_REQUEST`. With `httpStreamLink({ batch: true })`, the client's types require `{ batch: false }` on calls to procedures that may return a response, and the link sends them alone: `client.report.query(undefined, { batch: false })`.
 
 ## Reading the response on the client
 

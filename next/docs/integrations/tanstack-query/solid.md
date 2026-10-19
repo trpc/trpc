@@ -25,7 +25,11 @@ The [`examples/experimental/framework-matrix`](../../../examples/experimental/fr
 // ---cut-start---
 import { QueryClient, QueryClientProvider } from '@tanstack/solid-query';
 import { createTrpcContext } from '@trpc12/tanstack-solid-query';
-import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import {
+  createTrpcClient,
+  httpStreamLink,
+  routerType,
+} from '@trpc12/trpc/client';
 import type { JSX } from 'solid-js';
 import type { AppRouter } from './server.ts';
 declare function App(): JSX.Element;
@@ -33,7 +37,7 @@ declare function App(): JSX.Element;
 const makeClient = () =>
   createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: '/trpc' })],
+    links: [httpStreamLink({ url: '/trpc' })],
   });
 export const [TrpcProvider, useTrpc] = createTrpcContext<typeof makeClient>();
 

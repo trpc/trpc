@@ -11,13 +11,13 @@ order: 6
 // ---cut-start---
 import type { AppRouter } from './server.ts';
 // ---cut-end---
-import { httpLink, routerType } from '@trpc12/trpc/client';
-import { createEffectClient } from '@trpc12/trpc/effect';
+import { routerType } from '@trpc12/trpc/client';
+import { createEffectClient, httpStreamLink } from '@trpc12/trpc/effect';
 import { Effect } from 'effect';
 
 const client = createEffectClient({
   router: routerType<AppRouter>(),
-  links: [httpLink({ url: 'http://localhost:3000/trpc' })],
+  links: [httpStreamLink({ url: 'http://localhost:3000/trpc' })],
 });
 
 const program = Effect.gen(function* () {
@@ -26,4 +26,4 @@ const program = Effect.gen(function* () {
 });
 ```
 
-The links are the same as the Promise client's ([Links](./links.md)). For spans around calls, see [Tracing](./tracing.md).
+The links are the same as the Promise client's ([Links](./links.md)). `httpStreamLink` is the Effect HTTP link, so its batching, streams and subscriptions run on the fiber, and `@trpc12/trpc/effect` exports it too. Promise links such as `httpLink` work here as well, as one step the fiber waits on. For spans around calls, see [Tracing](./tracing.md).

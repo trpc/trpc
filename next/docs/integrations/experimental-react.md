@@ -28,13 +28,16 @@ import {
   useQuery,
   type QueryPromise,
 } from '@trpc12/experimental-react';
-import { httpLink, routerType } from '@trpc12/trpc/client';
+import { httpStreamLink, routerType } from '@trpc12/trpc/client';
 import { Suspense, use } from 'react';
 import type { AppRouter } from './server';
 
 export const trpc = createReactClient({
   router: routerType<AppRouter>(),
-  links: [...standardLinks({ staleTime: 10_000 }), httpLink({ url: '/trpc' })],
+  links: [
+    ...standardLinks({ staleTime: 10_000 }),
+    httpStreamLink({ url: '/trpc' }),
+  ],
 });
 
 // The route's loader starts the request; the navigation doesn't wait for it.
@@ -87,7 +90,7 @@ Query links are tRPC [links](../client/links.md): they sit in the same `links` a
 ```ts twoslash
 // ---cut-start---
 import { createReactClient } from '@trpc12/experimental-react';
-import { httpLink, routerType } from '@trpc12/trpc/client';
+import { httpStreamLink, routerType } from '@trpc12/trpc/client';
 import { z } from 'zod';
 import { appRouter, db, t } from './server.ts';
 const router = {
@@ -101,7 +104,7 @@ const router = {
 };
 const trpc = createReactClient({
   router: routerType<typeof router>(),
-  links: [httpLink({ url: '/trpc' })],
+  links: [httpStreamLink({ url: '/trpc' })],
 });
 declare const id: string;
 declare const title: string;
@@ -124,12 +127,12 @@ import {
   dehydrate,
   hydrate,
 } from '@trpc12/experimental-react';
-import { httpLink, routerType } from '@trpc12/trpc/client';
+import { httpStreamLink, routerType } from '@trpc12/trpc/client';
 import type { AppRouter } from './server.ts';
 const makeTrpc = (isServer: boolean) =>
   createReactClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: '/trpc' })],
+    links: [httpStreamLink({ url: '/trpc' })],
     isServer,
   });
 const serverTrpc = makeTrpc(true);
