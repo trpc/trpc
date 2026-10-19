@@ -10,6 +10,8 @@ export type {
   BuilderInternals,
   ConcatCheck,
   ConcatOutputCheck,
+  DeclaredCheck,
+  DeclaredStreamCheck,
   CurrentCtx,
   DeclaredErrors,
   ErrorConstructorOpts,

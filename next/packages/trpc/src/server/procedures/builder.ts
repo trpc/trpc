@@ -470,6 +470,44 @@ export type DeclaredErrors<M> = {
   >;
 };
 
+/**
+ * Declared errors are exhaustive: once a procedure has `.errors()`, its
+ * resolver may return only those. Middleware's errors aren't checked.
+ * @since 0.1.0
+ * @stability stable
+ */
+// Takes the resolver's return rather than its errors: a procedure without
+// `.errors()` then never splits it here.
+export type DeclaredCheck<TDef extends BuilderDef, $Ret> = [
+  keyof TDef['declared'],
+] extends [never]
+  ? unknown
+  : ErrorsIn<
+      SplitReturn<$Ret>['errors'],
+      TDef['declared'][keyof TDef['declared']]
+    >;
+
+/**
+ * {@link DeclaredCheck} for a subscription.
+ * @since 0.1.0
+ * @stability stable
+ */
+export type DeclaredStreamCheck<TDef extends BuilderDef, $Ret> = [
+  keyof TDef['declared'],
+] extends [never]
+  ? unknown
+  : ErrorsIn<
+      SplitStream<$Ret>['errors'],
+      TDef['declared'][keyof TDef['declared']]
+    >;
+
+type ErrorsIn<TErrors, TDeclared> = [TErrors] extends [TDeclared]
+  ? unknown
+  : TypeError<
+      '.errors() lists every error the resolver may return: declare this one, or return a declared one',
+      Exclude<TErrors, TDeclared>
+    >;
+
 // --- the builder -------------------------------------------------------------------
 
 /**
@@ -806,7 +844,8 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
     ) => $Ret &
       OutputChecks<TDef, $Ret> &
       UnmappedCheck<SplitReturn<$Ret>['unmapped']> &
-      ShortsFor<TDef, $Ret>,
+      ShortsFor<TDef, $Ret> &
+      DeclaredCheck<TDef, $Ret>,
   ): Procedure<{
     type: 'query';
     ctx: TDef['ctx'];
@@ -835,7 +874,8 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
     ) => $Ret &
       OutputChecks<TDef, $Ret> &
       UnmappedCheck<SplitReturn<$Ret>['unmapped']> &
-      ShortsFor<TDef, $Ret>,
+      ShortsFor<TDef, $Ret> &
+      DeclaredCheck<TDef, $Ret>,
   ): Procedure<{
     type: 'mutation';
     ctx: TDef['ctx'];
@@ -865,7 +905,10 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
   subscription<$Ret>(
     resolver: (
       opts: SubscriptionResolverOpts<TDef>,
-    ) => $Ret & EventConstraint<TDef> & StrictErrors<$Ret>,
+    ) => $Ret &
+      EventConstraint<TDef> &
+      StrictErrors<$Ret> &
+      DeclaredStreamCheck<TDef, $Ret>,
   ): Procedure<{
     type: 'subscription';
     ctx: TDef['ctx'];

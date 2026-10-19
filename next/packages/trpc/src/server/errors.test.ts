@@ -63,7 +63,12 @@ const router = {
     ),
   },
   pay: t.procedure
-    .errors({ PAYMENT_REQUIRED_CUSTOM: { status: 402 } })
+    .errors({
+      PAYMENT_REQUIRED_CUSTOM: {
+        status: 402,
+        data: z.object({ plan: z.literal('pro') }),
+      },
+    })
     .mutation(() =>
       error({
         code: 'PAYMENT_REQUIRED_CUSTOM',
