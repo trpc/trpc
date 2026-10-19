@@ -206,9 +206,9 @@ export function makeTransport(
   ): Effect.Effect<Reply, AnyTrpcError, Scope.Scope> =>
     Effect.suspend(() => {
       let web: Response | undefined;
-      // `HttpClientResponse` keeps the web response private, so it's
-      // caught on its way out of `fetch`.
-      // `FetchHttpClient` passes a `URL`; a custom `fetch` gets a string.
+      // `HttpClientResponse` keeps the web response private, so it's caught
+      // on its way out of `fetch`. `FetchHttpClient` passes a `URL` and
+      // Effect `Headers`; a custom `fetch` gets a string and web `Headers`.
       const fetch = async (url: URL, init: RequestInit = {}) => {
         const res = await rawFetch(url.href, {
           ...init,
