@@ -105,6 +105,14 @@ const openapi = experimental_createOpenApiHandler({
 - `{ router, specGenerateOptions }` generates the document on the first request. `{ document }` serves one you built, e.g. with the TypeScript generator below; it can be a function.
 - Without `servers`, the document lists the request's origin.
 
+### Cross-site forms
+
+The handler refuses requests from another origin that use a method other than `GET`, `HEAD` or `OPTIONS` with a body that isn't `application/json`, answering `403 FORBIDDEN`. A form or a `no-cors` `fetch` on another site can send a urlencoded, multipart or `text/plain` body (or none) without a CORS preflight, and the browser attaches the user's cookies. A JSON body needs a preflight, so [`cors()`](../adapters/overview.md#middleware-and-cors) decides those requests.
+
+- `Sec-Fetch-Site` decides: `same-origin` and `none` pass, while `same-site` and `cross-site` don't, so a sibling subdomain counts as another origin. Browsers from before 2023 don't send that header; for them, the `Origin` header must name the request's host.
+- A request with neither header (from `curl` or a server) passes.
+- `csrf: { trustedOrigins: ['https://www.example.com'] }` lets that origin's forms through. `csrf: false` turns the guard off.
+
 ## Input
 
 With the default `inputStructure: 'compact'`, path params merge with the query string (`GET`) or the body into one input.
@@ -112,6 +120,7 @@ With the default `inputStructure: 'compact'`, path params merge with the query s
 - Query strings and forms use bracket notation (`?tags[]=a&author[name]=x`) and are coerced by the input's JSON Schema, so `?limit=10&published=true` gives a number and a boolean.
 - JSON bodies are taken as they are.
 - `multipart/form-data` fields can hold `File`s.
+- Forms from another origin are refused unless it's trusted ([Cross-site forms](#cross-site-forms)).
 
 `inputStructure: 'detailed'` passes `{ params, query, headers, body }`, each with its own schema. `outputStructure: 'detailed'` lets the resolver return `{ status?, headers?, body }`.
 

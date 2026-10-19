@@ -114,6 +114,7 @@ const spec = await generateOpenAPI(appRouter, { info: { title: 'API', version: '
 
 - **Bracket notation** for query strings and `FormData` (`user[name]=x&tags[]=a`), shared with `action()` forms (15).
 - **Coercion:** strings in query, params and forms are coerced using the input's JSON Schema (number, boolean, date-time, arrays).
+- **CSRF:** forms are simple requests that other sites can send with the user's cookies, so the handler refuses non-JSON bodies from other origins on methods other than `GET`, `HEAD` and `OPTIONS`, on by default ([openapi-csrf-guard](../decisions/openapi-csrf-guard.md)).
 
   ```ts
   const list = t.procedure

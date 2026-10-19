@@ -7,6 +7,7 @@
   - Path params are `{name}`; static segments win, so `/posts/latest` matches before `/posts/{id}`. Two procedures on one method and path throw at creation.
   - `GET` reads the query string; other methods read a JSON, urlencoded or multipart body. Path params are merged into the input.
   - Bracket notation (`a[b]=1&tags[]=x`, plus repeated keys) in query strings and forms. Leaves are strings, or `File`s in forms.
+  - Non-JSON bodies from other origins are refused with a 403 by default ([`openapi-csrf-guard.md`](./openapi-csrf-guard.md)).
   - Strings are coerced from the input's JSON Schema to numbers, integers, booleans, `null`, enum or const values, and single-item arrays; anything the schema doesn't describe is left for validation. JSON bodies aren't coerced; path params always are.
 - Responses are plain JSON, no danSON. A `Blob` or `File` output is the body. Errors are `{ defined, code, status, message, data? }` with the error's status. Deferred values aren't supported over REST.
 - The spec is built from Standard JSON Schema (`~standard.jsonSchema`, `unrepresentable: 'any'`) and Effect's `Schema.toStandardJSONSchemaV1`, so there's no per-library converter. `$defs` are hoisted into `components.schemas`. Declared errors become responses by status; procedures with an input document the 400 validation error; `default` documents the error format.

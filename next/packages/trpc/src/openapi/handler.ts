@@ -64,10 +64,12 @@ import {
   propertySchema,
   toOpenApiError,
   compileRoute,
+  makeCsrfGuard,
   normalizePrefix,
   experimental_resolveRoute,
   routeOf,
   usesQuery,
+  type CsrfOptions,
   type ResolvedRoute,
   type Route,
 } from './rest/index.ts';
@@ -96,6 +98,15 @@ export interface BaseOpenApiHandlerOptions<TRouter extends AnyRouter> {
   exposeUnexpectedErrors?: boolean;
   /** Called for every error, with the original cause. */
   onError?: (opts: OnErrorOpts) => void;
+  /**
+   * Refuses, with a 403, requests from another origin that use a method other
+   * than `GET`, `HEAD` or `OPTIONS` and a body that isn't JSON. An HTML form
+   * or a `no-cors` fetch on another site sends those without a CORS
+   * preflight, with the user's cookies. JSON bodies need a preflight, so
+   * `cors()` decides them. `false` turns the guard off.
+   * @default true
+   */
+  csrf?: boolean | CsrfOptions;
   /**
    * Effect HTTP middleware around the handler, outermost first, e.g.
    * {@link experimental_openApiReference} or `cors()`.
@@ -273,6 +284,7 @@ export function experimental_createOpenApiHandler<
   const prefix = normalizePrefix(opts.prefix);
   const maxBodySize = opts.maxBodySize ?? 1_048_576;
   const ssePingMs = opts.sse?.pingMs ?? 15_000;
+  const guardCsrf = makeCsrfGuard(opts.csrf);
 
   const makeEntry = (
     path: string,
@@ -615,6 +627,7 @@ export function experimental_createOpenApiHandler<
   ): Effect.Effect<Response, AnyTrpcError> =>
     Effect.gen(function* () {
       const { http, request } = incoming;
+      yield* guardCsrf(http, incoming.url);
       const type = entry.type;
       const procedure = yield* entry.resolve();
       if (!procedure) {

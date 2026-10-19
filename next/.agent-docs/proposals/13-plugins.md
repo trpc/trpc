@@ -104,17 +104,17 @@ const tracing: HandlerPlugin = {
 
 ## First-party plugins (proposed)
 
-| Plugin            | Default        | Notes                                                                                      |
-| ----------------- | -------------- | ------------------------------------------------------------------------------------------ |
-| `bodyLimit`       | **on** (1 MB?) | Protects every platform, including Node                                                    |
-| `strictMethods`   | **on**         | GET only for queries, POST for mutations (oRPC "strict GET"); built into the protocol (10) |
-| `csrf`            | **on**         | Requires a non-simple content type or a `trpc-*` header on POST                            |
-| `batch`           | off            | Server half of batching; limits on by default (`maxSize: 20`)                              |
-| `cors`            | off            | Origin allow-list, credentials, preflight                                                  |
-| `responseHeaders` | n/a            | Covered by `response` in resolver options (04); plugin form for plugins/middleware         |
-| `compression`     | off            | `CompressionStream`-based; may be better left to the platform                              |
-| `rateLimit`       | later          | Effect-based, store as a service (memory, Redis, CF Durable Object)                        |
-| `tracing`         | later          | Effect spans exported via `@effect/opentelemetry`; may just be docs                        |
+| Plugin            | Default        | Notes                                                                                                                                                                |
+| ----------------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `bodyLimit`       | **on** (1 MB?) | Protects every platform, including Node                                                                                                                              |
+| `strictMethods`   | **on**         | GET only for queries, POST for mutations (oRPC "strict GET"); built into the protocol (10)                                                                           |
+| `csrf`            | **on**         | Requires a non-simple content type or a `trpc-*` header on POST; OpenAPI checks the origin of form bodies ([openapi-csrf-guard](../decisions/openapi-csrf-guard.md)) |
+| `batch`           | off            | Server half of batching; limits on by default (`maxSize: 20`)                                                                                                        |
+| `cors`            | off            | Origin allow-list, credentials, preflight                                                                                                                            |
+| `responseHeaders` | n/a            | Covered by `response` in resolver options (04); plugin form for plugins/middleware                                                                                   |
+| `compression`     | off            | `CompressionStream`-based; may be better left to the platform                                                                                                        |
+| `rateLimit`       | later          | Effect-based, store as a service (memory, Redis, CF Durable Object)                                                                                                  |
+| `tracing`         | later          | Effect spans exported via `@effect/opentelemetry`; may just be docs                                                                                                  |
 
 How first-party plugins would be written against `onRequest`:
 
