@@ -58,6 +58,45 @@ const [post, err] = await safeClient.post.byId.query({ id: '1' });
 
 The first three codes, the `LinkErrorCode` type, are made only by links, so a call's error has those its client's links declare and no others. With only `localLink`, which runs calls in-process, no call can fail with `NETWORK_ERROR`, and `switch (err.code)` can't have a `case 'NETWORK_ERROR'`. The other codes can reach any call.
 
+The same call has all three through `httpLink` and none through `localLink`:
+
+```ts twoslash
+// ---cut-start---
+import {
+  createTrpcClient,
+  httpLink,
+  localLink,
+  routerType,
+  safe,
+} from '@trpc12/trpc/client';
+import { appRouter, type AppRouter } from './server.ts';
+declare const url: string;
+// ---cut-end---
+import type { LinkErrorCode } from '@trpc12/trpc/client';
+
+const overHttp = createTrpcClient({
+  router: routerType<AppRouter>(),
+  links: [httpLink({ url })],
+});
+const inProcess = createTrpcClient({
+  router: routerType<AppRouter>(),
+  links: [
+    localLink({ router: appRouter, createContext: () => ({ user: null }) }),
+  ],
+});
+
+const [, httpErr] = await safe(overHttp.post.list.query());
+if (httpErr) {
+  type HttpCodes = Extract<typeof httpErr.code, LinkErrorCode>;
+  //   ^?
+}
+const [, localErr] = await safe(inProcess.post.list.query());
+if (localErr) {
+  type LocalCodes = Extract<typeof localErr.code, LinkErrorCode>;
+  //   ^?
+}
+```
+
 | Link                                                                             | Link codes it declares                                |
 | -------------------------------------------------------------------------------- | ----------------------------------------------------- |
 | `httpLink`                                                                       | `NETWORK_ERROR`, `BAD_RESPONSE`, `STREAM_INTERRUPTED` |
@@ -67,7 +106,7 @@ The first three codes, the `LinkErrorCode` type, are made only by links, so a ca
 | `splitLink`, `switchLink`                                                        | What their chains declare                             |
 | `localLink`, `retryLink`, `dedupeLink`, `loggerLink`, `experimental_durableLink` | None                                                  |
 
-`createRouterClient` declares none, since it calls the router in-process. A client typed without its links, like `TrpcClient<AppRouter>`, has all three, so it accepts a client with any links. [Custom links](./custom-links.md#errors-and-unsupported-types) declare theirs with `builtinErrors`.
+`createRouterClient` declares none, since it calls the router in-process. A client typed without its links, like `TrpcClient<AppRouter>`, has all three, so it accepts a client with any links. A [custom link](./custom-links.md#errors-and-unsupported-types) declares the link codes it makes with `builtinErrors`, and can add codes of its own with `errors`.
 
 The other built-in codes fall into four categories, which `ERROR_CATEGORY` maps each code to, since a call site usually does the same for every code in one. Undeclared errors are `rejected`:
 
