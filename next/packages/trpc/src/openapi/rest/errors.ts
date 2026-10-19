@@ -1,6 +1,6 @@
 import {
   codeOfStatus,
-  toBuiltinError,
+  toUntypedError,
   TrpcError,
   type AnyTrpcError,
 } from '../../internal/error.ts';
@@ -36,13 +36,12 @@ export function fromOpenApiError(body: unknown, status: number): TrpcError {
     typeof b.code === 'string'
       ? b.code
       : (codeOfStatus(status) ?? 'INTERNAL_SERVER_ERROR');
-  return toBuiltinError(
+  return toUntypedError(
     new TrpcError({
       code,
       message: typeof b.message === 'string' ? b.message : code,
       data: b.data,
       defined: b.defined === true,
     }),
-    'INTERNAL_SERVER_ERROR',
   ) as TrpcError;
 }

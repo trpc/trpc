@@ -1,4 +1,4 @@
-import type { BuiltinErrorCode } from '@trpc12/trpc/client';
+import type { BuiltinErrorCode, UndeclaredCode } from '@trpc12/trpc/client';
 import { describe, expectTypeOf, test } from 'vite-plus/test';
 import type { Closed } from '../closed-errors/closed.ts';
 import { AuthShell, type createApp, OfflineShell } from './app.ts';
@@ -39,14 +39,14 @@ describe('a claim of one boundary code, with no unexpected claim', () => {
   test('subtracts it from the closed union', () => {
     type Left = Remaining<Closed<RenameError>, 'NETWORK_ERROR', false>;
     expectTypeOf<CodeOf<Extract<Left, { defined: false }>>>().toEqualTypeOf<
-      Exclude<BuiltinErrorCode, 'NETWORK_ERROR'>
+      Exclude<BuiltinErrorCode, 'NETWORK_ERROR'> | UndeclaredCode
     >();
   });
 
   test('subtracts it from the client union, which is closed already', () => {
     type Left = Remaining<RenameError, 'NETWORK_ERROR', false>;
     expectTypeOf<CodeOf<Extract<Left, { defined: false }>>>().toEqualTypeOf<
-      Exclude<BuiltinErrorCode, 'NETWORK_ERROR'>
+      Exclude<BuiltinErrorCode, 'NETWORK_ERROR'> | UndeclaredCode
     >();
   });
 });

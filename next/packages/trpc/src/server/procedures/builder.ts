@@ -521,6 +521,8 @@ export interface BuilderInternals {
   readonly output: OutputSchema | undefined;
   readonly validateOutput?: false | undefined;
   readonly errors: ErrorMap;
+  /** `false`: from `initTrpc({ warnThrownErrors: false })`. */
+  readonly warnThrown?: false | undefined;
   /** How `.meta()` merges keys set again; from `initTrpc` and extensions. */
   readonly mergeMeta?: MetaMerge<any> | undefined;
 }
@@ -1004,6 +1006,7 @@ export function createBuilder(
         output: internals.output,
         validateOutput: internals.validateOutput,
         errors: internals.errors,
+        warnThrown: internals.warnThrown,
         resolver,
       },
     });

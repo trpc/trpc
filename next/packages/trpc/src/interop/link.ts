@@ -8,7 +8,6 @@ import {
 } from '../client/link.ts';
 import {
   isTrpcError,
-  toBuiltinError,
   TrpcError,
   type AnyTrpcError,
 } from '../internal/error.ts';
@@ -124,14 +123,11 @@ const fromV11Error = (error: unknown): AnyTrpcError => {
   if (isTrpcError(error)) return error;
   const code = (error as { data?: { code?: unknown } } | undefined)?.data?.code;
   if (typeof code !== 'string') return toClientError(error);
-  return toBuiltinError(
-    new TrpcError({
-      code,
-      message: error instanceof Error ? error.message : code,
-      cause: error,
-    }),
-    'INTERNAL_SERVER_ERROR',
-  );
+  return new TrpcError({
+    code,
+    message: error instanceof Error ? error.message : code,
+    cause: error,
+  });
 };
 
 /**

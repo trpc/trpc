@@ -541,6 +541,7 @@ export function implement(
       output: def.output,
       validateOutput: def.validateOutput,
       errors: { ...root.errors, ...def.errors },
+      warnThrown: root.warnThrown,
     });
   };
   const tree = mirror(contract) as Record<string, unknown>;

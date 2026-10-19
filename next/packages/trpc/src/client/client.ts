@@ -470,7 +470,7 @@ export function matchError<
           ERROR_STATUS[code] === 0 &&
           code !== 'CLIENT_ERROR' &&
           own(code)) ||
-        own(builtin && ERROR_CATEGORY[code])) ?? table['builtin'];
+        own(builtin ? ERROR_CATEGORY[code] : 'rejected')) ?? table['builtin'];
   if (!handler) throw err;
   return handler(err);
 }

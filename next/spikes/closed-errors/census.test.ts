@@ -138,7 +138,7 @@ test('what a call fails with, over httpLink', async () => {
   expect(await census(false)).toEqual({
     'returned NOT_FOUND': 'NOT_FOUND (defined)',
     'thrown Error': 'INTERNAL_SERVER_ERROR',
-    'thrown custom code': 'INTERNAL_SERVER_ERROR',
+    'thrown custom code': 'OUT_OF_STOCK',
     'thrown built-in code': 'CONFLICT',
     'procedure the server lacks': 'NOT_FOUND',
     'fetch rejects': 'NETWORK_ERROR',

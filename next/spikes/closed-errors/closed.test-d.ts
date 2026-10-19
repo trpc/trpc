@@ -4,6 +4,7 @@ import {
   httpLink,
   routerType,
   type BuiltinErrorCode,
+  type UndeclaredCode,
 } from '@trpc12/trpc/client';
 import { error, initTrpc } from '@trpc12/trpc/server';
 import { describe, expectTypeOf, test } from 'vite-plus/test';
@@ -33,7 +34,9 @@ describe('the client union', () => {
     expectTypeOf<CodeOf<Extract<Now, { defined: true }>>>().toEqualTypeOf<
       'NOT_FOUND' | 'BAD_REQUEST'
     >();
-    expectTypeOf<CodeOf<Undefined<Now>>>().toEqualTypeOf<BuiltinErrorCode>();
+    expectTypeOf<CodeOf<Undefined<Now>>>().toEqualTypeOf<
+      BuiltinErrorCode | UndeclaredCode
+    >();
   });
 
   test('claiming a boundary code removes it', () => {
@@ -42,14 +45,17 @@ describe('the client union', () => {
       { readonly code: 'NETWORK_ERROR' | 'CLIENT_CLOSED_REQUEST' }
     >;
     expectTypeOf<CodeOf<Undefined<Claimed>>>().toEqualTypeOf<
-      Exclude<BuiltinErrorCode, 'NETWORK_ERROR' | 'CLIENT_CLOSED_REQUEST'>
+      | Exclude<BuiltinErrorCode, 'NETWORK_ERROR' | 'CLIENT_CLOSED_REQUEST'>
+      | UndeclaredCode
     >();
   });
 
   test('a defined code keeps its data, a built-in one has none', () => {
     type NotFound = Extract<Now, { readonly code: 'NOT_FOUND'; defined: true }>;
     expectTypeOf<NotFound['data']>().toEqualTypeOf<{ id: string }>();
-    expectTypeOf<Undefined<Now>['data']>().toEqualTypeOf<undefined>();
+    expectTypeOf<
+      Extract<Undefined<Now>, { readonly code: BuiltinErrorCode }>['data']
+    >().toEqualTypeOf<undefined>();
   });
 });
 

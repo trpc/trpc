@@ -1,8 +1,10 @@
 import { Cause, Effect, Option, Stream, Tracer } from 'effect';
 import { HttpTraceContext } from 'effect/http';
 import {
+  isBuiltinCode,
+  isKeptUntyped,
   isTrpcError,
-  toBuiltinError,
+  toUntypedError,
   TrpcError,
   type AnyTrpcError,
 } from '../internal/error.ts';
@@ -208,11 +210,17 @@ export type DeclContext<TDecl> = TDecl extends { context: infer C }
 
 /**
  * Turns anything a link threw into a client error: a defined error, or a
- * built-in one with no `data`. An undeclared custom code is `CLIENT_ERROR`.
+ * built-in one with no `data`. An undeclared custom code is `CLIENT_ERROR`,
+ * unless the server sent it (`keepUntyped`).
  * @internal
  */
 export function toClientError(cause: unknown): AnyTrpcError {
-  if (isTrpcError(cause)) return toBuiltinError(cause, 'CLIENT_ERROR');
+  if (
+    isTrpcError(cause) &&
+    (cause.defined || isBuiltinCode(cause.code) || isKeptUntyped(cause))
+  ) {
+    return toUntypedError(cause);
+  }
   return new TrpcError({
     code: 'CLIENT_ERROR',
     message: cause instanceof Error ? cause.message : String(cause),

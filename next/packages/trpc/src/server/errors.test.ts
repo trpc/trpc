@@ -14,6 +14,8 @@ import {
   type BuiltinErrorClass,
   type BuiltinErrorCode,
   type CategoryCode,
+  type UndeclaredCode,
+  type UndeclaredError,
 } from '@trpc12/trpc/client';
 import { error, initTrpc, type OnErrorOpts } from '@trpc12/trpc/server';
 import { createTestServer } from '../fixtures/server.ts';
@@ -89,8 +91,27 @@ const router = {
     throw new TrpcError({
       code: 'LEGACY_BILLING_TIMEOUT',
       message: 'Sold out',
+      data: { retryIn: 30 },
     });
   }),
+  thrownUndeclared: t.procedure
+    .errors({ OUT_OF_STOCK: { data: z.object({ sku: z.string() }) } })
+    .query((): string => {
+      throw new TrpcError({
+        code: 'LEGACY_BILLING_TIMEOUT',
+        message: 'Sold out',
+      });
+    }),
+  thrownDeclared: t.procedure
+    .errors({ OUT_OF_STOCK: { data: z.object({ sku: z.string() }) } })
+    .query((): string => {
+      throw new TrpcError({ code: 'OUT_OF_STOCK', data: { sku: 'a1' } });
+    }),
+  thrownDeclaredBadData: t.procedure
+    .errors({ OUT_OF_STOCK: { data: z.object({ sku: z.string() }) } })
+    .query((): string => {
+      throw new TrpcError({ code: 'OUT_OF_STOCK', data: { sku: 1 } });
+    }),
   crash: t.procedure.query((): string => {
     throw new Error('connect ECONNREFUSED 10.0.0.7:5432');
   }),
@@ -264,9 +285,25 @@ test('a thrown built-in code loses its data, which no schema checked', async () 
   });
 });
 
-test('a thrown, undeclared custom code is masked like any other crash', async () => {
+test('a custom code thrown where nothing is declared keeps its code and data, untyped', async () => {
   await using ctx = await setup();
   const [, err] = await safe(ctx.client.thrownCustom.query());
+  expect(err).toMatchObject({
+    code: 'LEGACY_BILLING_TIMEOUT',
+    message: 'Sold out',
+    data: { retryIn: 30 },
+    defined: false,
+  });
+  expect(ctx.status()).toBe(400);
+  expectTypeOf(err!).toEqualTypeOf<BuiltinError | UndeclaredError>();
+  expect(matchError(err!, { rejected: (e) => e.code, builtin: () => '' })).toBe(
+    'LEGACY_BILLING_TIMEOUT',
+  );
+});
+
+test('declared errors are exhaustive: a thrown undeclared custom code is masked like any other crash', async () => {
+  await using ctx = await setup();
+  const [, err] = await safe(ctx.client.thrownUndeclared.query());
   expect(err).toMatchObject({
     code: 'INTERNAL_SERVER_ERROR',
     message: 'Internal server error',
@@ -278,11 +315,26 @@ test('a thrown, undeclared custom code is masked like any other crash', async ()
   });
 
   await using exposed = await setup({ expose: true });
-  const [, shown] = await safe(exposed.client.thrownCustom.query());
+  const [, shown] = await safe(exposed.client.thrownUndeclared.query());
   expect(shown).toMatchObject({
     code: 'INTERNAL_SERVER_ERROR',
     message: 'Sold out',
   });
+});
+
+test('a thrown error with a declared code is typed, and its data validated', async () => {
+  await using ctx = await setup();
+  const [, err] = await safe(ctx.client.thrownDeclared.query());
+  expect(err).toMatchObject({
+    code: 'OUT_OF_STOCK',
+    data: { sku: 'a1' },
+    defined: true,
+  });
+  if (err?.defined) {
+    expectTypeOf(err.data).toEqualTypeOf<{ sku: string }>();
+  }
+  const [, invalid] = await safe(ctx.client.thrownDeclaredBadData.query());
+  expect(invalid).toMatchObject({ code: 'INTERNAL_SERVER_ERROR' });
 });
 
 test('the union is closed: defined codes, then one member per built-in code', async () => {
@@ -291,10 +343,8 @@ test('the union is closed: defined codes, then one member per built-in code', as
   if (err) {
     expectTypeOf<
       Extract<typeof err, { defined: false }>['code']
-    >().toEqualTypeOf<BuiltinErrorCode>();
-    expectTypeOf<
-      Extract<typeof err, { defined: false }>['data']
-    >().toEqualTypeOf<undefined>();
+    >().toEqualTypeOf<BuiltinErrorCode | UndeclaredCode>();
+    expectTypeOf<BuiltinError['data']>().toEqualTypeOf<undefined>();
     switch (err.code) {
       case 'NOT_FOUND':
         expectTypeOf(err.data).toEqualTypeOf<{ id: string } | undefined>();
@@ -384,7 +434,7 @@ test('matchError takes a handler per category of built-in errors', async () => {
   expect(await explain('nope')).toBe('no post nope');
 
   const [, crash] = await safe(ctx.client.crash.query());
-  const category = (err: BuiltinError) =>
+  const category = (err: BuiltinError | UndeclaredError) =>
     matchError(err, {
       rejected: () => 'rejected',
       unavailable: () => 'unavailable',
@@ -411,6 +461,10 @@ test('matchError takes a handler per category of built-in errors', async () => {
   expect(category(aborted)).toBe('aborted');
   const missingProcedure = new TrpcError.NotFound() as BuiltinError;
   expect(category(missingProcedure)).toBe('rejected');
+  const undeclared = new TrpcError({
+    code: 'LEGACY',
+  }) as unknown as UndeclaredError;
+  expect(category(undeclared)).toBe('rejected');
 });
 
 test('every built-in code has a category and a class', () => {

@@ -94,6 +94,7 @@ export {
   type SubscribeOptions,
   type TrpcClient,
   type TrpcPromise,
+  type UndeclaredError,
   type TrpcSubscription,
 } from './types.ts';
 export type { MessagePortLike } from '../server/sockets/index.ts';
@@ -112,6 +113,7 @@ export {
   type BuiltinErrorClass,
   type BuiltinErrorCode,
   type CategoryCode,
+  type UndeclaredCode,
   type ErrorCategory,
   type TrpcErrorOptions,
 } from '../internal/error.ts';

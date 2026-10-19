@@ -108,7 +108,7 @@ test('fetch failures and pages that are not tRPC errors', async () => {
     message: 'INTERNAL_SERVER_ERROR',
   });
 
-  // A server that leaks undeclared custom codes and their data.
+  // A procedure without `.errors()` that threw a custom code: kept, untyped.
   const leaked = body(
     {
       error: {
@@ -120,14 +120,13 @@ test('fetch failures and pages that are not tRPC errors', async () => {
     },
     400,
   );
-  const [, folded] = await safe(leaked);
-  expect(folded).toMatchObject({
-    code: 'INTERNAL_SERVER_ERROR',
+  const [, kept] = await safe(leaked);
+  expect(kept).toMatchObject({
+    code: 'LEGACY_BILLING_TIMEOUT',
     message: 'billing down',
+    data: { host: '10.0.0.7' },
     defined: false,
-    cause: { code: 'LEGACY_BILLING_TIMEOUT' },
   });
-  expect(folded?.data).toBeUndefined();
   const [, conflict] = await safe(
     body(
       { error: { code: 'CONFLICT', message: 'taken', data: { a: 1 } } },

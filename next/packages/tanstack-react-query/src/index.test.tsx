@@ -32,6 +32,7 @@ import {
   type LinksContext,
   type LinksTypes,
   type TrpcClient,
+  type UndeclaredError,
 } from '@trpc12/trpc/client';
 import { createRouterClient } from '@trpc12/trpc/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
@@ -138,7 +139,9 @@ test("each hook's error is what the call fails with, network and aborts included
     const create = useMutation(trpc.post.create.mutationOptions());
     const added = useSubscription(trpc.post.onAdd.subscriptionOptions());
 
-    expectTypeOf(greeting.error).toEqualTypeOf<BuiltinError | null>();
+    expectTypeOf(greeting.error).toEqualTypeOf<
+      BuiltinError | UndeclaredError | null
+    >();
     expectTypeOf(post.error).toEqualTypeOf<ByIdError | null>();
     expectTypeOf(first.error).toEqualTypeOf<ByIdError | null>();
     expectTypeOf(feed.error).toEqualTypeOf<CallErrorOf<

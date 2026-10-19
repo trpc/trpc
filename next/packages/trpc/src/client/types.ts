@@ -1,4 +1,8 @@
-import type { BuiltinErrorCode, TrpcError } from '../internal/error.ts';
+import type {
+  BuiltinErrorCode,
+  TrpcError,
+  UndeclaredCode,
+} from '../internal/error.ts';
 import type {
   ClientValue,
   DansonForm,
@@ -67,6 +71,17 @@ export type BuiltinError<TCode extends BuiltinErrorCode = BuiltinErrorCode> =
     : never;
 
 /**
+ * A `TrpcError` with a custom code that a procedure without `.errors()`
+ * threw rather than returned: `defined: false`, its code and `data`
+ * untyped. `matchError()` handles it as `rejected`.
+ * @since 0.1.0
+ * @stability stable
+ */
+export type UndeclaredError = TrpcError<UndeclaredCode, unknown> & {
+  readonly defined: false;
+};
+
+/**
  * The built-in codes only links make, which a link declares with
  * `builtinErrors` so that calls through it can fail with them:
  * `NETWORK_ERROR` (no response, or the connection dropped), `BAD_RESPONSE`
@@ -81,10 +96,10 @@ export type LinkErrorCode =
   | 'STREAM_INTERRUPTED';
 
 /**
- * What a call can fail with: the procedure's defined errors and the
- * built-in ones. Every member has a literal `code`, so `switch (err.code)`
- * narrows it; `err.defined` tells a defined `NOT_FOUND` from a built-in one.
- * `TLinkCodes` are the {@link LinkErrorCode}s the client's links declare;
+ * What a call can fail with: the procedure's defined errors, the built-in
+ * ones, and an {@link UndeclaredError}. Every member but that one has a
+ * literal `code`, so `switch (err.code)` narrows it; `err.defined` tells a
+ * defined `NOT_FOUND` from a built-in one. `TLinkCodes` are the {@link LinkErrorCode}s the client's links declare;
  * the others are left out. Every link code by default.
  * @since 0.1.0
  * @stability stable
@@ -95,7 +110,8 @@ export type ClientError<
   TLinkCodes extends LinkErrorCode = LinkErrorCode,
 > =
   | DefinedError<E, F>
-  | BuiltinError<Exclude<BuiltinErrorCode, Exclude<LinkErrorCode, TLinkCodes>>>;
+  | BuiltinError<Exclude<BuiltinErrorCode, Exclude<LinkErrorCode, TLinkCodes>>>
+  | UndeclaredError;
 
 /** A call's errors: the procedure's in the result form, the links' as made. */
 type CallError<

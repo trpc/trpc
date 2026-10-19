@@ -173,6 +173,7 @@ export {
   type BuiltinErrorClass,
   type BuiltinErrorCode,
   type CategoryCode,
+  type UndeclaredCode,
   type ErrorCategory,
   type TrpcErrorOptions,
 } from '../internal/error.ts';

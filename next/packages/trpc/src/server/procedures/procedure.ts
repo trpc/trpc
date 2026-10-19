@@ -106,6 +106,8 @@ export interface ProcedureInternals {
   /** `false`: `output` only types and documents the result. */
   readonly validateOutput?: false | undefined;
   readonly errors: ErrorMap;
+  /** `false`: no development warning when a `TrpcError` is thrown. */
+  readonly warnThrown?: false | undefined;
   /** Absent on contract procedures (09). */
   readonly resolver: ((opts: any) => unknown) | undefined;
 }

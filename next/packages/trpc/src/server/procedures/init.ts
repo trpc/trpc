@@ -71,6 +71,13 @@ export interface RootOptions<TMeta> {
    * ```
    */
   mergeMeta?: MetaMerge<TMeta>;
+  /**
+   * Whether a procedure that throws a `TrpcError` it could return logs a
+   * warning, once per procedure and code, when `NODE_ENV` is
+   * `development`. A thrown error reaches clients untyped.
+   * @default true
+   */
+  warnThrownErrors?: boolean;
 }
 
 /**
@@ -328,6 +335,7 @@ export function initTrpc<TConfig extends RootConfig = {}>(
       mergeMeta: opts.mergeMeta,
       output: undefined,
       errors: {},
+      warnThrown: opts.warnThrownErrors === false ? false : undefined,
     }),
   ) as never;
 }
