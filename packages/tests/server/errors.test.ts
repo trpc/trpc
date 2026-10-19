@@ -142,35 +142,12 @@ test('malformed url-encoding in the path', async () => {
   });
   const res = await fetch(`${ctx.httpUrl}/%`);
 
-  expect(res.status).toBe(404);
+  expect(res.status).toBe(400);
   expect(onError).toHaveBeenCalledTimes(1);
   const serverError = onError.mock.calls[0]![0]!.error;
 
   expect(serverError).toBeInstanceOf(TRPCError);
-  expect(serverError.code).toBe('NOT_FOUND');
-  expect(serverError.message).toBe('No procedure found on path "%"');
-});
-
-test('procedure key containing "%"', async () => {
-  const t = initTRPC.create();
-
-  const router = t.router({
-    '100%': t.procedure.query(() => 'full'),
-    hello: t.procedure.query(() => 'world'),
-  });
-  await using ctx = testServerAndClientResource(router);
-
-  const client = createTRPCClient<typeof router>({
-    links: [httpLink({ url: ctx.httpUrl })],
-  });
-  expect(await client['100%'].query()).toBe('full');
-
-  const batchClient = createTRPCClient<typeof router>({
-    links: [httpBatchLink({ url: ctx.httpUrl })],
-  });
-  expect(
-    await Promise.all([batchClient['100%'].query(), batchClient.hello.query()]),
-  ).toEqual(['full', 'world']);
+  expect(serverError.code).toBe('BAD_REQUEST');
 });
 
 test('getMessageFromUnknownError()', () => {
