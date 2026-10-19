@@ -31,9 +31,24 @@ Links receive the fields in `op.context`. `signal` and `lastEventId` are reserve
 
 A link can also declare the errors it fails calls with, and the operation types it can't carry. Declared errors join every call's typed union (`defined: true`). An error a link didn't declare reaches callers as a built-in one: a custom code becomes `CLIENT_ERROR`, and a built-in code loses its `data`. Procedures of an unsupported type lose their method.
 
-A link that sends requests or reads responses itself declares the [link codes](./errors.md#errors-from-the-links) it fails calls with in `builtinErrors` (`link<{ builtinErrors: 'NETWORK_ERROR' | 'BAD_RESPONSE' }>`), since a call's union has only the ones its links declare:
+A code of your own is a `TrpcError.Tagged` class, with its `data` schema. Declare it in `errors` and fail with it, and every call through the client can fail with it, typed:
 
-```ts
+```ts twoslash
+// ---cut-start---
+import {
+  createTrpcClient,
+  httpLink,
+  link,
+  routerType,
+  safe,
+} from '@trpc12/trpc/client';
+import type { AppRouter } from './server.ts';
+declare const url: string;
+declare const budget: { take(): boolean };
+// ---cut-end---
+import { TrpcError } from '@trpc12/trpc/client';
+import { Schema, Stream } from 'effect';
+
 class RateLimited extends TrpcError.Tagged('RATE_LIMITED', {
   data: Schema.Struct({ retryAfter: Schema.Number }),
 }) {}
@@ -43,15 +58,51 @@ const rateLimit = link<{ errors: RateLimited }>((opts) =>
     ? opts.next(opts.op)
     : Stream.fail(new RateLimited({ retryAfter: 5 })),
 );
-const restOnly = link<{ unsupported: 'subscription' }>(/* … */);
 
 const client = createTrpcClient({
   router: routerType<AppRouter>(),
-  links: [rateLimit, restOnly, httpLink({ url })],
+  links: [rateLimit, httpLink({ url })],
 });
-const [, err] = await safe(client.post.create.mutate(input));
-if (err?.code === 'RATE_LIMITED') retryIn(err.data.retryAfter); // a custom code is always defined
-client.onPost.subscribe; // type error: no link carries subscriptions
+const [, err] = await safe(client.post.list.query());
+if (err?.code === 'RATE_LIMITED') {
+  err.data;
+  //  ^?
+}
+```
+
+A custom code is always defined, so every `matchError()` on the client now needs a `RATE_LIMITED` handler ([When the links change](./errors.md#when-the-links-change)).
+
+A link that sends requests or reads responses itself declares the [link codes](./errors.md#errors-from-the-links) it fails calls with in `builtinErrors` (`link<{ builtinErrors: 'NETWORK_ERROR' }>`, failing with `new TrpcError.NetworkError()`), since a call's union has only the ones its links declare. They join the union as built-in errors (`defined: false`), with no `data`.
+
+A link that declares `unsupported` takes the method off the procedures of that type:
+
+```ts twoslash
+// @errors: 2339
+// ---cut-start---
+import {
+  createTrpcClient,
+  httpLink,
+  link,
+  routerType,
+} from '@trpc12/trpc/client';
+import { t } from './server.ts';
+declare const url: string;
+const appRouter = {
+  onPost: t.procedure.subscription(async function* () {
+    yield 'created';
+  }),
+};
+type AppRouter = typeof appRouter;
+// ---cut-end---
+const restOnly = link<{ unsupported: 'subscription' }>((opts) =>
+  opts.next(opts.op),
+);
+
+const client = createTrpcClient({
+  router: routerType<AppRouter>(),
+  links: [restOnly, httpLink({ url })],
+});
+client.onPost.subscribe();
 ```
 
 ## Reading the response
@@ -95,7 +146,7 @@ createTrpcClient({
 
 ## Branching links
 
-`splitLink` and `switchLink` lack an operation type only when every branch does, and provide only what every branch provides. Built-in links carry every type, and their failures (`NETWORK_ERROR`, `CLIENT_CLOSED_REQUEST`) stay in the untyped part of the union.
+`splitLink` and `switchLink` lack an operation type only when every branch does, and provide only what every branch provides. Their errors are every branch's: a call can fail with what any branch declares.
 
 ## Typing integrations from the client
 
