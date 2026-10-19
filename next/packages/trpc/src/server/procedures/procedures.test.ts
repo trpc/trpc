@@ -535,7 +535,7 @@ test('call() runs one procedure, with a layer for its services', async () => {
 
   const echo = initTrpc()
     .procedure.input(z.string())
-    .query(({ input }) => input);
+    .query((opts) => opts.input);
   expect(await call(echo, 'hi')).toBe('hi');
   expect(await call(echo, 'hi', { path: 'echo' })).toBe('hi');
 });
