@@ -457,6 +457,84 @@ test('lifecycle helpers type meta and input from the procedure, and ctx from a t
   expect(await call(needsUser, undefined, { ctx: { user: 'bo' } })).toBe(1);
 });
 
+test('lifecycle helpers see an aborted call as CLIENT_CLOSED_REQUEST, and a throwing callback fails the call', async () => {
+  const controller = new AbortController();
+  const seen: string[] = [];
+  const aborted = t.procedure
+    .use(onFinish((result) => void seen.push(`finish ${result.ok}`)))
+    .use(onError((err) => void seen.push(`error ${err.code}`)))
+    .query(() =>
+      Effect.andThen(
+        Effect.sync(() => controller.abort()),
+        Effect.never,
+      ),
+    );
+  await expect(
+    call(aborted, undefined, {
+      ctx: { user: null },
+      signal: controller.signal,
+    }),
+  ).rejects.toMatchObject({ code: 'CLIENT_CLOSED_REQUEST' });
+  expect(seen).toEqual(['error CLIENT_CLOSED_REQUEST', 'finish false']);
+
+  for (const helper of [
+    onStart(() => Promise.reject(new Error('boom'))),
+    onSuccess(() => {
+      throw new Error('boom');
+    }),
+    onFinish(async () => {
+      throw new Error('boom');
+    }),
+  ]) {
+    const throwing = t.procedure.use(helper).query(() => 1);
+    await expect(
+      call(throwing, undefined, { ctx: { user: null } }),
+    ).rejects.toMatchObject({
+      code: 'INTERNAL_SERVER_ERROR',
+      message: 'boom',
+    });
+  }
+  const replaced = t.procedure
+    .use(
+      onError(() => {
+        throw new Error('boom');
+      }),
+    )
+    .query(() => error({ code: 'CONFLICT' }));
+  await expect(
+    call(replaced, undefined, { ctx: { user: null } }),
+  ).rejects.toMatchObject({ code: 'INTERNAL_SERVER_ERROR', message: 'boom' });
+});
+
+test("lifecycle helpers are Promise middleware when called, and their callbacks' next() is", async () => {
+  const outcomes: unknown[] = [];
+  const finish = onFinish((result) => void outcomes.push(result));
+  expect(
+    await finish({
+      ctx: {},
+      input: undefined,
+      meta: {},
+      path: 'p',
+      type: 'query',
+      signal: new AbortController().signal,
+      response: { headers: new Headers(), status: undefined },
+      next: () => Promise.resolve({ ok: true as const, data: 1 }),
+    }),
+  ).toEqual({ ok: true, data: 1 });
+  expect(outcomes).toEqual([{ ok: true, data: 1 }]);
+
+  const peeking = t.procedure
+    .use(
+      onStart(async (o) => {
+        const result = await o.next();
+        outcomes.push(result.ok);
+      }),
+    )
+    .query(() => 2);
+  expect(await call(peeking, undefined, { ctx: { user: null } })).toBe(2);
+  expect(outcomes).toEqual([{ ok: true, data: 1 }, true]);
+});
+
 test('Effect middleware provides services and its failures are typed', async () => {
   await using ctx = await setup();
   expect(await ctx.client.me.query()).toBe('ada');
@@ -655,6 +733,22 @@ test('procedures without async steps run synchronously', () => {
     signal: new AbortController().signal,
   });
   expect(Effect.runSync(run as Effect.Effect<unknown, unknown>)).toBe(2);
+
+  const seen: unknown[] = [];
+  const watched = initTrpc()
+    .procedure.use(onStart(() => void seen.push('start')))
+    .use(onSuccess((data) => void seen.push(data)))
+    .use(onFinish((result) => void seen.push(result.ok)))
+    .query(() => 3);
+  const watchedRun = callProcedure({
+    procedure: watched,
+    path: 'watched',
+    ctx: {},
+    input: undefined,
+    signal: new AbortController().signal,
+  });
+  expect(Effect.runSync(watchedRun as Effect.Effect<unknown, unknown>)).toBe(3);
+  expect(seen).toEqual(['start', true, 3]);
 });
 
 test('next({ input }) replaces the input for later steps, typed like ctx (#6892)', async () => {

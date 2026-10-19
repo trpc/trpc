@@ -1,5 +1,5 @@
-import type { Effect } from 'effect';
-import type { AnyTrpcError, TrpcError } from '../../internal/error.ts';
+import { Cause, Effect, Exit, identity, type Context } from 'effect';
+import { TrpcError, type AnyTrpcError } from '../../internal/error.ts';
 import type {
   MaybePromise,
   ProcedureType,
@@ -343,7 +343,9 @@ export const makeEffectMiddleware = (fn: (opts: any) => unknown): any => ({
 export const isEffectMiddleware = (
   value: unknown,
 ): value is { '~effectMiddleware': (opts: any) => unknown } =>
-  typeof value === 'object' && value !== null && '~effectMiddleware' in value;
+  (typeof value === 'object' || typeof value === 'function') &&
+  value !== null &&
+  '~effectMiddleware' in value;
 
 // --- standalone middleware ---------------------------------------------------------
 
@@ -424,6 +426,80 @@ export const middleware: MiddlewareFactory = /* @__PURE__ */ Object.assign(
 
 // --- lifecycle helpers (06 (f)) ----------------------------------------------------
 
+type Outcome =
+  | { readonly ok: true; readonly data: unknown }
+  | { readonly ok: false; readonly error: AnyTrpcError };
+
+type AnyEffectOpts = EffectMiddlewareOpts<unknown, unknown, unknown, never>;
+type AnyOpts = MiddlewareOpts<unknown, unknown, unknown>;
+
+/** Effect `next()`'s exit as Promise `next()` resolves: interrupted is `CLIENT_CLOSED_REQUEST`. */
+const outcomeOf = (exit: Exit.Exit<NextResult<{}>, NextError>): Outcome =>
+  Exit.isSuccess(exit)
+    ? exit.value
+    : {
+        ok: false,
+        error:
+          exit.cause.reasons.find(Cause.isFailReason)?.error ??
+          new TrpcError.ClientClosedRequest({
+            message: 'The request was aborted',
+          }),
+      };
+
+const isThenable = (value: unknown): value is PromiseLike<unknown> =>
+  typeof (value as PromiseLike<unknown> | null)?.then === 'function';
+
+/**
+ * Runs a lifecycle callback with `opts` as Promise middleware gets them,
+ * `next()` resolving to an outcome. Only a returned promise makes it
+ * asynchronous, and only waiting for it can be interrupted: an
+ * interrupted call still runs the callback but doesn't wait for it, as
+ * with Promise middleware.
+ */
+const runCallback = (
+  opts: AnyEffectOpts,
+  fn: (opts: AnyOpts) => MaybePromise<void>,
+  restore: <A, E, R>(effect: Effect.Effect<A, E, R>) => Effect.Effect<A, E, R>,
+): Effect.Effect<void> =>
+  Effect.withFiber((fiber) => {
+    const run = Effect.runPromiseExitWith(
+      fiber.context as Context.Context<never>,
+    );
+    const next = async (o?: object) =>
+      outcomeOf(await run(opts.next(o as never)));
+    const ret = fn({ ...opts, next: next as NextFn });
+    return isThenable(ret) ? restore(Effect.promise(() => ret)) : Effect.void;
+  });
+
+/**
+ * Runs the rest of the chain, then `fn` with its outcome, even when the
+ * call is interrupted, and ends as the chain did unless `fn` fails.
+ */
+const after = (
+  opts: AnyEffectOpts,
+  fn: (outcome: Outcome, opts: AnyOpts) => MaybePromise<void> | undefined,
+): Effect.Effect<unknown, unknown> =>
+  Effect.uninterruptibleMask((restore) =>
+    Effect.flatMap(Effect.exit(restore(opts.next())), (exit) => {
+      const outcome = outcomeOf(exit);
+      return Effect.andThen(
+        runCallback(opts, (o) => fn(outcome, o), restore),
+        exit,
+      );
+    }),
+  );
+
+/**
+ * A lifecycle helper: Promise middleware by its type and when called,
+ * Effect middleware in a chain (`.use()` runs its `~effectMiddleware`),
+ * so it adds no fiber or promise to a call.
+ */
+const lifecycle = <TCtx, TInput, TMeta>(
+  promise: (opts: MiddlewareOpts<TCtx, TInput, TMeta>) => Promise<unknown>,
+  effect: (opts: AnyEffectOpts) => Effect.Effect<unknown, unknown>,
+): MiddlewareFunction<TCtx, TInput, TMeta, {}, never> =>
+  Object.assign(promise, { '~effectMiddleware': effect }) as never;
+
 /**
  * Runs `fn` before the rest of the chain. `opts.meta` and `opts.input` are
  * typed from the procedure; `opts.ctx` is `unknown` unless given as the
@@ -441,10 +517,15 @@ export const middleware: MiddlewareFactory = /* @__PURE__ */ Object.assign(
 export function onStart<TCtx = unknown, TInput = unknown, TMeta = unknown>(
   fn: (opts: MiddlewareOpts<TCtx, TInput, TMeta>) => MaybePromise<void>,
 ): MiddlewareFunction<TCtx, TInput, TMeta, {}, never> {
-  return async (opts) => {
-    await fn(opts);
-    return opts.next();
-  };
+  const callback = fn as (opts: AnyOpts) => MaybePromise<void>;
+  return lifecycle(
+    async (opts) => {
+      await fn(opts);
+      return opts.next();
+    },
+    (opts) =>
+      Effect.andThen(runCallback(opts, callback, identity), opts.next()),
+  );
 }
 
 /**
@@ -464,11 +545,18 @@ export function onSuccess<TCtx = unknown, TInput = unknown, TMeta = unknown>(
     opts: MiddlewareOpts<TCtx, TInput, TMeta>,
   ) => MaybePromise<void>,
 ): MiddlewareFunction<TCtx, TInput, TMeta, {}, never> {
-  return async (opts) => {
-    const result = await opts.next();
-    if (result.ok) await fn(result.data, opts);
-    return result;
-  };
+  const callback = fn as (data: unknown, opts: AnyOpts) => MaybePromise<void>;
+  return lifecycle(
+    async (opts) => {
+      const result = await opts.next();
+      if (result.ok) await fn(result.data, opts);
+      return result;
+    },
+    (opts) =>
+      after(opts, (outcome, o) =>
+        outcome.ok ? callback(outcome.data, o) : undefined,
+      ),
+  );
 }
 
 /**
@@ -487,11 +575,21 @@ export function onError<TCtx = unknown, TInput = unknown, TMeta = unknown>(
     opts: MiddlewareOpts<TCtx, TInput, TMeta>,
   ) => MaybePromise<void>,
 ): MiddlewareFunction<TCtx, TInput, TMeta, {}, never> {
-  return async (opts) => {
-    const result = await opts.next();
-    if (!result.ok) await fn(result.error, opts);
-    return result;
-  };
+  const callback = fn as (
+    error: AnyTrpcError,
+    opts: AnyOpts,
+  ) => MaybePromise<void>;
+  return lifecycle(
+    async (opts) => {
+      const result = await opts.next();
+      if (!result.ok) await fn(result.error, opts);
+      return result;
+    },
+    (opts) =>
+      after(opts, (outcome, o) =>
+        outcome.ok ? undefined : callback(outcome.error, o),
+      ),
+  );
 }
 
 /**
@@ -512,9 +610,13 @@ export function onFinish<TCtx = unknown, TInput = unknown, TMeta = unknown>(
     opts: MiddlewareOpts<TCtx, TInput, TMeta>,
   ) => MaybePromise<void>,
 ): MiddlewareFunction<TCtx, TInput, TMeta, {}, never> {
-  return async (opts) => {
-    const result = await opts.next();
-    await fn(result, opts);
-    return result;
-  };
+  const callback = fn as (result: Outcome, opts: AnyOpts) => MaybePromise<void>;
+  return lifecycle(
+    async (opts) => {
+      const result = await opts.next();
+      await fn(result, opts);
+      return result;
+    },
+    (opts) => after(opts, callback),
+  );
 }
