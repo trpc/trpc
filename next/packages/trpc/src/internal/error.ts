@@ -1,4 +1,3 @@
-import { Data } from 'effect';
 import type * as Cause from 'effect/Cause';
 import type { AnySchema, OutOf } from '../server/validation/index.ts';
 
@@ -158,10 +157,41 @@ export interface TrpcErrorOptions<TCode extends string, TData> {
   cause?: unknown;
 }
 
-const YieldableBase: new (args: {
+/**
+ * `Data.Error` without importing Effect, so a client that never runs Effect
+ * doesn't bundle it: the same constructor and `toJSON` arguments, typed as a
+ * `YieldableError`. It can be yielded once {@link makeErrorsYieldable} has
+ * given it `Data.Error`'s prototype, which every module that runs Effect
+ * code with `TrpcError`s does when it loads.
+ */
+class PlainYieldableBase extends Error {
+  constructor(args: { message: string; cause?: unknown }) {
+    super(
+      args.message,
+      args.cause === undefined ? undefined : { cause: args.cause },
+    );
+    Object.defineProperty(this, Symbol.for('effect/Data/Error/plainArgs'), {
+      value: args,
+    });
+  }
+}
+const YieldableBase = PlainYieldableBase as unknown as new (args: {
   message: string;
   cause?: unknown;
-}) => Cause.YieldableError = Data.Error as never;
+}) => Cause.YieldableError;
+
+/**
+ * Puts `Data.Error`'s prototype under `TrpcError`'s, which makes every
+ * `TrpcError` an Effect that fails with itself (`yield* new TrpcError(…)`).
+ * Idempotent; `effect` is passed in so this module doesn't import it.
+ * @internal
+ */
+export function makeErrorsYieldable(effectError: { prototype: object }): void {
+  if (Object.getPrototypeOf(PlainYieldableBase.prototype) !== Error.prototype) {
+    return;
+  }
+  Object.setPrototypeOf(PlainYieldableBase.prototype, effectError.prototype);
+}
 
 /**
  * The one error type, on the server and on the client.

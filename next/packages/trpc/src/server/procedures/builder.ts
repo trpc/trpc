@@ -1,5 +1,9 @@
-import { Match, type Context, type Effect, type Stream } from 'effect';
-import type { AnyTrpcError, TrpcError } from '../../internal/error.ts';
+import { Data, Match, type Context, type Effect, type Stream } from 'effect';
+import {
+  makeErrorsYieldable,
+  type AnyTrpcError,
+  type TrpcError,
+} from '../../internal/error.ts';
 import type {
   IsAny,
   MaybePromise,
@@ -44,6 +48,8 @@ import type {
   StreamOutput,
 } from '../validation/index.ts';
 import type { TrackedEnvelope } from '../subscriptions/index.ts';
+
+makeErrorsYieldable(Data.Error);
 
 /**
  * The builder's state: one mapped bag (03 G-A).

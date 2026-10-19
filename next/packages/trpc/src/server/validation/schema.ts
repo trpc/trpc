@@ -1,4 +1,5 @@
 import {
+  Data,
   Effect,
   Match,
   Predicate,
@@ -6,7 +7,9 @@ import {
   SchemaIssue,
   type SchemaAST,
 } from 'effect';
-import { TrpcError } from '../../internal/error.ts';
+import { makeErrorsYieldable, TrpcError } from '../../internal/error.ts';
+
+makeErrorsYieldable(Data.Error);
 
 /**
  * A [Standard Schema](https://standardschema.dev) issue.

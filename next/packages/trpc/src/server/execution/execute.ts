@@ -1,6 +1,7 @@
 import {
   Cause,
   Context,
+  Data,
   Effect,
   Exit,
   References,
@@ -11,6 +12,7 @@ import { HttpServerResponse } from 'effect/http';
 import {
   isBuiltinCode,
   isTrpcError,
+  makeErrorsYieldable,
   statusOf,
   taggedSpec,
   toBuiltinError,
@@ -42,6 +44,8 @@ import {
   type StreamSchema,
 } from '../validation/index.ts';
 import { isTracked, tracked } from '../subscriptions/index.ts';
+
+makeErrorsYieldable(Data.Error);
 
 const unexpectedErrors = new WeakSet<AnyTrpcError>();
 
