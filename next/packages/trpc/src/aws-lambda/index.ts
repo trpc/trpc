@@ -363,15 +363,26 @@ const toRequest = (event: LambdaEvent, signal: AbortSignal): Request =>
 const marginOf = (options: LambdaHandlerOptions) =>
   Duration.toMillis(options.timeoutMargin ?? '1 second');
 
-const deadline = (
+/**
+ * The fetch handler's response to `event`. Its request's signal aborts when
+ * the call is interrupted, or `margin` milliseconds before Lambda's deadline.
+ */
+const respond = (
+  handler: LambdaFetchHandler,
+  event: LambdaEvent,
   context: LambdaContext,
   margin: number,
-): Effect.Effect<AbortSignal> =>
-  Effect.sync(() => {
+): Effect.Effect<Response> =>
+  Effect.promise((interrupted) => {
     const remaining = context.getRemainingTimeInMillis?.();
-    return remaining === undefined
-      ? new AbortController().signal
-      : AbortSignal.timeout(Math.max(0, remaining - margin));
+    const signal =
+      remaining === undefined
+        ? interrupted
+        : AbortSignal.any([
+            interrupted,
+            AbortSignal.timeout(Math.max(0, remaining - margin)),
+          ]);
+    return handler.fetch(toRequest(event, signal), { event, context });
   });
 
 const toResult = (
@@ -470,13 +481,9 @@ export function toLambdaHandler(
   const margin = marginOf(options);
   return (event, context = {}) =>
     Effect.runPromise(
-      Effect.gen(function* () {
-        const signal = yield* deadline(context, margin);
-        const response = yield* Effect.promise(() =>
-          handler.fetch(toRequest(event, signal), { event, context }),
-        );
-        return yield* toResult(event, response);
-      }),
+      Effect.flatMap(respond(handler, event, context, margin), (response) =>
+        toResult(event, response),
+      ),
     );
 }
 
@@ -532,10 +539,7 @@ export function toLambdaStreamingHandler(
   return (event, stream, context = {}) =>
     Effect.runPromise(
       Effect.gen(function* () {
-        const signal = yield* deadline(context, margin);
-        const response = yield* Effect.promise(() =>
-          handler.fetch(toRequest(event, signal), { event, context }),
-        );
+        const response = yield* respond(handler, event, context, margin);
         const headers: Record<string, string> = {};
         for (const [k, v] of response.headers) {
           if (k !== 'set-cookie') headers[k] = v;
