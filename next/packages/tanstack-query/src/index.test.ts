@@ -248,15 +248,15 @@ test('queryFilter takes part of the input and matches every query it fits', asyn
     queryClient
       .getQueryCache()
       .findAll({ stale: true })
-      .map((q) => q.queryKey[1]?.input);
+      .map((q) => q.queryKey);
 
   await queryClient.invalidateQueries({
     ...app.trpc.post.list.queryFilter({ input: { cursor: 2 } }),
     refetchType: 'none',
   });
   expect(stale()).toEqual([
-    { limit: 2, cursor: 2 },
-    { limit: 3, cursor: 2 },
+    [['post', 'list'], { input: { limit: 2, cursor: 2 }, type: 'query' }],
+    [['post', 'list'], { input: { limit: 3, cursor: 2 }, type: 'query' }],
   ]);
   // @ts-expect-error a field the input doesn't have
   app.trpc.post.list.queryFilter({ input: { page: 1 } });
