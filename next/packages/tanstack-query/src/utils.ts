@@ -661,7 +661,7 @@ type Bag = {
 type ClientMethod = (input: unknown, opts: object) => any;
 
 /** Calls a procedure whose output streams, handing each chunk to `onChunk`. */
-const streamChunks = Effect.fnUntraced(function* (opts: {
+const streamChunks = /* @__PURE__ */ Effect.fnUntraced(function* (opts: {
   readonly path: readonly string[];
   readonly call: (signal: AbortSignal) => PromiseLike<unknown>;
   readonly onChunk: (chunk: unknown) => void;

@@ -75,7 +75,7 @@ const idle = { status: 'idle', data: undefined, error: null } as const;
  * Runs one start of a shared subscription: its events, then its end or
  * failure. `subscribe`'s signal belongs to the run's scope.
  */
-const consume = Effect.fnUntraced(function* <TEvent, TError>(
+const consume = /* @__PURE__ */ Effect.fnUntraced(function* <TEvent, TError>(
   shared: SharedSubscription<TEvent, TError>,
   options: AnyOptions<TEvent, TError>,
 ) {

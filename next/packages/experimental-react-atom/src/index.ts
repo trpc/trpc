@@ -48,7 +48,7 @@ import {
 } from '@trpc12/trpc/serializer';
 
 /** Keys use danSON, so inputs with `Date`s and `Map`s key apart. */
-const keySerializer = createSerializer();
+const keySerializer = /* @__PURE__ */ createSerializer();
 
 /**
  * Reactivity keys: a list, or lists by namespace, as `Reactivity` takes them.

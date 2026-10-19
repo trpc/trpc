@@ -172,7 +172,7 @@ export interface GenerateOpenApiOptions {
 const UNTYPED_ERROR = 'TrpcUntypedError';
 
 /** The built-in codes a server can answer with; the rest are client-side only. */
-const SERVER_CODES = Object.entries(ERROR_STATUS)
+const SERVER_CODES = /* @__PURE__ */ Object.entries(ERROR_STATUS)
   .filter(([, status]) => status > 0)
   .map(([code]) => code);
 

@@ -47,7 +47,7 @@ export interface ResponseService extends Context.ServiceClass<
   setStatus(status: number): Effect.Effect<void, never, Response>;
 }
 
-const Key = Context.Service<Response, ResponseHandle>()(
+const Key = /* @__PURE__ */ Context.Service<Response, ResponseHandle>()(
   '@trpc12/trpc/Response',
 );
 const tag = Key as unknown as Context.Key<Response, ResponseHandle>;
@@ -58,7 +58,7 @@ const update = (f: (handle: ResponseHandle) => void) =>
  * @since 0.1.0
  * @stability stable
  */
-export const Response: ResponseService = Object.assign(Key, {
+export const Response: ResponseService = /* @__PURE__ */ Object.assign(Key, {
   setHeader: (name: string, value: string) =>
     update((h) => h.headers.set(name, value)),
   appendHeader: (name: string, value: string) =>

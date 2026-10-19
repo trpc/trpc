@@ -368,7 +368,8 @@ const normalizeIssues = (
         ...(issue.path ? { path: normalizePath(issue.path) } : {}),
       }));
 
-const formatEffectIssue = SchemaIssue.makeFormatterStandardSchemaV1();
+const formatEffectIssue =
+  /* @__PURE__ */ SchemaIssue.makeFormatterStandardSchemaV1();
 
 type EffectCheck = NonNullable<EffectInputIssue['check']>;
 

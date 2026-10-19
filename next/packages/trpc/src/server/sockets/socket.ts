@@ -125,7 +125,9 @@ export const SocketCore: Context.ServiceClass<
   SocketCore,
   '@trpc12/trpc/SocketCore',
   SocketCoreShape
-> = Context.Service<SocketCore, SocketCoreShape>()('@trpc12/trpc/SocketCore');
+> = /* @__PURE__ */ Context.Service<SocketCore, SocketCoreShape>()(
+  '@trpc12/trpc/SocketCore',
+);
 
 /** Where a connection's server messages go, whatever carries it. @internal */
 export interface Connection {

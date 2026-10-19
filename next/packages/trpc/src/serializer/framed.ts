@@ -349,7 +349,7 @@ export function createSyncSerializer<TKeeps = never>(
  * @since 0.1.0
  * @stability stable
  */
-export const jsonSerializer: Serializer<JsonForm> = framedSerializer(
+export const jsonSerializer: Serializer<JsonForm> = /* @__PURE__ */ framedSerializer(
   'json',
   'none',
   {

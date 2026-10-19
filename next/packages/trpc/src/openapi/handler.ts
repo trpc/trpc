@@ -190,7 +190,7 @@ export interface OpenApiCall {
   readonly params?: Readonly<Record<string, string>>;
 }
 
-const SelectedCall = Context.Reference<OpenApiCall | undefined>(
+const SelectedCall = /* @__PURE__ */ Context.Reference<OpenApiCall | undefined>(
   '@trpc12/trpc/openapi/SelectedCall',
   { defaultValue: () => undefined },
 );
@@ -219,8 +219,8 @@ interface Body {
 }
 const noBody: Body = { value: undefined, fromStrings: false };
 
-const encoder = new TextEncoder();
-const decoder = new TextDecoder();
+const encoder = /* @__PURE__ */ new TextEncoder();
+const decoder = /* @__PURE__ */ new TextDecoder();
 
 const toError = (cause: unknown): AnyTrpcError =>
   isTrpcError(cause) ? cause : unexpectedError(cause);

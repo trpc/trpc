@@ -417,7 +417,7 @@ interface MiddlewareFactory {
  * @since 0.1.0
  * @stability stable
  */
-export const middleware: MiddlewareFactory = Object.assign(
+export const middleware: MiddlewareFactory = /* @__PURE__ */ Object.assign(
   () => (fn: unknown) => fn,
   { effect: () => makeEffectMiddleware },
 ) as never;

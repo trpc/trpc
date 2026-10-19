@@ -72,7 +72,9 @@ export function unexpectedError(
   return err;
 }
 
-const noServices = Effect.succeed(Context.empty() as Context.Context<any>);
+const noServices = /* @__PURE__ */ Effect.succeed(
+  /* @__PURE__ */ Context.empty() as Context.Context<any>,
+);
 
 /**
  * A runtime's services, built by it on first use. Read on every call, since

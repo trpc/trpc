@@ -34,7 +34,9 @@ export const UpgradeServer: Context.ServiceClass<
   UpgradeServer,
   '@trpc12/trpc/UpgradeServer',
   ServeSocket
-> = Context.Service<UpgradeServer, ServeSocket>()('@trpc12/trpc/UpgradeServer');
+> = /* @__PURE__ */ Context.Service<UpgradeServer, ServeSocket>()(
+  '@trpc12/trpc/UpgradeServer',
+);
 
 /**
  * The TCP socket under a Node upgrade (`IncomingMessage.socket`). `ws`
@@ -61,7 +63,7 @@ const OPEN = 1;
 const CLOSING = 2;
 const CLOSED = 3;
 
-const encoder = new TextEncoder();
+const encoder = /* @__PURE__ */ new TextEncoder();
 const byteLength = (data: string | Uint8Array) =>
   typeof data === 'string' ? encoder.encode(data).byteLength : data.byteLength;
 

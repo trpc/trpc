@@ -177,16 +177,16 @@ interface DeferredContext {
 
 /** Registers deferred values with the serialization's `DeferredContext`. */
 const deferredSerializers: SerializeRecord = {
-  ReadableStream: instancesOnly((v, ctx: DeferredContext) =>
+  ReadableStream: /* @__PURE__ */ instancesOnly((v, ctx: DeferredContext) =>
     v instanceof ReadableStream ? ctx.register(v) : false,
   ),
-  AsyncIterable: objectsOnly((v, ctx: DeferredContext) =>
+  AsyncIterable: /* @__PURE__ */ objectsOnly((v, ctx: DeferredContext) =>
     isAsyncIterable(v) ? ctx.register(v) : false,
   ),
-  Promise: objectsOnly((v, ctx: DeferredContext) =>
+  Promise: /* @__PURE__ */ objectsOnly((v, ctx: DeferredContext) =>
     isPromiseLike(v) ? ctx.register(v) : false,
   ),
-  File: instancesOnly((v, ctx: DeferredContext) =>
+  File: /* @__PURE__ */ instancesOnly((v, ctx: DeferredContext) =>
     isFile(v)
       ? ({
           stream: ctx.registerBlob(v),
@@ -196,7 +196,7 @@ const deferredSerializers: SerializeRecord = {
         } satisfies BlobRef)
       : false,
   ),
-  Blob: instancesOnly((v, ctx: DeferredContext) =>
+  Blob: /* @__PURE__ */ instancesOnly((v, ctx: DeferredContext) =>
     v instanceof Blob
       ? ({
           stream: ctx.registerBlob(v),

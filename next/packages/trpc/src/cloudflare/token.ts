@@ -43,7 +43,7 @@ export interface ConnectionToken<A> {
   ) => Effect.Effect<A, CodeError<'UNAUTHORIZED'>>;
 }
 
-const encoder = new TextEncoder();
+const encoder = /* @__PURE__ */ new TextEncoder();
 
 const unauthorized = (message: string) =>
   new TrpcError.Unauthorized({ message });

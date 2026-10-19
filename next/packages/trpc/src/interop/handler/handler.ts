@@ -251,7 +251,7 @@ type Outcome =
       readonly headers?: Headers;
     };
 
-const decoder = new TextDecoder();
+const decoder = /* @__PURE__ */ new TextDecoder();
 const identity: V11Transformer = { serialize: (v) => v, deserialize: (v) => v };
 
 const DEFAULT_MAX_BATCH = 100;

@@ -5,7 +5,7 @@ import { sortKeys } from './share.ts';
 import { fulfilled, pending, type Pending, type Thenable } from './thenable.ts';
 
 /** Keys use danSON, so inputs with `Date`s and `Map`s key apart. */
-const keySerializer = createSerializer();
+const keySerializer = /* @__PURE__ */ createSerializer();
 
 /**
  * The cache key of a query: its path and its input, with plain objects'

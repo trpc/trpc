@@ -16,7 +16,7 @@ export interface experimental_UpstashOptions {
   readonly fetch?: (url: string, init: RequestInit) => Promise<Response>;
 }
 
-const noSubscribe = new Redis.RedisError({
+const noSubscribe = /* @__PURE__ */ new Redis.RedisError({
   cause: new Error('Upstash REST has no SUBSCRIBE; connect over TCP instead'),
 });
 

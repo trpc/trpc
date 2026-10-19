@@ -137,7 +137,7 @@ const isAttachment = (value: unknown): value is Attachment =>
   (value as Attachment).trpc === 1 &&
   typeof (value as Attachment).url === 'string';
 
-const encoder = new TextEncoder();
+const encoder = /* @__PURE__ */ new TextEncoder();
 const fits = (attachment: Attachment) =>
   encoder.encode(JSON.stringify(attachment)).length <= ATTACHMENT_LIMIT;
 

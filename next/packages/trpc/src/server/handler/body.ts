@@ -3,7 +3,7 @@ import { Cookies, type HttpServerRequest } from 'effect/http';
 import { TrpcError, type CodeError } from '../../internal/error.ts';
 import { isJsonContentType } from '../../internal/protocol.ts';
 
-const encoder = new TextEncoder();
+const encoder = /* @__PURE__ */ new TextEncoder();
 
 /** `Headers` from a response handle, as `HttpServerResponse` options. @internal */
 export const responseOptions = (

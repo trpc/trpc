@@ -20,9 +20,12 @@ const RateLimitedBase: TaggedErrorClass<
   'TOO_MANY_REQUESTS',
   RateLimitedData,
   429
-> = TrpcError.Tagged('TOO_MANY_REQUESTS', {
+> = /* @__PURE__ */ TrpcError.Tagged('TOO_MANY_REQUESTS', {
   status: 429,
-  data: Schema.Struct({ limit: Schema.Number, retryAfter: Schema.Number }),
+  data: /* @__PURE__ */ Schema.Struct({
+    limit: Schema.Number,
+    retryAfter: Schema.Number,
+  }),
 });
 
 /**

@@ -59,15 +59,15 @@ type Signal = Data.TaggedEnum<{
   Moved: {};
   Fail: { readonly error: AnyTrpcError };
 }>;
-const Signal = Data.taggedEnum<Signal>();
+const Signal = /* @__PURE__ */ Data.taggedEnum<Signal>();
 
 type CallMessage = Exclude<
   ServerMessage,
   { type: 'pong' } | { type: 'init' } | { type: 'reconnect' }
 >;
 
-const LOST = Signal.Lost();
-const MOVED = Signal.Moved();
+const LOST = /* @__PURE__ */ Signal.Lost();
+const MOVED = /* @__PURE__ */ Signal.Moved();
 
 /**
  * How a call's time on one connection ended. `stale`: the connection was

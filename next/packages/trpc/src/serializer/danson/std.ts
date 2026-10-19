@@ -6,7 +6,7 @@ import {
   type SerializeRecord,
 } from './sync.ts';
 
-const typedArrays = [
+const typedArrays = /* @__PURE__ */ [
   Int8Array,
   Uint8Array,
   Uint8ClampedArray,
@@ -26,11 +26,11 @@ const placeholder = <T>(name: string, value: T): PlaceholderTransformer<T> => ({
   placeholder: name,
   value,
 });
-const undefinedValue = placeholder('undefined', undefined);
-const infinity = placeholder('Infinity', Infinity);
-const negativeInfinity = placeholder('-Infinity', -Infinity);
-const negativeZero = placeholder('-0', -0);
-const nan = placeholder('NaN', NaN);
+const undefinedValue = /* @__PURE__ */ placeholder('undefined', undefined);
+const infinity = /* @__PURE__ */ placeholder('Infinity', Infinity);
+const negativeInfinity = /* @__PURE__ */ placeholder('-Infinity', -Infinity);
+const negativeZero = /* @__PURE__ */ placeholder('-0', -0);
+const nan = /* @__PURE__ */ placeholder('NaN', NaN);
 
 const dateToJson: unknown = Object.getOwnPropertyDescriptor(
   Date.prototype,
@@ -46,24 +46,26 @@ const dateToString = (v: Date) =>
 
 export const serializers: SerializeRecord = {
   BigInt: (v) => (typeof v === 'bigint' ? v.toString() : false),
-  Date: instancesOnly((v) => (v instanceof Date ? dateToString(v) : false)),
-  Headers: instancesOnly((v) =>
+  Date: /* @__PURE__ */ instancesOnly((v) =>
+    v instanceof Date ? dateToString(v) : false,
+  ),
+  Headers: /* @__PURE__ */ instancesOnly((v) =>
     v instanceof Headers ? Array.from(v.entries()) : false,
   ),
   infinity,
-  Map: instancesOnly((v) =>
+  Map: /* @__PURE__ */ instancesOnly((v) =>
     v instanceof Map ? Array.from(v.entries()) : false,
   ),
   NaN: nan,
   negativeInfinity,
   negativeZero,
-  RegExp: instancesOnly((v) =>
+  RegExp: /* @__PURE__ */ instancesOnly((v) =>
     v instanceof RegExp ? [v.source, v.flags] : false,
   ),
-  Set: instancesOnly((v) =>
+  Set: /* @__PURE__ */ instancesOnly((v) =>
     v instanceof Set ? Array.from(v.values()) : false,
   ),
-  TypedArray: instancesOnly((v) => {
+  TypedArray: /* @__PURE__ */ instancesOnly((v) => {
     if (!ArrayBuffer.isView(v)) return false;
     for (const Ctor of typedArrays) {
       if (v instanceof Ctor) return [Ctor.name, Array.from(v as never)];
@@ -71,8 +73,10 @@ export const serializers: SerializeRecord = {
     return false;
   }),
   undefined: undefinedValue,
-  URL: instancesOnly((v) => (v instanceof URL ? v.href : false)),
-  URLSearchParams: instancesOnly((v) =>
+  URL: /* @__PURE__ */ instancesOnly((v) =>
+    v instanceof URL ? v.href : false,
+  ),
+  URLSearchParams: /* @__PURE__ */ instancesOnly((v) =>
     v instanceof URLSearchParams ? v.toString() : false,
   ),
 };
@@ -115,6 +119,9 @@ export const deserializers: DeserializeRecord = {
 };
 
 /** Proposal 11 (e): `RegExp` is output-only by default (ReDoS). */
-export const inputDeserializers: DeserializeRecord = Object.fromEntries(
-  Object.entries(deserializers).filter(([name]) => name !== 'RegExp'),
-);
+export const inputDeserializers: DeserializeRecord =
+  /* @__PURE__ */ Object.fromEntries(
+    /* @__PURE__ */ Object.entries(deserializers).filter(
+      ([name]) => name !== 'RegExp',
+    ),
+  );

@@ -20,7 +20,7 @@ export const upgradeCommand: Command.Command<
   {},
   PlatformError,
   FileSystem.FileSystem | Path.Path
-> = Command.make(
+> = /* @__PURE__ */ Command.make(
   'trpc12-upgrade',
   {
     paths: Argument.String('paths').pipe(
@@ -53,4 +53,6 @@ export const upgradeCommand: Command.Command<
         `${changed} file(s) ${opts.write ? 'upgraded' : 'to upgrade'}, ${notes} step(s) by hand`,
       );
     }),
-).pipe(Command.withDescription('Upgrade a tRPC v11 codebase to v12'));
+).pipe(
+  /* @__PURE__ */ Command.withDescription('Upgrade a tRPC v11 codebase to v12'),
+);

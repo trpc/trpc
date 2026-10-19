@@ -85,6 +85,6 @@ export const HandlerDrains: Context.ServiceClass<
   HandlerDrains,
   '@trpc12/trpc/HandlerDrains',
   SocketDrains
-> = Context.Service<HandlerDrains, SocketDrains>()(
+> = /* @__PURE__ */ Context.Service<HandlerDrains, SocketDrains>()(
   '@trpc12/trpc/HandlerDrains',
 );

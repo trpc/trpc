@@ -21,7 +21,7 @@ export interface HibernationSlotShape {
 /** @internal */
 export const HibernationSlot: Context.Reference<
   HibernationSlotShape | undefined
-> = Context.Reference<HibernationSlotShape | undefined>(
+> = /* @__PURE__ */ Context.Reference<HibernationSlotShape | undefined>(
   '@trpc12/trpc/HibernationSlot',
   { defaultValue: () => undefined },
 );
