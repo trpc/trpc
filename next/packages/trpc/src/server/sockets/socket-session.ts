@@ -38,9 +38,7 @@ export const fromWebSocketLike = (
 ): Effect.Effect<Socket.Socket> =>
   Effect.map(Socket.fromWebSocket(Effect.succeed(ws)), (socket) =>
     typeof ws.bufferedAmount === 'number'
-      ? withBufferedAmount(socket, () =>
-          ws.readyState === 1 ? (ws.bufferedAmount ?? 0) : 0,
-        )
+      ? withBufferedAmount(socket, () => Number(ws.bufferedAmount))
       : socket,
   );
 
@@ -53,7 +51,7 @@ const bufferedAmounts = new WeakMap<Socket.Socket, () => number>();
 
 /**
  * Lets `runSocket` wait while `bufferedAmount()` is past the high-water
- * mark. It should read 0 once the socket is closed. @internal
+ * mark. Once the socket closes, the session stops waiting. @internal
  */
 export const withBufferedAmount = (
   socket: Socket.Socket,
@@ -63,10 +61,11 @@ export const withBufferedAmount = (
   return socket;
 };
 
-/** How to read `socket`'s unsent bytes, if anyone said. @internal */
-export const bufferedAmountOf = (
-  socket: Socket.Socket,
-): (() => number) | undefined => bufferedAmounts.get(socket);
+const unknownAmount = () => 0;
+
+/** How to read `socket`'s unsent bytes; 0 when nobody said. @internal */
+export const bufferedAmountOf = (socket: Socket.Socket): (() => number) =>
+  bufferedAmounts.get(socket) ?? unknownAmount;
 
 /** Unsent bytes past which a session stops writing until the client reads. @internal */
 export const sendHighWaterMark: number = 64 * 1024;
@@ -119,46 +118,39 @@ export const runSocket = <A>(opts: {
   Effect.gen(function* () {
     const writer = yield* opts.socket.writer;
     const bufferedAmount = bufferedAmountOf(opts.socket);
-    const queue = yield* Queue.bounded<string | Uint8Array, Cause.Done>(
+    // A close fails the queue with its event once what's queued is written;
+    // a queue that isn't open drops sends.
+    const queue = yield* Queue.bounded<string | Uint8Array, Socket.CloseEvent>(
       backpressure.bufferSize,
     );
-    let closing: Socket.CloseEvent | undefined;
-    let stopped = false;
-    /** The socket is gone: drop what's queued and let waiting senders go. */
+    /** Cleared by a close: flush the rest without waiting for the client. */
+    let patient = true;
+    /** Drops what's queued and lets waiting senders go. */
     const stop = () => {
-      stopped = true;
+      patient = false;
       Queue.shutdownUnsafe(queue);
     };
     const drained: Effect.Effect<void> = Effect.suspend(() =>
-      closing === undefined &&
-      !stopped &&
-      bufferedAmount !== undefined &&
-      bufferedAmount() > sendHighWaterMark
+      patient && bufferedAmount() > sendHighWaterMark
         ? Effect.andThen(Effect.sleep(drainPollMs), drained)
         : Effect.void,
     );
     yield* Queue.take(queue).pipe(
       Effect.flatMap((data) => Effect.andThen(writer.write(data), drained)),
       Effect.forever,
-      Effect.catch((err) =>
-        Cause.isDone(err) && closing
-          ? writer.write(closing)
-          : Effect.sync(stop),
-      ),
+      Effect.catchIf(Socket.isCloseEvent, (event) => writer.write(event)),
       Effect.ignore,
+      Effect.ensuring(Effect.sync(stop)),
       Effect.forkScoped,
     );
     const outbox: SocketOutbox = {
-      send: (data) =>
-        Effect.suspend(() =>
-          closing || stopped
-            ? Effect.void
-            : Effect.asVoid(Queue.offer(queue, data)),
-        ),
+      send: (data) => Effect.asVoid(Queue.offer(queue, data)),
       close: (code, reason) => {
-        if (closing || stopped) return;
-        closing = new Socket.CloseEvent(code, reason);
-        Queue.endUnsafe(queue);
+        patient = false;
+        Queue.failCauseUnsafe(
+          queue,
+          Cause.fail(new Socket.CloseEvent(code, reason)),
+        );
       },
     };
     const session = yield* opts.open(outbox);
