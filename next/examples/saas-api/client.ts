@@ -141,7 +141,6 @@ export async function main(url: string) {
         BAD_REQUEST: (e) => `invalid: ${e.data.issues.length} issues`,
         NETWORK_ERROR: () => 'offline',
         BAD_RESPONSE: (e) => `unreadable: ${e.message}`,
-        STREAM_INTERRUPTED: () => 'interrupted',
         unexpected: (e) => `${e.code}: ${e.message}`,
       }),
     );

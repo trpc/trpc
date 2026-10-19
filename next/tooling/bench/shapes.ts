@@ -85,13 +85,15 @@ const tenantLink = link<{ context: { tenant?: string }; errors: RateLimited }>((
   ]`,
 };
 
-/** `match`'s handlers: the procedure's codes, `httpLink`'s, and the rest. */
+/**
+ * `match`'s handlers: the procedure's codes, `httpLink`'s for a call that
+ * doesn't stream, and the rest.
+ */
 const handlers = [
   'NOT_FOUND: (e) => e.code',
   'BAD_REQUEST: (e) => e.message',
   "NETWORK_ERROR: () => 'offline'",
   'BAD_RESPONSE: (e) => e.message',
-  'STREAM_INTERRUPTED: (e) => e.message',
   'unexpected: (e) => e.message',
 ].join(', ');
 

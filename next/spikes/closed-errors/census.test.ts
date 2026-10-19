@@ -169,7 +169,6 @@ test('matchError dispatches defined codes by name and the rest to unexpected', a
           BAD_REQUEST: (err) => `bad input: ${err.message}`,
           NETWORK_ERROR: () => 'offline',
           BAD_RESPONSE: () => 'unreadable',
-          STREAM_INTERRUPTED: () => 'interrupted',
           unexpected: (err) => `unexpected ${err.code}`,
         })
       : 'ok';

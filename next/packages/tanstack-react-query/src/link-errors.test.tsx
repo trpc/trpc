@@ -62,7 +62,7 @@ test("useQuery's error has only the link codes of the client's links", async () 
     const query = useQuery(trpc.missing.queryOptions());
     expectTypeOf<
       Extract<CodesOf<NonNullable<typeof query.error>>, LinkErrorCode>
-    >().toEqualTypeOf<LinkErrorCode>();
+    >().toEqualTypeOf<Exclude<LinkErrorCode, 'STREAM_INTERRUPTED'>>();
     if (!query.error) return <p>loading</p>;
     return (
       <p className="error">
@@ -70,7 +70,6 @@ test("useQuery's error has only the link codes of the client's links", async () 
           NOT_FOUND: () => 'missing',
           NETWORK_ERROR: () => 'offline',
           BAD_RESPONSE: (e) => e.code,
-          STREAM_INTERRUPTED: (e) => e.code,
           unexpected: (e) => e.code,
         })}
       </p>

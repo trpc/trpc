@@ -413,7 +413,6 @@ type HandlerResult<H> = H[keyof H] extends (err: never) => infer R ? R : never;
  *     TITLE_TAKEN: (e) => [`"${e.data.title}" is taken`],
  *     NETWORK_ERROR: () => ['You are offline'],
  *     BAD_RESPONSE: () => ['Try again later'],
- *     STREAM_INTERRUPTED: () => ['Try again later'],
  *     unexpected: (e) => [e.message],
  *   });
  * }

@@ -38,6 +38,7 @@ import {
 import type {
   CallArgs,
   CallError,
+  SubscriptionError,
   CallOptions,
   Carries,
   ChainTypes,
@@ -120,7 +121,7 @@ type DecorateEffectCarried<
           ...args: CallArgs<D['input'], SubscribeOptions<TContext>>
         ): Stream.Stream<
           ClientValue<D['output'], ResultForm<undefined, TLinks>>,
-          CallError<D, ResultForm<undefined, TLinks>, TLinks>
+          SubscriptionError<D, ResultForm<undefined, TLinks>, TLinks>
         >;
       };
 

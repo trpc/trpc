@@ -106,7 +106,6 @@ if (post.error) {
     BAD_REQUEST: () => 'Invalid id',
     NETWORK_ERROR: () => 'Offline, retrying soon',
     BAD_RESPONSE: () => 'Try again later',
-    STREAM_INTERRUPTED: () => 'Try again later',
     unexpected: (err) => err.message,
   });
 }

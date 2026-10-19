@@ -29,6 +29,7 @@ import {
   routerType,
   TrpcError,
   type BuiltinError,
+  type BuiltinErrorCode,
   type LinksContext,
   type LinksTypes,
   type TrpcClient,
@@ -140,7 +141,9 @@ test("each hook's error is what the call fails with, network and aborts included
     const added = useSubscription(trpc.post.onAdd.subscriptionOptions());
 
     expectTypeOf(greeting.error).toEqualTypeOf<
-      BuiltinError | UndeclaredError | null
+      | BuiltinError<Exclude<BuiltinErrorCode, 'STREAM_INTERRUPTED'>>
+      | UndeclaredError
+      | null
     >();
     expectTypeOf(post.error).toEqualTypeOf<ByIdError | null>();
     expectTypeOf(first.error).toEqualTypeOf<ByIdError | null>();
@@ -165,7 +168,6 @@ test("each hook's error is what the call fails with, network and aborts included
           BAD_REQUEST: (err) => `invalid ${err.data.issues.length}`,
           NETWORK_ERROR: () => 'offline',
           BAD_RESPONSE: (err) => `unreadable ${err.message}`,
-          STREAM_INTERRUPTED: () => 'interrupted',
           unexpected: (err) => `unexpected ${err.code}`,
         })}
       </p>

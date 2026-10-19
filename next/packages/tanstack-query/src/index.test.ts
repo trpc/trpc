@@ -20,11 +20,13 @@ import {
   createTrpcClient,
   localLink,
   type ClientError,
+  type LinkErrorCode,
   routerType,
 } from '@trpc12/trpc/client';
 import {
   createSerializer,
   createSyncSerializer,
+  type DansonForm,
 } from '@trpc12/trpc/serializer';
 import {
   createRouterClient,
@@ -107,9 +109,22 @@ test('errors are the typed client errors', async () => {
           inferInputIssue<z.ZodObject<{ id: z.ZodString }>>
         >
       >
-    | TrpcError<'NOT_FOUND', { id: string }>
+    | TrpcError<'NOT_FOUND', { id: string }>,
+    DansonForm,
+    Exclude<LinkErrorCode, 'STREAM_INTERRUPTED'>
   >;
   expectTypeOf(result.error).toEqualTypeOf<Expected>();
+  // A streamed query's error is its stream's, which can be cut.
+  const reply = new QueryObserver(
+    queryClient,
+    app.trpc.chat.reply.queryOptions({ input: { prompt: 'hi' } }),
+  );
+  type ReplyError = NonNullable<
+    ReturnType<typeof reply.getCurrentResult>['error']
+  >;
+  expectTypeOf<
+    Extract<ReplyError['code'], 'STREAM_INTERRUPTED'>
+  >().toEqualTypeOf<'STREAM_INTERRUPTED'>();
   const error = result.error;
   expect(error.defined).toBe(true);
   if (error.defined) {
