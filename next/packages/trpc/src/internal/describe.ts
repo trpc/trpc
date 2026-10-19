@@ -97,15 +97,21 @@ const within = (
   base: group.prefix ? `${path}.` : scope.base,
 });
 
+const rootScope = (router: object): RouteScope => {
+  const group = routeGroupOf(routerMetaOf(router));
+  return group ? { ...within(ROOT_SCOPE, '', group), base: '' } : ROOT_SCOPE;
+};
+
 /**
- * Every procedure of a router with its OpenAPI scope. Loaded lazy subtrees
- * are walked; the others are listed in `lazies`.
+ * Every procedure of a router with its OpenAPI scope, starting from the
+ * router's own `route` meta. Loaded lazy subtrees are walked; the others are
+ * listed in `lazies`.
  * @since 0.1.0
  * @stability stable
  */
 export function flattenRoutes(
   router: object,
-  scope: RouteScope = ROOT_SCOPE,
+  scope: RouteScope = rootScope(router),
   prefix = '',
   out: FlatRoutes = { procedures: [], lazies: [] },
 ): FlatRoutes {

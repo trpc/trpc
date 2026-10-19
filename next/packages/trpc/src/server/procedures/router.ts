@@ -1,4 +1,4 @@
-import { Effect } from 'effect';
+import { Effect, Equal } from 'effect';
 import type { ClientTypes, ResultForm } from '../../client/types.ts';
 import type {
   ClientValue,
@@ -211,6 +211,12 @@ type DuplicateKeys<T extends readonly unknown[], Seen = never> = T extends [
  * Merges routers. A key in more than one router is a type error and a
  * runtime error, unlike object spread, which silently keeps the last.
  *
+ * Router-level meta (`t.router({ meta }, …)`) merges too: the result has
+ * every meta key of its routers, so every procedure in it is under that
+ * meta, as if the routers had been written as one. Two routers setting one
+ * meta key to different values is a runtime error; nest them under their own
+ * keys instead, so each keeps its meta.
+ *
  * @example
  * ```ts
  * export const appRouter = mergeRouters(postRouter, userRouter);
@@ -225,16 +231,37 @@ export function mergeRouters<const T extends readonly AnyRouter[]>(
       : TypeError<'mergeRouters: duplicate keys', DuplicateKeys<[...T]>>)
 ): Simplify<UnionToIntersection<T[number]>> {
   const merged: Record<string, unknown> = {};
-  for (const router of routers) {
+  const meta: Record<string, unknown> = {};
+  const metaFrom: Record<string, number> = {};
+  for (const [i, router] of routers.entries()) {
     for (const key of Object.keys(router)) {
       if (Object.hasOwn(merged, key)) {
         throw new Error(`mergeRouters: duplicate key "${key}"`);
       }
       merged[key] = router[key];
     }
+    for (const [key, value] of Object.entries(routerMetaOf(router) ?? {})) {
+      if (value === undefined) continue;
+      if (!Object.hasOwn(meta, key)) {
+        meta[key] = value;
+        metaFrom[key] = i;
+      } else if (!Equal.equals(meta[key], value)) {
+        const first = metaFrom[key]!;
+        throw new Error(
+          `mergeRouters: routers ${first + 1} (${describeKeys(routers[first]!)}) and ${i + 1} (${describeKeys(router)}) set router meta "${key}" to different values (${JSON.stringify(meta[key])} and ${JSON.stringify(value)}); nest them under keys of their own instead ({ a: …, b: … }), so each keeps its meta`,
+        );
+      }
+    }
   }
-  return merged as never;
+  return (
+    Object.keys(meta).length > 0 ? router({ meta }, merged) : merged
+  ) as never;
 }
+
+const describeKeys = (router: AnyRouter): string => {
+  const keys = Object.keys(router);
+  return `{ ${keys.slice(0, 3).join(', ')}${keys.length > 3 ? ', …' : ''} }`;
+};
 
 /**
  * Throws on a router key no client can call: `then` (clients and their
