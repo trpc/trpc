@@ -573,7 +573,8 @@ export type DeclaredErrors<M> = {
 
 /**
  * Declared errors are exhaustive: once a procedure has `.errors()`, its
- * resolver may return only those. Middleware's errors aren't checked.
+ * resolver may return only those, and a streamed output fail only with
+ * those. Middleware's errors aren't checked.
  * @since 0.1.0
  * @stability stable
  */
@@ -584,9 +585,12 @@ export type DeclaredCheck<TDef extends BuilderDef, $Ret> = [
 ] extends [never]
   ? unknown
   : ErrorsIn<
-      SplitReturn<$Ret>['errors'],
+      SplitReturn<$Ret>['errors'] | StreamFailuresOf<Awaited<$Ret>>,
       TDef['declared'][keyof TDef['declared']]
     >;
+
+type StreamFailuresOf<R> =
+  R extends Stream.Stream<any, infer E, any> ? Extract<E, AnyTrpcError> : never;
 
 /**
  * {@link DeclaredCheck} for a subscription.

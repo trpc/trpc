@@ -6,6 +6,7 @@
 - Without `.errors()`, a thrown `TrpcError` with a custom code keeps its code, message and `data`, `defined: false`. This replaces [closed-client-errors](./closed-client-errors.md)' masking for those procedures. A thrown built-in code still keeps its code and loses its `data`.
 - With `.errors()`, the list is exhaustive:
   - Returning or failing with an error it doesn't list, or with `data` of another type, is a type error (`DeclaredCheck`, `DeclaredStreamCheck`). Contract implementations already had `UndeclaredCheck`.
+  - (agent) So is a query's or mutation's streamed `Stream` failing with one: its failures are in no client type, so they weren't checked, and an undeclared code passed as `defined: true`, `data` and all.
   - A thrown custom code it doesn't list is an `INTERNAL_SERVER_ERROR` (a crash, masked in production).
   - A thrown error with a listed code is typed, even without its constructor, and its `data` is validated.
 - `matchError()` keys follow the types (the D answer): every inferred or declared code is a required key. Since [exhaustive-match-error](./exhaustive-match-error.md), so is every link code, and the rest go to one required `unexpected`.

@@ -275,6 +275,15 @@ test('declared errors are exhaustive in the types too', () => {
     .errors(OutOfStock)
     // @ts-expect-error: a subscription's returned errors are checked too
     .subscription(() => error({ code: 'GONE' }));
+  t.procedure
+    .errors(OutOfStock)
+    // @ts-expect-error: so are a streamed output's
+    .query(() => Stream.fail(error({ code: 'GONE' })));
+  t.procedure
+    .errors(OutOfStock)
+    .query(() =>
+      Stream.fail(error({ code: 'OUT_OF_STOCK', data: { sku: 'a' } })),
+    );
   // Without `.errors()`, returned errors are inferred.
   t.procedure.query(() => error({ code: 'NOT_FOUND' }));
 });

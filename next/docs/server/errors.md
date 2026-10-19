@@ -41,7 +41,7 @@ const me = t.procedure.query(
 
 Declaring errors with `.errors()` is optional. It adds typed constructors and `data` schemas. It also types what inference can't see: errors thrown from helpers, since a `throw` has no type.
 
-Once a procedure declares errors, the list is exhaustive. Returning an error it doesn't list, or one whose `data` doesn't match, is a type error, and a thrown custom code it doesn't list reaches the client as an `INTERNAL_SERVER_ERROR`. Errors from middleware aren't checked against the list.
+Once a procedure declares errors, the list is exhaustive. Returning an error it doesn't list, or one whose `data` doesn't match, is a type error (a streamed output's `Stream.fail()` too), and a thrown custom code it doesn't list reaches the client as an `INTERNAL_SERVER_ERROR`. Errors from middleware aren't checked against the list.
 
 ```ts twoslash
 // ---cut-start---
