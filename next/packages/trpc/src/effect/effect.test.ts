@@ -165,18 +165,20 @@ test('localLink needs the layer too', async () => {
       }),
     ],
   });
-  expect(
-    await Effect.runPromise(client.post.byId.query({ id: '2' })),
-  ).toEqual(seed[1]);
+  expect(await Effect.runPromise(client.post.byId.query({ id: '2' }))).toEqual(
+    seed[1],
+  );
 });
 
 test('typed errors land in the Effect error channel', async () => {
   await using ctx = await setup();
-  const program = ctx.client.post.byId.query({ id: 'nope' }).pipe(
-    Effect.catchTag('NOT_FOUND', (err) =>
-      Effect.succeed(err.defined ? `missing ${err.data.id}` : err.message),
-    ),
-  );
+  const program = ctx.client.post.byId
+    .query({ id: 'nope' })
+    .pipe(
+      Effect.catchTag('NOT_FOUND', (err) =>
+        Effect.succeed(err.defined ? `missing ${err.data.id}` : err.message),
+      ),
+    );
   expect(await Effect.runPromise(program)).toBe('missing nope');
   expectTypeOf<
     Extract<Effect.Error<typeof program>, { code: 'NOT_FOUND' }>
@@ -202,19 +204,22 @@ test('typed errors land in the Effect error channel', async () => {
   expect(Exit.isFailure(exit)).toBe(true);
 });
 
-test('a call fails with the Promise client\'s errors, data in the wire form', () => {
+test("a call fails with the Promise client's errors, data in the wire form", () => {
   const t = initTrpc();
   const router = {
     byId: t.procedure.query(() =>
       error({ code: 'NOT_FOUND', data: { at: new Date(0) } }),
     ),
   };
-  const opts = {
+  const links = [httpLink({ url: 'http://localhost' })];
+  const promise = createTrpcClient({
     router: routerType<typeof router>(),
-    links: [httpLink({ url: 'http://localhost' })],
-  };
-  const promise = createTrpcClient(opts).byId;
-  const effect = createEffectClient(opts).byId;
+    links,
+  }).byId;
+  const effect = createEffectClient({
+    router: routerType<typeof router>(),
+    links,
+  }).byId;
   type PromiseError = NonNullable<ReturnType<typeof promise.query>['~error']>;
   expectTypeOf<
     Effect.Error<ReturnType<typeof effect.query>>
