@@ -201,7 +201,7 @@ import { something } from '@trpc/unknown';
 });
 
 describe('client', () => {
-  test('links merge into httpLink; transformer becomes a serializer', () => {
+  test('links merge into httpStreamLink; transformer becomes a serializer', () => {
     expect(
       upgrade(`import {
   createTRPCClient,
@@ -228,7 +228,7 @@ export const client = createTRPCClient<AppRouter>({
 export const isTrpcError = (e: unknown) => e instanceof TRPCClientError;
 `).code,
     ).toMatchInlineSnapshot(`
-      "import { createTrpcClient, httpLink, splitLink, TrpcError, routerType } from '@trpc12/trpc/client';
+      "import { createTrpcClient, httpStreamLink, splitLink, TrpcError, routerType } from '@trpc12/trpc/client';
       import superjson from 'superjson';
       import type { AppRouter } from './server';
       import { createSyncSerializer } from '@trpc12/trpc/serializer';
@@ -240,8 +240,8 @@ export const isTrpcError = (e: unknown) => e instanceof TRPCClientError;
         links: [
           splitLink({
             condition: (op) => op.type === 'subscription',
-            true: httpLink({ url: '/trpc', serializer: createSyncSerializer(transformer) }),
-            false: httpLink({ batch: true, url: '/trpc', serializer: createSyncSerializer(superjson), maxUrlLength: 2083 }),
+            true: httpStreamLink({ url: '/trpc', serializer: createSyncSerializer(transformer) }),
+            false: httpStreamLink({ batch: true, url: '/trpc', serializer: createSyncSerializer(superjson), maxUrlLength: 2083 }),
           }),
         ],
       });
@@ -300,8 +300,8 @@ const client = createTRPCProxyClient<AppRouter>(options);
 const link = httpBatchLink(options);
 `).code,
     ).toMatchInlineSnapshot(`
-      "import { httpLink } from '@trpc12/trpc/client';
-      const link = httpLink({ ...options, batch: true });
+      "import { httpStreamLink } from '@trpc12/trpc/client';
+      const link = httpStreamLink({ ...options, batch: true });
       "
     `);
   });
@@ -529,23 +529,23 @@ const client = createWSClient({ url: 'ws://x' });
 const ws = wsLink({ client });
 `;
     expect(upgrade(source).code).toMatchInlineSnapshot(`
-      "import { httpLink, wsLink, createWSClient } from '@trpc12/trpc/client';
-      const empty = httpLink({ batch: true });
-      const multiline = httpLink({
+      "import { httpStreamLink, wsLink, createWSClient } from '@trpc12/trpc/client';
+      const empty = httpStreamLink({ batch: true });
+      const multiline = httpStreamLink({
         batch: true,
         url: '/trpc',
         maxUrlLength: 2000,
         [key]: 1,
       });
-      const sse = httpLink({ url: '/trpc', EventSource, eventSourceOptions: {} });
+      const sse = httpStreamLink({ url: '/trpc', EventSource, eventSourceOptions: {} });
       const client = createWSClient({ url: 'ws://x' });
       const ws = wsLink({ client });
       "
     `);
     expect(messages(source)).toMatchInlineSnapshot(`
       [
-        "8:50 EventSource: httpLink streams SSE over fetch; use headers or init",
-        "8:63 eventSourceOptions: httpLink streams SSE over fetch; use headers or init",
+        "8:50 EventSource: httpStreamLink streams SSE over fetch; use headers or init",
+        "8:63 eventSourceOptions: httpStreamLink streams SSE over fetch; use headers or init",
         "9:16 createWSClient: pass its options to wsLink({ url })",
         "10:21 wsLink({ url, connectionParams }) replaces createWSClient + wsLink({ client })",
       ]
@@ -696,13 +696,13 @@ export const { TRPCProvider, 1: one, ...rest } = createTRPCContext<AppRouter>();
 `;
     expect(upgrade(source).code).toMatchInlineSnapshot(`
       "import { initTrpc } from '@trpc12/trpc/server';
-      import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+      import { createTrpcClient, httpStreamLink, routerType } from '@trpc12/trpc/client';
       import { createFetchHandler } from '@trpc12/trpc/server';
       import { createTrpcContext } from '@trpc12/tanstack-react-query';
       const t = initTrpc({ [key]: 1, custom: 2 });
       const bare = Object.create(null);
       const holes = [, t];
-      const batch = httpLink();
+      const batch = httpStreamLink();
       const client = createTrpcClient({ router: routerType<AppRouter>(), links });
       const spread = t.mergeRouters(...routers);
       const none = t.mergeRouters();

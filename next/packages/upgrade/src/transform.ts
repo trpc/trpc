@@ -88,11 +88,11 @@ const MODULES: Readonly<Record<string, ModuleMap>> = {
       createTRPCProxyClient: 'createTrpcClient',
       TRPCClient: 'TrpcClient',
       TRPCClientError: 'TrpcError',
-      httpBatchLink: 'httpLink',
-      httpBatchStreamLink: 'httpLink',
-      unstable_httpBatchStreamLink: 'httpLink',
-      httpSubscriptionLink: 'httpLink',
-      unstable_httpSubscriptionLink: 'httpLink',
+      httpBatchLink: 'httpStreamLink',
+      httpBatchStreamLink: 'httpStreamLink',
+      unstable_httpBatchStreamLink: 'httpStreamLink',
+      httpSubscriptionLink: 'httpStreamLink',
+      unstable_httpSubscriptionLink: 'httpStreamLink',
     },
   },
   '@trpc/tanstack-react-query': {
@@ -496,7 +496,7 @@ export function upgradeSource(
       } else if (name === 'EventSource' || name === 'eventSourceOptions') {
         note(
           prop.start,
-          `${name}: httpLink streams SSE over fetch; use headers or init`,
+          `${name}: httpStreamLink streams SSE over fetch; use headers or init`,
         );
       } else if (name === 'client' && linkName === 'wsLink') {
         note(

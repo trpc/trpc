@@ -30,7 +30,7 @@ const steps = [
   'app/client/app.tsx:20:47 TrpcProvider takes client only; the queryClient goes to QueryClientProvider',
   'app/client/app.tsx:31:49 queryOptions(input, opts) is queryOptions({ input, ...opts }) in v12',
   'app/client/client.ts:27:11 createSyncSerializer<…>(transformer): list the types it rebuilds, docs/server/serializers.md',
-  'app/client/client.ts:28:11 EventSource: httpLink streams SSE over fetch; use headers or init',
+  'app/client/client.ts:28:11 EventSource: httpStreamLink streams SSE over fetch; use headers or init',
   'app/client/client.ts:32:11 createSyncSerializer<…>(transformer): list the types it rebuilds, docs/server/serializers.md',
   'app/client/client.ts:42:20 createWSClient: pass its options to wsLink({ url })',
   'app/client/client.ts:47:22 wsLink({ url, connectionParams }) replaces createWSClient + wsLink({ client })',
