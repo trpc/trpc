@@ -24,7 +24,12 @@ export type EventFrame =
  * sent. Completes once the events and every chunk are sent.
  * @internal
  */
-export const emitEvents = Effect.fnUntraced(function* (
+export const emitEvents: (
+  events: Stream.Stream<unknown, AnyTrpcError>,
+  serializer: AnySerializer,
+  coerceError: (cause: unknown) => unknown,
+  emit: (frame: EventFrame) => Effect.Effect<void>,
+) => Effect.Effect<void, AnyTrpcError> = Effect.fnUntraced(function* (
   events: Stream.Stream<unknown, AnyTrpcError>,
   serializer: AnySerializer,
   coerceError: (cause: unknown) => unknown,
