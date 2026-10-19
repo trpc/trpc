@@ -74,9 +74,11 @@ export function sourceOf(
       (queue) =>
         Effect.gen(function* () {
           const iterator = iterable[Symbol.asyncIterator]();
+          // Not awaited: a generator awaiting its signal returns only once
+          // that aborts, after the stream has closed.
           yield* Effect.addFinalizer(() =>
-            Effect.promise(async () => {
-              await iterator.return?.();
+            Effect.sync(() => {
+              iterator.return?.().catch(() => {});
             }),
           );
           while (true) {

@@ -1,9 +1,14 @@
 import { request as httpRequest } from 'node:http';
-import { HttpServerResponse } from 'effect/http';
+import { Effect, Fiber, Predicate, Stream } from 'effect';
+import {
+  HttpRouter,
+  HttpServerRequest,
+  HttpServerResponse,
+} from 'effect/http';
 import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
 import { jsonSerializer } from '@trpc12/trpc/serializer';
 import { createFetchHandler, error, initTrpc, lazy } from '@trpc12/trpc/server';
-import { expect, test } from 'vite-plus/test';
+import { expect, test, vi } from 'vite-plus/test';
 import { z } from 'zod';
 import { createTestServer } from '../../fixtures/server.ts';
 
@@ -336,5 +341,55 @@ test.each([
     // Socket buffers hold a few MB; without backpressure it reads all of it.
     expect(paused).toBeLessThan(limit / 4);
     expect(yielded).toBeLessThan(limit / 4);
+  },
+);
+
+test.each(['rows', 'report'])(
+  '%s: a deferred value awaiting its signal ends when the client leaves mid-write',
+  async (path) => {
+    const state = { waiting: 0, cleanups: 0 };
+    async function* waiting(signal: AbortSignal) {
+      state.waiting++;
+      try {
+        await new Promise((resolve) =>
+          signal.addEventListener('abort', resolve, { once: true }),
+        );
+        yield 'aborted';
+      } finally {
+        state.cleanups++;
+      }
+    }
+    const handler = createFetchHandler({
+      router: {
+        rows: t.procedure.query((opts) => waiting(opts.signal)),
+        report: t.procedure.query((opts) => ({
+          title: 'Report',
+          rows: waiting(opts.signal),
+        })),
+      },
+      createContext,
+    });
+    const request = HttpServerRequest.fromWeb(
+      new Request(`http://localhost/trpc/${path}`),
+    );
+    await Effect.gen(function* () {
+      const app = yield* HttpRouter.toHttpEffect(handler.routes);
+      const response = yield* Effect.provideService(
+        app,
+        HttpServerRequest.HttpServerRequest,
+        request,
+      );
+      const body = response.body;
+      if (!Predicate.isTagged(body, 'Stream')) throw new Error('not a stream');
+      // Stuck on its first chunk, like a server waiting for a socket to drain.
+      const writer = yield* Effect.forkChild(
+        Stream.runForEach(body.stream, () => Effect.never),
+      );
+      yield* Effect.promise(() =>
+        vi.waitFor(() => expect(state.waiting).toBe(1)),
+      );
+      yield* Fiber.interrupt(writer);
+    }).pipe(Effect.scoped, Effect.runPromise);
+    await vi.waitFor(() => expect(state.cleanups).toBe(1));
   },
 );
