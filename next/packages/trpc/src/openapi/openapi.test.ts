@@ -1004,3 +1004,34 @@ test('the default error leaves out documented codes, so generated clients narrow
     required: ['json'],
   });
 });
+
+test('zod dates are documented as the date-time strings JSON sends', () => {
+  const doc = experimental_generateOpenApi(
+    {
+      events: t.procedure
+        .meta({ route: { method: 'POST', path: '/events' } })
+        .input(z.object({ since: z.coerce.date(), until: z.date().optional() }))
+        .output(z.object({ at: z.date(), ended: z.date().nullable() }))
+        .mutation(() => ({ at: new Date(0), ended: null })),
+    },
+    { info: { title: 'x', version: '1' } },
+  );
+  const op = doc.paths['/api/events']!['post']!;
+  const dateTime = { type: 'string', format: 'date-time' };
+  expect(
+    (op.responses['200'] as { content: Record<string, { schema: unknown }> })
+      .content['application/json']!.schema,
+  ).toMatchObject({
+    properties: {
+      at: dateTime,
+      ended: { anyOf: [dateTime, { type: 'null' }] },
+    },
+  });
+  expect(
+    (op.requestBody as { content: Record<string, { schema: unknown }> })
+      .content['application/json']!.schema,
+  ).toMatchObject({
+    // A plain `z.date()` input rejects the string a client sends.
+    properties: { since: dateTime, until: {} },
+  });
+});
