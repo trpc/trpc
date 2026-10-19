@@ -2,6 +2,7 @@ import { Effect, Ref, Stream } from 'effect';
 import { Persistence } from 'effect/persistence';
 import {
   createSerializer,
+  deserializeStream,
   jsonSerializer,
   type AnySerializer,
   type Frame,
@@ -91,7 +92,7 @@ for (const [name, serializer] of [
             ),
           ),
         );
-        return yield* serializer.deserializeStream<any, never>(frames);
+        return yield* deserializeStream<any, never>(serializer, frames);
       }),
     );
     expect(await settle(value)).toEqual(expected);
@@ -105,7 +106,8 @@ test('the output keeps streaming into the log after every reader leaves', async 
       yield* a.start('call-2', jsonSerializer, feed);
       yield* Stream.runDrain(a.read('call-2').pipe(Stream.take(1)));
       yield* Effect.promise(() => sleep(150));
-      return yield* jsonSerializer.deserializeStream<any, never>(
+      return yield* deserializeStream<any, never>(
+        jsonSerializer,
         b.read('call-2'),
       );
     }),

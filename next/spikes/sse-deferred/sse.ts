@@ -13,14 +13,19 @@
  * live.
  */
 import { Effect, Option, PubSub, Semaphore, Stream } from 'effect';
-import type { AnySerializer, Frame } from '@trpc12/trpc/serializer';
+import {
+  deserializeStream,
+  serializeDeferred,
+  type AnySerializer,
+  type Frame,
+} from '@trpc12/trpc/serializer';
 
 /** A value's frames: the head, then each chunk as its deferred parts settle. */
 export const framesOf = (
   serializer: AnySerializer,
   value: unknown,
 ): Stream.Stream<Frame> => {
-  const { head, chunks } = serializer.serializeDeferred(value);
+  const { head, chunks } = serializeDeferred(serializer, value);
   return Stream.concat(
     Stream.make(head as Frame),
     chunks ? Stream.orDie(chunks) : Stream.empty,
@@ -88,7 +93,8 @@ export const fromSse = <T, E>(
   serializer: AnySerializer,
   events: Stream.Stream<SseEvent, E>,
 ): Effect.Effect<T, unknown> =>
-  serializer.deserializeStream<T, E>(
+  deserializeStream<T, E>(
+    serializer,
     Stream.map(events, (event) => JSON.parse(event.data) as Frame),
     { streamInterrupted: () => new Error('the SSE stream ended early') },
   );

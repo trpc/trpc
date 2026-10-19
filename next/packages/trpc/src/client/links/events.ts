@@ -10,6 +10,7 @@ import type {
   SerializeReturn,
   AnySerializer,
 } from '../../serializer/index.ts';
+import { deserializeStream } from '../../serializer/deferred.ts';
 
 /**
  * Serializes a call's input; a value the serializer can't send fails the call
@@ -80,12 +81,14 @@ export function makeDeferredDecoder(
             const queue = yield* Queue.unbounded<Frame, Cause.Done>();
             queues.set(deferred, queue);
             yield* Queue.offer(queue, body as Frame);
-            const head = yield* serializer
-              .deserializeStream(Stream.fromQueue(queue), {
+            const head = yield* deserializeStream(
+              serializer,
+              Stream.fromQueue(queue),
+              {
                 reviveError: (value) => fromWireError(value),
                 ...streamErrors,
-              })
-              .pipe(Effect.forkDetach);
+              },
+            ).pipe(Effect.forkDetach);
             return Fiber.join(head);
           }),
     chunk: (deferred, chunk) =>

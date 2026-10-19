@@ -38,6 +38,7 @@ import {
   type BatchLine,
 } from '../../internal/protocol.ts';
 import type { MaybePromise, ProcedureType } from '../../internal/types.ts';
+import { serializeDeferred } from '../../serializer/deferred.ts';
 import { jsonSerializer, type AnySerializer } from '../../serializer/index.ts';
 import { backpressure } from '../../internal/effects.ts';
 import { accepts, encodeRecord } from '../../internal/frames.ts';
@@ -726,7 +727,7 @@ export function createFetchHandler<
         };
       }
       try {
-        const serialized = serializer.serializeDeferred(value, {
+        const serialized = serializeDeferred(serializer, value, {
           coerceError: coerceError(request, path, type),
         });
         const { chunks } = serialized;

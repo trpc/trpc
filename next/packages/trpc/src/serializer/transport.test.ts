@@ -2,8 +2,11 @@ import { Effect, Stream } from 'effect';
 import {
   createSerializer,
   DansonError,
+  deserializeStream,
   jsonSerializer,
+  serializeDeferred,
   type Frame,
+  type JsonForm,
   type Serializer,
 } from '@trpc12/trpc/serializer';
 import { expect, test } from 'vite-plus/test';
@@ -19,19 +22,30 @@ const send = (
     frames: Stream.Stream<Frame, unknown>,
   ) => Stream.Stream<Frame, unknown>,
 ) => {
-  const serialized = serializer.serializeDeferred(value);
+  const serialized = serializeDeferred(serializer, value);
   const frames = (
     serialized.chunks
       ? Stream.concat(Stream.make(serialized.head), serialized.chunks)
       : Stream.make(serialized.head)
   ).pipe(Stream.map((f) => JSON.parse(JSON.stringify(f)) as Frame));
   return Effect.runPromise(
-    serializer.deserializeStream<any, unknown>(wire(frames)),
+    deserializeStream<any, unknown>(serializer, wire(frames)),
   );
 };
 const intact = <T>(frames: T) => frames;
 
-for (const serializer of [createSerializer(), jsonSerializer]) {
+/** A serializer of your own: values only, and the transport frames deferred parts. */
+const custom: Serializer<JsonForm> = {
+  name: 'custom',
+  kind: 'none',
+  serialize: (value) => {
+    const text = JSON.stringify(value);
+    return text === undefined ? {} : { json: JSON.parse(text) };
+  },
+  deserialize: (value) => value.json as never,
+};
+
+for (const serializer of [createSerializer(), jsonSerializer, custom]) {
   test(`${serializer.name}: deferred values travel over a custom transport`, async () => {
     const out = await send(
       serializer,
@@ -81,7 +95,7 @@ for (const serializer of [createSerializer(), jsonSerializer]) {
 
   test(`${serializer.name}: without coerceError, a value that can't be written fails the stream`, async () => {
     // JSON can't write a bigint, danSON can't write a symbol.
-    const unwritable = serializer === jsonSerializer ? 1n : Symbol('x');
+    const unwritable = serializer.kind === 'streaming' ? Symbol('x') : 1n;
     const out = await send(
       serializer,
       { p: Promise.resolve(unwritable), q: new Promise(() => {}) },

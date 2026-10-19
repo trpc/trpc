@@ -1,5 +1,6 @@
 import { Effect, Fiber, Stream } from 'effect';
 import { isTrpcError, type AnyTrpcError } from '../../internal/error.ts';
+import { serializeDeferred } from '../../serializer/deferred.ts';
 import type { AnySerializer } from '../../serializer/index.ts';
 import type { Chunk } from '../../serializer/danson/index.ts';
 import { unexpectedError } from './execute.ts';
@@ -36,7 +37,7 @@ export function emitEvents(
       yield* Stream.runForEach(events, (event) =>
         Effect.gen(function* () {
           const serialized = yield* Effect.try({
-            try: () => serializer.serializeDeferred(event, { coerceError }),
+            try: () => serializeDeferred(serializer, event, { coerceError }),
             catch: (cause) =>
               isTrpcError(cause) ? cause : unexpectedError(cause),
           });
