@@ -1,8 +1,6 @@
-import { getHTTPStatusCodeFromError } from '../http/getHTTPStatusCode';
 import type { ProcedureType } from '../procedure';
 import type { AnyRootTypes, RootConfig } from '../rootConfig';
-import { TRPC_ERROR_CODES_BY_KEY } from '../rpc';
-import type { DefaultErrorShape } from './formatter';
+import { getDefaultErrorShape, getFormattedErrorShape } from './formatter';
 import type { TRPCError } from './TRPCError';
 
 /**
@@ -17,20 +15,13 @@ export function getErrorShape<TRoot extends AnyRootTypes>(opts: {
   ctx: TRoot['ctx'] | undefined;
 }): TRoot['errorShape'] {
   const { path, error, config } = opts;
-  const { code } = opts.error;
-  const shape: DefaultErrorShape = {
-    message: error.message,
-    code: TRPC_ERROR_CODES_BY_KEY[code],
-    data: {
-      code,
-      httpStatus: getHTTPStatusCodeFromError(error),
-    },
-  };
-  if (config.isDev && typeof opts.error.stack === 'string') {
-    shape.data.stack = opts.error.stack;
+
+  // a `.errors()` handler already created the final shape
+  const formatted = getFormattedErrorShape(error);
+  if (formatted !== undefined) {
+    return formatted;
   }
-  if (typeof path === 'string') {
-    shape.data.path = path;
-  }
+
+  const shape = getDefaultErrorShape({ error, path, isDev: config.isDev });
   return config.errorFormatter({ ...opts, shape });
 }

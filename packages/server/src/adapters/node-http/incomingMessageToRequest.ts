@@ -131,14 +131,24 @@ export function incomingMessageToRequest(
   const ac = new AbortController();
 
   const onAbort = () => {
-    res.off('close', onAbort);
+    res.off('close', onClose);
     req.off('aborted', onAbort);
 
     // abort the request
     ac.abort();
   };
 
-  res.once('close', onAbort);
+  const onClose = () => {
+    // `close` is also emitted after a response that was sent completely,
+    // so only abort if the connection closed before the response was ended
+    if (res.writableEnded) {
+      req.off('aborted', onAbort);
+      return;
+    }
+    onAbort();
+  };
+
+  res.once('close', onClose);
   req.once('aborted', onAbort);
 
   // Get host from either regular header or HTTP/2 pseudo-header

@@ -16,6 +16,7 @@ import type {
   AnyRootTypes,
   AnyRouter,
   inferAsyncIterableYield,
+  inferProcedureErrorShape,
   inferProcedureInput,
   inferTransformedProcedureOutput,
   ProcedureType,
@@ -263,7 +264,9 @@ export interface useTRPCInfiniteQuery<TDef extends ResolverDef> {
 //   queryClient?: QueryClient,
 // ): UseSuspenseInfiniteQueryResult<TData, TError>;
 
-export type useTRPCSuspenseInfiniteQuery<TDef extends ResolverDef> = (
+export type useTRPCSuspenseInfiniteQuery<TDef extends ResolverDef> = <
+  TData = trpcInfiniteData<TDef>,
+>(
   input: InfiniteInput<TDef['input']>,
   opts: makeInfiniteQueryOptions<
     inferCursorType<TDef['input']>,
@@ -273,7 +276,7 @@ export type useTRPCSuspenseInfiniteQuery<TDef extends ResolverDef> = (
       //     TError,
       TRPCClientErrorLike<TDef>,
       //     TData,
-      trpcInfiniteData<TDef>,
+      TData,
       //     TQueryKey,
       any,
       //     TPageParam
@@ -281,12 +284,9 @@ export type useTRPCSuspenseInfiniteQuery<TDef extends ResolverDef> = (
     >
   >,
 ) => [
-  trpcInfiniteData<TDef>,
+  TData,
   TRPCHookResult &
-    UseSuspenseInfiniteQueryResult<
-      trpcInfiniteData<TDef>,
-      TRPCClientErrorLike<TDef>
-    >,
+    UseSuspenseInfiniteQueryResult<TData, TRPCClientErrorLike<TDef>>,
 ];
 
 /**
@@ -430,7 +430,7 @@ export type DecorateRouterRecord<
             input: inferProcedureInput<$Value>;
             output: inferTransformedProcedureOutput<TRoot, $Value>;
             transformer: TRoot['transformer'];
-            errorShape: TRoot['errorShape'];
+            errorShape: inferProcedureErrorShape<TRoot, $Value>;
           }
         >
       : $Value extends RouterRecord
