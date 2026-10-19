@@ -31,8 +31,6 @@ export interface PageSeo {
   readonly description: string;
   /** The page as markdown, for agents: `/v12/docs/<slug>.md`. */
   readonly markdownPath?: string;
-  /** Keeps search engines from indexing the page. */
-  readonly noindex?: boolean;
   /** Path from the site root, starting with `/`. */
   readonly path: string;
   /** Schema.org JSON-LD objects for the page. */
@@ -40,6 +38,20 @@ export interface PageSeo {
   /** Page title, without the site name. Omit for the home page. */
   readonly title?: string;
   readonly type?: 'article' | 'website';
+}
+
+/** The one host search engines may index. */
+export const indexedHost = 'trpc.io';
+
+/**
+ * Whether search engines may index a build of the site served at `siteUrl`
+ * (`site.url`), with Vercel's `VERCEL_ENV` (`''` off Vercel): only
+ * production at trpc.io. Otherwise every page has `<meta name="robots"
+ * content="noindex">` and every response `X-Robots-Tag: noindex`; once it
+ * is, the header stays on every host but trpc.io (`build/vercel-output.ts`).
+ */
+export function indexable(siteUrl: string, vercelEnv: string) {
+  return new URL(siteUrl).host === indexedHost && vercelEnv === 'production';
 }
 
 export function absoluteUrl(path: string) {
@@ -125,7 +137,6 @@ export function pageHead(page: PageSeo) {
     ],
     meta: [
       { title },
-      ...(page.noindex ? [{ content: 'noindex', name: 'robots' }] : []),
       { content: page.description, name: 'description' },
       { content: title, property: 'og:title' },
       { content: page.description, property: 'og:description' },

@@ -5,9 +5,8 @@ import { removeTwoslashNotations } from 'twoslash/fallback';
 import type { Connect, Plugin } from 'vite';
 import { parse as parseYaml } from 'yaml';
 
-import { listedSections } from '../src/content/listed.ts';
 import type { Doc, DocMeta, DocSection, Sample } from '../src/content/types.ts';
-import { experimentIds } from '../src/experiments.ts';
+import { experimentIds, experiments } from '../src/experiments.ts';
 import { stripCollapseMarkers } from './collapse.ts';
 import { ContentError, messageOf } from './content-error.ts';
 import { type DocLink, renderMarkdown, resolveLink } from './markdown.ts';
@@ -68,9 +67,8 @@ const Frontmatter = Schema.Struct({
   description: Schema.String,
   /**
    * The experiment the page belongs to (`src/experiments.ts`). Built and
-   * served at its URL, but out of the sidebar, search and pagination until
-   * the reader turns it on, and always out of the sitemap and `llms.txt`,
-   * and `noindex` for search engines.
+   * served at its URL, in the sitemap and `llms.txt`, but out of the
+   * sidebar, search and pagination until the reader turns it on.
    */
   experiment: Schema.optional(Schema.Literals(experimentIds)),
   label: Schema.optional(Schema.String),
@@ -570,11 +568,18 @@ export function docsContent(options: ContentOptions): Plugin {
         }
         return link;
       });
+    const experiment = source.frontmatter.experiment;
     return [
       `# ${source.frontmatter.title}`,
       '',
       `> ${source.frontmatter.description}`,
       '',
+      ...(experiment === undefined
+        ? []
+        : [
+            `Experimental: ${experiments[experiment].label} might change or go away in any release.`,
+            '',
+          ]),
       body.trim(),
       '',
     ].join('\n');
@@ -587,7 +592,7 @@ export function docsContent(options: ContentOptions): Plugin {
       'Every page is also markdown: add `.md` to its URL, or request it with `Accept: text/markdown`.',
       '',
     ];
-    for (const section of listedSections(sections)) {
+    for (const section of sections) {
       lines.push(`## ${section.title}`, '');
       const parents = new Map(
         section.docs.map((doc) => [doc.slug, doc.parent]),
@@ -598,7 +603,7 @@ export function docsContent(options: ContentOptions): Plugin {
       };
       for (const doc of section.docs) {
         lines.push(
-          `${'  '.repeat(depth(doc.slug))}- [${doc.title}](${options.siteUrl}${basePath}/${doc.slug}.md): ${doc.description}`,
+          `${'  '.repeat(depth(doc.slug))}- [${doc.title}](${options.siteUrl}${basePath}/${doc.slug}.md): ${doc.experiment === undefined ? '' : 'Experimental. '}${doc.description}`,
         );
       }
       lines.push('');
@@ -615,8 +620,8 @@ export function docsContent(options: ContentOptions): Plugin {
   /**
    * Files for agents, by URL path: `llms.txt`, `llms-full.txt`, each page's
    * markdown at `<basePath>/<slug>.md`, `/index.md` (the home page's markdown,
-   * the same as `llms.txt`) and `/404.md`. An experiment's page has its markdown,
-   * but `llms.txt` and `llms-full.txt` leave it out.
+   * the same as `llms.txt`) and `/404.md`. An experiment's page is in them
+   * like any other, marked experimental.
    */
   async function agentFiles() {
     const sections = await manifest();
@@ -643,12 +648,10 @@ export function docsContent(options: ContentOptions): Plugin {
       '/llms-full.txt',
       [
         ...intro,
-        ...pages
-          .filter((entry) => entry.page.doc.experiment === undefined)
-          .map(
-            (entry) =>
-              `---\n\nSource: ${options.siteUrl}${basePath}/${entry.source.slug}\n\n${pageMarkdown(entry.source, entry.page)}`,
-          ),
+        ...pages.map(
+          (entry) =>
+            `---\n\nSource: ${options.siteUrl}${basePath}/${entry.source.slug}\n\n${pageMarkdown(entry.source, entry.page)}`,
+        ),
       ].join('\n'),
     );
     for (const entry of pages) {

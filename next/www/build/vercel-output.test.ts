@@ -1,14 +1,16 @@
 import { NodeServices } from '@effect/platform-node';
 import { describe, expect, it } from '@effect/vitest';
+import { fileURLToPath } from 'node:url';
 import { Effect, FileSystem, Path } from 'effect';
 
+import { site } from '../src/site.ts';
 import {
   land,
   redirectsFile,
   servedPaths,
   type TrpcRedirect,
 } from './old-routes.ts';
-import { firstDoc, isNoindex, writeVercelOutput } from './vercel-output.ts';
+import { firstDoc, noindexRoute, writeVercelOutput } from './vercel-output.ts';
 
 const llmsTxt = [
   '# tRPC',
@@ -43,8 +45,7 @@ const setup = Effect.fn('setup')(function* (
     'v12/docs/client/links.md': '',
     'v12/docs/client/links/index.html': '',
     'v12/docs/openapi/routes.md': '',
-    'v12/docs/openapi/routes/index.html':
-      '<head><meta content="noindex" name="robots"/></head>',
+    'v12/docs/openapi/routes/index.html': '',
     'index.html': '',
     'index.md': '',
     'llms.txt': llms,
@@ -63,15 +64,46 @@ const setup = Effect.fn('setup')(function* (
   return root;
 });
 
-describe('isNoindex', () => {
-  it('reads the robots meta tag', () => {
-    expect(isNoindex('<meta content="noindex" name="robots"/>')).toBe(true);
-    expect(isNoindex('<meta name="robots" content="noindex, nofollow">')).toBe(
-      true,
-    );
-    expect(isNoindex('<meta content="index" name="robots"/>')).toBe(false);
-    expect(isNoindex('<p>noindex</p>')).toBe(false);
+describe('noindexRoute', () => {
+  const noindex = {
+    continue: true,
+    headers: { 'X-Robots-Tag': 'noindex' },
+    src: '^/.*$',
+  };
+
+  it('says noindex everywhere until the site is trpc.io', () => {
+    expect(noindexRoute('https://v12.trpc.io', 'production')).toEqual(noindex);
   });
+
+  it("says noindex on trpc.io's previews", () => {
+    expect(noindexRoute('https://trpc.io', 'preview')).toEqual(noindex);
+    expect(noindexRoute('https://trpc.io', '')).toEqual(noindex);
+  });
+
+  it('lets trpc.io be indexed in production, and no other host', () => {
+    expect(noindexRoute('https://trpc.io', 'production')).toEqual({
+      ...noindex,
+      missing: [{ type: 'host', value: '^trpc\\.io$' }],
+    });
+    const host = new RegExp('^trpc\\.io$');
+    expect(host.test('trpc.io')).toBe(true);
+    expect(host.test('v12.trpc.io')).toBe(false);
+    expect(host.test('trpc-v12.vercel.app')).toBe(false);
+  });
+});
+
+describe('robots.txt', () => {
+  it.effect(
+    'points at the sitemap of site.url, which the cutover changes',
+    () =>
+      Effect.gen(function* () {
+        const fs = yield* FileSystem.FileSystem;
+        const robots = yield* fs.readFileString(
+          fileURLToPath(new URL('../public/robots.txt', import.meta.url)),
+        );
+        expect(robots).toContain(`Sitemap: ${site.url}/sitemap.xml`);
+      }).pipe(Effect.provide(NodeServices.layer)),
+  );
 });
 
 describe('firstDoc', () => {
@@ -167,17 +199,12 @@ describe('writeVercelOutput', () => {
       expect(new RegExp(markdownRewrite.src).test('/docs/a')).toBe(false);
       expect(new RegExp(markdownRewrite.src).test('/v9/docs/a')).toBe(false);
 
-      // An experiment's page, which says `noindex`, and its markdown.
-      const noindex = config.routes.filter(
-        (route: { headers?: Record<string, string> }) =>
-          route.headers?.['X-Robots-Tag'] === 'noindex',
-      );
-      expect(noindex).toHaveLength(1);
-      const experimental = new RegExp(noindex[0].src);
-      expect(experimental.test('/v12/docs/openapi/routes')).toBe(true);
-      expect(experimental.test('/v12/docs/openapi/routes.md')).toBe(true);
-      expect(experimental.test('/v12/docs/client/links')).toBe(false);
-      expect(experimental.test('/v12/docs/openapi/routes/more')).toBe(false);
+      // Until the site is trpc.io, every response, before any redirect.
+      expect(config.routes[0]).toEqual({
+        continue: true,
+        headers: { 'X-Robots-Tag': 'noindex' },
+        src: '^/.*$',
+      });
     }).pipe(Effect.scoped, Effect.provide(NodeServices.layer)),
   );
 

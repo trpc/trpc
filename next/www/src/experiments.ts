@@ -1,8 +1,8 @@
 /**
  * The docs' experiments: features whose pages ship turned off. A page joins
- * one with `experiment: <id>` in its frontmatter; it's served at its URL but
- * out of the sidebar, search, pagination, the sitemap and `llms.txt`, and
- * `noindex`, until the reader turns its experiment on (`?flags=<id>`, the
+ * one with `experiment: <id>` in its frontmatter; it's served at its URL and
+ * in the sitemap and `llms.txt`, but out of the sidebar, search and
+ * pagination until the reader turns its experiment on (`?flags=<id>`, the
  * Experiments menu, or visiting one of its pages). Pure, so the build reads
  * it too.
  */

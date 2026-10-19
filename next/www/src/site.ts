@@ -10,6 +10,11 @@ export const site = {
     'Move Fast and Break Nothing.',
     'End-to-end typesafe APIs made easy.',
   ],
+  /**
+   * Where the site is served. Search engines index it only once this is
+   * `https://trpc.io` (`indexable` in `seo.ts`): the switch to flip at the
+   * cutover, with `public/robots.txt`'s `Sitemap:`.
+   */
   url: 'https://v12.trpc.io',
   /** The project's account on X, for `twitter:site`. */
   x: '@trpcio',

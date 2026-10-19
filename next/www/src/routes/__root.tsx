@@ -19,6 +19,7 @@ import {
 import { useRememberHomeVersion } from '~/content/docs.ts';
 import { type FlagSearch, validateFlagSearch } from '~/flags.ts';
 import { homeVersionScript } from '~/home-version.ts';
+import { indexable } from '~/seo.ts';
 import { blog, site } from '~/site.ts';
 import appCss from '~/styles.css?url';
 
@@ -64,6 +65,9 @@ export const Route = createRootRoute({
         name: 'theme-color',
       },
       { content: site.name, name: 'application-name' },
+      ...(indexable(site.url, import.meta.env.VERCEL_ENV)
+        ? []
+        : [{ content: 'noindex', name: 'robots' }]),
     ],
     scripts: [{ children: themeScript }, { children: homeVersionScript }],
   }),
