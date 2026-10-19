@@ -43,6 +43,7 @@ import type { HandlerCore } from '../handler/index.ts';
 import { resolveProcedureEffect, type AnyRouter } from '../procedures/index.ts';
 import type { DrainConnection, SocketDrains } from './drain.ts';
 import { runSocket, socketFrames } from './socket-session.ts';
+import { interruptSignal } from '../../internal/effects.ts';
 
 /** The span a socket call is a child of: the trace context in its message. */
 const traceParent = (trace: unknown): Tracer.AnySpan | undefined =>
@@ -289,44 +290,50 @@ export interface ConnectionReceiver {
   readonly close: Effect.Effect<void>;
 }
 
+/** Options for {@link connectionReceiver}. @internal */
+export interface ConnectionReceiverOptions {
+  request: HttpServerRequest.HttpServerRequest;
+  /** What `createContext` gets as `platform`. */
+  platform?: unknown;
+  transport: Transport;
+  /** Params from an earlier `init`, for a connection served before. */
+  connectionParams?: Record<string, unknown> | undefined;
+  onInit?: (connectionParams: Record<string, unknown> | undefined) => void;
+  /**
+   * Keeps a publisher subscription on the connection instead of running
+   * it. `false` runs it as usual.
+   */
+  hibernate?: (
+    call: ParkedSubscription & { id: number; path: string },
+  ) => boolean;
+  /** The client aborted, or the parked call failed. */
+  unpark?: (id: number) => void;
+  /**
+   * Joins `core.drains`, which refuses the connection (1012) while a
+   * drain runs. A drain closes it with 1012 at its timeout, or before:
+   * - `peer`: it sends `reconnect` and waits for the client to close
+   *   the connection, which it does once the calls it sent settle.
+   * - `calls`: it waits for the calls in flight (a port's client has
+   *   nowhere to move).
+   */
+  drain?: 'peer' | 'calls';
+}
+
 /**
  * The connection protocol, one message at a time. Each call is a fiber in
  * a `FiberMap` keyed by its id, in the caller's scope, so an `abort`, the
  * connection's close or the end of the scope interrupts it.
  * @internal
  */
-export const connectionReceiver = (
+export const connectionReceiver: (
   core: SocketCoreShape,
   conn: Connection,
-  opts: {
-    request: HttpServerRequest.HttpServerRequest;
-    /** What `createContext` gets as `platform`. */
-    platform?: unknown;
-    transport: Transport;
-    /** Params from an earlier `init`, for a connection served before. */
-    connectionParams?: Record<string, unknown> | undefined;
-    onInit?: (connectionParams: Record<string, unknown> | undefined) => void;
-    /**
-     * Keeps a publisher subscription on the connection instead of running
-     * it. `false` runs it as usual.
-     */
-    hibernate?: (
-      call: ParkedSubscription & { id: number; path: string },
-    ) => boolean;
-    /** The client aborted, or the parked call failed. */
-    unpark?: (id: number) => void;
-    /**
-     * Joins `core.drains`, which refuses the connection (1012) while a
-     * drain runs. A drain closes it with 1012 at its timeout, or before:
-     * - `peer`: it sends `reconnect` and waits for the client to close
-     *   the connection, which it does once the calls it sent settle.
-     * - `calls`: it waits for the calls in flight (a port's client has
-     *   nowhere to move).
-     */
-    drain?: 'peer' | 'calls';
-  },
-): Effect.Effect<ConnectionReceiver, never, Scope.Scope> =>
-  Effect.flatMap(FiberMap.make<number, void, never>(), (calls) => {
+  opts: ConnectionReceiverOptions,
+) => Effect.Effect<ConnectionReceiver, never, Scope.Scope> = Effect.fnUntraced(
+  function* (core, conn, opts) {
+    const calls = yield* FiberMap.make<number, void, never>();
+    const ended = yield* Deferred.make<void>();
+    const drained = yield* Deferred.make<void>();
     const { request } = opts;
     let connectionParams = opts.connectionParams;
     let closed = false;
@@ -355,102 +362,104 @@ export const connectionReceiver = (
     ): Effect.Effect<void> => {
       const { id, path } = message;
       const callParams = connectionParams;
-      const controller = new AbortController();
       let type: ProcedureType | undefined;
       let parked = false;
-      return Effect.gen(function* () {
-        const procedure = yield* resolveProcedureEffect(core.router, path);
-        const kind = procedure?.['~trpc'].type;
-        type = kind;
-        if (!procedure || !kind) {
-          return yield* Effect.fail(
-            new TrpcError.NotFound({
-              message: `No procedure at path "${path}"`,
-            }),
-          );
-        }
-        if (kind !== message.method) {
-          return yield* Effect.fail(
-            new TrpcError.MethodNotSupported({
-              message: `"${path}" is a ${kind}, not a ${String(message.method)}`,
-            }),
-          );
-        }
-        const input = yield* Effect.try({
-          try: () => core.deserializeInput(message.input),
-          catch: asTrpcError,
-        });
-        const ctx = yield* core.makeContext({
-          request,
-          platform: opts.platform,
-          calls: [{ path, type: kind }],
-          signal: controller.signal,
-          transport: opts.transport,
-          connectionParams: callParams,
-        });
-        const hibernate = kind === 'subscription' ? opts.hibernate : undefined;
-        const services = hibernate
-          ? Context.make(HibernationSlot, {
-              park: (sub) => (parked = hibernate({ ...sub, id, path })),
-            })
-          : undefined;
-        const exit = yield* core.run({
-          request,
-          procedure,
-          path,
-          ctx,
-          input,
-          signal: controller.signal,
-          response: createResponseHandle(),
-          lastEventId: message.lastEventId,
-          services,
-          parent: traceParent(message.trace),
-        });
-        if (Exit.isFailure(exit)) {
-          return yield* Effect.fail(normalizeCause(exit.cause));
-        }
-        if (kind === 'subscription') {
-          yield* emitEvents(
-            exit.value as Stream.Stream<unknown, AnyTrpcError>,
-            core.serializer,
-            coerceError(path, kind),
-            (frame) => conn.send(frameMessage(id, frame)),
-          );
-          if (!parked) yield* conn.send({ id, type: 'done' });
-          return;
-        }
-        const serialized = core.serializer.serializeDeferred(exit.value, {
-          coerceError: coerceError(path, kind),
-        });
-        if (!serialized.chunks) {
-          yield* conn.send({ id, type: 'result', body: serialized.head });
-          return;
-        }
-        yield* conn.send({
-          id,
-          type: 'result',
-          body: serialized.head,
-          deferred: true,
-        });
-        yield* Stream.runForEach(serialized.chunks, (chunk) =>
-          conn.send({ id, type: 'chunk', chunk }),
-        ).pipe(
-          Effect.catchCause((cause) =>
-            Cause.hasInterruptsOnly(cause) ? Effect.interrupt : Effect.void,
-          ),
-        );
-        yield* conn.send({ id, type: 'done' });
-      }).pipe(
-        Effect.catchCause((cause) => {
-          if (Cause.hasInterruptsOnly(cause)) return Effect.interrupt;
-          return Effect.suspend(() => {
-            if (parked) opts.unpark?.(id);
-            const err = normalizeCause(cause);
-            core.report(err, request, path, type);
-            return sendError(id, err);
+      return Effect.flatMap(interruptSignal(), (interrupt) =>
+        Effect.gen(function* () {
+          const procedure = yield* resolveProcedureEffect(core.router, path);
+          const kind = procedure?.['~trpc'].type;
+          type = kind;
+          if (!procedure || !kind) {
+            return yield* Effect.fail(
+              new TrpcError.NotFound({
+                message: `No procedure at path "${path}"`,
+              }),
+            );
+          }
+          if (kind !== message.method) {
+            return yield* Effect.fail(
+              new TrpcError.MethodNotSupported({
+                message: `"${path}" is a ${kind}, not a ${String(message.method)}`,
+              }),
+            );
+          }
+          const input = yield* Effect.try({
+            try: () => core.deserializeInput(message.input),
+            catch: asTrpcError,
           });
-        }),
-        Effect.onInterrupt(() => Effect.sync(() => controller.abort())),
+          const ctx = yield* core.makeContext({
+            request,
+            platform: opts.platform,
+            calls: [{ path, type: kind }],
+            signal: interrupt.signal,
+            transport: opts.transport,
+            connectionParams: callParams,
+          });
+          const hibernate =
+            kind === 'subscription' ? opts.hibernate : undefined;
+          const services = hibernate
+            ? Context.make(HibernationSlot, {
+                park: (sub) => (parked = hibernate({ ...sub, id, path })),
+              })
+            : undefined;
+          const exit = yield* core.run({
+            request,
+            procedure,
+            path,
+            ctx,
+            input,
+            signal: interrupt.signal,
+            response: createResponseHandle(),
+            lastEventId: message.lastEventId,
+            services,
+            parent: traceParent(message.trace),
+          });
+          if (Exit.isFailure(exit)) {
+            return yield* Effect.fail(normalizeCause(exit.cause));
+          }
+          if (kind === 'subscription') {
+            yield* emitEvents(
+              exit.value as Stream.Stream<unknown, AnyTrpcError>,
+              core.serializer,
+              coerceError(path, kind),
+              (frame) => conn.send(frameMessage(id, frame)),
+            );
+            if (!parked) yield* conn.send({ id, type: 'done' });
+            return;
+          }
+          const serialized = core.serializer.serializeDeferred(exit.value, {
+            coerceError: coerceError(path, kind),
+          });
+          if (!serialized.chunks) {
+            yield* conn.send({ id, type: 'result', body: serialized.head });
+            return;
+          }
+          yield* conn.send({
+            id,
+            type: 'result',
+            body: serialized.head,
+            deferred: true,
+          });
+          yield* Stream.runForEach(serialized.chunks, (chunk) =>
+            conn.send({ id, type: 'chunk', chunk }),
+          ).pipe(
+            Effect.catchCause((cause) =>
+              Cause.hasInterruptsOnly(cause) ? Effect.interrupt : Effect.void,
+            ),
+          );
+          yield* conn.send({ id, type: 'done' });
+        }).pipe(
+          Effect.catchCause((cause) => {
+            if (Cause.hasInterruptsOnly(cause)) return Effect.interrupt;
+            return Effect.suspend(() => {
+              if (parked) opts.unpark?.(id);
+              const err = normalizeCause(cause);
+              core.report(err, request, path, type);
+              return sendError(id, err);
+            });
+          }),
+          (self) => interrupt.abortOnInterrupt(self),
+        ),
       );
     };
 
@@ -522,21 +531,22 @@ export const connectionReceiver = (
         }
       });
 
-    const ended = Deferred.makeUnsafe<void>();
     let leave: (() => void) | undefined;
     const close = Effect.suspend(() => {
       closed = true;
       leave?.();
-      Deferred.doneUnsafe(ended, Effect.void);
-      return FiberMap.clear(calls);
+      return Effect.andThen(
+        Deferred.done(ended, Exit.void),
+        FiberMap.clear(calls),
+      );
     });
 
-    let drained: Deferred.Deferred<void> | undefined;
+    let draining = false;
     const drain: DrainConnection = (timeout) =>
       Effect.suspend(() => {
-        if (drained) return Deferred.await(drained);
+        if (draining) return Deferred.await(drained);
         if (closed) return Effect.void;
-        const done = (drained = Deferred.makeUnsafe<void>());
+        draining = true;
         // A slow client's send waits, within the timeout.
         const settled =
           opts.drain === 'peer'
@@ -553,7 +563,7 @@ export const connectionReceiver = (
               return close;
             }),
           ),
-          Effect.ensuring(Deferred.done(done, Exit.void)),
+          Effect.ensuring(Deferred.done(drained, Exit.void)),
         );
       });
 
@@ -565,8 +575,7 @@ export const connectionReceiver = (
         conn.close(1012, 'Service restart');
       }
     }
-    return Effect.as(
-      Effect.addFinalizer(() => Effect.sync(() => leave?.())),
-      { receive, close },
-    );
-  });
+    yield* Effect.addFinalizer(() => Effect.sync(() => leave?.()));
+    return { receive, close };
+  },
+);

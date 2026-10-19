@@ -1,6 +1,6 @@
-import { Effect, Stream } from 'effect';
+import { Effect, Fiber, Stream } from 'effect';
 import { expect, test } from 'vite-plus/test';
-import { toAsyncIterable } from './effects.ts';
+import { interruptSignal, toAsyncIterable } from './effects.ts';
 
 const tracked = () => {
   const state = { started: 0, closed: 0 };
@@ -46,4 +46,38 @@ test('throw() closes the stream and rethrows', async () => {
   const error = new Error('stop');
   await expect(iterator.throw?.(error)).rejects.toBe(error);
   expect(source.state.closed).toBe(1);
+});
+
+test('interruptSignal aborts once a wrapped effect is interrupted, not when it ends', async () => {
+  const signals = await Effect.runPromise(
+    Effect.gen(function* () {
+      const done = yield* interruptSignal();
+      yield* done.abortOnInterrupt(Effect.void);
+      const failed = yield* interruptSignal();
+      yield* Effect.exit(failed.abortOnInterrupt(Effect.fail('boom')));
+      const interrupted = yield* interruptSignal();
+      const fiber = yield* Effect.forkChild(
+        interrupted.abortOnInterrupt(Effect.never),
+      );
+      yield* Effect.yieldNow;
+      yield* Fiber.interrupt(fiber);
+      return [done, failed, interrupted].map((s) => s.signal.aborted);
+    }),
+  );
+  expect(signals).toEqual([false, false, true]);
+});
+
+test('interruptSignal aborts once a wrapped stream is interrupted', async () => {
+  const aborted = await Effect.runPromise(
+    Effect.gen(function* () {
+      const interrupt = yield* interruptSignal();
+      const fiber = yield* Effect.forkChild(
+        Stream.runDrain(interrupt.abortOnInterrupt(tracked().stream)),
+      );
+      yield* Effect.yieldNow;
+      yield* Fiber.interrupt(fiber);
+      return interrupt.signal.aborted;
+    }),
+  );
+  expect(aborted).toBe(true);
 });

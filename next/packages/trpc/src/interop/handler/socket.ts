@@ -1,6 +1,7 @@
 import { Cause, Effect, Exit, FiberMap, Stream, type Duration } from 'effect';
 import type { HttpServerRequest } from 'effect/http';
 import type { Socket } from 'effect/socket';
+import { interruptSignal } from '../../internal/effects.ts';
 import { TrpcError, type AnyTrpcError } from '../../internal/error.ts';
 import type { ProcedureType } from '../../internal/types.ts';
 import {
@@ -104,6 +105,7 @@ function v11Session(
       });
     });
 
+  /** Its signal aborts when `subscription.stop` or a closed socket interrupts it. */
   const call = (
     id: RequestId,
     jsonrpc: unknown,
@@ -113,95 +115,92 @@ function v11Session(
     const path = typeof params['path'] === 'string' ? params['path'] : '';
     const head = envelope(id, jsonrpc);
     const callParams = connectionParams;
-    // Aborted when `subscription.stop` or a closed socket interrupts the call.
-    const controller = new AbortController();
-    const abort = Effect.sync(() => controller.abort());
-    return Effect.gen(function* () {
-      const procedure = yield* resolveProcedureEffect(core.router, path);
-      // v11's sockets answer a missing path and a wrong type alike.
-      if (!procedure || procedure['~trpc'].type !== method) {
-        return yield* Effect.fail(
-          new TrpcError.NotFound({
-            message: `No "${method}"-procedure on path "${path}"`,
-          }),
-        );
-      }
-      const callInput = yield* Effect.try({
-        try: () =>
-          params['input'] === undefined
-            ? undefined
-            : (core.input.deserialize(params['input']) as unknown),
-        catch: (cause) =>
-          new TrpcError.ParseError({ message: 'Invalid input', cause }),
-      });
-      const lastEventId =
-        typeof params['lastEventId'] === 'string'
-          ? params['lastEventId']
-          : inputEventId(callInput);
-      const ctx = yield* base.makeContext({
-        request,
-        platform: opts.platform,
-        calls: [{ path, type: method }],
-        signal: controller.signal,
-        transport: 'websocket',
-        connectionParams: callParams,
-      });
-      const exit = yield* base.run({
-        request,
-        procedure,
-        path,
-        ctx,
-        input: callInput,
-        signal: controller.signal,
-        response: createResponseHandle(),
-        lastEventId,
-      });
-      if (Exit.isFailure(exit)) {
-        return yield* Effect.fail(normalizeCause(exit.cause));
-      }
-      if (method !== 'subscription') {
-        const data = yield* core.settle(exit.value);
-        yield* send({
-          ...head,
-          result: { type: 'data', data: output.serialize(data) },
+    return Effect.flatMap(interruptSignal(), (interrupt) =>
+      Effect.gen(function* () {
+        const procedure = yield* resolveProcedureEffect(core.router, path);
+        // v11's sockets answer a missing path and a wrong type alike.
+        if (!procedure || procedure['~trpc'].type !== method) {
+          return yield* Effect.fail(
+            new TrpcError.NotFound({
+              message: `No "${method}"-procedure on path "${path}"`,
+            }),
+          );
+        }
+        const callInput = yield* Effect.try({
+          try: () =>
+            params['input'] === undefined
+              ? undefined
+              : (core.input.deserialize(params['input']) as unknown),
+          catch: (cause) =>
+            new TrpcError.ParseError({ message: 'Invalid input', cause }),
         });
-        return;
-      }
-      yield* send({ ...head, result: { type: 'started' } });
-      yield* Stream.runForEach(
-        // Aborts before the stream's finalizers run: a resolver awaiting its
-        // signal returns only after it aborts.
-        (exit.value as Stream.Stream<unknown, AnyTrpcError>).pipe(
-          Stream.onExit((end) =>
-            Exit.hasInterrupts(end) ? abort : Effect.void,
-          ),
-        ),
-        (event) =>
-          send({
+        const lastEventId =
+          typeof params['lastEventId'] === 'string'
+            ? params['lastEventId']
+            : inputEventId(callInput);
+        const ctx = yield* base.makeContext({
+          request,
+          platform: opts.platform,
+          calls: [{ path, type: method }],
+          signal: interrupt.signal,
+          transport: 'websocket',
+          connectionParams: callParams,
+        });
+        const exit = yield* base.run({
+          request,
+          procedure,
+          path,
+          ctx,
+          input: callInput,
+          signal: interrupt.signal,
+          response: createResponseHandle(),
+          lastEventId,
+        });
+        if (Exit.isFailure(exit)) {
+          return yield* Effect.fail(normalizeCause(exit.cause));
+        }
+        if (method !== 'subscription') {
+          const data = yield* core.settle(exit.value);
+          yield* send({
             ...head,
-            result: isTracked(event)
-              ? {
-                  type: 'data',
-                  id: event.id,
-                  data: output.serialize({ id: event.id, data: event.data }),
-                }
-              : { type: 'data', data: output.serialize(event) },
-          }),
-      ).pipe(
+            result: { type: 'data', data: output.serialize(data) },
+          });
+          return;
+        }
+        yield* send({ ...head, result: { type: 'started' } });
+        yield* Stream.runForEach(
+          // Aborts before the stream's finalizers run: a resolver awaiting its
+          // signal returns only after it aborts.
+          interrupt.abortOnInterrupt(
+            exit.value as Stream.Stream<unknown, AnyTrpcError>,
+          ),
+          (event) =>
+            send({
+              ...head,
+              result: isTracked(event)
+                ? {
+                    type: 'data',
+                    id: event.id,
+                    data: output.serialize({ id: event.id, data: event.data }),
+                  }
+                : { type: 'data', data: output.serialize(event) },
+            }),
+        ).pipe(
+          Effect.catchCause((cause) =>
+            Cause.hasInterruptsOnly(cause)
+              ? Effect.failCause(cause)
+              : sendError(id, jsonrpc, normalizeCause(cause), path, method),
+          ),
+          Effect.ensuring(send({ ...head, result: { type: 'stopped' } })),
+        );
+      }).pipe(
         Effect.catchCause((cause) =>
           Cause.hasInterruptsOnly(cause)
             ? Effect.failCause(cause)
             : sendError(id, jsonrpc, normalizeCause(cause), path, method),
         ),
-        Effect.ensuring(send({ ...head, result: { type: 'stopped' } })),
-      );
-    }).pipe(
-      Effect.catchCause((cause) =>
-        Cause.hasInterruptsOnly(cause)
-          ? Effect.failCause(cause)
-          : sendError(id, jsonrpc, normalizeCause(cause), path, method),
+        (self) => interrupt.abortOnInterrupt(self),
       ),
-      Effect.onInterrupt(() => abort),
     ) as Effect.Effect<void>;
   };
 
