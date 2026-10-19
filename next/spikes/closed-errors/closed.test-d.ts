@@ -28,6 +28,8 @@ const client = createTrpcClient({
 type Now = ErrorOf<ReturnType<typeof client.byId.query>>;
 type CodeOf<E> = E extends { readonly code: infer C } ? C : never;
 type Undefined<E> = Extract<E, { readonly defined: false }>;
+/** A query that doesn't stream can't be interrupted. */
+type CallCode = Exclude<BuiltinErrorCode, 'STREAM_INTERRUPTED'>;
 
 describe('the client union', () => {
   test('defined codes are the procedure ones, undefined ones are built-in', () => {
@@ -35,7 +37,7 @@ describe('the client union', () => {
       'NOT_FOUND' | 'BAD_REQUEST'
     >();
     expectTypeOf<CodeOf<Undefined<Now>>>().toEqualTypeOf<
-      BuiltinErrorCode | UndeclaredCode
+      CallCode | UndeclaredCode
     >();
   });
 
@@ -45,7 +47,7 @@ describe('the client union', () => {
       { readonly code: 'NETWORK_ERROR' | 'CLIENT_CLOSED_REQUEST' }
     >;
     expectTypeOf<CodeOf<Undefined<Claimed>>>().toEqualTypeOf<
-      | Exclude<BuiltinErrorCode, 'NETWORK_ERROR' | 'CLIENT_CLOSED_REQUEST'>
+      | Exclude<CallCode, 'NETWORK_ERROR' | 'CLIENT_CLOSED_REQUEST'>
       | UndeclaredCode
     >();
   });
@@ -69,7 +71,6 @@ describe('matchError', () => {
       BAD_REQUEST: (err) => err.message,
       NETWORK_ERROR: () => 'offline',
       BAD_RESPONSE: (err) => err.message,
-      STREAM_INTERRUPTED: (err) => err.message,
       unexpected: (err) => {
         expectTypeOf(err.defined).toEqualTypeOf<false>();
         return err.code;
@@ -79,7 +80,6 @@ describe('matchError', () => {
     const links = {
       NETWORK_ERROR: () => 1,
       BAD_RESPONSE: () => 1,
-      STREAM_INTERRUPTED: () => 1,
     };
     // @ts-expect-error: BAD_REQUEST is missing
     matchError(now, { ...links, NOT_FOUND: () => 1, unexpected: () => 1 });

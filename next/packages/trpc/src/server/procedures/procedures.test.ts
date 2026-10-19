@@ -4,8 +4,10 @@ import {
   httpLink,
   safe,
   type ClientError,
+  type LinkErrorCode,
   routerType,
 } from '@trpc12/trpc/client';
+import type { DansonForm } from '@trpc12/trpc/serializer';
 import {
   call,
   error,
@@ -463,7 +465,12 @@ test('Effect middleware provides services and its failures are typed', async () 
   const res = await safe(anon.client.me.query());
   expect(res.error).toMatchObject({ code: 'UNAUTHORIZED', defined: true });
   expectTypeOf(res.error).toEqualTypeOf<
-    ClientError<TrpcError<'UNAUTHORIZED', undefined>> | undefined
+    | ClientError<
+        TrpcError<'UNAUTHORIZED', undefined>,
+        DansonForm,
+        Exclude<LinkErrorCode, 'STREAM_INTERRUPTED'>
+      >
+    | undefined
   >();
 
   // Only the Clock layer is passed: the middleware provides CurrentUser.

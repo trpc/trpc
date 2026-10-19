@@ -109,7 +109,6 @@ if (err) {
     BAD_REQUEST: (e) => console.log(e.data.issues),
     NETWORK_ERROR: () => console.log('offline'),
     BAD_RESPONSE: (e) => console.log(e.message),
-    STREAM_INTERRUPTED: (e) => console.log(e.message),
     unexpected: (e) => console.log(e.code), // crashes, aborts, thrown errors
   });
 }
@@ -162,7 +161,6 @@ if (err) {
     BAD_REQUEST: (e) => e.data.issues[0]?.message ?? 'Invalid id',
     NETWORK_ERROR: () => 'You are offline',
     BAD_RESPONSE: () => 'Try again later',
-    STREAM_INTERRUPTED: () => 'Try again later',
     unexpected: (e) => e.message,
   });
 }

@@ -295,12 +295,14 @@ test('a custom code thrown where nothing is declared keeps its code and data, un
     defined: false,
   });
   expect(ctx.status()).toBe(400);
-  expectTypeOf(err!).toEqualTypeOf<BuiltinError | UndeclaredError>();
+  expectTypeOf(err!).toEqualTypeOf<
+    | BuiltinError<Exclude<BuiltinErrorCode, 'STREAM_INTERRUPTED'>>
+    | UndeclaredError
+  >();
   expect(
     matchError(err!, {
       NETWORK_ERROR: () => '',
       BAD_RESPONSE: () => '',
-      STREAM_INTERRUPTED: () => '',
       unexpected: (e) => e.code,
     }),
   ).toBe('LEGACY_BILLING_TIMEOUT');
@@ -348,7 +350,9 @@ test('the union is closed: defined codes, then one member per built-in code', as
   if (err) {
     expectTypeOf<
       Extract<typeof err, { defined: false }>['code']
-    >().toEqualTypeOf<BuiltinErrorCode | UndeclaredCode>();
+    >().toEqualTypeOf<
+      Exclude<BuiltinErrorCode, 'STREAM_INTERRUPTED'> | UndeclaredCode
+    >();
     expectTypeOf<BuiltinError['data']>().toEqualTypeOf<undefined>();
     switch (err.code) {
       case 'NOT_FOUND':
@@ -384,7 +388,6 @@ test('matchError needs a handler per defined code and link code, and unexpected 
         return 'offline';
       },
       BAD_RESPONSE: () => 'unreadable',
-      STREAM_INTERRUPTED: () => 'interrupted',
       unexpected: (e) => {
         expectTypeOf(e).toEqualTypeOf<
           | BuiltinError<Exclude<BuiltinErrorCode, LinkErrorCode>>
@@ -427,7 +430,6 @@ test('matchError needs a handler per defined code and link code, and unexpected 
     BAD_REQUEST: () => 1,
     NETWORK_ERROR: () => 1,
     BAD_RESPONSE: () => 1,
-    STREAM_INTERRUPTED: () => 1,
     unexpected: () => 1,
   } satisfies Record<string, () => number>;
   const { BAD_REQUEST: _input, ...noInput } = all;

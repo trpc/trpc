@@ -6,7 +6,9 @@ import {
   routerType,
   wsLink,
   type ClientError,
+  type LinkErrorCode,
 } from '@trpc12/trpc/client';
+import type { DansonForm } from '@trpc12/trpc/serializer';
 import { createEffectClient } from '@trpc12/trpc/effect';
 import {
   type AnyRouter,
@@ -197,7 +199,9 @@ test('typed errors land in the Effect error channel', async () => {
             InputValidationErrorData<
               inferInputIssue<z.ZodObject<{ id: z.ZodString }>>
             >
-          >
+          >,
+        DansonForm,
+        Exclude<LinkErrorCode, 'STREAM_INTERRUPTED'>
       >
     >
   >();

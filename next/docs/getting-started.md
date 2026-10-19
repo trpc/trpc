@@ -132,7 +132,6 @@ if (err) {
     //                         ^?
     NETWORK_ERROR: () => 'You are offline',
     BAD_RESPONSE: () => 'Try again later',
-    STREAM_INTERRUPTED: () => 'Try again later',
     unexpected: (e) => e.message,
   });
 } else {
@@ -142,7 +141,7 @@ if (err) {
 
 `routerType<AppRouter>()` types the client from the router type alone, and the client also types what its links read (see [The client](./client/overview.md)).
 
-`safe()` resolves to `[data, error]` instead of throwing. Once `error` is handled, `data` is the output. `matchError()` takes a handler for each of the procedure's errors, for each code `httpLink` can fail with (`NETWORK_ERROR`, `BAD_RESPONSE`, `STREAM_INTERRUPTED`), and `unexpected` for the rest (crashes, aborts, a proxy's status). Leaving one out is a type error ([Errors without try/catch](./client/errors.md)).
+`safe()` resolves to `[data, error]` instead of throwing. Once `error` is handled, `data` is the output. `matchError()` takes a handler for each of the procedure's errors, for each code `httpLink` can fail the call with (`NETWORK_ERROR`, `BAD_RESPONSE`; a streamed output adds `STREAM_INTERRUPTED`), and `unexpected` for the rest (crashes, aborts, a proxy's status). Leaving one out is a type error ([Errors without try/catch](./client/errors.md)).
 
 ## Naming
 

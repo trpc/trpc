@@ -108,8 +108,30 @@ export type ClientError<
   | BuiltinError<Exclude<BuiltinErrorCode, Exclude<LinkErrorCode, TLinkCodes>>>
   | UndeclaredError;
 
-/** A call's errors: the procedure's in the result form, the links' as made. @internal */
+/**
+ * A query's or mutation's errors: the procedure's in the result form, the
+ * links' as made. `STREAM_INTERRUPTED` fails a stream after its call has
+ * resolved, so it's left out unless the output is an `AsyncIterable` (whose
+ * error TanStack's streamed queries report); values deferred inside an
+ * output reject with it untyped.
+ * @internal
+ */
 export type CallError<
+  D extends ProcedureDef,
+  F extends OutputForm,
+  TLinks extends ChainTypes,
+> =
+  | ClientError<
+      D['errors'],
+      F,
+      D['output'] extends AsyncIterable<any>
+        ? ChainLinkCodes<TLinks>
+        : UnstreamedLinkCodes<TLinks>
+    >
+  | DefinedError<ChainErrors<TLinks>>;
+
+/** A subscription's errors: every link code its chain declares. @internal */
+export type SubscriptionError<
   D extends ProcedureDef,
   F extends OutputForm,
   TLinks extends ChainTypes,
@@ -254,6 +276,11 @@ export type ChainLinkCodes<T extends ChainTypes> = T extends {
   ? C
   : LinkErrorCode;
 
+type UnstreamedLinkCodes<T extends ChainTypes> = Exclude<
+  ChainLinkCodes<T>,
+  'STREAM_INTERRUPTED'
+>;
+
 /** Whether the links can carry procedures of type `T`. @internal */
 export type Carries<T, TLinks extends ChainTypes> = TLinks extends {
   unsupported: infer U;
@@ -332,7 +359,7 @@ type DecorateCarried<
           ...args: CallArgs<D['input'], SubscribeOptions<TContext>>
         ): TrpcSubscription<
           ClientValue<D['output'], ResultForm<TForm, TLinks>>,
-          CallError<D, ResultForm<TForm, TLinks>, TLinks>
+          SubscriptionError<D, ResultForm<TForm, TLinks>, TLinks>
         >;
       };
 

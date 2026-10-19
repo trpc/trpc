@@ -48,7 +48,7 @@ const [post, err] = await safeClient.post.byId.query({ id: '1' });
 | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `NETWORK_ERROR`             | The request got no response, or the connection dropped. Only from links that send requests.                                                                            |
 | `BAD_RESPONSE`              | The response wasn't a tRPC one and its status names no code (an HTML page or an empty body sent with `200`), or it didn't decode. Only from links that read responses. |
-| `STREAM_INTERRUPTED`        | A stream stopped without an end or an error. Only from links that read streams.                                                                                        |
+| `STREAM_INTERRUPTED`        | A stream stopped without an end or an error, after its call resolved: a subscription's, or a streamed output's. Only from links that read streams.                     |
 | `CLIENT_CLOSED_REQUEST`     | The call's `signal` aborted it.                                                                                                                                        |
 | `CLIENT_ERROR`              | A link failed, or failed with a custom code it didn't declare.                                                                                                         |
 | `INTERNAL_SERVER_ERROR`     | The server crashed, or threw a custom code that its `.errors()` don't list. The message is masked in production.                                                       |
@@ -56,7 +56,7 @@ const [post, err] = await safeClient.post.byId.query({ id: '1' });
 
 ### Errors from the links
 
-The first three codes, the `LinkErrorCode` type, are made only by links, so a call's error has those its client's links declare and no others. With only `localLink`, which runs calls in-process, no call can fail with `NETWORK_ERROR`, and `switch (err.code)` can't have a `case 'NETWORK_ERROR'`. The other codes can reach any call.
+The first three codes, the `LinkErrorCode` type, are made only by links, so a call's error has those its client's links declare and no others. `STREAM_INTERRUPTED` is only in the error of a call that streams: a subscription, or a procedure whose output is an `AsyncIterable` or `Stream` ([streamed queries](../integrations/tanstack-query.md) report it as the query's error). Any other call has its result before anything can be cut: a response that ends before it is `NETWORK_ERROR` or `BAD_RESPONSE`, and a `Promise` deferred inside the output rejects with `STREAM_INTERRUPTED` on its own. With only `localLink`, which runs calls in-process, no call can fail with `NETWORK_ERROR`, and `switch (err.code)` can't have a `case 'NETWORK_ERROR'`. The other codes can reach any call.
 
 The same call has all three through `httpLink` and none through `localLink`:
 
@@ -163,7 +163,6 @@ async function title(id: string) {
       BAD_REQUEST: (e) => e.data.issues[0]?.message ?? 'Invalid id',
       NETWORK_ERROR: () => 'You are offline',
       BAD_RESPONSE: () => 'Try again later',
-      STREAM_INTERRUPTED: () => 'Try again later',
       unexpected: (e) =>
         e.code === 'CLIENT_CLOSED_REQUEST' ? 'Cancelled' : e.message,
     });
@@ -174,7 +173,7 @@ async function title(id: string) {
 
 Errors that share a code share its handler, which gets their union: a defined `NETWORK_ERROR` and the link's, or two `NOT_FOUND`s with different `data`. A built-in error with a defined code, like the `NOT_FOUND` of a procedure the server lacks, goes to `unexpected`.
 
-The link codes are the same for every call through a client, so one object of their handlers can be spread into each `matchError()`:
+The link codes are the same for every call through a client that doesn't stream, so one object of their handlers can be spread into each `matchError()` (a streamed call adds `STREAM_INTERRUPTED`):
 
 ```ts twoslash
 // ---cut-start---
@@ -184,7 +183,6 @@ import { matchError, safe } from '@trpc12/trpc/client';
 const offline = {
   NETWORK_ERROR: () => 'You are offline',
   BAD_RESPONSE: () => 'Try again later',
-  STREAM_INTERRUPTED: () => 'Try again later',
 };
 
 const [, err] = await safe(client.post.byId.query({ id: '1' }));
@@ -246,7 +244,6 @@ const rateLimit = link<{ errors: RateLimited }>((opts) =>
 const offline = {
   NETWORK_ERROR: () => 'You are offline',
   BAD_RESPONSE: () => 'Try again later',
-  STREAM_INTERRUPTED: () => 'Try again later',
 };
 // ---cut-end---
 const limited = createTrpcClient({

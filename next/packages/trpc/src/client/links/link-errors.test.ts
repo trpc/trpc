@@ -35,6 +35,10 @@ const router = {
   ticks: t.procedure.subscription(async function* () {
     yield 1;
   }),
+  feed: t.procedure.query(async function* () {
+    yield 1;
+  }),
+  digest: t.procedure.query(() => ({ later: Promise.resolve(1) })),
 };
 type AppRouter = typeof router;
 
@@ -48,6 +52,8 @@ const typed = <T>(links: T) => links;
 const http = httpLink({ url: 'http://localhost/trpc' });
 const local = localLink({ router });
 
+type Unstreamed = Exclude<LinkErrorCode, 'STREAM_INTERRUPTED'>;
+
 test("a call's union has the link codes its links declare, and no others", () => {
   const overHttp = createTrpcClient({
     router: routerType<AppRouter>(),
@@ -55,7 +61,7 @@ test("a call's union has the link codes its links declare, and no others", () =>
   });
   expectTypeOf<
     LinkCodesIn<ErrorOf<typeof overHttp.echo.query>>
-  >().toEqualTypeOf<LinkErrorCode>();
+  >().toEqualTypeOf<Unstreamed>();
 
   const inProcess = createTrpcClient({
     router: routerType<AppRouter>(),
@@ -113,7 +119,7 @@ test("a call's union has the link codes its links declare, and no others", () =>
   expectTypeOf(overHttp).toExtend<TrpcClient<AppRouter>>();
   expectTypeOf<
     LinkCodesIn<ErrorOf<TrpcClient<AppRouter>['echo']['query']>>
-  >().toEqualTypeOf<LinkErrorCode>();
+  >().toEqualTypeOf<Unstreamed>();
   expectTypeOf<
     LinkCodesIn<ClientError<inferProcedureErrors<AppRouter['echo']>>>
   >().toEqualTypeOf<LinkErrorCode>();
@@ -175,7 +181,6 @@ test('every link code the client declares is a required key', async () => {
         return 'offline';
       },
       BAD_RESPONSE: () => 'unreadable',
-      STREAM_INTERRUPTED: () => 'interrupted',
       unexpected: (e) => `unexpected ${e.code}`,
     });
   };
@@ -184,7 +189,7 @@ test('every link code the client declares is a required key', async () => {
   expect(await explain('busy')).toBe('unexpected SERVICE_UNAVAILABLE');
 
   const [, err] = await safe(client.echo.query('down'));
-  // @ts-expect-error: NETWORK_ERROR, BAD_RESPONSE and STREAM_INTERRUPTED are missing
+  // @ts-expect-error: NETWORK_ERROR and BAD_RESPONSE are missing
   matchError(err!, {
     BAD_REQUEST: () => 'invalid',
     unexpected: (e: { code: string }) => `unexpected ${e.code}`,

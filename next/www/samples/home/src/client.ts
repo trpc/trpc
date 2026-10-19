@@ -25,7 +25,6 @@ if (err) {
     BAD_REQUEST: (e) => console.log(e.data.issues),
     NETWORK_ERROR: () => console.log('You are offline'),
     BAD_RESPONSE: () => console.log('Try again later'),
-    STREAM_INTERRUPTED: () => console.log('Try again later'),
     unexpected: (e) => console.log(e.code, e.message),
   });
 } else {

@@ -39,14 +39,16 @@ describe('a claim of one boundary code, with no unexpected claim', () => {
   test('subtracts it from the closed union', () => {
     type Left = Remaining<Closed<RenameError>, 'NETWORK_ERROR', false>;
     expectTypeOf<CodeOf<Extract<Left, { defined: false }>>>().toEqualTypeOf<
-      Exclude<BuiltinErrorCode, 'NETWORK_ERROR'> | UndeclaredCode
+      | Exclude<BuiltinErrorCode, 'NETWORK_ERROR' | 'STREAM_INTERRUPTED'>
+      | UndeclaredCode
     >();
   });
 
   test('subtracts it from the client union, which is closed already', () => {
     type Left = Remaining<RenameError, 'NETWORK_ERROR', false>;
     expectTypeOf<CodeOf<Extract<Left, { defined: false }>>>().toEqualTypeOf<
-      Exclude<BuiltinErrorCode, 'NETWORK_ERROR'> | UndeclaredCode
+      | Exclude<BuiltinErrorCode, 'NETWORK_ERROR' | 'STREAM_INTERRUPTED'>
+      | UndeclaredCode
     >();
   });
 });
