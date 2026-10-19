@@ -10,6 +10,19 @@ export const cuts: Record<
   string,
   { readonly what: string; readonly patches: readonly Patch[] }
 > = {
+  'danson-sync': {
+    what: "danSON's stream methods out of createSerializer() (a sync danSON for the Promise httpLink)",
+    patches: [
+      [
+        'serializer/index.ts',
+        `    serializeDeferred: (value, o) =>
+      serializeDeferred(value, { serializers, coerceError: o?.coerceError }),
+    deserializeStream: (frames, o) =>
+      deserializeStream(frames, { ...output, ...o }),`,
+        '    serializeDeferred: undefined as never,\n    deserializeStream: undefined as never,',
+      ],
+    ],
+  },
   sse: {
     what: 'SSE subscriptions out of httpLink (an opt-in sseLink / subscriptions module)',
     patches: [
