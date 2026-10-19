@@ -28,7 +28,7 @@
 - Lost: 3.3 kB gzipped on the minimal client and 3.9 kB on the full one; each is that much further from its target (18 and 25 kB). Malformed base64 is now judged by Effect: CR/LF inside it is skipped and other whitespace rejected, where `atob` skipped all whitespace and took unpadded Lambda bodies. Lambda always pads, and only forged danSON streams carry anything else.
 - Open: kept, since Effect has no API with the same behaviour:
   - `retryLink` and `experimental_durableLink` retry with `Stream.catch` and `Effect.sleep`. `Stream.retry` resets its schedule after the first element, so a stream failing after each element would retry forever where `retries` caps it now, and their `delayMs(attempt, error)` and `retry({ op, error, attempt })` options are public.
-  - `httpLink`'s SSE and `wsLink`'s reconnect loops reset their attempt count on a heard event and resume with `lastEventId`.
+  - `wsLink`'s reconnect loop resets its attempt count on a heard event and resumes with `lastEventId`. `httpLink`'s SSE loop does too, but repeats with `Effect.repeat` ([`http-link-on-effect-http.md`](./http-link-on-effect-http.md)).
   - `experimental_memoryLocker`'s per-key queue: a `ttl` releases another holder's lock by token, which `Semaphore` permits can't do. `experimental_redisLocker` polls Redis with `SET NX` until a deadline.
   - `deepEqual` in `client/links/equal.ts` belongs to `dedupeLink` ([`dedupe-link.md`](./dedupe-link.md)).
   - The Promise client runs its links with `runLinks`, skipping the span code that never runs on Effect's native tracer. That leaves out code instead of copying it.
