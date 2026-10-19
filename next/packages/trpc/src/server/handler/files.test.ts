@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
   createTrpcClient,
+  experimental_httpStreams,
   httpLink,
   localLink,
   safe,
@@ -397,14 +398,22 @@ for (const transport of [
       router: routerType<AppRouter>(),
       links: [
         transport === 'httpLink'
-          ? httpLink({ url: server.url, serializer: danson })
+          ? httpLink({
+              url: server.url,
+              serializer: danson,
+              streams: experimental_httpStreams(),
+            })
           : transport === 'httpLink binary'
-            ? httpLink({ url: server.url, serializer: danson, binary: true })
+            ? httpLink({
+                url: server.url,
+                serializer: danson,
+                streams: experimental_httpStreams({ binary: true }),
+              })
             : transport === 'httpLink binary batch'
               ? httpLink({
                   url: server.url,
                   serializer: danson,
-                  binary: true,
+                  streams: experimental_httpStreams({ binary: true }),
                   batch: true,
                 })
               : transport.startsWith('wsLink')
@@ -469,7 +478,7 @@ test('binary frames carry nested file bytes unencoded when the client accepts th
       httpLink({
         url: server.url,
         serializer: danson,
-        binary: true,
+        streams: experimental_httpStreams({ binary: true }),
         batch: true,
       }),
     ],
@@ -548,7 +557,13 @@ test('files yielded by an async iterable arrive in order', async () => {
   await using server = await createTestServer({ router, serializer: danson });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: server.url, serializer: danson })],
+    links: [
+      httpLink({
+        url: server.url,
+        serializer: danson,
+        streams: experimental_httpStreams(),
+      }),
+    ],
   });
   const names: string[] = [];
   for await (const file of await client.gallery.query()) {

@@ -1,5 +1,6 @@
 import {
   createTrpcClient,
+  experimental_httpStreams,
   httpLink,
   routerType,
   safe,
@@ -348,8 +349,14 @@ test('a streamed result whose deferred slot has no place, or whose chunk is unre
         'trpc-version': '12',
       },
     });
-  const nowhere = clientWith(async () =>
-    jsonl('{"json":{"a":1},"d":[[["x","y"],0,"Promise"]]}', '[0,0,{"json":1}]'),
+  const streams = experimental_httpStreams();
+  const nowhere = clientWith(
+    async () =>
+      jsonl(
+        '{"json":{"a":1},"d":[[["x","y"],0,"Promise"]]}',
+        '[0,0,{"json":1}]',
+      ),
+    { streams },
   );
   const [, err] = await safe(
     Promise.race([nowhere.echo.query('x'), sleep(1000).then(() => 'hung')]),
@@ -358,8 +365,13 @@ test('a streamed result whose deferred slot has no place, or whose chunk is unre
     message: expect.stringContaining('no place in the result'),
   });
 
-  const unreadable = clientWith(async () =>
-    jsonl('{"json":{"a":null},"d":[[["a"],0,"Promise"]]}', '[0,0,{"json":1},'),
+  const unreadable = clientWith(
+    async () =>
+      jsonl(
+        '{"json":{"a":null},"d":[[["a"],0,"Promise"]]}',
+        '[0,0,{"json":1},',
+      ),
+    { streams },
   );
   const out = (await unreadable.echo.query('x')) as { a: Promise<unknown> };
   await expect(out.a).rejects.toBeDefined();

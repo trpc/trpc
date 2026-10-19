@@ -1,5 +1,6 @@
 import {
   createTrpcClient,
+  experimental_httpStreams,
   httpLink,
   link,
   safe,
@@ -69,7 +70,13 @@ async function setup(opts: { serverBatch?: boolean; clientBatch?: boolean }) {
   });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: server.url, batch: opts.clientBatch ?? true })],
+    links: [
+      httpLink({
+        url: server.url,
+        streams: experimental_httpStreams(),
+        batch: opts.clientBatch ?? true,
+      }),
+    ],
   });
   return { server, client, [Symbol.asyncDispose]: () => server.close() };
 }
@@ -160,6 +167,76 @@ test('deferred values stream inside a batch too', async () => {
   expect(ctx.server.requests).toHaveLength(1);
 });
 
+test('without streams, httpLink asks for JSON; an output that streams fails with UNSUPPORTED_PROTOCOL and stops on the server', async () => {
+  await using server = await createTestServer({ router });
+  const client = createTrpcClient({
+    router: routerType<AppRouter>(),
+    links: [httpLink({ url: server.url })],
+  });
+  expect(await client.double.query({ n: 2 })).toBe(4);
+  expect(server.requests.at(-1)!.headers.get('accept')).toBe(
+    'application/json',
+  );
+  const before = ticksStopped;
+  const [, endless] = await safe(client.ticks.mutate());
+  expect(endless).toMatchObject({
+    code: 'UNSUPPORTED_PROTOCOL',
+    message: expect.stringContaining('experimental_httpStreams()'),
+  });
+  await vi.waitFor(() => expect(ticksStopped).toBe(before + 1));
+  const [, deferred] = await safe(client.dashboard.query());
+  expect(deferred).toMatchObject({ code: 'UNSUPPORTED_PROTOCOL' });
+});
+
+test('without streams, batched calls still read deferred values', async () => {
+  await using server = await createTestServer({ router, batch: true });
+  const client = createTrpcClient({
+    router: routerType<AppRouter>(),
+    links: [httpLink({ url: server.url, batch: true })],
+  });
+  const [dashboard, double] = await Promise.all([
+    client.dashboard.query(),
+    client.double.query({ n: 4 }),
+  ]);
+  expect(double).toBe(8);
+  expect(await dashboard.stats).toEqual({ visits: 42 });
+  expect(server.requests.at(-1)!.headers.get('accept')).toBe(
+    'application/jsonl',
+  );
+});
+
+test.each([
+  [{}, 'application/json, application/jsonl', 'application/jsonl'],
+  [
+    { binary: true },
+    'application/json, application/vnd.trpc.frames, application/jsonl',
+    'application/vnd.trpc.frames, application/jsonl',
+  ],
+])(
+  'experimental_httpStreams(%o) asks single calls for %s and batches for %s',
+  async (opts, single, batch) => {
+    await using server = await createTestServer({ router, batch: true });
+    const client = createTrpcClient({
+      router: routerType<AppRouter>(),
+      links: [
+        httpLink({
+          url: server.url,
+          batch: true,
+          streams: experimental_httpStreams(opts),
+        }),
+      ],
+    });
+    const out = await client.dashboard.query(undefined, { batch: false });
+    expect(await out.stats).toEqual({ visits: 42 });
+    expect(server.requests.at(-1)!.headers.get('accept')).toBe(single);
+    await Promise.all([
+      client.double.query({ n: 1 }),
+      client.double.query({ n: 2 }),
+    ]);
+    expect(server.requests.at(-1)!.headers.get('accept')).toBe(batch);
+  },
+);
+
 test('a deferred value that fails rejects on the client', async () => {
   await using ctx = await setup({ clientBatch: false });
   const result = await ctx.client.flaky.query();
@@ -211,7 +288,13 @@ test('a stream that ends early rejects open values with STREAM_INTERRUPTED', asy
   };
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: server.url, fetch: truncating })],
+    links: [
+      httpLink({
+        url: server.url,
+        streams: experimental_httpStreams(),
+        fetch: truncating,
+      }),
+    ],
   });
   const out = await client.dashboard.query();
   const err = await out.stats.then(

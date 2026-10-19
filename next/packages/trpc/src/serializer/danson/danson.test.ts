@@ -1,5 +1,6 @@
 import {
   createTrpcClient,
+  experimental_httpStreams,
   httpLink,
   routerType,
   safe,
@@ -142,6 +143,7 @@ function setup() {
     links: [
       httpLink({
         url: 'http://localhost/trpc',
+        streams: experimental_httpStreams(),
         serializer: danson,
         fetch: (input, init) =>
           handler.fetch(new Request(input as string, init as RequestInit)),
@@ -340,6 +342,7 @@ test('a streamed head the client cannot read fails the call instead of hanging',
     links: [
       httpLink({
         url: 'http://localhost/trpc',
+        streams: experimental_httpStreams(),
         serializer: danson,
         fetch: async () =>
           new Response('{"json":{"_":"$","type":"Nope"}}\n[0,0,{"json":1}]\n', {
@@ -471,6 +474,7 @@ test('forged streams: bad or missing file bytes, bare refs, unreadable frames an
       links: [
         httpLink({
           url: 'http://localhost/trpc',
+          streams: experimental_httpStreams(),
           serializer: danson,
           fetch: async () =>
             new Response(
@@ -532,6 +536,7 @@ test('forged streams: bad or missing file bytes, bare refs, unreadable frames an
     links: [
       httpLink({
         url: 'http://localhost/trpc',
+        streams: experimental_httpStreams(),
         serializer: danson,
         fetch: async () =>
           new Response(

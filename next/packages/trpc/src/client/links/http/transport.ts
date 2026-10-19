@@ -17,7 +17,6 @@ import {
   TrpcError,
   type AnyTrpcError,
 } from '../../../internal/error.ts';
-import { decodeRecords } from '../../../internal/frames.ts';
 import {
   CONTENT_TYPE,
   HEADER,
@@ -35,8 +34,8 @@ import type {
 } from '../../../serializer/index.ts';
 import { toClientError, type Operation } from '../../link.ts';
 import { badResponse, serializeInput } from '../events.ts';
-import { resumeOf, retrying, type Retries } from '../resume.ts';
 import type { Batch } from './batch.ts';
+import type { HttpStreams } from './streams.ts';
 import type { HttpLinkOptions } from './link.ts';
 
 const isAbort = (cause: unknown) =>
@@ -112,6 +111,39 @@ export const abortOnInterrupt = <A, E>(
       Effect.onInterrupt(() => Scope.close(scope, Exit.void)),
     ),
   );
+
+const contentType = (reply: Reply) =>
+  reply.response.headers['content-type'] ?? '';
+
+/** Whether `reply` is a JSONL or frames body. */
+export const streamed = (reply: Reply): boolean => {
+  const type = contentType(reply);
+  return (
+    reply.web.body !== null &&
+    (type.startsWith(CONTENT_TYPE.jsonl) ||
+      type.startsWith(CONTENT_TYPE.frames))
+  );
+};
+
+/** A streamed body's lines, parsed: frames when `frames` decodes them, else JSONL. */
+export const readLines = (
+  reply: Reply,
+  frames: HttpStreams['~trpc']['frames'],
+): Stream.Stream<unknown, AnyTrpcError> => {
+  const bytes = reply.response.stream.pipe(Stream.mapError(toHttpError));
+  return frames && contentType(reply).startsWith(CONTENT_TYPE.frames)
+    ? frames(bytes)
+    : textLines(bytes).pipe(
+        Stream.map((line) => line.trim()),
+        Stream.filter((line) => line !== ''),
+        // Line by line, so the lines before an unreadable one still arrive.
+        // An unreadable line is a defect: what's still open fails as a
+        // broken stream.
+        Stream.mapEffect((line) =>
+          Effect.sync(() => JSON.parse(line) as unknown),
+        ),
+      );
+};
 
 /** What {@link makeTransport} gives the link. */
 export interface Transport {
@@ -322,35 +354,11 @@ export function makeTransport(
       }),
     );
 
-  const streamType = opts.binary
-    ? `${CONTENT_TYPE.frames}, ${CONTENT_TYPE.jsonl}`
-    : CONTENT_TYPE.jsonl;
-  const contentType = (reply: Reply) =>
-    reply.response.headers['content-type'] ?? '';
-  const streamed = (reply: Reply) => {
-    const type = contentType(reply);
-    return (
-      reply.web.body !== null &&
-      (type.startsWith(CONTENT_TYPE.jsonl) ||
-        type.startsWith(CONTENT_TYPE.frames))
-    );
-  };
-  /** A streamed body's lines, parsed. */
-  const readStream = (reply: Reply): Stream.Stream<unknown, AnyTrpcError> => {
-    const bytes = reply.response.stream.pipe(Stream.mapError(toHttpError));
-    return contentType(reply).startsWith(CONTENT_TYPE.frames)
-      ? decodeRecords(bytes)
-      : textLines(bytes).pipe(
-          Stream.map((line) => line.trim()),
-          Stream.filter((line) => line !== ''),
-          // Line by line, so the lines before an unreadable one still arrive.
-          // An unreadable line is a defect: what's still open fails as a
-          // broken stream.
-          Stream.mapEffect((line) =>
-            Effect.sync(() => JSON.parse(line) as unknown),
-          ),
-        );
-  };
+  const streams = opts.streams?.['~trpc'];
+  const singleType = streams
+    ? `${CONTENT_TYPE.json}, ${streams.accept}`
+    : CONTENT_TYPE.json;
+  const batchType = streams?.accept ?? CONTENT_TYPE.jsonl;
 
   /** One call's request: `GET` with its input in the URL, else a body. */
   const call = (
@@ -405,38 +413,6 @@ export function makeTransport(
       );
     });
 
-  /**
-   * `frames`, then, when the connection drops, the rest from a retry that
-   * says how many arrived (`trpc-resume-from`), fed to the same deserializer.
-   */
-  const resumable = (
-    op: Operation,
-    resume: Retries,
-    frames: Stream.Stream<Frame, AnyTrpcError>,
-  ): Stream.Stream<Frame, AnyTrpcError> => {
-    let count = 0;
-    const reopen = abortOnInterrupt(
-      Effect.gen(function* () {
-        const reply = yield* call(op, `${CONTENT_TYPE.json}, ${streamType}`, {
-          [HEADER.resumeFrom]: String(count),
-        });
-        yield* reported(op, reply);
-        if (!ok(reply)) return yield* readError(reply);
-        if (!streamed(reply)) {
-          return yield* Effect.fail(
-            badResponse('A resumed call answered without frames')(),
-          );
-        }
-        return readStream(reply) as Stream.Stream<Frame, AnyTrpcError>;
-      }),
-    );
-    return retrying(resume, (n) =>
-      Stream.tap(n === 0 ? frames : Stream.unwrap(reopen), () =>
-        Effect.sync(() => count++),
-      ),
-    );
-  };
-
   /** A call's output, from its own response. */
   const readResult = (
     reply: Reply,
@@ -455,17 +431,18 @@ export function makeTransport(
       });
     }
     if (streamed(reply)) {
-      const frames = readStream(reply) as Stream.Stream<Frame, AnyTrpcError>;
-      const resume = resumeOf(op.context);
-      return serializer
-        .deserializeStream(resume ? resumable(op, resume, frames) : frames, {
-          reviveError,
-          ...streamErrors,
-        })
-        .pipe(
-          Effect.mapError(toHttpError),
-          Effect.catchDefect((defect) => Effect.fail(toHttpError(defect))),
-        );
+      if (streams) return streams.read(transport, reply, op);
+      // The call has run: a handler streams such an output whatever
+      // `accept` says.
+      return Effect.andThen(
+        Effect.promise(() => reply.web.body!.cancel().catch(() => {})),
+        Effect.fail(
+          new TrpcError({
+            code: 'UNSUPPORTED_PROTOCOL',
+            message: `The output of '${op.path}' streams (${contentType(reply)}), but this httpLink doesn't read streamed outputs. Pass \`streams: experimental_httpStreams()\` to httpLink.`,
+          }),
+        ),
+      );
     }
     return reply.response.text.pipe(
       Effect.flatMap((text) =>
@@ -483,7 +460,7 @@ export function makeTransport(
   const single = (op: Operation): Effect.Effect<unknown, AnyTrpcError> =>
     abortOnInterrupt(
       Effect.gen(function* () {
-        const reply = yield* call(op, `${CONTENT_TYPE.json}, ${streamType}`);
+        const reply = yield* call(op, singleType);
         yield* reported(op, reply);
         return yield* readResult(reply, op);
       }),
@@ -552,7 +529,7 @@ export function makeTransport(
             ops,
             'POST',
             baseUrl,
-            { accept: streamType, [HEADER.batch]: '1' },
+            { accept: batchType, [HEADER.batch]: '1' },
             HttpBody.raw(JSON.stringify(calls), {
               contentType: CONTENT_TYPE.json,
             }),
@@ -570,7 +547,7 @@ export function makeTransport(
           }
           return yield* Effect.fail(err);
         }
-        yield* readStream(reply).pipe(
+        yield* readLines(reply, streams?.frames).pipe(
           Stream.runForEach((line) =>
             onLine(line as BatchLine, reply.web.headers),
           ),
@@ -587,7 +564,7 @@ export function makeTransport(
       );
     });
 
-  return {
+  const transport: Transport = {
     serializer,
     call,
     single,
@@ -597,4 +574,5 @@ export function makeTransport(
     unbatchable,
     batchKey: (op) => `${op.type} ${initKey(op)}`,
   };
+  return transport;
 }

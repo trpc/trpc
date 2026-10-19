@@ -22,6 +22,8 @@ export { dedupeLink } from './dedupe.ts';
 export type { DedupeContext, DedupeLinkOptions } from './dedupe.ts';
 export { httpLink } from './http/link.ts';
 export type { HttpLinkOptions } from './http/link.ts';
+export { experimental_httpStreams } from './http/streams.ts';
+export type { HttpStreams, HttpStreamsOptions } from './http/streams.ts';
 export { localLink } from './local.ts';
 export type { LocalLinkOptions } from './local.ts';
 export {

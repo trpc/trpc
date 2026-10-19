@@ -3,6 +3,7 @@ import { Persistence } from 'effect/persistence';
 import {
   createTrpcClient,
   experimental_durableLink,
+  experimental_httpStreams,
   httpLink,
   safe,
 } from '@trpc12/trpc/client';
@@ -186,6 +187,7 @@ test('experimental_durableLink retries a lost response with the same id', async 
       experimental_durableLink({ delayMs: () => 0 }),
       httpLink({
         url: http.url,
+        streams: experimental_httpStreams(),
         batch: true,
         fetch: async (url, init) => {
           const headers = new Headers(init?.headers);
@@ -391,6 +393,7 @@ test('experimental_durableLink resumes a streamed output mid-stream, on another 
       experimental_durableLink({ delayMs: () => 0 }),
       httpLink({
         url: 'http://localhost/trpc',
+        streams: experimental_httpStreams(),
         fetch: async (url, init) => {
           const request = new Request(url, init);
           sent.push(request.headers.get('trpc-resume-from'));
@@ -422,6 +425,7 @@ test('a resume that fails, then answers without frames, fails what was still ope
       experimental_durableLink({ delayMs: () => 0 }),
       httpLink({
         url: 'http://localhost/trpc',
+        streams: experimental_httpStreams(),
         fetch: async (url, init) => {
           const request = new Request(url, init);
           sent.push(request.headers.get('trpc-resume-from'));
@@ -461,6 +465,7 @@ test('a streamed output keeps going into the store after the client leaves', asy
       experimental_durableLink(),
       httpLink({
         url: 'http://localhost/trpc',
+        streams: experimental_httpStreams(),
         fetch: (url, init) => handler.fetch(new Request(url, init)),
       }),
     ],
@@ -612,7 +617,11 @@ test('inputs with files are kept without a fingerprint; an error that cannot be 
     router,
     links: [
       experimental_durableLink(),
-      httpLink({ url: server.url, serializer: danson }),
+      httpLink({
+        url: server.url,
+        streams: experimental_httpStreams(),
+        serializer: danson,
+      }),
     ],
   });
   const file = new File(['bytes'], 'a.txt');
@@ -655,6 +664,7 @@ test('experimental_durableLink waits before retrying by default; queries and sub
       experimental_durableLink(),
       httpLink({
         url: http.url,
+        streams: experimental_httpStreams(),
         fetch: async (url, init) => {
           sent.push(new Headers(init?.headers).get('trpc-call-id'));
           const res = await fetch(url, init);

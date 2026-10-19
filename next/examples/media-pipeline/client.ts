@@ -8,6 +8,7 @@ import assert from 'node:assert/strict';
 import { Effect, Stream } from 'effect';
 import {
   createTrpcClient,
+  experimental_httpStreams,
   httpLink,
   matchError,
   routerType,
@@ -62,23 +63,41 @@ export async function main(url: string) {
         url,
         batch: true,
         serializer: danson,
+        streams: experimental_httpStreams(),
         fetch: recordingFetch,
       }),
     ],
   });
   const binary = createTrpcClient({
     router,
-    links: [httpLink({ url, serializer: danson, binary: true })],
+    links: [
+      httpLink({
+        url,
+        serializer: danson,
+        streams: experimental_httpStreams({ binary: true }),
+      }),
+    ],
   });
   const superjsonClient = createTrpcClient({
     router,
     links: [
-      httpLink({ url: syncUrl, serializer: sync, fetch: recordingFetch }),
+      httpLink({
+        url: syncUrl,
+        serializer: sync,
+        streams: experimental_httpStreams(),
+        fetch: recordingFetch,
+      }),
     ],
   });
   const effectClient = createEffectClient({
     router,
-    links: [httpLink({ url, serializer: danson })],
+    links: [
+      httpLink({
+        url,
+        serializer: danson,
+        streams: experimental_httpStreams(),
+      }),
+    ],
   });
 
   // --- events: an Effect Stream, followed with the Effect client ------------------------
