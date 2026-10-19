@@ -1,4 +1,4 @@
-import { Effect, Fiber } from 'effect';
+import { Effect, Exit, Fiber, FiberSet, identity, Scope } from 'effect';
 import type { AnyLink } from '@trpc12/trpc/client';
 import { createSerializer } from '@trpc12/trpc/serializer';
 import { sortKeys } from './share.ts';
@@ -102,10 +102,9 @@ interface Entry extends MutableEntry {
   invalidated: boolean;
   error: unknown;
   updatedAt: number;
-  fetching: Promise<void> | undefined;
-  controller: AbortController | undefined;
+  fetching: Fiber.Fiber<void> | undefined;
   listeners: Set<() => void>;
-  cancelGc: (() => void) | undefined;
+  gc: Fiber.Fiber<void> | undefined;
 }
 
 /**
@@ -148,19 +147,16 @@ export interface QueryStore {
   mount(entry: QueryEntry): () => void;
   /** Writes an entry from another store (hydration); only newer data wins. */
   seed(path: string, input: unknown, data: unknown, updatedAt: number): void;
-  /** Detaches the links' listeners and drops every entry. */
+  /**
+   * Detaches the links' listeners, ends the store's requests and timers, and
+   * drops every entry. The store starts no requests after it.
+   */
   dispose(): void;
 }
 
-/** Runs `f` after `ms`, on an Effect fiber; returns the cancel. */
-const after = (ms: number, f: () => void): (() => void) => {
-  const fiber = Effect.runFork(
-    Effect.sleep(ms).pipe(Effect.andThen(Effect.sync(f))),
-  );
-  return () => {
-    Effect.runFork(Fiber.interrupt(fiber));
-  };
-};
+/** Resolves once every fiber has ended, however each ended. */
+const settled = (fibers: Iterable<Fiber.Fiber<void>>): Promise<void> =>
+  Effect.runPromise(Effect.asVoid(Fiber.awaitAll(fibers)));
 
 const owners = new WeakMap<Promise<unknown>, { store: Store; entry: Entry }>();
 
@@ -178,7 +174,7 @@ const matches = (filter: QueryFilter, entry: QueryEntry): boolean =>
 
 export interface StoreOptions {
   readonly links: ReadonlyArray<AnyLink>;
-  /** Runs a query through the client's links. */
+  /** Runs a query through the client's links. Interruption aborts `signal`. */
   readonly request: (
     path: string,
     input: unknown,
@@ -207,6 +203,11 @@ export function createStore(opts: StoreOptions): QueryStore {
   }
   const onMount = merged.flatMap((f) => (f.onMount ? [f.onMount] : []));
   const entries = new Map<string, Entry>();
+  // Link listeners, GC timers and requests end with it, on `dispose()`.
+  const scope = Scope.makeUnsafe();
+  const run = Effect.runSync(
+    Scope.provide(FiberSet.makeRuntime<never, void, never>(), scope),
+  );
 
   const isStale = (entry: QueryEntry) => {
     const e = entry as Entry;
@@ -229,14 +230,19 @@ export function createStore(opts: StoreOptions): QueryStore {
   };
 
   const scheduleGc = (entry: Entry) => {
-    entry.cancelGc?.();
-    entry.cancelGc = undefined;
+    entry.gc?.interruptUnsafe();
+    entry.gc = undefined;
     if (opts.isServer || entry.observers > 0 || entry.fetching) return;
     if (entries.get(entry.key) !== entry) return;
     // Removing an entry cancels its timer, so the entry is still the key's.
-    const drop = () => entries.delete(entry.key);
-    if (gcTime <= 0) drop();
-    else if (Number.isFinite(gcTime)) entry.cancelGc = after(gcTime, drop);
+    if (gcTime <= 0) entries.delete(entry.key);
+    else if (Number.isFinite(gcTime)) {
+      entry.gc = run(
+        Effect.sleep(gcTime).pipe(
+          Effect.andThen(Effect.sync(() => entries.delete(entry.key))),
+        ),
+      );
+    }
   };
 
   const create = (
@@ -258,11 +264,10 @@ export function createStore(opts: StoreOptions): QueryStore {
       error: undefined,
       updatedAt: 0,
       fetching: undefined,
-      controller: undefined,
       observers: 0,
       requested: false,
       listeners: new Set(),
-      cancelGc: undefined,
+      gc: undefined,
       snapshot: {
         isFetching: false,
         isStale: true,
@@ -295,53 +300,53 @@ export function createStore(opts: StoreOptions): QueryStore {
     return () => deferred?.resolve(next);
   };
 
-  const fetch = (entry: Entry): Promise<void> => {
+  const finish = (entry: Entry) => {
+    entry.fetching = undefined;
+    notify(entry);
+    scheduleGc(entry);
+  };
+
+  const load = (entry: Entry): Effect.Effect<void> =>
+    Effect.tryPromise({
+      try: (signal) =>
+        opts.request(entry.path, entry.input, entry.callOptions, signal),
+      catch: identity,
+    }).pipe(
+      Effect.match({
+        onSuccess: (value) => {
+          const release = write(entry, value);
+          finish(entry);
+          release();
+        },
+        onFailure: (error) => {
+          entry.error = error;
+          const deferred = entry.deferred;
+          entry.deferred = undefined;
+          finish(entry);
+          deferred?.reject(error);
+        },
+      }),
+    );
+
+  const fetch = (entry: Entry): Fiber.Fiber<void> => {
     if (entry.fetching) return entry.fetching;
     if (!entry.hasData && !entry.deferred) {
       const deferred = pending<unknown>();
       entry.deferred = deferred;
       own(entry, deferred.promise);
     }
-    const controller = new AbortController();
-    entry.controller = controller;
-    const finish = () => {
-      entry.fetching = undefined;
-      entry.controller = undefined;
-      notify(entry);
-      scheduleGc(entry);
-    };
-    const settled = opts
-      .request(entry.path, entry.input, entry.callOptions, controller.signal)
-      .then(
-        (value) => {
-          if (controller.signal.aborted) return;
-          const release = write(entry, value);
-          finish();
-          release();
-        },
-        (error: unknown) => {
-          if (controller.signal.aborted) return;
-          entry.error = error;
-          const deferred = entry.deferred;
-          entry.deferred = undefined;
-          finish();
-          deferred?.reject(error);
-        },
-      );
-    entry.fetching = settled;
+    const fiber = run(load(entry));
+    entry.fetching = fiber;
     notify(entry);
-    return settled;
+    return fiber;
   };
 
   const drop = (entry: Entry) => {
-    entry.cancelGc?.();
-    entry.controller?.abort();
+    entry.gc?.interruptUnsafe();
+    entry.fetching?.interruptUnsafe();
     entry.fetching = undefined;
-    entry.controller = undefined;
     entries.delete(entry.key);
   };
-
-  const detach: Array<() => void> = [];
 
   const store: Store = {
     '~entries': entries,
@@ -351,7 +356,7 @@ export function createStore(opts: StoreOptions): QueryStore {
       const entry = entries.get(key) ?? create(path, input, callOptions);
       if (entry.fetching || isStale(entry)) {
         entry.requested = true;
-        void fetch(entry);
+        fetch(entry);
       }
       return entry.promise;
     },
@@ -363,16 +368,16 @@ export function createStore(opts: StoreOptions): QueryStore {
     get: (path, input) => entries.get(queryKey(path, input)),
     entries: () => [...entries.values()],
     isStale,
-    refetch: (entry) => fetch(entry as Entry),
-    async invalidate(filter) {
-      const refetches: Array<Promise<void>> = [];
+    refetch: (entry) => settled([fetch(entry as Entry)]),
+    invalidate(filter) {
+      const refetches: Array<Fiber.Fiber<void>> = [];
       for (const entry of entries.values()) {
         if (!matches(filter, entry)) continue;
         entry.invalidated = true;
         if (entry.observers > 0) refetches.push(fetch(entry));
         else notify(entry);
       }
-      await Promise.all(refetches);
+      return settled(refetches);
     },
     setData(path, input, data) {
       const key = queryKey(path, input);
@@ -398,8 +403,8 @@ export function createStore(opts: StoreOptions): QueryStore {
       const e = entry as Entry;
       if (!entries.has(e.key)) entries.set(e.key, e);
       e.observers++;
-      e.cancelGc?.();
-      e.cancelGc = undefined;
+      e.gc?.interruptUnsafe();
+      e.gc = undefined;
       for (const hook of onMount) hook(e, store);
       e.requested = false;
       let mounted = true;
@@ -422,13 +427,14 @@ export function createStore(opts: StoreOptions): QueryStore {
       release();
     },
     dispose() {
-      for (const cleanup of detach.splice(0)) cleanup();
+      Effect.runFork(Scope.close(scope, Exit.void));
       store.remove();
     },
   };
   for (const feature of merged) {
     const cleanup = feature.attach?.(store);
-    if (cleanup) detach.push(cleanup);
+    if (cleanup)
+      Effect.runSync(Scope.addFinalizer(scope, Effect.sync(cleanup)));
   }
   return store;
 }

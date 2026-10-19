@@ -51,6 +51,28 @@ test('one promise per query while it loads, settled for use() once it has', asyn
   expect(posts[0]!.at).toEqual(new Date(0));
 });
 
+test('dispose() ends the requests in flight', async () => {
+  using _db = freshDb();
+  let ended = 0;
+  const trpc = createReactClient({
+    router: routerType<AppRouter>(),
+    links: [
+      cacheLink({ gcTime: 60_000 }),
+      link(() =>
+        Stream.never.pipe(Stream.ensuring(Effect.sync(() => ended++))),
+      ),
+    ],
+    isServer: false,
+  });
+  const post = trpc.post.byId.query({ id: '1' });
+  await tick(5);
+  expect(trpc.store.entryOf(post)?.snapshot.isFetching).toBe(true);
+  trpc.store.dispose();
+  await tick(5);
+  expect(ended).toBe(1);
+  expect(trpc.store.entries()).toHaveLength(0);
+});
+
 test('without links, an entry lives only while something holds it', async () => {
   using _db = freshDb();
   const trpc = make([]);
