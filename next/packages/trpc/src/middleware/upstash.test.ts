@@ -4,7 +4,7 @@ import { RateLimiter, Redis } from 'effect/persistence';
 import {
   experimental_upstashRateLimiterStore,
   experimental_upstashRedis,
-  rateLimit,
+  experimental_rateLimit,
 } from '@trpc12/trpc/middleware';
 import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
 import { expect, test } from 'vite-plus/test';
@@ -42,7 +42,7 @@ const serve = (store: Layer.Layer<RateLimiter.RateLimiterStore>) => {
     router: {
       ping: t.procedure
         .use(
-          rateLimit<{ ctx: { ip: string } }>({
+          experimental_rateLimit<{ ctx: { ip: string } }>({
             key: (opts) => `ping:${opts.ctx.ip}`,
             limit: 2,
             window: '1 minute',
@@ -51,7 +51,7 @@ const serve = (store: Layer.Layer<RateLimiter.RateLimiterStore>) => {
         .query(() => 'pong' as const),
       bucket: t.procedure
         .use(
-          rateLimit<{ ctx: { ip: string } }>({
+          experimental_rateLimit<{ ctx: { ip: string } }>({
             key: (opts) => `bucket:${opts.ctx.ip}`,
             limit: 2,
             window: '1 minute',

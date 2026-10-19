@@ -86,7 +86,7 @@ export interface experimental_UpstashRateLimiterStoreOptions extends experimenta
 
 /**
  * Effect's `RateLimiterStore` on Upstash: Effect's Redis store, with its
- * Lua scripts, over {@link experimental_upstashRedis}. Each `rateLimit()`
+ * Lua scripts, over {@link experimental_upstashRedis}. Each `experimental_rateLimit()`
  * call is one REST request (two the first time a script runs).
  *
  * @example

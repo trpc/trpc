@@ -5,7 +5,7 @@
   - Q26.1: an experimental `@trpc12/trpc/live` with the protocol, `Live.feed()` over a source interface and a memory source; database sources are guides, as publisher backends are.
   - Q26.2: a contiguous integer version per source, so gaps are visible.
   - Q26.3: mutations return their version in their output, which works on every transport; a header becomes safe once `wsLink` provides `'response'`.
-  - Q26.4: `liveCollectionOptions({ getKey, feed })` with `utils.awaitVersion` in a new `@trpc12/tanstack-db`.
+  - Q26.4: `liveCollectionOptions({ getKey, feed })` with `utils.awaitVersion` in a new `@trpc12/experimental-tanstack-db` (experimental by name, as everything hidden in the docs is, [`stability-jsdoc-tags.md`](./stability-jsdoc-tags.md)); `@trpc12/trpc/live`'s values would be `experimental_*`.
   - Q26.5: `wsLink` and HTTP/2 first, plus a pooled feed subscription with a JSON cursor for HTTP/1.1; subscription batching in `httpLink` only if non-live subscriptions hit the cap.
   - Q26.6: shapes are procedure inputs filtered with `ctx` on the server; TanStack DB's on-demand predicates later.
 - Why: the spike ([live-queries](../notes/live-queries.md)) found:

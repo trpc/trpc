@@ -126,8 +126,8 @@ export {
 export {
   tracked,
   type TrackedEnvelope,
-  makeMemoryPublisher,
-  Publisher,
+  experimental_makeMemoryPublisher,
+  experimental_Publisher,
   type MemoryPublisherOptions,
   type PublisherClass,
   type PublisherEvents,

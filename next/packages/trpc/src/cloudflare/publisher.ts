@@ -35,7 +35,7 @@ export interface HibernatingPublisherOptions {
  *
  * @example
  * ```ts
- * class Posts extends Publisher.Service<Posts, { created: Post }>()('Posts') {}
+ * class Posts extends experimental_Publisher.Service<Posts, { created: Post }>()('Posts') {}
  *
  * export class Room extends DurableObject<Env> {
  *   handler = createFetchHandler({

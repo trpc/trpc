@@ -16,7 +16,7 @@ import {
   tracked,
   type CreateContextOpts,
 } from '@trpc12/trpc/server';
-import { serveSocket } from '@trpc12/trpc/socket';
+import { experimental_serveSocket } from '@trpc12/trpc/socket';
 import { expect, test, vi } from 'vite-plus/test';
 import { z } from 'zod';
 
@@ -93,7 +93,7 @@ async function serve(opts: { idleTimeoutMs?: number | false } = {}) {
   const server = Context.get(
     await Effect.runPromise(
       Layer.buildWithScope(
-        serveSocket(handler, opts).pipe(
+        experimental_serveSocket(handler, opts).pipe(
           Layer.provideMerge(
             NodeSocketServer.layer({ port: 0, host: '127.0.0.1' }),
           ),

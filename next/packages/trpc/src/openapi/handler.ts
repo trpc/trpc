@@ -157,7 +157,7 @@ export interface OpenApiHandler<TPlatform = undefined> {
   ) => Promise<Response>;
   /**
    * Serves `request` with one procedure, without matching routes, for
-   * frameworks that route requests themselves (`@trpc12/nest`). The
+   * frameworks that route requests themselves (`@trpc12/experimental-nest`). The
    * handler's `middleware`, `createContext` and `layer` apply as in `fetch`.
    */
   readonly serve: (

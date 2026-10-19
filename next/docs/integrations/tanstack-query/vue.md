@@ -1,16 +1,16 @@
 ---
 title: Vue
-description: '@trpc12/tanstack-vue-query: a Vue plugin or provideTrpc() for the client, useTrpc() in setup, and useSubscription with refs.'
+description: '@trpc12/experimental-tanstack-vue-query: a Vue plugin or provideTrpc() for the client, useTrpc() in setup, and useSubscription with refs.'
 section: Integrations
 parent: integrations/tanstack-query
 order: 3
 experiment: tanstack-query-frameworks
 ---
 
-`@trpc12/tanstack-vue-query` re-exports [`@trpc12/tanstack-query`](../tanstack-query.md) and adds an app plugin (or `provideTrpc()`) that provides a client and its helpers, and a `useSubscription` that returns refs.
+`@trpc12/experimental-tanstack-vue-query` re-exports [`@trpc12/tanstack-query`](../tanstack-query.md) and adds an app plugin (or `provideTrpc()`) that provides a client and its helpers, and a `useSubscription` that returns refs.
 
 ```package-install
-@trpc12/trpc effect @trpc12/tanstack-vue-query @tanstack/vue-query
+@trpc12/trpc effect @trpc12/experimental-tanstack-vue-query @tanstack/vue-query
 ```
 
 The [`examples/experimental/framework-matrix`](../../../examples/experimental/framework-matrix/README.md) app has a page per adapter (Vue, Solid and Svelte) on one server.
@@ -23,7 +23,7 @@ The [`examples/experimental/framework-matrix`](../../../examples/experimental/fr
 // ---cut-start---
 import { createApp, type Component } from 'vue';
 import { VueQueryPlugin } from '@tanstack/vue-query';
-import { createTrpcContext } from '@trpc12/tanstack-vue-query';
+import { createTrpcContext } from '@trpc12/experimental-tanstack-vue-query';
 import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
 import type { AppRouter } from './server.ts';
 declare const App: Component;
@@ -54,7 +54,7 @@ Pass a getter to `useQuery`, so the options follow reactive input; a new input i
 // ---cut-start---
 import { ref } from 'vue';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
-import { createTrpcContext } from '@trpc12/tanstack-vue-query';
+import { createTrpcContext } from '@trpc12/experimental-tanstack-vue-query';
 import type { AppRouter } from './server.ts';
 const useTrpc = createTrpcContext<AppRouter>().useTrpc;
 // ---cut-end---
@@ -82,7 +82,10 @@ const create = useMutation(
 ```ts twoslash
 // ---cut-start---
 import { computed, ref } from 'vue';
-import { createTrpcContext, useSubscription } from '@trpc12/tanstack-vue-query';
+import {
+  createTrpcContext,
+  useSubscription,
+} from '@trpc12/experimental-tanstack-vue-query';
 import { tracked } from '@trpc12/trpc/server';
 import { z } from 'zod';
 import { db, t, type Post } from './server.ts';

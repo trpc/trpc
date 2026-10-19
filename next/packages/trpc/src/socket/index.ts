@@ -9,9 +9,9 @@
  * ```ts
  * import { NodeRuntime, NodeSocketServer } from '@effect/platform-node';
  * import { Layer } from 'effect';
- * import { serveSocket } from '@trpc12/trpc/socket';
+ * import { experimental_serveSocket } from '@trpc12/trpc/socket';
  *
- * serveSocket(createFetchHandler({ router })).pipe(
+ * experimental_serveSocket(createFetchHandler({ router })).pipe(
  *   Layer.provide(NodeSocketServer.layer({ port: 4000 })),
  *   Layer.launch,
  *   NodeRuntime.runMain,
@@ -32,13 +32,13 @@ import {
 import { handlerContext } from '../server/handler/index.ts';
 
 /**
- * Options for {@link serveSocket}.
+ * Options for {@link experimental_serveSocket}.
  * @example
  * ```ts
- * serveSocket(handler, { idleTimeoutMs: false });
+ * experimental_serveSocket(handler, { idleTimeoutMs: false });
  * ```
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
 export interface SocketOptions {
   /**
@@ -56,7 +56,7 @@ export interface SocketOptions {
  * const handler: SocketHandlerLike = createFetchHandler({ router });
  * ```
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
 export interface SocketHandlerLike {
   fetch(request: Request, ...platform: never[]): Promise<Response>;
@@ -86,12 +86,12 @@ const serveOne = (
  *
  * @example
  * ```ts
- * serveSocket(handler).pipe(Layer.provide(NodeSocketServer.layer({ port: 4000 })));
+ * experimental_serveSocket(handler).pipe(Layer.provide(NodeSocketServer.layer({ port: 4000 })));
  * ```
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
-export function serveSocket(
+export function experimental_serveSocket(
   handler: SocketHandlerLike,
   opts: SocketOptions = {},
 ): Layer.Layer<
@@ -102,7 +102,7 @@ export function serveSocket(
   const core = Context.getOrUndefined(handlerContext(handler), SocketCore);
   if (!core) {
     throw new TypeError(
-      'serveSocket() needs a handler from createFetchHandler()',
+      'experimental_serveSocket() needs a handler from createFetchHandler()',
     );
   }
   return Layer.effectDiscard(

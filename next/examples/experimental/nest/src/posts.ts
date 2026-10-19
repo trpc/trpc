@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { initTrpc } from '@trpc12/trpc/server';
 import { experimental_openapi } from '@trpc12/trpc/openapi';
-import { experimental_Implement } from '@trpc12/nest';
+import { Implement } from '@trpc12/experimental-nest';
 import { Context, Effect } from 'effect';
 import { appContract, type Post } from './contract.ts';
 
@@ -62,13 +62,13 @@ export class PostsController {
     this.#posts = posts;
   }
 
-  @experimental_Implement(appContract.health)
+  @Implement(appContract.health)
   health() {
     return impl.health.query(() => 'ok' as const);
   }
 
   // A router: one method adds a Nest route for every procedure below it.
-  @experimental_Implement(appContract.post)
+  @Implement(appContract.post)
   post() {
     return {
       list: impl.post.list.query(() => this.#posts.all()),
@@ -85,7 +85,7 @@ export class PostsController {
     };
   }
 
-  @experimental_Implement(appContract.admin.stats)
+  @Implement(appContract.admin.stats)
   @UseGuards(AdminGuard)
   stats() {
     const posts = this.#posts;

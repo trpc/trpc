@@ -6,7 +6,7 @@ order: 2
 experiment: publisher
 ---
 
-`Publisher` is typed publish/subscribe as an Effect service. Declare a key with its channels, then provide a layer:
+`experimental_Publisher` is typed publish/subscribe as an Effect service. Declare a key with its channels, then provide a layer:
 
 ```ts twoslash
 // ---cut-start---
@@ -18,9 +18,9 @@ const t = initTrpc();
 const PostInput = z.object({ title: z.string() });
 declare function savePost(input: { title: string }): Effect.Effect<Post>;
 // ---cut-end---
-import { Publisher } from '@trpc12/trpc/server';
+import { experimental_Publisher } from '@trpc12/trpc/server';
 
-class Posts extends Publisher.Service<
+class Posts extends experimental_Publisher.Service<
   Posts,
   { created: Post; deleted: { id: string } }
 >()('Posts') {}
@@ -49,12 +49,12 @@ To reach some subscribers only (a room, a user's inbox), give each audience its 
 
 ```ts twoslash
 // ---cut-start---
-import { initTrpc, Publisher } from '@trpc12/trpc/server';
+import { initTrpc, experimental_Publisher } from '@trpc12/trpc/server';
 import { Schema } from 'effect';
 import type { User } from './server.ts';
 const t = initTrpc<{ ctx: { user: User } }>();
 // ---cut-end---
-class Notes extends Publisher.Service<
+class Notes extends experimental_Publisher.Service<
   Notes,
   { [inbox: `inbox:${string}`]: { text: string } }
 >()('Notes') {}
@@ -77,4 +77,4 @@ The backend filters by channel, so a process only receives its subscribers' chan
 
 ## Credits
 
-The `Publisher` follows [oRPC's publisher helpers](https://orpc.dev/docs/helpers/publisher).
+The `experimental_Publisher` follows [oRPC's publisher helpers](https://orpc.dev/docs/helpers/publisher).

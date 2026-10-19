@@ -4,16 +4,16 @@
 - Human, 2026-10-11: "One package, one subpath per framework applies when there's no other deps. In the here we have both tanstack and react as peer dependencies". A subpath of `@trpc12/trpc` is only for code whose dependencies `@trpc12/trpc` already has. An integration that brings its own (peer) dependencies is a separate package.
 - TanStack Query is one package per TanStack adapter, named after TanStack's own (`@tanstack/react-query` → `@trpc12/tanstack-react-query`):
 
-  | Package                          | Peers besides `@trpc12/trpc`                            |
-  | -------------------------------- | ------------------------------------------------------- |
-  | `@trpc12/tanstack-query`         | `@tanstack/query-core`                                  |
-  | `@trpc12/tanstack-react-query`   | `@tanstack/react-query`, `react`                        |
-  | `@trpc12/tanstack-preact-query`  | `@tanstack/preact-query`, `preact`                      |
-  | `@trpc12/tanstack-vue-query`     | `@tanstack/vue-query`, `vue`                            |
-  | `@trpc12/tanstack-solid-query`   | `@tanstack/solid-query`, `solid-js`                     |
-  | `@trpc12/tanstack-svelte-query`  | `@tanstack/svelte-query`, `svelte`                      |
-  | `@trpc12/tanstack-angular-query` | `@tanstack/angular-query-experimental`, `@angular/core` |
-  | `@trpc12/tanstack-lit-query`     | `@tanstack/lit-query`, `lit`, `@lit/context`            |
+  | Package                                       | Peers besides `@trpc12/trpc`                            |
+  | --------------------------------------------- | ------------------------------------------------------- |
+  | `@trpc12/tanstack-query`                      | `@tanstack/query-core`                                  |
+  | `@trpc12/tanstack-react-query`                | `@tanstack/react-query`, `react`                        |
+  | `@trpc12/experimental-tanstack-preact-query`  | `@tanstack/preact-query`, `preact`                      |
+  | `@trpc12/experimental-tanstack-vue-query`     | `@tanstack/vue-query`, `vue`                            |
+  | `@trpc12/experimental-tanstack-solid-query`   | `@tanstack/solid-query`, `solid-js`                     |
+  | `@trpc12/experimental-tanstack-svelte-query`  | `@tanstack/svelte-query`, `svelte`                      |
+  | `@trpc12/experimental-tanstack-angular-query` | `@tanstack/angular-query-experimental`, `@angular/core` |
+  | `@trpc12/experimental-tanstack-lit-query`     | `@tanstack/lit-query`, `lit`, `@lit/context`            |
 
 - (agent) This answers Q19.1 (proposal 19): per-framework packages, not one agnostic package with `./react`.
 - (agent) Each framework package depends on `@trpc12/tanstack-query` and re-exports it, so an app imports from one package.

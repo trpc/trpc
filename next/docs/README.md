@@ -31,7 +31,7 @@ Pages marked (experimental) belong to an experiment, unlisted on the site until 
 
 - [Built-in middleware](./middleware/overview.md): The middleware in @trpc12/trpc/middleware, for logs and metrics, and how to apply it.
 - [Lifecycle hooks](./middleware/lifecycle.md): onStart, onSuccess, onError and onFinish, for logging and metrics.
-- [Rate limiting](./middleware/rate-limit.md) (experimental): rateLimit() counts calls with Effect's RateLimiter, in memory or in Redis, and sets the RateLimit headers.
+- [Rate limiting](./middleware/rate-limit.md) (experimental): experimental_rateLimit() counts calls with Effect's RateLimiter, in memory or in Redis, and sets the RateLimit headers.
 - [Locks](./middleware/lock.md) (experimental): experimental_lock() runs calls with the same key one at a time, across instances.
 - [Durable calls](./middleware/durable.md) (experimental): experimental_durable() keeps a call's result, so a client that lost the response gets it instead of running the mutation twice.
 
@@ -79,19 +79,19 @@ Pages marked (experimental) belong to an experiment, unlisted on the site until 
 - [Cloudflare](./adapters/cloudflare.md) (experimental): Everything in @trpc12/trpc/cloudflare. Durable Objects with hibernating WebSockets, publishers, durable calls, locks and connection tokens, plus Workers Traces.
 - [Message ports](./adapters/message-ports.md) (experimental): Serve calls over a MessagePort, a web Worker or a worker_threads port.
 - [Firebase](./adapters/firebase.md) (experimental): Call procedures from Firebase callable functions and map their errors to HttpsError.
-- [Raw sockets](./adapters/sockets.md) (experimental): serveSocket serves the router over TCP, TLS or Unix sockets, with experimental_socketLink on the client.
+- [Raw sockets](./adapters/sockets.md) (experimental): experimental_serveSocket serves the router over TCP, TLS or Unix sockets, with experimental_socketLink on the client.
 
 ## Integrations
 
 - [Integrations](./integrations/overview.md): Data fetching with TanStack Query, and React and Next.js on the server.
 - [TanStack Query](./integrations/tanstack-query.md): Query, mutation and subscription options for TanStack Query, from one package and its React adapter.
   - [React](./integrations/tanstack-query/react.md): @trpc12/tanstack-react-query: the helpers as a module singleton or through context, Suspense, useSubscription, and server components.
-  - [Preact](./integrations/tanstack-query/preact.md) (experimental): @trpc12/tanstack-preact-query: a context provider for the client, useTrpc() in components, and useSubscription.
-  - [Vue](./integrations/tanstack-query/vue.md) (experimental): @trpc12/tanstack-vue-query: a Vue plugin or provideTrpc() for the client, useTrpc() in setup, and useSubscription with refs.
-  - [Solid](./integrations/tanstack-query/solid.md) (experimental): @trpc12/tanstack-solid-query: a context provider for the client, useTrpc() in components, and useSubscription with reactive getters.
-  - [Svelte](./integrations/tanstack-query/svelte.md) (experimental): @trpc12/tanstack-svelte-query: context helpers for the client, useTrpc() in components, and createSubscription with runes.
-  - [Angular](./integrations/tanstack-query/angular.md) (experimental): @trpc12/tanstack-angular-query: provideTrpc() next to provideTanStackQuery, injectTrpc() in components, and injectSubscription with signals.
-  - [Lit](./integrations/tanstack-query/lit.md) (experimental): @trpc12/tanstack-lit-query: a provider element for the client, useTrpc(this) in elements, and createSubscriptionController.
+  - [Preact](./integrations/tanstack-query/preact.md) (experimental): @trpc12/experimental-tanstack-preact-query: a context provider for the client, useTrpc() in components, and useSubscription.
+  - [Vue](./integrations/tanstack-query/vue.md) (experimental): @trpc12/experimental-tanstack-vue-query: a Vue plugin or provideTrpc() for the client, useTrpc() in setup, and useSubscription with refs.
+  - [Solid](./integrations/tanstack-query/solid.md) (experimental): @trpc12/experimental-tanstack-solid-query: a context provider for the client, useTrpc() in components, and useSubscription with reactive getters.
+  - [Svelte](./integrations/tanstack-query/svelte.md) (experimental): @trpc12/experimental-tanstack-svelte-query: context helpers for the client, useTrpc() in components, and createSubscription with runes.
+  - [Angular](./integrations/tanstack-query/angular.md) (experimental): @trpc12/experimental-tanstack-angular-query: provideTrpc() next to provideTanStackQuery, injectTrpc() in components, and injectSubscription with signals.
+  - [Lit](./integrations/tanstack-query/lit.md) (experimental): @trpc12/experimental-tanstack-lit-query: a provider element for the client, useTrpc(this) in elements, and createSubscriptionController.
   - [Query keys and filters](./integrations/tanstack-query/keys.md): How tRPC's query keys are shaped, the filters that invalidate and read them, and keyPrefix for two APIs in one QueryClient.
   - [Subscriptions in TanStack Query](./integrations/tanstack-query/subscriptions.md): subscriptionOptions() for each framework's subscription primitive, shared between components, and liveOptions() and streamedOptions() in the query cache.
   - [Streamed mutations](./integrations/tanstack-query/streamed-mutations.md): A mutation that returns an async iterable fills in as it streams, with chunksOptions(), and stops on unmount or on demand; long jobs pair a mutation with a subscription.
@@ -104,7 +104,7 @@ Pages marked (experimental) belong to an experiment, unlisted on the site until 
   - [React atoms](./integrations/experimental-react-atom.md) (experimental): Query, mutation and subscription atoms on Effect Atom, typed with each procedure's errors.
 - [AI SDK](./integrations/ai-sdk.md) (experimental): Stream useChat responses from a procedure, and give procedures to the model as tools.
 - [Better Auth](./integrations/better-auth.md) (experimental): Read the Better Auth session in a middleware and type ctx.user with its user.
-- [NestJS](./integrations/nestjs.md) (experimental): Serve a contract from Nest controllers with @trpc12/nest.
+- [NestJS](./integrations/nestjs.md) (experimental): Serve a contract from Nest controllers with @trpc12/experimental-nest.
 
 ## Migrations
 

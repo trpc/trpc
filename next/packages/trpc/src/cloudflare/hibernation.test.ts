@@ -11,7 +11,7 @@ import {
   createFetchHandler,
   initTrpc,
   lazy,
-  Publisher,
+  experimental_Publisher,
   type AnyRouter,
 } from '@trpc12/trpc/server';
 import { jsonSerializer } from '@trpc12/trpc/serializer';
@@ -318,9 +318,10 @@ test('headers past the 2 KB attachment limit are dropped with a warning', async 
   );
 });
 
-class Posts extends Publisher.Service<Posts, { created: { title: string } }>()(
-  'test/HibernatingPosts',
-) {}
+class Posts extends experimental_Publisher.Service<
+  Posts,
+  { created: { title: string } }
+>()('test/HibernatingPosts') {}
 
 const pt = initTrpc();
 
@@ -530,7 +531,7 @@ const RoomToken = experimental_connectionToken(
   },
 );
 
-class Notes extends Publisher.Service<
+class Notes extends experimental_Publisher.Service<
   Notes,
   { [inbox: `inbox:${string}`]: { text: string } }
 >()('test/Notes') {}

@@ -930,7 +930,7 @@ export interface RawSocketLinkOptions
 
 /**
  * Sends every call over a raw socket (TCP, TLS, a Unix socket), to a
- * server run with `serveSocket()` from `@trpc12/trpc/socket`. Messages are the
+ * server run with `experimental_serveSocket()` from `@trpc12/trpc/socket`. Messages are the
  * WebSocket ones, one JSON value per line; reconnects, keep-alive pings
  * and resumed subscriptions work as on {@link wsLink}.
  *

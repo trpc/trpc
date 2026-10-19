@@ -12,7 +12,7 @@
 - Responses are plain JSON, no danSON. A `Blob` or `File` output is the body. Errors are `{ defined, code, status, message, data? }` with the error's status. Deferred values aren't supported over REST.
 - The spec is built from Standard JSON Schema (`~standard.jsonSchema`, `unrepresentable: 'any'`) and Effect's `Schema.toStandardJSONSchemaV1`, so there's no per-library converter. `$defs` are hoisted into `components.schemas`. Declared errors become responses by status; procedures with an input document the 400 validation error; `default` documents the error format.
 - Q18.3: later; the static TypeScript generator isn't ported.
-- `experimental_openApiLink({ url, contract })` reads methods and paths from a `experimental_toContract()` value, sends `multipart/form-data` when the input contains a `Blob`, and reads SSE for subscriptions.
+- `experimental_openApiLink({ url, contract })` reads methods and paths from an `experimental_toContract()` value, sends `multipart/form-data` when the input contains a `Blob`, and reads SSE for subscriptions.
 - Human, 2026-10-16 (Q18.5, decision round): "A". The `experimental_openApiReference({ path, specPath, docsProvider: 'scalar' | 'swagger', specGenerateOptions })` plugin serves the UI from a CDN and generates the document on first request.
 - (agent) Inferred errors are documented by `generateOpenApiFromTypes` ([`openapi-type-generator-v1.md`](./openapi-type-generator-v1.md)).
 - (agent) OpenAPI-to-contract is `experimental_generateContractFromOpenApi` ([`openapi-to-contract.md`](./openapi-to-contract.md)).

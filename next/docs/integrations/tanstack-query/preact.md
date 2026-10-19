@@ -1,16 +1,16 @@
 ---
 title: Preact
-description: '@trpc12/tanstack-preact-query: a context provider for the client, useTrpc() in components, and useSubscription.'
+description: '@trpc12/experimental-tanstack-preact-query: a context provider for the client, useTrpc() in components, and useSubscription.'
 section: Integrations
 parent: integrations/tanstack-query
 order: 2
 experiment: tanstack-query-frameworks
 ---
 
-`@trpc12/tanstack-preact-query` re-exports [`@trpc12/tanstack-query`](../tanstack-query.md) and adds a context for a client and its helpers, and a `useSubscription` hook. It works as the [React](./react.md) package does, with Preact's hooks.
+`@trpc12/experimental-tanstack-preact-query` re-exports [`@trpc12/tanstack-query`](../tanstack-query.md) and adds a context for a client and its helpers, and a `useSubscription` hook. It works as the [React](./react.md) package does, with Preact's hooks.
 
 ```package-install
-@trpc12/trpc effect @trpc12/tanstack-preact-query @tanstack/preact-query
+@trpc12/trpc effect @trpc12/experimental-tanstack-preact-query @tanstack/preact-query
 ```
 
 ## Provide the client
@@ -25,7 +25,7 @@ import {
   QueryClientProvider,
   useQuery,
 } from '@tanstack/preact-query';
-import { createTrpcContext } from '@trpc12/tanstack-preact-query';
+import { createTrpcContext } from '@trpc12/experimental-tanstack-preact-query';
 import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
 import type { ComponentChildren } from 'preact';
 import type { AppRouter } from './server.ts';
@@ -67,7 +67,7 @@ The fourth item is the Preact context itself, for bridging it into another rende
 import {
   createTrpcContext,
   useSubscription,
-} from '@trpc12/tanstack-preact-query';
+} from '@trpc12/experimental-tanstack-preact-query';
 import { t, type Post } from './server.ts';
 declare function onPost(): AsyncIterable<Post>;
 const router = {

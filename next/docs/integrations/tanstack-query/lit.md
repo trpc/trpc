@@ -1,16 +1,16 @@
 ---
 title: Lit
-description: '@trpc12/tanstack-lit-query: a provider element for the client, useTrpc(this) in elements, and createSubscriptionController.'
+description: '@trpc12/experimental-tanstack-lit-query: a provider element for the client, useTrpc(this) in elements, and createSubscriptionController.'
 section: Integrations
 parent: integrations/tanstack-query
 order: 7
 experiment: tanstack-query-frameworks
 ---
 
-`@trpc12/tanstack-lit-query` re-exports [`@trpc12/tanstack-query`](../tanstack-query.md) and adds a provider element and `@lit/context` consumers for a client and its helpers, and a `createSubscriptionController`. Without a provider, `createTrpcQueryUtils({ client })` works in Lit too.
+`@trpc12/experimental-tanstack-lit-query` re-exports [`@trpc12/tanstack-query`](../tanstack-query.md) and adds a provider element and `@lit/context` consumers for a client and its helpers, and a `createSubscriptionController`. Without a provider, `createTrpcQueryUtils({ client })` works in Lit too.
 
 ```package-install
-@trpc12/trpc effect @trpc12/tanstack-lit-query @tanstack/lit-query @lit/context
+@trpc12/trpc effect @trpc12/experimental-tanstack-lit-query @tanstack/lit-query @lit/context
 ```
 
 ## Provide the client
@@ -21,7 +21,7 @@ experiment: tanstack-query-frameworks
 // ---cut-start---
 import { html } from 'lit';
 import { QueryClient, QueryClientProvider } from '@tanstack/lit-query';
-import { createTrpcContext } from '@trpc12/tanstack-lit-query';
+import { createTrpcContext } from '@trpc12/experimental-tanstack-lit-query';
 import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
 import type { AppRouter } from './server.ts';
 // ---cut-end---
@@ -57,7 +57,7 @@ import {
   createMutationController,
   createQueryController,
 } from '@tanstack/lit-query';
-import { createTrpcContext } from '@trpc12/tanstack-lit-query';
+import { createTrpcContext } from '@trpc12/experimental-tanstack-lit-query';
 import type { AppRouter } from './server.ts';
 const useTrpc = createTrpcContext<AppRouter>().useTrpc;
 // ---cut-end---
@@ -95,7 +95,7 @@ import { html, LitElement } from 'lit';
 import {
   createSubscriptionController,
   createTrpcContext,
-} from '@trpc12/tanstack-lit-query';
+} from '@trpc12/experimental-tanstack-lit-query';
 import { z } from 'zod';
 import { t } from './server.ts';
 const router = {

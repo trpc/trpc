@@ -94,17 +94,68 @@ test.each(
 
 test('packages whose docs are in experiments are left out of docs/packages.md', () => {
   expect([...experimental].sort()).toEqual([
+    '@trpc12/experimental-nest',
     '@trpc12/experimental-react',
     '@trpc12/experimental-react-atom',
-    '@trpc12/nest',
-    '@trpc12/tanstack-angular-query',
-    '@trpc12/tanstack-lit-query',
-    '@trpc12/tanstack-preact-query',
-    '@trpc12/tanstack-solid-query',
-    '@trpc12/tanstack-svelte-query',
-    '@trpc12/tanstack-vue-query',
+    '@trpc12/experimental-tanstack-angular-query',
+    '@trpc12/experimental-tanstack-lit-query',
+    '@trpc12/experimental-tanstack-preact-query',
+    '@trpc12/experimental-tanstack-solid-query',
+    '@trpc12/experimental-tanstack-svelte-query',
+    '@trpc12/experimental-tanstack-vue-query',
   ]);
   for (const name of experimental) {
     expect(packagesPage).not.toContain(`\`${name}\``);
   }
 });
+
+test('a package is named experimental- exactly when its docs are in an experiment', () => {
+  expect(
+    packages
+      .map((opts) => opts.name)
+      .filter(
+        (name) =>
+          experimental.has(name) !== name.startsWith('@trpc12/experimental-'),
+      ),
+  ).toEqual([]);
+});
+
+const experimentPages = await run(
+  Effect.gen(function* () {
+    const fs = yield* FileSystem.FileSystem;
+    const path = yield* Path.Path;
+    const docs = path.join(root, 'docs');
+    const files = (yield* fs.readDirectory(docs, { recursive: true })).filter(
+      (file) => file.endsWith('.md'),
+    );
+    const pages = yield* Effect.forEach(files, (file) =>
+      fs.readFileString(path.join(docs, file)),
+    );
+    const byExperiment = new Map<string, string[]>();
+    for (const text of pages) {
+      const id = /^experiment: (\S+)/m.exec(text.split('\n---\n')[0]!)?.[1];
+      if (id !== undefined)
+        byExperiment.set(id, [...(byExperiment.get(id) ?? []), text]);
+    }
+    return byExperiment;
+  }),
+);
+
+/** Experiments of recipes: stable APIs with another library, hidden until reviewed. */
+const recipes = new Set(['integrations', 'tanstack-db']);
+
+test.each([...experimentPages.keys()].sort().map((id) => [id] as const))(
+  'the %s experiment documents experimental_ exports or experimental- packages, unless it is recipes',
+  (id) => {
+    const prefixed = experimentPages
+      .get(id)!
+      .some((text) =>
+        /import\s[^;]*\bexperimental_\w+[^;]*from '@trpc12\/|from '@trpc12\/experimental-/.test(
+          text,
+        ),
+      );
+    expect(prefixed, `${id} documents only stable names`).toBe(
+      !recipes.has(id),
+    );
+  },
+);

@@ -1,5 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/vue-query';
-import { createTrpcContext, useSubscription } from '@trpc12/tanstack-vue-query';
+import {
+  createTrpcContext,
+  useSubscription,
+} from '@trpc12/experimental-tanstack-vue-query';
 import { defineComponent, h } from 'vue';
 import { frameworks } from '../frameworks.ts';
 import type { makeClient } from '../trpc.ts';
@@ -25,7 +28,11 @@ export const App = defineComponent(() => {
         h('div', { class: ui.header }, [
           h('div', [
             h('div', { class: ui.title }, 'Vue'),
-            h('div', { class: ui.description }, '@trpc12/tanstack-vue-query'),
+            h(
+              'div',
+              { class: ui.description },
+              '@trpc12/experimental-tanstack-vue-query',
+            ),
           ]),
           h(
             'span',

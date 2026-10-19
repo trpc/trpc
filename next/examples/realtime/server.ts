@@ -1,6 +1,6 @@
 /**
  * The chat server: rooms anyone can read, and an inbox per user that only
- * its owner can. Both are channels of one `Publisher`, and the backend
+ * its owner can. Both are channels of one `experimental_Publisher`, and the backend
  * (Redis or Postgres) is how separate servers share events.
  *
  * `BACKEND=redis|postgres PORT=3000 node server.ts` serves until Ctrl-C;
@@ -17,7 +17,7 @@ import {
   createFetchHandler,
   error,
   initTrpc,
-  Publisher,
+  experimental_Publisher,
 } from '@trpc12/trpc/server';
 import { z } from 'zod';
 import { createEventsTable, pgPublisher, redisPublisher } from './publisher.ts';
@@ -37,7 +37,9 @@ export type ChatEvents = {
   [inbox: `inbox:${string}`]: Message;
 };
 
-export class Chat extends Publisher.Service<Chat, ChatEvents>()('Chat') {}
+export class Chat extends experimental_Publisher.Service<Chat, ChatEvents>()(
+  'Chat',
+) {}
 
 const users: Record<string, string> = {
   'alice-token': 'alice',

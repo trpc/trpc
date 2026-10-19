@@ -1,16 +1,16 @@
 ---
 title: Angular
-description: '@trpc12/tanstack-angular-query: provideTrpc() next to provideTanStackQuery, injectTrpc() in components, and injectSubscription with signals.'
+description: '@trpc12/experimental-tanstack-angular-query: provideTrpc() next to provideTanStackQuery, injectTrpc() in components, and injectSubscription with signals.'
 section: Integrations
 parent: integrations/tanstack-query
 order: 6
 experiment: tanstack-query-frameworks
 ---
 
-`@trpc12/tanstack-angular-query` re-exports [`@trpc12/tanstack-query`](../tanstack-query.md) and adds a provider and injectors for a client and its helpers, and an `injectSubscription` that returns signals. It's for `@tanstack/angular-query-experimental`.
+`@trpc12/experimental-tanstack-angular-query` re-exports [`@trpc12/tanstack-query`](../tanstack-query.md) and adds a provider and injectors for a client and its helpers, and an `injectSubscription` that returns signals. It's for `@tanstack/angular-query-experimental`.
 
 ```package-install
-@trpc12/trpc effect @trpc12/tanstack-angular-query @tanstack/angular-query-experimental
+@trpc12/trpc effect @trpc12/experimental-tanstack-angular-query @tanstack/angular-query-experimental
 ```
 
 ## Provide the client
@@ -24,7 +24,7 @@ import {
   provideTanStackQuery,
   QueryClient,
 } from '@tanstack/angular-query-experimental';
-import { createTrpcContext } from '@trpc12/tanstack-angular-query';
+import { createTrpcContext } from '@trpc12/experimental-tanstack-angular-query';
 import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
 import type { AppRouter } from './server.ts';
 declare class App {}
@@ -62,7 +62,7 @@ import {
   QueryClient,
 } from '@tanstack/angular-query-experimental';
 import { inject } from '@angular/core';
-import { createTrpcContext } from '@trpc12/tanstack-angular-query';
+import { createTrpcContext } from '@trpc12/experimental-tanstack-angular-query';
 import type { AppRouter } from './server.ts';
 const injectTrpc = createTrpcContext<AppRouter>().injectTrpc;
 // ---cut-end---
@@ -100,7 +100,7 @@ import { Component, signal } from '@angular/core';
 import {
   createTrpcContext,
   injectSubscription,
-} from '@trpc12/tanstack-angular-query';
+} from '@trpc12/experimental-tanstack-angular-query';
 import { z } from 'zod';
 import { t } from './server.ts';
 const router = {

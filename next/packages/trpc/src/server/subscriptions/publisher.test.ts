@@ -2,7 +2,7 @@ import { Effect, Fiber, Layer, Stream } from 'effect';
 import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
 import {
   initTrpc,
-  Publisher,
+  experimental_Publisher,
   type inferRouterServices,
   type TrackedEnvelope,
 } from '@trpc12/trpc/server';
@@ -15,7 +15,7 @@ interface Post {
   title: string;
 }
 
-class Posts extends Publisher.Service<
+class Posts extends experimental_Publisher.Service<
   Posts,
   { created: Post; deleted: { id: string } }
 >()('test/Posts') {}
@@ -43,7 +43,7 @@ test('publish and subscribe as Effects, with ids and channels (14 Q14.6)', async
   ]);
 });
 
-class Chat extends Publisher.Service<
+class Chat extends experimental_Publisher.Service<
   Chat,
   { [room: `chat:${string}`]: { text: string } }
 >()('test/Chat') {}

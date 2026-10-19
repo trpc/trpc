@@ -1,6 +1,6 @@
 # Realtime example
 
-A chat whose servers share events through a `Publisher` on Redis or on Postgres. Clients subscribe over WebSockets (`wsLink`) or read the SSE endpoint with a plain `EventSource`, and resume from their last event id when they come back, when their server restarts, and when a server drops their idle socket.
+A chat whose servers share events through an `experimental_Publisher` on Redis or on Postgres. Clients subscribe over WebSockets (`wsLink`) or read the SSE endpoint with a plain `EventSource`, and resume from their last event id when they come back, when their server restarts, and when a server drops their idle socket.
 
 ```
 server.ts     the router and listen(port, { backend, idleTimeoutMs })
@@ -23,4 +23,4 @@ The restart and keep-alive checks need the second server and the restart that `s
 
 Run it with `pnpm start` here, or `pnpm example` from `next/`. `pnpm server` (`BACKEND=postgres`, `PORT`) and `pnpm client [url]` run the halves apart; start a second server on another port and point a client at each to see events cross servers. It needs Redis (`REDIS_URL`, default `redis://127.0.0.1:6379`) and Postgres (`DATABASE_URL`, default `postgres://postgres:postgres@127.0.0.1:5432/postgres`); the Postgres backend creates its `trpc_events` table on start. Node 24 has `EventSource` behind `--experimental-eventsource`, which `pnpm start` and `pnpm client` pass.
 
-`Publisher` is tagged stable, but its docs pages (and the backend recipes') are still hidden for review, so treat that part as unreviewed.
+`experimental_Publisher` is experimental: its docs pages (and the backend recipes') are still hidden for review, and it might change or go away in any release.

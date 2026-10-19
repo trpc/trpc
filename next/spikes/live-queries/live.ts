@@ -1,5 +1,5 @@
 /**
- * Spike (proposal 26): live queries on the `Publisher`, the server half.
+ * Spike (proposal 26): live queries on the `experimental_Publisher`, the server half.
  *
  * A live table keeps rows, a version and a bounded log of commits, and
  * publishes each commit on a `LiveCommits` channel. A feed is what a
@@ -15,7 +15,11 @@
  * Nothing here is decided API.
  */
 import { Effect, Semaphore, Stream } from 'effect';
-import { Publisher, tracked, type TrackedEnvelope } from '@trpc12/trpc/server';
+import {
+  experimental_Publisher,
+  tracked,
+  type TrackedEnvelope,
+} from '@trpc12/trpc/server';
 
 /** A row change, in the shape TanStack DB's sync `write()` takes. */
 export type Change<Row> =
@@ -42,7 +46,7 @@ export interface Commit<Row = unknown> {
 }
 
 /** The fan-out between processes: one channel per table. */
-export class LiveCommits extends Publisher.Service<
+export class LiveCommits extends experimental_Publisher.Service<
   LiveCommits,
   { [table: `table:${string}`]: Commit }
 >()('LiveCommits') {}

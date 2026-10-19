@@ -1,20 +1,20 @@
 ---
 title: Rate limiting
-description: rateLimit() counts calls with Effect's RateLimiter, in memory, Redis, Upstash or Durable Objects, and sets the RateLimit headers.
+description: experimental_rateLimit() counts calls with Effect's RateLimiter, in memory, Redis, Upstash or Durable Objects, and sets the RateLimit headers.
 section: Middleware
 order: 2
 experiment: middleware
 ---
 
-`rateLimit()` counts calls with Effect's `RateLimiter` (`effect/persistence`). The store is a layer on the handler: `layerStoreMemory` for one instance, `layerStoreRedis` for many.
+`experimental_rateLimit()` counts calls with Effect's `RateLimiter` (`effect/persistence`). The store is a layer on the handler: `layerStoreMemory` for one instance, `layerStoreRedis` for many.
 
 ```ts
 import { RateLimiter } from 'effect/persistence';
-import { rateLimit } from '@trpc12/trpc/middleware';
+import { experimental_rateLimit } from '@trpc12/trpc/middleware';
 
 const login = t.procedure
   .use(
-    rateLimit<{ ctx: { ip: string } }>({
+    experimental_rateLimit<{ ctx: { ip: string } }>({
       key: (opts) => `login:${opts.ctx.ip}`,
       limit: 5,
       window: '1 minute',
@@ -28,7 +28,7 @@ createFetchHandler({
 });
 ```
 
-Past the limit it fails with `RateLimited` (`TOO_MANY_REQUESTS`, 429, `data: { limit, retryAfter }` in milliseconds), and it sets `RateLimit-Limit`, `RateLimit-Remaining`, `RateLimit-Reset` and `Retry-After`. `onExceeded: 'delay'` waits for capacity instead.
+Past the limit it fails with `experimental_RateLimited` (`TOO_MANY_REQUESTS`, 429, `data: { limit, retryAfter }` in milliseconds), and it sets `RateLimit-Limit`, `RateLimit-Remaining`, `RateLimit-Reset` and `Retry-After`. `onExceeded: 'delay'` waits for capacity instead.
 
 ## Stores
 
@@ -78,12 +78,12 @@ createFetchHandler({
 
 `experimental_durableRateLimiterStore(env.RATE_LIMITS)` counts each key in its own Durable Object, with the object's clock and storage, so a limit holds across Worker instances and evictions, and each call can pass its own `limit`, `window` and algorithm. It's one subrequest per call. The object delegates to `experimental_durableRateLimitObject(this.ctx)`, whose alarm deletes the counters once they expire ([Cloudflare](../adapters/cloudflare.md#rate-limits)).
 
-Cloudflare's Rate Limiting binding (`env.LIMITER.limit({ key })`) isn't a store. Its limit and period (10 or 60 seconds) are fixed in `wrangler.jsonc`, it counts per Cloudflare location and settles eventually, and it answers only `{ success }`. So it can't take `rateLimit()`'s `limit` and `window`, run a token bucket, or fill in `RateLimit-Remaining` and `Retry-After`. To use it, call it from your own middleware and fail with `RateLimited`.
+Cloudflare's Rate Limiting binding (`env.LIMITER.limit({ key })`) isn't a store. Its limit and period (10 or 60 seconds) are fixed in `wrangler.jsonc`, it counts per Cloudflare location and settles eventually, and it answers only `{ success }`. So it can't take `experimental_rateLimit()`'s `limit` and `window`, run a token bucket, or fill in `RateLimit-Remaining` and `Retry-After`. To use it, call it from your own middleware and fail with `experimental_RateLimited`.
 
 ## On the client
 
-`RateLimited` is a typed error, so the client narrows on its code. `retryLink({ retry, delayMs })` gets the error, so it can wait `error.data.retryAfter` ([retryLink](../client/links/retry.md#waiting-out-a-rate-limit)).
+`experimental_RateLimited` is a typed error, so the client narrows on its code. `retryLink({ retry, delayMs })` gets the error, so it can wait `error.data.retryAfter` ([retryLink](../client/links/retry.md#waiting-out-a-rate-limit)).
 
 ## Credits
 
-`rateLimit()` follows [oRPC's rate limit helpers](https://orpc.dev/docs/helpers/ratelimit).
+`experimental_rateLimit()` follows [oRPC's rate limit helpers](https://orpc.dev/docs/helpers/ratelimit).

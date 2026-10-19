@@ -28,7 +28,7 @@ Tests sit in five workspace packages under `next/test/`, away from the code they
 
   Their dependencies are declared by the test packages, not by the packages under test.
 
-- **Already in `src/`:** `packages/nest/src/index.test.ts`, `packages/upgrade/src/transform.test.ts`, `packages/trpc/src/exports.test.ts` and two `internal/*.test.ts` files.
+- **Already in `src/`:** `packages/experimental-nest/src/index.test.ts`, `packages/upgrade/src/transform.test.ts`, `packages/trpc/src/exports.test.ts` and two `internal/*.test.ts` files.
 - **v11** has a shared `packages/tests` package (`server/`, `showcase/`) and per-package `test/` folders with snapshots. Not a model to copy.
 
 ## Goals
@@ -99,7 +99,7 @@ The TanStack app fixture (200 lines: router, server, `createApp`) is used by eig
 **A — it lives in the package the others build on, and they import it by relative path** ⭐
 
 ```ts
-// packages/tanstack-vue-query/src/index.test.ts
+// packages/experimental-tanstack-vue-query/src/index.test.ts
 import { createApp } from '../../tanstack-query/src/fixtures/app.ts';
 ```
 

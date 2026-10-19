@@ -6,18 +6,18 @@ import { tracked, type TrackedEnvelope } from './tracked.ts';
  * For a channel per audience (a room, a user), key it with a template
  * literal type such as `chat:${string}` and publish to `chat:${roomId}`.
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
 export type PublisherEvents = Record<string, unknown>;
 
 /**
- * Options for `Publisher.subscribe`.
+ * Options for `experimental_Publisher.subscribe`.
  * @example
  * ```ts
  * Posts.subscribe('created', { lastEventId });
  * ```
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
 export interface SubscribeOptions {
   /** Kept events after this id come first. */
@@ -28,7 +28,7 @@ export interface SubscribeOptions {
  * What a publisher service does. Events carry ids, so subscribers resume
  * from `lastEventId` when the backend keeps history.
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
 export interface PublisherShape<TEvents extends PublisherEvents> {
   /** Sends an event to the channel's subscribers. Succeeds with its id. */
@@ -49,7 +49,7 @@ export interface PublisherShape<TEvents extends PublisherEvents> {
 /**
  * Options for the in-memory layer.
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
 export interface MemoryPublisherOptions {
   /**
@@ -61,10 +61,10 @@ export interface MemoryPublisherOptions {
 }
 
 /**
- * The class `Publisher.Service` makes: a `Context` key for the publisher,
+ * The class `experimental_Publisher.Service` makes: a `Context` key for the publisher,
  * with an in-memory layer and accessors.
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
 export interface PublisherClass<
   Self,
@@ -97,9 +97,11 @@ interface Event {
 /**
  * The in-memory publisher, for a layer of your own key.
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
-export const makeMemoryPublisher = <TEvents extends PublisherEvents>(
+export const experimental_makeMemoryPublisher = <
+  TEvents extends PublisherEvents,
+>(
   opts: MemoryPublisherOptions = {},
 ): Effect.Effect<PublisherShape<TEvents>, never, Scope.Scope> =>
   Effect.map(memoryPublisher(opts), (p) => p.shape as PublisherShape<TEvents>);
@@ -183,7 +185,7 @@ export const memoryPublisher = (
  *
  * @example
  * ```ts
- * class Posts extends Publisher.Service<Posts, { created: Post }>()('Posts') {}
+ * class Posts extends experimental_Publisher.Service<Posts, { created: Post }>()('Posts') {}
  *
  * const router = {
  *   create: t.procedure.input(PostInput).mutation(({ input }) =>
@@ -200,9 +202,9 @@ export const memoryPublisher = (
  * createFetchHandler({ router, layer: Posts.memory({ buffer: 100 }) });
  * ```
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
-export const Publisher = {
+export const experimental_Publisher = {
   Service:
     <Self, TEvents extends PublisherEvents>() =>
     <const Key extends string>(
@@ -215,7 +217,9 @@ export const Publisher = {
       >;
       return Object.assign(Base, {
         memory: (opts?: MemoryPublisherOptions) =>
-          Layer.effect(service)(makeMemoryPublisher<TEvents>(opts)),
+          Layer.effect(service)(
+            experimental_makeMemoryPublisher<TEvents>(opts),
+          ),
         publish: (channel: string, data: unknown) =>
           Effect.flatMap(service, (p) => p.publish(channel, data as never)),
         subscribe: (channel: string, opts?: SubscribeOptions) =>

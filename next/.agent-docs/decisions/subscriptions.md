@@ -4,7 +4,10 @@
 - Human, 2026-10-15 (Q14.6): "Build something thay works great with effect and their integrations, it doesn't have to satisfy non effect people". The publisher is an Effect service provided as a layer: an in-memory layer on `PubSub` with an optional resume buffer, and other backends by swapping the layer. No Promise wrapper.
 
   ```ts
-  class Posts extends Publisher.Service<Posts, { created: Post }>()('Posts') {}
+  class Posts extends experimental_Publisher.Service<
+    Posts,
+    { created: Post }
+  >()('Posts') {}
   yield * Posts.publish('created', post); // in a mutation's Effect
   const onPost = t.procedure.subscription(({ lastEventId }) =>
     Posts.subscribe('created', { lastEventId }),

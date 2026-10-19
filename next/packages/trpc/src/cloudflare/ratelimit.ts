@@ -197,7 +197,7 @@ export interface experimental_DurableRateLimiterStoreOptions {
 
 /**
  * Effect's `RateLimiterStore` on Durable Objects: each key is an object
- * running {@link experimental_durableRateLimitObject}, so `rateLimit()`
+ * running {@link experimental_durableRateLimitObject}, so `experimental_rateLimit()`
  * counts one limit across every Worker instance, with whatever `limit` and
  * `window` each call passes. One subrequest per call. Adaptive limiting
  * (Effect's `RateLimiter.adaptiveConsume`) isn't stored: it always reports

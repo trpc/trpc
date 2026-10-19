@@ -328,15 +328,15 @@ importers:
       '@tanstack/vue-query':
         specifier: 5.104.1
         version: 5.104.1(vue@3.5.43(typescript@7.0.2))
-      '@trpc12/tanstack-solid-query':
+      '@trpc12/experimental-tanstack-solid-query':
         specifier: workspace:*
-        version: link:../../../packages/tanstack-solid-query
-      '@trpc12/tanstack-svelte-query':
+        version: link:../../../packages/experimental-tanstack-solid-query
+      '@trpc12/experimental-tanstack-svelte-query':
         specifier: workspace:*
-        version: link:../../../packages/tanstack-svelte-query
-      '@trpc12/tanstack-vue-query':
+        version: link:../../../packages/experimental-tanstack-svelte-query
+      '@trpc12/experimental-tanstack-vue-query':
         specifier: workspace:*
-        version: link:../../../packages/tanstack-vue-query
+        version: link:../../../packages/experimental-tanstack-vue-query
       '@trpc12/trpc':
         specifier: workspace:*
         version: link:../../../packages/trpc
@@ -395,9 +395,9 @@ importers:
       '@nestjs/platform-express':
         specifier: 12.1.3
         version: 12.1.3(@nestjs/common@12.1.3(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@10.2.2))(@nestjs/core@12.1.3)(supports-color@10.2.2)
-      '@trpc12/nest':
+      '@trpc12/experimental-nest':
         specifier: workspace:*
-        version: link:../../../packages/nest
+        version: link:../../../packages/experimental-nest
       '@trpc12/trpc':
         specifier: workspace:*
         version: link:../../../packages/trpc
@@ -1058,6 +1058,45 @@ importers:
         specifier: ^7.0.2
         version: 7.0.2
 
+  packages/experimental-nest:
+    devDependencies:
+      '@effect/platform-node':
+        specifier: ^4.0.2
+        version: 4.0.2(effect@4.0.2)(redis@6.3.0(@opentelemetry/api@1.9.1))
+      '@nestjs/common':
+        specifier: ^12.1.3
+        version: 12.1.3(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@10.2.2)
+      '@nestjs/core':
+        specifier: ^12.1.3
+        version: 12.1.3(@nestjs/common@12.1.3(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@10.2.2))(@nestjs/platform-express@12.1.3)(reflect-metadata@0.2.2)(rxjs@7.8.2)
+      '@nestjs/platform-express':
+        specifier: 12.1.3
+        version: 12.1.3(@nestjs/common@12.1.3(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@10.2.2))(@nestjs/core@12.1.3)(supports-color@10.2.2)
+      '@tooling/tsconfig':
+        specifier: workspace:*
+        version: link:../../tooling/tsconfig
+      '@trpc12/trpc':
+        specifier: workspace:*
+        version: link:../trpc
+      '@types/node':
+        specifier: ^24.0.0
+        version: 24.19.1
+      effect:
+        specifier: ^4.0.2
+        version: 4.0.2
+      reflect-metadata:
+        specifier: 0.2.2
+        version: 0.2.2
+      rxjs:
+        specifier: ^7.8.2
+        version: 7.8.2
+      typescript:
+        specifier: ^7.0.2
+        version: 7.0.2
+      vite-plus:
+        specifier: 1.1.0
+        version: 1.1.0(@opentelemetry/api@1.9.1)(@types/node@24.19.1)(@vitest/coverage-v8@5.0.3)(@vitest/ui@5.0.3)(esbuild@0.28.2)(happy-dom@20.14.6)(jiti@2.7.0)(svelte@5.57.2)(typescript@7.0.2)(yaml@2.9.1)
+
   packages/experimental-react:
     devDependencies:
       '@tooling/tsconfig':
@@ -1133,46 +1172,7 @@ importers:
         specifier: 1.1.0
         version: 1.1.0(@opentelemetry/api@1.9.1)(@types/node@24.19.1)(@vitest/coverage-v8@5.0.3)(@vitest/ui@5.0.3)(esbuild@0.28.2)(happy-dom@20.14.6)(jiti@2.7.0)(svelte@5.57.2)(typescript@7.0.2)(yaml@2.9.1)
 
-  packages/nest:
-    devDependencies:
-      '@effect/platform-node':
-        specifier: ^4.0.2
-        version: 4.0.2(effect@4.0.2)(redis@6.3.0(@opentelemetry/api@1.9.1))
-      '@nestjs/common':
-        specifier: ^12.1.3
-        version: 12.1.3(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@10.2.2)
-      '@nestjs/core':
-        specifier: ^12.1.3
-        version: 12.1.3(@nestjs/common@12.1.3(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@10.2.2))(@nestjs/platform-express@12.1.3)(reflect-metadata@0.2.2)(rxjs@7.8.2)
-      '@nestjs/platform-express':
-        specifier: 12.1.3
-        version: 12.1.3(@nestjs/common@12.1.3(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@10.2.2))(@nestjs/core@12.1.3)(supports-color@10.2.2)
-      '@tooling/tsconfig':
-        specifier: workspace:*
-        version: link:../../tooling/tsconfig
-      '@trpc12/trpc':
-        specifier: workspace:*
-        version: link:../trpc
-      '@types/node':
-        specifier: ^24.0.0
-        version: 24.19.1
-      effect:
-        specifier: ^4.0.2
-        version: 4.0.2
-      reflect-metadata:
-        specifier: 0.2.2
-        version: 0.2.2
-      rxjs:
-        specifier: ^7.8.2
-        version: 7.8.2
-      typescript:
-        specifier: ^7.0.2
-        version: 7.0.2
-      vite-plus:
-        specifier: 1.1.0
-        version: 1.1.0(@opentelemetry/api@1.9.1)(@types/node@24.19.1)(@vitest/coverage-v8@5.0.3)(@vitest/ui@5.0.3)(esbuild@0.28.2)(happy-dom@20.14.6)(jiti@2.7.0)(svelte@5.57.2)(typescript@7.0.2)(yaml@2.9.1)
-
-  packages/tanstack-angular-query:
+  packages/experimental-tanstack-angular-query:
     dependencies:
       '@trpc12/tanstack-query':
         specifier: workspace:*
@@ -1224,7 +1224,7 @@ importers:
         specifier: 1.1.0
         version: 1.1.0(@opentelemetry/api@1.9.1)(@types/node@24.19.1)(@vitest/coverage-v8@5.0.3)(@vitest/ui@5.0.3)(esbuild@0.28.2)(happy-dom@20.14.6)(jiti@2.7.0)(svelte@5.57.2)(typescript@7.0.2)(yaml@2.9.1)
 
-  packages/tanstack-lit-query:
+  packages/experimental-tanstack-lit-query:
     dependencies:
       '@trpc12/tanstack-query':
         specifier: workspace:*
@@ -1264,7 +1264,7 @@ importers:
         specifier: 1.1.0
         version: 1.1.0(@opentelemetry/api@1.9.1)(@types/node@24.19.1)(@vitest/coverage-v8@5.0.3)(@vitest/ui@5.0.3)(esbuild@0.28.2)(happy-dom@20.14.6)(jiti@2.7.0)(svelte@5.57.2)(typescript@7.0.2)(yaml@2.9.1)
 
-  packages/tanstack-preact-query:
+  packages/experimental-tanstack-preact-query:
     dependencies:
       '@trpc12/tanstack-query':
         specifier: workspace:*
@@ -1300,6 +1300,117 @@ importers:
       vite-plus:
         specifier: 1.1.0
         version: 1.1.0(@opentelemetry/api@1.9.1)(@types/node@24.19.1)(@vitest/coverage-v8@5.0.3)(@vitest/ui@5.0.3)(esbuild@0.28.2)(happy-dom@20.14.6)(jiti@2.7.0)(svelte@5.57.2)(typescript@7.0.2)(yaml@2.9.1)
+
+  packages/experimental-tanstack-solid-query:
+    dependencies:
+      '@trpc12/tanstack-query':
+        specifier: workspace:*
+        version: link:../tanstack-query
+    devDependencies:
+      '@tanstack/query-core':
+        specifier: 5.104.1
+        version: 5.104.1
+      '@tanstack/solid-query':
+        specifier: 5.104.1
+        version: 5.104.1(solid-js@1.9.17)
+      '@tooling/tsconfig':
+        specifier: workspace:*
+        version: link:../../tooling/tsconfig
+      '@trpc12/trpc':
+        specifier: workspace:*
+        version: link:../trpc
+      '@types/node':
+        specifier: ^24.0.0
+        version: 24.19.1
+      effect:
+        specifier: 4.0.2
+        version: 4.0.2
+      happy-dom:
+        specifier: 20.14.6
+        version: 20.14.6
+      solid-js:
+        specifier: 1.9.17
+        version: 1.9.17
+      typescript:
+        specifier: ^7.0.2
+        version: 7.0.2
+      vite-plus:
+        specifier: 1.1.0
+        version: 1.1.0(@opentelemetry/api@1.9.1)(@types/node@24.19.1)(@vitest/coverage-v8@5.0.3)(@vitest/ui@5.0.3)(esbuild@0.28.2)(happy-dom@20.14.6)(jiti@2.7.0)(svelte@5.57.2)(typescript@7.0.2)(yaml@2.9.1)
+
+  packages/experimental-tanstack-svelte-query:
+    dependencies:
+      '@trpc12/tanstack-query':
+        specifier: workspace:*
+        version: link:../tanstack-query
+    devDependencies:
+      '@tanstack/query-core':
+        specifier: 5.104.1
+        version: 5.104.1
+      '@tanstack/svelte-query':
+        specifier: 6.3.1
+        version: 6.3.1(svelte@5.57.2)
+      '@tooling/tsconfig':
+        specifier: workspace:*
+        version: link:../../tooling/tsconfig
+      '@trpc12/trpc':
+        specifier: workspace:*
+        version: link:../trpc
+      '@types/node':
+        specifier: ^24.0.0
+        version: 24.19.1
+      effect:
+        specifier: 4.0.2
+        version: 4.0.2
+      happy-dom:
+        specifier: 20.14.6
+        version: 20.14.6
+      svelte:
+        specifier: 5.57.2
+        version: 5.57.2
+      typescript:
+        specifier: ^7.0.2
+        version: 7.0.2
+      vite-plus:
+        specifier: 1.1.0
+        version: 1.1.0(@opentelemetry/api@1.9.1)(@types/node@24.19.1)(@vitest/coverage-v8@5.0.3)(@vitest/ui@5.0.3)(esbuild@0.28.2)(happy-dom@20.14.6)(jiti@2.7.0)(svelte@5.57.2)(typescript@7.0.2)(yaml@2.9.1)
+
+  packages/experimental-tanstack-vue-query:
+    dependencies:
+      '@trpc12/tanstack-query':
+        specifier: workspace:*
+        version: link:../tanstack-query
+    devDependencies:
+      '@tanstack/query-core':
+        specifier: 5.104.1
+        version: 5.104.1
+      '@tanstack/vue-query':
+        specifier: 5.104.1
+        version: 5.104.1(vue@3.5.43(typescript@7.0.2))
+      '@tooling/tsconfig':
+        specifier: workspace:*
+        version: link:../../tooling/tsconfig
+      '@trpc12/trpc':
+        specifier: workspace:*
+        version: link:../trpc
+      '@types/node':
+        specifier: ^24.0.0
+        version: 24.19.1
+      effect:
+        specifier: 4.0.2
+        version: 4.0.2
+      happy-dom:
+        specifier: 20.14.6
+        version: 20.14.6
+      typescript:
+        specifier: ^7.0.2
+        version: 7.0.2
+      vite-plus:
+        specifier: 1.1.0
+        version: 1.1.0(@opentelemetry/api@1.9.1)(@types/node@24.19.1)(@vitest/coverage-v8@5.0.3)(@vitest/ui@5.0.3)(esbuild@0.28.2)(happy-dom@20.14.6)(jiti@2.7.0)(svelte@5.57.2)(typescript@7.0.2)(yaml@2.9.1)
+      vue:
+        specifier: 3.5.43
+        version: 3.5.43(typescript@7.0.2)
 
   packages/tanstack-query:
     devDependencies:
@@ -1385,117 +1496,6 @@ importers:
       vite-plus:
         specifier: 1.1.0
         version: 1.1.0(@opentelemetry/api@1.9.1)(@types/node@24.19.1)(@vitest/coverage-v8@5.0.3)(@vitest/ui@5.0.3)(esbuild@0.28.2)(happy-dom@20.14.6)(jiti@2.7.0)(svelte@5.57.2)(typescript@7.0.2)(yaml@2.9.1)
-
-  packages/tanstack-solid-query:
-    dependencies:
-      '@trpc12/tanstack-query':
-        specifier: workspace:*
-        version: link:../tanstack-query
-    devDependencies:
-      '@tanstack/query-core':
-        specifier: 5.104.1
-        version: 5.104.1
-      '@tanstack/solid-query':
-        specifier: 5.104.1
-        version: 5.104.1(solid-js@1.9.17)
-      '@tooling/tsconfig':
-        specifier: workspace:*
-        version: link:../../tooling/tsconfig
-      '@trpc12/trpc':
-        specifier: workspace:*
-        version: link:../trpc
-      '@types/node':
-        specifier: ^24.0.0
-        version: 24.19.1
-      effect:
-        specifier: 4.0.2
-        version: 4.0.2
-      happy-dom:
-        specifier: 20.14.6
-        version: 20.14.6
-      solid-js:
-        specifier: 1.9.17
-        version: 1.9.17
-      typescript:
-        specifier: ^7.0.2
-        version: 7.0.2
-      vite-plus:
-        specifier: 1.1.0
-        version: 1.1.0(@opentelemetry/api@1.9.1)(@types/node@24.19.1)(@vitest/coverage-v8@5.0.3)(@vitest/ui@5.0.3)(esbuild@0.28.2)(happy-dom@20.14.6)(jiti@2.7.0)(svelte@5.57.2)(typescript@7.0.2)(yaml@2.9.1)
-
-  packages/tanstack-svelte-query:
-    dependencies:
-      '@trpc12/tanstack-query':
-        specifier: workspace:*
-        version: link:../tanstack-query
-    devDependencies:
-      '@tanstack/query-core':
-        specifier: 5.104.1
-        version: 5.104.1
-      '@tanstack/svelte-query':
-        specifier: 6.3.1
-        version: 6.3.1(svelte@5.57.2)
-      '@tooling/tsconfig':
-        specifier: workspace:*
-        version: link:../../tooling/tsconfig
-      '@trpc12/trpc':
-        specifier: workspace:*
-        version: link:../trpc
-      '@types/node':
-        specifier: ^24.0.0
-        version: 24.19.1
-      effect:
-        specifier: 4.0.2
-        version: 4.0.2
-      happy-dom:
-        specifier: 20.14.6
-        version: 20.14.6
-      svelte:
-        specifier: 5.57.2
-        version: 5.57.2
-      typescript:
-        specifier: ^7.0.2
-        version: 7.0.2
-      vite-plus:
-        specifier: 1.1.0
-        version: 1.1.0(@opentelemetry/api@1.9.1)(@types/node@24.19.1)(@vitest/coverage-v8@5.0.3)(@vitest/ui@5.0.3)(esbuild@0.28.2)(happy-dom@20.14.6)(jiti@2.7.0)(svelte@5.57.2)(typescript@7.0.2)(yaml@2.9.1)
-
-  packages/tanstack-vue-query:
-    dependencies:
-      '@trpc12/tanstack-query':
-        specifier: workspace:*
-        version: link:../tanstack-query
-    devDependencies:
-      '@tanstack/query-core':
-        specifier: 5.104.1
-        version: 5.104.1
-      '@tanstack/vue-query':
-        specifier: 5.104.1
-        version: 5.104.1(vue@3.5.43(typescript@7.0.2))
-      '@tooling/tsconfig':
-        specifier: workspace:*
-        version: link:../../tooling/tsconfig
-      '@trpc12/trpc':
-        specifier: workspace:*
-        version: link:../trpc
-      '@types/node':
-        specifier: ^24.0.0
-        version: 24.19.1
-      effect:
-        specifier: 4.0.2
-        version: 4.0.2
-      happy-dom:
-        specifier: 20.14.6
-        version: 20.14.6
-      typescript:
-        specifier: ^7.0.2
-        version: 7.0.2
-      vite-plus:
-        specifier: 1.1.0
-        version: 1.1.0(@opentelemetry/api@1.9.1)(@types/node@24.19.1)(@vitest/coverage-v8@5.0.3)(@vitest/ui@5.0.3)(esbuild@0.28.2)(happy-dom@20.14.6)(jiti@2.7.0)(svelte@5.57.2)(typescript@7.0.2)(yaml@2.9.1)
-      vue:
-        specifier: 3.5.43
-        version: 3.5.43(typescript@7.0.2)
 
   packages/trpc:
     devDependencies:
@@ -1945,30 +1945,30 @@ importers:
       '@tanstack/query-core':
         specifier: 5.104.1
         version: 5.104.1
-      '@trpc12/tanstack-angular-query':
+      '@trpc12/experimental-tanstack-angular-query':
         specifier: workspace:*
-        version: link:../../packages/tanstack-angular-query
-      '@trpc12/tanstack-lit-query':
+        version: link:../../packages/experimental-tanstack-angular-query
+      '@trpc12/experimental-tanstack-lit-query':
         specifier: workspace:*
-        version: link:../../packages/tanstack-lit-query
-      '@trpc12/tanstack-preact-query':
+        version: link:../../packages/experimental-tanstack-lit-query
+      '@trpc12/experimental-tanstack-preact-query':
         specifier: workspace:*
-        version: link:../../packages/tanstack-preact-query
+        version: link:../../packages/experimental-tanstack-preact-query
+      '@trpc12/experimental-tanstack-solid-query':
+        specifier: workspace:*
+        version: link:../../packages/experimental-tanstack-solid-query
+      '@trpc12/experimental-tanstack-svelte-query':
+        specifier: workspace:*
+        version: link:../../packages/experimental-tanstack-svelte-query
+      '@trpc12/experimental-tanstack-vue-query':
+        specifier: workspace:*
+        version: link:../../packages/experimental-tanstack-vue-query
       '@trpc12/tanstack-query':
         specifier: workspace:*
         version: link:../../packages/tanstack-query
       '@trpc12/tanstack-react-query':
         specifier: workspace:*
         version: link:../../packages/tanstack-react-query
-      '@trpc12/tanstack-solid-query':
-        specifier: workspace:*
-        version: link:../../packages/tanstack-solid-query
-      '@trpc12/tanstack-svelte-query':
-        specifier: workspace:*
-        version: link:../../packages/tanstack-svelte-query
-      '@trpc12/tanstack-vue-query':
-        specifier: workspace:*
-        version: link:../../packages/tanstack-vue-query
       '@trpc12/trpc':
         specifier: workspace:*
         version: link:../../packages/trpc
@@ -2284,39 +2284,39 @@ importers:
       '@tanstack/vue-query':
         specifier: 5.104.1
         version: 5.104.1(vue@3.5.43(typescript@7.0.2))
+      '@trpc12/experimental-nest':
+        specifier: workspace:*
+        version: link:../../../packages/experimental-nest
       '@trpc12/experimental-react':
         specifier: workspace:*
         version: link:../../../packages/experimental-react
       '@trpc12/experimental-react-atom':
         specifier: workspace:*
         version: link:../../../packages/experimental-react-atom
-      '@trpc12/nest':
+      '@trpc12/experimental-tanstack-angular-query':
         specifier: workspace:*
-        version: link:../../../packages/nest
-      '@trpc12/tanstack-angular-query':
+        version: link:../../../packages/experimental-tanstack-angular-query
+      '@trpc12/experimental-tanstack-lit-query':
         specifier: workspace:*
-        version: link:../../../packages/tanstack-angular-query
-      '@trpc12/tanstack-lit-query':
+        version: link:../../../packages/experimental-tanstack-lit-query
+      '@trpc12/experimental-tanstack-preact-query':
         specifier: workspace:*
-        version: link:../../../packages/tanstack-lit-query
-      '@trpc12/tanstack-preact-query':
+        version: link:../../../packages/experimental-tanstack-preact-query
+      '@trpc12/experimental-tanstack-solid-query':
         specifier: workspace:*
-        version: link:../../../packages/tanstack-preact-query
+        version: link:../../../packages/experimental-tanstack-solid-query
+      '@trpc12/experimental-tanstack-svelte-query':
+        specifier: workspace:*
+        version: link:../../../packages/experimental-tanstack-svelte-query
+      '@trpc12/experimental-tanstack-vue-query':
+        specifier: workspace:*
+        version: link:../../../packages/experimental-tanstack-vue-query
       '@trpc12/tanstack-query':
         specifier: workspace:*
         version: link:../../../packages/tanstack-query
       '@trpc12/tanstack-react-query':
         specifier: workspace:*
         version: link:../../../packages/tanstack-react-query
-      '@trpc12/tanstack-solid-query':
-        specifier: workspace:*
-        version: link:../../../packages/tanstack-solid-query
-      '@trpc12/tanstack-svelte-query':
-        specifier: workspace:*
-        version: link:../../../packages/tanstack-svelte-query
-      '@trpc12/tanstack-vue-query':
-        specifier: workspace:*
-        version: link:../../../packages/tanstack-vue-query
       '@trpc12/trpc':
         specifier: workspace:*
         version: link:../../../packages/trpc

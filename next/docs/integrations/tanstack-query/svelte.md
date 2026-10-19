@@ -1,16 +1,16 @@
 ---
 title: Svelte
-description: '@trpc12/tanstack-svelte-query: context helpers for the client, useTrpc() in components, and createSubscription with runes.'
+description: '@trpc12/experimental-tanstack-svelte-query: context helpers for the client, useTrpc() in components, and createSubscription with runes.'
 section: Integrations
 parent: integrations/tanstack-query
 order: 5
 experiment: tanstack-query-frameworks
 ---
 
-`@trpc12/tanstack-svelte-query` re-exports [`@trpc12/tanstack-query`](../tanstack-query.md) and adds context helpers for a client and its helpers, and a `createSubscription` whose fields follow `$state`. It's for Svelte 5 and `@tanstack/svelte-query` 6.
+`@trpc12/experimental-tanstack-svelte-query` re-exports [`@trpc12/tanstack-query`](../tanstack-query.md) and adds context helpers for a client and its helpers, and a `createSubscription` whose fields follow `$state`. It's for Svelte 5 and `@tanstack/svelte-query` 6.
 
 ```package-install
-@trpc12/trpc effect @trpc12/tanstack-svelte-query @tanstack/svelte-query
+@trpc12/trpc effect @trpc12/experimental-tanstack-svelte-query @tanstack/svelte-query
 ```
 
 The [`examples/experimental/framework-matrix`](../../../examples/experimental/framework-matrix/README.md) app has a page per adapter (Vue, Solid and Svelte) on one server.
@@ -21,7 +21,7 @@ The [`examples/experimental/framework-matrix`](../../../examples/experimental/fr
 
 ```ts twoslash
 // ---cut-start---
-import { createTrpcContext } from '@trpc12/tanstack-svelte-query';
+import { createTrpcContext } from '@trpc12/experimental-tanstack-svelte-query';
 import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
 import type { AppRouter } from './server.ts';
 // ---cut-end---
@@ -83,7 +83,7 @@ Pass a getter to `createQuery`, so the options follow `$state` and `$props`; a n
 
 ```svelte
 <script lang="ts">
-  import { createSubscription } from '@trpc12/tanstack-svelte-query';
+  import { createSubscription } from '@trpc12/experimental-tanstack-svelte-query';
   import { useTrpc } from './trpc.ts';
 
   let { from }: { from: number } = $props();

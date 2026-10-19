@@ -6,7 +6,7 @@ import {
   type DurableRateLimitNamespace,
   type DurableRateLimitState,
 } from '@trpc12/trpc/cloudflare';
-import { rateLimit } from '@trpc12/trpc/middleware';
+import { experimental_rateLimit } from '@trpc12/trpc/middleware';
 import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
 import { expect, test, vi } from 'vite-plus/test';
 
@@ -75,7 +75,7 @@ const serve = (ns: DurableRateLimitNamespace) => {
     router: {
       ping: t.procedure
         .use(
-          rateLimit<{ ctx: { ip: string } }>({
+          experimental_rateLimit<{ ctx: { ip: string } }>({
             key: (opts) => `ping:${opts.ctx.ip}`,
             limit: 2,
             window: '1 minute',

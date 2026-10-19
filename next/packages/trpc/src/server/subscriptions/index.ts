@@ -1,12 +1,12 @@
 /**
  * Subscription events: `tracked()` envelopes a client resumes from, and the
- * `Publisher` service that fans events out to subscribers.
+ * `experimental_Publisher` service that fans events out to subscribers.
  *
  * @module
  */
 export {
-  Publisher,
-  makeMemoryPublisher,
+  experimental_Publisher,
+  experimental_makeMemoryPublisher,
   memoryPublisher,
 } from './publisher.ts';
 export type {

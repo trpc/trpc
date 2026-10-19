@@ -40,7 +40,7 @@ Two instances sharing a store run a call once: the second waits for the first's 
 
 Results are stored with danSON (`serializer` to change it), whatever the wire serializer. Streamed outputs (async iterables, `Stream`s, promises at any depth) are kept as the frames the handler sends, written from a fiber that keeps going after the client leaves. When the connection drops mid-stream, `httpLink` calls again with the same id and `trpc-resume-from: <frames it got>`, and the open deferred values settle from the new response, on any instance sharing the store. That works over unbatched HTTP, which `experimental_durableLink()` uses; over other transports streamed outputs aren't kept.
 
-For work a client should follow across sessions, start it in a mutation that returns an id and publish its progress to a [`Publisher`](../subscriptions/publisher.md) channel the client subscribes to with `lastEventId`.
+For work a client should follow across sessions, start it in a mutation that returns an id and publish its progress to a [`experimental_Publisher`](../subscriptions/publisher.md) channel the client subscribes to with `lastEventId`.
 
 ## Over WebSockets
 

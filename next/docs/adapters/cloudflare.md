@@ -15,9 +15,13 @@ A Durable Object is one process that every request for its name reaches, so `Pos
 ```ts twoslash
 // ---cut-start---
 /// <reference types="@cloudflare/workers-types" />
-import { createFetchHandler, initTrpc, Publisher } from '@trpc12/trpc/server';
+import {
+  createFetchHandler,
+  initTrpc,
+  experimental_Publisher,
+} from '@trpc12/trpc/server';
 import type { Post } from './server.ts';
-class Posts extends Publisher.Service<
+class Posts extends experimental_Publisher.Service<
   Posts,
   { created: Post; deleted: { id: string } }
 >()('Posts') {}
@@ -111,7 +115,11 @@ Provide the object's [publisher](../subscriptions/publisher.md) with `experiment
 // ---cut-start---
 /// <reference types="@cloudflare/workers-types" />
 import { DurableObject } from 'cloudflare:workers';
-import { createFetchHandler, initTrpc, Publisher } from '@trpc12/trpc/server';
+import {
+  createFetchHandler,
+  initTrpc,
+  experimental_Publisher,
+} from '@trpc12/trpc/server';
 import { Effect } from 'effect';
 import { PostSchema as PostInput, type Post } from './server.ts';
 interface Env {}
@@ -122,7 +130,9 @@ import {
   experimental_hibernatingPublisher,
 } from '@trpc12/trpc/cloudflare';
 
-class Posts extends Publisher.Service<Posts, { created: Post }>()('Posts') {}
+class Posts extends experimental_Publisher.Service<Posts, { created: Post }>()(
+  'Posts',
+) {}
 
 const router = {
   create: t.procedure
@@ -165,16 +175,21 @@ export class Room extends DurableObject<Env> {
 /// <reference types="@cloudflare/workers-types" />
 import { DurableObject } from 'cloudflare:workers';
 import { experimental_hibernatingPublisher } from '@trpc12/trpc/cloudflare';
-import { createFetchHandler, initTrpc, Publisher } from '@trpc12/trpc/server';
+import {
+  createFetchHandler,
+  initTrpc,
+  experimental_Publisher,
+} from '@trpc12/trpc/server';
 import { Layer } from 'effect';
 import type { Persistence } from 'effect/persistence';
 interface Message {
   from: string;
   text: string;
 }
-class Messages extends Publisher.Service<Messages, { message: Message }>()(
-  'Messages',
-) {}
+class Messages extends experimental_Publisher.Service<
+  Messages,
+  { message: Message }
+>()('Messages') {}
 declare function durableObjectPersistence(
   storage: DurableObjectStorage,
 ): Layer.Layer<Persistence.BackingPersistence>;
@@ -243,7 +258,7 @@ Bind `LOCKS` to `Locks` in `wrangler.jsonc` (a `new_sqlite_classes` migration). 
 
 ## Rate limits
 
-`experimental_durableRateLimiterStore(env.RATE_LIMITS)` is a store for `rateLimit()` ([Rate limiting](../middleware/rate-limit.md#cloudflare)) that every Worker instance shares: one object per key, counting with its own clock in its storage. The object delegates to `experimental_durableRateLimitObject(this.ctx)`, and its alarm deletes the counters once they expire:
+`experimental_durableRateLimiterStore(env.RATE_LIMITS)` is a store for `experimental_rateLimit()` ([Rate limiting](../middleware/rate-limit.md#cloudflare)) that every Worker instance shares: one object per key, counting with its own clock in its storage. The object delegates to `experimental_durableRateLimitObject(this.ctx)`, and its alarm deletes the counters once they expire:
 
 ```ts twoslash
 // ---cut-start---
@@ -355,12 +370,16 @@ export type WorkerRouter = typeof workerRouter;
 // @filename: room.ts
 import { DurableObject } from 'cloudflare:workers';
 import { experimental_hibernatingPublisher } from '@trpc12/trpc/cloudflare';
-import { createFetchHandler, initTrpc, Publisher } from '@trpc12/trpc/server';
+import {
+  createFetchHandler,
+  initTrpc,
+  experimental_Publisher,
+} from '@trpc12/trpc/server';
 import { Effect } from 'effect';
 import { RoomToken } from './token.ts';
 interface Env {}
 const t = initTrpc<{ ctx: { room: string; user: string } }>();
-class Notes extends Publisher.Service<
+class Notes extends experimental_Publisher.Service<
   Notes,
   { [inbox: `inbox:${string}`]: { text: string } }
 >()('Notes') {}

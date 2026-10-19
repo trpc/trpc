@@ -215,7 +215,7 @@ export interface RetryLinkOptions {
   /** @default 3 */
   retries?: number;
   /**
-   * Delay before each retry, given the error it retries (a `RateLimited`
+   * Delay before each retry, given the error it retries (an `experimental_RateLimited`
    * error's `data.retryAfter`, for one). @default attempt => 2 ** attempt * 100
    */
   delayMs?: (attempt: number, error: AnyTrpcError) => number;

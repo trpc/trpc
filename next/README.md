@@ -11,11 +11,12 @@ next/
   .repos/               vendored dependency source (vendor-src, read-only)
   packages/trpc/     core package (the brief: single `@trpc12/trpc` package)
   packages/tanstack-query/  `@trpc12/tanstack-query`: framework-agnostic TanStack Query helpers
-  packages/tanstack-*-query/  `@trpc12/tanstack-{react,preact,vue,solid,svelte,angular,lit}-query`: one package per TanStack adapter
+  packages/tanstack-react-query/  `@trpc12/tanstack-react-query`: the React TanStack adapter
+  packages/experimental-tanstack-*-query/  `@trpc12/experimental-tanstack-{preact,vue,solid,svelte,angular,lit}-query`: the other adapters, one package each
   packages/experimental-react/       `@trpc12/experimental-react`: stable `use()` promises, features as links
   packages/experimental-react-atom/  `@trpc12/experimental-react-atom`: queries and mutations as Effect Atoms
   packages/upgrade/     `@trpc12/upgrade`: the v11 → v12 codemod (`trpc12-upgrade` bin)
-  packages/nest/        `@trpc12/nest`: contracts implemented in NestJS controllers (`@experimental_Implement`, `experimental_TrpcModule`)
+  packages/experimental-nest/        `@trpc12/experimental-nest`: contracts implemented in NestJS controllers (`@Implement`, `TrpcModule`)
   examples/             workspace-linked examples
   packages/*/src/**/*.test.ts  tests beside the code they show; shared fixtures in `src/**/fixtures/`
   test/integration/     recipes with third-party libraries (AI SDK, Better Auth, Firebase callable, publisher backends)

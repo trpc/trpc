@@ -80,10 +80,12 @@ const resume = <TId>(opts: {
       );
     }),
   );
-import { Publisher } from '@trpc12/trpc/server';
+import { experimental_Publisher } from '@trpc12/trpc/server';
 import type { Post } from './server.ts';
 type PostEvents = { created: Post; deleted: { id: string } };
-class Posts extends Publisher.Service<Posts, PostEvents>()('Posts') {}
+class Posts extends experimental_Publisher.Service<Posts, PostEvents>()(
+  'Posts',
+) {}
 // ---cut-end---
 import { NodeRedis } from '@effect/platform-node';
 import { Redis } from 'effect/persistence';
@@ -202,10 +204,12 @@ const resume = <TId>(opts: {
       );
     }),
   );
-import { Publisher } from '@trpc12/trpc/server';
+import { experimental_Publisher } from '@trpc12/trpc/server';
 import type { Post } from './server.ts';
 type PostEvents = { created: Post; deleted: { id: string } };
-class Posts extends Publisher.Service<Posts, PostEvents>()('Posts') {}
+class Posts extends experimental_Publisher.Service<Posts, PostEvents>()(
+  'Posts',
+) {}
 // ---cut-end---
 import { PgClient } from '@effect/sql-pg';
 import { Redacted } from 'effect';
