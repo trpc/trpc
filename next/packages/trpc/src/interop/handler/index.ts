@@ -4,7 +4,11 @@
  *
  * @module
  */
-export type { V11ErrorFormatterOpts, V11ErrorShape } from './errors.ts';
+export {
+  v11Shape,
+  type V11ErrorFormatterOpts,
+  type V11ErrorShape,
+} from './errors.ts';
 export { createV11Handler } from './handler.ts';
 export type {
   BaseV11HandlerOptions,

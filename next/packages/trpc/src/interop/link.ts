@@ -12,6 +12,7 @@ import {
   type AnyTrpcError,
 } from '../internal/error.ts';
 import type { ProcedureType } from '../internal/types.ts';
+import { v11Shape, type V11ErrorShape } from './handler/index.ts';
 
 /**
  * The operation a v11 link receives.
@@ -116,11 +117,41 @@ const toV11Operation = (op: Operation): V11Operation => ({
 });
 
 /**
+ * A v12 error as v11 links read a `TRPCClientError`: `data.code`,
+ * `data.httpStatus` and `shape` in v11's form (`retryLink`'s
+ * `opts.error.data?.code`), with the v12 error as its `cause`. Not an
+ * `instanceof TRPCClientError`: that class is `@trpc/client`'s.
+ */
+class V11ClientError extends Error {
+  override readonly name = 'TRPCClientError';
+  override readonly cause: AnyTrpcError;
+  readonly shape: V11ErrorShape;
+  readonly data: V11ErrorShape['data'];
+  readonly meta: Record<string, unknown> | undefined = undefined;
+  constructor(cause: AnyTrpcError, path: string) {
+    super(cause.message, { cause });
+    this.cause = cause;
+    this.shape = v11Shape(cause, path);
+    this.data = this.shape.data;
+  }
+}
+
+/** The v12 error behind one a v11 link got from `next`, even rewrapped (`TRPCClientError.from(err)`). */
+const unwrapV11ClientError = (error: unknown): AnyTrpcError | undefined =>
+  error instanceof V11ClientError
+    ? error.cause
+    : error instanceof Error && error.cause instanceof V11ClientError
+      ? error.cause.cause
+      : undefined;
+
+/**
  * v11 errors are `TRPCClientError`s, with the code in `data.code`. The
  * v12 error is `defined: false`, so v11's `data` stays on the cause.
  */
 const fromV11Error = (error: unknown): AnyTrpcError => {
   if (isTrpcError(error)) return error;
+  const unwrapped = unwrapV11ClientError(error);
+  if (unwrapped) return unwrapped;
   const code = (error as { data?: { code?: unknown } } | undefined)?.data?.code;
   if (typeof code !== 'string') return toClientError(error);
   return new TrpcError({
@@ -133,9 +164,10 @@ const fromV11Error = (error: unknown): AnyTrpcError => {
 /**
  * Runs a v11 link (`TRPCLink` from `@trpc/client`) in a v12 chain, so
  * custom links keep working while you rewrite them as Effect links. The
- * v11 link sees v11 operations and observables; the errors it gets from
- * `next` are v12 `TrpcError`s, with the code on `code` and `data.code`
- * left as the procedure set it.
+ * v11 link sees v11 operations and observables, and the errors it gets
+ * from `next` read like `TRPCClientError`s: v11's `data.code`,
+ * `data.httpStatus` and `shape`, with the v12 `TrpcError` as `cause`.
+ * Passed on, they reach the v12 client as that `TrpcError`.
  *
  * @example
  * ```ts
@@ -181,7 +213,9 @@ export function fromV11Link(v11Link: V11Link): TrpcLink {
                   onSuccess: () => observer.complete?.(),
                   onFailure: (cause) => {
                     if (!Cause.hasInterruptsOnly(cause)) {
-                      observer.error?.(clientErrorFromCause(cause));
+                      observer.error?.(
+                        new V11ClientError(clientErrorFromCause(cause), o.path),
+                      );
                     }
                   },
                 }),

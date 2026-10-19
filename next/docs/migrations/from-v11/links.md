@@ -25,9 +25,9 @@ createTrpcClient({
 });
 ```
 
-The v11 link gets v11 operations and observables, so `observable()`, `tap()` and `share()` from `@trpc/server/observable` work as before. What it gets from `next` differs in two ways:
+The v11 link gets v11 operations and observables, so `observable()`, `tap()` and `share()` from `@trpc/server/observable` work as before. What it gets from `next`:
 
-- Errors are v12 `TrpcError`s, with the code on `error.code`. Errors the link fails with keep their `data.code`.
+- Errors read like `TRPCClientError`s, with v11's `data.code`, `data.httpStatus` and `shape`, so a `retryLink` that checks `opts.error.data?.code` works as before. They aren't `instanceof TRPCClientError`, though. The v12 `TrpcError` is `error.cause`, and it's what the client gets when the link passes the error on. Errors the link makes itself keep their `data.code`.
 - Subscription results are `{ type: 'started' }`, then `{ type: 'data', data }` for each event; there is no `stopped` result.
 
 A v11 terminating link (one that sends the request itself, such as v11's `httpBatchLink`) works too.
