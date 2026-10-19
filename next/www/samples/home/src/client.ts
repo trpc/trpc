@@ -17,14 +17,15 @@ const post = await client.post.byId.query({ id: '1' });
 // #endregion hero
 console.log(post.title);
 
-const [created, err] = await safe(client.post.create.mutate({ title: '' }));
+const [found, err] = await safe(client.post.byId.query({ id: '2' }));
 if (err) {
   matchError(err, {
+    NOT_FOUND: (e) => console.log(`No post ${e.data.id}`),
+    //                                              ^?
     BAD_REQUEST: (e) => console.log(e.data.issues),
     builtin: (e) => console.log(e.code, e.message),
   });
 } else {
-  console.log(created.id);
-  //          ^?
+  console.log(found.title);
 }
 // #endregion call
