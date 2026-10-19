@@ -2,7 +2,7 @@ import { Effect } from 'effect';
 import {
   createSafeClient,
   createTrpcClient,
-  httpLink,
+  httpStreamLink,
   isDefinedError,
   matchError,
   safe,
@@ -114,7 +114,7 @@ async function setup(opts: { expose?: boolean } = {}) {
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
     links: [
-      httpLink({
+      httpStreamLink({
         url: server.url,
         fetch: async (input, init) => {
           const res = await fetch(input, init);
@@ -478,7 +478,7 @@ test('a returned built-in class is a defined error, and catchTag narrows it', as
   await using server = await createTestServer({ router });
   const client = createTrpcClient({
     router: routerType<typeof router>(),
-    links: [httpLink({ url: server.url })],
+    links: [httpStreamLink({ url: server.url })],
   });
   const [, err] = await safe(client.me.query());
   expect(err).toMatchObject({ code: 'UNAUTHORIZED', defined: true });

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {
   createTrpcClient,
-  httpLink,
+  httpStreamLink,
   matchError,
   safe,
   routerType,
@@ -11,7 +11,9 @@ import type { AppRouter } from './server.ts';
 export async function main(url: string) {
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url, batch: true, headers: { authorization: 'ada' } })],
+    links: [
+      httpStreamLink({ url, batch: true, headers: { authorization: 'ada' } }),
+    ],
   });
 
   const post = await client.post.byId.query({ id: '1' });

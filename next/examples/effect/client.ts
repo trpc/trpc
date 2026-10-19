@@ -1,5 +1,5 @@
 import { Effect, Stream } from 'effect';
-import { httpLink, routerType } from '@trpc12/trpc/client';
+import { httpStreamLink, routerType } from '@trpc12/trpc/client';
 import { createEffectClient } from '@trpc12/trpc/effect';
 import type { AppRouter } from './server.ts';
 
@@ -7,7 +7,7 @@ export const program = (url: string) =>
   Effect.gen(function* () {
     const client = createEffectClient({
       router: routerType<AppRouter>(),
-      links: [httpLink({ url, headers: { authorization: 'ada' } })],
+      links: [httpStreamLink({ url, headers: { authorization: 'ada' } })],
     });
 
     const post = yield* client.post.byId.query({ id: '1' });

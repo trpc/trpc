@@ -3,7 +3,7 @@ import { HttpRouter, HttpServerRequest } from 'effect/http';
 import { EventSource } from 'undici';
 import {
   createTrpcClient,
-  httpLink,
+  httpStreamLink,
   type TrpcClient,
   routerType,
 } from '@trpc12/trpc/client';
@@ -132,7 +132,9 @@ async function setup(user: string | null = 'ada') {
   current = server;
   const client: TrpcClient<AppRouter> = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: server.url, reconnect: { delayMs: () => 10 } })],
+    links: [
+      httpStreamLink({ url: server.url, reconnect: { delayMs: () => 10 } }),
+    ],
   });
   return { server, client, [Symbol.asyncDispose]: () => server.close() };
 }
@@ -403,7 +405,7 @@ test('quiet subscriptions send keep-alive comments', async () => {
   expect(text).toContain(': ping\n\n');
   const client = createTrpcClient({
     router: routerType<typeof pinged>(),
-    links: [httpLink({ url: server.url })],
+    links: [httpStreamLink({ url: server.url })],
   });
   expect(await collect(client.slow.subscribe())).toEqual(['a', 'b']);
 });

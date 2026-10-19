@@ -3,7 +3,7 @@ import { Stream } from 'effect';
 import { cors } from '@trpc12/trpc/http';
 import {
   createTrpcClient,
-  httpLink,
+  httpStreamLink,
   routerType,
   safe,
   splitLink,
@@ -367,7 +367,7 @@ test('splitLink sends subscriptions over WebSockets and the rest over HTTP', asy
       splitLink({
         condition: (op) => op.type === 'subscription',
         true: ws,
-        false: httpLink({ url: server.url }),
+        false: httpStreamLink({ url: server.url }),
       }),
     ],
   });

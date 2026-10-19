@@ -7,7 +7,11 @@ import {
   type DurableLockSocket,
   type HibernatableWebSocket,
 } from '@trpc12/trpc/cloudflare';
-import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import {
+  createTrpcClient,
+  httpStreamLink,
+  routerType,
+} from '@trpc12/trpc/client';
 import {
   experimental_lock,
   experimental_Locker,
@@ -166,7 +170,7 @@ function app(layer: Layer.Layer<experimental_Locker>, log: string[]) {
   const client = createTrpcClient({
     router: routerType<typeof router>(),
     links: [
-      httpLink({
+      httpStreamLink({
         url: 'https://worker.example/trpc',
         fetch: (input, init) =>
           handler.fetch(new Request(input as string, init as RequestInit)),

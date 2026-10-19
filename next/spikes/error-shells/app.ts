@@ -1,5 +1,9 @@
 import { createTrpcQueryUtils } from '@trpc12/tanstack-query';
-import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import {
+  createTrpcClient,
+  httpStreamLink,
+  routerType,
+} from '@trpc12/trpc/client';
 import { createFetchHandler, error, initTrpc } from '@trpc12/trpc/server';
 import { Schema } from 'effect';
 import { createElement } from 'react';
@@ -49,7 +53,7 @@ export function createApp() {
     router: routerType<typeof router>(),
     links: [
       closedLink(),
-      httpLink({
+      httpStreamLink({
         url: 'http://localhost/trpc',
         fetch: async (input, init) => {
           if (!state.online) throw new TypeError('fetch failed');

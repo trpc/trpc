@@ -1,4 +1,8 @@
-import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import {
+  createTrpcClient,
+  httpStreamLink,
+  routerType,
+} from '@trpc12/trpc/client';
 import { fromV11Link } from '@trpc12/trpc/interop';
 import type { AppRouter } from '../server/router.ts';
 import { serializer } from '../server/serializer.ts';
@@ -18,7 +22,7 @@ export function makeClient(opts: {
     router: routerType<AppRouter>(),
     links: [
       fromV11Link(callLogLink(opts.log)),
-      httpLink({
+      httpStreamLink({
         url: opts.url,
         batch: true,
         serializer,

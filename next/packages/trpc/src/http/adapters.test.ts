@@ -6,7 +6,7 @@ import { Context, Effect, Exit, Layer, Match, Scope } from 'effect';
 import { HttpMiddleware, HttpServer } from 'effect/http';
 import {
   createTrpcClient,
-  httpLink,
+  httpStreamLink,
   routerType,
   wsLink,
 } from '@trpc12/trpc/client';
@@ -117,7 +117,7 @@ test("another library's fetch handler gets bodies a parser already read, as JSON
   await using server = await listenParsed(toHttpEffect(plain), parse);
   const client = createTrpcClient({
     router: routerType<typeof router>(),
-    links: [httpLink({ url: server.url })],
+    links: [httpStreamLink({ url: server.url })],
   });
   expect(await client.save.mutate({ n: 2 })).toBe(4);
   expect(await client.hello.query({ name: 'get' })).toBe('hello get');

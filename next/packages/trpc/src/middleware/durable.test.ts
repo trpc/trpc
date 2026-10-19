@@ -3,7 +3,7 @@ import { Persistence } from 'effect/persistence';
 import {
   createTrpcClient,
   experimental_durableLink,
-  httpLink,
+  httpStreamLink,
   safe,
 } from '@trpc12/trpc/client';
 import { experimental_durable } from '@trpc12/trpc/middleware';
@@ -184,7 +184,7 @@ test('experimental_durableLink retries a lost response with the same id', async 
     router: app.router,
     links: [
       experimental_durableLink({ delayMs: () => 0 }),
-      httpLink({
+      httpStreamLink({
         url: http.url,
         batch: true,
         fetch: async (url, init) => {
@@ -389,7 +389,7 @@ test('experimental_durableLink resumes a streamed output mid-stream, on another 
     router: app.router,
     links: [
       experimental_durableLink({ delayMs: () => 0 }),
-      httpLink({
+      httpStreamLink({
         url: 'http://localhost/trpc',
         fetch: async (url, init) => {
           const request = new Request(url, init);
@@ -420,7 +420,7 @@ test('a resume that fails, then answers without frames, fails what was still ope
     router: app.router,
     links: [
       experimental_durableLink({ delayMs: () => 0 }),
-      httpLink({
+      httpStreamLink({
         url: 'http://localhost/trpc',
         fetch: async (url, init) => {
           const request = new Request(url, init);
@@ -459,7 +459,7 @@ test('a streamed output keeps going into the store after the client leaves', asy
     router: app.router,
     links: [
       experimental_durableLink(),
-      httpLink({
+      httpStreamLink({
         url: 'http://localhost/trpc',
         fetch: (url, init) => handler.fetch(new Request(url, init)),
       }),
@@ -612,7 +612,7 @@ test('inputs with files are kept without a fingerprint; an error that cannot be 
     router,
     links: [
       experimental_durableLink(),
-      httpLink({ url: server.url, serializer: danson }),
+      httpStreamLink({ url: server.url, serializer: danson }),
     ],
   });
   const file = new File(['bytes'], 'a.txt');
@@ -653,7 +653,7 @@ test('experimental_durableLink waits before retrying by default; queries and sub
     router,
     links: [
       experimental_durableLink(),
-      httpLink({
+      httpStreamLink({
         url: http.url,
         fetch: async (url, init) => {
           sent.push(new Headers(init?.headers).get('trpc-call-id'));

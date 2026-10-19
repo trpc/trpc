@@ -2,7 +2,7 @@ import { Effect, Stream } from 'effect';
 import {
   createTrpcClient,
   dedupeLink,
-  httpLink,
+  httpStreamLink,
   link,
   routerType,
   type Operation,
@@ -100,7 +100,7 @@ async function setup(opts?: Parameters<typeof dedupeLink>[0]) {
   const server = await createTestServer({ router, serializer });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [dedupeLink(opts), httpLink({ url: server.url, serializer })],
+    links: [dedupeLink(opts), httpStreamLink({ url: server.url, serializer })],
   });
   const sent = (path: string) =>
     server.requests.filter((r) => new URL(r.url).pathname.endsWith(`/${path}`))

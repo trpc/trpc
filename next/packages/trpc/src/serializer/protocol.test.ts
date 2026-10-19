@@ -1,7 +1,7 @@
 import { MessageChannel } from 'node:worker_threads';
 import {
   createTrpcClient,
-  httpLink,
+  httpStreamLink,
   experimental_messagePortLink,
   safe,
   routerType,
@@ -87,7 +87,7 @@ test('with danSON, built-in types round-trip through inputs and outputs', async 
   await using server = await createTestServer({ router, serializer: danson });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: server.url, serializer: danson })],
+    links: [httpStreamLink({ url: server.url, serializer: danson })],
   });
   const when = new Date('2026-01-02T03:04:05.000Z');
   const result = await client.echo.query({
@@ -117,7 +117,7 @@ test('custom types work when both ends share a serializer', async () => {
   await using server = await createTestServer({ router, serializer });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: server.url, serializer })],
+    links: [httpStreamLink({ url: server.url, serializer })],
   });
   const total = await client.total.query({
     items: [new Money(150n, 'EUR'), new Money(250n, 'EUR')],
@@ -131,7 +131,7 @@ test('long queries fall back to POST', async () => {
   await using server = await createTestServer({ router });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: server.url, maxUrlLength: 100 })],
+    links: [httpStreamLink({ url: server.url, maxUrlLength: 100 })],
   });
   expect(await client.len.query({ text: 'short' })).toBe(5);
   expect(server.requests.at(-1)!.method).toBe('GET');
@@ -144,7 +144,11 @@ test('longQuery: "query" sends long queries with the QUERY method (10 Q10.3)', a
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
     links: [
-      httpLink({ url: server.url, maxUrlLength: 100, longQuery: 'query' }),
+      httpStreamLink({
+        url: server.url,
+        maxUrlLength: 100,
+        longQuery: 'query',
+      }),
     ],
   });
   expect(await client.len.query({ text: 'x'.repeat(500) })).toBe(500);
@@ -162,7 +166,7 @@ test('by default, outputs arrive as JSON and the server says which serializer it
   await using server = await createTestServer({ router });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: server.url })],
+    links: [httpStreamLink({ url: server.url })],
   });
   const when = new Date('2026-01-02T03:04:05.000Z');
   const [, err] = await safe(client.raw.query({ big: 1n }));
@@ -181,7 +185,7 @@ test("a link whose serializer isn't the server's fails with UNSUPPORTED_PROTOCOL
   await using server = await createTestServer({ router });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: server.url, serializer: danson })],
+    links: [httpStreamLink({ url: server.url, serializer: danson })],
   });
   const [, err] = await safe(client.greet.query({ name: 'x' }));
   expect(err).toMatchObject({ code: 'UNSUPPORTED_PROTOCOL', defined: false });
@@ -235,7 +239,7 @@ test('query URLs are canonical: ?input= is JSON with object keys sorted, array o
   await using server = await createTestServer({ router });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: server.url })],
+    links: [httpStreamLink({ url: server.url })],
   });
   await client.raw.query({ b: 1, a: { d: [3, 1], c: 2 } });
   await client.raw.query({ a: { c: 2, d: [3, 1] }, b: 1 });
@@ -250,7 +254,7 @@ test('with danSON, inputs cannot carry RegExps', async () => {
   await using server = await createTestServer({ router, serializer: danson });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: server.url, serializer: danson })],
+    links: [httpStreamLink({ url: server.url, serializer: danson })],
   });
   const [, err] = await safe(client.pattern.query(/(a+)+$/));
   expect(err).toMatchObject({ code: 'PARSE_ERROR' });
@@ -373,7 +377,7 @@ test('the endpoint is configurable', async () => {
   expect(server.url.endsWith('/api/rpc')).toBe(true);
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: server.url })],
+    links: [httpStreamLink({ url: server.url })],
   });
   expect(await client.greet.query({ name: 'there' })).toBe('hello there');
   const outside = await fetch(server.url.replace('/api/rpc', '/trpc/greet'));

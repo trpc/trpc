@@ -1,7 +1,7 @@
 import { Schema } from 'effect';
 import {
   createTrpcClient,
-  httpLink,
+  httpStreamLink,
   routerType,
   type BuiltinErrorCode,
 } from '@trpc12/trpc/client';
@@ -21,7 +21,7 @@ const router = {
 };
 const client = createTrpcClient({
   router: routerType<typeof router>(),
-  links: [httpLink({ url: 'http://localhost/trpc' })],
+  links: [httpStreamLink({ url: 'http://localhost/trpc' })],
 });
 
 type Now = ErrorOf<ReturnType<typeof client.byId.query>>;

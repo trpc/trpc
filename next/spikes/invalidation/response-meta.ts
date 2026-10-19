@@ -10,9 +10,9 @@
  */
 import { Deferred, Effect, Stream } from 'effect';
 import {
-  httpLink,
+  httpStreamLink,
   link,
-  type HttpLinkOptions,
+  type HttpStreamLinkOptions,
   type Operation,
   type OperationStream,
   type TrpcLink,
@@ -73,7 +73,7 @@ const ON_RESPONSE = '~onResponse';
  * it is; an `init` holding a function is batched apart.
  */
 export function responseHttpLink(
-  opts: HttpLinkOptions,
+  opts: HttpStreamLinkOptions,
 ): TrpcLink<{ context: ResponseContext }> & Capabilities<'response'> {
   const baseFetch = opts.fetch ?? globalThis.fetch;
   const fetch: typeof globalThis.fetch = async (input, init) => {
@@ -84,7 +84,7 @@ export function responseHttpLink(
     report?.({ status: res.status, headers: res.headers });
     return res;
   };
-  const inner = httpLink({ ...opts, fetch });
+  const inner = httpStreamLink({ ...opts, fetch });
   return link<{ context: ResponseContext }>(({ op, next }) => {
     const onResponse = op.context.onResponse;
     if (!onResponse) return inner({ op, next });

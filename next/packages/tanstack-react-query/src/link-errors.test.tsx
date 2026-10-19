@@ -7,7 +7,7 @@ import {
 import { createTrpcContext } from '@trpc12/tanstack-react-query';
 import {
   createTrpcClient,
-  httpLink,
+  httpStreamLink,
   localLink,
   matchError,
   routerType,
@@ -31,7 +31,7 @@ const inProcess = () =>
 const overHttp = () =>
   createTrpcClient({
     router: routerType<typeof router>(),
-    links: [httpLink({ url: 'http://127.0.0.1:1/trpc' })],
+    links: [httpStreamLink({ url: 'http://127.0.0.1:1/trpc' })],
   });
 
 type CodesOf<E> = E extends { readonly code: infer C } ? C : never;

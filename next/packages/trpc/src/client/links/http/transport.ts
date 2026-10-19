@@ -37,7 +37,7 @@ import { toClientError, type Operation } from '../../link.ts';
 import { badResponse, serializeInput } from '../events.ts';
 import { resumeOf, retrying, type Retries } from '../resume.ts';
 import type { Batch } from './batch.ts';
-import type { HttpLinkOptions } from './link.ts';
+import type { HttpStreamLinkOptions } from './link.ts';
 
 const isAbort = (cause: unknown) =>
   cause instanceof Error && cause.name === 'AbortError';
@@ -135,9 +135,9 @@ export interface Transport {
   readonly batchKey: (op: Operation) => string;
 }
 
-/** The HTTP side of `httpLink`: requests, responses and their bodies. */
+/** The HTTP side of `httpStreamLink`: requests, responses and their bodies. */
 export function makeTransport(
-  opts: HttpLinkOptions,
+  opts: HttpStreamLinkOptions,
   serializer: AnySerializer,
 ): Transport {
   const baseUrl = String(opts.url).replace(/\/+$/, '');

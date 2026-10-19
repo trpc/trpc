@@ -3,7 +3,7 @@ import { BunHttpServer } from '@effect/platform-bun';
 import { Context, Effect, Exit, Layer, Scope } from 'effect';
 import {
   createTrpcClient,
-  httpLink,
+  httpStreamLink,
   wsLink,
   routerType,
 } from '@trpc12/trpc/client';
@@ -77,7 +77,7 @@ test('runs on Bun', () => {
 test('batched queries keep rich types over BunHttpServer', async () => {
   const client = createTrpcClient({
     router: routerType<typeof router>(),
-    links: [httpLink({ url: server.url, batch: true, serializer })],
+    links: [httpStreamLink({ url: server.url, batch: true, serializer })],
   });
   const [a, b] = await Promise.all([
     client.post.query({ id: '1' }),
@@ -90,7 +90,7 @@ test('batched queries keep rich types over BunHttpServer', async () => {
 test('files go up as form data and come back as Files', async () => {
   const client = createTrpcClient({
     router: routerType<typeof router>(),
-    links: [httpLink({ url: server.url, serializer })],
+    links: [httpStreamLink({ url: server.url, serializer })],
   });
   expect(await client.upload.mutate({ file: new File(['hi'], 'a.txt') })).toBe(
     'a.txt:hi',
@@ -103,7 +103,7 @@ test('files go up as form data and come back as Files', async () => {
 test('SSE subscriptions stream and resume from lastEventId', async () => {
   const client = createTrpcClient({
     router: routerType<typeof router>(),
-    links: [httpLink({ url: server.url, serializer })],
+    links: [httpStreamLink({ url: server.url, serializer })],
   });
   const all = await collect(client.posts.subscribe());
   expect(all.map((e) => e.id)).toEqual(['1', '2', '3']);
@@ -128,7 +128,7 @@ test('wsLink queries and subscribes over the platform WebSocket', async () => {
 test('a client that goes away aborts the subscription signal', async () => {
   const client = createTrpcClient({
     router: routerType<typeof router>(),
-    links: [httpLink({ url: server.url, serializer })],
+    links: [httpStreamLink({ url: server.url, serializer })],
   });
   for await (const n of client.forever.subscribe()) if (n === 2) break;
   for (let i = 0; i < 50 && !aborted.includes('forever'); i++) {

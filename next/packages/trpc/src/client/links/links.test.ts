@@ -1,7 +1,7 @@
 import { Effect, Schema, Stream } from 'effect';
 import {
   createTrpcClient,
-  httpLink,
+  httpStreamLink,
   link,
   localLink,
   loggerLink,
@@ -85,7 +85,7 @@ test('a link can add headers through the operation context', async () => {
   );
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [authLink, httpLink({ url: server.url })],
+    links: [authLink, httpStreamLink({ url: server.url })],
   });
   expect(await client.whoami.query()).toBe('Bearer whoami');
   expect(
@@ -101,7 +101,7 @@ test('httpLink headers can be computed per request', async () => {
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
     links: [
-      httpLink({
+      httpStreamLink({
         url: server.url,
         headers: () => ({ authorization: `token-${++n}` }),
       }),
@@ -123,7 +123,7 @@ test('a link can replace a result or a subscription', async () => {
   });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [cacheLink, httpLink({ url: server.url })],
+    links: [cacheLink, httpStreamLink({ url: server.url })],
   });
   expect(await client.whoami.query()).toBe('cached');
   const ticks: number[] = [];
@@ -145,7 +145,7 @@ test('an Effect link wraps the result stream', async () => {
   );
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [tapLink, httpLink({ url: server.url })],
+    links: [tapLink, httpStreamLink({ url: server.url })],
   });
   await client.add.mutate({ a: 1, b: 2 });
   expect(seen).toEqual([['add', 3]]);
@@ -158,8 +158,8 @@ test('splitLink routes subscriptions and batched calls differently', async () =>
     links: [
       splitLink({
         condition: (op) => op.type === 'subscription',
-        true: httpLink({ url: server.url }),
-        false: httpLink({ url: server.url, batch: true }),
+        true: httpStreamLink({ url: server.url }),
+        false: httpStreamLink({ url: server.url, batch: true }),
       }),
     ],
   });
@@ -185,7 +185,7 @@ test('loggerLink sees requests, results and errors', async () => {
     router: routerType<AppRouter>(),
     links: [
       loggerLink({ log: (event) => events.push(event) }),
-      httpLink({ url: server.url }),
+      httpStreamLink({ url: server.url }),
     ],
   });
   await client.find.query({ id: '1' });
@@ -208,7 +208,7 @@ test('retryLink retries network failures on queries only', async () => {
     router: routerType<AppRouter>(),
     links: [
       retryLink({ retries: 3, delayMs: () => 1 }),
-      httpLink({ url: server.url, fetch: flakyFetch }),
+      httpStreamLink({ url: server.url, fetch: flakyFetch }),
     ],
   });
   expect(await client.whoami.query()).toBe('anonymous');
@@ -230,7 +230,7 @@ test('aborting a call rejects with CLIENT_CLOSED_REQUEST and aborts the server',
   await using server = await serve();
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: server.url })],
+    links: [httpStreamLink({ url: server.url })],
   });
   const before = signals.aborted;
   const controller = new AbortController();
@@ -341,7 +341,7 @@ test('createRouterClient and call() skip the network and the serializer', async 
 test('the untyped client takes paths as strings', async () => {
   await using server = await serve();
   const client = createUntypedClient({
-    links: [httpLink({ url: server.url })],
+    links: [httpStreamLink({ url: server.url })],
   });
   expect(
     await client.request({ type: 'query', path: 'find', input: { id: '1' } }),
@@ -381,8 +381,8 @@ test('one client for routers on two servers with different contexts (docs/client
     links: [
       splitLink({
         condition: (op) => op.path.startsWith('shop.'),
-        true: [unprefix('shop'), httpLink({ url: shop.url })],
-        false: [unprefix('blog'), httpLink({ url: blog.url })],
+        true: [unprefix('shop'), httpStreamLink({ url: shop.url })],
+        false: [unprefix('blog'), httpStreamLink({ url: blog.url })],
       }),
     ],
   });
@@ -399,7 +399,7 @@ test('httpLink init: a per-request default, merged with each call’s init', asy
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
     links: [
-      httpLink({
+      httpStreamLink({
         url: server.url,
         batch: true,
         headers: { authorization: 'link' },
@@ -456,7 +456,7 @@ test('loggerLink logs to the console by default, and skips ops it is not enabled
       router: routerType<AppRouter>(),
       links: [
         loggerLink({ enabled: (op) => op.path !== 'whoami' }),
-        httpLink({ url: server.url }),
+        httpStreamLink({ url: server.url }),
       ],
     });
     await client.whoami.query();
@@ -485,7 +485,7 @@ test('retryLink waits 200ms before its first retry by default', async () => {
     router: routerType<AppRouter>(),
     links: [
       retryLink({ retries: 1 }),
-      httpLink({
+      httpStreamLink({
         url: server.url,
         fetch: (input, init) =>
           failures-- > 0

@@ -1,5 +1,9 @@
 import { QueryClient } from '@tanstack/query-core';
-import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import {
+  createTrpcClient,
+  httpStreamLink,
+  routerType,
+} from '@trpc12/trpc/client';
 import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
 import { expect, test } from 'vite-plus/test';
 import { z } from 'zod';
@@ -121,7 +125,7 @@ test('the chain is checked: the link needs a response provider after it', () => 
   const url = 'http://localhost/trpc';
   chain(invalidationLink({ queryClient }), responseHttpLink({ url }));
   // @ts-expect-error -- chain: a link needs 'response' from a link after it
-  chain(invalidationLink({ queryClient }), httpLink({ url }));
+  chain(invalidationLink({ queryClient }), httpStreamLink({ url }));
   // @ts-expect-error -- a provider before the link doesn't count
   chain(responseHttpLink({ url }), invalidationLink({ queryClient }));
 });

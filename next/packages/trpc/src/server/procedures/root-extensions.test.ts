@@ -1,7 +1,7 @@
 import { Context, Effect } from 'effect';
 import {
   createTrpcClient,
-  httpLink,
+  httpStreamLink,
   safe,
   routerType,
 } from '@trpc12/trpc/client';
@@ -96,7 +96,7 @@ test('an extension adds ctx, meta, errors and middleware to every procedure (03 
   });
   const client = createTrpcClient({
     router: routerType<typeof appRouter>(),
-    links: [httpLink({ url: server.url, headers: { 'x-ip': 'a' } })],
+    links: [httpStreamLink({ url: server.url, headers: { 'x-ip': 'a' } })],
   });
   expect(await client.hello.query()).toEqual({ count: 1, max: 2 });
   expect(await client.hello.query()).toEqual({ count: 2, max: 2 });
@@ -109,7 +109,10 @@ test('an extension adds ctx, meta, errors and middleware to every procedure (03 
   const other = createTrpcClient({
     router: routerType<typeof appRouter>(),
     links: [
-      httpLink({ url: server.url, headers: { 'x-ip': 'b', 'x-user': 'kat' } }),
+      httpStreamLink({
+        url: server.url,
+        headers: { 'x-ip': 'b', 'x-user': 'kat' },
+      }),
     ],
   });
   await expect(other.strict.query()).rejects.toMatchObject({

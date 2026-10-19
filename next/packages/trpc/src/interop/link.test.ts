@@ -4,7 +4,7 @@ import { map, observable, share, tap } from '@trpc/server/observable';
 import { Stream } from 'effect';
 import {
   createTrpcClient,
-  httpLink,
+  httpStreamLink,
   link,
   routerType,
   type Operation,
@@ -69,7 +69,7 @@ test('a v11 link changes the operation and taps results', async () => {
         contexts.push(opts.op.context);
         return opts.next(opts.op);
       }),
-      httpLink({ url: server.url }),
+      httpStreamLink({ url: server.url }),
     ],
   });
   expect(await client.whoami.query()).toBe('kim');
@@ -88,7 +88,7 @@ test('a v11 link can answer without calling next', async () => {
       : opts.next(opts.op);
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [fromV11Link(cacheLink), httpLink({ url: server.url })],
+    links: [fromV11Link(cacheLink), httpStreamLink({ url: server.url })],
   });
   expect(await client.whoami.query()).toBe('cached');
   expect(await client.byId.query({ id: '1' })).toEqual({ id: '1' });
@@ -115,7 +115,7 @@ test('errors: v12 errors reach the v11 link, v11 errors keep their code', async 
       : opts.next(opts.op).pipe(tap({ error: (e) => seen.push(e) }));
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [fromV11Link(v11Link), httpLink({ url: server.url })],
+    links: [fromV11Link(v11Link), httpStreamLink({ url: server.url })],
   });
   await expect(client.byId.query({ id: '2' })).rejects.toMatchObject({
     code: 'NOT_FOUND',
@@ -150,7 +150,7 @@ test('subscriptions pass through v11 operators, and stop when the loop ends', as
     );
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [fromV11Link(timesTen), httpLink({ url: server.url })],
+    links: [fromV11Link(timesTen), httpStreamLink({ url: server.url })],
   });
   const ticks: number[] = [];
   for await (const n of client.ticks.subscribe()) ticks.push(n);

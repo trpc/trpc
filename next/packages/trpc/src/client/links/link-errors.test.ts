@@ -2,7 +2,7 @@ import { Effect, Schema, Stream } from 'effect';
 import {
   createTrpcClient,
   experimental_validationLink,
-  httpLink,
+  httpStreamLink,
   link,
   localLink,
   matchError,
@@ -45,7 +45,7 @@ type CodesOf<E> = E extends { readonly code: infer C } ? C : never;
 type LinkCodesIn<E> = Extract<CodesOf<E>, LinkErrorCode>;
 
 const typed = <T>(links: T) => links;
-const http = httpLink({ url: 'http://localhost/trpc' });
+const http = httpStreamLink({ url: 'http://localhost/trpc' });
 const local = localLink({ router });
 
 test("a call's union has the link codes its links declare, and no others", () => {
@@ -152,7 +152,7 @@ test("a link code's own key takes it from its category", async () => {
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
     links: [
-      httpLink({
+      httpStreamLink({
         url: server.url,
         fetch: async (input, init) => {
           const request = new Request(input, init);
@@ -203,7 +203,9 @@ test("httpLink fails with the codes it declares: a body that isn't JSON is BAD_R
   const answering = (response: () => Promise<Response>) =>
     createTrpcClient({
       router: routerType<AppRouter>(),
-      links: [httpLink({ url: 'http://localhost/trpc', fetch: response })],
+      links: [
+        httpStreamLink({ url: 'http://localhost/trpc', fetch: response }),
+      ],
     });
   const [, html] = await safe(
     answering(async () => new Response('<html>ok</html>')).ping.query(),

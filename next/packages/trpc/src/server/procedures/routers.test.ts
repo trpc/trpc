@@ -1,5 +1,9 @@
 import { Effect } from 'effect';
-import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import {
+  createTrpcClient,
+  httpStreamLink,
+  routerType,
+} from '@trpc12/trpc/client';
 import { experimental_toContract } from '@trpc12/trpc/contract';
 import { getProcedure, resolveProcedure } from '@trpc12/trpc/extend';
 import {
@@ -69,7 +73,7 @@ test('router-level route meta only changes OpenAPI routes (08 Q8.3)', async () =
   await using server = await createTestServer({ router });
   const client = createTrpcClient({
     router: routerType<typeof router>(),
-    links: [httpLink({ url: server.url })],
+    links: [httpStreamLink({ url: server.url })],
   });
   expect(await client.admin.users.query()).toEqual(['ada']);
   expect(await client.admin.audit.log.query()).toEqual(['ada']);
@@ -99,7 +103,7 @@ test('lazy() loads a subtree on its first call, once (08 Q8.4)', async () => {
   await using server = await createTestServer({ router, batch: true });
   const client = createTrpcClient({
     router: routerType<typeof router>(),
-    links: [httpLink({ url: server.url, batch: true })],
+    links: [httpStreamLink({ url: server.url, batch: true })],
   });
   expectTypeOf<
     Parameters<typeof client.billing.invoice.query>[0]

@@ -36,7 +36,7 @@ export async function run(url: string) {
   );
   strictEqual(unauthorized?.code, 'UNAUTHORIZED');
 
-  // httpLink subscribes over SSE; lastEventId is a call option now.
+  // httpStreamLink subscribes over SSE; lastEventId is a call option now.
   const added = await client.post.add.mutate({ title: 'From the v12 client' });
   strictEqual(added.author, 'ada');
   const events: Array<[string, string]> = [];

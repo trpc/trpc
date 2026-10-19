@@ -1,5 +1,5 @@
 /**
- * The built-in links: HTTP, WebSocket, MessagePort and raw socket, local,
+ * The built-in links: HTTP (Promise-only, and streaming), WebSocket, MessagePort and raw socket, local,
  * switch, validation, and the composing links (retry, dedupe, split, logger
  * and durable).
  *
@@ -20,8 +20,10 @@ export type {
 } from './basic.ts';
 export { dedupeLink } from './dedupe.ts';
 export type { DedupeContext, DedupeLinkOptions } from './dedupe.ts';
-export { httpLink } from './http/link.ts';
-export type { HttpLinkOptions } from './http/link.ts';
+export { httpLink } from './http/light.ts';
+export type { HttpLinkDecl, HttpLinkOptions } from './http/light.ts';
+export { httpStreamLink } from './http/link.ts';
+export type { HttpStreamLinkDecl, HttpStreamLinkOptions } from './http/link.ts';
 export { localLink } from './local.ts';
 export type { LocalLinkOptions } from './local.ts';
 export {

@@ -1,5 +1,9 @@
 import { Context, Effect, Exit, Layer, Option, Stream, Tracer } from 'effect';
-import { httpLink, routerType, type ClientError } from '@trpc12/trpc/client';
+import {
+  httpStreamLink,
+  routerType,
+  type ClientError,
+} from '@trpc12/trpc/client';
 import { createEffectClient } from '@trpc12/trpc/effect';
 import {
   type AnyRouter,
@@ -113,7 +117,7 @@ async function setup(user: string | null = 'ada') {
   });
   const client = createEffectClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: server.url })],
+    links: [httpStreamLink({ url: server.url })],
   });
   return { server, client, [Symbol.asyncDispose]: () => server.close() };
 }

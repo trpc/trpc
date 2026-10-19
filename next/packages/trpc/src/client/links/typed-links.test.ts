@@ -2,7 +2,7 @@ import { Effect, Schema, Stream } from 'effect';
 import {
   createTrpcClient,
   dedupeLink,
-  httpLink,
+  httpStreamLink,
   link,
   routerType,
   safe,
@@ -55,7 +55,7 @@ async function setup() {
   const server = await createTestServer({ router });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [dedupeLink(), httpLink({ url: server.url })],
+    links: [dedupeLink(), httpStreamLink({ url: server.url })],
   });
   return { server, client, [Symbol.asyncDispose]: () => server.close() };
 }
@@ -121,7 +121,7 @@ test('links declare the call option fields calls may pass (17 D-C, F-B)', async 
   });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [traceLink, dedupeLink(), httpLink({ url: server.url })],
+    links: [traceLink, dedupeLink(), httpStreamLink({ url: server.url })],
   });
   await client.post.byId.query(
     { id: '1' },
@@ -150,8 +150,8 @@ test('splitLink sees typed paths, and merges both branches', async () => {
           conditions.push(op.path);
           return op.path === 'post.byId';
         },
-        true: [dedupeLink(), httpLink({ url: server.url })],
-        false: httpLink({ url: server.url, batch: true }),
+        true: [dedupeLink(), httpStreamLink({ url: server.url })],
+        false: httpStreamLink({ url: server.url, batch: true }),
       }),
     ],
   });
@@ -163,8 +163,8 @@ test('splitLink sees typed paths, and merges both branches', async () => {
   splitLink<AppRouter>({
     // @ts-expect-error -- not a path of the router
     condition: (op) => op.path === 'post.nope',
-    true: httpLink({ url: server.url }),
-    false: httpLink({ url: server.url }),
+    true: httpStreamLink({ url: server.url }),
+    false: httpStreamLink({ url: server.url }),
   });
 
   createTrpcClient({
@@ -173,8 +173,8 @@ test('splitLink sees typed paths, and merges both branches', async () => {
       // @ts-expect-error -- typed for another router
       splitLink<typeof otherRouter>({
         condition: () => true,
-        true: httpLink({ url: server.url }),
-        false: httpLink({ url: server.url }),
+        true: httpStreamLink({ url: server.url }),
+        false: httpStreamLink({ url: server.url }),
       }),
     ],
   });
@@ -184,7 +184,7 @@ test('routerType works for the Effect client too', async () => {
   await using server = await createTestServer({ router });
   const client = createEffectClient({
     router: routerType<AppRouter>(),
-    links: [dedupeLink(), httpLink({ url: server.url })],
+    links: [dedupeLink(), httpStreamLink({ url: server.url })],
   });
   const post = await Effect.runPromise(
     client.post.byId.query({ id: '5' }, { dedupe: false }),
@@ -222,8 +222,15 @@ test('switchLink picks a branch, and a typed call option forces one', async () =
       switchLink({
         name: 'transport',
         links: {
-          batched: [tag('batched'), httpLink({ url: server.url, batch: true })],
-          single: [tag('single'), dedupeLink(), httpLink({ url: server.url })],
+          batched: [
+            tag('batched'),
+            httpStreamLink({ url: server.url, batch: true }),
+          ],
+          single: [
+            tag('single'),
+            dedupeLink(),
+            httpStreamLink({ url: server.url }),
+          ],
         },
         pick: (op) => {
           expectTypeOf(op.path).toEqualTypeOf<
@@ -251,7 +258,7 @@ test('switchLink picks a branch, and a typed call option forces one', async () =
 });
 
 test('switchLink names are checked', () => {
-  const http = httpLink({ url: 'http://localhost' });
+  const http = httpStreamLink({ url: 'http://localhost' });
   expect(() =>
     switchLink({
       // @ts-expect-error -- the client reads `signal` itself
@@ -317,7 +324,7 @@ test("a link's own declared errors join every call's typed union", async () => {
   );
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [rateLimit, httpLink({ url: server.url })],
+    links: [rateLimit, httpStreamLink({ url: server.url })],
   });
   expect((await client.post.byId.query({ id: '1' })).id).toBe('1');
   const [, err] = await safe(client.post.create.mutate({ title: 'x' }));
@@ -329,7 +336,7 @@ test("a link's own declared errors join every call's typed union", async () => {
 
   const effectClient = createEffectClient({
     router: routerType<AppRouter>(),
-    links: [rateLimit, httpLink({ url: server.url })],
+    links: [rateLimit, httpStreamLink({ url: server.url })],
   });
   const retryAfter = await Effect.runPromise(
     effectClient.post.byId.query({ id: '1' }).pipe(
@@ -351,7 +358,7 @@ const liveRouter = {
 };
 
 test('methods a chain cannot carry are missing from the client', () => {
-  const http = httpLink({ url: 'http://localhost' });
+  const http = httpStreamLink({ url: 'http://localhost' });
   const queriesOnly = link<{ unsupported: 'subscription' }>((opts) =>
     opts.next(opts.op),
   );

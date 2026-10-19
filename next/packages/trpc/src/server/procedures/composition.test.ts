@@ -1,6 +1,6 @@
 import {
   createTrpcClient,
-  httpLink,
+  httpStreamLink,
   safe,
   routerType,
 } from '@trpc12/trpc/client';
@@ -106,7 +106,7 @@ async function setup(ctxOverrides: Partial<Context> = {}) {
   });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: server.url })],
+    links: [httpStreamLink({ url: server.url })],
   });
   return { db, server, client, [Symbol.asyncDispose]: () => server.close() };
 }
@@ -376,7 +376,7 @@ test('ctx a standalone middleware needs and the procedure lacks becomes a root c
   });
   const client = createTrpcClient({
     router: routerType<typeof tenantRouter>(),
-    links: [httpLink({ url: server.url })],
+    links: [httpStreamLink({ url: server.url })],
   });
   expect(await client.whoami.query()).toBe('tenant:us-2/us');
 
