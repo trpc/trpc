@@ -177,7 +177,9 @@ const appRouter = {
 // RPC: admin.users. OpenAPI: GET /api/staff/users, tagged admin.
 ```
 
-The prefix goes before every route below the group: before an explicit `.meta({ route: { path } })`, and before the path derived from the keys below the group. Group tags come before a procedure's own. Groups nest.
+The prefix goes before every route below the group: before an explicit `.meta({ route: { path } })`, and before the path derived from the keys below the group. Group tags come before a procedure's own. Groups nest, and a group passed as the root router applies to every route.
+
+`mergeRouters(admin, other)` keeps the group: every route of the result is in it, `other`'s too. Merging two groups with different `route` throws; nest them instead ([Routers](../server/routers.md)). Object spread (`{ ...admin }`) drops the group.
 
 A router's `meta` takes only the keys an extension gives a router-level form, like `route`; other `meta` is set on procedures.
 

@@ -23,6 +23,29 @@ Two kinds of key can't be called from a client, so `createFetchHandler` and `cre
 
 Merge routers with `mergeRouters(a, b)`. A key in both is a type error and a runtime error; object spread would silently keep the last.
 
+Router-level `meta` (`t.router({ meta }, routes)`, like an OpenAPI group's `route`) merges too: the result has every `meta` key of its routers, so every procedure in it is under that `meta`, as if the routers had been written as one. Two routers setting a key to different values make `mergeRouters` throw, naming the key; equal values (compared structurally) are fine. Nest them under keys of their own instead, so each keeps its `meta`. Object spread drops router-level `meta`.
+
+```ts twoslash
+// ---cut-start---
+import { experimental_openapi } from '@trpc12/trpc/openapi';
+import { initTrpc, mergeRouters } from '@trpc12/trpc/server';
+const t = initTrpc().concat(experimental_openapi());
+const users = t.procedure.query(() => ['ada']);
+const invoices = t.procedure.query(() => [1]);
+const health = t.procedure.query(() => 'ok');
+// ---cut-end---
+const admin = t.router({ meta: { route: { prefix: '/admin' } } }, { users });
+const billing = t.router({ meta: { route: { prefix: '/billing' } } }, { invoices });
+
+// OpenAPI: GET /api/admin/users and GET /api/admin/health
+export const adminApi = mergeRouters(admin, { health });
+
+// mergeRouters(admin, billing) throws: they set `route` to different values.
+export const appRouter = { admin, billing, health };
+```
+
+The type check doesn't see router-level `meta`, so a conflict is a runtime error only.
+
 With thousands of procedures, split the router into packages and type apps from the server's built declarations: see [Large routers](./large-routers.md).
 
 ## Lazy subtrees

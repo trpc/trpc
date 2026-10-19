@@ -114,3 +114,5 @@ const admin = t.procedure.meta({ auth: true }).query(() => 'secret');
 ```
 
 A later `.meta()` replaces a key unless its root says how to merge it ([Extensions](./extensions.md)).
+
+Routers take `meta` too, for the keys an extension gives a router-level form, like an OpenAPI group's `route` ([Groups](../openapi/routes.md#groups-and-lazy-subtrees)); `mergeRouters` merges it ([Routers](./routers.md)).
