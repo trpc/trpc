@@ -21,7 +21,14 @@ import { fastifyRequestHandler } from './fastifyRequestHandler';
 export interface FastifyTRPCPluginOptions<TRouter extends AnyRouter> {
   prefix?: string;
   useWSS?: boolean;
-  trpcOptions: FastifyHandlerOptions<TRouter, FastifyRequest, FastifyReply>;
+  /**
+   * `keepAlive`, `dangerouslyDisablePong` and `experimental_encoder` are only used when `useWSS` is enabled
+   */
+  trpcOptions: FastifyHandlerOptions<TRouter, FastifyRequest, FastifyReply> &
+    Pick<
+      WSSHandlerOptions<TRouter>,
+      'keepAlive' | 'dangerouslyDisablePong' | 'experimental_encoder'
+    >;
 }
 
 export type CreateFastifyContextOptions = NodeHTTPCreateContextFnOptions<

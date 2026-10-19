@@ -18,6 +18,7 @@ import type {
   FastifyTRPCPluginOptions,
 } from '@trpc/server/adapters/fastify';
 import { fastifyTRPCPlugin } from '@trpc/server/adapters/fastify';
+import type { WSSHandlerOptions } from '@trpc/server/adapters/ws';
 import { observable } from '@trpc/server/observable';
 import fastify from 'fastify';
 import fp from 'fastify-plugin';
@@ -173,27 +174,20 @@ function createServer(opts: ServerOptions) {
 
   const router = opts.appRouter;
 
-  const trpcOptions = {
-    router,
-    createContext,
-    onError(data) {
-      // report to error monitoring
-      data;
-      // ^?
-    },
-  } satisfies FastifyTRPCPluginOptions<AppRouter>['trpcOptions'];
-
   instance.register(ws);
   instance.register(plugin, {
     useWSS: true,
     prefix: config.prefix,
-    // the plugin casts trpcOptions to WSSHandlerOptions internally, so
-    // keepAlive reaches the websocket handler at runtime even though the
-    // public type for trpcOptions does not declare it
     trpcOptions: {
-      ...trpcOptions,
-      ...(opts.keepAlive ? { keepAlive: opts.keepAlive } : {}),
-    } as FastifyTRPCPluginOptions<AppRouter>['trpcOptions'],
+      router,
+      createContext,
+      keepAlive: opts.keepAlive,
+      onError(data) {
+        // report to error monitoring
+        data;
+        // ^?
+      },
+    } satisfies FastifyTRPCPluginOptions<AppRouter>['trpcOptions'],
   });
 
   instance.register(async function (fastify) {
@@ -684,4 +678,19 @@ describe('issue #7502 - keepAlive must register a single ping interval', () => {
 
     socket.close();
   });
+});
+
+test('trpcOptions accepts the websocket handler options', () => {
+  type TRPCOptions = FastifyTRPCPluginOptions<AppRouter>['trpcOptions'];
+  type WSOptions = WSSHandlerOptions<AppRouter>;
+
+  expectTypeOf<TRPCOptions['keepAlive']>().toEqualTypeOf<
+    WSOptions['keepAlive']
+  >();
+  expectTypeOf<TRPCOptions['dangerouslyDisablePong']>().toEqualTypeOf<
+    WSOptions['dangerouslyDisablePong']
+  >();
+  expectTypeOf<TRPCOptions['experimental_encoder']>().toEqualTypeOf<
+    WSOptions['experimental_encoder']
+  >();
 });
