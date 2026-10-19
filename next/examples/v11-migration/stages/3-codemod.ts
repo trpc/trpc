@@ -1,10 +1,11 @@
 /**
  * Stage 3: `trpc12-upgrade` on a copy of the v11 app. A dry run lists the
  * rewrites and the steps left by hand as `file:line:column`; `--write`
- * rewrites what has one v12 form.
+ * rewrites what has one v12 form. A path that isn't there is one line on
+ * stderr and exit code 1.
  */
 import { deepStrictEqual, ok, strictEqual } from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { cpSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -135,6 +136,16 @@ export function run() {
       steps.filter((step) => step.startsWith('app/client/links.ts:')),
     );
     strictEqual(again.at(-1), '0 file(s) to upgrade, 2 step(s) by hand');
+
+    const missing = spawnSync(process.execPath, [bin, 'nope'], {
+      cwd: dir,
+      encoding: 'utf8',
+    });
+    strictEqual(missing.status, 1);
+    strictEqual(
+      missing.stderr,
+      'trpc12-upgrade: no such file or directory: nope\n',
+    );
 
     console.log('stage 3: trpc12-upgrade on the v11 snapshot:', {
       upgraded: files.length - 1,
