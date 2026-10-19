@@ -152,11 +152,14 @@ export function createTrpcRsc<TRouter extends AnyRouter>(
     getQueryClient,
     prefetch: (options) => {
       const client = getQueryClient();
-      void ('getNextPageParam' in options
-        ? client.infiniteQuery(
-            options as InfiniteQueryExecuteOptions<any, any, any, any, any>,
-          )
-        : client.query(options as QueryExecuteOptions<any, any, any, any, any>)
+      void (
+        'getNextPageParam' in options
+          ? client.infiniteQuery(
+              options as InfiniteQueryExecuteOptions<any, any, any, any, any>,
+            )
+          : client.query(
+              options as QueryExecuteOptions<any, any, any, any, any>,
+            )
       ).catch(noop);
     },
     HydrationBoundary: (props) => {
