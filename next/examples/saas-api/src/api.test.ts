@@ -136,8 +136,9 @@ test('localLink: through the serializer and the links before it', async () => {
     'down admin.members',
   ]);
 
-  // The CSV export is an HTTP response, which in-process calls can't carry.
+  // The CSV export is its own HTTP response; in-process it's a web Response.
   const projectId = (await client.project.list.query())[0]!.id;
-  const [, raw] = await safe(client.project.exportCsv.query({ projectId }));
-  expect(raw?.code).toBe('BAD_REQUEST');
+  const csv = await client.project.exportCsv.query({ projectId });
+  expect(csv.headers.get('content-type')).toBe('text/csv');
+  expect((await csv.text()).split('\n')[0]).toBe('id,title,done');
 });
