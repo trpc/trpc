@@ -1,14 +1,4 @@
-import {
-  Cause,
-  Effect,
-  Exit,
-  Fiber,
-  Option,
-  Queue,
-  Request,
-  RequestResolver,
-  Stream,
-} from 'effect';
+import { Cause, Effect, Exit, Option, Queue, Scope, Stream } from 'effect';
 import {
   codeOfStatus,
   fromWireError,
@@ -52,6 +42,7 @@ import {
   type DeferredDecoder,
 } from '../events.ts';
 import { resumeOf, retrying, type Retries } from '../resume.ts';
+import { makeBatcher, type Batch } from './batch.ts';
 
 /**
  * Options for {@link httpLink}.
@@ -494,57 +485,27 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
 
   // --- batching -------------------------------------------------------------------
 
-  /**
-   * A call waiting for its batch. `gone` once it settled or its caller
-   * stopped waiting; `onAbort` aborts the batch's request once every call
-   * in it is gone.
-   */
-  interface Batched extends Request.Request<unknown, AnyTrpcError> {
-    readonly op: Operation;
-    readonly key: string;
-    gone: boolean;
-    onAbort?: () => void;
-  }
-  const Batched = Request.of<Batched>();
-
-  const dispatch = (
-    entries: ReadonlyArray<Request.Entry<Batched>>,
-  ): Effect.Effect<void> =>
+  /** Sends a batch as one request and answers each call from its lines. */
+  const sendBatch = (
+    batch: Batch<Operation>,
+  ): Effect.Effect<void, AnyTrpcError> =>
     Effect.gen(function* () {
-      const controller = new AbortController();
-      for (const entry of entries) {
-        entry.request.onAbort = () => {
-          if (entries.every((e) => e.request.gone)) controller.abort();
-        };
-      }
-      /** A call settles once: a later answer for it is ignored. */
-      const settle = (
-        entry: Request.Entry<Batched>,
-        exit: Exit.Exit<unknown, AnyTrpcError>,
-      ) => {
-        entry.request.gone = true;
-        entry.completeUnsafe(exit);
-      };
-      /**
-       * Results still decoding. `Effect.request` fails the calls a batch
-       * ends without settling, so the batch waits for them.
-       */
-      const heads: Array<Fiber.Fiber<void>> = [];
-      const frames = yield* Effect.forEach(entries, () =>
+      const ops = batch.calls;
+      const frames = yield* Effect.forEach(ops, () =>
         Queue.unbounded<Frame, AnyTrpcError | Cause.Done>(),
       );
       const onLine = (line: BatchLine, headers: Headers) => {
-        const entry = entries[line.i];
+        const op = ops[line.i];
         const queue = frames[line.i];
-        if (!entry || !queue) return Effect.void;
+        if (!op || !queue) return Effect.void;
         if ('chunk' in line) {
           Queue.offerUnsafe(queue, line.chunk as Frame);
           return Effect.void;
         }
         try {
-          report(entry.request.op, line.status, headers);
+          report(op, line.status, headers);
         } catch (error) {
-          settle(entry, Exit.fail(error as AnyTrpcError));
+          batch.settle(line.i, Exit.fail(error as AnyTrpcError));
           Queue.endUnsafe(queue);
           return Effect.void;
         }
@@ -555,30 +516,26 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
           } catch (cause) {
             error = badResponse('Invalid error message')(cause);
           }
-          settle(entry, Exit.fail(error));
+          batch.settle(line.i, Exit.fail(error));
           Queue.endUnsafe(queue);
           return Effect.void;
         }
         Queue.offerUnsafe(queue, line.body as Frame);
-        return serializer
-          .deserializeStream(Stream.fromQueue(queue), {
-            reviveError,
-            ...streamErrors,
-          })
-          .pipe(
-            Effect.matchCause({
-              onSuccess: (value) => settle(entry, Exit.succeed(value)),
-              onFailure: (cause) =>
-                settle(entry, Exit.fail(toHttpError(Cause.squash(cause)))),
-            }),
-            Effect.forkDetach,
-            Effect.map((fiber) => {
-              heads.push(fiber);
-            }),
-          );
+        return batch.settleWith(
+          line.i,
+          serializer
+            .deserializeStream(Stream.fromQueue(queue), {
+              reviveError,
+              ...streamErrors,
+            })
+            .pipe(
+              Effect.catchCause((cause) =>
+                Effect.fail(toHttpError(Cause.squash(cause))),
+              ),
+            ),
+        );
       };
-      const failure = yield* Effect.gen(function* () {
-        const ops = entries.map((entry) => entry.request.op);
+      return yield* Effect.gen(function* () {
         const calls: BatchCall[] = ops.map((op) => {
           const encoded = encode(op);
           return {
@@ -586,6 +543,7 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
             ...(encoded.json === undefined ? {} : { input: encoded.json }),
           };
         });
+        const signal = yield* Scope.provide(Effect.abortSignal, batch.scope);
         const res = yield* Effect.tryPromise({
           try: async () =>
             fetchFn(
@@ -597,33 +555,28 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
                   'content-type': CONTENT_TYPE.json,
                   [HEADER.batch]: '1',
                 },
-                {
-                  method: 'POST',
-                  body: JSON.stringify(calls),
-                  signal: controller.signal,
-                },
+                { method: 'POST', body: JSON.stringify(calls), signal },
               ),
             ),
           catch: toHttpError,
         });
         if (!res.ok || !res.body) {
           const err = yield* Effect.promise(() => readError(res));
-          for (const entry of entries) {
+          for (const [i, op] of ops.entries()) {
             try {
-              report(entry.request.op, res.status, res.headers);
+              report(op, res.status, res.headers);
             } catch (error) {
-              settle(entry, Exit.fail(error as AnyTrpcError));
+              batch.settle(i, Exit.fail(error as AnyTrpcError));
             }
           }
-          return err;
+          return yield* Effect.fail(err);
         }
         yield* readStream(res.headers.get('content-type') ?? '', res.body).pipe(
           Stream.runForEach((line) => onLine(line as BatchLine, res.headers)),
         );
-        return badResponse('The batch response ended without a result')();
       }).pipe(
         Effect.catchCause((cause) =>
-          Effect.succeed(toHttpError(Cause.squash(cause))),
+          Effect.fail(toHttpError(Cause.squash(cause))),
         ),
         Effect.ensuring(
           Effect.sync(() => {
@@ -631,38 +584,16 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
           }),
         ),
       );
-      yield* Fiber.awaitAll(heads);
-      // Only calls the response never answered are still open.
-      for (const entry of entries) settle(entry, Exit.fail(failure));
     });
 
-  const resolver = RequestResolver.makeWith<Batched>({
-    batchKey: (entry) => entry.request.key,
-    // A macrotask, so calls started in the same tick share a request.
-    delay: Effect.sleep(0),
-    collectWhile: (entries) => entries.size < maxItems,
-    runAll: dispatch,
+  const loader = makeBatcher<Operation>({
+    // Calls without an `initKey` are unbatchable, so they never get here.
+    key: (op) => `${op.type} ${initKey(op)}`,
+    maxItems,
+    send: sendBatch,
   });
-
   const batched = (op: Operation): OperationStream =>
-    Stream.fromEffect(
-      Effect.suspend(() => {
-        // Calls without an `initKey` are unbatchable, so they never get here.
-        const request = Batched({
-          op,
-          key: `${op.type} ${initKey(op)}`,
-          gone: false,
-        });
-        return Effect.request(request, resolver).pipe(
-          Effect.onInterrupt(() =>
-            Effect.sync(() => {
-              request.gone = true;
-              request.onAbort?.();
-            }),
-          ),
-        );
-      }),
-    );
+    Stream.fromEffect(loader(op));
 
   // --- subscriptions ------------------------------------------------------------------
 
