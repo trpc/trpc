@@ -79,6 +79,10 @@ jobs:
         working-directory: next/www
         run: node build/sponsors-sync.ts --only-when-sponsors-change
 
+      # Someone may push in between: then the commit is made again on the
+      # branch's new tip (the synced sponsors.json, and the README's sponsors
+      # section redone from it), rather than rebased, so it can't conflict
+      # and the history stays linear.
       - if: steps.go.outputs.run == 'true'
         name: Commit and push if a sponsor joined, left or changed tier
         run: |
@@ -88,14 +92,27 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -- next/www/sponsors.json README.md
-          git commit -m "chore(sponsors): sync who sponsors from GitHub Sponsors"
+          synced="$RUNNER_TEMP/sponsors.json"
+          cp next/www/sponsors.json "$synced"
           branch="${GITHUB_REF#refs/heads/}"
-          for _ in 1 2 3; do
+          for attempt in 1 2 3 4 5 6; do
+            if [ "$attempt" -gt 1 ]; then
+              sleep $((attempt * 5 + RANDOM % 10))
+              git fetch --depth=1 origin "$branch"
+              git reset --hard FETCH_HEAD
+              cp "$synced" next/www/sponsors.json
+              (cd next/www && node build/sponsors-sync.ts --readme-only)
+              if git diff --quiet -- next/www/sponsors.json README.md; then
+                echo "$branch has these sponsors already."
+                exit 0
+              fi
+            fi
+            git add -- next/www/sponsors.json README.md
+            git commit -m "chore(sponsors): sync who sponsors from GitHub Sponsors"
             if git push origin "HEAD:$branch"; then
               exit 0
             fi
-            git pull --rebase origin "$branch"
+            echo "::warning::$branch moved on (attempt $attempt); redoing the commit on its tip."
           done
           echo "::error::Couldn't push the sponsors commit to $branch."
           exit 1
