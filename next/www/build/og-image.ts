@@ -30,6 +30,16 @@ export type OgCard = Data.TaggedEnum<{
     readonly version: 'v12' | CopiedVersion['id'];
   };
   Home: { readonly path: string };
+  /** A page of its own, like `/sponsor`. */
+  Page: {
+    readonly description: string;
+    readonly eyebrow: string;
+    readonly path: string;
+    /** Top right, where a doc's card has its version. */
+    readonly pill: string;
+    readonly title: string;
+    readonly url: string;
+  };
   /** The blog, or one of its posts. */
   Post: {
     readonly description: string;
@@ -324,6 +334,7 @@ const cardElement = (assets: Assets, ogCard: OgCard) =>
   OgCard.$match(ogCard, {
     Doc: (doc) => docCard(assets, doc),
     Home: () => homeCard(assets),
+    Page: (page) => articleCard(assets, page),
     Post: (post) => postCard(assets, post),
   });
 

@@ -60,6 +60,20 @@ export const topSponsors = sponsors
 
 export const sponsorUrl = 'https://github.com/sponsors/trpc';
 
+export const kattSponsorUrl = 'https://github.com/sponsors/KATT';
+
+/** Sponsoring the trpc organization at the tier GitHub numbers `tierId`. */
+export const sponsorTierUrl = (tierId: number) =>
+  `${sponsorUrl}/sponsorships?tier_id=${tierId}`;
+
+/** `/sponsor`, the tiers and what partners get; trpc.io's `/pricing` redirects there. */
+export const sponsorPage = {
+  description:
+    'tRPC is MIT licensed and kept going by its sponsors. Silver and Gold sponsors are partners, featured across the site and the README.',
+  path: '/sponsor',
+  title: 'Sponsor tRPC',
+} as const;
+
 /** `sponsor`'s GitHub avatar, `size` pixels square. */
 export function avatarUrl(sponsor: Sponsor, size: number) {
   const url = new URL(sponsor.imgSrc);
