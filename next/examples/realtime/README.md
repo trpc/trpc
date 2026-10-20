@@ -6,7 +6,7 @@ A chat whose servers share events through an `experimental_Publisher` on Redis o
 server.ts     the router and listen(port, { backend, idleTimeout })
 client.ts     main(url, cluster?): the clients and what they check
 start.ts      two servers per backend, Redis then Postgres, and main() against them
-publisher.ts  the Redis and Postgres publisher recipes (docs/subscriptions/backends.md)
+publisher.ts  the Redis and Postgres publisher recipes (https://v12.trpc.io/v12/docs/subscriptions/backends)
 ```
 
 What `client.ts` checks:

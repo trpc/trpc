@@ -1,6 +1,6 @@
 /**
  * The Redis and Postgres publishers: the recipes from
- * docs/subscriptions/backends.md ("Publisher backends"). Every server
+ * https://v12.trpc.io/v12/docs/subscriptions/backends ("Publisher backends"). Every server
  * sharing the Redis or the database sees every event, and `lastEventId`
  * resumes from the backend's history.
  */

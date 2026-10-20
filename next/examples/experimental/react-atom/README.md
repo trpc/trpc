@@ -1,6 +1,6 @@
 # Effect atoms on TanStack Start (experimental)
 
-`@trpc12/experimental-react-atom` in a TanStack Start app styled with `@shared/ui` and Tailwind. `useAtomSuspense()` reads the `post.list` query atom, a `post.add` mutation atom with `reactivityKeys: ['posts']` refetches it, and a subscription atom shows the server's clock. See [React atoms](../../../docs/integrations/experimental-react-atom.md); for the same page with `use()` and Suspense, see [`react-suspense`](../react-suspense/README.md).
+`@trpc12/experimental-react-atom` in a TanStack Start app styled with `@shared/ui` and Tailwind. `useAtomSuspense()` reads the `post.list` query atom, a `post.add` mutation atom with `reactivityKeys: ['posts']` refetches it, and a subscription atom shows the server's clock. See [React atoms](https://v12.trpc.io/v12/docs/integrations/experimental-react-atom); for the same page with `use()` and Suspense, see [`react-suspense`](../react-suspense/README.md).
 
 It's a framework app, so it keeps TanStack Start's layout instead of the [examples layout](../../README.md):
 

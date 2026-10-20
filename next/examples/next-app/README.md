@@ -11,8 +11,8 @@ src/app/page.tsx            prefetches posts at request time, inside <Suspense>
 src/app/guestbook/          a Server Action form over a cached, tagged list
 ```
 
-- **Posts** ([React Server Components](../../docs/integrations/rsc.md)): `prefetch` in a server component, read with `useSuspenseQuery`; a TanStack mutation invalidates with `pathFilter`. danSON keeps `createdAt` a `Date`.
-- **Guestbook** ([Next.js data cache](../../docs/integrations/rsc.md#nextjs-data-cache), [Server Actions](../../docs/integrations/server-actions.md)): a `'use cache'` function tags `caller.guestbook.list` with `cacheTags`, so the list is in the page's static shell. The form posts `FormData` to an `experimental_createAction` action through `useActionState`, `useOptimistic` shows the entry until the action settles, and the action calls `updateTag(revalidationTag(trpc.guestbook.pathKey()))`. A declared `CONFLICT` error comes back as the form's state.
+- **Posts** ([React Server Components](https://v12.trpc.io/v12/docs/integrations/rsc)): `prefetch` in a server component, read with `useSuspenseQuery`; a TanStack mutation invalidates with `pathFilter`. danSON keeps `createdAt` a `Date`.
+- **Guestbook** ([Next.js data cache](https://v12.trpc.io/v12/docs/integrations/rsc#nextjs-data-cache), [Server Actions](https://v12.trpc.io/v12/docs/integrations/server-actions)): a `'use cache'` function tags `caller.guestbook.list` with `cacheTags`, so the list is in the page's static shell. The form posts `FormData` to an `experimental_createAction` action through `useActionState`, `useOptimistic` shows the entry until the action settles, and the action calls `updateTag(revalidationTag(trpc.guestbook.pathKey()))`. A declared `CONFLICT` error comes back as the form's state.
 - **Streamed mutation** and **Files**: `streamedMutationOptions` / `chunksOptions`, and `File` in and out.
 
 Notes:

@@ -1,6 +1,6 @@
 # Runtime matrix example
 
-One router ([`src/router.ts`](./src/router.ts)) served on every runtime the [adapters](../../docs/adapters/overview.md) cover, and one client ([`client.ts`](./client.ts)) run against each. `pnpm start` starts every runtime its own way, runs the client against it, and exits:
+One router ([`src/router.ts`](./src/router.ts)) served on every runtime the [adapters](https://v12.trpc.io/v12/docs/adapters/overview) cover, and one client ([`client.ts`](./client.ts)) run against each. `pnpm start` starts every runtime its own way, runs the client against it, and exits:
 
 ```
 node                 runtime, batch, errors, rich types, files, streaming, sse resume, cors, services, websocket, websocket origin
