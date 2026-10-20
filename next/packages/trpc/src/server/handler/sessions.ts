@@ -1,8 +1,8 @@
 import { Effect, type Duration } from 'effect';
 import { HttpServerRequest, HttpServerResponse } from 'effect/http';
 import {
-  fromWebSocketLike,
   serveMessagePort,
+  runWebSocketLike,
   serveSocketConnection,
   type MessagePortLike,
   type ServeSocket,
@@ -70,7 +70,7 @@ export const makeSessions = (
     request: HttpServerRequest.HttpServerRequest,
     platform: unknown,
   ) =>
-    Effect.flatMap(fromWebSocketLike(ws), (socket) =>
+    runWebSocketLike(ws, (socket) =>
       serveSocketConnection(core, socket, {
         request,
         platform,

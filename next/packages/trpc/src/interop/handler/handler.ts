@@ -68,7 +68,7 @@ import {
   type inferRouterServices,
 } from '../../server/procedures/index.ts';
 import {
-  fromWebSocketLike,
+  runWebSocketLike,
   HandlerDrains,
   makeSocketDrains,
   type SocketDrains,
@@ -205,8 +205,9 @@ export interface V11Handler<TPlatform = undefined> {
   ): void;
   /**
    * Closes the open WebSockets (1012, "service restart"), so `wsLink`
-   * reconnects elsewhere and resends its subscriptions, then releases the
-   * `layer`'s resources. The handler takes no WebSockets after.
+   * reconnects elsewhere and resends its subscriptions, ends their
+   * sessions (a socket still connecting is closed once it opens), then
+   * releases the `layer`'s resources. The handler takes no WebSockets after.
    */
   dispose(): Promise<void>;
 }
@@ -351,12 +352,14 @@ export function createV11Handler<
   TRouter extends AnyRouter,
   TPlatform = undefined,
 >(opts: V11HandlerOptions<TRouter, TPlatform>): V11Handler<TPlatform> {
-  const base = createHandlerCore(
-    opts as typeof opts & {
+  const drains = makeSocketDrains(0);
+  const base = createHandlerCore({
+    ...(opts as typeof opts & {
       createContext?: (o: CreateContextOpts<any>) => MaybePromise<object>;
       layer?: Layer.Layer<any, any, never>;
-    },
-  );
+    }),
+    drains,
+  });
   const { publicError, report } = base;
   const transformer = opts.transformer;
   const input =
@@ -396,7 +399,7 @@ export function createV11Handler<
     output,
     errorShape,
     settle,
-    drains: makeSocketDrains(0),
+    drains,
     maxSocketBatch: batch?.maxItems ?? DEFAULT_MAX_BATCH,
   };
 
@@ -986,8 +989,8 @@ export function createV11Handler<
           : (Context.make(CurrentPlatform, platform) as Context.Context<never>),
       ),
     websocket(socket, o) {
-      Effect.runFork(
-        Effect.flatMap(fromWebSocketLike(socket), (effectSocket) =>
+      base.fork(
+        runWebSocketLike(socket, (effectSocket) =>
           serveV11Socket(core, effectSocket, {
             request: HttpServerRequest.fromWeb(o.request),
             platform: o.platform,
@@ -996,10 +999,7 @@ export function createV11Handler<
         ),
       );
     },
-    async dispose() {
-      await Effect.runPromise(core.drains.drain({ final: true }));
-      await base.dispose();
-    },
+    dispose: base.dispose,
   };
   setHandlerContext(
     handler,

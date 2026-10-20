@@ -9,6 +9,7 @@ export type { DrainConnection, SocketDrains } from './drain.ts';
 export {
   fromWebSocketLike,
   runSocket,
+  runWebSocketLike,
   socketFrames,
 } from './socket-session.ts';
 export type { SocketOutbox, SocketSession } from './socket-session.ts';

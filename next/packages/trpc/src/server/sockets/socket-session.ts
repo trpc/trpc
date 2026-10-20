@@ -43,6 +43,41 @@ export const fromWebSocketLike = (
       : socket,
   );
 
+const CONNECTING = 0;
+const OPEN = 1;
+
+/**
+ * Closes `ws` with `code` now if it's open, or once it opens if it's still
+ * connecting: some runtimes throw on closing a socket that isn't open yet.
+ */
+const closeWhenOpen = (ws: WebSocketLike, code: number, reason: string) => {
+  if (ws.readyState === OPEN) ws.close(code, reason);
+  else if (ws.readyState === CONNECTING) {
+    const onOpen = () => {
+      ws.removeEventListener('open', onOpen);
+      ws.close(code, reason);
+    };
+    ws.addEventListener('open', onOpen);
+  }
+};
+
+/**
+ * Serves `ws` as an Effect `Socket` with `serve`. Interrupting it closes
+ * `ws` with 1012 ("service restart"), so the client reconnects: Effect's
+ * `Socket` only lets go of the platform's socket, and a close the session
+ * queued may not have been written yet.
+ * @internal
+ */
+export const runWebSocketLike = (
+  ws: WebSocketLike,
+  serve: (socket: Socket.Socket) => Effect.Effect<void>,
+): Effect.Effect<void> =>
+  Effect.flatMap(fromWebSocketLike(ws), serve).pipe(
+    Effect.onInterrupt(() =>
+      Effect.sync(() => closeWhenOpen(ws, 1012, 'Service restart')),
+    ),
+  );
+
 /**
  * Bytes a socket has accepted but not sent yet. Effect's `Socket` writes
  * without waiting for the peer (WebSockets have no drain event), so
