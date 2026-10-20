@@ -95,7 +95,7 @@ flagged.onSeat;
 ```
 
 - ✅ One rule for both options: a value that may turn something off turns it off in the types
-- ❌ Apps with a runtime flag lose `.subscribe()` they do use, and have to restructure the chain (and the conditional above types as a union of two chains)
+- ❌ Apps with a runtime flag lose `.subscribe()` they do use, and have to restructure the chain: picking the link with a conditional, as above, types as a union of two chains that loses `.subscribe()` too
 
 ## Recommendation
 
