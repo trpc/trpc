@@ -46,9 +46,20 @@ export type Serialize<T> =
   T extends [unknown, ...unknown[]] ? SerializeTuple<T> :
   T extends readonly (infer U)[] ? (U extends NonJsonPrimitive ? null : Serialize<U>)[] :
   T extends object ?
-    IsRecord<T> extends true ? Record<keyof T, Serialize<T[keyof T]>> :
+    IsRecord<T> extends true ? SerializeRecord<T, keyof T> :
     Simplify<SerializeObject<UndefinedToOptional<T>>> :
   never;
+
+/**
+ * JSON serialize records. Same result as `Record<K, Serialize<T[keyof T]>>`,
+ * but the value type is only resolved when it is used, so a recursive type
+ * such as `Prisma.JsonValue` does not expand forever.
+ * @see https://github.com/trpc/trpc/issues/6997
+ * @internal
+ */
+export type SerializeRecord<T, K extends PropertyKey> = {
+  [P in K]: Serialize<T[keyof T]>;
+};
 
 /** JSON serialize [tuples](https://www.typescriptlang.org/docs/handbook/2/objects.html#tuple-types) */
 type SerializeTuple<T extends [unknown, ...unknown[]]> = {
