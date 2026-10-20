@@ -18,7 +18,9 @@ Everything runs in your browser, in the page:
 - The toolbar slows the network down, or drops the next request, to see what the app does while it waits and when a call fails. Once the app subscribes, it can also drop the open connections, to see the subscriptions reconnect.
 - The app's pages use TanStack Router, in a browser of their own with an address bar and back and forward buttons.
 
-Code is compiled as you type, without type checking: the types are in the page's code blocks, which compile at build time. An import the demo doesn't have, a syntax error or an error while the code runs shows under the editor, and the last version that worked keeps running.
+Code is compiled as you type. An import the demo doesn't have, a syntax error or an error while the code runs shows under the editor, and the last version that worked keeps running.
+
+Click into the code and TypeScript starts as well, in a worker of the page, with the declarations the demo's app compiles against. It checks every file as you type: errors are underlined (F8 goes to the next one), a file with some turns its tab red, hovering a name shows its type, and typing after a `.` or pressing Ctrl-Space completes it. Rename a field in the server's schema and the client's files turn red before you've finished typing. The app runs whatever the types say, as with Vite's dev server.
 
 Each demo is an app in `www/samples/` that typechecks with the rest of the repo, so its code is the code the page shows.
 
