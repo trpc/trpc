@@ -62,6 +62,7 @@ const served = servedPaths([
   'favicon.ico',
   'index.html',
   'logo.svg',
+  'sponsor/index.html',
   'v10/docs/introduction/index.html',
   'v10/docs/server/routers/index.html',
   'v11/img/links-diagram.svg',
@@ -229,6 +230,11 @@ describe('oldRedirects', () => {
     );
     expect(bySource.get('/blog/archive')?.location).toBe('/blog');
     expect(bySource.get('/img/favicon.ico')?.location).toBe('/favicon.ico');
+    expect(bySource.get('/pricing')).toEqual({
+      location: '/sponsor',
+      source: '/pricing',
+      status: 308,
+    });
   });
 
   it('names each URL that lands nowhere', () => {
@@ -273,9 +279,10 @@ describe('onTrpcIoRoutes', () => {
     expect(land(toTrpcIo, served, '/docs/typedoc/server').hops).toEqual([
       'https://trpc.io/docs/typedoc/server',
     ]);
-    expect(land(toTrpcIo, served, '/pricing').hops).toEqual([
-      'https://trpc.io/pricing',
+    expect(land(toTrpcIo, served, '/media').hops).toEqual([
+      'https://trpc.io/media',
     ]);
+    expect(land(toTrpcIo, served, '/pricing').hops).toEqual([]);
     expect(land(toTrpcIo, served, '/docs/typedocs').hops).toEqual([]);
     expect(onTrpcIoRoutes('https://trpc.io')).toEqual([]);
   });
@@ -350,7 +357,7 @@ describe('respond and land', () => {
       expect.arrayContaining([
         '/blog/archive: redirects to nowhere, a 404, not once to /blog',
         '/logo.svg: a route hides the file',
-        "/pricing: doesn't redirect to trpc.io",
+        "/media: doesn't redirect to trpc.io",
       ]),
     );
   });
