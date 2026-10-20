@@ -33,7 +33,8 @@ const linksOf = {
     { label: 'Docs', slug: v12Docs.firstDoc },
     { label: 'Client', slug: 'client/overview' },
     { label: 'Adapters', slug: 'adapters/overview' },
-    { label: 'Migrating from v11', slug: 'migrations/from-v11' },
+    // From `md` to `lg` the header has no room for it; the sidebar links it.
+    { label: 'Migrating from v11', slug: 'migrations/from-v11', wide: true },
   ],
 } as const;
 
@@ -43,7 +44,7 @@ function DocsLinks(props: { readonly version: HomeVersion }) {
     <Link
       activeOptions={{ exact: true }}
       activeProps={{ className: 'text-foreground' }}
-      className={navLink}
+      className={cn(navLink, 'wide' in link && 'hidden lg:inline-flex')}
       inactiveProps={{ className: 'text-muted-foreground' }}
       key={link.label}
       params={{ _splat: link.slug }}

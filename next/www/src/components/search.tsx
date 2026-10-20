@@ -25,9 +25,10 @@ export function SearchButton() {
   };
   return (
     <>
+      {/* An icon from `md` to `lg`, where the header's nav takes its room. */}
       <Button
         aria-keyshortcuts="Meta+K Control+K"
-        className="w-9 justify-start px-0 text-muted-foreground sm:w-56 sm:px-3"
+        className="w-9 justify-start px-0 text-muted-foreground sm:w-56 sm:px-3 md:w-9 md:px-0 lg:w-56 lg:px-3"
         onClick={() => {
           setOpen(true);
         }}
@@ -44,9 +45,11 @@ export function SearchButton() {
         title="Search docs (⌘K)"
         variant="outline"
       >
-        <Search className="mx-auto sm:mx-0" />
-        <span className="hidden sm:inline">Search docs…</span>
-        <kbd className="ml-auto hidden rounded border bg-muted px-1.5 font-mono text-[10px] sm:inline">
+        <Search className="mx-auto sm:mx-0 md:mx-auto lg:mx-0" />
+        <span className="hidden sm:inline md:hidden lg:inline">
+          Search docs…
+        </span>
+        <kbd className="ml-auto hidden rounded border bg-muted px-1.5 font-mono text-[10px] sm:inline md:hidden lg:inline">
           ⌘K
         </kbd>
       </Button>
