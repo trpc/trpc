@@ -61,7 +61,7 @@ export interface FileDiagnostics {
 
 // The docs' code blocks use Shiki's GitHub themes; styles.css sets these
 // variables for light and dark.
-const highlight = HighlightStyle.define([
+export const highlight = HighlightStyle.define([
   {
     tag: [
       tags.keyword,
@@ -102,7 +102,7 @@ const highlight = HighlightStyle.define([
   { tag: tags.invalid, color: 'var(--ks-keyword)' },
 ]);
 
-const theme = EditorView.theme({
+export const theme = EditorView.theme({
   '&': { height: '100%', fontSize: '13px', backgroundColor: 'transparent' },
   '&.cm-focused': { outline: 'none' },
   '.cm-scroller': { fontFamily: 'var(--font-mono)', lineHeight: '1.6' },

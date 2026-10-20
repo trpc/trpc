@@ -711,6 +711,11 @@ export function docsContent(options: ContentOptions): Plugin {
           ? `The web page runs this demo, editable, beside the text: [${demo.title}](${options.sourceUrl}/www/samples/${demo.sample}/src).`
           : '';
       })
+      .replaceAll(
+        /^```codemod-playground\n[\s\S]*?^```$/gm,
+        () =>
+          `The web page runs \`@trpc12/upgrade\` here, in the browser, on v11 code you edit: [its source](${options.sourceUrl}/packages/upgrade/src/transform.ts).`,
+      )
       .replaceAll(/^```chart\n([\s\S]*?)\n```$/gm, (_fence, json: string) =>
         // `renderDoc` decoded the fence already.
         chartMarkdown(decodeChart(json)),

@@ -316,6 +316,9 @@ export default defineConfig({
     ),
   ],
   resolve: {
+    // `oxc-parser`'s browser entry, for the codemod playground, imports its
+    // WebAssembly binding, which pnpm installs only as `www`'s own dependency.
+    dedupe: ['@oxc-parser/binding-wasm32-wasip1'],
     tsconfigPaths: true,
   },
   // The kitchen sink's type worker loads TypeScript and its declarations

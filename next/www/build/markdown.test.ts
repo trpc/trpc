@@ -360,6 +360,20 @@ describe('renderMarkdown', () => {
     }).pipe(Effect.provide(NodeServices.layer)),
   );
 
+  it.effect(
+    'turns a `codemod-playground` fence into the place the page runs it',
+    () =>
+      Effect.gen(function* () {
+        const rendered = yield* render(
+          'Before.\n\n```codemod-playground\n```\n\nAfter.',
+        );
+        expect(rendered.html).toMatch(
+          /<div class="codemod-playground-slot not-prose" data-codemod-playground=""><p>[^<]+<\/p><\/div>/,
+        );
+        expect(rendered.html).not.toContain('<pre');
+      }).pipe(Effect.provide(NodeServices.layer)),
+  );
+
   it.effect("fails on a `demo` fence that doesn't hold an id", () =>
     Effect.gen(function* () {
       const error = yield* Effect.flip(render('```demo\n<forms>\n```'));

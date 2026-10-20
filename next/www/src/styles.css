@@ -761,8 +761,26 @@ figure.tweet .tweet-footer a:hover {
   }
 }
 
+/* The codemod playground's place in its page (`remarkCodemodPlayground`), until it runs */
+.codemod-playground-slot {
+  margin-block: 1.5em;
+}
+
+.codemod-playground-slot > p {
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.125rem;
+  color: var(--muted-foreground);
+  font-size: 0.875rem;
+}
+
+.codemod-playground-slot[data-codemod-playground-running] > p {
+  display: none;
+}
+
 /* The demo editor's colors: Shiki's GitHub themes, as the code blocks */
-[data-demo-frame] {
+[data-demo-frame],
+[data-codemod-playground-frame] {
   --ks-keyword: #d73a49;
   --ks-string: #032f62;
   --ks-constant: #005cc5;
@@ -771,7 +789,8 @@ figure.tweet .tweet-footer a:hover {
   --ks-tag: #22863a;
 }
 
-.dark [data-demo-frame] {
+.dark [data-demo-frame],
+.dark [data-codemod-playground-frame] {
   --ks-keyword: #f97583;
   --ks-string: #9ecbff;
   --ks-constant: #79b8ff;

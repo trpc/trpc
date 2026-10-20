@@ -322,6 +322,29 @@ function remarkDemos(demos: Array<string>) {
 }
 
 /**
+ * A `codemod-playground` fence becomes the place the page runs `@trpc12/upgrade`
+ * on code the reader edits, which `CodemodPlaygroundSlot` fills in the browser.
+ * Its content shows until then.
+ */
+function remarkCodemodPlayground() {
+  return (tree: MdastRoot) => {
+    visit(tree, 'code', (node: Code, index, parent) => {
+      if (
+        node.lang !== 'codemod-playground' ||
+        !parent ||
+        index === undefined
+      ) {
+        return;
+      }
+      parent.children[index] = {
+        type: 'html',
+        value: `<div class="codemod-playground-slot not-prose" data-codemod-playground=""><p>The codemod runs here, in your browser.</p></div>`,
+      };
+    });
+  };
+}
+
+/**
  * A `chart` fence holds a bar chart as JSON (`Chart` in `charts.ts`) and
  * becomes its figure. `benchmark` fences expand into them.
  */
@@ -916,6 +939,7 @@ function parsing(
     .use(remarkHeadingIds)
     .use(remarkLinks(options, links))
     .use(remarkDemos(demos))
+    .use(remarkCodemodPlayground)
     .use(remarkCharts)
     .use(remarkPackageInstall)
     .use(remarkCodeMeta)
