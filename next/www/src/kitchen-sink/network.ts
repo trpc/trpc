@@ -3,11 +3,18 @@ export interface DemoRequest {
   /** Pretty-printed when it's JSON. */
   readonly body: string | undefined;
   readonly endedAt: number | undefined;
+  /** Which of the demo's browsers sent it, when it has several. */
+  readonly from?: string | undefined;
+  /** Its headers, a `name: value` line each: a reconnect's `last-event-id`. */
+  readonly headers?: string | undefined;
   readonly id: number;
   readonly method: string;
   /** The path and query, decoded: `/trpc/profile.get`. */
   readonly path: string;
-  /** What came back, pretty-printed when it's JSON, or why nothing did. */
+  /**
+   * What came back, pretty-printed when it's JSON, or why nothing did. A
+   * stream's (a subscription's events) grows as it arrives.
+   */
   readonly response: string | undefined;
   readonly startedAt: number;
   /** `undefined` while it's pending, or when it never got a response. */
@@ -37,6 +44,15 @@ export interface DemoNetwork {
   /** Makes the next `count` requests fail as if the network dropped. */
   failNext(count?: number): void;
   readonly failures: number;
+  /** Subscriptions whose responses (SSE) are open. */
+  readonly connections: number;
+  /**
+   * Cuts every open subscription's response, as a lost connection does:
+   * the client sees its body fail, and the server sees it cancelled.
+   */
+  dropConnections(): void;
+  /** `fetch`, with its requests logged as sent by `from`. */
+  fetchAs(from: string): Fetch;
   /** The latest 50, oldest first. */
   readonly requests: ReadonlyArray<DemoRequest>;
   readonly subscribe: (listener: () => void) => () => void;
@@ -80,8 +96,10 @@ function wait(ms: number, signal: AbortSignal | null | undefined) {
 /**
  * A pretend network between a demo's client and its server, both in this
  * page: `fetch` waits `latency` ms (± 25%), then hands the request to the
- * server's handler, and logs both sides for the requests panel.
- * `failNext()` makes the next request fail like a dropped connection.
+ * server's handler, and logs both sides for the requests panel, a
+ * response's body as it arrives. `failNext()` makes the next request fail
+ * like a dropped connection, and `dropConnections()` cuts the open
+ * subscriptions.
  */
 export function createNetwork(server: DemoServer): DemoNetwork {
   let requests: ReadonlyArray<DemoRequest> = [];
@@ -99,8 +117,85 @@ export function createNetwork(server: DemoServer): DemoNetwork {
     );
     notify();
   };
+  /** How to cut each subscription's response still arriving. */
+  const open = new Set<() => void>();
 
-  const fetch: Fetch = async (input, init) => {
+  /**
+   * `response` with a body that logs each chunk as the client reads it.
+   * The client cancelling it cancels the server's, so a closed
+   * subscription ends on the server too.
+   */
+  const relay = (id: number, response: Response) => {
+    const source = response.body?.getReader();
+    if (!source) {
+      update(id, { endedAt: Date.now(), outcome: 'responded', response: '' });
+      return response;
+    }
+    const decoder = new TextDecoder();
+    let text = '';
+    let ended = false;
+    const end = (change: Partial<DemoRequest>) => {
+      if (!ended) {
+        ended = true;
+        open.delete(drop);
+        update(id, { endedAt: Date.now(), ...change });
+      }
+    };
+    let controller: ReadableStreamDefaultController<Uint8Array> | undefined;
+    const drop = () => {
+      end({
+        outcome: 'failed',
+        response: `${text}\n(The connection dropped, simulated.)`,
+      });
+      // What a fetch body fails with when the connection drops.
+      controller?.error(new TypeError('network error'));
+      source.cancel().catch(() => undefined);
+    };
+    if (response.headers.get('content-type')?.startsWith('text/event-stream')) {
+      open.add(drop);
+      notify();
+    }
+    const body = new ReadableStream<Uint8Array>({
+      start(c) {
+        controller = c;
+      },
+      async pull(c) {
+        try {
+          const chunk = await source.read();
+          if (ended) {
+            return;
+          }
+          if (chunk.done) {
+            text += decoder.decode();
+            end({ outcome: 'responded', response: pretty(text) });
+            c.close();
+            return;
+          }
+          text += decoder.decode(chunk.value, { stream: true });
+          update(id, { response: text });
+          c.enqueue(chunk.value);
+        } catch (cause) {
+          end({ outcome: 'aborted' });
+          c.error(cause);
+        }
+      },
+      cancel(reason) {
+        end({ outcome: 'aborted' });
+        return source.cancel(reason);
+      },
+    });
+    return new Response(body, {
+      headers: response.headers,
+      status: response.status,
+      statusText: response.statusText,
+    });
+  };
+
+  const send = async (
+    from: string | undefined,
+    input: RequestInfo | URL,
+    init: RequestInit | undefined,
+  ) => {
     const request =
       input instanceof Request
         ? new Request(input, init)
@@ -116,6 +211,11 @@ export function createNetwork(server: DemoServer): DemoNetwork {
       {
         body,
         endedAt: undefined,
+        from,
+        headers: Array.from(
+          request.headers,
+          ([name, value]) => `${name}: ${value}`,
+        ).join('\n'),
         id,
         method: request.method,
         outcome: 'pending',
@@ -147,23 +247,12 @@ export function createNetwork(server: DemoServer): DemoNetwork {
     }
     const response = await server.fetch(request);
     update(id, { status: response.status });
-    void response
-      .clone()
-      .text()
-      .then(
-        (text) =>
-          update(id, {
-            endedAt: Date.now(),
-            outcome: 'responded',
-            response: pretty(text),
-          }),
-        () => update(id, { endedAt: Date.now(), outcome: 'aborted' }),
-      );
-    return response;
+    return relay(id, response);
   };
 
   const network: DemoNetwork = {
-    fetch,
+    fetch: (input, init) => send(undefined, input, init),
+    fetchAs: (from) => (input, init) => send(from, input, init),
     latency: latencies[1].ms,
     failNext(count = 1) {
       failures = count;
@@ -171,6 +260,14 @@ export function createNetwork(server: DemoServer): DemoNetwork {
     },
     get failures() {
       return failures;
+    },
+    get connections() {
+      return open.size;
+    },
+    dropConnections() {
+      for (const drop of open) {
+        drop();
+      }
     },
     get requests() {
       return requests;

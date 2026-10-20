@@ -14,8 +14,8 @@ Each page here runs a small app built with tRPC beside the text that explains it
 Everything runs in your browser, in the page:
 
 - The app's server is a real tRPC router served by `createFetchHandler`. Its database is in memory, so each change to the code starts it over.
-- The app's client calls it with `httpLink`, whose `fetch` goes to a pretend network instead of the internet. The requests panel shows each request and response as they cross it.
-- The toolbar slows the network down, or drops the next request, to see what the app does while it waits and when a call fails.
+- The app's client calls it with `httpLink`, whose `fetch` goes to a pretend network instead of the internet. The requests panel shows each request and response as they cross it, a subscription's events as they arrive.
+- The toolbar slows the network down, or drops the next request, to see what the app does while it waits and when a call fails. Once the app subscribes, it can also drop the open connections, to see the subscriptions reconnect.
 - The app's pages use TanStack Router, in a browser of their own with an address bar and back and forward buttons.
 
 Code is compiled as you type, without type checking: the types are in the page's code blocks, which compile at build time. An import the demo doesn't have, a syntax error or an error while the code runs shows under the editor, and the last version that worked keeps running.

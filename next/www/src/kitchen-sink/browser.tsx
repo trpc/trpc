@@ -159,6 +159,11 @@ function RequestRow(props: { readonly request: DemoRequest }) {
         <span className="w-10 shrink-0 text-muted-foreground">
           {request.method}
         </span>
+        {request.from === undefined ? null : (
+          <span className="shrink-0 rounded bg-muted px-1 text-muted-foreground">
+            {request.from}
+          </span>
+        )}
         <span className="min-w-0 flex-1 truncate">{request.path}</span>
         <span
           className={cn(
@@ -180,6 +185,11 @@ function RequestRow(props: { readonly request: DemoRequest }) {
           <p className="mb-1 text-xs font-medium text-muted-foreground">
             Request
           </p>
+          {request.headers ? (
+            <pre className="mb-1 max-h-24 overflow-auto rounded-md bg-muted p-2 font-mono text-xs text-muted-foreground">
+              {request.headers}
+            </pre>
+          ) : null}
           <pre className="max-h-48 overflow-auto rounded-md bg-muted p-2 font-mono text-xs">
             {request.body ?? '(no body)'}
           </pre>

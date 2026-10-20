@@ -10,7 +10,7 @@ import {
 } from '@shared/ui/components/resizable';
 import { cn } from '@shared/ui/lib/utils';
 import { type AnyRouter, createMemoryHistory } from '@tanstack/react-router';
-import { RotateCcw, Unplug } from 'lucide-react';
+import { RotateCcw, Unplug, WifiOff } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 import { buildDemo, type DemoApp } from './app.ts';
@@ -124,6 +124,7 @@ export function DemoFrame(props: {
   );
 
   const failures = useFailures(session?.network);
+  const connections = useConnections(session?.network);
   const edited = files !== demo.files;
   const failed =
     error instanceof DemoModuleError && error.file === file
@@ -173,6 +174,17 @@ export function DemoFrame(props: {
           <Unplug />
           {failures > 0 ? 'Next request fails' : 'Fail next request'}
         </Button>
+        {connections.seen ? (
+          <Button
+            disabled={connections.open === 0}
+            onClick={() => session?.network.dropConnections()}
+            size="sm"
+            variant="outline"
+          >
+            <WifiOff />
+            Drop connections
+          </Button>
+        ) : null}
         <Button
           disabled={!edited}
           onClick={() => {
@@ -296,4 +308,27 @@ function useFailures(network: DemoNetwork | undefined) {
     return network.subscribe(() => setFailures(network.failures));
   }, [network]);
   return failures;
+}
+
+/**
+ * The network's open subscriptions, and whether the demo has opened one:
+ * its toolbar offers to drop them from then on, reconnects included.
+ */
+function useConnections(network: DemoNetwork | undefined) {
+  const [open, setOpen] = useState(0);
+  const [seen, setSeen] = useState(false);
+  useEffect(() => {
+    if (!network) {
+      return undefined;
+    }
+    const read = () => {
+      setOpen(network.connections);
+      if (network.connections > 0) {
+        setSeen(true);
+      }
+    };
+    read();
+    return network.subscribe(read);
+  }, [network]);
+  return { open, seen };
 }
