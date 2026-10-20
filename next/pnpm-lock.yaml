@@ -1885,6 +1885,9 @@ importers:
       effect:
         specifier: ^4.0.0
         version: 4.0.2
+      yaml:
+        specifier: 2.9.1
+        version: 2.9.1
     devDependencies:
       '@tooling/tsconfig':
         specifier: workspace:*

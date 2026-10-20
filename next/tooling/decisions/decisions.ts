@@ -8,12 +8,14 @@
  *   pnpm decisions --agent-bullets agent calls inside human decisions too
  *   pnpm decisions --tentative     only decisions with a `Tentative (human):` bullet, printing it
  *   pnpm decisions --questions     every proposal question and the decisions citing it
+ *   pnpm decisions --pending       the questions waiting for a human, in `.agent-docs/open/`
  */
 import { fileURLToPath } from 'node:url';
 import { NodeRuntime, NodeServices } from '@effect/platform-node';
 import { Console, Data, Effect, FileSystem, Option, Path } from 'effect';
 import { Argument, Command, Flag } from 'effect/cli';
 import type { PlatformError } from 'effect/PlatformError';
+import { readOpenQuestions } from './open.ts';
 
 export type Who = 'human' | 'human asked' | 'agent';
 
@@ -200,6 +202,21 @@ const listQuestions = Effect.gen(function* () {
   }
 });
 
+const listPending = (query: RegExp | undefined) =>
+  Effect.gen(function* () {
+    const all = yield* readOpenQuestions();
+    const found = all.filter(
+      (q) =>
+        !query ||
+        query.test(`${q.title} ${q.summary} ${q.area} ${q.why} ${q.details ?? ''}`),
+    );
+    for (const q of found) {
+      yield* Console.log(`${q.file.padEnd(44)} [${q.area}] ${q.title}`);
+      yield* Console.log(`    ${q.summary}`);
+    }
+    yield* Console.log(`\n${found.length} of ${all.length} open questions`);
+  });
+
 const listDecisions = (filters: Filters) =>
   Effect.gen(function* () {
     const all = yield* readDecisions();
@@ -238,9 +255,16 @@ export const decisionsCommand = Command.make(
     tentative: Flag.Boolean('tentative').pipe(Flag.withDefault(false)),
     agentBullets: Flag.Boolean('agent-bullets').pipe(Flag.withDefault(false)),
     questions: Flag.Boolean('questions').pipe(Flag.withDefault(false)),
+    pending: Flag.Boolean('pending').pipe(Flag.withDefault(false)),
   },
   (opts) =>
-    opts.questions
+    opts.pending
+      ? listPending(
+          opts.terms.length > 0
+            ? new RegExp(opts.terms.join(' '), 'i')
+            : undefined,
+        )
+      : opts.questions
       ? listQuestions
       : listDecisions({
           who: Option.getOrUndefined(opts.who),

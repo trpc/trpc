@@ -14,6 +14,7 @@ Start here (paths relative to `next/`):
 - `.agent-docs/README.md` — proposal index and how to decide
 - `.agent-docs/proposals/` — API proposals (options + recommendations; a human decides)
 - `.agent-docs/decisions/` — one file per decided topic, titled `(human)` or `(agent)`; overrides proposals (`pnpm decisions` lists and searches them; `--who agent` shows the unreviewed calls)
+- `.agent-docs/open/` — one file per question waiting for a human, with options, code and a recommendation (`pnpm decisions --pending`); add one instead of leaving the choice in a note or a report
 - `.agent-docs/reference/` — oRPC parity, v11 inventory, prior art
 - `.agent-docs/notes/` — spike results and research
 - `spikes/` — throwaway prototypes backing the notes

@@ -13,10 +13,13 @@ Work from `next/`, with `nvm use` first. Follow `next/AGENTS.md` and `next/.agen
 
 Gather candidates, then drop any that a `(human)` decision already answers:
 
-1. **Open points waiting on a human:** run `pnpm decisions --open`. Include bullets addressed to a human (`Open (human)`, "for a human", "pending a human"). Leave out items blocked outside the repo, such as an upstream release.
-2. **Proposal questions without a human answer:** run `pnpm decisions --questions`. Include every `Qn.m` that only `(agent)` decisions cite, unless an `(agent)` file already quotes a human answer for it.
-3. **Agent calls to review:** run `pnpm decisions --who agent`, plus `--agent-bullets` for agent calls inside human files. Include these only when the human asks to review agent calls, or names a topic.
-4. **Tentative answers to revisit:** run `pnpm decisions --tentative`. Include these only when the human asks to revisit them, or names a topic.
+1. **Open questions:** run `pnpm decisions --pending`. Each file in `.agent-docs/open/` is one item, already written up: its options, code, recommendation and links are the item's content ([`open/README.md`](../../../next/.agent-docs/open/README.md)). Ask these first.
+2. **Open points waiting on a human:** run `pnpm decisions --open`. Include bullets addressed to a human (`Open (human)`, "for a human", "pending a human"). Leave out items blocked outside the repo, such as an upstream release.
+3. **Proposal questions without a human answer:** run `pnpm decisions --questions`. Include every `Qn.m` that only `(agent)` decisions cite, unless an `(agent)` file already quotes a human answer for it.
+4. **Agent calls to review:** run `pnpm decisions --who agent`, plus `--agent-bullets` for agent calls inside human files. Include these only when the human asks to review agent calls, or names a topic.
+5. **Tentative answers to revisit:** run `pnpm decisions --tentative`. Include these only when the human asks to revisit them, or names a topic.
+
+Items from 2 and 3 should already have an open file. When one doesn't, write it (template in `open/README.md`) before asking, so an unanswered item stays findable after the round.
 
 If the human names a topic ("decide openapi"), filter every source with `pnpm decisions <regex>` and `rg -n "<topic>" .agent-docs/proposals/`.
 
@@ -79,6 +82,7 @@ When the queue is empty, go to step 3 as if the human had said `done`.
    - **A skipped item:** the file stays or becomes `(agent)`, with a bullet `(agent) Skipped in the decision round, <date>; chose <option> because <reason>.` That keeps every skipped item findable with `pnpm decisions "decision round"`.
    - **A new topic:** create a new `decisions/<topic>.md` with Why, Lost, Open and Lives in bullets. Don't fill the Decision blocks in proposals.
    - **Questions:** every answered `Qn.m` must be cited by a decision file, so `pnpm decisions --questions` shows it.
+   - **Open files:** delete the `open/<topic>.md` of every answered or skipped item in the commit that records it, after copying the options given up into the decision's **Lost** bullet. Unasked items keep their files.
 2. **Ripple:** update the proposals, the docs pages in `next/www/docs/`, `.agent-docs/reference/orpc-parity.md` and the notes that the answers change.
 3. **Implement** what the answers require: code in Effect style, tests and docs. A `(human)` answer that reverses built code means changing that code, not just the docs. An answer of "spike it" means a spike under `spikes/` and a note in `.agent-docs/notes/`, not shipped code. For work that can't be finished (it needs credentials, an upstream release, or another answer), leave an `Open:` bullet saying what is missing.
 4. **Gates:** run `pnpm fix`, `pnpm check`, `pnpm typecheck`, `pnpm test` and `pnpm example`. Fix anything that fails.

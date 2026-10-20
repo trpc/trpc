@@ -7,6 +7,7 @@ It contains:
 - **[`approach.md`](./approach.md):** how we work. It covers the process, how agents use this folder, principles, the technical approach, phases and risks. Start here.
 - **[`proposals/`](./proposals):** one file per API area. Each has today's v11 behaviour, options with code sketches, a recommendation, numbered questions and a blank **Decision** block.
 - **[`decisions/`](./decisions):** one file per decided topic (see [Decisions](#decisions)).
+- **[`open/`](./open):** one file per question waiting for a human: options with code, pros and cons, a recommendation and links to the spikes and PRs. Answered, it becomes a decision and the file is deleted ([`open/README.md`](./open/README.md)).
 - **[`reference/`](./reference):** shared background.
   - [`orpc-parity.md`](./reference/orpc-parity.md): the oRPC comparison table mapped to proposals, and the decisions that could block parity.
   - [`v11-inventory.md`](./reference/v11-inventory.md): what v11 ships, and whether each item is kept, changed or deleted.
@@ -17,7 +18,7 @@ It contains:
 
 Tick boxes in a proposal's **Decision** block, or reply in chat, for example `07: Q7.1 combined, Q7.3 [data, error]`. Partial answers are fine; anything unanswered stays open. The agent records each decision in `decisions/` and ripples it through dependent proposals. Full process in [`approach.md`](./approach.md#1-process-proposals--decisions--code).
 
-Or say "decision round": the agent asks open items one at a time with a progress count. Answer with a letter or your own words, `skip` leaves it to the agent's best call, `done` stops and implements everything so far. See [`.agents/skills/decision-round/SKILL.md`](../../.agents/skills/decision-round/SKILL.md).
+Or say "decision round": the agent asks the questions in [`open/`](./open) first, one at a time with a progress count. Answer with a letter or your own words, `skip` leaves it to the agent's best call, `done` stops and implements everything so far. See [`.agents/skills/decision-round/SKILL.md`](../../.agents/skills/decision-round/SKILL.md).
 
 ## Decisions
 
