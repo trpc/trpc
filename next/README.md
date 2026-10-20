@@ -41,7 +41,7 @@ Work inside this folder (`cd next`). Use its own `pnpm-workspace.yaml`; do not a
 
 [Vite+](https://viteplus.dev) (`vite-plus`, CLI `vp`) bundles Vitest, Oxlint, Oxfmt and tsdown. Config lives in `vite.config.ts`. Requires Node ≥ 24.11.
 
-Node is pinned in `.nvmrc` (`24.21.0`, same version as `v11/.nvmrc`). From this directory, `nvm use` selects it even when `next/` is the workspace root. Then:
+Node is pinned in `.nvmrc` (`26.12.0`, same version as `v11/.nvmrc`). From this directory, `nvm use` selects it even when `next/` is the workspace root. Then:
 
 ```bash
 nvm use
