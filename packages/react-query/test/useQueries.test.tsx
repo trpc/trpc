@@ -194,7 +194,7 @@ test('regression #6188: conditionally returning an empty array', async () => {
       return [] as const;
     });
 
-    expectTypeOf(results[0]!.data).toEqualTypeOf<'foo' | undefined>();
+    expectTypeOf(results[0]?.data).toEqualTypeOf<'foo' | undefined>();
 
     return <pre>{JSON.stringify(results[0]?.data ?? 'n/a', null, 4)}</pre>;
   }
@@ -221,7 +221,7 @@ test('regression #6188: empty array first, and varying tuple lengths', async () 
       }
       return [t.foo()];
     });
-    expectTypeOf(emptyFirst[0]!.data).toEqualTypeOf<'foo' | undefined>();
+    expectTypeOf(emptyFirst[0]?.data).toEqualTypeOf<'foo' | undefined>();
 
     const varying = client.useQueries((t) => {
       if (text) {
@@ -229,10 +229,17 @@ test('regression #6188: empty array first, and varying tuple lengths', async () 
       }
       return [t.foo()];
     });
-    expectTypeOf(varying[0]!.data).toEqualTypeOf<'foo' | undefined>();
-    expectTypeOf(varying[1]!.data).toEqualTypeOf<'bar' | undefined>();
+    expectTypeOf(varying[0].data).toEqualTypeOf<'foo' | undefined>();
+    expectTypeOf(varying[1]?.data).toEqualTypeOf<'bar' | undefined>();
 
-    return <pre>{JSON.stringify([emptyFirst, varying])}</pre>;
+    return (
+      <pre>
+        {JSON.stringify({
+          emptyFirst: emptyFirst.map((v) => v.data),
+          varying: varying.map((v) => v.data),
+        })}
+      </pre>
+    );
   }
 
   const utils = render(
@@ -241,7 +248,9 @@ test('regression #6188: empty array first, and varying tuple lengths', async () 
     </App>,
   );
   await vi.waitFor(() => {
-    expect(utils.container).toHaveTextContent('foo');
+    expect(utils.container).toHaveTextContent(
+      '{"emptyFirst":["foo"],"varying":["foo","bar"]}',
+    );
   });
 });
 
@@ -260,8 +269,8 @@ test('regression #6188: readonly query options are still accepted', async () => 
       return roArray;
     });
 
-    expectTypeOf(fromTuple[0]!.data).toEqualTypeOf<'foo' | undefined>();
-    expectTypeOf(fromArray[0]!.data).toEqualTypeOf<'foo' | undefined>();
+    expectTypeOf(fromTuple[0].data).toEqualTypeOf<'foo' | undefined>();
+    expectTypeOf(fromArray[0]?.data).toEqualTypeOf<'foo' | undefined>();
 
     return (
       <pre>
