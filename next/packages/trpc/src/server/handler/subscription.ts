@@ -1,7 +1,12 @@
 import { Cause, Effect, Exit, type Stream, type Tracer } from 'effect';
 import type { HttpServerRequest, HttpServerResponse } from 'effect/http';
 import { statusOf, type AnyTrpcError } from '../../internal/error.ts';
-import { CONTENT_TYPE, HEADER, SSE_EVENT } from '../../internal/protocol.ts';
+import {
+  CONTENT_TYPE,
+  HEADER,
+  SSE_EVENT,
+  sseIdField,
+} from '../../internal/protocol.ts';
 import {
   createResponseHandle,
   emitEvents,
@@ -15,7 +20,7 @@ import { errorResponse, linesResponse } from './responses.ts';
 /** An event frame as an SSE message. */
 const sseMessage = (frame: EventFrame): string => {
   if (frame.kind === 'event') {
-    const id = frame.eventId === undefined ? '' : `id: ${frame.eventId}\n`;
+    const id = sseIdField(frame.eventId);
     return frame.deferred === undefined
       ? `${id}data: ${JSON.stringify(frame.body)}\n\n`
       : `${id}event: ${SSE_EVENT.deferred}\ndata: ${JSON.stringify({ e: frame.deferred, body: frame.body })}\n\n`;

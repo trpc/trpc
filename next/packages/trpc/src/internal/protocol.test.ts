@@ -5,6 +5,7 @@ import {
   isJsonContentType,
   isMultipartContentType,
   sseEvents,
+  sseIdField,
   textLines,
 } from './protocol.ts';
 
@@ -32,6 +33,24 @@ test('a CRLF split across chunks ends one line, not two', async () => {
     ),
   );
   expect(events).toEqual([{ event: 'x', data: '1', id: undefined }]);
+});
+
+test('an event id with line breaks or NUL is written as one id field', async () => {
+  const written = [
+    `${sseIdField('a\r\nevent: x\ndata: 2\0')}data: 1\n\n`,
+    `${sseIdField('\n')}data: 3\n\n`,
+    `${sseIdField(undefined)}data: 4\n\n`,
+  ].join('');
+  const events = await Effect.runPromise(
+    Stream.runCollect(
+      sseEvents(Stream.make(new TextEncoder().encode(written))),
+    ),
+  );
+  expect(events).toEqual([
+    { event: 'message', data: '1', id: 'aevent: xdata: 2' },
+    { event: 'message', data: '3', id: undefined },
+    { event: 'message', data: '4', id: undefined },
+  ]);
 });
 
 test('content types match by media type, ignoring case and parameters', () => {

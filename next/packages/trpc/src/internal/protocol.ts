@@ -292,6 +292,15 @@ export const isMultipartContentType = (value: string | null): boolean =>
 export const isOctetContentType = (value: string | null): boolean =>
   hasMediaType(value, CONTENT_TYPE.octet);
 
+/**
+ * An SSE `id:` line, or `''` for no id. A line break would end the field
+ * early and clients ignore an id holding NUL, so those characters are dropped.
+ */
+export const sseIdField = (id: string | undefined): string => {
+  const value = id?.replace(/[\r\n\0]/g, '');
+  return value ? `id: ${value}\n` : '';
+};
+
 /** An SSE event: `event` defaults to `message`. */
 export interface SseEvent {
   readonly event: string;

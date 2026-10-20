@@ -35,6 +35,7 @@ import {
   contentDisposition,
   hasMediaType,
   isJsonContentType,
+  sseIdField,
 } from '../internal/protocol.ts';
 import type { MaybePromise, ProcedureType } from '../internal/types.ts';
 import {
@@ -595,7 +596,7 @@ export function experimental_createOpenApiHandler<
     const messages = stream.pipe(
       Stream.map((event) => {
         const [id, data] = isTracked(event)
-          ? [`id: ${event.id}\n`, event.data]
+          ? [sseIdField(event.id), event.data]
           : ['', event];
         return `${id}event: message\ndata: ${JSON.stringify(data)}\n\n`;
       }),

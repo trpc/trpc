@@ -30,6 +30,7 @@ import {
   hasMediaType,
   isJsonContentType,
   isMultipartContentType,
+  sseIdField,
 } from '../../internal/protocol.ts';
 import type { MaybePromise, ProcedureType } from '../../internal/types.ts';
 import { experimental_parseBracketNotation } from '../../openapi/rest/index.ts';
@@ -681,7 +682,7 @@ export function createV11Handler<
             });
       // Each event ends with two blank lines, as v11's do.
       const frame = (event: string | undefined, data: string, id?: string) =>
-        `${event === undefined ? '' : `event: ${event}\n`}data: ${data}\n${id === undefined ? '' : `id: ${id}\n`}\n\n`;
+        `${event === undefined ? '' : `event: ${event}\n`}data: ${data}\n${sseIdField(id)}\n\n`;
       const errorFrame = (err: AnyTrpcError) => {
         report(err, request, call.path, 'subscription');
         return frame(
