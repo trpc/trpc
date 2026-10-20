@@ -1,6 +1,7 @@
 import { NodeServices } from '@effect/platform-node';
-import { Effect } from 'effect';
+import { Effect, FileSystem, Path } from 'effect';
 import { Command } from 'effect/cli';
+import { ChildProcess, ChildProcessSpawner } from 'effect/process';
 import { mkdtemp, readFile, writeFile, mkdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -850,6 +851,28 @@ describe('files and CLI', () => {
       `${file}:2:36 isServer is gone`,
       '1 file(s) to upgrade, 1 step(s) by hand',
     ]);
+  });
+
+  test('the bin’s --version is the package’s version', async () => {
+    const run = Effect.gen(function* () {
+      const fs = yield* FileSystem.FileSystem;
+      const path = yield* Path.Path;
+      const dir = path.join(import.meta.dirname, '..');
+      const pkg = JSON.parse(
+        yield* fs.readFileString(path.join(dir, 'package.json')),
+      ) as { version: string };
+      const spawner = yield* ChildProcessSpawner.ChildProcessSpawner;
+      const printed = yield* spawner.string(
+        ChildProcess.make(process.execPath, ['src/bin.ts', '--version'], {
+          cwd: dir,
+        }),
+      );
+      return { printed: printed.trim(), version: pkg.version };
+    });
+    const result = await Effect.runPromise(
+      run.pipe(Effect.provide(NodeServices.layer)),
+    );
+    expect(result.printed).toBe(`trpc12-upgrade v${result.version}`);
   });
 
   test('the CLI writes with --write', async () => {
