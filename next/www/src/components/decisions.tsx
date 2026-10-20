@@ -649,6 +649,7 @@ function QuestionLinks(props: { readonly question: OpenQuestion }) {
                   buttonVariants({
                     variant: link.kind === 'pr' ? 'default' : 'outline',
                   }),
+                  'h-auto min-h-8 py-1 text-left whitespace-normal',
                 )}
                 href={link.href}
                 key={link.href}
@@ -684,9 +685,10 @@ function QuestionLinks(props: { readonly question: OpenQuestion }) {
   );
 }
 
-// A code block's longest line (a `^?` type can be thousands of pixels) would
-// set the page's width through the grids around it; it scrolls instead.
-const codeScrolls = '[&_.code-block]:[contain:inline-size]';
+// The widest thing in a page's markdown (a `^?` type can be thousands of
+// pixels, a table or a path hundreds) would set the page's width through the
+// grids around it; it wraps or scrolls instead.
+const markdownFits = '[&_.prose]:[contain:inline-size]';
 
 export function OpenQuestionPage(props: { readonly question: OpenQuestion }) {
   const question = props.question;
@@ -697,7 +699,7 @@ export function OpenQuestionPage(props: { readonly question: OpenQuestion }) {
     <main
       className={cn(
         'mx-auto grid max-w-5xl gap-8 px-4 py-8 sm:px-6 sm:py-10',
-        codeScrolls,
+        markdownFits,
       )}
     >
       <header className="grid gap-4">
@@ -776,7 +778,7 @@ export function DecisionPage(props: { readonly decision: Decision }) {
     <main
       className={cn(
         'mx-auto grid max-w-3xl gap-6 px-4 py-8 sm:px-6 sm:py-10',
-        codeScrolls,
+        markdownFits,
       )}
     >
       <header className="grid gap-4 border-b pb-6">
