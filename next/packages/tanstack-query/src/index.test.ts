@@ -205,11 +205,13 @@ test('input: skipToken disables the query', async () => {
 
 test("queryFn forwards TanStack's signal: a query nothing observes aborts its call and reverts", async () => {
   const t = initTrpc();
+  let started = 0;
   let aborts = 0;
   const router = {
     slow: t.procedure.query(
       (opts) =>
         new Promise<string>((resolve) => {
+          started++;
           opts.signal.addEventListener('abort', () => {
             aborts++;
             resolve('aborted');
@@ -226,10 +228,9 @@ test("queryFn forwards TanStack's signal: a query nothing observes aborts its ca
   const queryClient = new QueryClient();
   const observer = new QueryObserver(queryClient, trpc.slow.queryOptions());
   const unsubscribe = observer.subscribe(() => {});
-  await sleep(10);
+  await vi.waitFor(() => expect(started).toBe(1));
   unsubscribe();
-  await sleep(10);
-  expect(aborts).toBe(1);
+  await vi.waitFor(() => expect(aborts).toBe(1));
   expect(queryClient.getQueryState(trpc.slow.queryKey())).toMatchObject({
     status: 'pending',
     fetchStatus: 'idle',
