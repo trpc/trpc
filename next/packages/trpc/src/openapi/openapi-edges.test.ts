@@ -1,4 +1,4 @@
-import { Effect, Stream } from 'effect';
+import { Effect, Layer, ManagedRuntime, Stream } from 'effect';
 import { HttpServerResponse } from 'effect/http';
 import { createTrpcClient, routerType, safe } from '@trpc12/trpc/client';
 import { experimental_toContract } from '@trpc12/trpc/contract';
@@ -633,4 +633,13 @@ test('form bodies: none at all, malformed, and malformed past maxBodySize', asyn
   } as RequestInit);
   expect(huge.status).toBe(413);
   await handler.dispose();
+});
+
+test('dispose() answers a request still running after drainTimeout with a 503, and leaves a runtime you pass running', async () => {
+  await using runtime = ManagedRuntime.make(Layer.empty);
+  await using handler = make({ runtime, drainTimeout: 0 });
+  const slow = api(handler, '/slow');
+  await handler.dispose();
+  expect((await slow).status).toBe(503);
+  expect(await runtime.runPromise(Effect.succeed('running'))).toBe('running');
 });

@@ -21,7 +21,7 @@ const handler = createFetchHandler({ router, createContext, layer });
 // handler.fetch(request): Promise<Response>
 // handler.websocket(socket, { request })
 // handler.drain(): moves WebSocket clients to other servers
-// handler.dispose(): drains, then releases the layer
+// handler.dispose(): ends requests and connections, then releases the layer
 ```
 
 Procedures are served under `endpoint`, `/trpc` by default.
@@ -65,7 +65,7 @@ const handler = createFetchHandler({
 A server that stops closes its WebSockets, and clients lose the queries and mutations in flight. Drain it first: `handler.drain()` sends every WebSocket and socket client a `reconnect` message, and `wsLink` sends new calls on a new connection, moves its subscriptions there from their last event id, and closes the old connection once the calls it sent there finish ([`wsLink`](../client/links/ws.md#rolling-deploys)). The drain ends when every client has moved, or at its timeout, when the handler closes what's left (code 1012, "service restart") and interrupts those calls. While it runs, the handler answers WebSocket upgrades with a 503 (and closes sockets handed to `handler.websocket` with 1012), so clients back off and reconnect to another server.
 
 - `serve(handler)` drains when its layer is released, before the server stops, and answers upgrades with a 503 until it has: `NodeRuntime.runMain` releases it on SIGTERM.
-- `handler.dispose()` drains, then releases the `layer`; the handler takes no connections after.
+- `handler.dispose()` ends event streams (SSE clients reconnect), drains while it waits for the requests in flight up to `websocket.drainTimeout`, answers what's still running with a 503, then releases the `layer` (not a `runtime` you passed). The handler takes no connections after. `await using handler = createFetchHandler(…)` calls it at the end of the block, and `makeFetchHandler` at the end of its `Scope`.
 - Serving `toHttpEffect(handler)` or `handler.routes` yourself, or a runtime's own server, call `handler.drain()` before you stop it.
 
 ```ts

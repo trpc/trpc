@@ -20,6 +20,8 @@ import {
 import {
   createFetchHandler,
   initTrpc,
+  makeFetchHandler,
+  type AnyRouter,
   type WebSocketLike,
 } from '@trpc12/trpc/server';
 import { expect, test, vi } from 'vite-plus/test';
@@ -249,6 +251,42 @@ test("serve() serves a createFetchHandler()'s routes, with its middleware; cors(
   } finally {
     seen.length = 0;
   }
+});
+
+test('serve() serves a makeFetchHandler(), whose services come from the layers under it; stopping the server disposes both', async () => {
+  class Greeting extends Context.Service<Greeting, { readonly text: string }>()(
+    'Greeting',
+  ) {}
+  const events: string[] = [];
+  const greeter = {
+    greet: t.procedure.query(() =>
+      Effect.gen(function* () {
+        return (yield* Greeting).text;
+      }),
+    ),
+  } satisfies AnyRouter;
+  const live = Layer.unwrap(
+    Effect.map(makeFetchHandler({ router: greeter }), serve),
+  ).pipe(
+    Layer.provide(
+      Layer.effect(
+        Greeting,
+        Effect.acquireRelease(Effect.succeed({ text: 'hi' }), () =>
+          Effect.sync(() => events.push('released')),
+        ),
+      ),
+    ),
+  );
+  {
+    await using server = await listen(live);
+    const client = createTrpcClient({
+      router: routerType<typeof greeter>(),
+      links: [httpLink({ url: server.url })],
+    });
+    expect(await client.greet.query()).toBe('hi');
+    expect(events).toEqual([]);
+  }
+  expect(events).toEqual(['released']);
 });
 
 test('cors() without options allows every origin', async () => {

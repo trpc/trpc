@@ -3,7 +3,7 @@ import {
   httpBatchStreamLink,
   httpLink,
 } from '@trpc/client';
-import { Effect, Stream } from 'effect';
+import { Effect, Layer, ManagedRuntime, Stream } from 'effect';
 import { HttpServerResponse } from 'effect/http';
 import superjson from 'superjson';
 import { createV11Handler, type V11HandlerOptions } from '@trpc12/trpc/interop';
@@ -453,4 +453,17 @@ test('cancelling a JSON Lines body without aborting the request ends a query wai
   await drained;
   await expect.poll(() => state.closed).toBe(true);
   await handler.dispose();
+});
+
+test('dispose() answers an HTTP call still running after drainTimeout with a 503, and leaves a runtime you pass running', async () => {
+  await using runtime = ManagedRuntime.make(Layer.empty);
+  await using handler = createV11Handler({
+    router: { stuck: initTrpc().procedure.query(() => Effect.never) },
+    runtime,
+    drainTimeout: 0,
+  });
+  const stuck = call(handler, '/trpc/stuck');
+  await handler.dispose();
+  expect((await stuck).status).toBe(503);
+  expect(await runtime.runPromise(Effect.succeed('running'))).toBe('running');
 });

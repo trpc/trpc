@@ -16,6 +16,7 @@ import {
   initTrpc,
   TrpcError,
   type inferProcedureErrors,
+  type inferRouterServices,
 } from '@trpc12/trpc/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { createTestServer } from '../fixtures/server.ts';
@@ -269,8 +270,8 @@ test('a call id is kept over REST too', async () => {
 test('experimental_durable() requires BackingPersistence', () => {
   const app = makeRouter();
   expectTypeOf<
-    Parameters<typeof createFetchHandler<typeof app.router>>[0]['layer']
-  >().toEqualTypeOf<Layer.Layer<Persistence.BackingPersistence, any, never>>();
+    inferRouterServices<typeof app.router>
+  >().toEqualTypeOf<Persistence.BackingPersistence>();
   // @ts-expect-error -- BackingPersistence is required
   createFetchHandler({ router: app.router });
 });
@@ -478,8 +479,10 @@ test('a streamed output keeps going into the store after the client leaves', asy
   });
   const controller = new AbortController();
   const first = await post(handler, 'feed', undefined, 'g1', controller.signal);
-  await first.body!.getReader().read();
+  const reader = first.body!.getReader();
+  await reader.read();
   controller.abort();
+  await reader.cancel();
   await sleep(100);
 
   const client = createTrpcClient({

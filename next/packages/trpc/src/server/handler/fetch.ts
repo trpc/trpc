@@ -1,6 +1,7 @@
 import {
   Context,
   Effect,
+  Scope,
   type Duration,
   type Layer,
   type ManagedRuntime,
@@ -122,22 +123,26 @@ export type PlatformField<TPlatform> = undefined extends TPlatform
   : { platform: TPlatform };
 
 /**
- * `layer`, required when the router's procedures need Effect services.
+ * `layer`, required when the router's procedures need Effect services
+ * and no `runtime` is given. The handler builds it on first use and
+ * `dispose()` releases it.
  * @since 0.1.0
  * @stability stable
  */
-export type LayerOption<TServices> = [TServices] extends [never]
+export type LayerOption<TServices> = ([TServices] extends [never]
   ? { layer?: Layer.Layer<never, any, never> }
   : {
       /** Provides the Effect services the router's procedures need. */
       layer: Layer.Layer<TServices, any, never>;
-    };
+    }) & { runtime?: undefined };
 
 /**
  * `runtime`, required when the router's procedures need Effect services. The
  * caller owns it: calls read its services, and `runtime.dispose()` (or
- * `await using`) runs the layer's finalizers. `layer` is a type error that
- * names the fix.
+ * `await using`) runs the layer's finalizers. Handlers take it instead of
+ * `layer`, so a server and `createRouterClient` share one build, and their
+ * `dispose()` leaves it running. Where only `runtime` is taken
+ * (`createRouterClient`), `layer` is a type error that names the fix.
  * @since 0.1.0
  * @stability stable
  */
@@ -226,7 +231,8 @@ export interface BaseHandlerOptions<TRouter extends AnyRouter> {
     idleTimeout?: Duration.Input | false;
     /**
      * How long `dispose()`, a `drain()` without `timeout` and the end of
-     * `serve()` give connections to move before closing them.
+     * `serve()` give connections to move before closing them. `dispose()`
+     * also waits this long for the requests `fetch` is serving.
      * @default '10 seconds'
      */
     drainTimeout?: Duration.Input;
@@ -260,7 +266,24 @@ export type FetchHandlerOptions<
   TPlatform = undefined,
 > = BaseHandlerOptions<TRouter> &
   ContextOption<inferRouterContext<TRouter>, TPlatform> &
-  LayerOption<inferRouterServices<TRouter>> &
+  (
+    | LayerOption<inferRouterServices<TRouter>>
+    | RuntimeOption<inferRouterServices<TRouter>>
+  ) &
+  SerializerOption;
+
+/**
+ * The options of {@link makeFetchHandler}: those of
+ * {@link createFetchHandler} without `layer` or `runtime`, since the
+ * services come from the Effect that makes the handler.
+ * @since 0.1.0
+ * @stability stable
+ */
+export type MakeFetchHandlerOptions<
+  TRouter extends AnyRouter,
+  TPlatform = undefined,
+> = BaseHandlerOptions<TRouter> &
+  ContextOption<inferRouterContext<TRouter>, TPlatform> &
   SerializerOption;
 
 /**
@@ -361,10 +384,18 @@ export interface FetchHandler<TPlatform = undefined> {
     timeout?: Duration.Input;
   }): Promise<void>;
   /**
-   * Drains the connections (`drain()`, with `websocket.drainTimeout`), then
-   * releases the `layer`'s resources. The handler takes no connections after.
+   * Ends what the handler started. Event streams (SSE subscriptions) end
+   * at once, and their clients reconnect. Then, within
+   * `websocket.drainTimeout`, it drains the connections (`drain()`) and
+   * waits for the requests `fetch` is serving, streamed bodies included.
+   * What's left is interrupted: a request still running gets a 503. Last,
+   * it releases the `layer`'s resources; a `runtime` you passed is yours
+   * to dispose. The handler takes no connections after. Calling it again
+   * waits for the first call.
    */
   dispose(): Promise<void>;
+  /** `dispose()`, for `await using`. */
+  [Symbol.asyncDispose](): Promise<void>;
 }
 
 /**
@@ -390,15 +421,70 @@ export function createFetchHandler<
   TRouter extends AnyRouter,
   TPlatform = undefined,
 >(opts: FetchHandlerOptions<TRouter, TPlatform>): FetchHandler<TPlatform> {
+  return buildFetchHandler(opts as BuildOptions, undefined)
+    .handler as FetchHandler<TPlatform>;
+}
+
+/**
+ * {@link createFetchHandler} as an Effect: the handler lives as long as
+ * the `Scope`, whose end disposes it, and procedures read their services
+ * from the Effect's context instead of a `layer`. Serve it with
+ * `@trpc12/trpc/http`'s `serve()`.
+ *
+ * @example
+ * ```ts
+ * const live = Layer.unwrap(
+ *   Effect.map(makeFetchHandler({ router: appRouter }), serve),
+ * ).pipe(
+ *   Layer.provide(PostRepo.Live),
+ *   Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 })),
+ * );
+ * ```
+ * @since 0.1.0
+ * @stability stable
+ */
+export function makeFetchHandler<
+  TRouter extends AnyRouter,
+  TPlatform = undefined,
+>(
+  opts: MakeFetchHandlerOptions<TRouter, TPlatform>,
+): Effect.Effect<
+  FetchHandler<TPlatform>,
+  never,
+  Scope.Scope | inferRouterServices<TRouter>
+> {
+  return Effect.map(
+    Effect.acquireRelease(
+      Effect.map(Effect.context<inferRouterServices<TRouter>>(), (services) =>
+        buildFetchHandler(
+          opts as BuildOptions,
+          Context.omit(Scope.Scope)(services),
+        ),
+      ),
+      (built) => built.close,
+    ),
+    (built) => built.handler,
+  ) as Effect.Effect<
+    FetchHandler<TPlatform>,
+    never,
+    Scope.Scope | inferRouterServices<TRouter>
+  >;
+}
+
+type BuildOptions = FetchHandlerOptions<AnyRouter, unknown> & {
+  createContext?: (o: CreateContextOpts<any>) => MaybePromise<object>;
+  layer?: Layer.Layer<any, any, never>;
+  runtime?: ManagedRuntime.ManagedRuntime<never, unknown> | undefined;
+};
+
+function buildFetchHandler(
+  opts: BuildOptions,
+  services: Context.Context<any> | undefined,
+): { handler: FetchHandler<unknown>; close: Effect.Effect<void> } {
   checkRouterKeys(opts.router);
-  const drains = makeSocketDrains(opts.websocket?.drainTimeout ?? '10 seconds');
-  const base = createHandlerCore({
-    ...(opts as typeof opts & {
-      createContext?: (o: CreateContextOpts<any>) => MaybePromise<object>;
-      layer?: Layer.Layer<any, any, never>;
-    }),
-    drains,
-  });
+  const drainTimeout = opts.websocket?.drainTimeout ?? '10 seconds';
+  const drains = makeSocketDrains(drainTimeout);
+  const base = createHandlerCore({ ...opts, services, drains, drainTimeout });
   const handler = makeHttpHandler(opts, base);
   const sessions = makeSessions(handler, drains, opts.websocket);
   const app = makeApp(handler);
@@ -410,6 +496,7 @@ export function createFetchHandler<
     serveWebSocket: sessions.serveWebSocket,
     upgradeWeb: sessions.upgradeWeb,
     refusing: drains.refusing,
+    request: base.request,
   });
 
   const fetchHandler: FetchHandler<unknown> = {
@@ -425,6 +512,7 @@ export function createFetchHandler<
     routes: http.routes,
     drain: (o) => Effect.runPromise(drains.drain({ timeout: o?.timeout })),
     dispose: base.dispose,
+    [Symbol.asyncDispose]: base.dispose,
   };
   setHandlerContext(
     fetchHandler,
@@ -434,5 +522,5 @@ export function createFetchHandler<
       Context.add(HttpApp, { app, middleware, endpoint: handler.endpoint }),
     ),
   );
-  return fetchHandler as FetchHandler<TPlatform>;
+  return { handler: fetchHandler, close: base.close };
 }

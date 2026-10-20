@@ -88,6 +88,7 @@ export function docHead(version: DocsVersion, slug: string) {
     article: { modified: meta.lastModified, section: meta.section },
     description,
     markdownPath: `${path}.md`,
+    noindex: meta.experiment !== undefined,
     path,
     structuredData: [
       {
