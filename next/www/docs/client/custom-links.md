@@ -105,6 +105,23 @@ const client = createTrpcClient({
 client.onPost.subscribe();
 ```
 
+## Sending subscriptions
+
+`subscribe()` hands a subscription's events to callers as an `AsyncIterable` (Effect's `Stream.toAsyncIterable`), which comes from the link that sends it. The built-in links that carry subscriptions bring it along, so a client that never subscribes doesn't ship it. A link of your own that ends a subscription's chain is wrapped in `withSubscriptions()`, and without one `subscribe()` fails with `CLIENT_ERROR`:
+
+```ts twoslash
+// ---cut-start---
+import { link, withSubscriptions } from '@trpc12/trpc/client';
+import { Stream } from 'effect';
+declare function events(path: string): Stream.Stream<unknown>;
+// ---cut-end---
+const eventsLink = withSubscriptions(
+  link((opts) =>
+    opts.op.type === 'subscription' ? events(opts.op.path) : opts.next(opts.op),
+  ),
+);
+```
+
 ## Reading the response
 
 `httpLink` hands each call's response to an `onResponse` call option (`{ status, headers }`), before the value goes up the chain. A batched call gets its own line's status and the batch's headers. A link that reads it declares `needs: 'response'`, and the client rejects a `links` array with no link after it that `provides: 'response'`:
