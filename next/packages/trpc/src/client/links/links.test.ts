@@ -8,8 +8,11 @@ import {
   retryLink,
   safe,
   splitLink,
+  switchLink,
   type LoggerEvent,
+  type AtLeastOneLink,
   routerType,
+  withSubscriptions,
 } from '@trpc12/trpc/client';
 import { createEffectClient } from '@trpc12/trpc/effect';
 import { createUntypedClient } from '@trpc12/trpc/extend';
@@ -567,11 +570,52 @@ test('what a link fails, dies or ends with becomes a client error', async () => 
   });
 });
 
+test('subscriptions need a link marked withSubscriptions, found through splitLink and switchLink', async () => {
+  const events = () => Stream.make(1, 2);
+  const read = async (links: AtLeastOneLink) => {
+    const client = createTrpcClient({
+      router: routerType<typeof router>(),
+      links,
+    });
+    const ticks: number[] = [];
+    for await (const n of client.ticks.subscribe()) ticks.push(n);
+    return ticks;
+  };
+
+  await expect(read([link(events)])).rejects.toMatchObject({
+    code: 'CLIENT_ERROR',
+    message:
+      'No link on this chain carries subscriptions; wrap a custom one in withSubscriptions()',
+  });
+  expect(await read([withSubscriptions(link(events))])).toEqual([1, 2]);
+  expect(
+    await read([
+      splitLink({
+        condition: (op) => op.type === 'subscription',
+        true: withSubscriptions(link(events)),
+        false: link(events),
+      }),
+    ]),
+  ).toEqual([1, 2]);
+  expect(
+    await read([
+      switchLink({
+        name: 'via',
+        links: {
+          plain: link(events),
+          events: [withSubscriptions(link(events))],
+        },
+        pick: () => 'events',
+      }),
+    ]),
+  ).toEqual([1, 2]);
+});
+
 test('errors a link makes outside the union get a built-in code and no data', async () => {
   const failing = (err: TrpcError) =>
     createTrpcClient({
       router: routerType<typeof router>(),
-      links: [link(() => Stream.fail(err))],
+      links: [withSubscriptions(link(() => Stream.fail(err)))],
     });
   const [, custom] = await safe(
     failing(

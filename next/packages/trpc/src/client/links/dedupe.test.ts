@@ -7,6 +7,7 @@ import {
   routerType,
   type BuiltinCallOptions,
   type Operation,
+  withSubscriptions,
 } from '@trpc12/trpc/client';
 import { createSerializer } from '@trpc12/trpc/serializer';
 import { error, initTrpc, tracked } from '@trpc12/trpc/server';
@@ -116,10 +117,12 @@ function stubbed(answer: (op: Operation) => Stream.Stream<unknown>) {
     router: routerType<AppRouter>(),
     links: [
       dedupeLink(),
-      link<{ context: Pick<BuiltinCallOptions, 'onResponse'> }>((args) => {
-        ops.push(args.op);
-        return answer(args.op);
-      }),
+      withSubscriptions(
+        link<{ context: Pick<BuiltinCallOptions, 'onResponse'> }>((args) => {
+          ops.push(args.op);
+          return answer(args.op);
+        }),
+      ),
     ],
   });
   return { client, ops };
