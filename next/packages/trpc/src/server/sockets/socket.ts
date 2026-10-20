@@ -182,7 +182,7 @@ export const serveSocketConnection = (
     readonly transport: Transport;
     /** Close the socket after this long without a message. */
     readonly idleTimeout: Duration.Duration | undefined;
-    readonly messages?: Stream.Stream<unknown, Socket.SocketError>;
+    readonly messages?: Stream.Stream<unknown, unknown>;
     /** `binary` is set once the client's `init` asks for binary messages. */
     readonly encode?: (
       message: ServerMessage,

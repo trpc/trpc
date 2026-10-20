@@ -78,7 +78,9 @@ const router = {
   }),
 };
 
-async function serve(opts: { idleTimeout?: number | false } = {}) {
+async function serve(
+  opts: { idleTimeout?: number | false; maxPayload?: number } = {},
+) {
   const scope = Scope.makeUnsafe();
   const handler = createFetchHandler({
     router,
@@ -224,6 +226,31 @@ test('a line that is not JSON gets a PARSE_ERROR message', async () => {
   });
   const message = JSON.parse(reply.split('\n')[0]!);
   expect(message).toMatchObject({ id: null, type: 'error' });
+});
+
+test('maxPayload closes a connection whose line runs past it', async () => {
+  await using server = await serve({ maxPayload: 2000 });
+  const raw = connect(server.port, '127.0.0.1');
+  await once(raw, 'connect');
+  raw.setEncoding('utf8');
+  let received = '';
+  raw.on('data', (data: string) => (received += data));
+  const closed = once(raw, 'close');
+  const request = (id: number, name: string) =>
+    JSON.stringify({
+      id,
+      type: 'request',
+      method: 'query',
+      path: 'hello',
+      input: { json: { name } },
+    });
+  raw.write(`${JSON.stringify({ type: 'init', version: '12' })}\n`);
+  raw.write(`${request(1, 'a'.repeat(900))}\n${request(2, 'b'.repeat(900))}`);
+  raw.write('\n');
+  await vi.waitFor(() => expect(received.match(/"result"/g)).toHaveLength(2));
+  raw.write(request(3, 'c'.repeat(3000)).slice(0, 2500));
+  await closed;
+  expect(received).not.toContain('"id":3');
 });
 
 test('the link skips lines from the server that are not JSON', async () => {

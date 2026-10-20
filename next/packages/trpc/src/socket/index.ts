@@ -23,7 +23,11 @@ import { Context, Effect, Layer, Stream, type Duration } from 'effect';
 import { HttpServerRequest } from 'effect/http';
 import { Socket, SocketServer } from 'effect/socket';
 import { timerOption } from '../internal/duration.ts';
-import { decodeLines, encodeLine } from '../internal/lines.ts';
+import {
+  decodeLines,
+  encodeLine,
+  limitLineLength,
+} from '../internal/lines.ts';
 import {
   parseSocketMessage,
   serveSocketConnection,
@@ -48,6 +52,12 @@ export interface SocketOptions {
    * @default '60 seconds'
    */
   readonly idleTimeout?: Duration.Input | false;
+  /**
+   * The most bytes one message (one line) may have. A connection that sends
+   * a longer one is closed, as a WebSocket over Node's `maxPayload` is.
+   * @default 104_857_600 (100 MiB, Node's WebSocket default)
+   */
+  readonly maxPayload?: number;
 }
 
 /**
@@ -67,14 +77,15 @@ const serveOne = (
   core: SocketCoreShape,
   socket: Socket.Socket,
   idleTimeout: Duration.Duration | undefined,
+  maxPayload: number,
 ): Effect.Effect<void> =>
   serveSocketConnection(core, socket, {
     request: HttpServerRequest.fromWeb(new Request('http://localhost/')),
     transport: 'socket',
     idleTimeout,
-    messages: decodeLines(Socket.toStream(socket)).pipe(
-      Stream.map(parseSocketMessage),
-    ),
+    messages: decodeLines(
+      limitLineLength(Socket.toStream(socket), maxPayload),
+    ).pipe(Stream.map(parseSocketMessage)),
     encode: encodeLine,
   });
 
@@ -107,11 +118,14 @@ export function experimental_serveSocket(
     );
   }
   const idleTimeout = timerOption(opts.idleTimeout, '60 seconds');
+  const maxPayload = opts.maxPayload ?? 104_857_600;
   return Layer.effectDiscard(
     Effect.gen(function* () {
       const server = yield* SocketServer.SocketServer;
       yield* Effect.forkScoped(
-        server.run((socket) => serveOne(core, socket, idleTimeout)),
+        server.run((socket) =>
+          serveOne(core, socket, idleTimeout, maxPayload),
+        ),
       );
     }),
   );
