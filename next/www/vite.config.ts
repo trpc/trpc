@@ -28,6 +28,7 @@ import {
   site,
   v12,
 } from './src/site.ts';
+import { sponsorPage } from './src/sponsors.ts';
 import v9Sections from './v9/sections.json' with { type: 'json' };
 import v10Sections from './v10/sections.json' with { type: 'json' };
 import v11Sections from './v11/sections.json' with { type: 'json' };
@@ -167,6 +168,12 @@ export default defineConfig({
           title: `The ${site.name} blog`,
           url: absoluteUrl('/blog'),
         }),
+        OgCard.Page({
+          ...sponsorPage,
+          eyebrow: '',
+          pill: 'MIT licensed',
+          url: absoluteUrl(sponsorPage.path),
+        }),
         ...posts.map((post) =>
           OgCard.Post({
             description: post.description,
@@ -204,6 +211,10 @@ export default defineConfig({
           })),
         ),
         { path: '/blog', sitemap: { changefreq: 'monthly', priority: 0.5 } },
+        {
+          path: sponsorPage.path,
+          sitemap: { changefreq: 'monthly', priority: 0.5 },
+        },
         // Like the older versions' pages, each post's canonical link points
         // at trpc.io.
         ...posts.map((post) => ({
