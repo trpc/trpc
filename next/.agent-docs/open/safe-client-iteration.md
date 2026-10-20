@@ -38,7 +38,8 @@ for await (const [seat, streamErr] of safe(seats)) {
 }
 
 // subscribe() isn't wrapped either
-for await (const [event, subErr] of safe(safeClient.onSeat.subscribe())) {}
+for await (const [event, subErr] of safe(safeClient.onSeat.subscribe())) {
+}
 ```
 
 - ✅ Built, documented and tested; one rule: `safe()` is what makes anything safe
@@ -60,7 +61,8 @@ for await (const [seat, streamErr] of seats) {
   render(seat);
 }
 
-for await (const [event, subErr] of safeClient.onSeat.subscribe()) {}
+for await (const [event, subErr] of safeClient.onSeat.subscribe()) {
+}
 ```
 
 - ✅ Matches the answer's wording: everything on a safe client is safe
@@ -74,9 +76,11 @@ Keep the iterable as it is and add `.safe()` on it, or a `safeSubscribe()`, so i
 
 ```ts
 const [seats, err] = await safeClient.seats.list.query({ show: 1 });
-for await (const [seat, streamErr] of seats.safe()) {}
+for await (const [seat, streamErr] of seats.safe()) {
+}
 
-for await (const [event, subErr] of safeClient.onSeat.safeSubscribe()) {}
+for await (const [event, subErr] of safeClient.onSeat.safeSubscribe()) {
+}
 ```
 
 - ✅ Explicit at the loop, and the plain iterable stays the same type everywhere
