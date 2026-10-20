@@ -1,4 +1,10 @@
-import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import {
+  batching,
+  createTrpcClient,
+  httpLink,
+  routerType,
+  sse,
+} from '@trpc12/trpc/client';
 import { fromV11Link } from '@trpc12/trpc/interop';
 import type { AppRouter } from '../server/router.ts';
 import { serializer } from '../server/serializer.ts';
@@ -20,7 +26,8 @@ export function makeClient(opts: {
       fromV11Link(callLogLink(opts.log)),
       httpLink({
         url: opts.url,
-        batch: true,
+        batch: batching(),
+        subscriptions: sse(),
         serializer,
         headers: (): HeadersInit =>
           opts.token ? { authorization: opts.token } : {},

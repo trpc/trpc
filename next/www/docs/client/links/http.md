@@ -7,34 +7,45 @@ order: 1
 v11: client/links/httpLink
 ---
 
-`httpLink` sends queries as `GET`, mutations as `POST` and subscriptions as server-sent events, to a handler's URL:
+`httpLink` sends queries as `GET` and mutations as `POST` to a handler's URL. Batching and subscriptions over server-sent events are imports you pass to it, `batching()` and `sse()`, so a client bundles only the ones it uses:
 
 ```ts twoslash
 // ---cut-start---
 import type { AppRouter } from './server.ts';
 // ---cut-end---
-import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import {
+  batching,
+  createTrpcClient,
+  httpLink,
+  routerType,
+  sse,
+} from '@trpc12/trpc/client';
 
 const client = createTrpcClient({
   router: routerType<AppRouter>(),
-  links: [httpLink({ url: 'http://localhost:3000/trpc', batch: true })],
+  links: [
+    httpLink({
+      url: 'http://localhost:3000/trpc',
+      batch: batching(),
+      subscriptions: sse(),
+    }),
+  ],
 });
 ```
 
 - `url`: the handler's endpoint.
-- `batch`: send the queries made in the same tick as one request, and the mutations as another (below).
+- `batch: batching()`: send the queries made in the same tick as one request, and the mutations as another (below).
+- `subscriptions: sse()`: subscriptions over SSE (below). Without it, procedures have no `.subscribe()` on this link.
 - `headers`: headers for every request, or a function of the calls a request carries. A call's `headers` option is merged in.
 - `init`: `fetch` options (below).
 - `fetch`: a `fetch` of your own.
 - `serializer`: must match the handler's, and client types follow it ([Serializers](../../server/serializers.md)).
 - `maxUrlLength` and `longQuery`: when a query goes with a body (below).
 - `binary`: streamed outputs as binary frames (below).
-- `subscriptions: false`: no SSE, so procedures lose `.subscribe()`, for a link that only carries queries and mutations.
-- `reconnect`: how a dropped subscription reconnects, `{ attempts: 5, delay }` by default. `delay(attempt)` returns the wait before each attempt.
 
 ## Batching
 
-With `batch: true`, the queries made in the same tick go as one request, and so do the mutations, up to `maxItems` calls a request (`batch: { maxItems }`, 10 by default). The handler has to accept batches too, with `createFetchHandler({ batch: true })`. A call opts out with `{ batch: false }`, and calls with different `init`s are batched apart.
+With `batch: batching()`, the queries made in the same tick go as one request, and so do the mutations, up to `maxItems` calls a request (`batching({ maxItems })`, 10 by default). The handler has to accept batches too, with `createFetchHandler({ batch: true })`. A call opts out with `{ batch: false }`, and calls with different `init`s are batched apart.
 
 The response has a line per call, with its own status, so each call settles when its line arrives and one call's error doesn't fail the others.
 
@@ -75,7 +86,7 @@ Inputs holding a `File` or `Blob` go alone as `multipart/form-data` ([Files](../
 
 ## Subscriptions
 
-A subscription is an SSE request. When the connection drops, the link reconnects up to `reconnect.attempts` times and sends the last [`tracked()`](../../subscriptions/overview.md#resuming) event id, so the stream resumes where it stopped. A call made with `{ reconnect: false }` ends with `NETWORK_ERROR` instead.
+With `subscriptions: sse()`, a subscription is an SSE request. When the connection drops, the link reconnects up to `reconnect.attempts` times (`sse({ reconnect: { attempts, delay } })`, 5 by default; `delay(attempt)` returns the wait before each attempt) and sends the last [`tracked()`](../../subscriptions/overview.md#resuming) event id, so the stream resumes where it stopped. A call made with `{ reconnect: false }` ends with `NETWORK_ERROR` instead.
 
 ## Errors
 

@@ -1,10 +1,12 @@
 import { Context, Data, Effect, Layer, ManagedRuntime } from 'effect';
 import {
+  batching,
   createTrpcClient,
   httpLink,
   safe,
   type ClientError,
   type LinkErrorCode,
+  sse,
   routerType,
 } from '@trpc12/trpc/client';
 import type { DansonForm } from '@trpc12/trpc/serializer';
@@ -177,7 +179,8 @@ async function setup(user: string | null = 'ada', batch = false) {
     links: [
       httpLink({
         url: server.url,
-        batch,
+        batch: batch ? batching() : undefined,
+        subscriptions: sse(),
         fetch: async (input, init) => {
           const response = await fetch(input, init);
           responses.push(response);
@@ -954,7 +957,7 @@ test('chained inputs merge only plain objects; a subscription takes a stream() o
   });
   const client = createTrpcClient({
     router: routerType<typeof tickRouter>(),
-    links: [httpLink({ url: server.url })],
+    links: [httpLink({ url: server.url, subscriptions: sse() })],
   });
   expect(await collect(client.ticks.subscribe())).toEqual([10, 20]);
 });

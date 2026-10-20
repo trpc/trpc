@@ -2,11 +2,13 @@ import * as devalue from 'devalue';
 import { Effect, Stream } from 'effect';
 import superjson from 'superjson';
 import {
+  batching,
   createTrpcClient,
   getClientSerializer,
   httpLink,
   routerType,
   safe,
+  sse,
   wsLink,
   type Deserialized,
 } from '@trpc12/trpc/client';
@@ -190,7 +192,7 @@ test('no serializer: plain JSON, JSON-form client types, ?input= GET params', as
   await using server = await createTestServer({ router, batch: true });
   const client = createTrpcClient({
     router: routerType<typeof router>(),
-    links: [httpLink({ url: server.url })],
+    links: [httpLink({ url: server.url, subscriptions: sse() })],
   });
 
   const rich = await client.rich.query({ q: 'hi there' });
@@ -244,7 +246,7 @@ test('no serializer: plain JSON, JSON-form client types, ?input= GET params', as
 
   const batched = createTrpcClient({
     router: routerType<typeof router>(),
-    links: [httpLink({ url: server.url, batch: true })],
+    links: [httpLink({ url: server.url, batch: batching() })],
   });
   const [a, b] = await Promise.all([
     batched.rich.query({ q: 'x' }),
@@ -343,7 +345,13 @@ test('a sync serializer (superjson): its types survive, the transport frames roo
   });
   const client = createTrpcClient({
     router: routerType<typeof router>(),
-    links: [httpLink({ url: server.url, serializer: superjsonSerializer })],
+    links: [
+      httpLink({
+        url: server.url,
+        serializer: superjsonSerializer,
+        subscriptions: sse(),
+      }),
+    ],
   });
   expect(getClientSerializer(client)).toBe(superjsonSerializer);
 
@@ -461,7 +469,11 @@ test('devalue as a sync transformer', async () => {
   const client = createTrpcClient({
     router: routerType<typeof router>(),
     links: [
-      httpLink({ url: server.url, serializer: devalueSerializer, batch: true }),
+      httpLink({
+        url: server.url,
+        serializer: devalueSerializer,
+        batch: batching(),
+      }),
     ],
   });
   const [rich, count] = await Promise.all([
@@ -489,7 +501,7 @@ test('nested deferred values stream with every serializer; files in inputs need 
       serializer,
       batch: true,
     });
-    for (const batch of [false, true]) {
+    for (const batch of [undefined, batching()]) {
       const client = createTrpcClient({
         router: routerType<typeof deferred>(),
         links: [httpLink({ url: server.url, serializer, batch })],

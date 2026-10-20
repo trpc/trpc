@@ -7,11 +7,13 @@
 import assert from 'node:assert/strict';
 import { Effect, Stream } from 'effect';
 import {
+  batching,
   createTrpcClient,
   httpLink,
   matchError,
   routerType,
   safe,
+  sse,
   TrpcError,
 } from '@trpc12/trpc/client';
 import { createEffectClient } from '@trpc12/trpc/effect';
@@ -60,7 +62,7 @@ export async function main(url: string) {
     links: [
       httpLink({
         url,
-        batch: true,
+        batch: batching(),
         serializer: danson,
         fetch: recordingFetch,
       }),
@@ -78,7 +80,7 @@ export async function main(url: string) {
   });
   const effectClient = createEffectClient({
     router,
-    links: [httpLink({ url, serializer: danson })],
+    links: [httpLink({ url, serializer: danson, subscriptions: sse() })],
   });
 
   // --- events: an Effect Stream, followed with the Effect client ------------------------

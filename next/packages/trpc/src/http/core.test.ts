@@ -6,6 +6,7 @@ import {
   localLink,
   routerType,
   safe,
+  batching,
 } from '@trpc12/trpc/client';
 import { cors } from '@trpc12/trpc/http';
 import {
@@ -205,7 +206,7 @@ test('a procedure can return its own response on unbatched HTTP calls (04 Q4.3)'
 
   const batched = createTrpcClient({
     router: routerType<Router>(),
-    links: [httpLink({ url: server.url, batch: true })],
+    links: [httpLink({ url: server.url, batch: batching() })],
   });
   const [ok, raw] = await Promise.allSettled([
     batched.whoami.query(),
@@ -229,13 +230,15 @@ test('a procedure can return its own response on unbatched HTTP calls (04 Q4.3)'
   expect(await alone.text()).toBe('a,b\n1,2\n');
   expect(server.requests.length - before).toBe(2);
 
-  const batching = (on: boolean) =>
+  const maybeBatched = (on: boolean) =>
     createTrpcClient({
       router: routerType<Router>(),
-      links: [httpLink({ url: server.url, batch: on })],
+      links: [
+        httpLink({ url: server.url, batch: on ? batching() : undefined }),
+      ],
     });
   // @ts-expect-error -- a `batch` that may be on counts as on
-  await expect(batching(true).csv.query()).rejects.toMatchObject({
+  await expect(maybeBatched(true).csv.query()).rejects.toMatchObject({
     code: 'BAD_REQUEST',
   });
 

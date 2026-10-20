@@ -7,6 +7,7 @@
  */
 import { Context, Effect, Layer, ManagedRuntime, Schema, Stream } from 'effect';
 import {
+  batching,
   createTrpcClient,
   dedupeLink,
   httpLink,
@@ -14,6 +15,7 @@ import {
   localLink,
   routerType,
   splitLink,
+  sse,
   wsLink,
 } from '@trpc12/trpc/client';
 import {
@@ -162,6 +164,11 @@ export const client = createTrpcClient({
 });
 
 export const runtime = ManagedRuntime.make(PostRepoLive);
+
+export const batchedClient = createTrpcClient({
+  router: routerType<AppRouter>(),
+  links: [httpLink({ url: '/trpc', batch: batching(), subscriptions: sse() })],
+});
 
 export const localClient = createTrpcClient({
   router: routerType<AppRouter>(),

@@ -28,11 +28,16 @@ const onPost = t.procedure.subscription(async function* (opts) {
 // ---cut-start---
 export const router = { onPost };
 // @filename: client.ts
-import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import {
+  createTrpcClient,
+  httpLink,
+  routerType,
+  sse,
+} from '@trpc12/trpc/client';
 import type { router } from './server.ts';
 const client = createTrpcClient({
   router: routerType<typeof router>(),
-  links: [httpLink({ url: '/trpc' })],
+  links: [httpLink({ url: '/trpc', subscriptions: sse() })],
 });
 // ---cut-end---
 
@@ -41,6 +46,8 @@ for await (const post of client.onPost.subscribe()) {
   //               ^?
 }
 ```
+
+Over HTTP, subscriptions are SSE requests, which `httpLink` sends when it's given `subscriptions: sse()` ([`httpLink`](../client/links/http.md#subscriptions)). Without it, procedures have no `.subscribe()`. Over WebSockets, `wsLink` carries them as they are.
 
 `.output(Event)` validates each event (the `data` of `tracked()` events); `.output(stream(Event))` does the same, matching [streamed queries](../server/streaming.md).
 
@@ -66,18 +73,23 @@ const onPost = t.procedure.subscription(async function* (opts) {
 // ---cut-start---
 export const router = { onPost };
 // @filename: client.ts
-import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import {
+  createTrpcClient,
+  httpLink,
+  routerType,
+  sse,
+} from '@trpc12/trpc/client';
 import type { router } from './server.ts';
 const client = createTrpcClient({
   router: routerType<typeof router>(),
-  links: [httpLink({ url: '/trpc' })],
+  links: [httpLink({ url: '/trpc', subscriptions: sse() })],
 });
 // ---cut-end---
 
 client.onPost.subscribe(undefined, { lastEventId: '42' }); // resume from a known id
 ```
 
-`httpLink` reconnects a dropped subscription with backoff (`reconnect: { attempts, delay }`). `wsLink` resends `lastEventId` after reconnecting, and when a draining server asks it to move to a new connection ([Rolling deploys](../client/links/ws.md#rolling-deploys)). A subscription without `tracked()` ids has nothing to resume from, so a reconnect or a move starts it over: the resolver runs again without `lastEventId`. A subscription whose resolver has side effects that must not rerun can opt out with `subscribe(input, { reconnect: false })`; a dropped connection then ends it with `NETWORK_ERROR`.
+`httpLink` with `subscriptions: sse()` reconnects a dropped subscription with backoff (`sse({ reconnect: { attempts, delay } })`). `wsLink` resends `lastEventId` after reconnecting, and when a draining server asks it to move to a new connection ([Rolling deploys](../client/links/ws.md#rolling-deploys)). A subscription without `tracked()` ids has nothing to resume from, so a reconnect or a move starts it over: the resolver runs again without `lastEventId`. A subscription whose resolver has side effects that must not rerun can opt out with `subscribe(input, { reconnect: false })`; a dropped connection then ends it with `NETWORK_ERROR`.
 
 While a subscription is quiet, the handler sends a `: ping` comment every 15 seconds so proxies don't close it as idle. Set `createFetchHandler({ sse: { pingInterval } })` (`'30 seconds'`, say), or `false` to turn it off.
 

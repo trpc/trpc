@@ -4,6 +4,7 @@ import {
   httpLink,
   safe,
   type TrpcClient,
+  sse,
   routerType,
 } from '@trpc12/trpc/client';
 import {
@@ -82,7 +83,13 @@ async function setup() {
   });
   const client = createTrpcClient({
     router: appContract,
-    links: [httpLink({ url: server.url, headers: { 'x-user': 'ada' } })],
+    links: [
+      httpLink({
+        url: server.url,
+        headers: { 'x-user': 'ada' },
+        subscriptions: sse(),
+      }),
+    ],
   });
   return { server, client, [Symbol.asyncDispose]: () => server.close() };
 }

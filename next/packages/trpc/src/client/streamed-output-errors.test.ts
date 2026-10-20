@@ -3,6 +3,7 @@ import {
   createSafeClient,
   createTrpcClient,
   httpLink,
+  sse,
   matchError,
   routerType,
   safe,
@@ -92,7 +93,7 @@ const steps = async <T, E>(
 test("a streamed output carries its stream's failures in the call's errors and its iterable's", async () => {
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: 'http://localhost/trpc' })],
+    links: [httpLink({ url: 'http://localhost/trpc', subscriptions: sse() })],
   });
   type Feed = Awaited<ReturnType<typeof client.feed.query>>;
   expectTypeOf<Feed>().toExtend<AsyncIterable<number>>();
@@ -226,7 +227,9 @@ async function expectTypedFailures(links: AtLeastOneLink) {
 
 test("httpLink: a streamed output's typed failures arrive typed, through safe()", async () => {
   await using server = await createTestServer({ router });
-  await expectTypedFailures([httpLink({ url: server.url })]);
+  await expectTypedFailures([
+    httpLink({ url: server.url, subscriptions: sse() }),
+  ]);
 });
 
 test("wsLink: a streamed output's typed failures arrive typed, through safe()", async () => {

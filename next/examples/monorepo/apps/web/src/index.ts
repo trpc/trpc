@@ -5,6 +5,7 @@
  */
 import type { AppRouter } from '@acme/api';
 import {
+  batching,
   createTrpcClient,
   httpLink,
   routerType,
@@ -14,7 +15,9 @@ import {
 export async function run(url: string) {
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url, batch: true, headers: { authorization: 'ada' } })],
+    links: [
+      httpLink({ url, batch: batching(), headers: { authorization: 'ada' } }),
+    ],
   });
 
   const post = await client.posts.byId.query({ id: '1' });

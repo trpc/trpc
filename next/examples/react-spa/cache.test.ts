@@ -8,11 +8,13 @@ import {
 } from '@tanstack/react-query';
 import { createTrpcQueryUtils } from '@trpc12/tanstack-react-query';
 import {
+  batching,
   createTrpcClient,
   dedupeLink,
   httpLink,
   localLink,
   routerType,
+  sse,
 } from '@trpc12/trpc/client';
 import { expect, test } from 'vite-plus/test';
 import { directoryRouter } from './server/directory.ts';
@@ -31,7 +33,8 @@ const trpc = createTrpcQueryUtils({
       dedupeLink(),
       httpLink({
         url: 'http://localhost/trpc',
-        batch: true,
+        batch: batching(),
+        subscriptions: sse(),
         serializer,
         fetch: (input, init) => trackerApi.fetch(new Request(input, init)),
       }),

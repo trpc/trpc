@@ -114,11 +114,16 @@ createFetchHandler({ router, layer: PostEvents.memory({ buffer: 100 }) });
 // @filename: app.ts
 import type { QueryClient } from '@tanstack/react-query';
 import { createTrpcQueryUtils } from '@trpc12/tanstack-query';
-import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import {
+  createTrpcClient,
+  httpLink,
+  routerType,
+  sse,
+} from '@trpc12/trpc/client';
 import type { router } from './router.ts';
 const client = createTrpcClient({
   router: routerType<typeof router>(),
-  links: [httpLink({ url: '/trpc' })],
+  links: [httpLink({ url: '/trpc', subscriptions: sse() })],
 });
 const trpc = createTrpcQueryUtils({ client });
 declare const queryClient: QueryClient;
@@ -193,11 +198,16 @@ export const router = {
 };
 // ---cut-start---
 // @filename: app.ts
-import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import {
+  createTrpcClient,
+  httpLink,
+  routerType,
+  sse,
+} from '@trpc12/trpc/client';
 import type { router } from './router.ts';
 const client = createTrpcClient({
   router: routerType<typeof router>(),
-  links: [httpLink({ url: '/trpc' })],
+  links: [httpLink({ url: '/trpc', subscriptions: sse() })],
 });
 // ---cut-end---
 import { createCollection } from '@tanstack/db';

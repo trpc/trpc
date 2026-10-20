@@ -1,4 +1,4 @@
-import { Cause, Effect, Exit, Queue, Scope, Stream } from 'effect';
+import { Effect, Exit, Scope, Stream } from 'effect';
 import {
   FetchHttpClient,
   HttpBody,
@@ -25,8 +25,6 @@ import {
   readBlob,
   textLines,
   toInputSearch,
-  type BatchCall,
-  type BatchLine,
 } from '../../../internal/protocol.ts';
 import type {
   AnySerializer,
@@ -36,7 +34,6 @@ import type {
 import { toClientError, type Operation } from '../../link.ts';
 import { badResponse, isByteStreamInput, serializeInput } from '../events.ts';
 import { resumeOf, retrying, type Retries } from '../resume.ts';
-import type { Batch } from './batch.ts';
 import type { HttpLinkOptions } from './link.ts';
 
 const NO_BODY_STATUSES = new Set([204, 205, 304]);
@@ -81,29 +78,6 @@ const headless = (error: AnyTrpcError): AnyTrpcError =>
     : error;
 
 /**
- * Calls batch together only when their `init`s are equal. `undefined` for
- * an `init` that can't be compared (it holds something JSON can't write).
- */
-function initKey(op: Operation): string | undefined {
-  const init = op.context.init;
-  if (!init) return '';
-  try {
-    const { headers, ...rest } = init;
-    const sorted = (value: unknown): unknown =>
-      value && typeof value === 'object' && !Array.isArray(value)
-        ? Object.fromEntries(
-            Object.entries(value)
-              .sort(([a], [b]) => (a < b ? -1 : 1))
-              .map(([k, v]) => [k, sorted(v)]),
-          )
-        : value;
-    return JSON.stringify([[...new Headers(headers).entries()], sorted(rest)]);
-  } catch {
-    return undefined;
-  }
-}
-
-/**
  * A response: Effect's, for reading its body, and the web one it wraps,
  * which `onResponse`, `File` outputs and raw responses hand on.
  */
@@ -114,6 +88,38 @@ export interface Reply {
 
 export const ok = (reply: Reply): boolean =>
   reply.response.status >= 200 && reply.response.status < 300;
+
+const contentType = (reply: Reply) =>
+  reply.response.headers['content-type'] ?? '';
+
+/** Whether `reply` streams its output as JSONL or binary frames. */
+const streamed = (reply: Reply) => {
+  const type = contentType(reply);
+  return (
+    reply.web.body !== null &&
+    (type.startsWith(CONTENT_TYPE.jsonl) ||
+      type.startsWith(CONTENT_TYPE.frames))
+  );
+};
+
+/** A streamed body's lines, parsed. */
+export const readStream = (
+  reply: Reply,
+): Stream.Stream<unknown, AnyTrpcError> => {
+  const bytes = reply.response.stream.pipe(Stream.mapError(toHttpError));
+  return contentType(reply).startsWith(CONTENT_TYPE.frames)
+    ? decodeRecords(bytes)
+    : textLines(bytes).pipe(
+        Stream.map((line) => line.trim()),
+        Stream.filter((line) => line !== ''),
+        // Line by line, so the lines before an unreadable one still arrive.
+        // An unreadable line is a defect: what's still open fails as a
+        // broken stream.
+        Stream.mapEffect((line) =>
+          Effect.sync(() => JSON.parse(line) as unknown),
+        ),
+      );
+};
 
 /**
  * Runs `effect` with a scope that closes, aborting its requests, only if
@@ -129,26 +135,50 @@ export const abortOnInterrupt = <A, E>(
     ),
   );
 
-/** What {@link makeTransport} gives the link. */
+/** A call's input, serialized: JSON, and the `Blob`s it holds. */
+export interface Encoded {
+  readonly json: SerializeReturn | undefined;
+  readonly parts: Blob[];
+}
+
+/** What {@link makeTransport} gives the link and its features. */
 export interface Transport {
   readonly serializer: AnySerializer;
+  /** The endpoint, without a trailing `/`. */
+  readonly baseUrl: string;
+  /** The `accept` for streamed outputs: JSONL, and frames with `binary`. */
+  readonly streamType: string;
+  /** `op`'s input, serialized once. Throws for one that can't be. */
+  readonly encode: (op: Operation) => Encoded;
   readonly call: (
     op: Operation,
     accept: string,
     extra?: Record<string, string>,
   ) => Effect.Effect<Reply, AnyTrpcError, Scope.Scope>;
+  /** A `POST` of `json` for `ops`, which share one `init`. */
+  readonly post: (
+    ops: ReadonlyArray<Operation>,
+    url: string,
+    extra: Record<string, string>,
+    json: unknown,
+  ) => Effect.Effect<Reply, AnyTrpcError, Scope.Scope>;
   readonly single: (op: Operation) => Effect.Effect<unknown, AnyTrpcError>;
-  readonly sendBatch: (
-    batch: Batch<Operation>,
-  ) => Effect.Effect<void, AnyTrpcError>;
   readonly readError: (reply: Reply) => Effect.Effect<never, AnyTrpcError>;
+  /** Hands `op` its response; throws what an `onResponse` that throws did. */
+  readonly report: (op: Operation, status: number, headers: Headers) => void;
   readonly reported: (
     op: Operation,
     reply: Reply,
   ) => Effect.Effect<void, AnyTrpcError>;
-  readonly unbatchable: (op: Operation) => boolean;
-  /** Calls with differing `init`s or types never share a batch. */
-  readonly batchKey: (op: Operation) => string;
+}
+
+/**
+ * An `httpLink` feature, such as `batching()` or `sse()`: an import whose
+ * `build` the link calls with its transport, so a client that doesn't pass
+ * it doesn't bundle it.
+ */
+export interface HttpFeature<F> {
+  readonly build: (transport: Transport) => F;
 }
 
 /** The HTTP side of `httpLink`: requests, responses and their bodies. */
@@ -282,10 +312,6 @@ export function makeTransport(
       );
     });
 
-  interface Encoded {
-    json: SerializeReturn | undefined;
-    parts: Blob[];
-  }
   const encodings = new WeakMap<Operation, Encoded>();
   const encode = (op: Operation): Encoded => {
     let encoded = encodings.get(op);
@@ -300,19 +326,6 @@ export function makeTransport(
     }
     return encoded;
   };
-  /**
-   * Blobs need a multipart request of their own, and a byte stream is the
-   * body of its own; a bad input fails alone.
-   */
-  const unbatchable = (op: Operation) => {
-    if (op.context.batch === false || isByteStreamInput(op.input)) return true;
-    try {
-      return encode(op).parts.length > 0 || initKey(op) === undefined;
-    } catch {
-      return true;
-    }
-  };
-
   /**
    * A tRPC error body, else a page from something in between (a proxy, a
    * framework's JSON 404), whose status names the error.
@@ -344,33 +357,6 @@ export function makeTransport(
   const streamType = opts.binary
     ? `${CONTENT_TYPE.frames}, ${CONTENT_TYPE.jsonl}`
     : CONTENT_TYPE.jsonl;
-  const contentType = (reply: Reply) =>
-    reply.response.headers['content-type'] ?? '';
-  const streamed = (reply: Reply) => {
-    const type = contentType(reply);
-    return (
-      reply.web.body !== null &&
-      (type.startsWith(CONTENT_TYPE.jsonl) ||
-        type.startsWith(CONTENT_TYPE.frames))
-    );
-  };
-  /** A streamed body's lines, parsed. */
-  const readStream = (reply: Reply): Stream.Stream<unknown, AnyTrpcError> => {
-    const bytes = reply.response.stream.pipe(Stream.mapError(toHttpError));
-    return contentType(reply).startsWith(CONTENT_TYPE.frames)
-      ? decodeRecords(bytes)
-      : textLines(bytes).pipe(
-          Stream.map((line) => line.trim()),
-          Stream.filter((line) => line !== ''),
-          // Line by line, so the lines before an unreadable one still arrive.
-          // An unreadable line is a defect: what's still open fails as a
-          // broken stream.
-          Stream.mapEffect((line) =>
-            Effect.sync(() => JSON.parse(line) as unknown),
-          ),
-        );
-  };
-
   /** One call's request: `GET` with its input in the URL, else a body. */
   const call = (
     op: Operation,
@@ -524,112 +510,28 @@ export function makeTransport(
       }),
     );
 
-  /** Sends a batch as one request and answers each call from its lines. */
-  const sendBatch = (
-    batch: Batch<Operation>,
-  ): Effect.Effect<void, AnyTrpcError> =>
-    Effect.gen(function* () {
-      const ops = batch.calls;
-      const frames = yield* Effect.forEach(ops, () =>
-        Queue.unbounded<Frame, AnyTrpcError | Cause.Done>(),
-      );
-      const onLine = (line: BatchLine, headers: Headers) => {
-        const op = ops[line.i];
-        const queue = frames[line.i];
-        if (!op || !queue) return Effect.void;
-        if ('chunk' in line) {
-          Queue.offerUnsafe(queue, line.chunk as Frame);
-          return Effect.void;
-        }
-        try {
-          report(op, line.status, headers);
-        } catch (error) {
-          batch.settle(line.i, Exit.fail(error as AnyTrpcError));
-          Queue.endUnsafe(queue);
-          return Effect.void;
-        }
-        if (line.status >= 400) {
-          let error: AnyTrpcError;
-          try {
-            error = fromWireError(serializer.deserialize(line.body as never));
-          } catch (cause) {
-            error = badResponse('Invalid error message')(cause);
-          }
-          batch.settle(line.i, Exit.fail(error));
-          Queue.endUnsafe(queue);
-          return Effect.void;
-        }
-        Queue.offerUnsafe(queue, line.body as Frame);
-        return batch.settleWith(
-          line.i,
-          serializer
-            .deserializeStream(Stream.fromQueue(queue), {
-              reviveError,
-              ...streamErrors,
-            })
-            .pipe(
-              Effect.catchCause((cause) =>
-                Effect.fail(toHttpError(Cause.squash(cause))),
-              ),
-            ),
-        );
-      };
-      return yield* Effect.gen(function* () {
-        const calls: BatchCall[] = ops.map((op) => {
-          const encoded = encode(op);
-          return {
-            path: op.path,
-            ...(encoded.json === undefined ? {} : { input: encoded.json }),
-          };
-        });
-        const reply = yield* execute(
-          yield* prepare(
-            ops,
-            'POST',
-            baseUrl,
-            { accept: streamType, [HEADER.batch]: '1' },
-            HttpBody.raw(JSON.stringify(calls), {
-              contentType: CONTENT_TYPE.json,
-            }),
-          ),
-          undefined,
-        ).pipe(Scope.provide(batch.scope));
-        if (!ok(reply) || reply.web.body === null) {
-          const err = yield* Effect.flip(readError(reply));
-          for (const [i, op] of ops.entries()) {
-            try {
-              report(op, reply.web.status, reply.web.headers);
-            } catch (error) {
-              batch.settle(i, Exit.fail(error as AnyTrpcError));
-            }
-          }
-          return yield* Effect.fail(err);
-        }
-        yield* readStream(reply).pipe(
-          Stream.runForEach((line) =>
-            onLine(line as BatchLine, reply.web.headers),
-          ),
-        );
-      }).pipe(
-        Effect.catchCause((cause) =>
-          Effect.fail(toHttpError(Cause.squash(cause))),
-        ),
-        Effect.ensuring(
-          Effect.sync(() => {
-            for (const queue of frames) Queue.endUnsafe(queue);
-          }),
-        ),
-      );
-    });
+  const post: Transport['post'] = (ops, url, extra, json) =>
+    Effect.flatMap(
+      prepare(
+        ops,
+        'POST',
+        url,
+        extra,
+        HttpBody.raw(JSON.stringify(json), { contentType: CONTENT_TYPE.json }),
+      ),
+      (prepared) => execute(prepared, undefined),
+    );
 
   return {
     serializer,
+    baseUrl,
+    streamType,
+    encode,
     call,
+    post,
     single,
-    sendBatch,
     readError,
+    report,
     reported,
-    unbatchable,
-    batchKey: (op) => `${op.type} ${initKey(op)}`,
   };
 }

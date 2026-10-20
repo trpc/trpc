@@ -1,17 +1,26 @@
 import assert from 'node:assert/strict';
 import {
+  batching,
   createTrpcClient,
   httpLink,
   matchError,
   safe,
   routerType,
+  sse,
 } from '@trpc12/trpc/client';
 import type { AppRouter } from './server.ts';
 
 export async function main(url: string) {
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url, batch: true, headers: { authorization: 'ada' } })],
+    links: [
+      httpLink({
+        url,
+        batch: batching(),
+        subscriptions: sse(),
+        headers: { authorization: 'ada' },
+      }),
+    ],
   });
 
   const post = await client.post.byId.query({ id: '1' });

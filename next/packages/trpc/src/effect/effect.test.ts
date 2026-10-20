@@ -13,6 +13,7 @@ import {
   httpLink,
   localLink,
   routerType,
+  sse,
   wsLink,
   type ClientError,
   type LinkErrorCode,
@@ -134,7 +135,7 @@ async function setup(user: string | null = 'ada') {
   });
   const client = createEffectClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: server.url })],
+    links: [httpLink({ url: server.url, subscriptions: sse() })],
   });
   return { server, client, [Symbol.asyncDispose]: () => server.close() };
 }

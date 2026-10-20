@@ -12,6 +12,7 @@ A client's `links` is a chain: each link gets the operation and the rest of the 
 import type { AppRouter } from './server.ts';
 // ---cut-end---
 import {
+  batching,
   createTrpcClient,
   dedupeLink,
   httpLink,
@@ -26,7 +27,7 @@ const client = createTrpcClient({
     loggerLink({ enabled: () => process.env.NODE_ENV === 'development' }),
     dedupeLink(),
     retryLink(),
-    httpLink({ url: 'http://localhost:3000/trpc', batch: true }),
+    httpLink({ url: 'http://localhost:3000/trpc', batch: batching() }),
   ],
 });
 ```
@@ -59,11 +60,11 @@ clientWith([]);
 
 ## Terminating links
 
-| Link                            | Carries calls                                                          |
-| ------------------------------- | ---------------------------------------------------------------------- |
-| [`httpLink`](./links/http.md)   | Over HTTP: queries as `GET`, mutations as `POST`, subscriptions as SSE |
-| [`wsLink`](./links/ws.md)       | Over one WebSocket                                                     |
-| [`localLink`](./links/local.md) | To a router in the same process                                        |
+| Link                            | Carries calls                                                                       |
+| ------------------------------- | ----------------------------------------------------------------------------------- |
+| [`httpLink`](./links/http.md)   | Over HTTP: queries as `GET`, mutations as `POST`, subscriptions as SSE with `sse()` |
+| [`wsLink`](./links/ws.md)       | Over one WebSocket                                                                  |
+| [`localLink`](./links/local.md) | To a router in the same process                                                     |
 
 ## Links in the middle
 
@@ -79,11 +80,11 @@ clientWith([]);
 
 A link declares the call options it reads (`dedupe` for `dedupeLink`, a `switchLink`'s name), and a client made with `router:` types them on every call next to `signal`, so a call takes an option only when a link in its chain reads it ([The client](./overview.md#call-options)). The terminating links also declare the [link codes](./errors.md#errors-from-the-links) they fail calls with, and the client's types follow:
 
-| Link        | Call options                                          | Link codes                                            | Also                                                                             |
-| ----------- | ----------------------------------------------------- | ----------------------------------------------------- | -------------------------------------------------------------------------------- |
-| `httpLink`  | `headers`, `init`, `batch`, `reconnect`, `onResponse` | `NETWORK_ERROR`, `BAD_RESPONSE`, `STREAM_INTERRUPTED` | No `.subscribe()` with `subscriptions: false`; `batch: true` makes calls batched |
-| `wsLink`    | `reconnect`                                           | `NETWORK_ERROR`, `BAD_RESPONSE`, `STREAM_INTERRUPTED` |                                                                                  |
-| `localLink` | none                                                  | none                                                  |                                                                                  |
+| Link        | Call options                                          | Link codes                                            | Also                                                                                     |
+| ----------- | ----------------------------------------------------- | ----------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `httpLink`  | `headers`, `init`, `batch`, `reconnect`, `onResponse` | `NETWORK_ERROR`, `BAD_RESPONSE`, `STREAM_INTERRUPTED` | `.subscribe()` only with `subscriptions: sse()`; `batch: batching()` makes calls batched |
+| `wsLink`    | `reconnect`                                           | `NETWORK_ERROR`, `BAD_RESPONSE`, `STREAM_INTERRUPTED` |                                                                                          |
+| `localLink` | none                                                  | none                                                  |                                                                                          |
 
 A `splitLink` or `switchLink` takes the options and codes of every branch, and drops a method only when no branch carries it. Every one of these links types outputs in its serializer's form, and a chain takes its form from its first link that declares one.
 

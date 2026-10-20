@@ -5,7 +5,10 @@
   ```ts
   switchLink({
     name: 'transport',
-    links: { http: httpLink({ url, batch: true }), ws: wsLink({ url: wsUrl }) },
+    links: {
+      http: httpLink({ url, batch: batching() }),
+      ws: wsLink({ url: wsUrl }),
+    },
     pick: (op) => (op.type === 'subscription' ? 'ws' : 'http'),
   });
   await client.report.query(input, { transport: 'http' });

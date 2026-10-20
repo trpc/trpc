@@ -3,10 +3,12 @@ import { mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
+  batching,
   createTrpcClient,
   httpLink,
   localLink,
   safe,
+  sse,
   wsLink,
   routerType,
 } from '@trpc12/trpc/client';
@@ -129,7 +131,9 @@ test('a call with a file leaves the batch and goes alone', async () => {
   });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: server.url, serializer: danson, batch: true })],
+    links: [
+      httpLink({ url: server.url, serializer: danson, batch: batching() }),
+    ],
   });
   const [size, a, b] = await Promise.all([
     client.size.query({ file: cover }),
@@ -300,7 +304,7 @@ test('a root File output of an unbatched call is the response body, with any ser
   await using server = await createTestServer({ router, batch: true });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: server.url, batch: false })],
+    links: [httpLink({ url: server.url })],
   });
   const file = await client.download.query({ name: 'Q3 rapport – é.csv' });
   expectTypeOf(file).toEqualTypeOf<File>();
@@ -324,15 +328,15 @@ test('a root File output of an unbatched call is the response body, with any ser
   expect(blob.type).toBe('');
   expect([...new Uint8Array(await blob.arrayBuffer())]).toEqual([0, 255, 1]);
 
-  const batching = createTrpcClient({
+  const batched = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: server.url, batch: true })],
+    links: [httpLink({ url: server.url, batch: batching() })],
   });
-  const alone = await batching.rawBlob.query(undefined, { batch: false });
+  const alone = await batched.rawBlob.query(undefined, { batch: false });
   expect(alone.size).toBe(3);
   void (() => {
     // @ts-expect-error -- plain JSON can't batch a file, so the call leaves the batch
-    void batching.rawBlob.query();
+    void batched.rawBlob.query();
   });
 });
 
@@ -362,7 +366,9 @@ test('a root File output in a batch streams like a nested one', async () => {
   });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: server.url, serializer: danson, batch: true })],
+    links: [
+      httpLink({ url: server.url, serializer: danson, batch: batching() }),
+    ],
   });
   const [file, hello] = await Promise.all([
     client.download.query({ name: 'a.csv' }),
@@ -405,7 +411,7 @@ for (const transport of [
                   url: server.url,
                   serializer: danson,
                   binary: true,
-                  batch: true,
+                  batch: batching(),
                 })
               : transport.startsWith('wsLink')
                 ? ws
@@ -470,7 +476,7 @@ test('binary frames carry nested file bytes unencoded when the client accepts th
         url: server.url,
         serializer: danson,
         binary: true,
-        batch: true,
+        batch: batching(),
       }),
     ],
   });
@@ -532,7 +538,11 @@ for (const transport of ['httpLink', 'wsLink', 'wsLink binary'] as const) {
       router: routerType<AppRouter>(),
       links: [
         transport === 'httpLink'
-          ? httpLink({ url: server.url, serializer: danson })
+          ? httpLink({
+              url: server.url,
+              serializer: danson,
+              subscriptions: sse(),
+            })
           : ws,
       ],
     });

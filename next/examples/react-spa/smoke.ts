@@ -7,6 +7,7 @@
  */
 import { spawnSync } from 'node:child_process';
 import {
+  batching,
   createTrpcClient,
   httpLink,
   routerType,
@@ -29,7 +30,7 @@ const assert = (ok: boolean, message: string): void => {
 await using server = await listen();
 const tracker = createTrpcClient({
   router: routerType<AppRouter>(),
-  links: [httpLink({ url: server.url, batch: true, serializer })],
+  links: [httpLink({ url: server.url, batch: batching(), serializer })],
 });
 const browser = await chromium.launch(
   process.env['CHROME_PATH']
