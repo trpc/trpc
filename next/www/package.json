@@ -55,6 +55,7 @@
     "@shikijs/twoslash": "4.5.0",
     "@tailwindcss/typography": "0.5.20",
     "@tailwindcss/vite": "4.3.3",
+    "@tooling/decisions": "workspace:*",
     "@tooling/tsconfig": "workspace:*",
     "@types/d3-hierarchy": "3.1.7",
     "@types/hast": "3.0.5",

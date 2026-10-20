@@ -21,7 +21,7 @@ function internalHref(target: EventTarget | null, root: HTMLElement) {
   const url = new URL(anchor.href, window.location.href);
   if (
     url.origin !== window.location.origin ||
-    !/^\/(?:(?:v\d+\/)?docs|blog)\//.test(url.pathname) ||
+    !/^\/(?:(?:v\d+\/)?docs|v\d+\/decisions|blog)\//.test(url.pathname) ||
     url.pathname.endsWith('.md')
   ) {
     return undefined;

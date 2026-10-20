@@ -1,4 +1,5 @@
 User-agent: *
 Allow: /
+Disallow: /v12/decisions
 
 Sitemap: https://v12.trpc.io/sitemap.xml

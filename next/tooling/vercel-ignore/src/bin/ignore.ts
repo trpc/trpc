@@ -16,8 +16,9 @@ decide(
     // The packages' tests: the site imports, compiles and links their
     // sources, never a test.
     ignored: ['packages/**/*.test.ts', 'packages/**/*.test.tsx'],
-    // The docs are in `www/docs`, so the project's own directory has them.
-    inputs: [],
+    // The docs are in `www/docs`, so the project's own directory has them;
+    // the decisions pages render these.
+    inputs: ['.agent-docs/open', '.agent-docs/decisions'],
   },
   { production: 'v12', remote: 'https://github.com/trpc/trpc.git' },
 ).pipe(

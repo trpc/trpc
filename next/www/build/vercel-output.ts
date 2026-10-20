@@ -11,7 +11,8 @@ import { NodeRuntime, NodeServices } from '@effect/platform-node';
 import { Data, Effect, FileSystem, Path, Schema } from 'effect';
 
 import { indexable, indexedHost } from '../src/seo.ts';
-import { copiedVersions, site, v12 } from '../src/site.ts';
+import { copiedVersions, decisions, site, v12 } from '../src/site.ts';
+import { hiddenPathProblems, hiddenRoute, isNoindex } from './hidden-paths.ts';
 import {
   onDemandRoutes,
   pageCacheControl,
@@ -98,11 +99,7 @@ export const noindexRoute = (
   src: '^/.*$',
 });
 
-const robotsMeta = /<meta\b[^>]*\bname="robots"[^>]*>/;
-
-/** Whether a prerendered page asks search engines not to index it. */
-export const isNoindex = (html: string) =>
-  robotsMeta.exec(html)?.[0].includes('noindex') ?? false;
+export { isNoindex };
 
 const escapeRegExp = (text: string) =>
   text.replaceAll(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -135,6 +132,7 @@ export const routes = (
   noindex: ReadonlyArray<VercelRoute> = [noindexRoute(site.url, '')],
 ): ReadonlyArray<VercelRoute> => [
   ...noindex,
+  hiddenRoute(decisions.basePath),
   { headers: { Location: '/$1' }, src: '^/(.+)/$', status: 308 },
   { headers: { Location: '/$1' }, src: '^/(.+)\\.html$', status: 308 },
   {
@@ -279,6 +277,23 @@ export const writeVercelOutput = Effect.fn('writeVercelOutput')(function* (
         Effect.orElseSucceed(() => true),
       );
   });
+  const texts = new Map(
+    yield* Effect.forEach(
+      files.filter((file) => /\.(?:html|md|txt|xml)$/.test(file)),
+      (file) =>
+        Effect.map(
+          fs.readFileString(path.join(staticDir, file)),
+          (text) => [file, text] as const,
+        ),
+      { concurrency: 32 },
+    ),
+  );
+  const hidden = hiddenPathProblems(decisions.basePath, texts);
+  if (hidden.length > 0) {
+    return yield* new VercelOutputError({
+      message: `${decisions.basePath} is meant to be hidden:\n${hidden.join('\n')}`,
+    });
+  }
   const problems = [
     ...old.problems,
     ...missingAnchors.map(

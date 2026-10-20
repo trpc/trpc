@@ -27,6 +27,15 @@ export const site = {
 export const v12 = { basePath: '/v12/docs' } as const;
 
 /**
+ * The design decisions in `.agent-docs/`, rendered for browsing: the open
+ * questions (`open/`) and the records (`decisions/`). Hidden: nothing on the
+ * site links here, and it's `noindex` and out of `robots.txt`'s crawl, the
+ * sitemap, `llms.txt` and search, whatever host serves it
+ * (`build/hidden-paths.ts` checks the build).
+ */
+export const decisions = { basePath: '/v12/decisions' } as const;
+
+/**
  * A version of the docs trpc.io serves, copied as it was
  * (`build/old-docs-copy.ts`).
  */

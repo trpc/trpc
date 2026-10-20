@@ -58,6 +58,9 @@ const setup = Effect.fn('setup')(function* (
     'llms.txt': llms,
     'logo.svg': '',
     'docs/server/routers/index.html': '<h2 id="nesting">Nesting</h2>',
+    'robots.txt': 'User-agent: *\nDisallow: /v12/decisions\n',
+    'v12/decisions/index.html':
+      '<meta name="robots" content="noindex, nofollow">',
   };
   for (const [file, contents] of Object.entries(files)) {
     const target = path.join(root, 'dist/client', file);
@@ -187,6 +190,11 @@ describe('writeVercelOutput', () => {
         },
         'index.md': { contentType: 'text/markdown; charset=utf-8' },
         'llms.txt': { contentType: 'text/plain; charset=utf-8' },
+        'robots.txt': { contentType: 'text/plain; charset=utf-8' },
+        'v12/decisions/index.html': {
+          contentType: 'text/html; charset=utf-8',
+          path: 'v12/decisions',
+        },
         'docs/server/routers/index.html': {
           contentType: 'text/html; charset=utf-8',
           path: 'docs/server/routers',

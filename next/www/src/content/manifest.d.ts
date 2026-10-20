@@ -33,6 +33,18 @@ declare module 'virtual:blog-manifest' {
   export const posts: ReadonlyArray<PostMeta>;
 }
 
+declare module 'virtual:decisions-manifest' {
+  import type {
+    DecisionMeta,
+    OpenQuestionMeta,
+  } from '~/content/decision-types.ts';
+
+  /** `.agent-docs/open/*.md`, by file name, from `build/decisions-content.ts`. */
+  export const openQuestions: ReadonlyArray<OpenQuestionMeta>;
+  /** `.agent-docs/decisions/*.md`, newest first. */
+  export const decisionRecords: ReadonlyArray<DecisionMeta>;
+}
+
 declare module 'sample:*' {
   import type { Sample } from '~/content/types.ts';
 

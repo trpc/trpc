@@ -2249,6 +2249,9 @@ importers:
       '@tailwindcss/vite':
         specifier: 4.3.3
         version: 4.3.3(@voidzero-dev/vite-plus-core@1.1.0(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(typescript@7.0.2)(yaml@2.9.1))
+      '@tooling/decisions':
+        specifier: workspace:*
+        version: link:../tooling/decisions
       '@tooling/tsconfig':
         specifier: workspace:*
         version: link:../tooling/tsconfig

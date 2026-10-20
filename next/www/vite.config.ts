@@ -7,6 +7,7 @@ import { defineConfig } from 'vite-plus';
 
 import { blogContent, blogPosts } from './build/blog-content.ts';
 import { docPages, docsContent } from './build/content.ts';
+import { decisionsContent } from './build/decisions-content.ts';
 import { blogFeeds } from './build/feeds.ts';
 import { siteIcons } from './build/icons.ts';
 import { bundledServer } from './build/on-demand.ts';
@@ -17,6 +18,7 @@ import {
   blog,
   type CopiedVersion,
   copiedVersions,
+  decisions,
   sections,
   site,
   v12,
@@ -146,6 +148,14 @@ export default defineConfig({
       sourceUrl: `${site.github}/blob/main/www`,
     }),
     blogFeeds({ posts }),
+    decisionsContent({
+      basePath: decisions.basePath,
+      dir: new URL('../.agent-docs', import.meta.url).pathname,
+      dirInRepo: 'next/.agent-docs',
+      manifestId: 'virtual:decisions-manifest',
+      repoUrl: `${site.github}/blob/v12`,
+      samplesDir,
+    }),
     siteIcons({ svg: favicon }),
     ogImages({
       cacheDir: `${cacheDir}/og`,
@@ -214,6 +224,9 @@ export default defineConfig({
           path: `/blog/${post.slug}`,
           sitemap: { exclude: true },
         })),
+        // Hidden: nothing links here, so the crawl starts here, and finds
+        // each question and decision from it, out of the sitemap.
+        { path: decisions.basePath, sitemap: { exclude: true } },
         {
           path: '/404',
           prerender: { enabled: true, outputPath: '/404.html' },

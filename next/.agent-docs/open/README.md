@@ -2,7 +2,7 @@
 
 Questions only a human can answer: API shapes, trade-offs and spikes waiting for a call. Each is one file, so parallel changes rarely touch the same one. Once answered, a question becomes a record in [`decisions/`](../decisions) and its file here is deleted.
 
-The docs site renders this folder and `decisions/` at a hidden path for browsing: each option as a tab with its code, the recommended one marked, and the links as buttons. Nothing on the site links there, and it's kept out of search engines, the sitemap, `llms.txt` and the site's search. Find the path in `www/src/site.ts` (`decisions`).
+The docs site renders this folder and `decisions/` for browsing at [`https://v12.trpc.io/v12/decisions`](https://v12.trpc.io/v12/decisions), each question at `/v12/decisions/open/<file name>`: the summary as its lead, each option as a tab (or side by side) with its code and its ✅ and ❌ bullets as pros and cons, the recommended one marked, spikes, PRs and previews as buttons, and `## Details` collapsed. Nothing on the site links there, and it's kept out of search engines, the sitemap, `llms.txt` and the site's search ([`decisions/hidden-decisions-pages.md`](../decisions/hidden-decisions-pages.md)). Relative links work there too: to an open question or a decision, they open its page; to any other file, it on GitHub.
 
 ## When to add one
 
@@ -74,6 +74,7 @@ Optional, for deep reading: measurements, edge cases, history. The site shows it
 ````
 
 - **Frontmatter:**
+  - Quote a value that starts with a backtick or has a `: ` in it (``summary: '`call()` on a …'``); YAML can't read it otherwise.
   - `title`: the question, in plain words, ending with `?`, the same as the `#` heading.
   - `summary`: one line. It's the card on the site's index and the lead of the page.
   - `area`: one of `areas` in `tooling/decisions/open.ts`.
