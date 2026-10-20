@@ -90,6 +90,11 @@ const getCtx = (protocol: 'http' | 'ws') => {
           throw err;
         }
       }),
+    yieldOnce: t.procedure
+      .input(z.number())
+      .subscription(async function* (opts) {
+        yield opts.input;
+      }),
     /**
      * @deprecated delete in v12
      */
@@ -215,6 +220,53 @@ describe.each([
       // no event listeners
       expect(ctx.ee.listenerCount('data')).toBe(0);
     });
+  });
+
+  test('server ends the subscription', async () => {
+    await using ctx = getCtx(protocol);
+
+    const onDataMock = vi.fn();
+    const onErrorMock = vi.fn();
+    const onStoppedMock = vi.fn();
+    const statuses: TRPCSubscriptionResult<number, unknown>['status'][] = [];
+
+    const { useTRPC } = ctx;
+
+    function MyComponent() {
+      const trpc = useTRPC();
+      const result = useSubscription(
+        trpc.yieldOnce.subscriptionOptions(10, {
+          onData: onDataMock,
+          onError: onErrorMock,
+          onStopped: onStoppedMock,
+        }),
+      );
+
+      statuses.push(result.status);
+
+      return (
+        <>
+          <div>status:{result.status}</div>
+          <div>error:{result.error?.message ?? 'NO_ERROR'}</div>
+        </>
+      );
+    }
+
+    const utils = ctx.renderApp(<MyComponent />);
+
+    await vi.waitFor(() => {
+      expect(utils.container).toHaveTextContent('status:idle');
+    });
+
+    expect(onDataMock).toHaveBeenCalledTimes(1);
+    expect(onDataMock).toHaveBeenCalledWith(10);
+    expect(onErrorMock).toHaveBeenCalledTimes(0);
+    expect(onStoppedMock).toHaveBeenCalledTimes(1);
+    expect(utils.container).toHaveTextContent('error:NO_ERROR');
+    expect(statuses[0]).toBe('connecting');
+    expect(statuses.at(-1)).toBe('idle');
+
+    utils.unmount();
   });
 
   test('observable()', async () => {
