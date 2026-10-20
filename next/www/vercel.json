@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "pnpm build",
+  "buildCommand": "NODE_OPTIONS=--max-old-space-size=4096 pnpm build",
   "framework": "tanstack-start",
   "git": {
     "deploymentEnabled": {
