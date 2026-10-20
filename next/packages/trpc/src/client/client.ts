@@ -462,9 +462,18 @@ export type ErrorHandlers<E extends AnyTrpcError> = {
  * A type error naming each of `matchError()`'s keys that no error of the
  * call goes to. Over the keys alone, so it's cached when there are none.
  */
-type Leftover<K extends PropertyKey> = {
+type LeftoverKeys<K extends PropertyKey> = {
   [P in K]: `'${P & string}' handles no error of this call`;
 };
+
+/**
+ * {@link LeftoverKeys} of `K` that aren't `Known`. `unknown` when there are
+ * none, so the usual call's constraint is `ErrorHandlers<E>` alone; `{}`
+ * keeps the intersection, and with it the cost (`pnpm bench shapes`, `match`).
+ */
+type Leftover<K extends PropertyKey, Known> = [K] extends [Known]
+  ? unknown
+  : LeftoverKeys<Exclude<K, Known>>;
 
 type HandlerResult<H> = H[keyof H] extends (err: never) => infer R ? R : never;
 
@@ -491,8 +500,7 @@ type HandlerResult<H> = H[keyof H] extends (err: never) => infer R ? R : never;
  */
 export function matchError<
   E extends AnyTrpcError,
-  H extends ErrorHandlers<E> &
-    Leftover<Exclude<keyof H, keyof ErrorHandlers<E>>>,
+  H extends ErrorHandlers<E> & Leftover<keyof H, keyof ErrorHandlers<E>>,
 >(err: E, handlers: H): HandlerResult<H> {
   const table = handlers as unknown as Record<
     string,
