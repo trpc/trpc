@@ -326,6 +326,37 @@ export function chainSerializer(
   return undefined;
 }
 
+/**
+ * Turns a subscription's stream into what `subscribe()` returns, ending
+ * quietly when `signal` aborts. @internal
+ */
+export type SubscriptionIterator = (
+  stream: OperationStream,
+  signal: AbortSignal | undefined,
+) => AsyncIterable<unknown>;
+
+const iterators = new WeakMap<AnyLink, SubscriptionIterator>();
+
+/** Records the iterator a link's subscriptions reach callers through. @internal */
+export function setSubscriptionIterator<L extends AnyLink>(
+  target: L,
+  iterate: SubscriptionIterator | undefined,
+): L {
+  if (iterate) iterators.set(target, iterate);
+  return target;
+}
+
+/** The first subscription iterator a chain records, looking into split branches. @internal */
+export function chainSubscriptionIterator(
+  links: ReadonlyArray<AnyLink>,
+): SubscriptionIterator | undefined {
+  for (const current of links) {
+    const found = iterators.get(current);
+    if (found) return found;
+  }
+  return undefined;
+}
+
 const switchNames = new WeakMap<AnyLink, ReadonlySet<string>>();
 
 /** Records the `switchLink` names a link contains. @internal */

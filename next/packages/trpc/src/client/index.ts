@@ -43,6 +43,7 @@ export {
   type TrpcRequestInit,
   type TrpcLink,
 } from './link.ts';
+export { withSubscriptions } from './subscriptions.ts';
 export {
   dedupeLink,
   experimental_durableLink,

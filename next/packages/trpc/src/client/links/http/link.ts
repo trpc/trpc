@@ -12,6 +12,7 @@ import {
   type TrpcLink,
   type TrpcRequestInit,
 } from '../../link.ts';
+import { withSubscriptions } from '../../subscriptions.ts';
 import { makeBatcher } from './batch.ts';
 import { makeSubscriptions } from './sse.ts';
 import { makeTransport } from './transport.ts';
@@ -162,7 +163,7 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
   const subscription = makeSubscriptions(transport, opts);
 
   return withSerializer(
-    (({ op }) => {
+    withSubscriptions((({ op }) => {
       if (op.type === 'subscription') {
         if (opts.subscriptions === false) {
           return Stream.fail(
@@ -179,7 +180,7 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
           ? batched(op)
           : transport.single(op),
       );
-    }) as TrpcLink<any>,
+    }) as TrpcLink<any>),
     serializer,
   );
 }

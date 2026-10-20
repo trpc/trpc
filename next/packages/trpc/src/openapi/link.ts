@@ -5,6 +5,7 @@ import type {
   OperationStream,
   TrpcLink,
 } from '../client/link.ts';
+import { withSubscriptions } from '../client/subscriptions.ts';
 import type { ContractJson } from '../contract/index.ts';
 import {
   codeOfStatus,
@@ -236,7 +237,7 @@ export function experimental_openApiLink(opts: OpenApiLinkOptions): TrpcLink<{
     }
   }
 
-  return ({ op }): OperationStream => {
+  return withSubscriptions(({ op }): OperationStream => {
     if (op.type !== 'subscription') {
       return Stream.fromEffect(
         Effect.tryPromise({
@@ -255,5 +256,5 @@ export function experimental_openApiLink(opts: OpenApiLinkOptions): TrpcLink<{
         ).pipe(Stream.ensuring(Effect.sync(() => controller.abort())));
       }),
     );
-  };
+  });
 }

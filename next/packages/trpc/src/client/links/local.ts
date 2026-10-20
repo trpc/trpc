@@ -28,6 +28,7 @@ import {
   type inferRouterServices,
 } from '../../server/procedures/index.ts';
 import { link, withSerializer, type TrpcLink } from '../link.ts';
+import { withSubscriptions } from '../subscriptions.ts';
 import { isByteStreamInput } from './events.ts';
 
 /**
@@ -115,7 +116,7 @@ export function localLink<TRouter extends AnyRouter>(
     });
   };
 
-  return withSerializer(
+  const local = withSerializer(
     link(({ op }) =>
       Stream.unwrap(
         Effect.gen(function* () {
@@ -191,4 +192,5 @@ export function localLink<TRouter extends AnyRouter>(
     ),
     serializer,
   );
+  return withSubscriptions(local);
 }

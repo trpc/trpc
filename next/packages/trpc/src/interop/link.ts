@@ -6,6 +6,7 @@ import {
   type Operation,
   type TrpcLink,
 } from '../client/link.ts';
+import { withSubscriptions } from '../client/subscriptions.ts';
 import {
   isTrpcError,
   TrpcError,
@@ -183,7 +184,7 @@ const fromV11Error = (error: unknown): AnyTrpcError => {
  */
 export function fromV11Link(v11Link: V11Link): TrpcLink {
   const operationLink = v11Link({});
-  return link((opts) =>
+  const fromV11 = link((opts) =>
     Stream.callback<unknown, AnyTrpcError>((queue) =>
       Effect.gen(function* () {
         const fibers = yield* FiberSet.make<void, never>();
@@ -247,4 +248,5 @@ export function fromV11Link(v11Link: V11Link): TrpcLink {
       }),
     ),
   );
+  return withSubscriptions(fromV11);
 }
