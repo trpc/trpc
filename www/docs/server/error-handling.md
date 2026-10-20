@@ -39,6 +39,44 @@ const t = initTRPC.create({ isDev: false });
 
 If you need stricter control over which error fields are returned, use [error formatting](error-formatting).
 
+## Secure error reporting
+
+Errors that are not a `TRPCError` are wrapped as `INTERNAL_SERVER_ERROR` and keep the original `message`. A database driver or a library can put table names, queries or file paths in that message, and it would reach the client. This is the kind of information leak [OWASP describes](https://owasp.org/www-community/Improper_Error_Handling).
+
+A safe setup has two parts:
+
+- [`onError`](#handling-errors) receives the full error. Log it or send it to your error tracker there.
+- [`errorFormatter`](error-formatting) controls what the client sees. Replace the message of `INTERNAL_SERVER_ERROR`s and only return the fields you want to expose.
+
+```ts twoslash title='server.ts'
+import { initTRPC } from '@trpc/server';
+
+const t = initTRPC.create({
+  errorFormatter({ shape }) {
+    return {
+      message:
+        shape.data.code === 'INTERNAL_SERVER_ERROR'
+          ? 'Internal server error'
+          : shape.message,
+      code: shape.code,
+      data: {
+        code: shape.data.code,
+        httpStatus: shape.data.httpStatus,
+        path: shape.data.path,
+      },
+    };
+  },
+});
+```
+
+The formatter above keeps the message of every other code. A `TRPCError` you throw yourself with a code like `NOT_FOUND` or `UNAUTHORIZED` is shown as written, so write messages that are safe to show to users. One thrown with `INTERNAL_SERVER_ERROR` is replaced too.
+
+:::note
+
+Input validation errors are `BAD_REQUEST`s and their message is the output of your validation library. If you don't want to reveal which library you use or how your input is shaped, replace that message in the `errorFormatter` as well.
+
+:::
+
 ## Error codes
 
 tRPC defines a list of error codes that each represent a different type of error and response with a different HTTP code.
