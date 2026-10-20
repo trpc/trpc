@@ -21,7 +21,8 @@
     "docs:build": "pnpm --filter @trpc12/www build",
     "bench": "pnpm --filter @tooling/bench run bench",
     "postinstall": "vendor-src check",
-    "vendor:sync": "vendor-src sync"
+    "vendor:sync": "vendor-src sync",
+    "land": "node tooling/dev/src/bin/land.ts"
   },
   "dependencies": {
     "@sveltejs/vite-plugin-svelte": "7.3.1",
