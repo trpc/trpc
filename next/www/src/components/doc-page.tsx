@@ -88,6 +88,7 @@ export function docHead(version: DocsVersion, slug: string) {
     article: { modified: meta.lastModified, section: meta.section },
     description,
     markdownPath: `${path}.md`,
+    noindex: meta.experiment !== undefined,
     path,
     structuredData: [
       {
@@ -286,7 +287,7 @@ export function DocPage(props: {
           ) : (
             <a
               className={footerLink}
-              href={`${site.github}/edit/v12/next/docs/${doc.slug}.md`}
+              href={`${site.github}/edit/v12/next/www/docs/${doc.slug}.md`}
             >
               <Pencil className="size-3.5" /> Edit this page on GitHub
             </a>

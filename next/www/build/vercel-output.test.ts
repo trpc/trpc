@@ -11,7 +11,13 @@ import {
   servedPaths,
   type TrpcRedirect,
 } from './old-routes.ts';
-import { firstDoc, noindexRoute, writeVercelOutput } from './vercel-output.ts';
+import {
+  firstDoc,
+  isNoindex,
+  noindexPageRoutes,
+  noindexRoute,
+  writeVercelOutput,
+} from './vercel-output.ts';
 
 const llmsTxt = [
   '# tRPC',
@@ -95,6 +101,30 @@ describe('noindexRoute', () => {
     expect(host.test('trpc.io')).toBe(true);
     expect(host.test('v12.trpc.io')).toBe(false);
     expect(host.test('trpc-v12.vercel.app')).toBe(false);
+  });
+});
+
+describe('isNoindex', () => {
+  it('reads the robots meta tag', () => {
+    expect(isNoindex('<meta content="noindex" name="robots"/>')).toBe(true);
+    expect(isNoindex('<meta name="robots" content="noindex, nofollow">')).toBe(
+      true,
+    );
+    expect(isNoindex('<meta content="index" name="robots"/>')).toBe(false);
+    expect(isNoindex('<p>noindex</p>')).toBe(false);
+  });
+});
+
+describe('noindexPageRoutes', () => {
+  it('says noindex on the pages and their markdown, and nowhere else', () => {
+    expect(noindexPageRoutes([])).toEqual([]);
+    const [route] = noindexPageRoutes(['/v12/docs/openapi/routes']);
+    expect(route?.headers).toEqual({ 'X-Robots-Tag': 'noindex' });
+    const pages = new RegExp(route?.src ?? '');
+    expect(pages.test('/v12/docs/openapi/routes')).toBe(true);
+    expect(pages.test('/v12/docs/openapi/routes.md')).toBe(true);
+    expect(pages.test('/v12/docs/client/links')).toBe(false);
+    expect(pages.test('/v12/docs/openapi/routes/more')).toBe(false);
   });
 });
 

@@ -1,7 +1,7 @@
 {
   "name": "@tooling/docs-lint",
   "private": true,
-  "description": "Lints the code blocks in docs/ with the trpc oxlint rules that apply to examples",
+  "description": "Lints the code blocks in www/docs/ with the trpc oxlint rules that apply to examples",
   "type": "module",
   "scripts": {
     "typecheck": "tsc -p tsconfig.json"

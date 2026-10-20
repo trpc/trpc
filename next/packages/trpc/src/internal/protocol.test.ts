@@ -4,28 +4,9 @@ import {
   hasMediaType,
   isJsonContentType,
   isMultipartContentType,
-  parseSse,
+  sseEvents,
   textLines,
 } from './protocol.ts';
-
-const streamOf = (...chunks: (string | Uint8Array)[]) =>
-  new ReadableStream<Uint8Array>({
-    start(controller) {
-      const encoder = new TextEncoder();
-      for (const chunk of chunks) {
-        controller.enqueue(
-          typeof chunk === 'string' ? encoder.encode(chunk) : chunk,
-        );
-      }
-      controller.close();
-    },
-  });
-
-const collect = async <T>(it: AsyncIterable<T>) => {
-  const out: T[] = [];
-  for await (const value of it) out.push(value);
-  return out;
-};
 
 test('lines split mid-character decode whole, without TextDecoderStream', async () => {
   vi.stubGlobal('TextDecoderStream', undefined);
@@ -39,8 +20,16 @@ test('lines split mid-character decode whole, without TextDecoderStream', async 
 });
 
 test('a CRLF split across chunks ends one line, not two', async () => {
-  const events = await collect(
-    parseSse(streamOf('event: x\r', '\ndata: 1\r\n\r\n')),
+  const encoder = new TextEncoder();
+  const events = await Effect.runPromise(
+    Stream.runCollect(
+      sseEvents(
+        Stream.make(
+          encoder.encode('event: x\r'),
+          encoder.encode('\ndata: 1\r\n\r\n'),
+        ),
+      ),
+    ),
   );
   expect(events).toEqual([{ event: 'x', data: '1', id: undefined }]);
 });

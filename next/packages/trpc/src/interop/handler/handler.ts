@@ -49,6 +49,7 @@ import {
   type ContextOption,
   type CreateContextOpts,
   type LayerOption,
+  type RuntimeOption,
   type OnErrorOpts,
   type PlatformArgs,
   type PlatformField,
@@ -173,6 +174,12 @@ export interface BaseV11HandlerOptions<TRouter extends AnyRouter> {
      */
     idleTimeout?: Duration.Input | false;
   };
+  /**
+   * How long `dispose()` waits for the HTTP requests in flight before it
+   * interrupts them.
+   * @default '10 seconds'
+   */
+  drainTimeout?: Duration.Input;
 }
 
 /**
@@ -185,7 +192,10 @@ export type V11HandlerOptions<
   TPlatform = undefined,
 > = BaseV11HandlerOptions<TRouter> &
   ContextOption<inferRouterContext<TRouter>, TPlatform> &
-  LayerOption<inferRouterServices<TRouter>>;
+  (
+    | LayerOption<inferRouterServices<TRouter>>
+    | RuntimeOption<inferRouterServices<TRouter>>
+  );
 
 /**
  * A handler that serves v11 clients.
@@ -205,11 +215,16 @@ export interface V11Handler<TPlatform = undefined> {
   ): void;
   /**
    * Closes the open WebSockets (1012, "service restart"), so `wsLink`
-   * reconnects elsewhere and resends its subscriptions, ends their
-   * sessions (a socket still connecting is closed once it opens), then
-   * releases the `layer`'s resources. The handler takes no WebSockets after.
+   * reconnects elsewhere and resends its subscriptions, and ends their
+   * sessions (a socket still connecting is closed once it opens). Ends the
+   * requests `fetch` is serving: event streams at once, the rest after up
+   * to `drainTimeout` (a 503 for one still running). Then releases the
+   * `layer`'s resources; a `runtime` you passed is yours to dispose. The
+   * handler takes no WebSockets after.
    */
   dispose(): Promise<void>;
+  /** `dispose()`, for `await using`. */
+  [Symbol.asyncDispose](): Promise<void>;
 }
 
 /** What the HTTP and WebSocket sides share. @internal */
@@ -977,7 +992,7 @@ export function createV11Handler<
   >((inner, m) => m(inner), app);
   // HttpEffect runs apps uninterruptibly; an aborted `request.signal` must abort the call.
   const webHandler = HttpEffect.toWebHandler(
-    Effect.interruptible(served) as never,
+    base.request(Effect.interruptible(served)) as never,
   );
 
   const handler: V11Handler<unknown> = {
@@ -1000,6 +1015,7 @@ export function createV11Handler<
       );
     },
     dispose: base.dispose,
+    [Symbol.asyncDispose]: base.dispose,
   };
   setHandlerContext(
     handler,

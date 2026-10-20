@@ -16,7 +16,7 @@ Method: `gh issue list --repo trpc/trpc --state open --limit 1000 --json number,
 - #5534, #7446, bodies already read: `toHttpEffect` rebuilds the body from `req.body` after `express.json()`, `text()` or `raw()`, and otherwise fails with a 500 that names the cause instead of a misleading validation error (`platforms.test.ts`).
 - #6996 (related): JSONL and SSE decoding no longer need `TextDecoderStream`, which Hermes lacks. The SSE parser also handled a `\r\n` split across chunks as two line ends.
 - WebSocket heartbeat: `wsLink` pings (`keepAlive`), and a connection that stops answering reconnects (`websockets.test.ts`).
-- #7436, work after the response: `docs/server/effect.md` documents `Effect.forkDetach` (tested) and the platforms' `waitUntil`. Workers' `env` and `ctx` reach `createContext` as the handler's typed platform argument (`handler.fetch(request, { env, ctx })`), which replaced a `WeakMap`-keyed-by-request recipe.
+- #7436, work after the response: `www/docs/server/effect.md` documents `Effect.forkDetach` (tested) and the platforms' `waitUntil`. Workers' `env` and `ctx` reach `createContext` as the handler's typed platform argument (`handler.fetch(request, { env, ctx })`), which replaced a `WeakMap`-keyed-by-request recipe.
 - #6771 and Next control flow: `redirect()`, `notFound()` and dynamic-API errors (a string `digest`) were wrapped as `INTERNAL_SERVER_ERROR` by actions and in-process callers, and RSC dehydration redacted them. They now pass through unchanged (`actions.test.ts`, `rsc.test.tsx`).
 - #7021, offline mutations: no helper needed. `mutationOptions()` carries `mutationKey` and `mutationFn`, so `setMutationDefaults(o.mutationKey, o)` lets a restored client resume paused mutations. Documented, and tested through dehydrate, JSON and hydrate (`core.test.ts`).
 - #6306, structural sharing: `queryOptions()` and `infiniteOptions()` keep equal `Date`, `Map`, `Set`, `URL` and typed-array values across refetches (`sharing.test.ts`, `core.test.ts`).
@@ -48,7 +48,7 @@ Method: `gh issue list --repo trpc/trpc --state open --limit 1000 --json number,
 | #6819                                    | stream content type                                   | `application/jsonl`                                                                                          |
 | #6999, #6708                             | custom HTTP shapes, `x-www-form-urlencoded`           | `@trpc12/trpc/openapi` (routes, forms, bracket notation)                                                     |
 | #5752                                    | `.` blocked by firewalls                              | decided: `.` stays (Q10.2); OpenAPI routes use `/`                                                           |
-| #6325                                    | `Deno.serve`                                          | `handler.fetch` and `handler.websocket` (`docs/adapters/deno.md`)                                            |
+| #6325                                    | `Deno.serve`                                          | `handler.fetch` and `handler.websocket` (`www/docs/adapters/deno.md`)                                        |
 | #5484, #4257                             | no unstable imports; inspect routers                  | `@trpc12/trpc/extend` (`flattenRoutes`, `resolveProcedure`)                                                  |
 | #6467                                    | next-safe-action                                      | `@trpc12/trpc/actions` (`createAction`, `createCallable`)                                                    |
 | #5876                                    | prefetch without blocking                             | `hydrationOptions()` dehydrates pending queries; async iterables still can't cross into Client Components    |
@@ -63,7 +63,7 @@ A human answered the "Worth considering" list; each answer is a `decisions/` fil
 - Invalidation declared on mutations (#5264, #3468, #6715): later, maybe as a link or plugin (`declared-invalidation-later.md`).
 - Middleware that reshapes input (#6892): `next({ input })`, typed like `next({ ctx })` (`middleware-input.md`).
 - `fetch` sees the operations (#4184): no third `fetch` argument. An `init` call option merged onto `httpLink({ init })`, which can be a callback of `{ ops }`; calls with different inits batch apart (`link-init.md`). Plus a named `switchLink` whose name is a call option that forces a branch (`switch-link.md`).
-- Publisher backends (#5618): no packages; recipes on Effect's `Redis` and `@effect/sql-pg`, and a Durable Object one, in `docs/subscriptions/backends.md` (`publisher-backends.md`).
+- Publisher backends (#5618): no packages; recipes on Effect's `Redis` and `@effect/sql-pg`, and a Durable Object one, in `www/docs/subscriptions/backends.md` (`publisher-backends.md`).
 - Cloudflare hibernation: `createHibernatingWebSockets()` (`cloudflare-hibernation.md`).
 - Streamed mutations (#5846): `streamedMutationOptions()`, interruptible with `abortWhenUnobserved` or a per-call `signal` ([note](./interruptible-streamed-mutations.md), `interruptible-streamed-mutations.md`).
 - File outputs (Q11.6): raw body for an unbatched root `File`, streamed chunks elsewhere (`files.md`).
@@ -71,7 +71,7 @@ A human answered the "Worth considering" list; each answer is a `decisions/` fil
 
 ## Still worth considering
 
-1. **TanStack DB** (#6891). `queryOptions()` should plug into `queryCollectionOptions` as it is; worth a test and a docs example. Built since: `packages/tanstack-query/src/db.test.ts`, `docs/integrations/tanstack-query.md` (TanStack DB), `tanstack-db-collections.md`.
+1. **TanStack DB** (#6891). `queryOptions()` should plug into `queryCollectionOptions` as it is; worth a test and a docs example. Built since: `packages/tanstack-query/src/db.test.ts`, `www/docs/integrations/tanstack-query.md` (TanStack DB), `tanstack-db-collections.md`.
 2. **Adapters, recorded as later**: Lambda API Gateway and Lambda@Edge (#4978, built since: `@trpc12/trpc/aws-lambda`, `aws-lambda-adapter.md`), Firebase callable (#6388, built since as a recipe: `firebase-callable-recipe.md`), WebTransport (#6971, not built: `webtransport-not-yet.md`), raw TCP (#5995, built since: `@trpc12/trpc/socket`, `socketLink`, `raw-socket-transport.md`). The socket core is generic over connections, so the last two are a transport each.
 
 ## Not pursuing
@@ -89,7 +89,7 @@ A human answered the "Worth considering" list; each answer is a `decisions/` fil
   - #6862: `infiniteOptions({ input: (pageParam) => … })` maps the page param explicitly, so no `cursor: undefined` is injected into the input.
   - #6962: a subscription the server ends sets the `SubscriptionObserver` to `idle`, whatever the link.
   - #6097: `loggerLink({ log })` takes a custom logger, and the default logs the input and result values.
-  - #5113: a link can rewrite `op.path`, so one client can cover routers on different servers with different contexts. The recipe is in `docs/client/links.md`, tested in `links.test.ts`.
+  - #5113: a link can rewrite `op.path`, so one client can cover routers on different servers with different contexts. The recipe is in `www/docs/client/links.md`, tested in `links.test.ts`.
   - #5455: RSC caching is per request (React `cache()`), so a ctx-dependent query can't leak between users.
 - Worth considering:
   - #4829: there are no Next data-cache tags. With `'use cache'`, `cacheTag(...trpc.post.pathKey())` style tags (path prefixes, then path and input) would match TanStack's key hierarchy. Worth a docs recipe once `'use cache'` is stable. Built since: `cacheTags`/`revalidationTag`, `next-cache-tags.md`.
@@ -105,7 +105,7 @@ A human answered the "Worth considering" list; each answer is a `decisions/` fil
 - #7555: a path parameter with a malformed escape (`/things/%E0%A4%A`) was a 500 in the OpenAPI handler; now it's a 400 `BAD_REQUEST`. The RPC handler already answered 404.
 - #7614: content types are matched by media type, case and parameters ignored. Case already worked, but `application/json-seq` was read as JSON (`hasMediaType` in `internal/protocol.ts`).
 - #7612: the TanStack and React integration packages are marked `sideEffects: false`, like `@trpc12/trpc`.
-- #4448, #7398, #7611 (`abortOnUnmount`): queries always pass TanStack's `signal`, so an unobserved query cancels. Documented in `docs/integrations/tanstack-query.md` and the migration guide; a per-query opt-out is an open question (`tanstack-query-signal.md`).
+- #4448, #7398, #7611 (`abortOnUnmount`): queries always pass TanStack's `signal`, so an unobserved query cancels. Documented in `www/docs/integrations/tanstack-query.md` and the migration guide; a per-query opt-out is an open question (`tanstack-query-signal.md`).
 - #6740: the RSC docs read an unawaited `prefetch()` with `useQuery`, which can render loading on the server and data in the browser. They now say `useSuspenseQuery`, or to await the query.
 - #7388: `useSuspenseInfiniteQuery({ ...infiniteOptions(…), select })` types the selected data. It already worked, since vNext hands TanStack its own options, and is now tested.
 

@@ -1899,6 +1899,31 @@ importers:
         specifier: 1.1.0
         version: 1.1.0(@opentelemetry/api@1.9.1)(@types/node@24.19.1)(@vitest/coverage-v8@5.0.3)(@vitest/ui@5.0.3)(esbuild@0.28.2)(happy-dom@20.14.6)(jiti@2.7.0)(svelte@5.57.2)(typescript@7.0.2)(yaml@2.9.1)
 
+  tooling/dev:
+    dependencies:
+      '@effect/platform-node':
+        specifier: 4.0.2
+        version: 4.0.2(effect@4.0.2)(redis@6.3.0(@opentelemetry/api@1.9.1))
+      effect:
+        specifier: 4.0.2
+        version: 4.0.2
+    devDependencies:
+      '@effect/vitest':
+        specifier: 4.0.2
+        version: 4.0.2(effect@4.0.2)(vitest@5.0.3)
+      '@tooling/tsconfig':
+        specifier: workspace:*
+        version: link:../tsconfig
+      '@types/node':
+        specifier: ^24.0.0
+        version: 24.19.1
+      typescript:
+        specifier: ^7.0.2
+        version: 7.0.2
+      vite-plus:
+        specifier: 1.1.0
+        version: 1.1.0(@opentelemetry/api@1.9.1)(@types/node@24.19.1)(@vitest/coverage-v8@5.0.3)(@vitest/ui@5.0.3)(esbuild@0.28.2)(happy-dom@20.14.6)(jiti@2.7.0)(svelte@5.57.2)(typescript@7.0.2)(yaml@2.9.1)
+
   tooling/docs-lint:
     dependencies:
       '@effect/platform-node':
@@ -2163,6 +2188,9 @@ importers:
       lucide-react:
         specifier: 1.55.0
         version: 1.55.0(@types/react@19.3.0)(react@19.3.0)
+      minisearch:
+        specifier: 7.2.0
+        version: 7.2.0
       next-themes:
         specifier: 0.4.6
         version: 0.4.6(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
@@ -8429,6 +8457,9 @@ packages:
 
   minimist@1.2.8:
     resolution: {integrity: sha512-2yyAR8qBkN3YuheJanUpWC5U3bb5osDywNB8RzDVlDwDHbocAJveqqj1u8+SVD7jkWT4yvsHCpWqqWqAxb0zCA==}
+
+  minisearch@7.2.0:
+    resolution: {integrity: sha512-dqT2XBYUOZOiC5t2HRnwADjhNS2cecp9u+TJRiJ1Qp/f5qjkeT5APcGPjHw+bz89Ms8Jp+cG4AlE+QZ/QnDglg==}
 
   mrmime@1.0.1:
     resolution: {integrity: sha512-hzzEagAgDyoU1Q6yg5uI+AorQgdvMCur3FcKf7NhMKWsaYg+RnbTyHRa/9IlLF9rf455MOCtcqqrQQ83pPP7Uw==}
@@ -15880,6 +15911,8 @@ snapshots:
       brace-expansion: 5.0.12
 
   minimist@1.2.8: {}
+
+  minisearch@7.2.0: {}
 
   mrmime@1.0.1: {}
 

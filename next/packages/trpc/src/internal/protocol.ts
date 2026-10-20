@@ -349,13 +349,3 @@ export const sseEvents = <E>(
       },
     ),
   );
-
-/** {@link sseEvents} of a web body, for code outside Effect. */
-export const parseSse = (
-  body: ReadableStream<Uint8Array>,
-): AsyncIterable<SseEvent> =>
-  Stream.toAsyncIterable(
-    sseEvents(
-      Stream.fromReadableStream({ evaluate: () => body, onError: (e) => e }),
-    ),
-  );

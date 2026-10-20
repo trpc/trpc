@@ -264,7 +264,7 @@ test('a caller that stops leaves the others reading; the request stops after the
   expect(ctx.sent('forever')).toBe(1);
 });
 
-test("the request's signal aborts once every caller's has, so a value already sent still reads", async () => {
+test("the request's signal aborts once every caller still in it has aborted, so a value already sent still reads", async () => {
   let interrupted = 0;
   const stub = stubbed(() =>
     Stream.fromEffect(
@@ -281,8 +281,9 @@ test("the request's signal aborts once every caller's has, so a value already se
   await expect(a).rejects.toMatchObject({ code: 'CLIENT_CLOSED_REQUEST' });
   await expect(b).resolves.toBe('late');
   expect(stub.ops[0]!.signal!.aborted).toBe(false);
+  // `b` has left: its signal no longer reaches the request.
   second!.abort();
-  expect(stub.ops[0]!.signal!.aborted).toBe(true);
+  expect(stub.ops[0]!.signal!.aborted).toBe(false);
 
   const c = stub.client.slow.query(undefined, { signal: third!.signal });
   await sleep(5);
@@ -290,6 +291,112 @@ test("the request's signal aborts once every caller's has, so a value already se
   await expect(c).rejects.toMatchObject({ code: 'CLIENT_CLOSED_REQUEST' });
   expect(stub.ops[1]!.signal!.aborted).toBe(true);
   await vi.waitFor(() => expect(interrupted).toBe(1));
+});
+
+test("a caller that stops reading stops counting: the others' signals abort the request", async () => {
+  const stub = stubbed(() =>
+    Stream.concat(
+      Stream.fromEffect(Effect.as(Effect.sleep(10), 1)),
+      Stream.never,
+    ),
+  );
+  const controller = new AbortController();
+  const a = stub.client.forever.subscribe()[Symbol.asyncIterator]();
+  const first = a.next();
+  const b = collect(
+    stub.client.forever.subscribe(undefined, { signal: controller.signal }),
+  );
+  expect(await first).toEqual({ done: false, value: 1 });
+  await a.return?.();
+  expect(stub.ops).toHaveLength(1);
+  expect(stub.ops[0]!.signal!.aborted).toBe(false);
+  controller.abort();
+  await expect(b).resolves.toEqual([1]);
+  expect(stub.ops[0]!.signal!.aborted).toBe(true);
+});
+
+test('aborting mid-stream ends only that caller, and its signal keeps no listener; the last one aborts the request', async () => {
+  const stub = stubbed(() =>
+    Stream.iterate(0, (n) => n + 1).pipe(Stream.tap(() => Effect.sleep(5))),
+  );
+  const listening = (signal: AbortSignal) => {
+    const added = vi.spyOn(signal, 'addEventListener');
+    const removed = vi.spyOn(signal, 'removeEventListener');
+    return () => {
+      const live = new Set(added.mock.calls.map((call) => call[1]));
+      for (const call of removed.mock.calls) live.delete(call[1]);
+      return live.size;
+    };
+  };
+  const [first, second] = [new AbortController(), new AbortController()];
+  const firstLive = listening(first.signal);
+  const secondLive = listening(second.signal);
+  const a = stub.client.forever
+    .subscribe(undefined, { signal: first.signal })
+    [Symbol.asyncIterator]();
+  const b = stub.client.forever
+    .subscribe(undefined, { signal: second.signal })
+    [Symbol.asyncIterator]();
+  expect(await Promise.all([a.next(), b.next()])).toEqual([
+    { done: false, value: 0 },
+    { done: false, value: 0 },
+  ]);
+  expect(firstLive()).toBeGreaterThan(0);
+
+  first.abort();
+  await expect(a.next()).resolves.toMatchObject({ done: true });
+  expect((await b.next()).value).toBeGreaterThan(0);
+  expect(stub.ops).toHaveLength(1);
+  expect(stub.ops[0]!.signal!.aborted).toBe(false);
+  await vi.waitFor(() => expect(firstLive()).toBe(0));
+
+  second.abort();
+  await expect(b.next()).resolves.toMatchObject({ done: true });
+  expect(stub.ops[0]!.signal!.aborted).toBe(true);
+  await vi.waitFor(() => expect(secondLive()).toBe(0));
+});
+
+test('a caller that leaves removes its abort listener, so a long-lived signal keeps no request', async () => {
+  const stub = stubbed(() => Stream.fromEffect(Effect.as(Effect.sleep(5), 7)));
+  const signal = new AbortController().signal;
+  const added = vi.spyOn(signal, 'addEventListener');
+  const removed = vi.spyOn(signal, 'removeEventListener');
+  for (let round = 0; round < 3; round++) {
+    await expect(
+      Promise.all([
+        stub.client.slow.query(undefined, { signal }),
+        stub.client.slow.query(undefined, { signal }),
+      ]),
+    ).resolves.toEqual([7, 7]);
+  }
+  expect(stub.ops).toHaveLength(3);
+  const listening = new Set(added.mock.calls.map((call) => call[1]));
+  for (const call of removed.mock.calls) listening.delete(call[1]);
+  expect(listening.size).toBe(0);
+  expect(added.mock.calls.length).toBeGreaterThanOrEqual(6);
+});
+
+test('a signal an earlier link sets aborts the request while its caller still waits', async () => {
+  const own = new AbortController();
+  const answer = Deferred.makeUnsafe<string>();
+  const ops: Operation[] = [];
+  const client = createTrpcClient({
+    router: routerType<AppRouter>(),
+    links: [
+      link((args) => args.next({ ...args.op, signal: own.signal })),
+      dedupeLink(),
+      link((args) => {
+        ops.push(args.op);
+        return Stream.fromEffect(Deferred.await(answer));
+      }),
+    ],
+  });
+  const call = client.slow.query();
+  await vi.waitFor(() => expect(ops).toHaveLength(1));
+  own.abort();
+  await vi.waitFor(() => expect(ops[0]!.signal!.aborted).toBe(true));
+  Deferred.doneUnsafe(answer, Effect.succeed('late'));
+  await expect(call).resolves.toBe('late');
 });
 
 test('a call made once every caller has left sends its own request', async () => {

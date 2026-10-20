@@ -1,8 +1,14 @@
 import { Effect, Exit, Fiber, FiberSet, identity, Scope } from 'effect';
-import type { AnyLink } from '@trpc12/trpc/client';
+import { TrpcError, type AnyLink } from '@trpc12/trpc/client';
 import { createSerializer } from '@trpc12/trpc/serializer';
 import { sortKeys } from './share.ts';
-import { fulfilled, pending, type Pending, type Thenable } from './thenable.ts';
+import {
+  fulfilled,
+  pending,
+  rejected,
+  type Pending,
+  type Thenable,
+} from './thenable.ts';
 
 /** Keys use danSON, so inputs with `Date`s and `Map`s key apart. */
 const keySerializer = /* @__PURE__ */ createSerializer();
@@ -123,7 +129,10 @@ export type QueryFilter = string | ((entry: QueryEntry) => boolean) | undefined;
  */
 export interface QueryStore {
   readonly isServer: boolean;
-  /** `.query()`: the entry's promise, starting a request when needed. */
+  /**
+   * `.query()`: the entry's promise, starting a request when needed. After
+   * `dispose()`, a query without data rejects with `CLIENT_CLOSED_REQUEST`.
+   */
   read(path: string, input: unknown, callOptions?: object): Thenable<unknown>;
   /** The entry a promise from `read()` belongs to: the current one for its key. */
   entryOf(promise: Promise<unknown>): QueryEntry | undefined;
@@ -149,14 +158,28 @@ export interface QueryStore {
   seed(path: string, input: unknown, data: unknown, updatedAt: number): void;
   /**
    * Detaches the links' listeners, ends the store's requests and timers, and
-   * drops every entry. The store starts no requests after it.
+   * drops every entry. The store starts no requests after it: first loads in
+   * flight and later reads without data reject with `CLIENT_CLOSED_REQUEST`.
    */
   dispose(): void;
 }
 
 /** Resolves once every fiber has ended, however each ended. */
-const settled = (fibers: Iterable<Fiber.Fiber<void>>): Promise<void> =>
-  Effect.runPromise(Effect.asVoid(Fiber.awaitAll(fibers)));
+const settled = (
+  fibers: Iterable<Fiber.Fiber<void> | undefined>,
+): Promise<void> =>
+  Effect.runPromise(
+    Effect.asVoid(
+      Fiber.awaitAll([...fibers].filter((fiber) => fiber !== undefined)),
+    ),
+  );
+
+const disposedError = () =>
+  new TrpcError({
+    code: 'CLIENT_CLOSED_REQUEST',
+    message:
+      "The query's store was disposed: after dispose() it starts no requests",
+  });
 
 const owners = new WeakMap<Promise<unknown>, { store: Store; entry: Entry }>();
 
@@ -183,6 +206,8 @@ export interface StoreOptions {
   ) => Promise<unknown>;
   readonly isServer: boolean;
   readonly now?: (() => number) | undefined;
+  /** Disposes the store when it closes. */
+  readonly scope?: Scope.Scope | undefined;
 }
 
 type Store = QueryStore & { readonly '~entries': Map<string, Entry> };
@@ -203,11 +228,21 @@ export function createStore(opts: StoreOptions): QueryStore {
   }
   const onMount = merged.flatMap((f) => (f.onMount ? [f.onMount] : []));
   const entries = new Map<string, Entry>();
-  // Link listeners, GC timers and requests end with it, on `dispose()`.
-  const scope = Scope.makeUnsafe();
+  // Link listeners, GC timers and requests end with it, on `dispose()` or
+  // when the caller's scope closes.
+  const scope = opts.scope ? Scope.forkUnsafe(opts.scope) : Scope.makeUnsafe();
   const run = Effect.runSync(
     Scope.provide(FiberSet.makeRuntime<never, void, never>(), scope),
   );
+  let disposed = false;
+  const end = () => {
+    if (disposed) return;
+    disposed = true;
+    const error = disposedError();
+    for (const entry of entries.values()) entry.deferred?.reject(error);
+    store.remove();
+  };
+  Effect.runSync(Scope.addFinalizer(scope, Effect.sync(end)));
 
   const isStale = (entry: QueryEntry) => {
     const e = entry as Entry;
@@ -328,8 +363,8 @@ export function createStore(opts: StoreOptions): QueryStore {
       }),
     );
 
-  const fetch = (entry: Entry): Fiber.Fiber<void> => {
-    if (entry.fetching) return entry.fetching;
+  const fetch = (entry: Entry): Fiber.Fiber<void> | undefined => {
+    if (entry.fetching || disposed) return entry.fetching;
     if (!entry.hasData && !entry.deferred) {
       const deferred = pending<unknown>();
       entry.deferred = deferred;
@@ -353,7 +388,9 @@ export function createStore(opts: StoreOptions): QueryStore {
     isServer: opts.isServer,
     read(path, input, callOptions) {
       const key = queryKey(path, input);
-      const entry = entries.get(key) ?? create(path, input, callOptions);
+      const cached = entries.get(key);
+      if (disposed && !cached?.hasData) return rejected(disposedError());
+      const entry = cached ?? create(path, input, callOptions);
       if (entry.fetching || isStale(entry)) {
         entry.requested = true;
         fetch(entry);
@@ -370,7 +407,7 @@ export function createStore(opts: StoreOptions): QueryStore {
     isStale,
     refetch: (entry) => settled([fetch(entry as Entry)]),
     invalidate(filter) {
-      const refetches: Array<Fiber.Fiber<void>> = [];
+      const refetches: Array<Fiber.Fiber<void> | undefined> = [];
       for (const entry of entries.values()) {
         if (!matches(filter, entry)) continue;
         entry.invalidated = true;
@@ -427,8 +464,8 @@ export function createStore(opts: StoreOptions): QueryStore {
       release();
     },
     dispose() {
+      end();
       Effect.runFork(Scope.close(scope, Exit.void));
-      store.remove();
     },
   };
   for (const feature of merged) {

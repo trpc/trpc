@@ -24,6 +24,12 @@ export const fulfilled = <T>(value: T): Thenable<T> =>
     value,
   });
 
+export const rejected = (reason: unknown): Thenable<never> => {
+  const deferred = pending<never>();
+  deferred.reject(reason);
+  return deferred.promise;
+};
+
 export interface Pending<T> {
   readonly promise: Thenable<T>;
   resolve(value: T): void;

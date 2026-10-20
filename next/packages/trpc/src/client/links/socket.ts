@@ -5,6 +5,7 @@ import {
   Deferred,
   Duration,
   Effect,
+  Exit,
   Fiber,
   Option,
   PubSub,
@@ -146,6 +147,12 @@ export interface SocketLink<TDecl extends LinkDecl = {}>
    * `CLIENT_CLOSED_REQUEST`; the next call opens a new connection.
    */
   close(): Promise<void>;
+  /**
+   * Ends the link for good: calls in flight and every later call fail with
+   * `CLIENT_CLOSED_REQUEST`, and the connection closes. `await using` calls
+   * it.
+   */
+  dispose(): Promise<void>;
 }
 
 interface KeepAlive {
@@ -179,21 +186,28 @@ type ReconnectOption = Pick<BuiltinCallOptions, 'reconnect'>;
 const lostError = () =>
   new TrpcError({ code: 'NETWORK_ERROR', message: 'The connection was lost' });
 
+const closedError = (message: string) =>
+  new TrpcError({ code: 'CLIENT_CLOSED_REQUEST', message });
+
+/**
+ * `scope` is the link's lifetime: it holds the shared connection, the
+ * fibers the link starts outside a call's own (drops, calls whose output
+ * streams on), and whatever the transport ties to it. `dispose()` closes it.
+ */
 function makeSocketLink(
   transport: SocketTransport,
   opts: SocketLinkOptions,
+  scope: Scope.Closeable = Scope.makeUnsafe(),
 ): SocketLink<any> {
   const serializer = opts.serializer ?? jsonSerializer;
-  /**
-   * The link's lifetime: it holds the shared connection and the fibers the
-   * link starts outside a call's own (drops, calls whose output streams on).
-   */
-  const scope = Scope.makeUnsafe();
   /** Every call's inbox, so `close()` can fail them wherever they are. */
   const live = new Set<Queue.Queue<Signal>>();
   let current: Connection | undefined;
   /** Bumped by `close()`, which can't reach a connection still opening. */
   let closes = 0;
+  /** Set by `dispose()`: the scope is closed, and every call fails. */
+  let disposed = false;
+  const disposedError = () => closedError('The link was disposed');
 
   const revive = (message: Extract<ServerMessage, { type: 'error' }>) => {
     try {
@@ -392,8 +406,10 @@ function makeSocketLink(
     if (Option.isSome(signal) && Signal.$is('Fail')(signal.value)) {
       return yield* Effect.fail(signal.value.error);
     }
-    const conn = yield* Effect.option(RcRef.get(connection));
-    if (Option.isNone(conn)) return undefined;
+    // Disposing interrupts a connection still opening.
+    const conn = yield* Effect.exit(RcRef.get(connection));
+    if (disposed) return yield* Effect.fail(disposedError());
+    if (Exit.isFailure(conn)) return undefined;
     if (!conn.value.lost && !conn.value.retired) return conn.value;
     yield* drop(conn.value);
     return 'stale';
@@ -560,7 +576,12 @@ function makeSocketLink(
           },
         };
         const fiber = yield* run(call).pipe(
-          Effect.onError((cause) => Deferred.failCause(result, cause)),
+          // Disposing interrupts the fiber, as the link's scope closes.
+          Effect.onError((cause) =>
+            disposed
+              ? Deferred.fail(result, disposedError())
+              : Deferred.failCause(result, cause),
+          ),
           Effect.ensuring(decoder.close),
           Effect.forkIn(scope),
         );
@@ -624,17 +645,16 @@ function makeSocketLink(
       },
     ).pipe(Stream.mapEffect((value) => value));
 
+  const failLive = (error: AnyTrpcError) => {
+    const signal = Signal.Fail({ error });
+    for (const inbox of live) Queue.offerUnsafe(inbox, signal);
+  };
+
   const close = () =>
     Effect.runPromise(
       Effect.gen(function* () {
-        const signal = Signal.Fail({
-          error: new TrpcError({
-            code: 'CLIENT_CLOSED_REQUEST',
-            message: 'The link was closed',
-          }),
-        });
         closes++;
-        for (const inbox of live) Queue.offerUnsafe(inbox, signal);
+        failLive(closedError('The link was closed'));
         const conn = current;
         yield* RcRef.invalidate(connection);
         if (conn) {
@@ -644,10 +664,24 @@ function makeSocketLink(
       }),
     );
 
+  const dispose = () =>
+    Effect.runPromise(
+      Effect.suspend(() => {
+        if (disposed) return Effect.void;
+        disposed = true;
+        failLive(disposedError());
+        return Scope.close(scope, Exit.void);
+      }),
+    );
+
   const link: TrpcLink = ({ op }) =>
-    op.type === 'subscription' ? subscription(op) : single(op);
+    disposed
+      ? Stream.fail(disposedError())
+      : op.type === 'subscription'
+        ? subscription(op)
+        : single(op);
   return withSerializer(
-    Object.assign(link, { close, [Symbol.asyncDispose]: close }),
+    Object.assign(link, { close, dispose, [Symbol.asyncDispose]: dispose }),
     serializer,
   );
 }
@@ -897,8 +931,9 @@ export function experimental_messagePortLink(
   opts: MessagePortLinkOptions,
 ): SocketLink<any> {
   const { port } = opts;
-  // A port can't drop its listeners, so they're added once, on the first
-  // connection, and every connection subscribes to what they hear.
+  const scope = Scope.makeUnsafe();
+  // The listeners are added once, on the first connection, and every
+  // connection subscribes to what they hear; `dispose()` removes them.
   const listening = Effect.runSync(
     Effect.cached(
       Effect.gen(function* () {
@@ -906,19 +941,32 @@ export function experimental_messagePortLink(
         const closed = yield* Deferred.make<void>();
         const deliver = (message: unknown) =>
           PubSub.publishUnsafe(received, message);
+        const onMessage = (event: { data: unknown }) => deliver(event.data);
         const close = () => Deferred.doneUnsafe(closed, Effect.void);
-        if (port.on) {
-          port.on('message', deliver);
-          port.on('close', close);
-        } else {
-          port.addEventListener?.('message', (event: { data: unknown }) =>
-            deliver(event.data),
-          );
-          port.addEventListener?.('close', close);
-        }
-        port.start?.();
+        yield* Effect.acquireRelease(
+          Effect.sync(() => {
+            if (port.on) {
+              port.on('message', deliver);
+              port.on('close', close);
+            } else {
+              port.addEventListener?.('message', onMessage);
+              port.addEventListener?.('close', close);
+            }
+            port.start?.();
+          }),
+          () =>
+            Effect.sync(() => {
+              if (port.on) {
+                port.off?.('message', deliver);
+                port.off?.('close', close);
+              } else {
+                port.removeEventListener?.('message', onMessage);
+                port.removeEventListener?.('close', close);
+              }
+            }),
+        );
         return { received, closed };
-      }),
+      }).pipe(Scope.provide(scope)),
     ),
   );
   return makeSocketLink(
@@ -946,6 +994,7 @@ export function experimental_messagePortLink(
       }),
     },
     opts,
+    scope,
   );
 }
 

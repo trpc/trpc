@@ -1,4 +1,4 @@
-import { Effect, Stream } from 'effect';
+import { Effect, Stream, type Scope } from 'effect';
 import type {
   BuiltinCallOptions,
   Operation,
@@ -12,7 +12,7 @@ import {
   TrpcError,
   type AnyTrpcError,
 } from '../internal/error.ts';
-import { parseSse } from '../internal/protocol.ts';
+import { sseEvents } from '../internal/protocol.ts';
 import type { JsonForm } from '../internal/types.ts';
 import {
   experimental_toBracketNotation,
@@ -64,6 +64,26 @@ const toError = (cause: unknown): AnyTrpcError => {
   });
 };
 
+const parseJson = (text: string): Effect.Effect<unknown, AnyTrpcError> =>
+  Effect.try({ try: (): unknown => JSON.parse(text), catch: toError });
+
+/** A response that isn't a result, as the error its body describes. */
+const readError = (res: Response): Effect.Effect<never, AnyTrpcError> =>
+  Effect.tryPromise({ try: () => res.text(), catch: toError }).pipe(
+    Effect.flatMap((text) =>
+      Effect.try({
+        try: () => fromOpenApiError(JSON.parse(text), res.status),
+        catch: (cause) =>
+          new TrpcError({
+            code: codeOfStatus(res.status) ?? 'BAD_RESPONSE',
+            message: `Unexpected ${res.status} response`,
+            cause,
+          }),
+      }),
+    ),
+    Effect.flatMap(Effect.fail),
+  );
+
 const isPlainObject = (v: unknown): v is Record<string, unknown> =>
   typeof v === 'object' &&
   v !== null &&
@@ -104,36 +124,70 @@ export function experimental_openApiLink(opts: OpenApiLinkOptions): TrpcLink<{
   const prefix = normalizePrefix(opts.prefix);
   const fetchFn = opts.fetch ?? globalThis.fetch;
   const routes = new Map<string, ResolvedRoute>();
-  const routeOf = (op: Operation): ResolvedRoute => {
-    let route = routes.get(op.path);
-    if (!route) {
+  const routeOf = (op: Operation): Effect.Effect<ResolvedRoute, AnyTrpcError> =>
+    Effect.suspend(() => {
+      const cached = routes.get(op.path);
+      if (cached) return Effect.succeed(cached);
       const procedure = opts.contract.procedures[op.path];
       if (!procedure) {
-        throw new TrpcError.NotFound({
-          message: `"${op.path}" is not in the contract`,
-        });
+        return Effect.fail(
+          new TrpcError.NotFound({
+            message: `"${op.path}" is not in the contract`,
+          }),
+        );
       }
-      route = experimental_resolveRoute(
-        op.path,
-        procedure.type,
-        procedure.route,
-        prefix,
-      );
-      routes.set(op.path, route);
-    }
-    return route;
+      return Effect.sync(() => {
+        const route = experimental_resolveRoute(
+          op.path,
+          procedure.type,
+          procedure.route,
+          prefix,
+        );
+        routes.set(op.path, route);
+        return route;
+      });
+    });
+
+  const extraHeaders = (
+    op: Operation,
+  ): Effect.Effect<HeadersInit | undefined, AnyTrpcError> => {
+    const headers = opts.headers;
+    return typeof headers === 'function'
+      ? Effect.tryPromise({ try: async () => headers({ op }), catch: toError })
+      : Effect.succeed(headers);
   };
 
-  async function request(
+  /**
+   * Sends the call. The request aborts when the scope closes, so the
+   * response body reads within it.
+   */
+  const send = Effect.fnUntraced(function* (
     op: Operation,
-    signal: AbortSignal,
-  ): Promise<Response> {
-    const route = routeOf(op);
-    const headers = new Headers(
-      typeof opts.headers === 'function'
-        ? await opts.headers({ op })
-        : opts.headers,
+    route: ResolvedRoute,
+  ): Effect.fn.Return<Response, AnyTrpcError, Scope.Scope> {
+    const init = yield* extraHeaders(op);
+    const built = yield* Effect.try({
+      try: () => build(op, route, new Headers(init)),
+      catch: toError,
+    });
+    const controller = yield* Effect.acquireRelease(
+      Effect.sync(() => new AbortController()),
+      (controller) => Effect.sync(() => controller.abort()),
     );
+    const signal = op.signal
+      ? AbortSignal.any([controller.signal, op.signal])
+      : controller.signal;
+    return yield* Effect.tryPromise({
+      try: () => fetchFn(built.url, { ...built.request, signal }),
+      catch: toError,
+    });
+  });
+
+  function build(
+    op: Operation,
+    route: ResolvedRoute,
+    headers: Headers,
+  ): { url: string; request: RequestInit } {
     new Headers(op.context.headers).forEach((v, k) => headers.set(k, v));
     let input = op.input;
     let params: Record<string, unknown> = {};
@@ -181,79 +235,71 @@ export function experimental_openApiLink(opts: OpenApiLinkOptions): TrpcLink<{
         payload = JSON.stringify(body);
       }
     }
-    return fetchFn(url, {
-      method: route.method,
-      headers,
-      ...(payload === undefined ? {} : { body: payload }),
-      signal,
-    });
+    return {
+      url,
+      request: {
+        method: route.method,
+        headers,
+        ...(payload === undefined ? {} : { body: payload }),
+      },
+    };
   }
 
-  async function readError(res: Response): Promise<AnyTrpcError> {
-    const text = await res.text();
-    try {
-      return fromOpenApiError(JSON.parse(text), res.status);
-    } catch (cause) {
-      return new TrpcError({
-        code: codeOfStatus(res.status) ?? 'BAD_RESPONSE',
-        message: `Unexpected ${res.status} response`,
-        cause,
-      });
-    }
-  }
-
-  async function readResult(op: Operation, res: Response): Promise<unknown> {
-    if (!res.ok) throw await readError(res);
+  const single = Effect.fnUntraced(function* (
+    op: Operation,
+  ): Effect.fn.Return<unknown, AnyTrpcError, Scope.Scope> {
+    const route = yield* routeOf(op);
+    const res = yield* send(op, route);
+    if (!res.ok) return yield* readError(res);
     const type = res.headers.get('content-type') ?? '';
-    const value = /^application\/json\b/i.test(type)
-      ? await res.json()
-      : res.status === 204 || res.headers.get('content-length') === '0'
-        ? undefined
-        : type
-          ? await res.blob()
-          : (await res.text()) || undefined;
-    if (routeOf(op).outputStructure !== 'detailed') return value;
+    const value = yield* Effect.tryPromise({
+      try: async (): Promise<unknown> =>
+        /^application\/json\b/i.test(type)
+          ? res.json()
+          : res.status === 204 || res.headers.get('content-length') === '0'
+            ? undefined
+            : type
+              ? res.blob()
+              : (await res.text()) || undefined,
+      catch: toError,
+    });
+    if (route.outputStructure !== 'detailed') return value;
     return {
       status: res.status,
       headers: Object.fromEntries(res.headers),
       body: value,
     };
-  }
+  }, Effect.scoped);
 
-  const linked = (signal: AbortSignal, op: Operation) =>
-    op.signal ? AbortSignal.any([signal, op.signal]) : signal;
-
-  async function* events(op: Operation, signal: AbortSignal) {
-    const res = await request(op, signal);
-    if (!res.ok || !res.body) throw await readError(res);
-    for await (const event of parseSse(res.body)) {
-      if (event.event === 'done') return;
-      if (event.event === 'error') {
-        throw fromOpenApiError(JSON.parse(event.data), res.status);
-      }
-      const data: unknown = JSON.parse(event.data);
-      yield event.id === undefined ? data : { id: event.id, data };
-    }
-  }
-
-  return ({ op }): OperationStream => {
-    if (op.type !== 'subscription') {
-      return Stream.fromEffect(
-        Effect.tryPromise({
-          try: async (signal) =>
-            readResult(op, await request(op, linked(signal, op))),
-          catch: toError,
-        }),
-      );
-    }
-    return Stream.unwrap(
-      Effect.sync(() => {
-        const controller = new AbortController();
-        return Stream.fromAsyncIterable(
-          events(op, linked(controller.signal, op)),
-          toError,
-        ).pipe(Stream.ensuring(Effect.sync(() => controller.abort())));
-      }),
+  const subscription = Effect.fnUntraced(function* (
+    op: Operation,
+  ): Effect.fn.Return<OperationStream, AnyTrpcError, Scope.Scope> {
+    const res = yield* send(op, yield* routeOf(op));
+    const body = res.body;
+    if (!res.ok || !body) return yield* readError(res);
+    return sseEvents(
+      Stream.fromReadableStream({ evaluate: () => body, onError: toError }),
+    ).pipe(
+      Stream.takeWhile((event) => event.event !== 'done'),
+      // Not `Stream.mapEffect`, whose concurrent machinery is 2.3 kB of
+      // this link.
+      Stream.mapAccumEffect(
+        () => undefined,
+        (state, event) =>
+          Effect.flatMap(parseJson(event.data), (data) =>
+            event.event === 'error'
+              ? Effect.fail(fromOpenApiError(data, res.status))
+              : Effect.succeed([
+                  state,
+                  [event.id === undefined ? data : { id: event.id, data }],
+                ] as const),
+          ),
+      ),
     );
-  };
+  });
+
+  return ({ op }): OperationStream =>
+    op.type === 'subscription'
+      ? Stream.unwrap(subscription(op))
+      : Stream.fromEffect(single(op));
 }

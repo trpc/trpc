@@ -1,4 +1,4 @@
-import { Effect, Stream } from 'effect';
+import { Effect, Layer, ManagedRuntime, Stream } from 'effect';
 import { HttpServerResponse } from 'effect/http';
 import { createTrpcClient, routerType, safe } from '@trpc12/trpc/client';
 import { experimental_toContract } from '@trpc12/trpc/contract';
@@ -7,7 +7,7 @@ import {
   experimental_openapi,
   experimental_openApiLink,
 } from '@trpc12/trpc/openapi';
-import { error, initTrpc, lazy, tracked } from '@trpc12/trpc/server';
+import { error, initTrpc, lazy, tracked, TrpcError } from '@trpc12/trpc/server';
 import { expect, test, vi } from 'vite-plus/test';
 import { z } from 'zod';
 
@@ -542,6 +542,36 @@ test('experimental_openApiLink turns fetch failures into client errors', async (
     failing(new DOMException('aborted', 'AbortError')),
   );
   expect(aborted).toMatchObject({ code: 'CLIENT_CLOSED_REQUEST' });
+  const [, typed] = await safe(
+    failing(new TrpcError({ code: 'CONFLICT', message: 'mine' })),
+  );
+  expect(typed).toMatchObject({ code: 'CONFLICT', message: 'mine' });
+});
+
+test('experimental_openApiLink aborts a subscription request and cancels its body once the reader stops', async () => {
+  let signal: AbortSignal | null | undefined;
+  let cancelled = false;
+  const app = linked(async (_input, init) => {
+    signal = init?.signal;
+    return new Response(
+      new ReadableStream({
+        start(controller) {
+          controller.enqueue(new TextEncoder().encode('data: 1\n\n'));
+        },
+        cancel() {
+          cancelled = true;
+        },
+      }),
+      { headers: { 'content-type': 'text/event-stream' } },
+    );
+  });
+  for await (const event of app.client.feed.subscribe(undefined)) {
+    expect(event).toBe(1);
+    break;
+  }
+  await vi.waitFor(() => expect(signal?.aborted).toBe(true));
+  expect(cancelled).toBe(true);
+  await app.handler.dispose();
 });
 
 test('experimental_openApiLink subscriptions yield plain and tracked events, then errors', async () => {
@@ -603,4 +633,13 @@ test('form bodies: none at all, malformed, and malformed past maxBodySize', asyn
   } as RequestInit);
   expect(huge.status).toBe(413);
   await handler.dispose();
+});
+
+test('dispose() answers a request still running after drainTimeout with a 503, and leaves a runtime you pass running', async () => {
+  await using runtime = ManagedRuntime.make(Layer.empty);
+  await using handler = make({ runtime, drainTimeout: 0 });
+  const slow = api(handler, '/slow');
+  await handler.dispose();
+  expect((await slow).status).toBe(503);
+  expect(await runtime.runPromise(Effect.succeed('running'))).toBe('running');
 });

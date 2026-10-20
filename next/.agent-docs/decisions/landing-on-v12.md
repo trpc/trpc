@@ -1,0 +1,10 @@
+# Landing on `v12` with ~35 agents pushing (agent)
+
+- A push to `v12` runs `next.yml` to the end: `cancel-in-progress` is on only for pull requests. GitHub still keeps one waiting run per branch, so a newer push replaces a run that hasn't started.
+- Why: with cancel-in-progress on every push, 60 of the last 100 `v12` runs (2026-10-19 to 2026-10-20) were cancelled, some stretches finished none, and agents spent 10 to 35 minutes per push re-watching runs a sibling's push cancelled.
+- Lost: CI minutes for runs whose commit is soon superseded, and a finished run reports on an older commit than the newest push.
+- `pnpm land` lands the current branch's commits: it fetches `origin/v12`, rebases onto it, takes `v12`'s `pnpm-lock.yaml` and reinstalls on a conflict in the lockfile alone, reinstalls when the rebase brought in a manifest or lockfile change, runs `vp check` (type-aware lint included) on the files the commits change, pushes `HEAD:v12`, and rebases again when the push is rejected, five times at most. Any other conflict stops it mid-rebase.
+- Why `pnpm land`: the steps were prose in `AGENTS.md` that agents rediscovered. A rebase merged two copies of one test block without a conflict and nothing checked it before the push (`const helpers` declared twice on `v12`); lockfile conflicts were the most common conflict; agents pushed without reinstalling after a rebase brought in new packages; Cloud Agents' git hooks are Cursor's, so `.vite-hooks/pre-commit` never ran.
+- (agent) The check is `vp check` on the changed files, not the full gates: it catches a bad merge in the rebased files in seconds, so the push follows soon after the fetch. The full gates stay the author's job before `pnpm land`.
+- `pnpm ci:wait [commit]` (HEAD by default) waits for the oldest `next.yml` push run on `v12` that includes the commit and wasn't cancelled, prints it and the next ones, and exits 1 with the failed jobs when it failed. Any later run counts, since `v12` moves on before a run of one's own commit starts.
+- Lives in: `../.github/workflows/next.yml` (`concurrency`), `tooling/dev/src/land.ts`, `tooling/dev/src/ci.ts`, `tooling/dev/src/bin/`.

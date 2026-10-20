@@ -9,4 +9,4 @@
 - (agent) The link reads schemas from a contract or a router (any tree of `'~trpc'` definitions). Paths it doesn't have pass through.
 - Human, 2026-10-18 (decision round, hiding pages): "B - i think that should be grouped with the openapi stuff?". The link is `experimental_validationLink`, `@stability experimental` with `ValidationLinkOptions`, which keeps its name, and its docs page is hidden in the OpenAPI section ([`docs-experiments.md`](./docs-experiments.md)). Nothing had shipped, so there's no deprecated alias.
 - Lost: validation without shipping schemas; checking `stream()` items and context-aware inputs on the client.
-- Lives in: `packages/trpc/src/client/links/validation.ts`, `src/client/index.ts`, `packages/trpc/src/client/links/validation.test.ts`, `docs/client/validation.md`.
+- Lives in: `packages/trpc/src/client/links/validation.ts`, `src/client/index.ts`, `packages/trpc/src/client/links/validation.test.ts`, `www/docs/client/validation.md`.

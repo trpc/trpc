@@ -9,4 +9,4 @@
 - Lost: a stop that follows TanStack's own `reset()`, which TanStack doesn't expose to `mutationFn`.
 - (agent) Inside, the call's chunks are a `Stream` run in a scope whose `Effect.abortSignal` goes to the procedure, raced (`Effect.raceFirst`) against an `Effect.callback` that resumes on the per-call `signal` or when the last `chunksOptions()` observer leaves. Winning that race interrupts the stream, so `data` is the chunks so far. `Effect.runPromise` is the `mutationFn` edge ([`effect-internal-patterns.md`](./effect-internal-patterns.md)).
 - Spike: [`../notes/interruptible-streamed-mutations.md`](../notes/interruptible-streamed-mutations.md).
-- Lives in: `packages/tanstack-query/src/utils.ts`, `docs/integrations/tanstack-query.md` ("Streamed mutations", "Long jobs"); `packages/tanstack-query/src/index.test.ts`.
+- Lives in: `packages/tanstack-query/src/utils.ts`, `www/docs/integrations/tanstack-query.md` ("Streamed mutations", "Long jobs"); `packages/tanstack-query/src/index.test.ts`.

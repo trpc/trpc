@@ -91,8 +91,12 @@ export interface MessagePortLike {
   postMessage(message: unknown): void;
   /** Node style: the listener receives the message itself. Preferred when present. */
   on?(event: 'message' | 'close', listener: (value: any) => void): unknown;
+  /** Removes an `on` listener; without it, a disposed client link's listeners stay. */
+  off?(event: 'message' | 'close', listener: (value: any) => void): unknown;
   /** Web style: the listener receives a `MessageEvent`. */
   addEventListener?(type: string, listener: (event: any) => void): void;
+  /** Removes an `addEventListener` listener. */
+  removeEventListener?(type: string, listener: (event: any) => void): void;
   start?(): void;
 }
 
