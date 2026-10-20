@@ -110,6 +110,18 @@ const router = {
   secret: authed.subscription(async function* (opts) {
     yield `hi ${opts.ctx.user}`;
   }),
+  unwritable: t.procedure.subscription(async function* () {
+    yield 1;
+    yield 2n as unknown as number;
+  }),
+  refused: t.procedure.subscription(async function* () {
+    yield 1;
+    yield {
+      get n(): number {
+        throw error({ code: 'FORBIDDEN', message: 'Not yours' });
+      },
+    };
+  }),
   quiet: t.procedure.subscription(async function* (opts) {
     await new Promise((resolve) =>
       opts.signal.addEventListener('abort', resolve, { once: true }),
@@ -275,6 +287,27 @@ test('an error thrown mid-stream reaches the loop', async () => {
     for await (const n of ctx.client.failsMidway.subscribe()) seen.push(n);
   }).rejects.toMatchObject({ code: 'CONFLICT', defined: false });
   expect(seen).toEqual([1]);
+});
+
+test("an event the serializer can't write fails the subscription; a TrpcError it throws is kept", async () => {
+  await using ctx = await setup();
+  const subscribe = async (sub: AsyncIterable<unknown>) => {
+    const seen: unknown[] = [];
+    try {
+      for await (const event of sub) seen.push(event);
+    } catch (cause) {
+      return { seen, cause };
+    }
+    return { seen, cause: undefined };
+  };
+  expect(await subscribe(ctx.client.unwritable.subscribe())).toMatchObject({
+    seen: [1],
+    cause: { code: 'INTERNAL_SERVER_ERROR' },
+  });
+  expect(await subscribe(ctx.client.refused.subscribe())).toMatchObject({
+    seen: [1],
+    cause: { code: 'FORBIDDEN', message: 'Not yours' },
+  });
 });
 
 test('an Effect Stream is a subscription', async () => {
