@@ -15,7 +15,7 @@
 | `middleware`      | `authed` (three `.use()`, one returning `UNAUTHORIZED`) plus an inline `.use((opts) => opts.next({ ctx: { … } }))`, then `.input()` |
 | `effect`          | `plain` with an `Effect.gen` resolver that `yield*`s the error                                                                      |
 | `effect services` | `effect` that also `yield*`s one of five services, every third after a `.provide()`; the handler takes their `layer`                |
-| `effect client`   | `effect`, called through `createEffectClient` with `Effect.catchTag('NOT_FOUND', …)`                                                |
+| `effect client`   | `effect`, called through `createEffectClient` with `Effect.catchTag('NotFound', …)`                                                 |
 | `contract`        | `c.input(S).output(S).errors({ … }).query()` in a contract, implemented through `t.implement(contract)` and `impl.router()`         |
 
 Instantiations, types and memory are the same on every run. Check time moves by about 10% between sessions on this VM (v11's fixed number read 1.15s to 1.30s on the same day), so compare times within one table. Median of 5 runs (3 for `errors` and `effect`, which this work doesn't change).

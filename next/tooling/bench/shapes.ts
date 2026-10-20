@@ -205,7 +205,7 @@ const shapeList = {
     impl: (i, kind) =>
       `t.procedure${input(i)}.${kind}((opts) => ${effectBody(i)})`,
     consume: (i, call) =>
-      `export const r${i}: Effect.Effect<{ v_${i}: string } | null, unknown> = ${call}.pipe(Effect.catchTag('NOT_FOUND', () => Effect.succeed(null)));`,
+      `export const r${i}: Effect.Effect<{ v_${i}: string } | null, unknown> = ${call}.pipe(Effect.catchTag('NotFound', () => Effect.succeed(null)));`,
     own: {
       module: '',
       imports: '',
