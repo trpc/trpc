@@ -176,12 +176,13 @@ test.each(packages.map((opts) => [opts.name, opts.dir, opts.pkg] as const))(
           .filter(([, code]) => code !== '');
       }),
     );
-    const unlisted = running
-      .filter(([key]) => !runsOnLoad.has(key))
-      .map(([key, code]) => `${key} keeps:\n${code}`);
-    expect(running.map(([key]) => key), unlisted.join('\n\n')).toEqual(
-      [...runsOnLoad].filter((key) => key.startsWith(`${name}/`)),
-    );
+    // Keyed by module, so a failure shows the code each one keeps.
+    expect(
+      Object.fromEntries(running.filter(([key]) => !runsOnLoad.has(key))),
+    ).toEqual({});
+    expect(
+      running.map(([key]) => key).filter((key) => runsOnLoad.has(key)),
+    ).toEqual([...runsOnLoad].filter((key) => key.startsWith(`${name}/`)));
   },
 );
 
