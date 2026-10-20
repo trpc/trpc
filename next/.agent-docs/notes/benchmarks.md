@@ -83,7 +83,7 @@ The raises below are from when CI failed above a ceiling, today's size plus 0.1 
 - **Grew, 2026-10-19 (no ceiling):** the typed client's proxy answers `request()` and `subscribe()` at its root through the untyped client, so an `any` router's `TrpcUntypedClient` type is true at runtime (first-release review, question 7, [`client.md`](../decisions/client.md)): +34 B on the minimal client and +32 B on the full one (39,548 → 39,582 B and 43,701 → 43,733 B).
 
 - **Cut so far:** the Promise client runs its links with `runLinks`. `runOperation`'s tracer check and client span never ran there (Promise clients run on Effect's native tracer), but they were bundled: `Tracer`, `Scope` spans and `encoding/Hex`, 1.7 kB gzipped on each client.
-- **Cut, 2026-10-20:** streamed single-call outputs (the JSONL reader, resume) and binary frames are behind `httpLink({ streams: experimental_httpStreams() })` ([`../decisions/http-streams-opt-in.md`](../decisions/http-streams-opt-in.md)). On top of the `batching()` and `sse()` imports: 36,612 to 35,072 B on the minimal client, 42,618 to 41,862 B on the full one.
+- **Cut, 2026-10-20:** streamed single-call outputs (the JSONL reader, resume) and binary frames are behind `httpLink({ streams: experimental_httpStreams() })` ([`../decisions/http-streams-opt-in.md`](../decisions/http-streams-opt-in.md)). On top of the `batching()` and `sse()` imports: 36,626 to 35,086 B on the minimal client, 42,641 to 41,886 B on the full one.
 - **The floor of links on Effect**, same bundler and gzip:
   - `Effect.runPromise(Effect.tryPromise(fetch))`: 8.5 kB.
   - The same through a one-element `Stream` (`Stream.fromEffect`, `Stream.runHead`), which is what every link returns: 10.7 kB.
