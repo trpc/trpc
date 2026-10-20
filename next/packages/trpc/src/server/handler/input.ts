@@ -15,7 +15,7 @@ import { isByteStreamSchema } from '../validation/index.ts';
 import { bodyStream, consumedError, parsedBody, readBytes } from './body.ts';
 import { protocolError, type HttpHandler } from './http-handler.ts';
 
-const decoder = new TextDecoder();
+const decoder = /* @__PURE__ */ new TextDecoder();
 
 /** What reading a call's input can fail with. @internal */
 export type InputError = CodeError<
@@ -32,7 +32,7 @@ const invalidInput = (cause: unknown): CodeError<'PARSE_ERROR'> =>
     cause,
   });
 
-const noInput = Exit.succeed(undefined);
+const noInput = /* @__PURE__ */ Exit.succeed(undefined);
 
 /**
  * `Effect.try`, evaluated now: decoding is synchronous, and a call goes on
@@ -74,7 +74,7 @@ const parseJson = (text: string) =>
 export const readBody: (
   request: HttpServerRequest.HttpServerRequest,
   maxBodySize: number,
-) => Effect.Effect<unknown, InputError> = Effect.fnUntraced(
+) => Effect.Effect<unknown, InputError> = /* @__PURE__ */ Effect.fnUntraced(
   function* (request, maxBodySize) {
     if (parsedBody(request) === 'consumed') {
       return yield* Effect.fail(consumedError());
@@ -93,7 +93,7 @@ export const readBody: (
 );
 
 /** An `input` field with the serialized JSON, and parts `0`, `1`, … for its blobs. */
-const readMultipart = Effect.fnUntraced(function* (
+const readMultipart = /* @__PURE__ */ Effect.fnUntraced(function* (
   handler: HttpHandler,
   request: HttpServerRequest.HttpServerRequest,
 ) {

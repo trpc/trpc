@@ -16,7 +16,7 @@ import type { Chunk } from '../../serializer/danson/index.ts';
 import { responseOptions } from './body.ts';
 import { wire, type HttpHandler } from './http-handler.ts';
 
-const encoder = new TextEncoder();
+const encoder = /* @__PURE__ */ new TextEncoder();
 
 /**
  * A response with the protocol's headers and those a response handle set

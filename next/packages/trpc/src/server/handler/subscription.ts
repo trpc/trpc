@@ -42,65 +42,66 @@ export const subscription: (
   input: unknown,
   signal: AbortSignal,
   parent: Tracer.AnySpan | undefined,
-) => Effect.Effect<HttpServerResponse.HttpServerResponse> = Effect.fnUntraced(
-  function* (handler, request, procedure, path, ctx, input, signal, parent) {
-    const response = createResponseHandle();
-    const exit = yield* handler.core.run({
-      request,
-      procedure,
-      path,
-      ctx,
-      input,
-      signal,
-      response,
-      lastEventId: request.headers[HEADER.lastEventId],
-      parent,
-    });
-    if (Exit.isFailure(exit)) {
-      const err = normalizeCause(exit.cause);
-      handler.core.report(err, request, path, 'subscription');
-      return errorResponse(
+) => Effect.Effect<HttpServerResponse.HttpServerResponse> =
+  /* @__PURE__ */ Effect.fnUntraced(
+    function* (handler, request, procedure, path, ctx, input, signal, parent) {
+      const response = createResponseHandle();
+      const exit = yield* handler.core.run({
+        request,
+        procedure,
+        path,
+        ctx,
+        input,
+        signal,
+        response,
+        lastEventId: request.headers[HEADER.lastEventId],
+        parent,
+      });
+      if (Exit.isFailure(exit)) {
+        const err = normalizeCause(exit.cause);
+        handler.core.report(err, request, path, 'subscription');
+        return errorResponse(
+          handler,
+          err,
+          statusOf(err, procedure['~trpc'].errors),
+          response.headers,
+        );
+      }
+      const events = exit.value as Stream.Stream<unknown, AnyTrpcError>;
+      return linesResponse(
         handler,
-        err,
-        statusOf(err, procedure['~trpc'].errors),
+        Effect.fnUntraced(function* (write) {
+          // Servers that buffer headers until the first body chunk (Node) would
+          // otherwise hold them back until the first event.
+          yield* write(': open\n\n');
+          if (handler.ssePing) {
+            yield* write(': ping\n\n').pipe(
+              Effect.delay(handler.ssePing),
+              Effect.forever,
+              Effect.forkScoped,
+            );
+          }
+          const done = yield* Effect.exit(
+            emitEvents(
+              events,
+              handler.serializer,
+              coerceError(handler, request, path, 'subscription'),
+              (frame) => write(sseMessage(frame)),
+            ),
+          );
+          if (Exit.isFailure(done)) {
+            if (Cause.hasInterruptsOnly(done.cause)) return;
+            const err = normalizeCause(done.cause);
+            handler.core.report(err, request, path, 'subscription');
+            yield* write(
+              `event: error\ndata: ${JSON.stringify(wire(handler, err))}\n\n`,
+            );
+            return;
+          }
+          yield* write('event: done\ndata: \n\n');
+        }, Effect.scoped),
+        CONTENT_TYPE.sse,
         response.headers,
       );
-    }
-    const events = exit.value as Stream.Stream<unknown, AnyTrpcError>;
-    return linesResponse(
-      handler,
-      Effect.fnUntraced(function* (write) {
-        // Servers that buffer headers until the first body chunk (Node) would
-        // otherwise hold them back until the first event.
-        yield* write(': open\n\n');
-        if (handler.ssePing) {
-          yield* write(': ping\n\n').pipe(
-            Effect.delay(handler.ssePing),
-            Effect.forever,
-            Effect.forkScoped,
-          );
-        }
-        const done = yield* Effect.exit(
-          emitEvents(
-            events,
-            handler.serializer,
-            coerceError(handler, request, path, 'subscription'),
-            (frame) => write(sseMessage(frame)),
-          ),
-        );
-        if (Exit.isFailure(done)) {
-          if (Cause.hasInterruptsOnly(done.cause)) return;
-          const err = normalizeCause(done.cause);
-          handler.core.report(err, request, path, 'subscription');
-          yield* write(
-            `event: error\ndata: ${JSON.stringify(wire(handler, err))}\n\n`,
-          );
-          return;
-        }
-        yield* write('event: done\ndata: \n\n');
-      }, Effect.scoped),
-      CONTENT_TYPE.sse,
-      response.headers,
-    );
-  },
-);
+    },
+  );

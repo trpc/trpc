@@ -34,7 +34,9 @@ export const HttpApp: Context.ServiceClass<
   HttpApp,
   '@trpc12/trpc/HttpApp',
   HttpAppShape
-> = Context.Service<HttpApp, HttpAppShape>()('@trpc12/trpc/HttpApp');
+> = /* @__PURE__ */ Context.Service<HttpApp, HttpAppShape>()(
+  '@trpc12/trpc/HttpApp',
+);
 
 /**
  * A request URL's pathname and search, as `new URL(url, base)` gives them.

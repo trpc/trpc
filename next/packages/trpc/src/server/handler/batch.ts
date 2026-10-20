@@ -83,7 +83,7 @@ export const batched: (
   request: HttpServerRequest.HttpServerRequest,
   parent: Tracer.AnySpan | undefined,
 ) => Effect.Effect<HttpServerResponse.HttpServerResponse, AnyTrpcError> =
-  Effect.fnUntraced(function* (handler, request, parent) {
+  /* @__PURE__ */ Effect.fnUntraced(function* (handler, request, parent) {
     const batch = handler.batch;
     if (!batch) {
       return yield* Effect.fail(
