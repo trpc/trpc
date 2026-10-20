@@ -115,7 +115,8 @@ interface Entry extends MutableEntry {
 
 /**
  * Picks entries: all of them, those under a path (`'post'` matches
- * `post.byId`), or those a predicate accepts.
+ * `post.byId`), the one with a query key (`trpc.post.byId.queryKey(input)`),
+ * or those a predicate accepts.
  * @since 0.1.0
  * @stability experimental
  */
@@ -220,11 +221,17 @@ export const ownerOf = (
   promise: Promise<unknown>,
 ): { store: QueryStore; entry: QueryEntry } | undefined => owners.get(promise);
 
-const matches = (filter: QueryFilter, entry: QueryEntry): boolean =>
+/** Query keys have a newline between path and input; paths never do. */
+const isKey = (filter: string) => filter.includes('\n');
+
+/** Whether a filter picks the entry. @internal */
+export const matches = (filter: QueryFilter, entry: QueryEntry): boolean =>
   filter === undefined
     ? true
     : typeof filter === 'string'
-      ? entry.path === filter || entry.path.startsWith(`${filter}.`)
+      ? isKey(filter)
+        ? entry.key === filter
+        : entry.path === filter || entry.path.startsWith(`${filter}.`)
       : filter(entry);
 
 export interface StoreOptions {

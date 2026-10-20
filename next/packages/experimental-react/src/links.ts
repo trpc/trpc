@@ -15,6 +15,15 @@ import {
 
 const passThrough = (): TrpcLink => link((opts) => opts.next(opts.op));
 
+/**
+ * The call option `useMutation`'s `invalidates` travels in: for that call,
+ * it replaces `invalidateOnMutationLink()`'s filter. @internal
+ */
+export const ownInvalidates: unique symbol = Symbol('trpc.invalidates');
+
+/** Stores an `invalidateOnMutationLink()` invalidates after mutations. @internal */
+export const revalidated: WeakSet<QueryStore> = new WeakSet();
+
 /** Refetches the stale entries a mounted `useQuery` reads. */
 const refetchObserved = (store: QueryStore) => {
   for (const entry of store.entries()) {
@@ -171,7 +180,8 @@ export interface InvalidateOnMutationLinkOptions {
  * Invalidates queries after each successful mutation, as a router
  * revalidates its loaders after an action. The mutation resolves once the
  * mounted queries have refetched, so an action stays pending until fresh
- * data is on screen.
+ * data is on screen. A `useMutation` with `invalidates` replaces the
+ * filter for its calls.
  *
  * @example
  * ```ts
@@ -194,20 +204,29 @@ export function invalidateOnMutationLink(
     return op.type !== 'mutation'
       ? out
       : out.pipe(
-          Stream.tap(() =>
-            Effect.forEach(
+          Stream.tap((data) => {
+            const own = (
+              op.context as {
+                [ownInvalidates]?: (data: unknown) => QueryFilter;
+              }
+            )[ownInvalidates];
+            const filter = own ? own(data) : invalidates(op);
+            return Effect.forEach(
               [...stores],
-              (store) =>
-                Effect.promise(() => store.invalidate(invalidates(op))),
+              (store) => Effect.promise(() => store.invalidate(filter)),
               { concurrency: 'unbounded', discard: true },
-            ),
-          ),
+            );
+          }),
         );
   });
   return withQueryFeature(chain, {
     attach(store) {
       stores.add(store);
-      return () => stores.delete(store);
+      revalidated.add(store);
+      return () => {
+        stores.delete(store);
+        revalidated.delete(store);
+      };
     },
   });
 }

@@ -49,6 +49,13 @@ export interface DecorateQuery<TArgs extends readonly unknown[], T, E> {
   getData(
     ...input: undefined extends TArgs[0] ? [input?: TArgs[0]] : [TArgs[0]]
   ): T | undefined;
+  /**
+   * The query's cache key, which filters such as `trpc.invalidate()` and
+   * `useMutation`'s `invalidates` match exactly.
+   */
+  queryKey(
+    ...input: undefined extends TArgs[0] ? [input?: TArgs[0]] : [TArgs[0]]
+  ): string;
 }
 
 /**
@@ -110,6 +117,16 @@ export type ReactClientOptions<
 
 const at = (node: unknown, path: readonly string[]): any =>
   path.reduce((current: any, segment) => current[segment], node);
+
+const procedureKey = Symbol('trpc.reactProcedure');
+
+/** The store and path behind a React client's procedure. @internal */
+export const procedureOf = (
+  node: object,
+): { store: QueryStore; path: string } | undefined =>
+  (node as { [procedureKey]?: { store: QueryStore; path: string } })[
+    procedureKey
+  ];
 
 /**
  * Creates a React client: a tRPC client whose queries return stable,
@@ -192,6 +209,8 @@ export function createReactClient(opts: {
       }
       case 'getData':
         return dataOf(procedure, args[0]);
+      case 'queryKey':
+        return queryKey(procedure, args[0]);
       default:
         return at(client, path)(...args);
     }
@@ -201,6 +220,7 @@ export function createReactClient(opts: {
     new Proxy((...args: unknown[]) => method(path, args), {
       get(_target, key) {
         if (path.length === 0 && key === Symbol.dispose) return dispose;
+        if (key === procedureKey) return { store, path: path.join('.') };
         if (typeof key !== 'string' || key === 'then') return undefined;
         if (path.length === 0 && key === 'client') return client;
         if (path.length === 0 && key === 'store') return store;

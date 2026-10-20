@@ -8,11 +8,19 @@ import {
   refetchOnWindowFocusLink,
   standardLinks,
   structuralSharingLink,
+  useMutation,
   useQuery,
   useQueryState,
   type QueryPromise,
 } from '@trpc12/experimental-react';
-import { link, localLink, routerType, type AnyLink } from '@trpc12/trpc/client';
+import {
+  link,
+  localLink,
+  routerType,
+  TrpcError,
+  type AnyLink,
+} from '@trpc12/trpc/client';
+import { error, initTrpc } from '@trpc12/trpc/server';
 import { createSerializer } from '@trpc12/trpc/serializer';
 import { type Duration, Effect, Stream } from 'effect';
 import { Component, Suspense, use, type ReactNode } from 'react';
@@ -435,6 +443,236 @@ test('refetchInterval waits while the page is hidden, and refetches once it is v
   document.dispatchEvent(new Event('visibilitychange'));
   await tick(20);
   expect(db.calls).toHaveLength(calls);
+});
+
+/** Renders `hook` in a component and reads its latest result. */
+function renderHook<T>(hook: () => T) {
+  const box = { current: undefined as T };
+  function Probe() {
+    box.current = hook();
+    return null;
+  }
+  const view = mount(<Probe />);
+  return Object.assign(box, { unmount: view.unmount });
+}
+
+const local = {
+  item: {
+    claim: initTrpc().procedure.mutation(() =>
+      error({ code: 'CONFLICT', data: { reason: 'taken' } }),
+    ),
+  },
+};
+
+test('useMutation tracks the latest call: pending, then data or the typed error', async () => {
+  using _dom = domCleanup();
+  let open!: () => void;
+  const gate = new Promise<void>((resolve) => (open = resolve));
+  const trpc = make([
+    link((opts) =>
+      Stream.unwrap(
+        Effect.promise(() => gate).pipe(Effect.as(opts.next(opts.op))),
+      ),
+    ),
+  ]);
+  const rename = renderHook(() => useMutation(trpc.post.rename));
+  await waitFor(() => expect(rename.current.status).toBe('idle'));
+  const mutate = rename.current.mutate;
+
+  const done = rename.current.mutate({ id: '1', title: 'Renamed' });
+  await waitFor(() => expect(rename.current.isPending).toBe(true));
+  expect(rename.current.input).toEqual({ id: '1', title: 'Renamed' });
+  open();
+  expect(await done).toBe('Renamed');
+  await waitFor(() => expect(rename.current.status).toBe('success'));
+  expect(rename.current.data).toBe('Renamed');
+  expect(rename.current.isPending).toBe(false);
+  expect(rename.current.mutate).toBe(mutate);
+
+  const claims = createReactClient({
+    router: routerType<typeof local>(),
+    links: [localLink({ router: local })],
+  });
+  const claim = renderHook(() => useMutation(claims.item.claim));
+  await waitFor(() => expect(claim.current.status).toBe('idle'));
+  // The hook handles the rejection: an ignored call fails nothing.
+  void claim.current.mutate();
+  await waitFor(() => expect(claim.current.status).toBe('error'));
+  const err = claim.current.error;
+  expect(err?.defined && err.code === 'CONFLICT' && err.data.reason).toBe(
+    'taken',
+  );
+  await expect(claim.current.mutate()).rejects.toBeInstanceOf(TrpcError);
+
+  claim.current.reset();
+  await waitFor(() => expect(claim.current.status).toBe('idle'));
+  expect(claim.current.error).toBeUndefined();
+  rename.unmount();
+  claim.unmount();
+});
+
+test('useMutation: only the latest call updates the state, and reset() drops the one in flight', async () => {
+  using _dom = domCleanup();
+  let open!: () => void;
+  const gate = new Promise<void>((resolve) => (open = resolve));
+  const trpc = make([
+    link((opts) =>
+      opts.op.input && (opts.op.input as { title: string }).title === 'Slow'
+        ? Stream.unwrap(
+            Effect.promise(() => gate).pipe(Effect.as(opts.next(opts.op))),
+          )
+        : opts.next(opts.op),
+    ),
+  ]);
+  const rename = renderHook(() => useMutation(trpc.post.rename));
+  await waitFor(() => expect(rename.current.status).toBe('idle'));
+  const slow = rename.current.mutate({ id: '1', title: 'Slow' });
+  await rename.current.mutate({ id: '1', title: 'Fast' });
+  await waitFor(() => expect(rename.current.data).toBe('Fast'));
+  open();
+  await slow;
+  await tick(5);
+  expect(rename.current.data).toBe('Fast');
+
+  let release!: () => void;
+  const held = new Promise<void>((resolve) => (release = resolve));
+  const later = createReactClient({
+    router: routerType<typeof local>(),
+    links: [
+      link((opts) =>
+        Stream.unwrap(
+          Effect.promise(() => held).pipe(Effect.as(opts.next(opts.op))),
+        ),
+      ),
+      localLink({ router: local }),
+    ],
+  });
+  const reset = renderHook(() => useMutation(later.item.claim));
+  await waitFor(() => expect(reset.current.status).toBe('idle'));
+  const dropped = reset.current.mutate();
+  await waitFor(() => expect(reset.current.isPending).toBe(true));
+  reset.current.reset();
+  release();
+  await expect(dropped).rejects.toBeInstanceOf(TrpcError);
+  await tick(5);
+  expect(reset.current.status).toBe('idle');
+  rename.unmount();
+  reset.unmount();
+});
+
+test('useMutation invalidates paths, query keys, or what a function of the input and data picks', async () => {
+  using _dom = domCleanup();
+  const trpc = make([cacheLink({ staleTime: 60_000 })]);
+  const one = trpc.post.byId.query({ id: '1' });
+  const two = trpc.post.byId.query({ id: '2' });
+  const count = trpc.post.count.query();
+  await Promise.all([one, two, count]);
+  const unmounts = [one, two, count].map((p) =>
+    trpc.store.mount(trpc.store.entryOf(p)!),
+  );
+  const reset = () => (db.calls = []);
+
+  reset();
+  const byKey = renderHook(() =>
+    useMutation(trpc.post.rename, {
+      invalidates: (opts) =>
+        opts.data === 'Keyed'
+          ? trpc.post.byId.queryKey({ id: opts.input.id })
+          : [],
+    }),
+  );
+  await waitFor(() => expect(byKey.current.status).toBe('idle'));
+  await byKey.current.mutate({ id: '1', title: 'Keyed' });
+  // Resolved after the refetch.
+  expect(trpc.post.byId.getData({ id: '1' })?.title).toBe('Keyed');
+  expect(db.calls).toEqual(['rename:1', 'byId:1']);
+
+  reset();
+  const byPath = renderHook(() =>
+    useMutation(trpc.post.rename, { invalidates: 'post.byId' }),
+  );
+  await waitFor(() => expect(byPath.current.status).toBe('idle'));
+  await byPath.current.mutate({ id: '2', title: 'Pathed' });
+  expect([...db.calls].sort()).toEqual(['byId:1', 'byId:2', 'rename:2']);
+
+  reset();
+  const many = renderHook(() =>
+    useMutation(trpc.post.rename, {
+      invalidates: [
+        trpc.post.count.queryKey(),
+        trpc.post.byId.queryKey({ id: '2' }),
+      ],
+    }),
+  );
+  await waitFor(() => expect(many.current.status).toBe('idle'));
+  await many.current.mutate({ id: '2', title: 'Many' });
+  expect([...db.calls].sort()).toEqual(['byId:2', 'count', 'rename:2']);
+
+  reset();
+  const none = renderHook(() =>
+    useMutation(trpc.post.rename, { invalidates: [] }),
+  );
+  await waitFor(() => expect(none.current.status).toBe('idle'));
+  await none.current.mutate({ id: '1', title: 'None' });
+  const plain = renderHook(() => useMutation(trpc.post.rename));
+  await waitFor(() => expect(plain.current.status).toBe('idle'));
+  await plain.current.mutate({ id: '1', title: 'Plain' });
+  expect(db.calls).toEqual(['rename:1', 'rename:1']);
+
+  for (const unmount of unmounts) unmount();
+  for (const view of [byKey, byPath, many, none, plain]) view.unmount();
+});
+
+test("useMutation's invalidates replaces invalidateOnMutationLink's filter for its calls", async () => {
+  using _dom = domCleanup();
+  const trpc = make(standardLinks({ staleTime: 60_000 }));
+  const one = trpc.post.byId.query({ id: '1' });
+  const list = trpc.post.list.query({ limit: 2, order: 'asc' });
+  await Promise.all([one, list]);
+  const unmounts = [one, list].map((p) =>
+    trpc.store.mount(trpc.store.entryOf(p)!),
+  );
+  db.calls = [];
+  const narrow = renderHook(() =>
+    useMutation(trpc.post.rename, {
+      invalidates: trpc.post.byId.queryKey({ id: '1' }),
+    }),
+  );
+  await waitFor(() => expect(narrow.current.status).toBe('idle'));
+  const signal = new AbortController().signal;
+  await narrow.current.mutate({ id: '1', title: 'Narrow' }, { signal });
+  expect(db.calls).toEqual(['rename:1', 'byId:1']);
+
+  // Without it, the link's own filter: every query.
+  db.calls = [];
+  const wide = renderHook(() => useMutation(trpc.post.rename));
+  await waitFor(() => expect(wide.current.status).toBe('idle'));
+  await wide.current.mutate({ id: '1', title: 'Wide' });
+  expect([...db.calls].sort()).toEqual(['byId:1', 'list', 'rename:1']);
+  for (const unmount of unmounts) unmount();
+  narrow.unmount();
+  wide.unmount();
+  trpc.store.dispose();
+});
+
+test("useMutation() only takes a React client's mutation", async () => {
+  using _dom = domCleanup();
+  const trpc = make([]);
+  function Plain() {
+    useMutation(trpc.client.post.rename);
+    return null;
+  }
+  const view = mount(
+    <Boundary>
+      <Plain />
+    </Boundary>,
+  );
+  await waitFor(() =>
+    expect(view.el.textContent).toBe(
+      "useMutation() takes a React client's mutation, such as trpc.post.create",
+    ),
+  );
+  view.unmount();
 });
 
 test("useQuery() only takes a React client's query promise", async () => {

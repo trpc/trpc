@@ -1,7 +1,8 @@
 /**
  * tRPC for React's `use()`, render-as-you-fetch: loaders start queries,
- * components read the promises. Promises are stable: one per query while
- * it loads, the same object while its data doesn't change. Everything
+ * components read the promises, and `useMutation` tracks mutations.
+ * Promises are stable: one per query while it loads, the same object
+ * while its data doesn't change. Everything
  * else (caching, structural sharing, refetching on mount, focus and
  * reconnect, retries, invalidation after mutations) is a link, opt-in one
  * by one or all at once with `standardLinks()`. Every export is
@@ -30,9 +31,14 @@ export {
   type ReactProcedures,
 } from './client.ts';
 export {
+  useMutation,
   useQuery,
   useQueryState,
+  type Invalidates,
+  type MutationState,
   type QueryState,
+  type UseMutationOptions,
+  type UseMutationResult,
   type UseQueryOptions,
 } from './hooks.ts';
 export {

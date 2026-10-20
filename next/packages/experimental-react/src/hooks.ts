@@ -1,10 +1,14 @@
 import { Duration, identity } from 'effect';
 import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
-import type { QueryPromise } from './client.ts';
+import type { TrpcPromise } from '@trpc12/trpc/client';
+import { procedureOf, type QueryPromise } from './client.ts';
+import { ownInvalidates, revalidated } from './links.ts';
 import { replaceEqualDeep } from './share.ts';
 import {
+  matches,
   ownerOf,
   type QueryEntry,
+  type QueryFilter,
   type QuerySnapshot,
   type QueryStore,
 } from './store.ts';
@@ -199,4 +203,196 @@ export function useQueryState(promise: Promise<unknown>): QueryState {
   const read = () => slot.entry.snapshot;
   const snapshot = useSyncExternalStore(slot.subscribe, read, read);
   return { ...snapshot, refetch: () => slot.store.refetch(slot.entry) };
+}
+
+/**
+ * The queries a mutation invalidates: path prefixes (`'post'` matches
+ * `post.byId`) and query keys (`trpc.post.byId.queryKey({ id })`). An
+ * empty array invalidates none.
+ * @since 0.1.0
+ * @stability experimental
+ */
+export type Invalidates = string | ReadonlyArray<string>;
+
+/**
+ * Options for {@link useMutation}.
+ * @since 0.1.0
+ * @stability experimental
+ */
+export interface UseMutationOptions<TInput, T> {
+  /**
+   * What a successful call invalidates, or a function of its input and
+   * result that says. The call resolves once the invalidated queries on
+   * screen have refetched. With `invalidateOnMutationLink()` in the links
+   * (it's in `standardLinks()`), it replaces the link's filter for this
+   * hook's calls; without, the hook invalidates on its own.
+   * @default what `invalidateOnMutationLink()` does, or nothing without it
+   */
+  invalidates?:
+    | Invalidates
+    | ((opts: { input: TInput; data: T }) => Invalidates)
+    | undefined;
+}
+
+/**
+ * The state of a {@link useMutation}'s latest call.
+ * @since 0.1.0
+ * @stability experimental
+ */
+export type MutationState<TInput, T, E> =
+  | {
+      readonly status: 'idle';
+      readonly input: undefined;
+      readonly data: undefined;
+      readonly error: undefined;
+    }
+  | {
+      readonly status: 'pending';
+      readonly input: TInput;
+      readonly data: undefined;
+      readonly error: undefined;
+    }
+  | {
+      readonly status: 'success';
+      readonly input: TInput;
+      readonly data: T;
+      readonly error: undefined;
+    }
+  | {
+      readonly status: 'error';
+      readonly input: TInput;
+      readonly data: undefined;
+      readonly error: E;
+    };
+
+/**
+ * What {@link useMutation} returns: the latest call's state, and the
+ * function that calls.
+ * @since 0.1.0
+ * @stability experimental
+ */
+export type UseMutationResult<
+  TArgs extends readonly unknown[],
+  T,
+  E,
+> = MutationState<TArgs[0], T, E> & {
+  /** `status === 'pending'`. */
+  readonly isPending: boolean;
+  /**
+   * Calls the mutation, with the procedure's input and call options. The
+   * promise rejects with the typed error too; the hook already handles
+   * it, so `void mutate(input)` is safe. The same function every render.
+   */
+  readonly mutate: (...args: TArgs) => TrpcPromise<T, E>;
+  /** Back to `idle`; a call in flight no longer updates the state. */
+  readonly reset: () => void;
+};
+
+const idle: MutationState<unknown, unknown, unknown> = {
+  status: 'idle',
+  input: undefined,
+  data: undefined,
+  error: undefined,
+};
+
+const toFilter = (invalidates: Invalidates): QueryFilter =>
+  typeof invalidates === 'string'
+    ? invalidates
+    : (entry) => invalidates.some((filter) => matches(filter, entry));
+
+/**
+ * Calls a mutation of a React client and tracks its latest call: `status`,
+ * `isPending`, `data`, and `error`, typed with the procedure's error union.
+ * `invalidates` picks the queries a call refetches before it resolves.
+ * Inside a transition, such as a form's `action`, React shows the state
+ * once the transition ends; read `useFormStatus()` there for pending.
+ *
+ * @example
+ * ```tsx
+ * function Rename(props: { id: string }) {
+ *   const rename = useMutation(trpc.post.rename, {
+ *     invalidates: (opts) => trpc.post.byId.queryKey({ id: opts.input.id }),
+ *   });
+ *   return (
+ *     <button
+ *       disabled={rename.isPending}
+ *       onClick={() => void rename.mutate({ id: props.id, title: 'New' })}
+ *     >
+ *       {rename.error ? 'Retry' : 'Rename'}
+ *     </button>
+ *   );
+ * }
+ * ```
+ * @since 0.1.0
+ * @stability experimental
+ */
+export function useMutation<TArgs extends readonly unknown[], T, E>(
+  procedure: { mutate(...args: TArgs): TrpcPromise<T, E> },
+  opts?: UseMutationOptions<TArgs[0], T>,
+): UseMutationResult<TArgs, T, E> {
+  const owner = procedureOf(procedure);
+  if (!owner) {
+    throw new TypeError(
+      "useMutation() takes a React client's mutation, such as trpc.post.create",
+    );
+  }
+  const [state, setState] =
+    useState<MutationState<unknown, unknown, unknown>>(idle);
+  // The latest render's procedure and options, so `mutate` stays the same
+  // function while reading them.
+  const [latest] = useState(() => ({ call: 0, procedure, opts, owner }));
+  latest.procedure = procedure;
+  latest.opts = opts;
+  latest.owner = owner;
+  const mutate = useCallback(
+    (...args: TArgs) => {
+      const call = ++latest.call;
+      const input = args[0];
+      const store = latest.owner.store;
+      const own = latest.opts?.invalidates;
+      const filterOf =
+        own === undefined
+          ? undefined
+          : (data: T) =>
+              toFilter(typeof own === 'function' ? own({ input, data }) : own);
+      const linked = revalidated.has(store);
+      const callArgs: unknown[] = [...args];
+      if (filterOf && linked) {
+        callArgs[1] = {
+          ...(args[1] as object | undefined),
+          [ownInvalidates]: filterOf,
+        };
+      }
+      setState({ status: 'pending', input, data: undefined, error: undefined });
+      const target = latest.procedure;
+      const run = async () => {
+        const data = await target.mutate(...(callArgs as unknown as TArgs));
+        if (filterOf && !linked) await store.invalidate(filterOf(data));
+        return data;
+      };
+      const promise = run();
+      promise.then(
+        (data) => {
+          if (latest.call === call)
+            setState({ status: 'success', input, data, error: undefined });
+        },
+        (error: unknown) => {
+          if (latest.call === call)
+            setState({ status: 'error', input, data: undefined, error });
+        },
+      );
+      return promise as TrpcPromise<T, E>;
+    },
+    [latest],
+  );
+  const reset = useCallback(() => {
+    latest.call++;
+    setState(idle);
+  }, [latest]);
+  return {
+    ...(state as MutationState<TArgs[0], T, E>),
+    isPending: state.status === 'pending',
+    mutate,
+    reset,
+  };
 }

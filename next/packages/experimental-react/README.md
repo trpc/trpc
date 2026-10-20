@@ -1,6 +1,6 @@
 # `@trpc12/experimental-react`
 
-Render-as-you-fetch for React's `use()`: loaders start queries, components read the promises, and caching, structural sharing, refetching and retries are links you opt into, one by one or with `standardLinks()`. The whole package is experimental, as its name says: every export might change or go away in any release. For a stable React integration, use [`@trpc12/tanstack-react-query`](https://github.com/trpc/trpc/tree/v12/next/packages/tanstack-react-query).
+Render-as-you-fetch for React's `use()`: loaders start queries, components read the promises (with `select` and polling), `useMutation` tracks mutations, and caching, structural sharing, refetching and retries are links you opt into, one by one or with `standardLinks()`. The whole package is experimental, as its name says: every export might change or go away in any release. For a stable React integration, use [`@trpc12/tanstack-react-query`](https://github.com/trpc/trpc/tree/v12/next/packages/tanstack-react-query).
 
 ```sh
 pnpm add @trpc12/trpc effect @trpc12/experimental-react
@@ -10,6 +10,7 @@ pnpm add @trpc12/trpc effect @trpc12/experimental-react
 import {
   createReactClient,
   standardLinks,
+  useMutation,
   useQuery,
 } from '@trpc12/experimental-react';
 
@@ -20,6 +21,7 @@ export const trpc = createReactClient({
 
 const post = trpc.post.byId.query({ id }); // in a loader
 const data = use(useQuery(post)); // in the component
+const rename = useMutation(trpc.post.rename, { invalidates: 'post' });
 ```
 
 ## Docs

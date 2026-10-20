@@ -139,6 +139,53 @@ Without links, the cache does the least: an entry lives while a request is in fl
 
 Query links are tRPC [links](../client/links.md): they sit in the same `links` array, before the link that sends. Write your own with `withQueryFeature(link, feature)`.
 
+## Mutations
+
+`useMutation(trpc.post.create)` calls a mutation and tracks its latest call: `status` (`idle`, `pending`, `success` or `error`), `isPending`, `input`, `data`, and `error`, typed with the procedure's error union as the call's `safe()` result is ([Errors](../client/errors.md)). `mutate` takes the procedure's input and call options and returns its promise; the hook already handles a rejection, so `void create.mutate(input)` is safe, and `await` gets the result or the error. `mutate` is the same function every render, and `reset()` goes back to `idle`.
+
+```tsx twoslash
+// ---cut-start---
+import {
+  createReactClient,
+  standardLinks,
+  useMutation,
+} from '@trpc12/experimental-react';
+import { httpLink, routerType } from '@trpc12/trpc/client';
+import type { AppRouter } from './server.ts';
+const trpc = createReactClient({
+  router: routerType<AppRouter>(),
+  links: [...standardLinks(), httpLink({ url: '/trpc' })],
+});
+// ---cut-end---
+function NewPost() {
+  const create = useMutation(trpc.post.create, { invalidates: 'post.list' });
+  return (
+    <form
+      onSubmit={(event) => {
+        event.preventDefault();
+        const title = String(new FormData(event.currentTarget).get('title'));
+        void create.mutate({ title });
+      }}
+    >
+      <input name="title" />
+      <button disabled={create.isPending}>Add</button>
+      {create.error?.code === 'UNAUTHORIZED' && <p>Sign in to post.</p>}
+    </form>
+  );
+}
+```
+
+`invalidates` names what a successful call refetches before it resolves, so `isPending` lasts until fresh data is on screen:
+
+- a path prefix: `'post'` is every query under `post.*`;
+- a query key: `trpc.post.byId.queryKey({ id })` is that one query;
+- an array of both, where `[]` invalidates nothing;
+- or a function of the call's `input` and `data` that returns one of those, such as `(opts) => trpc.post.byId.queryKey({ id: opts.input.id })`.
+
+With `invalidateOnMutationLink()` in the links, as in `standardLinks()`, a hook's `invalidates` replaces the link's filter for its calls; without `invalidates`, the link's applies. Without the link, the hook invalidates on its own.
+
+Inside a transition, such as a form's `action`, React shows state updates when the transition ends: there, read `isPending` from `useFormStatus()` or `useTransition()`, and the error from `await create.mutate(…)`.
+
 ## Cache methods
 
 ```ts twoslash
@@ -165,9 +212,10 @@ declare const title: string;
 // ---cut-end---
 await trpc.post.byId.invalidate({ id }); // refetches it if it's on screen
 await trpc.invalidate('post'); // every query under post.*
+await trpc.invalidate(trpc.post.byId.queryKey({ id })); // that query
 trpc.post.byId.setData({ id }, (prev) => ({ ...prev!, title }));
 trpc.post.byId.getData({ id });
-await trpc.post.rename.mutate({ id, title }); // mutations and subscriptions are the plain client's
+await trpc.post.rename.mutate({ id, title }); // as on the plain client; useMutation tracks it
 ```
 
 ## Server rendering
