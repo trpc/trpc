@@ -1,5 +1,5 @@
 import type http from 'http';
-import { createTRPCClient, httpLink } from '@trpc/client';
+import { createTRPCClient, httpLink, TRPCClientError } from '@trpc/client';
 import { initTRPC } from '@trpc/server';
 import { createHTTPServer } from '@trpc/server/adapters/standalone';
 import { z } from 'zod';
@@ -50,16 +50,11 @@ async function startServer() {
   };
 }
 
-const TIMEOUT = Symbol('timeout');
-
-function settleWithin(promise: Promise<unknown>, ms: number) {
+function settleWithin<T>(promise: Promise<T>, ms: number): Promise<T> {
   return Promise.race([
-    promise.then(
-      () => 'resolved' as const,
-      () => 'rejected' as const,
-    ),
-    new Promise<typeof TIMEOUT>((resolve) =>
-      setTimeout(() => resolve(TIMEOUT), ms),
+    promise,
+    new Promise<never>((_resolve, reject) =>
+      setTimeout(() => reject(new Error(`Timed out after ${ms}ms`)), ms),
     ),
   ]);
 }
@@ -72,12 +67,19 @@ afterAll(async () => {
   await $.close();
 });
 
-test('mutation without input does not hang when the body was already read', async () => {
-  const outcome = await settleWithin($.client.ping.mutate(), 2_000);
-  expect(outcome).not.toBe(TIMEOUT);
+test('mutation without input still resolves when the body was already read', async () => {
+  await expect(settleWithin($.client.ping.mutate(), 2_000)).resolves.toBe(
+    'pong',
+  );
 });
 
-test('mutation with input does not hang when the body was already read', async () => {
-  const outcome = await settleWithin($.client.echo.mutate('hello'), 2_000);
-  expect(outcome).not.toBe(TIMEOUT);
+test('mutation with input rejects instead of hanging when the body was already read', async () => {
+  const err = await settleWithin($.client.echo.mutate('hello'), 2_000).catch(
+    (cause: unknown) => cause,
+  );
+  assert(err instanceof TRPCClientError);
+  expect(err.data?.code).toBe('INTERNAL_SERVER_ERROR');
+  expect(err.message).toMatchInlineSnapshot(
+    `"The request body has already been read by another middleware. Assign the parsed body to \`req.body\` so tRPC can use it"`,
+  );
 });
