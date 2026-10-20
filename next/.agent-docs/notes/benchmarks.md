@@ -12,6 +12,8 @@
 
 Versions: tRPC v12 at `next/` HEAD, `@trpc/server` 11.19.0, `@orpc/server` 2.0.0-beta.44, TypeScript 7.0.2, Node 24.21.0. Machine: 4-core Intel Xeon VM, 16 GB.
 
+The latest run is `www/benchmarks.json` (2026-10-20, Node 26, TypeScript 7.1), which `--snapshot` writes and the docs' hidden benchmarks page charts ([`benchmarks-page.md`](../decisions/benchmarks-page.md)); the tables below are older.
+
 ## Results
 
 Re-run after the `perf(...)` commits that followed the first run (first-run v12 numbers in the last column).

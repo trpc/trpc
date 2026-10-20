@@ -15,7 +15,7 @@ Legend: ✅ first-class · 🟡 partial / third-party · 🛑 not supported. `ex
 | End-to-end typesafe File/Blob                    | ✅   | 🟡  | ✅  | `File`/`Blob` at any depth through danSON; raw file responses ([files](../decisions/files.md))                                                                                                                                                                                                                 |
 | End-to-end typesafe Server-Sent Events           | ✅   | ✅  | ✅  | Fetch-streamed SSE subscriptions with `tracked()` resume; async generators and Effect `Stream`s validated with `stream(Item, Return?)`                                                                                                                                                                         |
 | End-to-end typesafe `ReadableStream<Uint8Array>` | ✅   | 🛑  | ✅  | Inputs: `experimental_byteStream()`, the request body read as an Effect `Stream`, on every HTTP adapter (`experimental_`, hidden docs; [byte-stream-inputs](../decisions/byte-stream-inputs.md)). Outputs, with danSON: a typed `ReadableStream<Uint8Array>` whose chunks travel as values in the JSONL stream |
-| Typesafe at scale                                | ✅   | ✅  | 🟡  | 3,000 procedures check in 1.16s, but that's 23% slower than v11 and 66% slower than oRPC ([benchmarks](../notes/benchmarks.md))                                                                                                                                                                                |
+| Typesafe at scale                                | ✅   | ✅  | 🟡  | 3,000 procedures check in 0.99s on TypeScript 7.1, level with v11 (0.97s) and 46% slower than oRPC (0.68s) ([benchmarks](../notes/benchmarks.md))                                                                                                                                                              |
 
 ## API design and OpenAPI
 
@@ -59,13 +59,13 @@ oRPC's table compares oRPC v2 with v11 (and Hono). `pnpm bench` measures the sam
 
 | Metric                                    | oRPC v2           | v11               | v12                 |
 | ----------------------------------------- | ----------------- | ----------------- | ------------------- |
-| RPC over HTTP (req/s avg)                 | 59,940            | 13,165            | 46,576              |
-| Type-check, 3,000 procedures (check time) | 0.84s             | 1.19s             | 1.23s               |
-| Type-check, 3,000 procedures (memory)     | 237 MB            | 262 MB            | 342 MB              |
-| Client bundle (minified / gzip)           | 27.1 kB / 9.6 kB  | 36.4 kB / 11.8 kB | 86.1 kB / 28.9 kB   |
-| Node server bundle (minified / gzip)      | 41.3 kB / 13.2 kB | 53.1 kB / 17.3 kB | 345.0 kB / 110.7 kB |
+| RPC over HTTP (req/s avg)                 | 63,594            | 15,533            | 48,845              |
+| Type-check, 3,000 procedures (check time) | 0.68s             | 0.97s             | 0.99s               |
+| Type-check, 3,000 procedures (memory)     | 174 MB            | 195 MB            | 246 MB              |
+| Client bundle (minified / gzip)           | 27.1 kB / 9.6 kB  | 36.4 kB / 11.8 kB | 132.3 kB / 43.9 kB  |
+| Node server bundle (minified / gzip)      | 41.3 kB / 13.2 kB | 53.1 kB / 17.3 kB | 364.6 kB / 117.8 kB |
 
-- v12 beats v11 on throughput, is level with it on check time (re-run 2026-10-19, a slower session than the other rows; [`../notes/type-check-shapes.md`](../notes/type-check-shapes.md) has where it grew), and trails oRPC on every row.
+- v12 beats v11 on throughput, is level with it on check time ([`../notes/type-check-shapes.md`](../notes/type-check-shapes.md) has where the types grew), and trails oRPC on every row. The rows are `next/www/benchmarks.json`, measured 2026-10-20 on Node 26 and TypeScript 7.1 at the commit it names, which the docs' hidden benchmarks page charts ([`benchmarks-page.md`](../decisions/benchmarks-page.md)).
 - The floors are Effect's: its `HttpServer` alone does about 69k req/s; its declarations take about 65 MB of the type-check memory; the Effect APIs the client runs on are about 20 kB gzipped, and a one-element `Stream`, which every link returns, is 10.7 kB on its own. CI reports the client's gzip sizes, without ceilings, against the human's targets (18 kB minimal JSON, 25 kB full; [`../notes/benchmarks.md`](../notes/benchmarks.md#budgets)).
 
 Not measured yet: RPC over WebSocket, OpenAPI over HTTP, Clinic profiles.
