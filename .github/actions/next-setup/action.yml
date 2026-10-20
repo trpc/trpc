@@ -1,0 +1,45 @@
+name: next setup
+description: pnpm and Node for the workspace in next/, with the pnpm store restored from v12's cache
+inputs:
+  install:
+    description: Run `pnpm install --frozen-lockfile` in next/
+    default: 'true'
+  save-cache:
+    # Only pushes to v12 save: a PR's cache is restorable only by that PR.
+    description: On a push to v12, save the store after installing when the lockfile has no cache yet
+    default: 'false'
+outputs:
+  cache-key:
+    description: The store's cache key for the current lockfile
+    value: ${{ steps.restore.outputs.cache-primary-key }}
+runs:
+  using: composite
+  steps:
+    - uses: pnpm/action-setup@v6
+      with:
+        package_json_file: next/package.json
+    - uses: actions/setup-node@v7
+      with:
+        node-version: 24
+    - id: store
+      shell: bash
+      working-directory: next
+      run: echo "path=$(pnpm store path)" >> "$GITHUB_OUTPUT"
+    # A lockfile change restores the latest store and downloads only what's new.
+    - id: restore
+      uses: actions/cache/restore@v6
+      with:
+        path: ${{ steps.store.outputs.path }}
+        key: ${{ runner.os }}-next-pnpm-store-${{ hashFiles('next/pnpm-lock.yaml') }}
+        restore-keys: ${{ runner.os }}-next-pnpm-store-
+    - if: inputs.install == 'true'
+      shell: bash
+      working-directory: next
+      run: pnpm install --frozen-lockfile
+      env:
+        VP_GIT_HOOKS: '0'
+    - if: inputs.install == 'true' && inputs.save-cache == 'true' && github.event_name == 'push' && github.ref == 'refs/heads/v12' && steps.restore.outputs.cache-hit != 'true'
+      uses: actions/cache/save@v6
+      with:
+        path: ${{ steps.store.outputs.path }}
+        key: ${{ steps.restore.outputs.cache-primary-key }}

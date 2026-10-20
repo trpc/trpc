@@ -61,20 +61,7 @@ jobs:
           # The branch's tip, not the pushed commit: a later push may be in.
           ref: ${{ github.ref }}
       - if: steps.go.outputs.run == 'true'
-        uses: pnpm/action-setup@v6
-        with:
-          package_json_file: next/package.json
-      - if: steps.go.outputs.run == 'true'
-        uses: actions/setup-node@v7
-        with:
-          node-version-file: next/.nvmrc
-          cache: pnpm
-          cache-dependency-path: next/pnpm-lock.yaml
-      - if: steps.go.outputs.run == 'true'
-        working-directory: next
-        run: pnpm install --frozen-lockfile
-        env:
-          VP_GIT_HOOKS: '0'
+        uses: ./.github/actions/next-setup
       - if: steps.go.outputs.run == 'true'
         working-directory: next/www
         run: node build/sponsors-sync.ts --only-when-sponsors-change

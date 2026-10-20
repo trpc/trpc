@@ -16,8 +16,9 @@ runs:
       working-directory: v11
       run: |
         echo "pnpm_cache_dir=$(pnpm store path)" >> $GITHUB_OUTPUT
-    - uses: actions/cache@v6
-      name: Setup pnpm cache
+    - uses: actions/cache/restore@v6
+      name: Restore pnpm cache
+      id: restore-pnpm-cache
       with:
         path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
         key: ${{ runner.os }}-v11-pnpm-store-${{ hashFiles('v11/pnpm-lock.yaml') }}
@@ -26,3 +27,10 @@ runs:
     - run: pnpm install
       shell: bash
       working-directory: v11
+    # Only pushes to v12 save: a PR's cache is restorable only by that PR.
+    - uses: actions/cache/save@v6
+      name: Save pnpm cache
+      if: github.event_name == 'push' && github.ref == 'refs/heads/v12' && steps.restore-pnpm-cache.outputs.cache-hit != 'true'
+      with:
+        path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
+        key: ${{ steps.restore-pnpm-cache.outputs.cache-primary-key }}
