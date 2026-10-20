@@ -1,0 +1,9 @@
+# Coverage is a packages-only requirement (human asked)
+
+- Human, 2026-10-20: "we shouldn't need high test coverage aside from packages so get rid of that too, can probably kill a bunch of useless tests".
+- `pnpm coverage` runs the `packages*` Vitest projects alone (`packages/*/src` and the `test/` recipes) and fails under 98% statements, branches, functions or lines of `packages/*/src`. The docs site, tooling, examples and spikes run in the `repo` project and `framework-matrix`, without coverage; CI's `check` job runs them with `pnpm test --project '!packages*'`.
+- (agent) Low-value tests outside `packages/` were deleted: tests of spikes whose feature shipped in `packages/` (the package's own tests cover it; the spike's code and note stay, and git keeps the tests), example tests their `smoke` script already runs, and tests of trivial or cosmetic helpers (favicon packing, the sponsor bubbles' layout, backtick splitting, the home page's version pill scroll math, `vpArgs`).
+- (agent) Kept: build-time guards (hidden paths and `noindex`, old URL redirects, the Vercel output, Twoslash cache keys, Markdown rendering), the sponsors sync (an unattended job that pushes to `v12`), the old docs converter (rerun on every sync), lint rules, `pnpm land` and `ci:wait`, the `test/` recipes, and spikes behind open questions (MCP, live queries, layered services, error shells, TanStack DB real time, SSE, durable resume, invalidation, danSON query params).
+- Why: the 98% gate is about the library; everywhere else, tests guard regressions rather than lines, and instrumenting them only slowed `pnpm coverage`.
+- Lost: coverage numbers for `www/` and `tooling/` (never gated), and example tests that counted toward the packages' coverage. Without them it is unchanged.
+- Lives in: `vite.config.ts` (`projects`), `package.json` (`coverage`), `../.github/workflows/next.yml` (`check`), `README.md`.

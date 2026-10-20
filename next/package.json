@@ -11,7 +11,7 @@
     "lint": "vp lint && pnpm lint:docs",
     "lint:docs": "node tooling/docs-lint/docs-lint.ts",
     "test": "node tooling/dev/src/bin/vp.ts test run",
-    "coverage": "node tooling/dev/src/bin/vp.ts test run --coverage",
+    "coverage": "node tooling/dev/src/bin/vp.ts test run --coverage --project 'packages*'",
     "test:watch": "node tooling/dev/src/bin/vp.ts test watch",
     "test:bun": "pnpm --filter @trpc12/trpc run test:bun",
     "example": "pnpm -r --workspace-concurrency=1 --filter './examples/*' --filter './examples/experimental/*' run smoke",

@@ -243,22 +243,18 @@ export default defineConfig({
       reporter: ['text-summary', 'json-summary', 'text'],
       thresholds: { statements: 98, branches: 98, functions: 98, lines: 98 },
     },
+    // `pnpm coverage` runs the `packages*` projects alone: coverage only
+    // counts `packages/*/src`, and the other projects add nothing to it.
     projects: [
       {
         extends: true,
         test: {
-          name: 'node',
+          name: 'packages',
           include: [
             'packages/*/src/**/*.test.ts',
             'packages/*/src/**/*.test.tsx',
             'test/**/*.test.ts',
             'test/**/*.test.tsx',
-            'spikes/**/*.test.ts',
-            'tooling/**/*.test.ts',
-            'www/build/**/*.test.ts',
-            'www/src/**/*.test.ts',
-            'examples/*/*.test.ts',
-            'examples/*/src/**/*.test.ts',
           ],
           exclude: [
             '**/node_modules/**',
@@ -270,20 +266,40 @@ export default defineConfig({
           typecheck: {
             enabled: true,
             tsconfig: './tsconfig.vitest.json',
-            include: ['packages/*/src/**/*.test-d.ts', 'spikes/**/*.test-d.ts'],
+            include: ['packages/*/src/**/*.test-d.ts'],
+          },
+        },
+      },
+      {
+        extends: true,
+        test: {
+          name: 'repo',
+          include: [
+            'spikes/**/*.test.ts',
+            'tooling/**/*.test.ts',
+            'www/build/**/*.test.ts',
+            'www/src/**/*.test.ts',
+            'examples/*/*.test.ts',
+            'examples/*/src/**/*.test.ts',
+          ],
+          exclude: ['**/node_modules/**'],
+          typecheck: {
+            enabled: true,
+            tsconfig: './tsconfig.vitest.json',
+            include: ['spikes/**/*.test-d.ts'],
           },
         },
       },
       // A UI example tests with its own plugins and environment.
       'examples/experimental/framework-matrix/vite.config.ts',
       browserBuild(
-        'solid',
+        'packages-solid',
         'packages/experimental-tanstack-solid-query/src/index.test.ts',
         ['solid-js', '@tanstack/solid-query'],
       ),
       {
         ...browserBuild(
-          'svelte',
+          'packages-svelte',
           'packages/experimental-tanstack-svelte-query/src/index.test.ts',
           [
             'svelte',
@@ -298,7 +314,7 @@ export default defineConfig({
         extends: true,
         plugins: [svelte({ configFile: false })],
         test: {
-          name: 'svelte-ssr',
+          name: 'packages-svelte-ssr',
           include: [
             'packages/experimental-tanstack-svelte-query/src/ssr.test.ts',
           ],

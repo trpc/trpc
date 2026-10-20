@@ -5,7 +5,7 @@
   - Q23.1: "1a". Tests sit beside the module, `src/<area>/<module>.test.ts`.
   - Q23.3: "3b". A fixture shared across packages stays unpublished in the package the others build on (`packages/tanstack-query/src/fixtures/`), imported by relative path. Shared test servers stay in `@trpc12/trpc/internal/testing` ([`testing-helpers-internal.md`](./testing-helpers-internal.md)).
   - Q23.4: "4a". The Bun smoke becomes `packages/trpc/src/http/serve.bun.test.ts`, run by `bun test` and skipped by Vitest. (agent) It's type-checked by `packages/trpc/tsconfig.bun.json`, which extends `@tooling/tsconfig/bun.json`; the package's `tsconfig.json` leaves it out.
-  - Q23.5: "for now things like can just live in integration in tests as they do now, but a lot of them should move to respective packages". Recipes and feature showcases not tied to one package stay in `test/integration/`; the rest move to their packages. Example apps with Vitest tests may take some later, since coverage counts `packages/*/src/**` whatever imports it.
+  - Q23.5: "for now things like can just live in integration in tests as they do now, but a lot of them should move to respective packages". Recipes and feature showcases not tied to one package stay in `test/integration/`; the rest move to their packages. Example apps with Vitest tests may take some later; their tests don't count toward coverage ([`coverage-packages-only.md`](./coverage-packages-only.md)).
   - Q23.7: "7b - i don't care about docs at all right now. tests and code are docs". Docs don't link to tests.
   - Order: "start with tanstack ones".
 - Human, 2026-10-17 (decision round, where the type-portability check lives): "A". It's `tooling/portability` (`@tooling/portability`), a repo-wide check rather than one package's test.

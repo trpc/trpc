@@ -64,10 +64,12 @@ jobs:
           VP_GIT_HOOKS: '0'
       - run: pnpm typecheck
       - run: pnpm check
-      # The tests, failing under 98% coverage on any metric.
+      # The packages' tests, failing under 98% coverage on any metric.
       - run: pnpm coverage
         env:
           REDIS_URL: redis://127.0.0.1:6379
+      # The docs site's, tooling's, examples' and spikes' tests, without coverage.
+      - run: pnpm test --project '!packages*'
       # examples/runtime-matrix serves its router on Bun and Deno too.
       - uses: oven-sh/setup-bun@v2
         with:

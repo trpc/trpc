@@ -30,7 +30,8 @@ links:
 
 ```bash
 pnpm fix && pnpm check && pnpm typecheck
-pnpm coverage          # runs pnpm test, fails under 98%
+pnpm coverage          # the packages' tests, fails under 98%
+pnpm test --project '!packages*'   # every other test
 pnpm test:bun
 pnpm example           # needs Redis and Postgres
 pnpm build             # vp pack, and the docs site
@@ -88,7 +89,7 @@ pnpm ci:wait
 
 ## Details
 
-- CI (`.github/workflows/next.yml`) runs `typecheck`, `check`, `coverage`, `example` and `bench budget` in `check`, the docs site in `www`, `test:bun` in `bun`, and `typecheck` and `test` on the latest Effect in `effect-latest`. It doesn't run `pnpm build`: the `tooling/pack` tests in `coverage` build every package, and `www` builds the site, so B's `pnpm docs:build` stands in for `pnpm build`.
+- CI (`.github/workflows/next.yml`) runs `typecheck`, `check`, `coverage`, the other tests, `example` and `bench budget` in `check`, the docs site in `www`, `test:bun` in `bun`, and `typecheck` and `test` on the latest Effect in `effect-latest`. It doesn't run `pnpm build`: the `tooling/pack` tests build every package, and `www` builds the site, so B's `pnpm docs:build` stands in for `pnpm build`.
 - `pnpm bench budget` never fails ([orpc-v2-parity](../decisions/orpc-v2-parity.md)); it's only needed when a change moves a client bundle's size, to update the table in `notes/benchmarks.md`.
 - `pnpm land` could pick B's tiers itself from the changed paths and run them before pushing. That's a tooling change on top of B, not a different answer.
 - Flakes found in the review (a `tanstack-query` subscription count, the WebSocket backpressure test, `dedupe.test.ts`) make B and C's fix-forward noisier until they're fixed.
