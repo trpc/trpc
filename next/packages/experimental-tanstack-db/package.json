@@ -34,7 +34,7 @@
     "@trpc12/trpc": "workspace:*",
     "@types/node": "^26.0.0",
     "effect": "4.0.2",
-    "typescript": "^7.0.2",
+    "typescript": "7.1.0-beta",
     "vite-plus": "1.1.0",
     "zod": "4.6.5"
   },

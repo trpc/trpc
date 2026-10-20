@@ -25,6 +25,8 @@
     "eslint.enable": false,
     "prettier.enable": false,
     "js/ts.experimental.useTsgo": true,
+    // `next`'s TypeScript (7.1 beta), not the extension's bundled build.
+    "js/ts.tsdk.path": "./node_modules/typescript",
     "js/ts.preferences.autoImportFileExcludePatterns": ["**/.repos/**"],
     "files.exclude": {
       "next": true,

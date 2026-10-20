@@ -35,7 +35,7 @@
     "@types/node": "^26.0.0",
     "happy-dom": "20.14.6",
     "tailwindcss": "4.3.3",
-    "typescript": "^7.0.2",
+    "typescript": "7.1.0-beta",
     "vite-plugin-solid": "2.11.14",
     "vite-plus": "1.1.0"
   }

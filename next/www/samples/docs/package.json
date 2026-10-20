@@ -65,6 +65,6 @@
     "@types/bun": "1.4.3",
     "@types/node": "26.6.4",
     "@types/react": "19.3.0",
-    "typescript": "^7.0.2"
+    "typescript": "7.1.0-beta"
   }
 }

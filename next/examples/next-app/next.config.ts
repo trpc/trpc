@@ -11,7 +11,7 @@ const config: NextConfig = {
     '@trpc12/tanstack-query',
     '@trpc12/tanstack-react-query',
   ],
-  // `pnpm typecheck` runs tsc (TypeScript 7), which Next's checker can't load.
+  // `pnpm typecheck` runs tsc (TypeScript 7.1), which Next's checker can't load.
   typescript: { ignoreBuildErrors: true },
 };
 export default config;

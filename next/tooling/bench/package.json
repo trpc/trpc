@@ -23,6 +23,6 @@
     "autocannon": "8.0.0",
     "rolldown": "1.2.13",
     "superjson": "2.2.6",
-    "typescript": "^7.0.2"
+    "typescript": "7.1.0-beta"
   }
 }

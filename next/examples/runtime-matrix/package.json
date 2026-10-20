@@ -31,7 +31,7 @@
     "@cloudflare/workers-types": "5.20261014.1",
     "@types/bun": "1.4.3",
     "@types/node": "^26.0.0",
-    "typescript": "^7.0.2",
+    "typescript": "7.1.0-beta",
     "wrangler": "4.151.0"
   }
 }

@@ -82,7 +82,7 @@
     "shiki": "4.5.0",
     "tailwindcss": "4.3.3",
     "twoslash": "0.3.9",
-    "typescript": "^7.0.2",
+    "typescript": "7.1.0-beta",
     "typescript6": "npm:typescript@6.0.3",
     "unified": "11.0.5",
     "unist-util-visit": "5.1.0",

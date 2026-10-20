@@ -38,6 +38,7 @@ pnpm example
 
 `pnpm typecheck` and `pnpm check` are the other local gates (`pnpm fix` autofixes). Commands are listed in `README.md`; run every gate listed there before landing. If `node -v` is not 26.x, run `nvm use` before install or test.
 
+- TypeScript is `7.1.0-beta` in every `package.json`, pinned exactly: `^7.1.0-beta` resolves to the newer-sorting `7.1.0-dev.*` nightlies. Twoslash still compiles the docs' blocks with TypeScript 6 ([`decisions/typescript-versions.md`](./.agent-docs/decisions/typescript-versions.md)).
 - `pnpm test <file or folder>` runs only those tests, and so does `pnpm test -- --watch false <file>`. Tests run through `vp test`; there is no `vitest` binary.
 - Import test APIs from `vite-plus/test`, or from `@effect/vitest` in a package that depends on it, never from `vitest` (lint fails on it). No package here depends on `vitest`: a checkout with a v11 install in `../node_modules` resolves it from there, and CI doesn't. The same goes for any package a `package.json` here doesn't list.
 - Cloud Agents' `core.hooksPath` is Cursor's, so `pnpm install` skips `.vite-hooks` and `pre-commit` doesn't run: run `pnpm fix` before committing.

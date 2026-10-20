@@ -8,7 +8,7 @@
  * file that calls each procedure with its result annotated (`match`: through
  * `safe()` and an exhaustive `matchError()`; `links`: through an app's
  * chain of links, passing call options). Each project is
- * checked twice with tsc 7 (`--singleThreaded`, v12 from its `.d.ts`): the
+ * checked twice with tsc 7.1 (`--singleThreaded`, v12 from its `.d.ts`): the
  * server half alone (routers and handler), then with the client calls.
  * "per procedure" subtracts a project with an empty router.
  */

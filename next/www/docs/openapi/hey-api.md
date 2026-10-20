@@ -48,7 +48,7 @@ export default defineConfig({
 npx @hey-api/openapi-ts
 ```
 
-Hey API 0.99 needs TypeScript 5 or 6: it uses TypeScript's JavaScript API, which TypeScript 7 doesn't have. A project on TypeScript 7, which `experimental_generateOpenApiFromTypes` needs, can run it with TypeScript 6 alongside: `pnpm dlx --package=@hey-api/openapi-ts --package=typescript@6 openapi-ts`.
+Hey API 0.99 needs TypeScript 5 or 6: it uses TypeScript 6's JavaScript API, which TypeScript 7 replaced. A project on TypeScript 7.1, which `experimental_generateOpenApiFromTypes` needs, can run it with TypeScript 6 alongside: `pnpm dlx --package=@hey-api/openapi-ts --package=typescript@6 openapi-ts`.
 
 What the document gives Hey API:
 

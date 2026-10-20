@@ -16,7 +16,7 @@
     "ai": "7.0.138",
     "better-auth": "1.7.7",
     "effect": "4.0.2",
-    "typescript": "^7.0.2",
+    "typescript": "7.1.0-beta",
     "vite-plus": "1.1.0",
     "zod": "4.6.5"
   }

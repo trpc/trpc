@@ -174,7 +174,7 @@
     "react-dom": "19.3.0",
     "react-server-dom-turbopack": "19.3.0",
     "superjson": "2.2.6",
-    "typescript": "^7.0.2",
+    "typescript": "7.1.0-beta",
     "undici": "8.11.2",
     "vite-plus": "1.1.0",
     "zod": "4.6.5"

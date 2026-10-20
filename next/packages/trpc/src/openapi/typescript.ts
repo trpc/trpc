@@ -1,6 +1,6 @@
 /**
  * The TypeScript-based OpenAPI generator (`@trpc12/trpc/openapi/typescript`, 21):
- * reads a router's types with the TypeScript 7 compiler API to document
+ * reads a router's types with the TypeScript 7.1 compiler API to document
  * what the runtime generator can't see, errors that are only inferred and
  * procedures without static schemas. `typescript` is an optional peer
  * dependency, so this runs at build time.
@@ -24,10 +24,11 @@ import {
   SymbolFlags,
   TypeFlags,
   type Checker,
+  type Snapshot,
   type Symbol as TsSymbol,
   type Type,
   type TypeReference,
-} from 'typescript/unstable/sync';
+} from 'typescript/sync';
 import { ERROR_STATUS } from '../internal/error.ts';
 import type { JsonSchema } from '../internal/json-schema.ts';
 import { loadRouter } from '../server/procedures/index.ts';
@@ -365,17 +366,24 @@ function inferRouterTypes(
   const file = absolute(opts.file);
   const tsconfig = opts.tsconfig && absolute(opts.tsconfig);
   const api = new API({ cwd: dirname(tsconfig ?? file) });
-  try {
-    const snapshot = api.updateSnapshot(
-      tsconfig ? { openProjects: [tsconfig] } : { openFiles: [file] },
+  const notInProject = (cause?: unknown) =>
+    new Error(
+      `experimental_generateOpenApiFromTypes: ${file} is not in a TypeScript project`,
+      { cause },
     );
+  try {
+    let snapshot: Snapshot;
+    try {
+      snapshot = api.createSnapshot(
+        tsconfig ? { openProjects: [tsconfig] } : { openFiles: [file] },
+      );
+    } catch (cause) {
+      // An opened file that no project includes fails the whole snapshot.
+      throw notInProject(cause);
+    }
     const project = snapshot.getDefaultProjectForFile(file);
     const source = project?.program.getSourceFile(file);
-    if (!project || !source) {
-      throw new Error(
-        `experimental_generateOpenApiFromTypes: ${file} is not in a TypeScript project`,
-      );
-    }
+    if (!project || !source) throw notInProject();
     const checker = project.checker;
     const module = checker.getSymbolAtLocation(source);
     const name = opts.exportName ?? 'appRouter';

@@ -50,7 +50,7 @@
     "happy-dom": "20.14.6",
     "react": "19.3.0",
     "react-dom": "19.3.0",
-    "typescript": "^7.0.2",
+    "typescript": "7.1.0-beta",
     "vite-plus": "1.1.0"
   },
   "peerDependencies": {

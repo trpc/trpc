@@ -24,8 +24,9 @@ import remarkParse from 'remark-parse';
 import remarkRehype from 'remark-rehype';
 import type { ShikiTransformer, ShikiTransformerContext } from 'shiki';
 import { createTwoslasher } from 'twoslash/core';
-// Twoslash runs the compiler through its JavaScript API, which TypeScript 7
-// doesn't have.
+// Twoslash (0.3.9) runs the compiler through TypeScript 6's JavaScript API
+// (`ts.sys`, a language service); TypeScript 7.1's API (`typescript/sync`) is
+// a different one it can't use yet.
 import ts from 'typescript6';
 import { unified } from 'unified';
 import { visit } from 'unist-util-visit';
@@ -664,7 +665,7 @@ function twoslasherFor(root: string, tsLibDirectory: string) {
     // @ts-expect-error -- typed as `@typescript/vfs`'s environment, from a package www doesn't depend on
     cache: environments,
     tsLibDirectory,
-    // @ts-expect-error -- twoslash types `tsModule` as the `typescript` package, which here is TypeScript 7's, with no JavaScript API
+    // @ts-expect-error -- twoslash types `tsModule` as the `typescript` package, which here is TypeScript 7.1's, without TypeScript 6's JavaScript API
     tsModule: ts,
     vfsRoot: root,
   });
