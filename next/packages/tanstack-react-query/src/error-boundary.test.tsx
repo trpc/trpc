@@ -1,7 +1,11 @@
 // @vitest-environment happy-dom
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import {
+  QueryClient,
+  QueryClientProvider,
+  useSuspenseQuery,
+} from '@tanstack/react-query';
 import { isTrpcError, matchError } from '@trpc12/trpc/client';
-import { act, type ReactNode } from 'react';
+import { act, Suspense, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { expect, test, vi } from 'vite-plus/test';
 import {
@@ -220,6 +224,50 @@ test("a mutation's own throwOnError throws what no boundary owns too", async () 
   };
   await expect(clickAndSettle()).rejects.toSatisfy(
     (error) => isTrpcError(error) && error.code === 'TITLE_TAKEN',
+  );
+});
+
+test("useSuspenseQuery's owned errors reach their boundary as they are, and reset refetches", async () => {
+  await using app = createApp();
+  app.state.user = undefined;
+  function SuspenseTitle(props: { id: string }) {
+    const doc = useSuspenseQuery(
+      app.trpc.doc.byId.queryOptions({ input: { id: props.id } }),
+    );
+    return <h1 id="title">{doc.data.title}</h1>;
+  }
+  using ui = await mount(
+    boundaries(
+      <Suspense fallback={<p id="loading" />}>
+        <SuspenseTitle id="1" />
+      </Suspense>,
+    ),
+  );
+  await ui.settle();
+  expect(ui.text('#sign-in')).toBe('Sign in');
+
+  app.state.user = 'ada';
+  await ui.click('#sign-in-retry');
+  await ui.settle();
+  expect(ui.text('#title')).toBe('Hello');
+});
+
+test("useSuspenseQuery's unowned errors go past every boundary", async () => {
+  await using app = createApp();
+  function SuspenseTitle() {
+    useSuspenseQuery(app.trpc.doc.byId.queryOptions({ input: { id: '404' } }));
+    return null;
+  }
+  await expect(
+    mount(
+      boundaries(
+        <Suspense fallback={null}>
+          <SuspenseTitle />
+        </Suspense>,
+      ),
+    ),
+  ).rejects.toSatisfy(
+    (error) => isTrpcError(error) && error.code === 'NOT_FOUND',
   );
 });
 
