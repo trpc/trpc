@@ -7,7 +7,8 @@
  * shared), a fetch handler over the router, and a client file per router
  * file that calls each procedure with its result annotated (`match`: through
  * `safe()` and an exhaustive `matchError()`; `links`: through an app's
- * chain of links, passing call options). Each project is
+ * chain of links, passing call options; `safe …`: through
+ * `createSafeClient`). Each project is
  * checked twice with tsc 7.1 (`--singleThreaded`, v12 from its `.d.ts`): the
  * server half alone (routers and handler), then with the client calls.
  * "per procedure" subtracts a project with an empty router.
@@ -49,6 +50,8 @@ interface Shape {
   readonly links?: { readonly imports: string; readonly links: string };
   /** The call options each call passes. */
   readonly callOptions?: string;
+  /** Whether `client.ts` exports the client through `createSafeClient`. */
+  readonly safeClient?: true;
   /** Files of its own, which its router files import from (`./effect-shape.ts`). */
   readonly own?: {
     readonly module: string;
@@ -146,6 +149,12 @@ export const layer = Layer.mergeAll(
 );
 `;
 
+/** Half return a `Stream` that may fail with `GONE`, half a generator. */
+const streamedImpl: Shape['impl'] = (i, kind) =>
+  i % 4 < 2
+    ? `t.procedure${input(i)}.${kind}((opts) => opts.input.a_${i} === '' ? ${returned} : Stream.make({ v_${i}: opts.input.a_${i} }).pipe(Stream.concat(Stream.fail(error({ code: 'GONE' })))))`
+    : `t.procedure${input(i)}.${kind}(async function* (opts) { yield { v_${i}: opts.input.a_${i} }; })`;
+
 /** The shapes, by name; each procedure returns `{ v_i }` or a `NOT_FOUND`. */
 const shapeList = {
   plain: {
@@ -242,13 +251,24 @@ const shapeList = {
     callOptions: `{ tenant: 't', dedupe: false, headers: { 'x-a': '1' } }`,
   },
   streamed: {
-    // Half return a `Stream` that may fail with `GONE`, half a generator.
-    impl: (i, kind) =>
-      i % 4 < 2
-        ? `t.procedure${input(i)}.${kind}((opts) => opts.input.a_${i} === '' ? ${returned} : Stream.make({ v_${i}: opts.input.a_${i} }).pipe(Stream.concat(Stream.fail(error({ code: 'GONE' })))))`
-        : `t.procedure${input(i)}.${kind}(async function* (opts) { yield { v_${i}: opts.input.a_${i} }; })`,
+    impl: streamedImpl,
     consume: (i, call) =>
       `export const r${i}: AsyncIterable<{ v_${i}: string }> = await ${call};`,
+    own: { module: '', imports: `import { Stream } from 'effect';` },
+  },
+  'safe client': {
+    // `plain`, through `createSafeClient`.
+    impl: (i, kind) => `t.procedure${input(i)}.${kind}(${body(i, returned)})`,
+    safeClient: true,
+    consume: (i, call) =>
+      `const [d${i}, e${i}] = await ${call};\nexport const r${i}: string = e${i} ? e${i}.message : d${i}.v_${i};`,
+  },
+  'safe streamed': {
+    // `streamed`, through `createSafeClient`, each output iterated.
+    impl: streamedImpl,
+    safeClient: true,
+    consume: (i, call) =>
+      `export async function r${i}(): Promise<string> {\n  const [d, e] = await ${call};\n  if (e) return e.message;\n  for await (const [item, err] of safe(d)) return err ? err.message : item.v_${i};\n  return '';\n}`,
     own: { module: '', imports: `import { Stream } from 'effect';` },
   },
 } satisfies Record<string, Shape>;
@@ -373,10 +393,11 @@ const fixture = (
     imports: '',
     links: `[httpLink({ url: 'http://localhost:3000/trpc' })]`,
   };
+  const safeClient = shape?.safeClient === true;
   files.push([
     'client.ts',
     own?.client ??
-      `import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';\n${links.imports}import type { router } from './router';\n\nexport const client = createTrpcClient({\n  router: routerType<typeof router>(),\n  links: ${links.links},\n});\n`,
+      `import { ${safeClient ? 'createSafeClient, ' : ''}createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';\n${links.imports}import type { router } from './router';\n\nexport const client = ${safeClient ? 'createSafeClient(' : ''}createTrpcClient({\n  router: routerType<typeof router>(),\n  links: ${links.links},\n})${safeClient ? ')' : ''};\n`,
   ]);
   files.push([
     'tsconfig.server.json',
