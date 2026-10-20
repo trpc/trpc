@@ -4,6 +4,7 @@ import {
   type CodeError,
   type Failure,
 } from '../../internal/error.ts';
+import { CONTENT_TYPE } from '../../internal/protocol.ts';
 
 const BYTE_STREAM = '~trpc.byteStream';
 
@@ -133,6 +134,8 @@ export function experimental_byteStream(
   const maxBytes = opts.maxBytes ?? Infinity;
   return Schema.declare(isReadableStream, {
     expected: 'ReadableStream<Uint8Array>',
+    format: 'binary',
+    contentMediaType: CONTENT_TYPE.octet,
   })
     .pipe(
       Schema.decodeTo(
@@ -150,3 +153,24 @@ export function experimental_byteStream(
 export const isByteStreamSchema = (schema: unknown): boolean =>
   Schema.isSchema(schema) &&
   Schema.resolveAnnotations(schema)?.[BYTE_STREAM] === true;
+
+/**
+ * Which part of a procedure's input is an {@link experimental_byteStream}:
+ * all of it, or the `body` of a `Schema.Struct` input (an OpenAPI route's
+ * detailed input).
+ * @internal
+ */
+export const byteStreamPart = (
+  steps: ReadonlyArray<{ readonly kind: string; readonly arg?: unknown }>,
+): 'input' | 'body' | undefined => {
+  for (const step of steps) {
+    if (step.kind !== 'input') continue;
+    if (isByteStreamSchema(step.arg)) return 'input';
+    const fields =
+      Schema.isSchema(step.arg) && 'fields' in step.arg
+        ? (step.arg.fields as Readonly<Record<string, unknown>>)
+        : undefined;
+    if (isByteStreamSchema(fields?.['body'])) return 'body';
+  }
+  return undefined;
+};

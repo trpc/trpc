@@ -1,7 +1,10 @@
 import { Effect } from 'effect';
 import type { HttpServerRequest } from 'effect/http';
 import { TrpcError, type Failure } from '../../internal/error.ts';
-import { isJsonContentType } from '../../internal/protocol.ts';
+import {
+  isJsonContentType,
+  isOctetContentType,
+} from '../../internal/protocol.ts';
 
 /**
  * The OpenAPI handler's `csrf` option.
@@ -26,6 +29,13 @@ const safeMethods: ReadonlySet<string> = new Set(['GET', 'HEAD', 'OPTIONS']);
 /** `Sec-Fetch-Site` values of requests the user's own page or browser made. */
 const ownSites: ReadonlySet<string> = new Set(['same-origin', 'none']);
 
+/**
+ * Body types a browser sends to another origin only after a CORS preflight:
+ * JSON, and a byte stream input's `application/octet-stream`.
+ */
+const preflighted = (type: string | null): boolean =>
+  isJsonContentType(type) || isOctetContentType(type);
+
 const toTrustedOrigin = (value: string): string => {
   const url = URL.parse(value);
   if (
@@ -44,8 +54,9 @@ const toTrustedOrigin = (value: string): string => {
 
 /**
  * Refuses requests another origin could send without a CORS preflight: a
- * method other than `GET`, `HEAD` or `OPTIONS` whose body isn't JSON (an
- * HTML form, a `no-cors` fetch or `sendBeacon`), from another origin.
+ * method other than `GET`, `HEAD` or `OPTIONS` whose body isn't JSON or
+ * `application/octet-stream` (an HTML form, a `no-cors` fetch or
+ * `sendBeacon`), from another origin.
  * `Sec-Fetch-Site` decides; without it (browsers before 2023), `Origin` is
  * compared with the request's host; with neither, the request isn't from a
  * browser and passes. Sibling subdomains count as other origins.
@@ -75,7 +86,7 @@ export const makeCsrfGuard = (
   };
   return (request, url) =>
     safeMethods.has(request.method) ||
-    isJsonContentType(request.headers['content-type'] ?? null) ||
+    preflighted(request.headers['content-type'] ?? null) ||
     fromOwnOrigin(request.headers, url)
       ? Effect.void
       : Effect.fail(

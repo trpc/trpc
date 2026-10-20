@@ -30,7 +30,11 @@ export type {
   inferInputIssue,
 } from './schema.ts';
 export { isStreamSchema, stream } from './stream-schema.ts';
-export { experimental_byteStream, isByteStreamSchema } from './byte-stream.ts';
+export {
+  byteStreamPart,
+  experimental_byteStream,
+  isByteStreamSchema,
+} from './byte-stream.ts';
 export type {
   experimental_ByteStream,
   experimental_ByteStreamError,

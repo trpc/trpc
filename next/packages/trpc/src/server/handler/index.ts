@@ -4,7 +4,12 @@
  *
  * @module
  */
-export { readBytes, responseOptions, type BodyError } from './body.ts';
+export {
+  bodyStream,
+  readBytes,
+  responseOptions,
+  type BodyError,
+} from './body.ts';
 export { strictestCacheControl } from './cache-control.ts';
 export { createHandlerCore } from './core.ts';
 export type { HandlerCore } from './core.ts';

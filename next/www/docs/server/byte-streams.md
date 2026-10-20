@@ -93,3 +93,37 @@ Node's `fetch` reads the response while it sends the body. Browsers send stream 
 - It streams on Node, Bun, Deno and fetch runtimes. AWS Lambda buffers event bodies, so the stream reads from memory, within Lambda's payload limit. Behind Express, a body `express.raw()` read is replayed; one that another parser read and dropped fails the call with `INTERNAL_SERVER_ERROR`.
 
 `experimental_byteStream()` is an Effect Schema that decodes the `ReadableStream` to a `Stream` and encodes one back, so in-process calls decode it as the handler does.
+
+## Over OpenAPI
+
+[`experimental_createOpenApiHandler`](../openapi/routes.md#input) reads a byte stream input from an `application/octet-stream` body the same way, unbuffered, and answers any other body with `415 UNSUPPORTED_MEDIA_TYPE`. It needs no `trpc-version` header: a page on another site can't send that content type without a CORS preflight, so the [cross-site guard](../openapi/routes.md#cross-site-forms) lets it through as it does JSON. With `inputStructure: 'detailed'`, the stream can be the `body` of a `Schema.Struct` input, next to path params, the query and headers:
+
+```ts twoslash
+// ---cut-start---
+import { initTrpc } from '@trpc12/trpc/server';
+declare const storage: {
+  append(id: string, chunk: Uint8Array): Effect.Effect<void>;
+};
+// ---cut-end---
+import { experimental_openapi } from '@trpc12/trpc/openapi';
+import { experimental_byteStream } from '@trpc12/trpc/server';
+import { Effect, Schema, Stream } from 'effect';
+
+const t = initTrpc().concat(experimental_openapi());
+
+const uploadVideo = t.procedure
+  .meta({
+    route: { method: 'PUT', path: '/videos/{id}', inputStructure: 'detailed' },
+  })
+  .input(
+    Schema.Struct({
+      params: Schema.Struct({ id: Schema.String }),
+      body: experimental_byteStream({ maxBytes: 1_000_000_000 }),
+    }),
+  )
+  .mutation((opts) =>
+    Stream.runForEach(opts.input.body, (chunk) =>
+      storage.append(opts.input.params.id, chunk),
+    ),
+  );
+```

@@ -107,7 +107,7 @@ const openapi = experimental_createOpenApiHandler({
 
 ### Cross-site forms
 
-The handler refuses requests from another origin that use a method other than `GET`, `HEAD` or `OPTIONS` with a body that isn't `application/json`, answering `403 FORBIDDEN`. A form or a `no-cors` `fetch` on another site can send a urlencoded, multipart or `text/plain` body (or none) without a CORS preflight, and the browser attaches the user's cookies. A JSON body needs a preflight, so [`cors()`](../adapters/overview.md#middleware-and-cors) decides those requests.
+The handler refuses requests from another origin that use a method other than `GET`, `HEAD` or `OPTIONS` with a body that isn't `application/json` or `application/octet-stream`, answering `403 FORBIDDEN`. A form or a `no-cors` `fetch` on another site can send a urlencoded, multipart or `text/plain` body (or none) without a CORS preflight, and the browser attaches the user's cookies. JSON and `application/octet-stream` bodies need a preflight, so [`cors()`](../adapters/overview.md#middleware-and-cors) decides those requests.
 
 - `Sec-Fetch-Site` decides: `same-origin` and `none` pass, while `same-site` and `cross-site` don't, so a sibling subdomain counts as another origin. Browsers from before 2023 don't send that header; for them, the `Origin` header must name the request's host.
 - A request with neither header (from `curl` or a server) passes.
@@ -120,6 +120,7 @@ With the default `inputStructure: 'compact'`, path params merge with the query s
 - Query strings and forms use bracket notation (`?tags[]=a&author[name]=x`) and are coerced by the input's JSON Schema, so `?limit=10&published=true` gives a number and a boolean.
 - JSON bodies are taken as they are.
 - `multipart/form-data` fields can hold `File`s. The document describes a body with a `z.file()`, `z.instanceof(File)` or `z.instanceof(Blob)` in it as `multipart/form-data`, with the file as `format: binary`, so generated clients send a form. Repeat a field for an array; one value for an array field is an array of one.
+- An [`experimental_byteStream()`](../server/byte-streams.md#over-openapi) input is the `application/octet-stream` body, read as it arrives. Only the whole input or a detailed input's `body` can be one, so a route with path params needs `inputStructure: 'detailed'`.
 - Forms from another origin are refused unless it's trusted ([Cross-site forms](#cross-site-forms)).
 
 `inputStructure: 'detailed'` passes `{ params, query, headers, body }`, each with its own schema. `outputStructure: 'detailed'` lets the resolver return `{ status?, headers?, body }`.

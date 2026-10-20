@@ -33,13 +33,16 @@ import { timerOption } from '../internal/duration.ts';
 import { toAsyncIterable } from '../internal/effects.ts';
 import type { JsonSchema } from '../internal/json-schema.ts';
 import {
+  CONTENT_TYPE,
   contentDisposition,
   hasMediaType,
   isJsonContentType,
+  isOctetContentType,
   sseIdField,
 } from '../internal/protocol.ts';
 import type { MaybePromise, ProcedureType } from '../internal/types.ts';
 import {
+  bodyStream,
   createHandlerCore,
   CurrentPlatform,
   readBytes,
@@ -64,6 +67,7 @@ import {
   type inferRouterServices,
 } from '../server/procedures/index.ts';
 import { isTracked } from '../server/subscriptions/index.ts';
+import { byteStreamPart } from '../server/validation/index.ts';
 import {
   experimental_parseBracketNotation,
   experimental_coerceBySchema,
@@ -106,10 +110,11 @@ export interface BaseOpenApiHandlerOptions<TRouter extends AnyRouter> {
   onError?: (opts: OnErrorOpts) => void;
   /**
    * Refuses, with a 403, requests from another origin that use a method other
-   * than `GET`, `HEAD` or `OPTIONS` and a body that isn't JSON. An HTML form
-   * or a `no-cors` fetch on another site sends those without a CORS
-   * preflight, with the user's cookies. JSON bodies need a preflight, so
-   * `cors()` decides them. `false` turns the guard off.
+   * than `GET`, `HEAD` or `OPTIONS` and a body that isn't JSON (or a byte
+   * stream's `application/octet-stream`). An HTML form or a `no-cors` fetch
+   * on another site sends those without a CORS preflight, with the user's
+   * cookies. JSON and byte stream bodies need a preflight, so `cors()`
+   * decides them. `false` turns the guard off.
    * @default true
    */
   csrf?: boolean | CsrfOptions;
@@ -494,21 +499,49 @@ export function experimental_createOpenApiHandler<
       });
     });
 
+  /**
+   * A byte stream input's body, unread: the resolver pulls it, so
+   * `maxBodySize` doesn't apply and the schema's `maxBytes` does.
+   */
+  const readStream = (
+    http: HttpServerRequest.HttpServerRequest,
+  ): Effect.Effect<
+    Body,
+    CodeError<'UNSUPPORTED_MEDIA_TYPE'> | Failure<'BodyConsumed'>
+  > =>
+    isOctetContentType(http.headers['content-type'] ?? null)
+      ? Effect.map(bodyStream(http), (value): Body => ({
+          value,
+          fromStrings: false,
+        }))
+      : Effect.fail(
+          new TrpcError.UnsupportedMediaType({
+            message: `This route's body is a byte stream: send ${CONTENT_TYPE.octet}`,
+          }),
+        );
+
   const readInput = (
     http: HttpServerRequest.HttpServerRequest,
     request: Request,
     url: URL,
     entry: Entry,
     params: Record<string, string>,
-  ): Effect.Effect<unknown, AnyTrpcError> =>
-    Effect.flatMap(
-      usesQuery(entry.route.method) ? Effect.succeed(noBody) : readBody(http),
-      (body) =>
-        Effect.try({
-          try: () => inputOf(request, url, entry, params, body),
-          catch: toError,
-        }),
+    procedure: AnyProcedure,
+  ): Effect.Effect<unknown, AnyTrpcError> => {
+    const streamed =
+      byteStreamPart(procedure['~trpc'].steps) ===
+      (entry.route.inputStructure === 'detailed' ? 'body' : 'input');
+    let body: Effect.Effect<Body, AnyTrpcError> = Effect.succeed(noBody);
+    if (!usesQuery(entry.route.method)) {
+      body = streamed ? readStream(http) : readBody(http);
+    }
+    return Effect.flatMap(body, (read) =>
+      Effect.try({
+        try: () => inputOf(request, url, entry, params, read),
+        catch: toError,
+      }),
     );
+  };
 
   function inputOf(
     request: Request,
@@ -664,6 +697,7 @@ export function experimental_createOpenApiHandler<
         incoming.url,
         entry,
         params,
+        procedure,
       );
       // Outlives this fiber: a subscription's events are read after it ends.
       const controller = new AbortController();
