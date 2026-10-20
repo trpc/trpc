@@ -222,13 +222,6 @@ export function createInputMiddleware<TInput>(parse: ParseFn<TInput>) {
   return inputMiddleware;
 }
 
-function cloneError(error: TRPCError): TRPCError {
-  return Object.create(
-    Object.getPrototypeOf(error),
-    Object.getOwnPropertyDescriptors(error),
-  );
-}
-
 /**
  * @internal
  */
@@ -257,16 +250,11 @@ export function createErrorFormatterMiddleware(
           }),
         });
 
-        if (shape === undefined) {
-          return error;
+        if (shape !== undefined) {
+          setFormattedErrorShape(error, shape);
         }
 
-        // The same error instance can be thrown by other calls too, e.g. when it
-        // is a module-level constant, so the shape goes on a copy of it rather
-        // than on the instance itself.
-        const formatted = cloneError(error);
-        setFormattedErrorShape(formatted, shape);
-        return formatted;
+        return error;
       };
 
       const tryFormatThrown = (cause: unknown): unknown => {
@@ -297,7 +285,8 @@ export function createErrorFormatterMiddleware(
 
       // normal procedures return errors immediately
       if (!result.ok) {
-        return { ...result, error: tryFormat(result.error) };
+        tryFormat(result.error);
+        return result;
       }
 
       // subscription/streaming procedures need to be enumerated to find errors
