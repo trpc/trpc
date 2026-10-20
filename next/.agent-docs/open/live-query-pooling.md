@@ -37,7 +37,38 @@ links:
 
 The docs say to use `wsLink`, or serve SSE over HTTP/2, which multiplexes requests on one connection.
 
-```ts
+```ts twoslash
+// ---cut-start---
+// @filename: router.ts
+import type { TrackedEnvelope } from '@trpc12/trpc/server';
+import type { LiveEvent } from '@trpc12/experimental-tanstack-db';
+import { z } from 'zod';
+import { t, type Post } from './server.ts';
+interface Todo {
+  id: string;
+  title: string;
+  done: boolean;
+}
+type Feed<T> = AsyncIterable<TrackedEnvelope<LiveEvent<T, string>>>;
+declare function postFeed(): Feed<Post>;
+declare function todoFeed(input: { done: boolean }): Feed<Todo>;
+const appRouter = {
+  post: { live: t.procedure.subscription(() => postFeed()) },
+  todo: {
+    live: t.procedure
+      .input(z.object({ done: z.boolean() }))
+      .subscription((opts) => todoFeed(opts.input)),
+  },
+};
+export type AppRouter = typeof appRouter;
+// @filename: app.ts
+import { createCollection } from '@tanstack/db';
+import { liveCollectionOptions } from '@trpc12/experimental-tanstack-db';
+import { createTrpcClient, routerType, wsLink } from '@trpc12/trpc/client';
+import type { AppRouter } from './router.ts';
+declare const url: string;
+declare function getKey(row: { id: string }): string;
+// ---cut-end---
 const client = createTrpcClient({
   router: routerType<AppRouter>(),
   links: [wsLink({ url })],
@@ -65,12 +96,42 @@ createCollection(
 
 One subscription carries many live queries: `{ subs: { [id]: { feed, input } } }`. Its event ids are a JSON cursor `{ [id]: id }`, so a reconnect, or a reopen with a changed set, resumes each query from its own position.
 
-```ts
+```ts twoslash
+// ---cut-start---
+// @filename: router.ts
+import {
+  liveFeedsB as liveFeeds,
+  PooledInputB as PooledInput,
+  type LiveFeedB as LiveFeed,
+} from '../open/live-query-pooling.ts';
+import { t, type Post } from './server.ts';
+interface Todo {
+  id: string;
+  title: string;
+  done: boolean;
+}
+declare const postFeed: LiveFeed<{}, Post>;
+declare const todoFeed: LiveFeed<{ done?: boolean }, Todo>;
+// ---cut-end---
 // server
 const feeds = { posts: postFeed, todos: todoFeed };
 const router = {
   live: t.procedure.input(PooledInput).subscription(liveFeeds(feeds)),
 };
+// ---cut-start---
+export type { feeds, router };
+// @filename: app.ts
+import { createCollection } from '@tanstack/db';
+import { liveCollectionOptions } from '@trpc12/experimental-tanstack-db';
+import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import { createLivePoolB as createLivePool } from '../open/live-query-pooling.ts';
+import type { feeds, router } from './router.ts';
+const client = createTrpcClient({
+  router: routerType<typeof router>(),
+  links: [httpLink({ url: '/trpc' })],
+});
+declare function getKey(row: { id: string }): string;
+// ---cut-end---
 
 // client
 const pool = createLivePool<typeof feeds>((input, opts) =>
@@ -96,7 +157,11 @@ const done = createCollection(
 
 Subscriptions started in the same tick share one SSE response, with per-call ids and a composite `Last-Event-ID`, for any subscription.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { httpLinkC as httpLink } from '../open/live-query-pooling.ts';
+declare const url: string;
+// ---cut-end---
 httpLink({ url, batch: { subscriptions: true } });
 // GET /trpc/post.live,chat.onMessage?batch=1  ->  one text/event-stream
 ```

@@ -33,7 +33,7 @@ The human set three stages, as in v11: "experimental mean the feature might go a
 
 Everything stays `experimental_` for 0.1; features move one by one as their docs experiment is reviewed.
 
-```ts
+```ts twoslash
 import { experimental_contract } from '@trpc12/trpc/contract';
 import { experimental_createOpenApiHandler } from '@trpc12/trpc/openapi';
 import { experimental_createAction } from '@trpc12/trpc/actions';
@@ -47,7 +47,7 @@ import { experimental_createAction } from '@trpc12/trpc/actions';
 
 Nine exports in three features become `unstable_`: contracts, the core of OpenAPI, and actions' factory (full list in Details). Everything else stays `experimental_`.
 
-```ts
+```ts twoslash
 // before
 import {
   experimental_contract,
@@ -57,9 +57,9 @@ import { experimental_createOpenApiHandler } from '@trpc12/trpc/openapi';
 import { experimental_createAction } from '@trpc12/trpc/actions';
 
 // after (no alias: nothing has shipped)
-import { unstable_contract, unstable_toContract } from '@trpc12/trpc/contract';
-import { unstable_createOpenApiHandler } from '@trpc12/trpc/openapi';
-import { unstable_createAction } from '@trpc12/trpc/actions';
+// import { unstable_contract, unstable_toContract } from '@trpc12/trpc/contract';
+// import { unstable_createOpenApiHandler } from '@trpc12/trpc/openapi';
+// import { unstable_createAction } from '@trpc12/trpc/actions';
 ```
 
 - ✅ Each one has `(human)` answers on its shape (contracts Q9.1, `experimental_openApiLink` "V1", `experimental_openApiReference` Q18.5, actions Q15.2 and Q15.3)

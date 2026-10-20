@@ -30,14 +30,20 @@ links:
 
 `call()` on a subscription resolves to `Stream<Event, Errors>`, and the type says so.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { Effect, Stream } from 'effect';
+import { initTrpc } from '@trpc12/trpc/server';
+import { callA as call } from '../open/call-subscription-output.ts';
+const t = initTrpc();
+// ---cut-end---
 const onTick = t.procedure.subscription(async function* () {
-  yield 1;
-  yield 2;
+  yield* [1, 2];
 });
 
 // before: typed number, actually a Stream
 const ticks = await call(onTick, undefined);
+//    ^?
 // after: typed Stream<number, …>
 await Effect.runPromise(Stream.runForEach(ticks, (tick) => Effect.log(tick)));
 ```
@@ -50,15 +56,27 @@ await Effect.runPromise(Stream.runForEach(ticks, (tick) => Effect.log(tick)));
 
 `call()` turns the subscription's `Stream` into an `AsyncIterable` of events, typed so, as it does for a streamed query and as the router client does.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { initTrpc } from '@trpc12/trpc/server';
+import { callProcedure } from '@trpc12/trpc/extend';
+import { callB as call } from '../open/call-subscription-output.ts';
+const t = initTrpc();
+const onTick = t.procedure.subscription(async function* () {
+  yield* [1, 2];
+});
+declare const signal: AbortSignal;
+// ---cut-end---
 // before: typed number, actually a Stream
 // after:
 for await (const tick of await call(onTick, undefined)) {
   console.log(tick); // number
+  //          ^?
 }
 
 // Effect code gets the Stream from callProcedure (@trpc12/trpc/extend)
 const ticksEffect = callProcedure({
+  //  ^?
   procedure: onTick,
   path: '',
   ctx: {},

@@ -37,7 +37,27 @@ links:
 
 The input is validated, and the server turns it into a filter with `ctx`, so a client only picks among shapes the server allows.
 
-```ts
+```ts twoslash
+// ---cut-start---
+// @filename: router.ts
+import { type TrackedEnvelope } from '@trpc12/trpc/server';
+import type { LiveEvent } from '@trpc12/experimental-tanstack-db';
+import { z } from 'zod';
+import { t, type User } from './server.ts';
+export interface Todo {
+  id: string;
+  projectId: string;
+  title: string;
+  done: boolean;
+}
+declare const todos: { list(): Todo[] };
+declare function canRead(user: User | null, todo: Todo): boolean;
+/** Starts listening on the call, and yields the changes to rows `visible` accepts. */
+declare function listen(
+  signal: AbortSignal,
+  visible: (todo: Todo) => boolean,
+): AsyncIterable<TrackedEnvelope<LiveEvent<Todo, string>>>;
+// ---cut-end---
 const router = {
   todo: {
     live: t.procedure
@@ -52,6 +72,19 @@ const router = {
       }),
   },
 };
+// ---cut-start---
+export type Router = typeof router;
+// @filename: app.ts
+import { createCollection } from '@tanstack/db';
+import { liveCollectionOptions } from '@trpc12/experimental-tanstack-db';
+import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import type { Router } from './router.ts';
+const client = createTrpcClient({
+  router: routerType<Router>(),
+  links: [httpLink({ url: '/trpc' })],
+});
+declare const projectId: string;
+// ---cut-end---
 
 createCollection(
   liveCollectionOptions({
@@ -70,7 +103,42 @@ createCollection(
 
 Simple predicates (`eq` on fields the server allows) become the subscription's input, one subscription per loaded subset.
 
-```ts
+```ts twoslash
+// ---cut-start---
+// @filename: router.ts
+import type { TrackedEnvelope } from '@trpc12/trpc/server';
+import type { LiveEvent } from '@trpc12/experimental-tanstack-db';
+import { z } from 'zod';
+import { t } from './server.ts';
+interface Todo {
+  id: string;
+  projectId: string;
+  done: boolean;
+}
+declare function feed(input: {
+  projectId: string;
+  done?: boolean;
+}): AsyncIterable<TrackedEnvelope<LiveEvent<Todo, string>>>;
+export const router = {
+  todo: {
+    live: t.procedure
+      .input(z.object({ projectId: z.string(), done: z.boolean().optional() }))
+      .subscription((opts) => feed(opts.input)),
+  },
+};
+// @filename: app.ts
+import { createCollection } from '@tanstack/db';
+import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import {
+  liveCollectionOptionsB as liveCollectionOptions,
+  toInputB as toInput,
+} from '../open/live-query-row-selection.ts';
+import type { router } from './router.ts';
+const client = createTrpcClient({
+  router: routerType<typeof router>(),
+  links: [httpLink({ url: '/trpc' })],
+});
+// ---cut-end---
 createCollection(
   liveCollectionOptions({
     syncMode: 'on-demand',

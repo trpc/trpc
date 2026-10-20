@@ -30,10 +30,23 @@ The human asked that "the exported public apis should be prefixed". Built: value
 
 Types and methods keep plain names, tagged `experimental`. The 15 prefixed types lose the prefix to match.
 
-```ts
-import { experimental_lock, type LockOptions } from '@trpc12/trpc/middleware'; // was experimental_LockOptions
+```ts twoslash
+// ---cut-start---
+import type { MessagePort } from 'node:worker_threads';
+declare const parentPort: MessagePort;
+import { createFetchHandler } from '@trpc12/trpc/server';
+import { type LockOptionsA as LockOptions } from '../open/experimental-prefix-on-types-and-methods.ts';
+import { appRouter as router, t } from './server.ts';
+declare const contract: {};
+const handler = createFetchHandler({
+  router,
+  createContext: () => ({ user: null }),
+});
+// ---cut-end---
+import { experimental_lock } from '@trpc12/trpc/middleware';
 import { experimental_contract } from '@trpc12/trpc/contract';
 
+const lock: LockOptions = { ttl: '30 seconds' }; // was experimental_LockOptions, from '@trpc12/trpc/middleware'
 const impl = t.implement(contract); // experimental, not visible here
 handler.messagePort(parentPort);
 ```
@@ -45,12 +58,28 @@ handler.messagePort(parentPort);
 
 Experimental methods on stable objects get the prefix too; types stay plain, and the 15 prefixed ones lose it.
 
-```ts
+```ts twoslash
+// @errors: 2339
+// ---cut-start---
+import type { MessagePort } from 'node:worker_threads';
+declare const parentPort: MessagePort;
+import {
+  type FetchHandlerB as FetchHandler,
+  type LockOptionsB as LockOptions,
+  type TrpcRootB as TrpcRoot,
+} from '../open/experimental-prefix-on-types-and-methods.ts';
+import { t as root } from './server.ts';
+declare const contract: {};
+declare const t: TrpcRoot<typeof root>;
+declare const handler: FetchHandler;
+// ---cut-end---
 import { experimental_contract } from '@trpc12/trpc/contract';
-import { type LockOptions } from '@trpc12/trpc/middleware'; // was experimental_LockOptions
 
+const lock: LockOptions = { ttl: '30 seconds' }; // was experimental_LockOptions, from '@trpc12/trpc/middleware'
 const impl = t.experimental_implement(contract);
 handler.experimental_messagePort(parentPort);
+// Doesn't compile: the method carries the prefix now
+t.implement(contract);
 // promoting later: t.implement, with t.experimental_implement as `@deprecated Use implement`
 ```
 
@@ -62,12 +91,22 @@ handler.experimental_messagePort(parentPort);
 
 Every experimental type is prefixed too.
 
-```ts
+```ts twoslash
+// ---cut-start---
 import {
-  experimental_durableLink,
-  type experimental_DurableLinkOptions,
-} from '@trpc12/trpc/client';
-import { type experimental_ContractBuilder } from '@trpc12/trpc/contract';
+  type experimental_ContractBuilderC as experimental_ContractBuilder,
+  type experimental_DurableLinkOptionsC as experimental_DurableLinkOptions,
+  type TrpcRootC as TrpcRoot,
+} from '../open/experimental-prefix-on-types-and-methods.ts';
+import { t as root } from './server.ts';
+declare const contract: {};
+declare const t: TrpcRoot<typeof root>;
+// ---cut-end---
+import { experimental_durableLink } from '@trpc12/trpc/client';
+
+// the types from '@trpc12/trpc/client' and '@trpc12/trpc/contract'
+const durable: experimental_DurableLinkOptions = { retries: 3 };
+type Builder = experimental_ContractBuilder<any>;
 
 const impl = t.experimental_implement(contract);
 ```

@@ -28,7 +28,14 @@ Since the second pass, `dispose()` waits for the requests `fetch` is serving, st
 
 ### A) Keep it as it is: one budget under `websocket`
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { initTrpc } from '@trpc12/trpc/server';
+import { createFetchHandler } from '@trpc12/trpc/server';
+import { experimental_createOpenApiHandler } from '@trpc12/trpc/openapi';
+const t = initTrpc();
+const router = { health: t.procedure.query(() => 'ok') };
+// ---cut-end---
 const handler = createFetchHandler({
   router,
   websocket: { drainTimeout: '20 seconds' }, // sockets and HTTP requests
@@ -48,7 +55,13 @@ const openapi = experimental_createOpenApiHandler({
 
 A top-level `drainTimeout` covers the HTTP requests, 5 seconds by default; `websocket.drainTimeout` keeps covering the sockets, 10 seconds by default.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { initTrpc } from '@trpc12/trpc/server';
+import { createFetchHandlerB as createFetchHandler } from '../open/http-drain-timeout.ts';
+const t = initTrpc();
+const router = { health: t.procedure.query(() => 'ok') };
+// ---cut-end---
 const handler = createFetchHandler({
   router,
   drainTimeout: '5 seconds', // HTTP requests
@@ -65,8 +78,15 @@ const handler = createFetchHandler({
 
 `websocket.drainTimeout` moves to a top-level `drainTimeout`, the name the OpenAPI and v11 handlers already use, still 10 seconds and still for both. `drain()` and `serve()` default to it.
 
-```ts
-// before
+```ts twoslash
+// @errors: 2353
+// ---cut-start---
+import { initTrpc } from '@trpc12/trpc/server';
+import { createFetchHandlerC as createFetchHandler } from '../open/http-drain-timeout.ts';
+const t = initTrpc();
+const router = { health: t.procedure.query(() => 'ok') };
+// ---cut-end---
+// before: doesn't compile any more, the option moved up
 createFetchHandler({ router, websocket: { drainTimeout: '20 seconds' } });
 // after
 createFetchHandler({ router, drainTimeout: '20 seconds' });

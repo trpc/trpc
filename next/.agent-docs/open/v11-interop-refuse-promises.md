@@ -33,7 +33,20 @@ links:
 
 The JSON links get the settled value; async iterables still get v11's 415.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { initTrpc } from '@trpc12/trpc/server';
+const t = initTrpc();
+interface Comment {
+  id: string;
+  body: string;
+}
+// @trpc/client 11 isn't installed here: a stand-in for its client of this router
+declare const client: {
+  post: { query(): Promise<{ title: string; comments: Comment[] }> };
+};
+declare const db: { comments: { list(): Promise<Comment[]> } };
+// ---cut-end---
 const post = t.procedure.query(() => ({
   title: 'Hello',
   comments: db.comments.list(), // a Promise
@@ -52,7 +65,17 @@ await client.post.query(); // { title: 'Hello', comments: [...] }
 
 The JSON links get v11's error; only `httpBatchStreamLink` reads deferred values.
 
-```ts
+```ts twoslash
+// ---cut-start---
+interface Comment {
+  id: string;
+  body: string;
+}
+// @trpc/client 11 isn't installed here: a stand-in for its client of this router
+declare const client: {
+  post: { query(): Promise<{ title: string; comments: Comment[] }> };
+};
+// ---cut-end---
 // v11 app on httpBatchLink, through createV11Handler
 await client.post.query();
 // TRPCClientError: Cannot use stream-like response in non-streaming request - use httpBatchStreamLink
@@ -66,7 +89,12 @@ await client.post.query();
 
 Settle by default, or refuse with 415 when asked.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { createV11HandlerC as createV11Handler } from '../open/v11-interop-refuse-promises.ts';
+import { appRouter, type Context } from './server.ts';
+declare function createContext(): Context;
+// ---cut-end---
 const legacy = createV11Handler({
   router: appRouter,
   createContext,

@@ -22,17 +22,25 @@ links:
 
 ## Why it matters
 
-`lazy(() => import('./admin.ts'))` returns a `LazyRouter`, whose `~lazy` is a `LazyDef` with `loadEffect` (one `Effect.cached` load) and `load()` (`Effect.runPromise` of it). Since the second pass every caller in the package uses `loadEffect`, `resolveProcedure` or `loadRouter`; `load()` has none. `LazyDef` is `@internal` and not exported, but `LazyRouter` is public in `@trpc12/trpc/server` and carries it, so removing `load` changes a type in router declaration, which goes to the human first.
+`lazy(() => import('./admin.ts'))` returns a `LazyRouter`, whose `~lazy` is a `LazyDef` with `loadEffect` (one `Effect.cached` load) and `load()` (`Effect.runPromise` of it). Since the second pass every caller in the package uses `loadEffect`, `resolveProcedure` or `loadRouter`; `load()` has none. `LazyDef` is `@internal`, exported only from `@trpc12/trpc/internal` so declaration emit can name it, but `LazyRouter` is public in `@trpc12/trpc/server` and carries it, so removing `load` changes a type in router declaration, which goes to the human first.
 
 ## Options
 
 ### A) Keep `load()`
 
-```ts
+```ts twoslash
+// ---cut-start---
+// @filename: admin.ts
+import { t } from './server.ts';
+export default { stats: t.procedure.query(() => 42) };
+// @filename: app.ts
+import { lazy, loadRouter } from '@trpc12/trpc/server';
+// ---cut-end---
 const appRouter = { admin: lazy(() => import('./admin.ts')) };
 
 // still works, for code that reads the internal key
 const admin = await appRouter.admin['~lazy'].load();
+//    ^?
 // the public Promise path
 await loadRouter(appRouter);
 ```
@@ -44,12 +52,26 @@ await loadRouter(appRouter);
 
 `~lazy` keeps `loadEffect`, `meta` and `loaded`. Promise code loads with `loadRouter`.
 
-```ts
+```ts twoslash
+// @errors: 2339
+// ---cut-start---
+// @filename: admin.ts
+import { t } from './server.ts';
+export default { stats: t.procedure.query(() => 42) };
+// @filename: app.ts
+import { Effect } from 'effect';
+import {
+  lazyB as lazy,
+  loadRouterB as loadRouter,
+} from '../open/lazy-def-load.ts';
+// ---cut-end---
 const appRouter = { admin: lazy(() => import('./admin.ts')) };
 
 await loadRouter(appRouter); // loads every lazy subtree
 // or, from Effect code
-const admin = Effect.runPromise(appRouter.admin['~lazy'].loadEffect);
+const admin = await Effect.runPromise(appRouter.admin['~lazy'].loadEffect);
+// Doesn't compile any more: `~lazy` has no `load()`
+await appRouter.admin['~lazy'].load();
 ```
 
 - ✅ One way to load a subtree internally, the cached Effect

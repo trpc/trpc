@@ -35,7 +35,19 @@ A contract plus `t.implement()` is already as strict as `effect/rpc`'s `RpcGroup
 
 ### A) Keep it as it is: contracts list middleware errors
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { z } from 'zod';
+import { experimental_contract } from '@trpc12/trpc/contract';
+import { error, middleware } from '@trpc12/trpc/server';
+import { t, type Context } from './server.ts';
+const User = z.object({ id: z.string(), name: z.string() });
+const authed = middleware<{ ctx: Context }>()((opts) =>
+  opts.ctx.user
+    ? opts.next({ ctx: { user: opts.ctx.user } })
+    : error({ code: 'UNAUTHORIZED' }),
+);
+// ---cut-end---
 const c = experimental_contract.create().errors({ UNAUTHORIZED: {} });
 export const appContract = {
   me: c.output(User).query(),
@@ -55,7 +67,24 @@ export const router = impl.router({
 
 A contract names a middleware key ([`middleware-as-service.md`](./middleware-as-service.md)); its errors join the procedures', and `t.implement` makes the router require the key's implementation.
 
-```ts
+```ts twoslash
+// @errors: 2345
+// ---cut-start---
+import { z } from 'zod';
+import {
+  createFetchHandler,
+  initTrpc,
+  type inferRouterServices,
+} from '@trpc12/trpc/server';
+import {
+  AuthB as Auth,
+  AuthLiveB as AuthLive,
+  CurrentUserB as CurrentUser,
+  experimental_contractB as experimental_contract,
+} from '../open/contracts-declare-middleware.ts';
+const t = initTrpc();
+const User = z.object({ id: z.string(), name: z.string() });
+// ---cut-end---
 const c = experimental_contract.create();
 export const appContract = {
   me: c.use(Auth).output(User).query(), // errors: UNAUTHORIZED, from Auth's type
@@ -66,6 +95,11 @@ export const router = impl.router({
   me: impl.me.query(() => CurrentUser), // CurrentUser is provided
 });
 // inferRouterServices<typeof router> includes Auth: the handler's layer gives AuthLive
+type Services = inferRouterServices<typeof router>;
+//   ^?
+createFetchHandler({ router, layer: AuthLive });
+// Doesn't compile: the contract requires Auth, and nothing gives it
+createFetchHandler({ router });
 ```
 
 - ✅ A contract becomes a full `RpcGroup`: declared middleware gives typed client errors and documented auth (OpenAPI security from the key, later)

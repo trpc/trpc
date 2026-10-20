@@ -35,17 +35,47 @@ The human asked "can we get it as strict as Effect rpc somehow?". Much of it lan
 
 ### A) Keep it as it is: declarations bind when present; contracts for the rest
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { z } from 'zod';
+import { experimental_contract } from '@trpc12/trpc/contract';
+import { t, type Post as PostRow } from './server.ts';
+const ById = z.object({ id: z.string() });
+const Post = z.object({ id: z.string(), title: z.string() });
+declare function findPost(id: string): PostRow | undefined;
+declare function anything(): unknown;
+const c = experimental_contract.create();
+const appContract = {
+  post: {
+    byId: c
+      .input(ById)
+      .output(Post)
+      .errors({ NOT_FOUND: { data: ById } })
+      .query(),
+  },
+};
+// ---cut-end---
 const byId = t.procedure
   .input(ById)
   .output(Post)
   .errors({ NOT_FOUND: { data: ById } })
-  .query((opts) => findPost(opts.input.id) ?? opts.errors.NOT_FOUND({ data: opts.input }));
+  .query(
+    (opts) =>
+      findPost(opts.input.id) ?? opts.errors.NOT_FOUND({ data: opts.input }),
+  );
 
 t.procedure.query(() => anything()); // fine: no output or errors declared
 
 // all-required strictness: a contract and t.implement(contract)
-export const router = t.implement(appContract).router({ post: { byId: … } });
+const impl = t.implement(appContract);
+export const router = impl.router({
+  post: {
+    byId: impl.post.byId.query(
+      (opts) =>
+        findPost(opts.input.id) ?? opts.errors.NOT_FOUND({ data: opts.input }),
+    ),
+  },
+});
 ```
 
 - ✅ Built; one way per need (inferred, declared, or contract)
@@ -57,7 +87,27 @@ export const router = t.implement(appContract).router({ post: { byId: … } });
 
 An opt-in flag, inherited by everything built from it: `.output()` and `.errors()` are required, and middleware errors must be declared too.
 
-```ts
+```ts twoslash
+// @errors: 2322 2345
+// ---cut-start---
+import { z } from 'zod';
+import { error, middleware, TrpcError } from '@trpc12/trpc/server';
+import { strictableB } from '../open/strict-procedures.ts';
+import { t as root, type Context, type Post as PostRow } from './server.ts';
+const ById = z.object({ id: z.string() });
+const Post = z.object({ id: z.string(), title: z.string() });
+declare function findPost(id: string): PostRow | undefined;
+const authed = middleware<{ ctx: Context }>()((opts) =>
+  opts.ctx.user
+    ? opts.next({ ctx: { user: opts.ctx.user } })
+    : error({ code: 'UNAUTHORIZED' }),
+);
+const t = {
+  procedure: {
+    use: (mw: typeof authed) => strictableB(root.procedure.use(mw)),
+  },
+};
+// ---cut-end---
 const strict = t.procedure.use(authed).strict();
 
 export const byId = strict
@@ -69,10 +119,10 @@ export const byId = strict
       findPost(opts.input.id) ?? opts.errors.NOT_FOUND({ data: opts.input }),
   );
 
+// Doesn't compile: strict, so declare the output with .output()
 strict.query(() => 'x');
-//     ~~~~~ strict: declare the output with .output()
+// Doesn't compile: FORBIDDEN is not declared; add it with .errors()
 strict.output(Post).query(() => new TrpcError.Forbidden());
-//                         ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ FORBIDDEN is not declared; add it with .errors()
 ```
 
 - ✅ `effect/rpc`'s strictness without a contract file, per base procedure, so an app can make only its public API strict
@@ -84,9 +134,15 @@ strict.output(Post).query(() => new TrpcError.Forbidden());
 
 `initTrpc({ strict: true })` makes every procedure strict.
 
-```ts
+```ts twoslash
+// @errors: 2345
+// ---cut-start---
+import { initTrpcC as initTrpc } from '../open/strict-procedures.ts';
+type Ctx = { userId: string | null };
+// ---cut-end---
 const t = initTrpc<{ ctx: Ctx }>({ strict: true });
-t.procedure.query(() => 'x'); // error: declare the output with .output()
+// Doesn't compile: declare the output with .output()
+t.procedure.query(() => 'x');
 ```
 
 - ✅ One switch, no base procedure to remember

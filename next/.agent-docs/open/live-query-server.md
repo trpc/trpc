@@ -43,7 +43,32 @@ The client half shipped: `liveCollectionOptions` in `@trpc12/experimental-tansta
 
 The docs show a resolver that listens first, then yields the snapshot, with the app's own change feed and log.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import type { TrackedEnvelope } from '@trpc12/trpc/server';
+import type { LiveEvent } from '@trpc12/experimental-tanstack-db';
+import { t } from './server.ts';
+import { z } from 'zod';
+interface Post {
+  id: string;
+  title: string;
+  authorId: string;
+}
+const NewPost = z.object({
+  id: z.string(),
+  title: z.string(),
+  authorId: z.string(),
+});
+type PostChange = LiveEvent<Post, string>;
+declare const posts: { list(): Post[]; save(post: Post): void };
+declare function listen(
+  signal: AbortSignal,
+): AsyncIterable<TrackedEnvelope<PostChange>>;
+declare const log: {
+  since(id: string): TrackedEnvelope<PostChange>[] | undefined;
+};
+declare function publish(change: PostChange): string;
+// ---cut-end---
 const router = {
   post: {
     live: t.procedure.subscription(async function* (opts) {
@@ -70,7 +95,27 @@ const router = {
 
 `subscribe(channel, { snapshot })` subscribes first, then runs the snapshot read, and gives the snapshot the publisher's latest id. A resume the buffer still covers replays the missed events instead of a new snapshot.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { Effect } from 'effect';
+import type { LiveEvent } from '@trpc12/experimental-tanstack-db';
+import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
+import { experimental_PublisherB as experimental_Publisher } from '../open/live-query-server.ts';
+const t = initTrpc();
+import { z } from 'zod';
+interface Post {
+  id: string;
+  title: string;
+  authorId: string;
+}
+const NewPost = z.object({
+  id: z.string(),
+  title: z.string(),
+  authorId: z.string(),
+});
+type PostChange = LiveEvent<Post, string>;
+declare const posts: { list(): Post[]; save(post: Post): void };
+// ---cut-end---
 class PostEvents extends experimental_Publisher.Service<
   PostEvents,
   { changes: PostChange }
@@ -111,9 +156,31 @@ createFetchHandler({ router, layer: PostEvents.memory({ buffer: 100 }) });
 
 `Live.feed()` over a source interface with a contiguous version per source, a commit log, shapes and empty batches; a memory source ships, database sources are guides. This was the agent's earlier tentative pick.
 
-```ts
-import { Live } from '@trpc12/trpc/live';
-
+```ts twoslash
+// ---cut-start---
+import { Effect } from 'effect';
+import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
+import { LiveC as Live } from '../open/live-query-server.ts';
+import { z } from 'zod';
+interface Post {
+  id: string;
+  title: string;
+  authorId: string;
+}
+const NewPost = z.object({
+  id: z.string(),
+  title: z.string(),
+  authorId: z.string(),
+});
+const PostFilter = z.object({ authorId: z.string().optional() });
+declare function currentUser(): { id: string };
+const t = {
+  procedure: initTrpc().procedure.use((opts) =>
+    opts.next({ ctx: { user: currentUser() } }),
+  ),
+};
+// ---cut-end---
+// Live from '@trpc12/trpc/live'
 class Posts extends Live.Source<Posts, Post>()('Posts') {}
 
 const router = {
@@ -148,7 +215,39 @@ createFetchHandler({
 
 `t.procedure.live({ getKey, source })` is a query (the snapshot, for SSR) and a subscription (the changes) at once.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { createCollection } from '@tanstack/db';
+import type { QueryClient } from '@tanstack/react-query';
+import { initTrpc } from '@trpc12/trpc/server';
+import {
+  LiveC as Live,
+  liveableD,
+  type LiveOptionsProxyD,
+} from '../open/live-query-server.ts';
+import { z } from 'zod';
+interface Post {
+  id: string;
+  title: string;
+  authorId: string;
+}
+const NewPost = z.object({
+  id: z.string(),
+  title: z.string(),
+  authorId: z.string(),
+});
+const PostFilter = z.object({ authorId: z.string().optional() });
+const root = initTrpc<{ ctx: { user: { id: string } } }>();
+const t = {
+  procedure: {
+    input: (schema: typeof PostFilter) =>
+      liveableD(root.procedure.input(schema)),
+  },
+};
+class Posts extends Live.Source<Posts, Post>()('Posts') {}
+declare const queryClient: QueryClient;
+declare const trpc: LiveOptionsProxyD<typeof router>;
+// ---cut-end---
 const router = {
   post: {
     live: t.procedure.input(PostFilter).live({

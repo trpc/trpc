@@ -35,13 +35,48 @@ links:
 
 ## Why it matters
 
-The human asked for a real-time story on the TanStack DB page. Two ways shipped: changes from a subscription written into a query collection (no new API), and `liveCollectionOptions`, a collection synced by one subscription, in a new `@trpc12/experimental-tanstack-db` (about 230 lines, Effect inside, Promises outside). Where it lives decides whether `@tanstack/db`, still at 0.15, becomes anyone else's peer dependency, and whether we version a package against its releases.
+The human asked for a real-time story on the TanStack DB page. Two ways shipped: changes from a subscription written into a query collection (no new API), and `liveCollectionOptions`, a collection synced by one subscription, in a new `@trpc12/experimental-tanstack-db` (about 270 lines, Effect inside, Promises outside). Where it lives decides whether `@tanstack/db`, still at 0.15, becomes anyone else's peer dependency, and whether we version a package against its releases.
 
 ## Options
 
 ### A) Keep it as it is: its own experimental package
 
-```ts
+```ts twoslash
+// ---cut-start---
+// @filename: router.ts
+import { initTrpc, type TrackedEnvelope } from '@trpc12/trpc/server';
+import type { LiveEvent } from '@trpc12/experimental-tanstack-db';
+import { z } from 'zod';
+import type { Post } from './server.ts';
+const t = initTrpc();
+declare const posts: { list(): Post[]; save(post: Post): void };
+declare function listen(
+  signal: AbortSignal,
+): AsyncIterable<TrackedEnvelope<LiveEvent<Post, string>>>;
+declare function publish(change: LiveEvent<Post, string>): string;
+export const router = {
+  post: {
+    live: t.procedure.subscription(async function* (opts) {
+      const changes = listen(opts.signal);
+      yield { type: 'snapshot', rows: posts.list() } as const;
+      yield* changes;
+    }),
+    create: t.procedure
+      .input(z.object({ id: z.string(), title: z.string() }))
+      .mutation((opts) => {
+        posts.save(opts.input);
+        return { eventId: publish({ type: 'upsert', row: opts.input }) };
+      }),
+  },
+};
+// @filename: app.ts
+import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import type { router } from './router.ts';
+const client = createTrpcClient({
+  router: routerType<typeof router>(),
+  links: [httpLink({ url: '/trpc' })],
+});
+// ---cut-end---
 import { createCollection } from '@tanstack/db';
 import { liveCollectionOptions } from '@trpc12/experimental-tanstack-db';
 
@@ -65,7 +100,50 @@ const posts = createCollection(
 
 ### B) Drop the package; document only changes into a query collection
 
-```ts
+```ts twoslash
+// ---cut-start---
+// @filename: router.ts
+import { experimental_Publisher, initTrpc } from '@trpc12/trpc/server';
+import { Effect } from 'effect';
+import { z } from 'zod';
+import { db, type Post } from './server.ts';
+const t = initTrpc();
+type PostChange =
+  | { type: 'upsert'; row: Post }
+  | { type: 'delete'; key: string };
+class PostEvents extends experimental_Publisher.Service<
+  PostEvents,
+  { changes: PostChange }
+>()('PostEvents') {}
+export const router = {
+  post: {
+    list: t.procedure.query(() => db.post.list()),
+    changes: t.procedure.subscription((opts) =>
+      PostEvents.subscribe('changes', { lastEventId: opts.lastEventId }),
+    ),
+    create: t.procedure
+      .input(z.object({ title: z.string() }))
+      .mutation((opts) =>
+        Effect.gen(function* () {
+          const post = db.post.create(opts.input.title);
+          yield* PostEvents.publish('changes', { type: 'upsert', row: post });
+          return post;
+        }),
+      ),
+  },
+};
+// @filename: app.ts
+import type { QueryClient } from '@tanstack/react-query';
+import { createTrpcQueryUtils } from '@trpc12/tanstack-query';
+import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import type { router } from './router.ts';
+const client = createTrpcClient({
+  router: routerType<typeof router>(),
+  links: [httpLink({ url: '/trpc' })],
+});
+const trpc = createTrpcQueryUtils({ client });
+declare const queryClient: QueryClient;
+// ---cut-end---
 import { createCollection } from '@tanstack/db';
 import { queryCollectionOptions } from '@tanstack/query-db-collection';
 
@@ -101,11 +179,50 @@ import { liveCollectionOptions } from '@trpc12/tanstack-query';
 
 ### D) A method on the options proxy
 
-```ts
+```ts twoslash
+// ---cut-start---
+// @filename: router.ts
+import { initTrpc, type TrackedEnvelope } from '@trpc12/trpc/server';
+import type { LiveEvent } from '@trpc12/experimental-tanstack-db';
+import { z } from 'zod';
+import type { Post } from './server.ts';
+const t = initTrpc();
+declare const posts: { list(): Post[]; save(post: Post): void };
+declare function listen(
+  signal: AbortSignal,
+): AsyncIterable<TrackedEnvelope<LiveEvent<Post, string>>>;
+declare function publish(change: LiveEvent<Post, string>): string;
+export const router = {
+  post: {
+    live: t.procedure.subscription(async function* (opts) {
+      const changes = listen(opts.signal);
+      yield { type: 'snapshot', rows: posts.list() } as const;
+      yield* changes;
+    }),
+    create: t.procedure
+      .input(z.object({ id: z.string(), title: z.string() }))
+      .mutation((opts) => {
+        posts.save(opts.input);
+        return { eventId: publish({ type: 'upsert', row: opts.input }) };
+      }),
+  },
+};
+// @filename: app.ts
+import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import type { router } from './router.ts';
+const client = createTrpcClient({
+  router: routerType<typeof router>(),
+  links: [httpLink({ url: '/trpc' })],
+});
+import { createCollection } from '@tanstack/db';
+import { createOptionsProxyD as createOptionsProxy } from '../open/tanstack-db-live-package.ts';
+const trpc = createOptionsProxy({ client });
+// ---cut-end---
 const posts = createCollection(
   trpc.post.live.collectionOptions({
     input: undefined,
     getKey: (post) => post.id,
+    //       ^?
   }),
 );
 ```
