@@ -68,11 +68,13 @@ export const hiddenPaths: ReadonlyArray<string> = [
  * trpc.io's own site (the `www` Vercel project, built from `main`), for
  * what the site has no copy of: v11's API reference, under `/docs/typedoc`
  * (`onTrpcIo` in `build/old-routes.ts`). trpc.io until the cutover; then
- * the host that project keeps. `undefined` there fails the build, rather
- * than letting those URLs 404 or redirect to themselves.
+ * the host that project keeps: its production URL on Vercel, which says
+ * `noindex`, unless it gets a domain of its own. The build fails on
+ * `undefined` or the site's own URL, which would 404 those URLs or redirect
+ * them to themselves.
  */
 export const oldSite: { readonly url: string | undefined } = {
-  url: atTrpcIo ? undefined : trpcIo,
+  url: atTrpcIo ? 'https://www-trpc.vercel.app' : trpcIo,
 };
 
 /**

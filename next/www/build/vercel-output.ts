@@ -203,11 +203,18 @@ export const routes = (
     },
     src: `${docPath}$`,
   },
-  {
-    continue: true,
-    headers: { Link: `<${site.url}${v12.basePath}/$1>; rel="canonical"` },
-    src: `${docPath}\\.md$`,
-  },
+  // Hidden pages have no canonical link (`v12.hidden`).
+  ...(v12.hidden
+    ? []
+    : [
+        {
+          continue: true,
+          headers: {
+            Link: `<${site.url}${v12.basePath}/$1>; rel="canonical"`,
+          },
+          src: `${docPath}\\.md$`,
+        },
+      ]),
   { dest: '/index.md', has: acceptsMarkdown, src: '^/$' },
   {
     dest: `${v12.basePath}/$1.md`,
