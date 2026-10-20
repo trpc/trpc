@@ -7,10 +7,16 @@ import {
 } from '../internal/describe.ts';
 import { defaultTag, ERROR_STATUS } from '../internal/error.ts';
 import { toJsonSchema, type JsonSchema } from '../internal/json-schema.ts';
+import {
+  CONTENT_TYPE,
+  HEADER,
+  PROTOCOL_VERSION,
+} from '../internal/protocol.ts';
 import type {
   AnyProcedure,
   ProcedureInternals,
 } from '../server/procedures/index.ts';
+import { byteStreamPart } from '../server/validation/index.ts';
 import {
   propertySchema,
   normalizePrefix,
@@ -332,6 +338,14 @@ const rpcWrap = (schema: JsonSchema | undefined): Schema => ({
   required: ['json'],
 });
 
+/** An `experimental_byteStream()` input's body: the bytes themselves. */
+const byteStreamBody = () => ({
+  required: true,
+  content: {
+    [CONTENT_TYPE.octet]: { schema: { type: 'string', format: 'binary' } },
+  },
+});
+
 /**
  * A no-input mutation's body: `{}`. The RPC handler refuses a `POST` without
  * `content-type: application/json` (its CSRF guard), so it needs a JSON body.
@@ -503,6 +517,10 @@ export function generateDocument(
     .procedures) {
     if (opts.filter && !opts.filter({ path, procedure })) continue;
     const def = procedure['~trpc'];
+    const streamed = byteStreamPart(def.steps);
+    // RPC sends a byte stream only as the whole input, so a `body` one is
+    // REST's alone.
+    if (target === 'rpc' && streamed === 'body') continue;
     const scoped = scopedRoute(path, routeOf(def), scope);
     const route =
       target === 'rpc'
@@ -549,7 +567,14 @@ export function generateDocument(
       });
     };
 
-    if (target === 'rpc') {
+    let method = route.method;
+    if (target === 'rpc' && streamed === 'input') {
+      // `httpLink` posts a byte stream alone, queries too, and the RPC
+      // handler wants its version header with one.
+      method = 'POST';
+      param(HEADER.version, 'header', { const: PROTOCOL_VERSION }, true);
+      requestBody = byteStreamBody();
+    } else if (target === 'rpc') {
       // The RPC handler reads a GET's input only from `?input=`, JSON
       // encoded, as `httpLink` sends it (wire-protocol.md).
       if (usesQuery(route.method)) {
@@ -587,10 +612,10 @@ export function generateDocument(
       }
       const body = propertySchema(input, 'body');
       if (body !== undefined && !usesQuery(route.method)) {
-        requestBody = {
-          required: true,
-          content: bodyContent(body, components),
-        };
+        requestBody =
+          streamed === 'body'
+            ? byteStreamBody()
+            : { required: true, content: bodyContent(body, components) };
       }
     } else {
       for (const name of route.params) {
@@ -606,6 +631,8 @@ export function generateDocument(
           if (!route.params.includes(name))
             param(name, 'query', schema, required);
         }
+      } else if (streamed === 'input') {
+        requestBody = byteStreamBody();
       } else if (input) {
         const body = withoutProperties(input, route.params);
         const properties = (body as Schema)['properties'];
@@ -667,7 +694,7 @@ export function generateDocument(
     };
     const spec = target === 'openapi' ? r?.spec : undefined;
     const methods = (paths[route.path] ??= {});
-    methods[route.method.toLowerCase()] = (
+    methods[method.toLowerCase()] = (
       typeof spec === 'function'
         ? spec(operation as unknown as OperationSpec)
         : (spec ?? operation)

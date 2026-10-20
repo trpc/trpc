@@ -9,8 +9,11 @@ import {
 import {
   type AnyRouter,
   createFetchHandler,
+  experimental_byteStream,
   initTrpc,
+  type experimental_ByteStream,
 } from '@trpc12/trpc/server';
+import { Effect, Schema, Stream } from 'effect';
 import { expect, test } from 'vite-plus/test';
 import { z } from 'zod';
 
@@ -18,13 +21,22 @@ import { z } from 'zod';
 // can call the server with it. Each test below builds every request from the
 // generated document alone (a sample of each parameter's and body's schema,
 // encoded by OpenAPI's serialization rules) and calls the real handler. Every
-// procedure echoes its input, so the response must be a sample of the
-// documented success response.
+// procedure echoes its input (a byte stream as its text), so the response
+// must be a sample of the documented success response.
 
 const t = initTrpc().concat(experimental_openapi());
 
 const echo = <S extends z.ZodType>(schema: S) =>
   t.procedure.input(schema).output(schema);
+
+const text = (bytes: experimental_ByteStream) =>
+  bytes.pipe(
+    Stream.decodeText(),
+    Stream.runFold(
+      () => '',
+      (all, part) => all + part,
+    ),
+  );
 
 const Flat = z.object({
   text: z.string(),
@@ -67,6 +79,33 @@ const router = {
         yield opts.input;
       },
     ),
+  },
+  stream: {
+    upload: t.procedure
+      .input(experimental_byteStream())
+      .output(z.string())
+      .mutation((opts) => text(opts.input)),
+    put: t.procedure
+      .meta({
+        route: {
+          method: 'PUT',
+          path: '/uploads/{name}',
+          inputStructure: 'detailed',
+        },
+      })
+      .input(
+        Schema.Struct({
+          params: Schema.Struct({ name: Schema.String }),
+          body: experimental_byteStream(),
+        }),
+      )
+      .output(z.object({ name: z.string(), body: z.string() }))
+      .mutation((opts) =>
+        Effect.map(text(opts.input.body), (body) => ({
+          name: opts.input.params.name,
+          body,
+        })),
+      ),
   },
 } satisfies AnyRouter;
 
@@ -193,9 +232,15 @@ function toRequest(
       { schema: unknown }
     >;
     const [type, media] = Object.entries(content)[0]!;
-    expect(type).toBe('application/json');
     headers.set('content-type', type);
-    body = JSON.stringify(sample(media.schema, doc));
+    const value = sample(media.schema, doc);
+    if (type === 'application/octet-stream') {
+      expect(media.schema).toEqual({ type: 'string', format: 'binary' });
+      body = new TextEncoder().encode(String(value));
+    } else {
+      expect(type).toBe('application/json');
+      body = JSON.stringify(value);
+    }
   }
   const search = query.size > 0 ? `?${query}` : '';
   return new Request(`http://localhost${pathname}${search}`, {
@@ -250,6 +295,8 @@ const procedurePaths = Object.entries(router).flatMap(([group, procedures]) =>
 // can't describe for a scalar or deeply nested query input.
 const inRestDoc = (path: string) =>
   !['query.deep', 'query.scalar'].includes(path);
+// RPC sends a byte stream only as the whole input.
+const inRpcDoc = (path: string) => path !== 'stream.put';
 
 const info: OpenApiInfo = { title: 'Contract', version: '1.0.0' };
 const rpcDoc = experimental_generateOpenApi(router, { info, target: 'rpc' });
@@ -263,7 +310,7 @@ test('the contract documents describe every procedure', () => {
     operations(doc)
       .map((o) => o.op.operationId)
       .sort();
-  expect(ids(rpcDoc)).toEqual([...procedurePaths].sort());
+  expect(ids(rpcDoc)).toEqual(procedurePaths.filter(inRpcDoc).sort());
   expect(ids(restDoc)).toEqual(procedurePaths.filter(inRestDoc).sort());
 });
 

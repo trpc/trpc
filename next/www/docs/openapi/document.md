@@ -24,6 +24,8 @@ The document has schemas for input, output and each declared error. Each error's
 
 With `target: 'rpc'`, the document describes requests as `httpLink` sends them. A query or subscription is a `GET` with one `input` query parameter holding the input as JSON (`/trpc/post.byId?input={"id":"1"}`, URL-encoded; [Query URLs](../client/links/http.md#query-urls)). A mutation is a `POST` with an `application/json` body of `{ "json": input }`, or `{}` without an input. Responses are wrapped the same way, in `{ "json": … }`.
 
+An [`experimental_byteStream()`](../server/byte-streams.md#over-openapi) input, or a detailed input's `body` that is one, is an `application/octet-stream` body with the schema `{ type: 'string', format: 'binary' }`. `target: 'rpc'` documents it as a `POST` with the `trpc-version` header the RPC handler needs, and leaves out procedures whose stream is a detailed input's `body`, which only REST can send.
+
 ## Security and tags
 
 `components.securitySchemes` declares how clients authenticate, and `security` says which schemes every operation needs. Docs UIs show a login form for them, and generated clients attach the credentials ([Generating a client with Hey API](./hey-api.md)). A procedure's `route.spec` overrides it, with `security: []` for a public route. `tags` describes the tags routes use, in the order docs UIs list them.

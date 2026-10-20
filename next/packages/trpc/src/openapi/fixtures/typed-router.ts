@@ -1,5 +1,11 @@
-import { Effect, Schema } from 'effect';
-import { error, initTrpc, tracked, TrpcError } from '@trpc12/trpc/server';
+import { Effect, Schema, Stream } from 'effect';
+import {
+  error,
+  experimental_byteStream,
+  initTrpc,
+  tracked,
+  TrpcError,
+} from '@trpc12/trpc/server';
 import { z } from 'zod';
 import { experimental_openapi } from '@trpc12/trpc/openapi';
 
@@ -78,6 +84,21 @@ export const appRouter = {
           total: 0,
         }),
       ),
+    uploadCover: t.procedure
+      .meta({
+        route: {
+          method: 'PUT',
+          path: '/posts/{id}/cover',
+          inputStructure: 'detailed',
+        },
+      })
+      .input(
+        Schema.Struct({
+          params: Schema.Struct({ id: Schema.String }),
+          body: experimental_byteStream(),
+        }),
+      )
+      .mutation((opts) => Stream.runDrain(opts.input.body)),
     onCreated: t.procedure
       .meta({ route: { method: 'GET', path: '/posts/events' } })
       .subscription(async function* () {

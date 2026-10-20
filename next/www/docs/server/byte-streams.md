@@ -127,3 +127,5 @@ const uploadVideo = t.procedure
     ),
   );
 ```
+
+`experimental_generateOpenApi` and `experimental_generateOpenApiFromTypes` document the stream as an `application/octet-stream` body, `{ type: 'string', format: 'binary' }` ([The OpenAPI document](../openapi/document.md)), so generated clients send the bytes as they are.

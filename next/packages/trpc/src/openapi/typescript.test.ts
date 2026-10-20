@@ -154,6 +154,22 @@ test('runtime schemas win over types (21)', () => {
   );
 });
 
+test('both generators document a byte stream input as an application/octet-stream body', () => {
+  const runtime = experimental_generateOpenApi(appRouter, {
+    info: { title: 'Posts', version: '1.0.0' },
+  });
+  for (const generated of [doc, runtime]) {
+    expect(op(generated, 'put', '/api/posts/{id}/cover').requestBody).toEqual({
+      required: true,
+      content: {
+        'application/octet-stream': {
+          schema: { type: 'string', format: 'binary' },
+        },
+      },
+    });
+  }
+});
+
 test('experimental_openApiReference serves a document generated at build time (21)', async () => {
   const handler = HttpEffect.toWebHandler(
     experimental_openApiReference({ document: doc })(
