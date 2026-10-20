@@ -221,7 +221,7 @@ if (err?.code === 'POST_NOT_FOUND') {
 
 ## Details
 
-- Under A the types already follow the wire: `output: 'json'` declares `DecodedJsonForm`, whose `errorData` types errors' `data` as plain JSON ([error-data-form](../decisions/error-data-form.md)). B and C would declare `DansonForm` again.
+- Under A the types already follow the wire: `output: 'json'` declares `DecodedJsonForm`, whose `errorData` types errors' `data` as plain JSON ([error-data-form](../decisions/error-data-form.md)). B and C would drop `errorData`.
 - Undeclared errors (`UndeclaredError`, a thrown custom code from a procedure without `.errors()`) have no schema, so no option can check their `data`.
 - `experimental_validationLink`'s own output mismatch is `BAD_RESPONSE`, with the issues on `cause.issues` ([closed-client-errors](../decisions/closed-client-errors.md)); B would use the same for an error's `data`.
 - `offline` in the examples is the object of link-code handlers (`NETWORK_ERROR`, `BAD_RESPONSE`) the client errors docs spread into each `matchError()`.

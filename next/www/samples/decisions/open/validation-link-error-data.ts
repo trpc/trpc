@@ -5,10 +5,10 @@
  * link as it is.
  */
 import type { TrpcLink, ValidationLinkOptions } from '@trpc12/trpc/client';
-import type { DansonForm } from '@trpc12/trpc/serializer';
+import type { DansonForm, JsonForm } from '@trpc12/trpc/serializer';
 
 type DecodingLink = TrpcLink<{
-  form: DansonForm;
+  form: DansonForm & { readonly streamedOutput: JsonForm };
   builtinErrors: 'BAD_RESPONSE';
 }>;
 
