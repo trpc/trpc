@@ -30,7 +30,7 @@ Two spikes back this: [closed-error-unions](https://github.com/trpc/trpc/blob/2e
   - `PARSE_ERROR` covers a foreign response with an unmapped status, an undecodable body, `validationLink`'s output mismatch, and the server failing to parse a request.
   - A client calling a procedure the server lacks (a stale deploy) gets `NOT_FOUND` with `defined: false`. (It is now tagged `ProcedureNotFound`, on the wire too: [error-tags](../decisions/error-tags.md).)
   - There is no client-side timeout or offline code. (A call whose `signal` times out now fails with `TIMEOUT`: [client-timeout-error](../decisions/client-timeout-error.md).)
-- **Error data isn't checked on the client.** `validationLink` validates outputs only. `fromWireError` rebuilds every error as a plain `TrpcError`, so `instanceof PostNotFound` is false on the client.
+- **Error data isn't checked on the client.** `validationLink` validates outputs only. `fromWireError` rebuilds every error as a plain `TrpcError`, so `instanceof PostNotFound` is false on the client. (`experimental_validationLink` now decodes declared errors' `data`: [validation-link-error-data](../decisions/validation-link-error-data.md).)
 
 ## Goals
 
@@ -157,6 +157,8 @@ Human, 2026-10-20: C, later. A procedure the server lacks stays a built-in `NOT_
 
 - **A: `validationLink` checks defined errors' `data`** against the contract's error specs and rebuilds `TrpcError.Tagged` instances, so `instanceof PostNotFound` holds and rich `data` types come back.
 - **B: no.** The server already validates `data` before sending it.
+
+Human, 2026-10-20: left to the agent, who chose A without rebuilding classes, as oRPC does: the link decodes declared errors' `data`, and a mismatch is downgraded to undeclared. Rebuilding classes waits for the link to move to unstable ([validation-link-error-data](../decisions/validation-link-error-data.md)).
 
 ## Recommendation
 

@@ -47,7 +47,7 @@ Declared errors come back as typed `TrpcError`s, as they do over RPC.
 
 A `ReadableStream` input to an [`experimental_byteStream()`](../server/byte-streams.md#over-openapi) procedure, or one in a detailed input's `body`, is sent as the `application/octet-stream` body itself, while it's read. As with `httpLink`, browsers send stream bodies only over HTTP/2 and later ([Streaming back](../server/byte-streams.md#streaming-back)).
 
-REST responses are plain JSON, and the client types say so: a `createdAt: Date` output is a `string` through `experimental_openApiLink`. To get the types back, put `experimental_validationLink({ contract, output: 'json' })` in front: it decodes each result with the Effect Schema's JSON codec, and the client types those results as the schemas' types again. What it doesn't decode keeps its JSON types: errors' `data`, streamed outputs, and procedures without an output schema or outside `contract` ([Validating on the client](../client/validation.md)):
+REST responses are plain JSON, and the client types say so: a `createdAt: Date` output is a `string` through `experimental_openApiLink`. To get the types back, put `experimental_validationLink({ contract, output: 'json' })` in front: it decodes each result and each declared error's `data` with the Effect Schema's JSON codec, and the client types them as the schemas' types again. What it doesn't decode keeps its JSON types: streamed outputs, and procedures without an output schema or outside `contract` ([Validating on the client](../client/validation.md)):
 
 ```ts
 links: [

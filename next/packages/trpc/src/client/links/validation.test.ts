@@ -23,6 +23,7 @@ import { createEffectClient } from '@trpc12/trpc/effect';
 import { createUntypedClient } from '@trpc12/trpc/extend';
 import {
   type AnyRouter,
+  error,
   type inferRouterOutputs,
   initTrpc,
   stream,
@@ -163,20 +164,24 @@ test("output: 'json' decodes experimental_openApiLink's plain JSON into the sche
   await openapi.dispose();
 });
 
-test("output: 'json' types declared errors' data in its JSON form, as it arrives", async () => {
-  class PostGone extends TrpcError.Tagged('POST_GONE', {
-    status: 410,
-    data: Schema.Struct({ id: Schema.String, deletedAt: Schema.Date }),
-  }) {}
-  const gone = {
-    post: {
-      byId: c
-        .input(z.object({ id: z.string() }))
-        .output(Post)
-        .errors({ POST_GONE: PostGone })
-        .query(),
-    },
-  } satisfies AnyContractRouter;
+class PostGone extends TrpcError.Tagged('POST_GONE', {
+  status: 410,
+  data: Schema.Struct({ id: Schema.String, deletedAt: Schema.Date }),
+}) {}
+const gone = {
+  post: {
+    byId: c
+      .input(z.object({ id: z.string() }))
+      .output(Post)
+      .errors({
+        POST_GONE: PostGone,
+        NOT_FOUND: { data: Schema.Struct({ id: Schema.String }) },
+      })
+      .query(),
+  },
+} satisfies AnyContractRouter;
+
+test("output: 'json' decodes declared errors' data with their schemas, and types it so", async () => {
   const goneImpl = t.implement(gone);
   const goneRouter = goneImpl.router({
     post: {
@@ -196,21 +201,35 @@ test("output: 'json' types declared errors' data in its JSON form, as it arrives
   });
   const [, err] = await safe(client.post.byId.query({ id: '1' }));
   if (!err) throw new Error('expected an error');
+  expect(err).toMatchObject({ code: 'POST_GONE', defined: true });
+  expect(err).not.toBeInstanceOf(PostGone);
   const deletedAt = matchError(err, {
     NETWORK_ERROR: () => undefined,
     BAD_RESPONSE: () => undefined,
     BAD_REQUEST: () => undefined,
+    NOT_FOUND: () => undefined,
     POST_GONE: (e) => e.data.deletedAt,
     unexpected: () => undefined,
   });
-  expect(deletedAt).toBe(at.toISOString());
-  expectTypeOf(deletedAt).toEqualTypeOf<string | undefined>();
+  expect(deletedAt).toBeInstanceOf(Date);
+  expect(deletedAt).toEqual(at);
+  expectTypeOf(deletedAt).toEqualTypeOf<Date | undefined>();
 
   const [, safeErr] = await createSafeClient(client).post.byId.query({
     id: '1',
   });
   if (safeErr?.code !== 'POST_GONE') throw safeErr;
-  expectTypeOf(safeErr.data.deletedAt).toEqualTypeOf<string>();
+  expect(safeErr.data.deletedAt).toEqual(at);
+  expectTypeOf(safeErr.data.deletedAt).toEqualTypeOf<Date>();
+
+  const plain = createTrpcClient({
+    router: gone,
+    links: [httpLink({ url: http.url })],
+  });
+  const [, plainErr] = await safe(plain.post.byId.query({ id: '1' }));
+  if (plainErr?.code !== 'POST_GONE') throw new Error('expected POST_GONE');
+  expect(plainErr.data.deletedAt).toBe(at.toISOString());
+  expectTypeOf(plainErr.data.deletedAt).toEqualTypeOf<string>();
 
   const effectClient = createEffectClient({
     router: gone,
@@ -223,8 +242,8 @@ test("output: 'json' types declared errors' data in its JSON form, as it arrives
     Effect.flip(effectClient.post.byId.query({ id: '1' })),
   );
   if (failed.code !== 'POST_GONE') throw failed;
-  expect(failed.data.deletedAt).toBe(at.toISOString());
-  expectTypeOf(failed.data.deletedAt).toEqualTypeOf<string>();
+  expect(failed.data.deletedAt).toEqual(at);
+  expectTypeOf(failed.data.deletedAt).toEqualTypeOf<Date>();
 
   await using danson = await createTestServer({
     router: goneRouter,
@@ -241,6 +260,92 @@ test("output: 'json' types declared errors' data in its JSON form, as it arrives
   if (keptErr?.code !== 'POST_GONE') throw new Error('expected POST_GONE');
   expect(keptErr.data.deletedAt).toEqual(at);
   expectTypeOf(keptErr.data.deletedAt).toEqualTypeOf<Date>();
+});
+
+test("a declared error whose data fails its schema arrives undeclared, as oRPC's response validation does, not as BAD_RESPONSE", async () => {
+  const p = initTrpc();
+  await using http = await createTestServer({
+    router: {
+      post: {
+        byId: p.procedure.input(z.object({ id: z.string() })).query((opts) =>
+          opts.input.id === 'gone'
+            ? error({
+                code: 'POST_GONE',
+                data: { id: 'gone', deletedAt: 'not a date' },
+              })
+            : error({ code: 'NOT_FOUND', data: { id: 404 } }),
+        ),
+      },
+    },
+  });
+  const client = createTrpcClient({
+    router: gone,
+    links: [
+      experimental_validationLink({ contract: gone, output: 'json' }),
+      httpLink({ url: http.url }),
+    ],
+  });
+
+  const [, custom] = await safe(client.post.byId.query({ id: 'gone' }));
+  expect(custom).toBeInstanceOf(TrpcError);
+  expect(custom).toMatchObject({
+    code: 'POST_GONE',
+    defined: false,
+    data: { id: 'gone', deletedAt: 'not a date' },
+  });
+  if (!custom) throw new Error('expected an error');
+  expect(
+    matchError(custom, {
+      NETWORK_ERROR: () => 'offline',
+      BAD_RESPONSE: () => 'bad response',
+      BAD_REQUEST: () => 'bad request',
+      NOT_FOUND: () => 'not found',
+      POST_GONE: () => 'gone',
+      unexpected: (e) => `unexpected ${e.code}`,
+    }),
+  ).toBe('unexpected POST_GONE');
+
+  const [, builtin] = await safe(client.post.byId.query({ id: '1' }));
+  if (!builtin) throw new Error('expected an error');
+  expect(builtin).toMatchObject({ code: 'NOT_FOUND', defined: false });
+  expect(builtin.data).toBeUndefined();
+  expect((builtin.cause as { data: unknown }).data).toEqual({ id: 404 });
+});
+
+test('undeclared errors pass through untouched', async () => {
+  const p = initTrpc();
+  const thrown = new TrpcError({
+    code: 'LEGACY',
+    data: { at: 'not a date' },
+  });
+  await using http = await createTestServer({
+    router: {
+      post: {
+        byId: p.procedure.input(z.object({ id: z.string() })).query(() => {
+          throw thrown;
+        }),
+      },
+    },
+  });
+  const clientOf = (validate: boolean) =>
+    createTrpcClient({
+      router: gone,
+      links: validate
+        ? [
+            experimental_validationLink({ contract: gone, output: 'json' }),
+            httpLink({ url: http.url }),
+          ]
+        : [httpLink({ url: http.url })],
+    });
+  const [, through] = await safe(clientOf(true).post.byId.query({ id: '1' }));
+  const [, direct] = await safe(clientOf(false).post.byId.query({ id: '1' }));
+  expect(through).toMatchObject({
+    code: 'LEGACY',
+    defined: false,
+    data: { at: 'not a date' },
+  });
+  expect(through).toEqual(direct);
+  expect(Object.getPrototypeOf(through)).toBe(Object.getPrototypeOf(direct));
 });
 
 test("output: 'json' types a streamed output's items in their JSON form, as they arrive, and subscription events decoded", async () => {

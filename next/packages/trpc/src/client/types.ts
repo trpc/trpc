@@ -24,8 +24,7 @@ import type { AnyLink, DeclContext, TrpcLink } from './link.ts';
 
 /**
  * An error's `data` as it arrives under a serializer's form, like outputs:
- * its JSON form unless the serializer keeps the types; in a
- * {@link DecodedResultForm}, the links' form. Input validation
+ * its JSON form unless the serializer keeps the types. Input validation
  * issues are JSON already, so they keep theirs.
  * @since 0.1.0
  * @stability stable
@@ -34,9 +33,7 @@ export type ErrorData<
   D,
   F extends OutputForm = DansonForm,
 > = F['streaming'] extends true
-  ? F extends { readonly errorData: infer E extends OutputForm }
-    ? ErrorData<D, E>
-    : D
+  ? D
   : unknown extends D
     ? D
     : '~issues' extends keyof D
@@ -513,30 +510,15 @@ export type Decodes<TLinks extends ChainTypes> = TLinks extends {
   : never;
 
 /**
- * The form of a result a link decoded with its schema
- * (`experimental_validationLink` with `output: 'json'`): the schema's
- * types. Errors' `data` isn't decoded, so it keeps the links' form `E`.
- * @internal
- */
-export interface DecodedResultForm<E extends OutputForm> extends DansonForm {
-  readonly errorData: E;
-}
-
-/** {@link DecodedResultForm} over plain JSON, the common case: a generic one costs every call more. @internal */
-export interface DecodedJsonResultForm extends DansonForm {
-  readonly errorData: JsonForm;
-}
-
-/**
- * The form of a decoded result on a chain whose links' form is `F`; a
- * form that keeps every type already has the schemas' types.
+ * The form of a procedure's results and declared errors' `data` that a
+ * link decoded with their schemas (`experimental_validationLink` with
+ * `output: 'json'`) on a chain whose links' form is `F`: the schemas'
+ * types. A form that keeps every type already has them.
  * @internal
  */
 export type DecodedFormOf<F extends OutputForm> = F['streaming'] extends true
   ? F
-  : [F] extends [JsonForm]
-    ? DecodedJsonResultForm
-    : DecodedResultForm<F>;
+  : DansonForm;
 
 /**
  * The form procedure `P`'s results arrive in on a chain whose links decode

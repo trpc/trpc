@@ -1,6 +1,14 @@
 import { Effect, Schema, Stream } from 'effect';
-import { TrpcError } from '../../internal/error.ts';
+import {
+  type AnyTrpcError,
+  statusOf,
+  toUntypedError,
+  TrpcError,
+  withDefined,
+  withStatusHint,
+} from '../../internal/error.ts';
 import type {
+  ErrorMap,
   ProcedureInternals,
   Step,
 } from '../../server/procedures/index.ts';
@@ -25,11 +33,13 @@ export interface ValidationLinkOptions {
   /** Validate inputs before sending. @default true */
   input?: boolean;
   /**
-   * Validate results. `'json'` decodes plain JSON results (`httpLink`'s
-   * default serializer, `experimental_openApiLink`) with the Effect Schema's JSON codec,
-   * so `Date`s, `bigint`s and classes come back as their types. Only
-   * results it checks are typed so; errors' `data`, streamed (`stream()`)
-   * outputs and unchecked results stay plain JSON.
+   * Validate results, and the `data` of the declared errors of procedures
+   * whose results it checks. `'json'` decodes plain JSON results and
+   * error `data` (`httpLink`'s default serializer,
+   * `experimental_openApiLink`) with the Effect Schema's JSON codec, so
+   * `Date`s, `bigint`s and classes come back as their types. Only values
+   * it checks are typed so; streamed (`stream()`) outputs and unchecked
+   * results stay plain JSON.
    * @default true
    */
   output?: boolean | 'json';
@@ -79,6 +89,43 @@ const receiving = (schema: AnySchema, json: boolean): AnySchema =>
       : Schema.toType(schema)
     : schema;
 
+/**
+ * `err` with its `data` decoded by its declared code's schema. A declared
+ * error whose `data` doesn't decode becomes undeclared, as a server that
+ * didn't declare it would send it: a custom code keeps its `data` untyped,
+ * a built-in code loses it.
+ */
+const declaredError = (
+  errors: ErrorMap,
+  err: AnyTrpcError,
+  json: boolean,
+): Effect.Effect<never, AnyTrpcError> => {
+  const schema = Object.hasOwn(errors, err.code)
+    ? errors[err.code]?.data
+    : undefined;
+  if (!err.defined || !schema) return Effect.fail(err);
+  return validate(receiving(schema, json), err.data, () => err).pipe(
+    Effect.matchEffect({
+      onFailure: () => Effect.fail(toUntypedError(withDefined(err, false))),
+      onSuccess: (data) =>
+        Effect.fail(
+          data === err.data
+            ? err
+            : withStatusHint(
+                new TrpcError({
+                  code: err.code,
+                  message: err.message,
+                  data,
+                  defined: true,
+                  cause: err.cause,
+                }),
+                statusOf(err),
+              ),
+        ),
+    }),
+  );
+};
+
 const isEnvelope = (value: unknown): value is { id: string; data: unknown } =>
   typeof value === 'object' &&
   value !== null &&
@@ -91,13 +138,16 @@ const isEnvelope = (value: unknown): value is { id: string; data: unknown } =>
  * they are sent (failing with the same `BAD_REQUEST` the server would), and
  * results and subscription events after they arrive (`BAD_RESPONSE`). Results
  * are checked against the output's type side, so Effect Schema
- * transformations don't run twice. Inputs from functions (context-aware) and
- * streamed (`stream()`) outputs are not checked. Paths the contract doesn't
- * have pass through. With `output: 'json'` the client types the results
- * it decodes (`contract`'s procedures with an output schema that
- * validates) as the schemas' types again, not the JSON form plain-JSON
- * links declare; everything else, errors' `data` and streamed outputs
- * included, keeps its JSON form.
+ * transformations don't run twice. The same procedures' declared errors
+ * have their `data` checked by their schemas; one whose `data` doesn't
+ * match arrives undeclared (`defined: false`), as oRPC's response
+ * validation does, rather than failing the call. Inputs from functions
+ * (context-aware) and streamed (`stream()`) outputs are not checked. Paths
+ * the contract doesn't have pass through. With `output: 'json'` the client
+ * types what it decodes (results and declared errors' `data` of
+ * `contract`'s procedures with an output schema that validates) as the
+ * schemas' types again, not the JSON form plain-JSON links declare;
+ * everything else, streamed outputs included, keeps its JSON form.
  *
  * @example
  * ```ts
@@ -131,11 +181,24 @@ export function experimental_validationLink(
             (schema) => validate(schema, op.input, inputError),
             { discard: true },
           );
-    const result = Stream.unwrap(Effect.as(checkInput, args.next(op)));
     const output =
       opts.output === false || def.validateOutput === false
         ? undefined
         : def.output;
+    const checksResults =
+      output !== undefined &&
+      (op.type === 'subscription' || !isStreamSchema(output));
+    const received = args.next(op);
+    const result = Stream.unwrap(
+      Effect.as(
+        checkInput,
+        checksResults
+          ? Stream.catch(received, (err) =>
+              Stream.fromEffect(declaredError(def.errors, err, json)),
+            )
+          : received,
+      ),
+    );
     if (!output) return result;
     if (op.type !== 'subscription') {
       if (isStreamSchema(output)) return result;
