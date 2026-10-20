@@ -248,24 +248,29 @@ test('regression #6188: empty array first, and varying tuple lengths', async () 
 // the readonly-array overload must keep accepting readonly query options
 test('regression #6188: readonly query options are still accepted', async () => {
   const { client, App } = ctx;
-  const text = 'Bob';
 
   function MyComponent() {
-    const results = client.useQueries((t) => {
-      const one = t.foo();
-      const roTuple = [one] as const;
-      const roArray: readonly (typeof one)[] = [one];
-
-      const fromTuple = client.useQueries(() => roTuple);
-      const fromArray = client.useQueries(() => roArray);
-
-      expectTypeOf(fromTuple[0]!.data).toEqualTypeOf<'foo' | undefined>();
-      expectTypeOf(fromArray[0]!.data).toEqualTypeOf<'foo' | undefined>();
-
+    const fromTuple = client.useQueries((t) => {
+      const roTuple = [t.foo()] as const;
       return roTuple;
     });
+    const fromArray = client.useQueries((t) => {
+      const one = t.foo();
+      const roArray: readonly (typeof one)[] = [one];
+      return roArray;
+    });
 
-    return <pre>{JSON.stringify(results[0]?.data ?? 'n/a', null, 4)}</pre>;
+    expectTypeOf(fromTuple[0]!.data).toEqualTypeOf<'foo' | undefined>();
+    expectTypeOf(fromArray[0]!.data).toEqualTypeOf<'foo' | undefined>();
+
+    return (
+      <pre>
+        {JSON.stringify({
+          fromTuple: fromTuple.map((v) => v.data),
+          fromArray: fromArray.map((v) => v.data),
+        })}
+      </pre>
+    );
   }
 
   const utils = render(
@@ -274,7 +279,9 @@ test('regression #6188: readonly query options are still accepted', async () => 
     </App>,
   );
   await vi.waitFor(() => {
-    expect(utils.container).toHaveTextContent('foo');
+    expect(utils.container).toHaveTextContent(
+      '{"fromTuple":["foo"],"fromArray":["foo"]}',
+    );
   });
 });
 
