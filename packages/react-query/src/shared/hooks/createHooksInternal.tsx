@@ -35,13 +35,17 @@ import {
   useHookResult,
 } from '../../internals/trpcResult';
 import type {
+  QueriesResults,
   TRPCUseQueries,
   TRPCUseSuspenseQueries,
   UseQueryOptionsForUseQueries,
   UseQueryOptionsForUseSuspenseQueries,
 } from '../../internals/useQueries';
 import { createUtilityFunctions } from '../../utils/createUtilityFunctions';
-import type { UseSuspenseQueriesProcedureRecord } from '../proxy/useQueriesProxy';
+import type {
+  UseQueriesProcedureRecord,
+  UseSuspenseQueriesProcedureRecord,
+} from '../proxy/useQueriesProxy';
 import { createUseQueries } from '../proxy/useQueriesProxy';
 import type { CreateTRPCReactOptions, UseMutationOverride } from '../types';
 import type {
@@ -701,9 +705,18 @@ export function createRootHooks<
 
   const useQueries: TRPCUseQueries<TRouter> = (
     queriesCallback: (
-      t: any,
+      t: UseQueriesProcedureRecord<
+        TRouter['_def']['_config']['$types'],
+        TRouter['_def']['record']
+      >,
     ) => readonly UseQueryOptionsForUseQueries<any, any, any, any>[],
-    options?: { combine?: (results: any) => any },
+    options?: {
+      combine?: (
+        results: QueriesResults<
+          UseQueryOptionsForUseQueries<any, any, any, any>[]
+        >,
+      ) => unknown;
+    },
   ) => {
     const { ssrState, queryClient, prefetchQuery, client } = useContext();
 
