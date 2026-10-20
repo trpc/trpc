@@ -1,6 +1,6 @@
 import { describe, expect, it } from '@effect/vitest';
 
-import { decisions, hiddenPaths } from '../src/site.ts';
+import { decisions, hiddenPaths, unindexedPaths } from '../src/site.ts';
 import type { VercelRoute } from './old-routes.ts';
 import {
   hiddenPathProblems,
@@ -8,6 +8,8 @@ import {
   hiddenRouteProblems,
   isNoindex,
   robotsTxt,
+  unindexedPathProblems,
+  unindexedRoute,
 } from './hidden-paths.ts';
 import { noindexRoute, routes } from './vercel-output.ts';
 
@@ -262,6 +264,76 @@ describe('hiddenRoute', () => {
     expect(src.test('/v12/decisions/open/q')).toBe(true);
     expect(src.test('/v12/decisionsx')).toBe(false);
     expect(src.test('/v12/docs/a')).toBe(false);
+  });
+});
+
+describe('unindexedPathProblems', () => {
+  const trpcIoProduction = [noindexRoute('https://trpc.io', 'production')];
+  const pages = new Map([
+    ['v12/docs/a/index.html', '<meta content="noindex" name="robots"/>'],
+    [
+      'v12/decisions/index.html',
+      '<meta name="robots" content="noindex, nofollow">',
+    ],
+    ['docs/a/index.html', ''],
+    [
+      'sitemap.xml',
+      '<urlset><url><loc>https://trpc.io/docs/a</loc></url></urlset>',
+    ],
+  ]);
+
+  it('passes the routes the site writes, on trpc.io and v12.trpc.io, hidden or not', () => {
+    for (const noindex of [undefined, trpcIoProduction]) {
+      for (const hidden of [
+        [],
+        ['/v12/decisions'],
+        ['/v12/decisions', '/v12/docs'],
+      ]) {
+        expect(
+          unindexedPathProblems(
+            '/v12',
+            pages,
+            routes('getting-started', [], noindex, hidden, ['/v12']),
+          ),
+        ).toEqual([]);
+      }
+    }
+  });
+
+  it('is every path under /v12 until v12Indexable flips', () => {
+    expect(unindexedPaths).toEqual(['/v12']);
+  });
+
+  it('fails on trpc.io, unhidden, without the route', () => {
+    expect(
+      unindexedPathProblems(
+        '/v12',
+        pages,
+        routes('getting-started', [], trpcIoProduction, [], []),
+      ),
+    ).toEqual([
+      "/v12: isn't answered with X-Robots-Tag: noindex",
+      "/v12/a: isn't answered with X-Robots-Tag: noindex",
+      "/v12/a.md: isn't answered with X-Robots-Tag: noindex",
+      "/v12/docs/a: isn't answered with X-Robots-Tag: noindex",
+    ]);
+  });
+
+  it('fails on a page there without noindex, and on the sitemap listing one', () => {
+    const indexed = new Map([
+      ['v12/docs/a/index.html', '<meta content="index" name="robots"/>'],
+      ['v12/docs/b.md', ''],
+      [
+        'sitemap.xml',
+        '<urlset><url><loc>https://trpc.io/v12/docs/a</loc></url></urlset>',
+      ],
+    ]);
+    expect(
+      unindexedPathProblems('/v12', indexed, [unindexedRoute('/v12')]),
+    ).toEqual([
+      'v12/docs/a/index.html: has no noindex robots meta tag',
+      'sitemap.xml: lists /v12',
+    ]);
   });
 });
 

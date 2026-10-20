@@ -58,6 +58,23 @@ export const v12 = {
  */
 export const decisions = { basePath: '/v12/decisions' } as const;
 
+/**
+ * Whether search engines may index anything under `/v12` (v12's docs and
+ * the decisions pages), on every host: trpc.io and v12.trpc.io alike.
+ * `false` until v12's first npm release; flip it then, with `v12.hidden`.
+ * Until then, every response under `/v12` says `X-Robots-Tag: noindex`,
+ * every page there has a `noindex` robots meta tag, and none is in the
+ * sitemap, whether v12 is hidden or not (`unindexedPathProblems` in
+ * `build/hidden-paths.ts` fails the build otherwise). `site.test.ts` fails
+ * if it flips while `@trpc12/trpc` is private, so not on npm.
+ */
+export const v12Indexable: boolean = false;
+
+/** The paths no search engine may index, on any host (`v12Indexable`). */
+export const unindexedPaths: ReadonlyArray<string> = v12Indexable
+  ? []
+  : ['/v12'];
+
 /** The paths served only to whoever has a link (`build/hidden-paths.ts`). */
 export const hiddenPaths: ReadonlyArray<string> = [
   decisions.basePath,

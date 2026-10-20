@@ -36,6 +36,7 @@ import {
   sections,
   site,
   v12,
+  v12Indexable,
 } from './src/site.ts';
 import { sponsorPage } from './src/sponsors.ts';
 import v9Sections from './v9/sections.json' with { type: 'json' };
@@ -245,9 +246,9 @@ export default defineConfig({
         ...pages.map((page) => ({
           path: page.path,
           // An experiment's page is `noindex`, and every page while v12 is
-          // hidden.
+          // hidden or unindexed.
           sitemap:
-            page.experiment === undefined && !v12.hidden
+            page.experiment === undefined && !v12.hidden && v12Indexable
               ? {
                   changefreq: 'weekly' as const,
                   lastmod: page.lastModified,

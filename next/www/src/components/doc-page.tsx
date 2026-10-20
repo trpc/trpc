@@ -45,7 +45,7 @@ import {
   pageHead,
   trpcPageUrl,
 } from '~/seo.ts';
-import { atTrpcIo, site, v11, v12 } from '~/site.ts';
+import { atTrpcIo, site, v11, v12, v12Indexable } from '~/site.ts';
 import { partners } from '~/sponsors.ts';
 
 export function DocsLayout() {
@@ -139,7 +139,7 @@ export function docHead(version: DocsVersion, slug: string) {
     description,
     hidden: v12.hidden,
     markdownPath: `${path}.md`,
-    noindex: meta.experiment !== undefined,
+    noindex: meta.experiment !== undefined || !v12Indexable,
     path,
     structuredData: [
       {

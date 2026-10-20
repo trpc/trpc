@@ -108,6 +108,33 @@ export function hiddenPathProblems(
 }
 
 /**
+ * The `X-Robots-Tag` `routes` answer `pathname` with on every host, as the
+ * last word on it, before the files are served.
+ */
+function robotsTagAt(routes: ReadonlyArray<VercelRoute>, pathname: string) {
+  const filesAt = routes.findIndex((route) => route.handle === 'filesystem');
+  const before = filesAt === -1 ? routes : routes.slice(0, filesAt);
+  return before
+    .flatMap((route) =>
+      route.continue === true &&
+      route.has === undefined &&
+      route.missing === undefined &&
+      route.src !== undefined &&
+      route.headers?.['X-Robots-Tag'] !== undefined &&
+      new RegExp(route.src, 'i').test(pathname)
+        ? [route.headers['X-Robots-Tag']]
+        : [],
+    )
+    .at(-1);
+}
+
+const samplePaths = (basePath: string) => [
+  basePath,
+  `${basePath}/a`,
+  `${basePath}/a.md`,
+];
+
+/**
  * The hidden paths whose responses `routes` don't all answer with
  * `X-Robots-Tag: noindex, nofollow`, as the last word on it, before the
  * files are served.
@@ -116,25 +143,57 @@ export function hiddenRouteProblems(
   routes: ReadonlyArray<VercelRoute>,
   basePaths: ReadonlyArray<string>,
 ): ReadonlyArray<string> {
-  const filesAt = routes.findIndex((route) => route.handle === 'filesystem');
-  const before = filesAt === -1 ? routes : routes.slice(0, filesAt);
   return basePaths.flatMap((basePath) =>
-    [basePath, `${basePath}/a`, `${basePath}/a.md`].flatMap((pathname) => {
-      const tags = before.flatMap((route) =>
-        route.continue === true &&
-        route.has === undefined &&
-        route.missing === undefined &&
-        route.src !== undefined &&
-        route.headers?.['X-Robots-Tag'] !== undefined &&
-        new RegExp(route.src, 'i').test(pathname)
-          ? [route.headers['X-Robots-Tag']]
-          : [],
-      );
-      return tags.at(-1) === hiddenHeaders['X-Robots-Tag']
+    samplePaths(basePath).flatMap((pathname) =>
+      robotsTagAt(routes, pathname) === hiddenHeaders['X-Robots-Tag']
         ? []
-        : [`${pathname}: isn't answered with X-Robots-Tag: noindex, nofollow`];
-    }),
+        : [`${pathname}: isn't answered with X-Robots-Tag: noindex, nofollow`],
+    ),
   );
+}
+
+/** `X-Robots-Tag: noindex` on the path and under it, whatever the host. */
+export const unindexedRoute = (basePath: string): VercelRoute => ({
+  continue: true,
+  headers: { 'X-Robots-Tag': 'noindex' },
+  src: `^${escapeRegExp(basePath)}(?:/.*)?$`,
+});
+
+/**
+ * What lets search engines index an unindexed path (`unindexedPaths` in
+ * `src/site.ts`): a response there that `routes` don't answer with
+ * `noindex` on every host, a page there without a `noindex` robots meta
+ * tag, or a URL there in the sitemap.
+ */
+export function unindexedPathProblems(
+  basePath: string,
+  files: ReadonlyMap<string, string>,
+  routes: ReadonlyArray<VercelRoute>,
+): ReadonlyArray<string> {
+  const routeProblems = [...samplePaths(basePath), `${basePath}/docs/a`]
+    .filter(
+      (pathname) =>
+        !(robotsTagAt(routes, pathname) ?? '')
+          .split(',')
+          .map((directive) => directive.trim())
+          .includes('noindex'),
+    )
+    .map(
+      (pathname) => `${pathname}: isn't answered with X-Robots-Tag: noindex`,
+    );
+  const pageProblems = [...files]
+    .filter(
+      ([file, html]) =>
+        isUnder(basePath, file) && file.endsWith('.html') && !isNoindex(html),
+    )
+    .map(([file]) => `${file}: has no noindex robots meta tag`);
+  const sitemap = files.get('sitemap.xml') ?? '';
+  const listed = new RegExp(
+    `<loc>(?:https?://[^<"/]+)?${escapeRegExp(basePath)}(?:[/<?#])`,
+  ).test(sitemap)
+    ? [`sitemap.xml: lists ${basePath}`]
+    : [];
+  return [...routeProblems, ...pageProblems, ...listed];
 }
 
 /** `robots.txt`: crawl everything but the hidden paths, and find the sitemap. */

@@ -31,8 +31,10 @@ const llmsTxt = [
 ].join('\n');
 
 const hiddenMeta = '<meta name="robots" content="noindex, nofollow">';
-/** The v12 docs pages: hidden at trpc.io (`v12.hidden`). */
-const v12Page = v12.hidden ? hiddenMeta : '';
+/** The v12 docs pages: hidden at trpc.io (`v12.hidden`), and unindexed (`v12Indexable`). */
+const v12Page = v12.hidden
+  ? hiddenMeta
+  : '<meta name="robots" content="noindex">';
 /** Where the build writes v12's llms.txt, which moves when it's hidden. */
 const v12LlmsFile = llmsTxtPath('v12').slice(1);
 

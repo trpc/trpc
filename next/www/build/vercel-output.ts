@@ -17,6 +17,7 @@ import {
   llmsTxtPath,
   oldSite,
   site,
+  unindexedPaths,
   v12,
 } from '../src/site.ts';
 import {
@@ -24,6 +25,8 @@ import {
   hiddenRoute,
   hiddenRouteProblems,
   isNoindex,
+  unindexedPathProblems,
+  unindexedRoute,
 } from './hidden-paths.ts';
 import {
   onDemandRoutes,
@@ -137,15 +140,18 @@ export const noindexPageRoutes = (
 /**
  * `old`: the redirects that keep trpc.io's URLs working (`old-routes.ts`).
  * `noindex`: the routes that say `X-Robots-Tag: noindex`. `hidden`: the
- * paths that say `noindex, nofollow` (`hiddenPaths`).
+ * paths that say `noindex, nofollow` (`hiddenPaths`). `unindexed`: the
+ * paths that say `noindex` on every host (`unindexedPaths`).
  */
 export const routes = (
   first: string,
   old: ReadonlyArray<VercelRoute> = [],
   noindex: ReadonlyArray<VercelRoute> = [noindexRoute(site.url, '')],
   hidden: ReadonlyArray<string> = hiddenPaths,
+  unindexed: ReadonlyArray<string> = unindexedPaths,
 ): ReadonlyArray<VercelRoute> => [
   ...noindex,
+  ...unindexed.map(unindexedRoute),
   ...hidden.map(hiddenRoute),
   { headers: { Location: '/$1' }, src: '^/(.+)/$', status: 308 },
   // trpc.io answers a page's `index.html` too: `/docs/a/index.html`, `/index.html`.
@@ -332,10 +338,13 @@ export const writeVercelOutput = Effect.fn('writeVercelOutput')(function* (
       }),
     ),
     ...hiddenRouteProblems(allRoutes, hiddenPaths),
+    ...unindexedPaths.flatMap((basePath) =>
+      unindexedPathProblems(basePath, texts, allRoutes),
+    ),
   ];
   if (hidden.length > 0) {
     return yield* new VercelOutputError({
-      message: `${hiddenPaths.join(' and ')} are meant to be hidden:\n${hidden.join('\n')}`,
+      message: `${[...hiddenPaths, ...unindexedPaths].join(', ')} are meant to be hidden or unindexed:\n${hidden.join('\n')}`,
     });
   }
   const problems = [
