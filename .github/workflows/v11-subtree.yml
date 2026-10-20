@@ -50,7 +50,7 @@ jobs:
           package_json_file: v11/package.json
       - uses: actions/setup-node@v7
         with:
-          node-version: 24.x
+          node-version-file: v11/.nvmrc
           cache: 'pnpm'
           cache-dependency-path: v11/pnpm-lock.yaml
 
