@@ -2,9 +2,11 @@ import { createRouter } from '@tanstack/react-router';
 
 import { NotFound } from './components/not-found.tsx';
 import { routeTree } from './routeTree.gen.ts';
+import { releaseInPage, traceRouter } from './sentry-client.ts';
 
 export function getRouter() {
-  return createRouter({
+  const router = createRouter({
+    ...releaseInPage,
     defaultNotFoundComponent: NotFound,
     // Hovering a link loads the page's content chunk, so the click renders
     // without waiting.
@@ -17,6 +19,8 @@ export function getRouter() {
     // going back still jumps.
     scrollRestorationBehavior: 'instant',
   });
+  traceRouter(router);
+  return router;
 }
 
 declare module '@tanstack/react-router' {

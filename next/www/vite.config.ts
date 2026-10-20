@@ -12,6 +12,11 @@ import { blogFeeds } from './build/feeds.ts';
 import { siteIcons } from './build/icons.ts';
 import { bundledServer } from './build/on-demand.ts';
 import { OgCard, ogImages } from './build/og-image.ts';
+import {
+  sentryDefines,
+  sentrySettings,
+  sentryUploadPlugins,
+} from './build/sentry.ts';
 import { siteFiles } from './build/site-files.ts';
 import {
   cacheDir,
@@ -111,12 +116,15 @@ const docCard = (
     version,
   });
 
+const sentry = sentrySettings(process.env);
+
 export default defineConfig({
   define: {
     // The environment the Experiments menu names (`src/flags.ts`).
     'import.meta.env.VERCEL_ENV': JSON.stringify(
       process.env['VERCEL_ENV'] ?? '',
     ),
+    ...sentryDefines(sentry),
   },
   // The prerender fetches each page from this server in the build's own
   // process. `localhost` binds `::1` only, and a render that holds the event
@@ -298,6 +306,12 @@ export default defineConfig({
       sitemap: { enabled: true, host: site.url },
     }),
     react(),
+    // Last, as Sentry's docs say.
+    ...sentryUploadPlugins(
+      process.env,
+      sentry,
+      new URL('dist', import.meta.url).pathname,
+    ),
   ],
   resolve: {
     tsconfigPaths: true,
