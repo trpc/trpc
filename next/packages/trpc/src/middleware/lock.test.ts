@@ -232,7 +232,7 @@ const fakeRedis = (freeAt: number) => {
   const layer = Layer.effect(
     Redis.Redis,
     Redis.make({
-      send: <A,>(command: string) =>
+      send: <A>(command: string) =>
         Effect.map(Clock.currentTimeMillis, (now) => {
           if (command !== 'SET') return null as A;
           tries.push(now);

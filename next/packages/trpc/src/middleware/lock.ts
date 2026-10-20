@@ -269,8 +269,8 @@ export function experimental_redisLocker(
               if (set !== 'OK') {
                 return yield* new experimental_LockTimeout({ key });
               }
-              const { attempt } = yield* Schedule.CurrentMetadata;
-              return { waited: attempt > 0 };
+              const step = yield* Schedule.CurrentMetadata;
+              return { waited: step.attempt > 0 };
             });
             return yield* Effect.retry(take, retryUntil(retry, deadline));
           }),
