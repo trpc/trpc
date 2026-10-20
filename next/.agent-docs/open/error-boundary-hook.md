@@ -7,6 +7,9 @@ links:
   - kind: code
     label: error-boundary.ts (internal)
     url: ../../packages/tanstack-react-query/src/error-boundary.ts
+  - kind: decision
+    label: error-boundaries
+    url: ../decisions/error-boundaries.md
   - kind: proposal
     label: 24 Error ownership
     url: ../proposals/24-error-ownership.md

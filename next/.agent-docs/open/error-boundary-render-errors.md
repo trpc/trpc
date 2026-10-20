@@ -8,6 +8,9 @@ links:
     label: error-boundary.ts (internal)
     url: ../../packages/tanstack-react-query/src/error-boundary.ts
   - kind: decision
+    label: error-boundaries
+    url: ../decisions/error-boundaries.md
+  - kind: decision
     label: exhaustive-match-error
     url: ../decisions/exhaustive-match-error.md
   - kind: proposal

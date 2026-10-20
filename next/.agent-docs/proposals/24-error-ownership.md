@@ -1,4 +1,4 @@
-# 24 — Error ownership: closed unions, exhaustive matching and shells
+# 24 — Error ownership: closed unions, exhaustive matching and error boundaries
 
 | Status     | Area                          | Depends on     | oRPC parity rows           |
 | ---------- | ----------------------------- | -------------- | -------------------------- |
@@ -6,13 +6,13 @@
 
 ## Summary
 
-[result-rpc](https://result-rpc.com/) ("Errors are values. Values have owners.") gives every call one **closed** failure union, which includes transport, protocol and stale-client failures. React **shells** above a component claim some of those failures, and the component is typed with only the rest, so a missing case fails to compile. We already infer, declare, mask and tag errors ([07](./07-errors.md), [errors](../decisions/errors.md), [inferred-errors](../decisions/inferred-errors.md)). What we lack is a closed client union, a matcher, and ownership along the component tree.
+[result-rpc](https://result-rpc.com/) ("Errors are values. Values have owners.") gives every call one **closed** failure union, which includes transport, protocol and stale-client failures. React **shells** above a component, type-safe error boundaries, claim some of those failures, and the component is typed with only the rest, so a missing case fails to compile. We already infer, declare, mask and tag errors ([07](./07-errors.md), [errors](../decisions/errors.md), [inferred-errors](../decisions/inferred-errors.md)). What we lack is a closed client union, a matcher, and ownership along the component tree.
 
 **Recommendation:**
 
 - Close the union. The server masks thrown, undeclared custom codes, and the client types `defined: false` errors as one member per built-in code.
 - Ship `matchError()` in `@trpc12/trpc/client`.
-- Ship error shells in boundary mode: the claim primitive in `@trpc12/tanstack-query` and `createShell` in `@trpc12/tanstack-react-query`.
+- Ship type-safe error boundaries: the claim primitive in `@trpc12/tanstack-query` and `createErrorBoundary` in `@trpc12/tanstack-react-query`.
 
 Two spikes back this: [closed-error-unions](../notes/closed-error-unions.md) and [error-shells](../notes/error-shells.md).
 
@@ -37,7 +37,7 @@ Two spikes back this: [closed-error-unions](../notes/closed-error-unions.md) and
 - A component's `error` type lists exactly what it must handle, and a missing case is a compile error.
 - App-wide failures (signed out, offline, crashed) are handled once, by a component that owns them, with types to match.
 - The types match what arrives at runtime.
-- Nothing changes for apps that don't use shells. `safe()`, `isDefinedError` and `catchTag` keep working.
+- Nothing changes for apps that don't use error boundaries. `safe()`, `isDefinedError` and `catchTag` keep working.
 
 ## Non-goals
 
@@ -68,7 +68,7 @@ type BoundaryError = {
   - ❌ Two typings of the same call, and the server still leaks custom codes to other clients.
 - **C: keep it open.**
   - ✅ Nothing changes.
-  - ❌ Shells can own `UNAUTHORIZED` only when it's returned, never one from a proxy, and can't own `NETWORK_ERROR` at all.
+  - ❌ Error boundaries can own `UNAUTHORIZED` only when it's returned, never one from a proxy, and can't own `NETWORK_ERROR` at all.
 
 ### Q24.2: what the closed set is
 
@@ -95,42 +95,47 @@ matchError(err, {
 
 The spike found that A works on today's open union too: `unexpected` takes the whole `defined: false` part. So Q24.3 doesn't depend on Q24.1.
 
-### Q24.4: shells
+### Q24.4: type-safe error boundaries
 
 ```ts
-const RootShell = createShell({
+const [RootBoundary] = createErrorBoundary({
   name: 'Root',
   claims: [],
   unexpected: true,
   fallback: Crashed,
 });
-const AuthShell = RootShell.extend({
+const [AuthBoundary, useAuthBoundary] = createErrorBoundary({
   name: 'Auth',
+  parent: RootBoundary,
   claims: ['UNAUTHORIZED'],
   fallback: SignIn,
 });
 
-const rename = AuthShell.useMutation(trpc.doc.rename.mutationOptions());
+const rename = useAuthBoundary().useMutation(trpc.doc.rename.mutationOptions());
 rename.error; // TITLE_TAKEN | BAD_REQUEST: Auth owns UNAUTHORIZED, Root owns every undefined error
 ```
 
 - **A: boundary mode.**
-  - A shell's hooks set `throwOnError` to "a shell in my chain owns it". Each `Boundary` renders its fallback for its own claims and re-throws the rest. Hooks check that their chain is mounted.
+  - A boundary's hooks set `throwOnError` to "a boundary in my chain owns it". Each boundary renders its fallback for its own claims and re-throws the rest. Hooks throw outside their boundary.
   - ✅ Built and tested ([error-shells](../notes/error-shells.md)); TanStack needs no changes.
   - ❌ The fallback replaces the subtree, so an owned mutation error unmounts the form.
 - **B: A, plus a side-effect mode.**
-  - A shell can instead react (a toast, a redirect, a sign-in modal) while its hooks swallow owned errors, leaving `error: null` and `status: 'error'`.
+  - A boundary can instead react (a toast, a redirect, a sign-in modal) while its hooks swallow owned errors, leaving `error: null` and `status: 'error'`.
   - ✅ Covers "session expired" without losing form state.
   - ❌ Not spiked. A hook whose `status` is `'error'` while its `error` is `null` is new for TanStack users.
 - **C: primitives only.** Ship `owns()`, the `Remaining` type and the options transform, and let apps write their boundaries.
 - **D: not now.**
 
-### Q24.5: where shells live
+Human, 2026-10-20: error boundaries, shipped as `unstable_createErrorBoundary`, a `[AuthBoundary, useAuthBoundary]` tuple whose hook throws outside its boundary: A behind the `unstable_` prefix, with its DX details asked as open questions ([error-boundaries](../decisions/error-boundaries.md)).
 
-- **A: the framework-free half in `@trpc12/tanstack-query`** (claims, `Remaining`, the `throwOnError` transform), with `createShell` per adapter. React comes first; Vue, Solid and Svelte follow on request.
+### Q24.5: where error boundaries live
+
+- **A: the framework-free half in `@trpc12/tanstack-query`** (claims, `Remaining`, the `throwOnError` transform), with `createErrorBoundary` per adapter. React comes first; Vue, Solid and Svelte follow on request.
 - **B: React only**, all in `@trpc12/tanstack-react-query`.
 
-Suspense hooks don't fit either way: `useSuspenseQuery` throws every error while there's no data. The spike doesn't cover them.
+Suspense hooks need nothing: `useSuspenseQuery` throws every error while there's no data, so owned ones reach their boundary as they are.
+
+Human, 2026-10-20, with Q24.4 ("tuples in react"): B for now, all in `@trpc12/tanstack-react-query`; the framework-free part can move to `@trpc12/tanstack-query` when another adapter wants it ([error-boundaries](../decisions/error-boundaries.md)).
 
 ### Q24.6: sharper boundary codes
 
@@ -158,10 +163,10 @@ Human, 2026-10-20: C, later. A procedure the server lacks stays a built-in `NOT_
 - **Q24.1 A, Q24.2 A.** Mask undeclared custom codes on the server and type the client's union closed over built-in codes. Undeclared custom codes reaching the client are the only thing keeping the union open, and they leak internals just like messages do. Declared constructors already cover "throw a typed error from a helper".
 - **Q24.3 A.** It's small, it works even without Q24.1, and it gives result-rpc's "a missing case fails to compile".
 - **Q24.4 A, Q24.5 A.** Boundary mode is built and tested. Keep side-effect mode (B) open until a real "session expired" form needs it.
-- **Q24.6 A.** `PARSE_ERROR` meaning four things is the one coarse code shells will trip on.
+- **Q24.6 A.** `PARSE_ERROR` meaning four things is the one coarse code error boundaries would trip on.
 - **Q24.7 C** and **Q24.8 B** for now. Both are independent of the rest and haven't been spiked. The human chose Q24.7 C ([stale-client-error](../decisions/stale-client-error.md)).
 
-What we give up: thrown custom codes that reach the client untyped (Q24.1 A), and keeping the form mounted when a shell owns a mutation's error (Q24.4 A).
+What we give up: thrown custom codes that reach the client untyped (Q24.1 A), and keeping the form mounted when a boundary owns a mutation's error (Q24.4 A).
 
 > ⚠️ **Parity:** none of the options blocks a row in [`orpc-parity.md`](../reference/orpc-parity.md). oRPC's `ORPCError` is open as well; a closed union goes beyond oRPC's "End-to-end typesafe errors".
 
@@ -170,8 +175,8 @@ What we give up: thrown custom codes that reach the client untyped (Q24.1 A), an
 - **Q24.1** Close the client's error union: A the server masks undeclared custom codes and the client types it closed, B an opt-in `closedLink()`, or C keep it open?
 - **Q24.2** The closed set: A every built-in code (`defined: false`), or B a few folded categories?
 - **Q24.3** Exhaustive matching: A `matchError(err, handlers)`, B A plus `.match()` on `safe()` results, or C none?
-- **Q24.4** Shells: A boundary mode, B A plus a side-effect mode, C primitives only, or D not now?
-- **Q24.5** Where shells live: A the framework-free half in `@trpc12/tanstack-query` and `createShell` per adapter, or B React only?
+- **Q24.4** Error boundaries: A boundary mode, B A plus a side-effect mode, C primitives only, or D not now?
+- **Q24.5** Where error boundaries live: A the framework-free half in `@trpc12/tanstack-query` and `createErrorBoundary` per adapter, or B React only?
 - **Q24.6** Boundary codes: A split `PARSE_ERROR` (`BAD_RESPONSE`), B also a client `TIMEOUT`, or C leave them?
 - **Q24.7** Stale clients: A a router fingerprint, B a distinct unknown-path error, or C later?
 - **Q24.8** Validate defined errors' `data` and rebuild tagged classes in `validationLink`: A yes, or B no?

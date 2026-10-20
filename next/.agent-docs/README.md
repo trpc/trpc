@@ -91,7 +91,7 @@ These are treated as given:
 - **20** [React `use()` package](./proposals/20-react-use-package.md): Defer; keep link-based caching possible. 3 questions.
 - **21** [Stability and JSDoc](./proposals/21-stability-and-jsdoc.md): `@since`/`@stability` JSDoc + experimental entry points, no name prefixes, CI-enforced. 5 questions.
 - **22** [Tooling, CI and repo](./proposals/22-tooling-ci-and-repo.md): Vite+ (`vp`) toolchain, TS 7, `vp staged` precommit hook, one CI workflow, fresh layout. 5 questions.
-- **24** [Error ownership](./proposals/24-error-ownership.md): Closed client error union, exhaustive `matchError()`, TanStack error shells that subtract the failures they own (after result-rpc). 8 questions.
+- **24** [Error ownership](./proposals/24-error-ownership.md): Closed client error union, exhaustive `matchError()`, type-safe TanStack error boundaries that subtract the failures they own (after result-rpc). 8 questions.
 - **25** [MCP](./proposals/25-mcp.md): `@trpc12/trpc/mcp`: opt-in procedures as MCP tools over stateless HTTP, schemas from `experimental_toContract()`, errors as `isError` results, no SDK dependency. 9 questions.
 - **26** [Live queries and sync](./proposals/26-live-queries-and-sync.md): Experimental `@trpc12/trpc/live` feeds on `tracked()` and `Publisher`, `@trpc12/experimental-tanstack-db` live collections with `awaitVersion`, pooled feeds for SSE. 6 questions.
 - **27** [Layered services and strictness](./proposals/27-layered-services-and-strictness.md): `.provide(layer)` built once per handler; middleware as Effect services (`.use(Key)`); opt-in `.strict()`; contracts declare middleware. 5 questions.
