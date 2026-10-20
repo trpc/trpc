@@ -87,7 +87,7 @@ useMutationState({
 
 ## Errors
 
-The options carry the procedure's error type, so `useQuery` infers `error` as what the call fails with ([Errors](../client/errors.md)): the procedure's own errors, the [link codes](../client/errors.md#errors-from-the-links) the client's links declare (network failures, `NETWORK_ERROR`, over `httpLink` but not `localLink`), and the built-in ones that can always happen, aborts (`CLIENT_CLOSED_REQUEST`) included. `useQueries`, `useInfiniteQuery`, `useMutation`, `useSuspenseQuery` and `useSubscription` infer it the same way. A procedure without `.input()` has no `BAD_REQUEST` of its own, so its `error` is only the built-in ones. `matchError()` makes you handle each:
+The options carry the procedure's error type, so `useQuery` infers `error` as what the call fails with ([Errors](../client/errors.md)): the procedure's own errors, the [link codes](../client/errors.md#errors-from-the-links) the client's links declare (network failures, `NETWORK_ERROR`, over `httpLink` but not `localLink`), and the built-in ones that can always happen, aborts (`CLIENT_CLOSED_REQUEST`) and [timeouts](../client/errors.md#timeouts-and-cancels) (`TIMEOUT`) included. `useQueries`, `useInfiniteQuery`, `useMutation`, `useSuspenseQuery` and `useSubscription` infer it the same way. A procedure without `.input()` has no `BAD_REQUEST` of its own, so its `error` is only the built-in ones. `matchError()` makes you handle each:
 
 ```ts twoslash
 // ---cut-start---

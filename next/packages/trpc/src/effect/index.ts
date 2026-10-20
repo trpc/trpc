@@ -17,8 +17,7 @@
  * ```
  * @module
  */
-import type { Effect } from 'effect';
-import { Stream } from 'effect';
+import { Effect, Stream } from 'effect';
 import {
   createRecursiveProxy,
   makeOperation,
@@ -29,6 +28,7 @@ import type {
   TypedClientOptions,
 } from '../client/client.ts';
 import {
+  abortedBy,
   chainSwitchNames,
   firstValue,
   link,
@@ -224,7 +224,8 @@ const METHODS = {
 
 /**
  * Creates a client whose calls are Effects. Interrupting the fiber aborts the
- * request. A call fails with the same errors as the Promise client's, and
+ * request; so does a query's or mutation's `signal`, failing it with
+ * `CLIENT_CLOSED_REQUEST`, or `TIMEOUT` for `AbortSignal.timeout()`'s. A call fails with the same errors as the Promise client's, and
  * an error's `_tag` is its code, so `Effect.catchTag` takes a code out of
  * the union. It also catches the built-in error with that code, whose
  * `defined` is `false`.
@@ -274,6 +275,12 @@ export function createEffectClient(opts: TrpcClientOptions): unknown {
         makeOperation(type, procedurePath, input, callOptions),
       ),
     );
-    return type === 'subscription' ? stream : firstValue(stream);
+    if (type === 'subscription') return stream;
+    // Not every link reads `op.signal` (a batch or a socket doesn't), so the
+    // call stops with it here, as the Promise client's run does.
+    const signal = callOptions.signal;
+    return signal
+      ? Effect.raceFirst(firstValue(stream), abortedBy(signal))
+      : firstValue(stream);
   });
 }

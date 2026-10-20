@@ -211,7 +211,7 @@ export class TrpcError<
   declare static readonly NotFound: BuiltinErrorClass<'NOT_FOUND'>;
   /** `METHOD_NOT_SUPPORTED`: the wrong HTTP method for the procedure. */
   declare static readonly MethodNotSupported: BuiltinErrorClass<'METHOD_NOT_SUPPORTED'>;
-  /** `TIMEOUT`. */
+  /** `TIMEOUT`: a server's `408`, or the call's `signal` timed out (`AbortSignal.timeout()`). */
   declare static readonly Timeout: BuiltinErrorClass<'TIMEOUT'>;
   /** `CONFLICT`. */
   declare static readonly Conflict: BuiltinErrorClass<'CONFLICT'>;
@@ -225,7 +225,7 @@ export class TrpcError<
   declare static readonly UnprocessableContent: BuiltinErrorClass<'UNPROCESSABLE_CONTENT'>;
   /** `TOO_MANY_REQUESTS`. */
   declare static readonly TooManyRequests: BuiltinErrorClass<'TOO_MANY_REQUESTS'>;
-  /** `CLIENT_CLOSED_REQUEST`: the call's `signal` aborted it. */
+  /** `CLIENT_CLOSED_REQUEST`: the call's `signal` aborted it, for any reason but a timeout. */
   declare static readonly ClientClosedRequest: BuiltinErrorClass<'CLIENT_CLOSED_REQUEST'>;
   /** `INTERNAL_SERVER_ERROR`: a crash, masked in production. */
   declare static readonly InternalServerError: BuiltinErrorClass<'INTERNAL_SERVER_ERROR'>;
@@ -517,6 +517,38 @@ export const hasDigest = (value: unknown): boolean =>
  */
 export function frameworkError(err: AnyTrpcError): unknown {
   return hasDigest(err.cause) ? err.cause : undefined;
+}
+
+const isTimeoutReason = (reason: unknown) =>
+  reason instanceof Error && reason.name === 'TimeoutError';
+
+/**
+ * Whether `cause` is what an aborted `fetch` rejects with: the signal's
+ * reason, an `AbortError` or `AbortSignal.timeout()`'s `TimeoutError`.
+ * @internal
+ */
+export const isAbortReason = (cause: unknown): boolean =>
+  isTimeoutReason(cause) ||
+  (cause instanceof Error && cause.name === 'AbortError');
+
+/**
+ * What a call its signal aborted with `reason` fails with: `TIMEOUT` for
+ * `AbortSignal.timeout()`'s `TimeoutError`, `CLIENT_CLOSED_REQUEST` for
+ * anything else. The reason is its `cause`.
+ * @internal
+ */
+export function abortedError(reason: unknown): AnyTrpcError {
+  return isTimeoutReason(reason)
+    ? new TrpcError({
+        code: 'TIMEOUT',
+        message: 'The request timed out',
+        cause: reason,
+      })
+    : new TrpcError({
+        code: 'CLIENT_CLOSED_REQUEST',
+        message: 'The request was aborted',
+        cause: reason,
+      });
 }
 
 /**

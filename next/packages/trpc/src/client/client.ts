@@ -175,7 +175,7 @@ export function createUntypedClient(
         },
       );
       if (Exit.isSuccess(exit)) return exit.value;
-      const error = clientErrorFromCause(exit.cause);
+      const error = clientErrorFromCause(exit.cause, op.signal);
       throw frameworkError(error) ?? error;
     },
     subscribe(o) {

@@ -109,3 +109,62 @@ test("useQuery's error has only the link codes of the client's links", async () 
     el.remove();
   }
 });
+
+test("useQuery's error is TIMEOUT when the call's fetch times out, for matchError()'s unexpected", async () => {
+  const timingOut = () =>
+    createTrpcClient({
+      router: routerType<typeof router>(),
+      links: [
+        httpLink({
+          url: 'http://127.0.0.1:1/trpc',
+          fetch: () =>
+            new Promise<Response>((_resolve, reject) => {
+              const signal = AbortSignal.timeout(20);
+              signal.addEventListener('abort', () => reject(signal.reason));
+            }),
+        }),
+      ],
+    });
+  const remote = createTrpcContext<ReturnType<typeof timingOut>>();
+
+  function Remote() {
+    const trpc = remote[1]();
+    const query = useQuery(trpc.missing.queryOptions());
+    expectTypeOf<
+      Extract<CodesOf<NonNullable<typeof query.error>>, 'TIMEOUT'>
+    >().toEqualTypeOf<'TIMEOUT'>();
+    if (!query.error) return <p>loading</p>;
+    return (
+      <p className="error">
+        {matchError(query.error, {
+          NOT_FOUND: () => 'missing',
+          NETWORK_ERROR: () => 'offline',
+          BAD_RESPONSE: (e) => e.code,
+          unexpected: (e) =>
+            e.code === 'TIMEOUT' ? 'took too long' : `unexpected ${e.code}`,
+        })}
+      </p>
+    );
+  }
+
+  const el = container();
+  const root = createRoot(el);
+  const [RemoteProvider] = remote;
+  root.render(
+    <QueryClientProvider
+      client={
+        new QueryClient({ defaultOptions: { queries: { retry: false } } })
+      }
+    >
+      <RemoteProvider client={timingOut()}>
+        <Remote />
+      </RemoteProvider>
+    </QueryClientProvider>,
+  );
+  try {
+    await waitFor(() => expect(text(el, '.error')).toBe('took too long'));
+  } finally {
+    root.unmount();
+    el.remove();
+  }
+});

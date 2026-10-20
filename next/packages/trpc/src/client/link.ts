@@ -1,6 +1,7 @@
 import { Cause, Effect, Option, Stream, Tracer } from 'effect';
 import { HttpTraceContext } from 'effect/http';
 import {
+  abortedError,
   isBuiltinCode,
   isKeptUntyped,
   isTrpcError,
@@ -246,11 +247,15 @@ export function toClientError(cause: unknown): AnyTrpcError {
 }
 
 /**
+ * The error a call whose run ended with `cause` fails with. Interrupted
+ * only, it was aborted: `TIMEOUT` if `signal` timed out
+ * (`AbortSignal.timeout()`), else `CLIENT_CLOSED_REQUEST`.
  * @since 0.1.0
  * @stability stable
  */
 export function clientErrorFromCause(
   cause: Cause.Cause<unknown>,
+  signal?: AbortSignal,
 ): AnyTrpcError {
   for (const reason of cause.reasons) {
     if (Cause.isFailReason(reason)) return toClientError(reason.error);
@@ -258,11 +263,23 @@ export function clientErrorFromCause(
   for (const reason of cause.reasons) {
     if (Cause.isDieReason(reason)) return toClientError(reason.defect);
   }
-  return new TrpcError({
-    code: 'CLIENT_CLOSED_REQUEST',
-    message: 'The request was aborted',
-  });
+  return abortedError(signal?.reason);
 }
+
+/**
+ * Fails with {@link abortedError} once `signal` aborts, for racing a call
+ * that should stop with it.
+ * @internal
+ */
+export const abortedBy = (
+  signal: AbortSignal,
+): Effect.Effect<never, AnyTrpcError> =>
+  Effect.callback<never, AnyTrpcError>((resume) => {
+    const onAbort = () => resume(Effect.fail(abortedError(signal.reason)));
+    if (signal.aborted) return onAbort();
+    signal.addEventListener('abort', onAbort, { once: true });
+    return Effect.sync(() => signal.removeEventListener('abort', onAbort));
+  });
 
 /**
  * The single value of a query or mutation.

@@ -49,7 +49,8 @@ const [post, err] = await safeClient.post.byId.query({ id: '1' });
 | `NETWORK_ERROR`             | The request got no response, or the connection dropped. Only from links that send requests.                                                                            |
 | `BAD_RESPONSE`              | The response wasn't a tRPC one and its status names no code (an HTML page or an empty body sent with `200`), or it didn't decode. Only from links that read responses. |
 | `STREAM_INTERRUPTED`        | A stream stopped without an end or an error, after its call resolved: a subscription's, or a streamed output's. Only from links that read streams.                     |
-| `CLIENT_CLOSED_REQUEST`     | The call's `signal` aborted it.                                                                                                                                        |
+| `CLIENT_CLOSED_REQUEST`     | The call's `signal` aborted it, for any reason but a timeout.                                                                                                          |
+| `TIMEOUT`                   | The call's `signal` timed out (`AbortSignal.timeout()`), or the server answered `408` ([below](#timeouts-and-cancels)).                                                |
 | `CLIENT_ERROR`              | A link failed, or failed with a custom code it didn't declare.                                                                                                         |
 | `INTERNAL_SERVER_ERROR`     | The server crashed, or threw a custom code that its `.errors()` don't list. The message is masked in production.                                                       |
 | Any other code (`CONFLICT`) | The server threw it without declaring it, a proxy answered with its status (`401` is `UNAUTHORIZED`), or the server lacks the procedure (`NOT_FOUND`).                 |
@@ -107,6 +108,40 @@ if (localErr) {
 | `localLink`, `retryLink`, `dedupeLink`, `loggerLink`, `experimental_durableLink` | None                                                  |
 
 `createRouterClient` declares none, since it calls the router in-process. A client typed without its links, like `TrpcClient<AppRouter>`, has all three, so it accepts a client with any links. A [custom link](./custom-links.md#errors-and-unsupported-types) declares the link codes it makes with `builtinErrors`, and can add codes of its own with `errors`.
+
+### Timeouts and cancels
+
+A call given `AbortSignal.timeout()` as its `signal` fails with `TIMEOUT` once it times out; any other abort, like `controller.abort()`, is `CLIENT_CLOSED_REQUEST`. So code that ignores cancels still sees a timeout. The signal's reason is the error's `cause`. Joined with a component's own signal by `AbortSignal.any()`, whichever aborts first names the error:
+
+```ts twoslash
+// ---cut-start---
+import { client } from './client.ts';
+import { matchError, safe } from '@trpc12/trpc/client';
+declare const signal: AbortSignal;
+// ---cut-end---
+const [, err] = await safe(
+  client.post.byId.query(
+    { id: '1' },
+    { signal: AbortSignal.any([signal, AbortSignal.timeout(10_000)]) },
+  ),
+);
+if (err) {
+  matchError(err, {
+    NOT_FOUND: (e) => `No post ${e.data.id}`,
+    BAD_REQUEST: (e) => e.data.issues[0]?.message ?? 'Invalid id',
+    NETWORK_ERROR: () => 'You are offline',
+    BAD_RESPONSE: () => 'Try again later',
+    unexpected: (e) =>
+      e.code === 'TIMEOUT'
+        ? 'That took too long'
+        : e.code === 'CLIENT_CLOSED_REQUEST'
+          ? null
+          : e.message,
+  });
+}
+```
+
+`TIMEOUT` is a built-in code no link declares, since a server's `408` sends it too, so it goes to `unexpected` rather than a key of its own. Its status stays `408`, so `retryLink` doesn't retry it. It's the same on every link and client: the [Effect client](./effect.md), the safe client and the [TanStack Query](../integrations/tanstack-query.md#errors) hooks, whose `error` lists it. A subscription whose `signal` aborts still ends quietly, whatever the reason.
 
 ## Switching on the code
 

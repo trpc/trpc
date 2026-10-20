@@ -85,4 +85,4 @@ const firstThree = client.ticks
   .pipe(Stream.take(3), Stream.runCollect);
 ```
 
-Call options are the Promise client's: what links read, `lastEventId` and `signal`. Interrupting already aborts, so a `signal` is only for aborting from outside Effect.
+Call options are the Promise client's: what links read, `lastEventId` and `signal`. Interrupting already aborts, so a `signal` is only for aborting from outside Effect. A query or mutation stops when it aborts, on any link, failing with `CLIENT_CLOSED_REQUEST`, or `TIMEOUT` for `AbortSignal.timeout()` ([Timeouts and cancels](./errors.md#timeouts-and-cancels)); inside Effect, `Effect.timeout` around the call does the same with Effect's own `TimeoutError`.

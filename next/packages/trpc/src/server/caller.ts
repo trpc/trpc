@@ -1,9 +1,9 @@
-import { Effect, Exit, type Layer, type ManagedRuntime } from 'effect';
+import { Cause, Effect, Exit, type Layer, type ManagedRuntime } from 'effect';
 import { createTrpcClient } from '../client/client.ts';
 import { localLink, type LocalLinkOptions } from '../client/links/index.ts';
 import { routerType, type TrpcClient } from '../client/types.ts';
 import { interruptSignal } from '../internal/effects.ts';
-import { frameworkError } from '../internal/error.ts';
+import { abortedError, frameworkError } from '../internal/error.ts';
 import type {
   DansonForm,
   MaybePromise,
@@ -171,6 +171,8 @@ export async function call<TDef extends ProcedureDef>(
     { signal: o.signal },
   );
   if (Exit.isSuccess(exit)) return exit.value;
-  const error = normalizeCause(exit.cause);
+  const error = Cause.hasInterruptsOnly(exit.cause)
+    ? abortedError(o.signal?.reason)
+    : normalizeCause(exit.cause);
   throw frameworkError(error) ?? error;
 }

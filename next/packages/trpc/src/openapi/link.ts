@@ -7,7 +7,9 @@ import type {
 } from '../client/link.ts';
 import type { ContractJson } from '../contract/index.ts';
 import {
+  abortedError,
   codeOfStatus,
+  isAbortReason,
   isTrpcError,
   TrpcError,
   type AnyTrpcError,
@@ -47,17 +49,9 @@ export interface OpenApiLinkOptions {
   fetch?: (url: string, init: RequestInit) => Promise<Response>;
 }
 
-const isAbort = (cause: unknown) =>
-  cause instanceof Error && cause.name === 'AbortError';
-
 const toError = (cause: unknown): AnyTrpcError => {
   if (isTrpcError(cause)) return cause;
-  if (isAbort(cause)) {
-    return new TrpcError.ClientClosedRequest({
-      message: 'The request was aborted',
-      cause,
-    });
-  }
+  if (isAbortReason(cause)) return abortedError(cause);
   return new TrpcError.NetworkError({
     message: cause instanceof Error ? cause.message : 'Network error',
     cause,

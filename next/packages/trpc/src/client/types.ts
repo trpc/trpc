@@ -56,7 +56,7 @@ export type DefinedError<E, F extends OutputForm = DansonForm> =
 /**
  * An error from outside the procedure's typed union, one member per
  * built-in code: network failures (`NETWORK_ERROR`), aborts
- * (`CLIENT_CLOSED_REQUEST`), unreadable responses (`BAD_RESPONSE`), crashes
+ * (`CLIENT_CLOSED_REQUEST`) and timeouts (`TIMEOUT`), unreadable responses (`BAD_RESPONSE`), crashes
  * (`INTERNAL_SERVER_ERROR`, masked in production), thrown built-in codes
  * and a proxy's statuses (`UNAUTHORIZED`, `BAD_GATEWAY`). It never has
  * `data`. Pass a code to name one: `BuiltinError<'NETWORK_ERROR'>`.
