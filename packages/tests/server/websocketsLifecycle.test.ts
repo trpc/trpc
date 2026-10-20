@@ -394,22 +394,52 @@ test.each(['resolve', 'reject'] as const)(
           error: { message: 'iteration failed' },
         });
       }
+      // the error is still followed by `stopped`, as before cleanup was awaited
+      const errorIndex = ctx.messages.findIndex(
+        (message) => message.id === 1 && 'error' in message,
+      );
+      expect(ctx.messages[errorIndex + 1]).toEqual({
+        id: 1,
+        result: { type: 'stopped' },
+      });
     } finally {
       cleanup.resolve({ done: true, value: undefined });
     }
   },
 );
 
+const abortError = () => new DOMException('request aborted', 'AbortError');
+
 test.each([
-  'abort',
-  'genuine',
-  'BAD_REQUEST',
-  'INTERNAL_SERVER_ERROR',
-  'implicit-message',
-  'same-message',
-] as const)(
-  'stop during admission handles a %s rejection without losing error semantics',
-  async (failure) => {
+  {
+    rejection: 'an AbortError',
+    reject: abortError,
+    expected: null,
+  },
+  {
+    rejection: 'an INTERNAL_SERVER_ERROR caused by an AbortError',
+    reject: () =>
+      new TRPCError({ code: 'INTERNAL_SERVER_ERROR', cause: abortError() }),
+    expected: null,
+  },
+  {
+    rejection: 'an unrelated error',
+    reject: () => new Error('admission failed'),
+    expected: { code: 'INTERNAL_SERVER_ERROR', message: 'admission failed' },
+  },
+  {
+    rejection: 'an explicit error code caused by an AbortError',
+    reject: () =>
+      new TRPCError({
+        code: 'BAD_REQUEST',
+        message: 'admission refused',
+        cause: abortError(),
+      }),
+    expected: { code: 'BAD_REQUEST', message: 'admission refused' },
+  },
+])(
+  'stop during admission followed by $rejection',
+  async ({ reject, expected }) => {
     const entered = createDeferred();
     const onError = vi.fn();
     const replacement = vi.fn(async function* () {
@@ -419,37 +449,10 @@ test.each([
     const router = t.router({
       pending: t.procedure.subscription(async ({ signal }) => {
         entered.resolve();
-        await new Promise<never>((_resolve, reject) => {
-          signal!.addEventListener(
-            'abort',
-            () =>
-              reject(
-                failure === 'abort'
-                  ? new DOMException('admission cancelled', 'AbortError')
-                  : failure === 'genuine'
-                    ? new Error('admission failed')
-                    : new TRPCError({
-                        code:
-                          failure === 'implicit-message' ||
-                          failure === 'same-message'
-                            ? 'INTERNAL_SERVER_ERROR'
-                            : failure,
-                        ...(failure === 'implicit-message'
-                          ? {}
-                          : {
-                              message:
-                                failure === 'same-message'
-                                  ? 'request aborted'
-                                  : 'admission refused',
-                            }),
-                        cause: new DOMException(
-                          'request aborted',
-                          'AbortError',
-                        ),
-                      }),
-              ),
-            { once: true },
-          );
+        await new Promise<never>((_resolve, rejectAdmission) => {
+          signal!.addEventListener('abort', () => rejectAdmission(reject()), {
+            once: true,
+          });
         });
         return (async function* () {
           yield 'unreachable';
@@ -462,27 +465,15 @@ test.each([
     await entered.promise;
     await ctx.send({ id: 1, method: 'subscription.stop' });
     await vi.waitFor(() => expect(ctx.messages).toHaveLength(1));
-    if (failure === 'abort') {
+    if (expected === null) {
       expect(ctx.messages).toEqual([{ id: 1, result: { type: 'stopped' } }]);
       expect(onError).not.toHaveBeenCalled();
     } else {
       expect(ctx.messages[0]).toMatchObject({
         id: 1,
         error: {
-          message:
-            failure === 'genuine'
-              ? 'admission failed'
-              : failure === 'implicit-message' || failure === 'same-message'
-                ? 'request aborted'
-                : 'admission refused',
-          data: {
-            code:
-              failure === 'genuine' ||
-              failure === 'implicit-message' ||
-              failure === 'same-message'
-                ? 'INTERNAL_SERVER_ERROR'
-                : failure,
-          },
+          message: expected.message,
+          data: { code: expected.code },
         },
       });
       expect(onError).toHaveBeenCalledOnce();

@@ -37,8 +37,6 @@ import {
 // eslint-disable-next-line no-restricted-imports
 import type { Result } from '../unstable-core-do-not-import';
 // eslint-disable-next-line no-restricted-imports
-import { isAutomaticallyWrappedError } from '../unstable-core-do-not-import/error/wrappedErrors';
-// eslint-disable-next-line no-restricted-imports
 import { iteratorResource } from '../unstable-core-do-not-import/stream/utils/asyncIterable';
 import { Unpromise } from '../vendor/unpromise';
 import { createURL, type NodeHTTPCreateContextFnOptions } from './node-http';
@@ -130,9 +128,6 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
     }
 
     function respond(untransformedJSON: TRPCResponseMessage) {
-      if (client.readyState !== WEBSOCKET_OPEN) {
-        return;
-      }
       client.send(
         encoder.encode(
           transformTRPCResponse(router._def._config, untransformedJSON),
@@ -263,96 +258,71 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         }
       }
       const abortController = new AbortController();
-      let subscriptionRegistered = false;
       const releaseSubscription = () => {
         if (clientSubscriptions.get(id) === abortController) {
           clientSubscriptions.delete(id);
         }
       };
-      const respondToOperation = (response: TRPCResponseMessage) => {
-        if (
-          subscriptionRegistered &&
-          clientSubscriptions.get(id) !== abortController
-        ) {
-          return;
-        }
-        respond(response);
-      };
-      const onOperationError = (cause: unknown) => {
-        abortController.abort();
+      const respondWithError = (cause: unknown) => {
         const error = getTRPCErrorFromUnknown(cause);
-        try {
-          opts.onError?.({ error, path, type, ctx, req, input });
-          respondToOperation({
-            id,
-            jsonrpc,
-            error: getErrorShape({
-              config: router._def._config,
-              error,
-              type,
-              path,
-              input,
-              ctx,
-            }),
-          });
-        } finally {
-          releaseSubscription();
-        }
+        opts.onError?.({ error, path, type, ctx, req, input });
+        respond({
+          id,
+          jsonrpc,
+          error: getErrorShape({
+            config: router._def._config,
+            error,
+            type,
+            path,
+            input,
+            ctx,
+          }),
+        });
       };
-      run(async () => {
-        if (type === 'subscription') {
-          if (clientSubscriptions.has(id)) {
-            throw new TRPCError({
+      // The id stays reserved until the subscription has fully cleaned up,
+      // so it is released right before the client is told it may reuse it.
+      const stopSubscription = () => {
+        releaseSubscription();
+        respond({ id, jsonrpc, result: { type: 'stopped' } });
+      };
+
+      if (type === 'subscription') {
+        if (clientSubscriptions.has(id)) {
+          // duplicate request ids for client
+          respondWithError(
+            new TRPCError({
               message: `Duplicate id ${id}`,
               code: 'BAD_REQUEST',
-            });
-          }
-          clientSubscriptions.set(id, abortController);
-          subscriptionRegistered = true;
+            }),
+          );
+          return;
         }
+        // Registered before any await so that a stop or a disconnect during
+        // context creation or the procedure call cancels the subscription.
+        clientSubscriptions.set(id, abortController);
+      }
+
+      run(async () => {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const res = await ctxPromise!; // asserts context has been set
         if (!res.ok) {
           throw res.error;
         }
 
-        if (
-          type === 'subscription' &&
-          (abortController.signal.aborted ||
-            client.readyState !== WEBSOCKET_OPEN)
-        ) {
-          respondToOperation({ id, jsonrpc, result: { type: 'stopped' } });
-          releaseSubscription();
+        if (abortController.signal.aborted) {
+          stopSubscription();
           return;
         }
-        let procedureResult: unknown;
-        try {
-          procedureResult = await callTRPCProcedure({
-            router,
-            path,
-            getRawInput: async () => input,
-            ctx,
-            type,
-            signal: abortController.signal,
-            batchIndex,
-          });
-        } catch (cause) {
-          const error = getTRPCErrorFromUnknown(cause);
-          if (
-            type === 'subscription' &&
-            abortController.signal.aborted &&
-            isAutomaticallyWrappedError(error) &&
-            error.code === 'INTERNAL_SERVER_ERROR' &&
-            isAbortError(error.cause) &&
-            error.message === error.cause.message
-          ) {
-            respondToOperation({ id, jsonrpc, result: { type: 'stopped' } });
-            releaseSubscription();
-            return;
-          }
-          throw cause;
-        }
-        const result = procedureResult;
+
+        const result = await callTRPCProcedure({
+          router,
+          path,
+          getRawInput: async () => input,
+          ctx,
+          type,
+          signal: abortController.signal,
+          batchIndex,
+        });
 
         const isIterableResult =
           isAsyncIterable(result) || isObservable(result);
@@ -365,7 +335,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
             });
           }
           // send the value as data if the method is not a subscription
-          respondToOperation({
+          respond({
             id,
             jsonrpc,
             result: {
@@ -386,15 +356,13 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         const iterable = isObservable(result)
           ? observableToAsyncIterable(result, abortController.signal)
           : result;
-        if (
-          abortController.signal.aborted ||
-          client.readyState !== WEBSOCKET_OPEN
-        ) {
+
+        if (abortController.signal.aborted) {
+          // dispose the iterator without consuming it
           {
             await using _iterator = iteratorResource(iterable);
           }
-          respondToOperation({ id, jsonrpc, result: { type: 'stopped' } });
-          releaseSubscription();
+          stopSubscription();
           return;
         }
 
@@ -446,7 +414,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
                 };
               }
 
-              respondToOperation({
+              respond({
                 id,
                 jsonrpc,
                 result,
@@ -462,21 +430,36 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
             throw cause;
           }
         })
-          .then(() => {
-            // The iterator has been disposed before the id can be reused.
-            respondToOperation({ id, jsonrpc, result: { type: 'stopped' } });
-            releaseSubscription();
+          .catch((cause) => {
+            abortController.abort();
+            respondWithError(cause);
           })
-          .catch(onOperationError);
+          .finally(stopSubscription);
 
-        respondToOperation({
+        respond({
           id,
           jsonrpc,
           result: {
             type: 'started',
           },
         });
-      }).catch(onOperationError);
+      }).catch((cause) => {
+        // procedure threw an error
+        const error = getTRPCErrorFromUnknown(cause);
+        // A procedure that gives up because its subscription was cancelled
+        // rejects with an `AbortError`, which is wrapped as an
+        // INTERNAL_SERVER_ERROR. Any other cause or code is still reported.
+        if (
+          abortController.signal.aborted &&
+          error.code === 'INTERNAL_SERVER_ERROR' &&
+          isAbortError(error.cause)
+        ) {
+          stopSubscription();
+          return;
+        }
+        releaseSubscription();
+        respondWithError(error);
+      });
     }
     client.on('message', (rawData, isBinary) => {
       // Handle PING/PONG as text regardless of encoder
