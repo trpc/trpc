@@ -10,8 +10,21 @@ export const cuts: Record<
   string,
   { readonly what: string; readonly patches: readonly Patch[] }
 > = {
+  'danson-sync': {
+    what: "danSON's stream methods out of createSerializer() (a sync danSON for the Promise httpLink)",
+    patches: [
+      [
+        'serializer/index.ts',
+        `    serializeDeferred: (value, o) =>
+      serializeDeferred(value, { serializers, coerceError: o?.coerceError }),
+    deserializeStream: (frames, o) =>
+      deserializeStream(frames, { ...output, ...o }),`,
+        '    serializeDeferred: undefined as never,\n    deserializeStream: undefined as never,',
+      ],
+    ],
+  },
   sse: {
-    what: 'SSE subscriptions out of httpLink (an opt-in sseLink / subscriptions module)',
+    what: 'SSE subscriptions out of httpStreamLink (an opt-in sseLink / subscriptions module)',
     patches: [
       [
         'client/links/http/link.ts',
@@ -21,7 +34,7 @@ export const cuts: Record<
     ],
   },
   batch: {
-    what: 'batching (the data loader) out of httpLink (an opt-in batch link or module)',
+    what: 'batching (the data loader) out of httpStreamLink (an opt-in batch link or module)',
     patches: [
       [
         'client/links/http/link.ts',
