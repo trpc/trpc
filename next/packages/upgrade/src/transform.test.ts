@@ -163,7 +163,7 @@ export default {
     `);
     expect(messages(source)).toMatchInlineSnapshot(`
       [
-        "6:5 createFetchHandler: make the handler once, outside the request function; createContext gets { request, info }; old clients: createV11Handler on this endpoint, createFetchHandler on another (docs/migrations/from-v11/serve-v11-clients.md)",
+        "6:5 createFetchHandler: make the handler once, outside the request function; createContext gets { request, info }; old clients: createV11Handler on this endpoint, createFetchHandler on another (https://v12.trpc.io/v12/docs/migrations/from-v11/serve-v11-clients)",
       ]
     `);
   });
@@ -179,7 +179,7 @@ export const createContext = (opts: FetchCreateContextFnOptions) => ({});
     `);
     expect(messages(source)).toMatchInlineSnapshot(`
       [
-        "1:15 CreateContextOpts: opts.req is opts.request, whose headers are a record (request.headers['authorization']); response headers go on the procedure's response handle, docs/server/responses.md",
+        "1:15 CreateContextOpts: opts.req is opts.request, whose headers are a record (request.headers['authorization']); response headers go on the procedure's response handle, https://v12.trpc.io/v12/docs/server/responses",
       ]
     `);
   });
@@ -193,8 +193,8 @@ import { something } from '@trpc/unknown';
     ).toMatchInlineSnapshot(`
       [
         "1:1 observable(): subscriptions return an async generator or an Effect Stream; a v11 link keeps it under fromV11Link",
-        "2:1 adapters: serve createFetchHandler() with serve() from @trpc12/trpc/http (docs/adapters/overview.md); old clients: createV11Handler on this endpoint, createFetchHandler on another (docs/migrations/from-v11/serve-v11-clients.md)",
-        "3:1 @trpc/unknown: no v12 module, see docs/migrations/from-v11.md",
+        "2:1 adapters: serve createFetchHandler() with serve() from @trpc12/trpc/http (https://v12.trpc.io/v12/docs/adapters/overview); old clients: createV11Handler on this endpoint, createFetchHandler on another (https://v12.trpc.io/v12/docs/migrations/from-v11/serve-v11-clients)",
+        "3:1 @trpc/unknown: no v12 module, see https://v12.trpc.io/v12/docs/migrations/from-v11",
       ]
     `);
   });
@@ -527,7 +527,7 @@ const t = init.create();
     `);
     expect(messages(source)).toMatchInlineSnapshot(`
       [
-        "1:1 default or namespace import of @trpc/server: see docs/migrations/from-v11.md",
+        "1:1 default or namespace import of @trpc/server: see https://v12.trpc.io/v12/docs/migrations/from-v11",
       ]
     `);
   });
@@ -629,7 +629,7 @@ export const handle = (request: Request) =>
     expect(messages(source)).toMatchInlineSnapshot(`
       [
         "5:17 createCallerFactory: createRouterClient(router, { ctx }) makes a caller",
-        "7:3 createFetchHandler: make the handler once, outside the request function; createContext gets { request, info }; old clients: createV11Handler on this endpoint, createFetchHandler on another (docs/migrations/from-v11/serve-v11-clients.md)",
+        "7:3 createFetchHandler: make the handler once, outside the request function; createContext gets { request, info }; old clients: createV11Handler on this endpoint, createFetchHandler on another (https://v12.trpc.io/v12/docs/migrations/from-v11/serve-v11-clients)",
       ]
     `);
   });

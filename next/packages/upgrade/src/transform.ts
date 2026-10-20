@@ -59,7 +59,9 @@ interface ModuleMap {
   readonly names: Readonly<Record<string, string>>;
 }
 
-const GUIDE = 'see docs/migrations/from-v11.md';
+/** The v12 docs on the site, which the steps link. */
+const DOCS = 'https://v12.trpc.io/v12/docs';
+const GUIDE = `see ${DOCS}/migrations/from-v11`;
 const TRPC12 = /^@trpc12\/[^/]+(\/|$)/;
 
 const MODULES: Readonly<Record<string, ModuleMap>> = {
@@ -146,15 +148,14 @@ const GONE_HELPERS: ReadonlySet<string> = new Set([
   'infiniteQueryFilter',
 ]);
 
-const OLD_CLIENTS =
-  'old clients: createV11Handler on this endpoint, createFetchHandler on another (docs/migrations/from-v11/serve-v11-clients.md)';
+const OLD_CLIENTS = `old clients: createV11Handler on this endpoint, createFetchHandler on another (${DOCS}/migrations/from-v11/serve-v11-clients)`;
 
 const MODULE_NOTES: Readonly<Record<string, string>> = {
   '@trpc/server/observable':
     'observable(): subscriptions return an async generator or an Effect Stream; a v11 link keeps it under fromV11Link',
-  '@trpc/server/adapters/standalone': `adapters: serve createFetchHandler() with serve() from @trpc12/trpc/http (docs/adapters/overview.md); ${OLD_CLIENTS}`,
-  '@trpc/server/adapters/express': `adapters: mount createFetchHandler() with toNodeHandler from @trpc12/trpc/http (docs/adapters/node.md); ${OLD_CLIENTS}`,
-  '@trpc/server/adapters/ws': `adapters: handler.websocket(socket, { request }) or serve() from @trpc12/trpc/http (docs/adapters/overview.md); ${OLD_CLIENTS}`,
+  '@trpc/server/adapters/standalone': `adapters: serve createFetchHandler() with serve() from @trpc12/trpc/http (${DOCS}/adapters/overview); ${OLD_CLIENTS}`,
+  '@trpc/server/adapters/express': `adapters: mount createFetchHandler() with toNodeHandler from @trpc12/trpc/http (${DOCS}/adapters/node); ${OLD_CLIENTS}`,
+  '@trpc/server/adapters/ws': `adapters: handler.websocket(socket, { request }) or serve() from @trpc12/trpc/http (${DOCS}/adapters/overview); ${OLD_CLIENTS}`,
   '@trpc/react-query':
     '@trpc/react-query has no v12 version: move to @trpc12/tanstack-react-query',
   '@trpc/next':
@@ -162,8 +163,7 @@ const MODULE_NOTES: Readonly<Record<string, string>> = {
 };
 
 const NAME_NOTES: Readonly<Record<string, string>> = {
-  FetchCreateContextFnOptions:
-    "CreateContextOpts: opts.req is opts.request, whose headers are a record (request.headers['authorization']); response headers go on the procedure's response handle, docs/server/responses.md",
+  FetchCreateContextFnOptions: `CreateContextOpts: opts.req is opts.request, whose headers are a record (request.headers['authorization']); response headers go on the procedure's response handle, ${DOCS}/server/responses`,
   TRPCLink:
     'TRPCLink: stays on @trpc/client; keep the link with fromV11Link(link) from @trpc12/trpc/interop, or rewrite it with link() as an Effect Stream function',
   inferRouterOutputs:
@@ -502,7 +502,7 @@ export function upgradeSource(
           s.appendRight(prop['value'].end, ')');
           note(
             prop.start,
-            'createSyncSerializer<…>(transformer): list the types it rebuilds, docs/server/serializers.md',
+            `createSyncSerializer<…>(transformer): list the types it rebuilds, ${DOCS}/server/serializers`,
           );
         }
       } else if (name === 'maxURLLength') {
