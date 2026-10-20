@@ -17,6 +17,9 @@ links:
   - kind: decision
     label: error-tags
     url: ../decisions/error-tags.md
+  - kind: decision
+    label: error-data-form
+    url: ../decisions/error-data-form.md
   - kind: code
     label: experimental_validationLink
     url: ../../packages/trpc/src/client/links/validation.ts
@@ -32,7 +35,7 @@ links:
 
 ## Why it matters
 
-`experimental_validationLink` checks inputs and results against a contract's schemas; errors pass through it. `fromWireError` rebuilds every error as a plain `TrpcError`, so `instanceof PostNotFound` (a `TrpcError.Tagged` class) is false on the client, and under `output: 'json'` a `Date` in an error's `data` stays a string while the same `Date` in an output is decoded. The server already validates declared errors' `data` before sending it.
+`experimental_validationLink` checks inputs and results against a contract's schemas; errors pass through it. `fromWireError` rebuilds every error as a plain `TrpcError`, so `instanceof PostNotFound` (a `TrpcError.Tagged` class) is false on the client, and under `output: 'json'` a `Date` in an error's `data` stays a string (typed as one) while the same `Date` in an output is decoded. The server already validates declared errors' `data` before sending it.
 
 ## Options
 
@@ -94,7 +97,7 @@ err instanceof PostNotFound; // false
 
 - ✅ Nothing to build; `matchError()` and `Effect.catchTag` match on the code, so neither needs `instanceof`
 - ✅ The link is experimental, so it can add this later without breaking anyone
-- ❌ No `instanceof` on the client, and `Date`s in error `data` arrive as strings under `output: 'json'`
+- ❌ No `instanceof` on the client, and `Date`s in error `data` arrive, and are typed, as strings under `output: 'json'`
 
 ### B) Check declared errors' `data` and rebuild their classes
 
@@ -104,12 +107,12 @@ The link decodes each defined error's `data` with its spec from the contract and
 // ---cut-start---
 import {
   createTrpcClient,
-  experimental_validationLink,
   httpLink,
   matchError,
   safe,
   TrpcError,
 } from '@trpc12/trpc/client';
+import { experimental_validationLinkB as experimental_validationLink } from '../open/validation-link-error-data.ts';
 import { experimental_contract } from '@trpc12/trpc/contract';
 import { Schema } from 'effect';
 class PostNotFound extends TrpcError.Tagged('POST_NOT_FOUND', {
@@ -162,12 +165,12 @@ Under `output: 'json'`, decode defined errors' `data` with their schemas; the er
 // ---cut-start---
 import {
   createTrpcClient,
-  experimental_validationLink,
   httpLink,
   matchError,
   safe,
   TrpcError,
 } from '@trpc12/trpc/client';
+import { experimental_validationLinkC as experimental_validationLink } from '../open/validation-link-error-data.ts';
 import { experimental_contract } from '@trpc12/trpc/contract';
 import { Schema } from 'effect';
 class PostNotFound extends TrpcError.Tagged('POST_NOT_FOUND', {
@@ -205,7 +208,7 @@ if (err?.code === 'POST_NOT_FOUND') {
 }
 ```
 
-- ✅ Fixes the JSON-form mismatch between outputs and errors with no class registry
+- ✅ Errors' `data` decodes to the same types as outputs, with no class registry
 - ❌ The same schema work as B, without `instanceof`
 
 ## Recommendation
@@ -218,6 +221,7 @@ if (err?.code === 'POST_NOT_FOUND') {
 
 ## Details
 
+- Under A the types already follow the wire: `output: 'json'` declares `DecodedJsonForm`, whose `errorData` types errors' `data` as plain JSON ([error-data-form](../decisions/error-data-form.md)). B and C would declare `DansonForm` again.
 - Undeclared errors (`UndeclaredError`, a thrown custom code from a procedure without `.errors()`) have no schema, so no option can check their `data`.
 - `experimental_validationLink`'s own output mismatch is `BAD_RESPONSE`, with the issues on `cause.issues` ([closed-client-errors](../decisions/closed-client-errors.md)); B would use the same for an error's `data`.
 - `offline` in the examples is the object of link-code handlers (`NETWORK_ERROR`, `BAD_RESPONSE`) the client errors docs spread into each `matchError()`.
