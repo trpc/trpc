@@ -1,6 +1,6 @@
 ---
 name: decision-round
-description: Walk the human through open tRPC vNext decisions one at a time with a progress count, each as a short summary linking its page under v12.trpc.io/v12/decisions, then act on the answers. "skip" defers an item to the agent's best call; "done" stops asking and implements everything answered so far. Use when the human asks for a decision round, to go through open decisions or questions, to review agent calls, or says "ask me" about decisions in next/.agent-docs.
+description: Walk the human through open tRPC vNext decisions one at a time with a progress count, each as a short summary linking its page under v12.trpc.io/v12/decisions, then act on the answers. "skip" defers an item: it stays open for later, the agent doesn't decide it and nothing is recorded; "done" stops asking and implements everything answered so far. Use when the human asks for a decision round, to go through open decisions or questions, to review agent calls, or says "ask me" about decisions in next/.agent-docs.
 ---
 
 # Decision round
@@ -59,7 +59,7 @@ Send each item as its own short message, then stop and wait for the reply. Keep 
 | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | A letter or free text | Record the answer verbatim as the human's. Say in one line which decision it goes into, linking that record's page (`https://v12.trpc.io/v12/decisions/<topic>`, live once landed), then go to the next item. "Do recommended" is the recommended option, chosen by the human. |
 | A hesitant answer     | "I don't get this", "might change", "not sure": record it as the human's, but tentative (step 3), and say so in one line.                                                                               |
-| `skip`                | Defer to the agent: pick the best option (Effect-native first, v11 second), say the pick in one line ("Skipped: going with A"), then go to the next item. It is recorded as `(agent)`, not the human's. |
+| `skip`                | Defer: the item stays open for a later round. Don't pick an option, don't record anything and don't touch its open file; say "Skipped, it stays open" in one line, then go to the next item. |
 | `done`                | Stop asking and go to step 3. Unasked items stay open.                                                                                                                                                  |
 | `back`                | Re-ask the previous item; the new answer replaces the old one.                                                                                                                                          |
 
@@ -70,10 +70,9 @@ When the queue is empty, go to step 3 as if the human had said `done`.
 1. **Record every answer** under `.agent-docs/decisions/`:
    - **The human's answer:** the file's title is `(human)`, or `(human asked)` when they set the outcome and left the details to the agent. Add a bullet quoting them: `Human, <date> (Q12.1): "<their words>"`. If an `(agent)` file exists for that topic, edit it: change the title marker, and keep any agent details as `(agent)` bullets.
    - **A tentative answer:** as above, plus a bullet `Tentative (human): <why, in their words>. Challenge it when it gets in the way.` `pnpm decisions --tentative` lists these.
-   - **A skipped item:** the file stays or becomes `(agent)`, with a bullet `(agent) Skipped in the decision round, <date>; chose <option> because <reason>.` That keeps every skipped item findable with `pnpm decisions "decision round"`.
    - **A new topic:** create a new `decisions/<topic>.md` with Why, Lost, Open and Lives in bullets. Don't fill the Decision blocks in proposals.
    - **Questions:** every answered `Qn.m` must be cited by a decision file, so `pnpm decisions --questions` shows it.
-   - **Open files:** delete the `open/<topic>.md` of every answered or skipped item in the commit that records it, after copying the options given up into the decision's **Lost** bullet. Unasked items keep their files.
+   - **Open files:** delete the `open/<topic>.md` of every answered item in the commit that records it, after copying the options given up into the decision's **Lost** bullet. Skipped and unasked items keep their files, unchanged.
 2. **Ripple:** update the proposals, the docs pages in `next/www/docs/`, `.agent-docs/reference/orpc-parity.md` and the notes that the answers change.
 3. **Implement** what the answers require: code in Effect style, tests and docs. A `(human)` answer that reverses built code means changing that code, not just the docs. An answer of "spike it" means a spike under `spikes/` and a note in `.agent-docs/notes/`, not shipped code. For work that can't be finished (it needs credentials, an upstream release, or another answer), leave an `Open:` bullet saying what is missing.
 4. **Gates:** run `pnpm fix`, `pnpm check`, `pnpm typecheck`, `pnpm test` and `pnpm example`. Fix anything that fails.
@@ -84,6 +83,6 @@ When the queue is empty, go to step 3 as if the human had said `done`.
 Keep it short and readable on a phone:
 
 - **Decided by you:** each item, linking its decision record's page (`https://v12.trpc.io/v12/decisions/<file name without .md>`), with what it changed and the commit. Mark tentative ones.
-- **Skipped (agent's call):** each item and the pick, linking its record's page the same way, so they can be revisited later with `pnpm decisions "decision round"`.
+- **Skipped:** each item, linking its open page, so the next round asks it again. Nothing was recorded or changed for them.
 - **Still open:** what wasn't asked or couldn't be finished, and why.
 - **Gates and CI:** results.
