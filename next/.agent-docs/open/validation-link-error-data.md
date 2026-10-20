@@ -213,7 +213,7 @@ if (err?.code === 'POST_NOT_FOUND') {
 
 ## Recommendation
 
-**A** for now. Declared `.errors()` lists are exhaustive and checked on the server ([thrown-errors-and-exhaustive-declarations](../decisions/thrown-errors-and-exhaustive-declarations.md)), and matching is by code (`_tag` is the code, [error-tags](../decisions/error-tags.md)), so B mostly adds `instanceof` and `Date`s. B is the Effect-native shape if someone needs it, and fits the experimental link without a break.
+**A** for now. Declared `.errors()` lists are exhaustive and checked on the server ([thrown-errors-and-exhaustive-declarations](../decisions/thrown-errors-and-exhaustive-declarations.md)), and matching is by code or by `_tag`, which crosses the wire for defined errors ([error-tags](../decisions/error-tags.md)), so B mostly adds `instanceof` and `Date`s. B is the Effect-native shape if someone needs it, and fits the experimental link without a break.
 
 ## Blocked until answered
 

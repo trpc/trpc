@@ -9,7 +9,7 @@
 - (agent, Q7.3) `safe()` returns `[data, error]` that also has `{ data, error }` properties, so both destructuring styles work.
 - (agent, Q16.4; human: "Revisit later. Pick something for now") Client-side failures are new codes in the same union (`NETWORK_ERROR`, `CLIENT_CLOSED_REQUEST`), not a flag.
 - Masking is [`mask-unexpected-errors.md`](./mask-unexpected-errors.md).
-- (agent) The Open here (tag errors by code for `Effect.catchTag`) is done: [`error-tags.md`](./error-tags.md).
+- (agent) The Open here (tag errors for `Effect.catchTag`) is done, with a tag per failure: [`error-tags.md`](./error-tags.md).
 - Human, 2026-10-16 (decision round, error status after oRPC v2): "C". `status` lives only on declared specs (`.errors({ X: { status } })`) and `TrpcError.Tagged` specs, as a hint the HTTP and OpenAPI handlers read. It is gone from `TrpcError` instances, `error()` and `new TrpcError()` options, REST error bodies and socket error frames. This narrows Q7.7's field list to `code`, `data` and `defined`.
   - Options were: A) keep `status` everywhere; B) oRPC v2's way, no `status` anywhere and a code-to-status map on the handlers; C) this. oRPC v2 removed it from `ORPCError` and its error bodies ([`apps/content/docs/migrations/from-v1.mdx`](https://github.com/middleapi/orpc/blob/v2.0.0-beta.44/apps/content/docs/migrations/from-v1.mdx), "`status` removed from errors").
   - Why: sockets and message ports have no status, and the brief says the protocol must not assume HTTP.

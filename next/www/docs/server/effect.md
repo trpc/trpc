@@ -128,7 +128,7 @@ const withUser = t.middleware.effect<{ provides: CurrentUser }>()((opts) =>
 
 ## Around `next()`
 
-An Effect middleware's `next()` succeeds with the rest of the chain's result (`data`) and fails with its error, a `NextError`: the `TrpcError` clients will get, where a thrown value is an `INTERNAL_SERVER_ERROR`. Its `_tag` is its code, so Effect's own combinators work on it:
+An Effect middleware's `next()` succeeds with the rest of the chain's result (`data`) and fails with its error, a `NextError`: the `TrpcError` clients will get, where a thrown value is an `INTERNAL_SERVER_ERROR`. It has its failure's `_tag` (`NotFound`, `InvalidInput`, a tagged class's) and its `code`, so Effect's own combinators work on it:
 
 ```ts twoslash
 // ---cut-start---
@@ -145,7 +145,7 @@ const resilient = t.middleware.effect()((opts) =>
       times: 2,
       while: (err) => err.code === 'SERVICE_UNAVAILABLE',
     }),
-    Effect.catchTag('NOT_FOUND', () => Effect.fail(new PostGone())),
+    Effect.catchTag('NotFound', () => Effect.fail(new PostGone())),
     Effect.timeoutOrElse({
       duration: '5 seconds',
       orElse: () => Effect.fail(new TrpcError.Timeout()),

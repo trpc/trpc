@@ -30,7 +30,7 @@ The links are the same as the Promise client's ([Links](./links.md)). For spans 
 
 ## Errors
 
-A call fails with the errors a Promise client call rejects with: the procedure's errors, the built-in ones and the links' own. An error's `_tag` is its code, so `Effect.catchTag` handles a code and removes it from the error channel. A built-in error with that code (`defined: false`, such as a `NOT_FOUND` from a server that doesn't have the procedure) is caught too:
+A call fails with the errors a Promise client call rejects with: the procedure's errors, the built-in ones and the links' own. Each kind of failure has its own `_tag`, so `Effect.catchTag` takes exactly one out of the error channel: a declared error by its class's tag, a built-in error by its code's class name (`NotFound`, `NetworkError`, `Timeout`), and the failures a client acts on by their own ([Errors](./errors.md#the-failures-a-client-acts-on)). A server that doesn't have the procedure fails with `ProcedureNotFound`, not `NotFound`, so a handler for "no such post" doesn't run for a stale deploy:
 
 ```ts twoslash
 // ---cut-start---
@@ -41,18 +41,40 @@ const client = createEffectClient({
   router: routerType<AppRouter>(),
   links: [httpLink({ url: 'http://localhost:3000/trpc' })],
 });
+declare const reload: () => Effect.Effect<string>;
 // ---cut-end---
 import { Effect } from 'effect';
 
 const title = client.post.byId.query({ id: '1' }).pipe(
   Effect.map((post) => post.title),
-  Effect.catchTag('NOT_FOUND', (err) =>
+  Effect.catchTag('NotFound', (err) =>
     Effect.succeed(err.defined ? `no post ${err.data.id}` : err.message),
   ),
+  Effect.catchTag('ProcedureNotFound', () => reload()),
 );
 ```
 
-`Effect.catchTags` handles several codes, and `Effect.result` gives a `Result` instead of failing, like the Promise client's `safe()`. Failures of the links themselves that aren't errors (a bug in a custom link) are defects, not failures.
+`Effect.catchTags` handles several tags, and `Effect.result` gives a `Result` instead of failing, like the Promise client's `safe()`. Failures of the links themselves that aren't errors (a bug in a custom link) are defects, not failures.
+
+Every error keeps its `code` too, for the HTTP-style grouping the Promise client switches on. `hasCode(code)` is a refinement, so `Effect.catchIf` takes every error with a code out, whatever its tag:
+
+```ts twoslash
+// ---cut-start---
+import type { AppRouter } from './server.ts';
+import { httpLink, routerType } from '@trpc12/trpc/client';
+import { createEffectClient } from '@trpc12/trpc/effect';
+import { Effect } from 'effect';
+const client = createEffectClient({
+  router: routerType<AppRouter>(),
+  links: [httpLink({ url: 'http://localhost:3000/trpc' })],
+});
+// ---cut-end---
+import { hasCode } from '@trpc12/trpc/client';
+
+const post = client.post.byId
+  .query({ id: '1' })
+  .pipe(Effect.catchIf(hasCode('NOT_FOUND'), () => Effect.succeed(null)));
+```
 
 ## Interruption
 

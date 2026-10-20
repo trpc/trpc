@@ -85,6 +85,15 @@ const post = t.procedure
   );
 ```
 
+The class's name is its `_tag`, and its code unless `code` names another. A class with a built-in code keeps that code's status and its place in `switch (err.code)` and `matchError()`, and Effect code still catches it by its own tag:
+
+```ts
+class PostMissing extends TrpcError.Tagged('PostMissing', {
+  code: 'NOT_FOUND', // a 404, matchError()'s NOT_FOUND key
+  data: z.object({ id: z.string() }),
+}) {}
+```
+
 ## On the client
 
 On the client, the errors in the union are `defined: true`, with their `data`, whether they were returned, failed or declared. A thrown error with a declared code is too: its `data` is validated like a returned one's. Anything else arrives with `defined: false`:
@@ -93,7 +102,7 @@ On the client, the errors in the union are `defined: true`, with their `data`, w
 - A thrown error with a custom code keeps its code and `data`, untyped, when the procedure declares no errors. On the client it is an `UndeclaredError`, which `matchError()` hands to `unexpected`. With `.errors()` that don't list it, it is an `INTERNAL_SERVER_ERROR`.
 - A crash is an `INTERNAL_SERVER_ERROR`. Its message is masked unless `NODE_ENV` is `development` or `test`, or `exposeUnexpectedErrors: true`.
 
-`onError` still sees the original error. Return a thrown error, or declare it, to make it typed on the client. There is no `errorFormatter`.
+`onError` still sees the original error, with its own `_tag` ([below](#in-effect-code)). Return a thrown error, or declare it, to make it typed on the client. There is no `errorFormatter`.
 
 ```ts twoslash
 // ---cut-start---
@@ -209,11 +218,41 @@ t.procedure.query(() => error({ code: 'unexpected' }));
 
 ## In Effect code
 
-An error's `_tag` is its code, so Effect code narrows with `catchTag`:
+Every failure has its own `_tag`, so `Effect.catchTag` takes exactly one out of the error channel. A built-in code's class is tagged with its name (`NOT_FOUND` is `TrpcError.NotFound`, tagged `NotFound`, and so is `error({ code: 'NOT_FOUND' })`), a `TrpcError.Tagged` class with its own, a custom code with the code, and a failure tRPC makes with what went wrong:
 
 ```ts
-Effect.catchTag('NOT_FOUND', () => Effect.succeed(null));
+Effect.catchTag('NotFound', () => Effect.succeed(null));
 ```
+
+`code` still groups them for HTTP: `hasCode(code)` is a refinement, so `Effect.catchIf(hasCode('NOT_FOUND'), …)` takes every `NOT_FOUND`, whatever its tag.
+
+- `ProcedureNotFound` (`NOT_FOUND`): no procedure at the path. Reaches clients with its tag.
+- `ProcedureTypeMismatch` (`METHOD_NOT_SUPPORTED`): a query called as a mutation, or the other way. Reaches clients with its tag.
+- `SerializerMismatch` (`UNSUPPORTED_PROTOCOL`): a link whose serializer isn't the server's. Made by the link.
+- `InvalidInput` (`BAD_REQUEST`): an input that failed its schema. It's defined, with `data.issues`, so it reaches clients with its tag.
+- `InvalidOutput` (`INTERNAL_SERVER_ERROR`): an output that failed its schema.
+- `RouteNotFound` (`NOT_FOUND`): a URL outside the endpoint, or no OpenAPI route for it.
+- `InvalidBody` (`PARSE_ERROR`): a body or `input` that isn't JSON, multipart or a form, or doesn't decode.
+- `MissingInputField` (`BAD_REQUEST`): a multipart body without its `input` field.
+- `UnreadableBody` (`BAD_REQUEST`): a body or byte stream that failed while it was read.
+- `BodyConsumed` (`INTERNAL_SERVER_ERROR`): a body a middleware mounted before tRPC read without keeping it.
+- `ByteStreamConsumed` (`BAD_REQUEST`): a byte stream input read a second time.
+- `BatchTooLarge` (`PAYLOAD_TOO_LARGE`): a batch with more calls than `batch.maxItems`.
+- `BatchingDisabled` (`BAD_REQUEST`): a batch sent to a handler without `batch`.
+- `InvalidBatch` (`BAD_REQUEST`): a batch body that isn't an array, or a batched subscription.
+- `InvalidPathParam` (`BAD_REQUEST`): an OpenAPI path param that isn't valid, or doesn't fit the body.
+- `CrossSiteRequest` (`FORBIDDEN`): a cross-site OpenAPI request without a JSON content type.
+- `InvalidMessage` (`PARSE_ERROR`): a socket message that isn't one.
+- `UnknownMessage` (`BAD_REQUEST`): a socket message of an unknown type.
+- `InvalidRequestId` (`BAD_REQUEST`): a socket request without a unique numeric id.
+- `ProcedureNotImplemented` (`NOT_IMPLEMENTED`): a contract procedure without an implementation.
+- `UnsupportedResponse` (`BAD_REQUEST`): a `Response`, or a streamed durable replay, over a transport that can't carry it.
+- `CallIdConflict` (`CONFLICT`): a call id reused with another input, in `experimental_durable()`.
+- `InvalidDurableHeader` (`BAD_REQUEST`): a malformed call id or resume header, in `experimental_durable()`.
+- `InvalidConnectionToken` (`UNAUTHORIZED`): a missing, malformed or forged token, in `experimental_connectionToken()`.
+- `ConnectionTokenExpired` (`UNAUTHORIZED`): a token past its `ttl`, in `experimental_connectionToken()`.
+
+A failure that is just its code's meaning is that code's class: a body over `maxBodySize` is `PayloadTooLarge`. Clients get the tags of defined errors and the first three above; the rest reach them as their code's class, so the wire carries a tag only where a client [acts on it](../client/errors.md#the-failures-a-client-acts-on). To make one, pass `tag` to the code's class: `new TrpcError.PayloadTooLarge({ tag: 'BatchTooLarge' })` is typed with that tag, and a tag of another code is a type error.
 
 A failure that isn't a `TrpcError` is a type error until it is mapped, so internals never reach clients. `TrpcError.Tagged` classes mark the errors clients may see ([Effect](./effect.md#errors-clients-may-see)).
 

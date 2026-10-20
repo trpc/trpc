@@ -24,11 +24,11 @@ Two spikes back this: [closed-error-unions](../notes/closed-error-unions.md) and
 - **One thing keeps it open.** A thrown, undeclared `TrpcError` keeps its code on the wire (`normalizeCause`, `server/execution/execute.ts`). Only non-`TrpcError` throws are masked ([mask-unexpected-errors](../decisions/mask-unexpected-errors.md)).
   - The census in [closed-error-unions](../notes/closed-error-unions.md#census-what-reaches-the-client-over-httplink) shows that every other failure arrives as a built-in code.
   - `codeOfStatus` maps a proxy's 401, 502 and so on onto built-in codes.
-- **Narrowing** is `err.defined` then `code`, or `Effect.catchTag` ([error-tags](../decisions/error-tags.md)). Nothing checks that every case is handled.
+- **Narrowing** is `err.defined` then `code`, or `Effect.catchTag` on each failure's own `_tag` ([error-tags](../decisions/error-tags.md)). Nothing checks that every case is handled.
 - **TanStack adapters** type `error` with the full union in every component ([tanstack-query-types](../decisions/tanstack-query-types.md)). App-wide handling (`QueryCache` `onError`, error boundaries) is untyped and never narrows what a component sees.
 - **Boundary codes are coarse.**
   - `PARSE_ERROR` covers a foreign response with an unmapped status, an undecodable body, `validationLink`'s output mismatch, and the server failing to parse a request.
-  - A client calling a procedure the server lacks (a stale deploy) gets `NOT_FOUND` with `defined: false`.
+  - A client calling a procedure the server lacks (a stale deploy) gets `NOT_FOUND` with `defined: false`. (It is now tagged `ProcedureNotFound`, on the wire too: [error-tags](../decisions/error-tags.md).)
   - There is no client-side timeout or offline code. (A call whose `signal` times out now fails with `TIMEOUT`: [client-timeout-error](../decisions/client-timeout-error.md).)
 - **Error data isn't checked on the client.** `validationLink` validates outputs only. `fromWireError` rebuilds every error as a plain `TrpcError`, so `instanceof PostNotFound` is false on the client.
 
@@ -146,7 +146,7 @@ A shipped as `BAD_RESPONSE` ([closed-client-errors](../decisions/closed-client-e
 - **B: a distinct code for unknown paths.** The server answers a path it doesn't have with `NOT_FOUND` and `data: { procedure: path }`, and the client reads that as `STALE_CLIENT`.
 - **C: later.**
 
-Human, 2026-10-20: C, later. A procedure the server lacks stays a built-in `NOT_FOUND`; B is the cheaper path when it comes back ([stale-client-error](../decisions/stale-client-error.md)).
+Human, 2026-10-20: C, later. A procedure the server lacks stays a built-in `NOT_FOUND`; B is the cheaper path when it comes back ([stale-client-error](../decisions/stale-client-error.md)). Since then every distinct failure has its own `_tag`, and this one reaches clients as `ProcedureNotFound`, still a `NOT_FOUND`, with no fingerprint ([error-tags](../decisions/error-tags.md)).
 
 ### Q24.8: errors decoded on the client
 

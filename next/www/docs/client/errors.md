@@ -41,7 +41,7 @@ const [post, err] = await safeClient.post.byId.query({ id: '1' });
 `error` is a `TrpcError`, and its type lists every way the call can fail, in three groups:
 
 - **Defined errors** (`defined: true`): the procedure's own. They're the errors it returns, fails with (a returned `Stream`'s failures too) or declares on the server ([Errors](../server/errors.md)), its input's `BAD_REQUEST` with `data.issues`, and errors links declare ([Custom links](./custom-links.md#errors-and-unsupported-types)). Each code has its `data` type, in the form it arrives in, as outputs do: a `Date` is a `string` over plain JSON, and a `Date` with danSON ([Serializers](../server/serializers.md)).
-- **Built-in errors** (`defined: false`, the `BuiltinError` type): one member per built-in code, and they never have `data`.
+- **Built-in errors** (`defined: false`, the `BuiltinError` type): one member per built-in code, each its code's class (`TrpcError.NotFound`, tagged `NotFound`), plus [the failures a client acts on](#the-failures-a-client-acts-on), which have their own tags. They never have `data`.
 - **Undeclared errors** (`defined: false`, the `UndeclaredError` type): a custom code thrown by a procedure that declares no errors, with its `data`, both untyped. No literal matches its code type, so `switch` cases skip it.
 
 | Built-in code               | When                                                                                                                                                                   |
@@ -145,7 +145,7 @@ if (err) {
 
 ## Switching on the code
 
-`switch (err.code)` narrows the error to the members with that code. A code can be in both groups: the server's `NOT_FOUND` for a missing post, and a built-in `NOT_FOUND` when the server doesn't have the procedure (a client deployed before its server). Until `err.defined` says which, `data` is the defined error's type or `undefined`:
+`switch (err.code)` narrows the error to the members with that code. A code can be in both groups: the server's `NOT_FOUND` for a missing post, and a built-in `NOT_FOUND` when the server doesn't have the procedure (a client deployed before its server). Until `err.defined` says which, `data` is the defined error's type or `undefined`, and the built-in one's `_tag` says which failure it was:
 
 ```ts twoslash
 // ---cut-start---
@@ -159,7 +159,8 @@ async function title(id: string) {
       case 'NOT_FOUND':
         err.data;
         //  ^?
-        return err.defined ? `No post ${err.data.id}` : 'Please reload';
+        if (err.defined) return `No post ${err.data.id}`;
+        return err._tag === 'ProcedureNotFound' ? 'Please reload' : err.message;
       case 'NETWORK_ERROR':
         return 'You are offline';
       default:
@@ -169,6 +170,16 @@ async function title(id: string) {
   return post.title;
 }
 ```
+
+### The failures a client acts on
+
+Every error has a `_tag` naming its failure, which the [Effect client](./effect.md#errors) catches by. A defined error's is its class's, and a built-in error's is its code's class name (`NotFound`), except for three failures a client can do something about. They keep their code, so `switch` and `matchError()` see them as before:
+
+- `ProcedureNotFound` (`NOT_FOUND`): the server has no procedure at the path, so the client is newer than the server (a deploy in progress, a cached bundle). Reload, or retry once the deploy is done.
+- `ProcedureTypeMismatch` (`METHOD_NOT_SUPPORTED`): the procedure is a query on the server and a mutation on the client, or the other way. Reload.
+- `SerializerMismatch` (`UNSUPPORTED_PROTOCOL`): the link and the server use different serializers. The link makes it, before the server runs anything. Fix the link's or the handler's config.
+
+The server tells more failures apart (`BatchTooLarge`, `InvalidBody`, `RouteNotFound`, …: [Errors](../server/errors.md#in-effect-code)), which its `onError` sees. They reach clients as their code's class, so the wire carries a tag only for defined errors and these three.
 
 ## Handling every error
 
@@ -396,7 +407,7 @@ for await (const [seat, saleErr] of safeClient.onSale.subscribe()) {
 
 ## Checking a caught value
 
-`isTrpcError(value)` checks a value from a `catch`, and `isDefinedError(error)` narrows to the defined errors. In the [Effect client](./effect.md) the same union is the error channel, and an error's `_tag` is its code, so `Effect.catchTag('NETWORK_ERROR', …)` handles one member.
+`isTrpcError(value)` checks a value from a `catch`, and `isDefinedError(error)` narrows to the defined errors. In the [Effect client](./effect.md) the same union is the error channel, and each failure has its own `_tag`, so `Effect.catchTag('NetworkError', …)` handles one member.
 
 `safe()` doesn't catch a framework's control flow: Next's `redirect()` and `notFound()`, which in-process calls rethrow ([Server Actions](../integrations/server-actions.md)), still throw.
 
