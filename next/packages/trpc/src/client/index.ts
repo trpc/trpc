@@ -103,6 +103,7 @@ export type { MessagePortLike } from '../server/sockets/index.ts';
 export {
   ERROR_STATUS,
   isBuiltinCode,
+  hasCode,
   isDefinedError,
   isTrpcError,
   TrpcError,
@@ -113,6 +114,13 @@ export {
   type TaggedErrorSpec,
   type BuiltinErrorClass,
   type BuiltinErrorCode,
+  type BuiltinErrorOptions,
+  type BuiltinTag,
+  type ClientTags,
+  type CodeTags,
+  type Failure,
+  type FailureTags,
+  type TagOfCode,
   type UndeclaredCode,
   type TrpcErrorOptions,
 } from '../internal/error.ts';

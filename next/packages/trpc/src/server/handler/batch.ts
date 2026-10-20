@@ -28,11 +28,19 @@ const batchedCall = (
   const procedure = call.procedure;
   const result: Effect.Effect<CallResult, AnyTrpcError> = !procedure
     ? Effect.fail(
-        protocolError('NOT_FOUND', `No procedure at path "${call.path}"`),
+        protocolError(
+          'NOT_FOUND',
+          `No procedure at path "${call.path}"`,
+          'ProcedureNotFound',
+        ),
       )
     : procedure['~trpc'].type === 'subscription'
       ? Effect.fail(
-          protocolError('BAD_REQUEST', 'Subscriptions cannot be batched'),
+          protocolError(
+            'BAD_REQUEST',
+            'Subscriptions cannot be batched',
+            'InvalidBatch',
+          ),
         )
       : Effect.flatMapEager(
           deserialize(handler.serializer, call.input),
@@ -84,7 +92,11 @@ export const batched: (
     const batch = handler.batch;
     if (!batch) {
       return yield* Effect.fail(
-        protocolError('BAD_REQUEST', 'Batching is not enabled'),
+        protocolError(
+          'BAD_REQUEST',
+          'Batching is not enabled',
+          'BatchingDisabled',
+        ),
       );
     }
     if (request.method !== 'POST') {
@@ -95,7 +107,11 @@ export const batched: (
     const body = yield* readBody(request, handler.maxBodySize);
     if (!Array.isArray(body)) {
       return yield* Effect.fail(
-        protocolError('BAD_REQUEST', 'A batch body must be an array'),
+        protocolError(
+          'BAD_REQUEST',
+          'A batch body must be an array',
+          'InvalidBatch',
+        ),
       );
     }
     if (body.length > batch.maxItems) {
@@ -103,6 +119,7 @@ export const batched: (
         protocolError(
           'PAYLOAD_TOO_LARGE',
           `A batch can have at most ${batch.maxItems} calls`,
+          'BatchTooLarge',
         ),
       );
     }

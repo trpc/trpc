@@ -1,5 +1,9 @@
 import { Effect, Schema, SchemaTransformation, Stream } from 'effect';
-import { TrpcError, type CodeError } from '../../internal/error.ts';
+import {
+  TrpcError,
+  type CodeError,
+  type Failure,
+} from '../../internal/error.ts';
 
 const BYTE_STREAM = '~trpc.byteStream';
 
@@ -18,15 +22,15 @@ export interface experimental_ByteStreamOptions {
 }
 
 /**
- * How reading an {@link experimental_ByteStream} fails: `PAYLOAD_TOO_LARGE`
- * past `maxBytes`, `BAD_REQUEST` when the body can't be read (the client
- * went away, or the stream was read already).
+ * How reading an {@link experimental_ByteStream} fails: `PayloadTooLarge`
+ * past `maxBytes`, `UnreadableBody` when the client went away,
+ * `ByteStreamConsumed` when the stream was read already.
  * @since 0.1.0
  * @stability experimental
  */
 export type experimental_ByteStreamError =
   | CodeError<'PAYLOAD_TOO_LARGE'>
-  | CodeError<'BAD_REQUEST'>;
+  | Failure<'UnreadableBody' | 'ByteStreamConsumed'>;
 
 /**
  * A procedure's byte stream input, as its resolver reads it: an Effect
@@ -80,10 +84,11 @@ const fromReadable = (
   maxBytes: number,
 ): experimental_ByteStream => {
   let read = false;
-  const bytes: experimental_ByteStream = Stream.suspend(() => {
+  const bytes = Stream.suspend((): experimental_ByteStream => {
     if (read || body.locked) {
       return Stream.fail(
         new TrpcError.BadRequest({
+          tag: 'ByteStreamConsumed',
           message: 'The byte stream can only be read once',
         }),
       );
@@ -93,6 +98,7 @@ const fromReadable = (
       evaluate: () => body,
       onError: (cause) =>
         new TrpcError.BadRequest({
+          tag: 'UnreadableBody',
           message: 'Could not read the byte stream',
           cause,
         }),

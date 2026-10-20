@@ -1,6 +1,10 @@
 import { Effect, Exit } from 'effect';
 import type { HttpServerRequest } from 'effect/http';
-import { TrpcError, type CodeError } from '../../internal/error.ts';
+import {
+  TrpcError,
+  type CodeError,
+  type Failure,
+} from '../../internal/error.ts';
 import {
   CONTENT_TYPE,
   fromInputSearch,
@@ -12,22 +16,26 @@ import {
 import type { AnySerializer } from '../../serializer/index.ts';
 import type { AnyProcedure } from '../procedures/index.ts';
 import { isByteStreamSchema } from '../validation/index.ts';
-import { bodyStream, consumedError, parsedBody, readBytes } from './body.ts';
+import {
+  bodyStream,
+  consumedError,
+  parsedBody,
+  readBytes,
+  type BodyError,
+} from './body.ts';
 import { protocolError, type HttpHandler } from './http-handler.ts';
 
 const decoder = /* @__PURE__ */ new TextDecoder();
 
 /** What reading a call's input can fail with. @internal */
-export type InputError = CodeError<
-  | 'PARSE_ERROR'
-  | 'BAD_REQUEST'
-  | 'UNSUPPORTED_MEDIA_TYPE'
-  | 'PAYLOAD_TOO_LARGE'
-  | 'INTERNAL_SERVER_ERROR'
->;
+export type InputError =
+  | CodeError<'UNSUPPORTED_MEDIA_TYPE'>
+  | BodyError
+  | Failure<'InvalidBody' | 'MissingInputField'>;
 
-const invalidInput = (cause: unknown): CodeError<'PARSE_ERROR'> =>
+const invalidInput = (cause: unknown): Failure<'InvalidBody'> =>
   new TrpcError.ParseError({
+    tag: 'InvalidBody',
     message: cause instanceof Error ? cause.message : 'Invalid input',
     cause,
   });
@@ -40,7 +48,7 @@ const noInput = /* @__PURE__ */ Exit.succeed(undefined);
  */
 const decodeNow = <A>(
   decode: () => A,
-): Exit.Exit<A, CodeError<'PARSE_ERROR'>> => {
+): Exit.Exit<A, Failure<'InvalidBody'>> => {
   try {
     return Exit.succeed(decode());
   } catch (cause) {
@@ -56,7 +64,7 @@ export const deserialize = (
   serializer: AnySerializer,
   value: unknown,
   parts?: ReadonlyArray<Blob>,
-): Exit.Exit<unknown, CodeError<'PARSE_ERROR'>> =>
+): Exit.Exit<unknown, Failure<'InvalidBody'>> =>
   value === undefined
     ? noInput
     : decodeNow(() =>
@@ -67,7 +75,11 @@ const parseJson = (text: string) =>
   Effect.try({
     try: () => (text === '' ? undefined : (JSON.parse(text) as unknown)),
     catch: (cause) =>
-      new TrpcError.ParseError({ message: 'Invalid JSON', cause }),
+      new TrpcError.ParseError({
+        tag: 'InvalidBody',
+        message: 'Invalid JSON',
+        cause,
+      }),
   });
 
 /** A JSON request body, parsed. @internal */
@@ -105,12 +117,20 @@ const readMultipart = /* @__PURE__ */ Effect.fnUntraced(function* (
         headers: { 'content-type': request.headers['content-type']! },
       }).formData(),
     catch: (cause) =>
-      new TrpcError.ParseError({ message: 'Invalid multipart body', cause }),
+      new TrpcError.ParseError({
+        tag: 'InvalidBody',
+        message: 'Invalid multipart body',
+        cause,
+      }),
   });
   const field = form.get('input');
   if (typeof field !== 'string') {
     return yield* Effect.fail(
-      protocolError('BAD_REQUEST', 'A multipart body needs an "input" field'),
+      protocolError(
+        'BAD_REQUEST',
+        'A multipart body needs an "input" field',
+        'MissingInputField',
+      ),
     );
   }
   const value = yield* parseJson(field);

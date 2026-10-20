@@ -8,6 +8,7 @@ import {
 import type {
   AnyTrpcError,
   ReservedKeyCheck,
+  TagOfCode,
   TrpcError,
 } from '../../internal/error.ts';
 import type {
@@ -590,7 +591,8 @@ export type ErrorMapInput = Record<string, ErrorSpec>;
 export type DeclaredErrors<M> = {
   [K in keyof M & string]: TrpcError<
     K,
-    M[K] extends { data: infer S extends AnySchema } ? OutOf<S> : undefined
+    M[K] extends { data: infer S extends AnySchema } ? OutOf<S> : undefined,
+    M[K] extends { readonly tag: infer T extends string } ? T : TagOfCode<K>
   >;
 };
 

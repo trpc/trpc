@@ -4,11 +4,14 @@ import type { IsAny, ProcedureType } from '../../internal/types.ts';
 import type { AnySchema, OutputSchema } from '../validation/index.ts';
 
 /**
- * A declared error: its status, default message and `data` schema.
+ * A declared error: its status, default message, `data` schema and `_tag`
+ * (a `TrpcError.Tagged` class's).
  * @since 0.1.0
  * @stability stable
  */
 export interface ErrorSpec {
+  /** @default a built-in code's class name, or the code */
+  readonly tag?: string | undefined;
   readonly status?: number | undefined;
   readonly message?: string | undefined;
   readonly data?: AnySchema | undefined;

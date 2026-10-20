@@ -227,6 +227,7 @@ function makeSocketLink(
         if (message.serializer === serializer.name) return Effect.void;
         const error = new TrpcError({
           code: 'UNSUPPORTED_PROTOCOL',
+          tag: 'SerializerMismatch',
           message: `The server uses the '${message.serializer}' serializer, but this ${transport.name} uses '${serializer.name}'. Pass the same serializer to the handler and ${transport.name}.`,
         });
         conn.refused = error;

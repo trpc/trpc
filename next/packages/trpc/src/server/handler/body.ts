@@ -1,6 +1,10 @@
 import { Cause, Effect, Exit, Scope, Stream, type Context } from 'effect';
 import { Cookies, type HttpServerRequest } from 'effect/http';
-import { TrpcError, type CodeError } from '../../internal/error.ts';
+import {
+  TrpcError,
+  type CodeError,
+  type Failure,
+} from '../../internal/error.ts';
 import { isJsonContentType } from '../../internal/protocol.ts';
 
 const encoder = /* @__PURE__ */ new TextEncoder();
@@ -40,8 +44,9 @@ export const parsedBody = (
 };
 
 /** @internal */
-export const consumedError = (): CodeError<'INTERNAL_SERVER_ERROR'> =>
+export const consumedError = (): Failure<'BodyConsumed'> =>
   new TrpcError.InternalServerError({
+    tag: 'BodyConsumed',
     message:
       'The request body was already read by another middleware. Mount tRPC before body parsers, or use one that sets req.body.',
   });
@@ -113,10 +118,7 @@ const drainingStream = (
  */
 export const bodyStream = (
   request: HttpServerRequest.HttpServerRequest,
-): Effect.Effect<
-  ReadableStream<Uint8Array>,
-  CodeError<'INTERNAL_SERVER_ERROR'>
-> =>
+): Effect.Effect<ReadableStream<Uint8Array>, Failure<'BodyConsumed'>> =>
   Effect.suspend(() => {
     const replayed = parsedBody(request);
     if (replayed === 'consumed') return Effect.fail(consumedError());
@@ -133,6 +135,11 @@ export const bodyStream = (
     );
   });
 
+/** What reading a body can fail with. @internal */
+export type BodyError =
+  | CodeError<'PAYLOAD_TOO_LARGE'>
+  | Failure<'UnreadableBody' | 'BodyConsumed'>;
+
 /**
  * The body, at most `maxBodySize` bytes. Past it, the rest is drained, not
  * cancelled: cancelling makes some servers (Node) drop the connection
@@ -142,10 +149,7 @@ export const bodyStream = (
 export const readBytes = (
   request: HttpServerRequest.HttpServerRequest,
   maxBodySize: number,
-): Effect.Effect<
-  Uint8Array,
-  CodeError<'PAYLOAD_TOO_LARGE' | 'BAD_REQUEST' | 'INTERNAL_SERVER_ERROR'>
-> =>
+): Effect.Effect<Uint8Array, BodyError> =>
   Effect.gen(function* () {
     const tooLarge = new TrpcError.PayloadTooLarge({
       message: 'Request body is too large',
@@ -172,6 +176,7 @@ export const readBytes = (
         Effect.mapError(
           (cause) =>
             new TrpcError.BadRequest({
+              tag: 'UnreadableBody',
               message: 'Could not read the request body',
               cause,
             }),

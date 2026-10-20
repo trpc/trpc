@@ -124,7 +124,7 @@ test.for(names)(
     });
     const code = await Effect.runPromise(
       client.slow.query(undefined, { signal: AbortSignal.timeout(20) }).pipe(
-        Effect.catchTag('TIMEOUT', (e) => Effect.succeed(e.code)),
+        Effect.catchTag('Timeout', (e) => Effect.succeed(e.code)),
         Effect.catch((e) => Effect.succeed(`other: ${e.code}`)),
       ),
     );

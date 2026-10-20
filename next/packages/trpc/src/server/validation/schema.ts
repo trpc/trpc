@@ -6,7 +6,7 @@ import {
   SchemaIssue,
   type SchemaAST,
 } from 'effect';
-import { TrpcError } from '../../internal/error.ts';
+import { TrpcError, type Failure } from '../../internal/error.ts';
 
 /**
  * A [Standard Schema](https://standardschema.dev) issue.
@@ -276,7 +276,8 @@ export interface InputValidationErrorData<TIssue = InputIssue> {
  */
 export type InputValidationError<TIssue = InputIssue> = TrpcError<
   'BAD_REQUEST',
-  InputValidationErrorData<TIssue>
+  InputValidationErrorData<TIssue>,
+  'InvalidInput'
 >;
 
 /**
@@ -301,7 +302,8 @@ export interface SchemaInputErrorData<S> {
  */
 export type SchemaValidationError<S> = TrpcError<
   'BAD_REQUEST',
-  SchemaInputErrorData<S>
+  SchemaInputErrorData<S>,
+  'InvalidInput'
 >;
 
 /** Effect Schema classes and ArkType types are functions too. @internal */
@@ -518,9 +520,14 @@ export function validateThen<A>(
 /** @internal */
 export const inputError = (
   issues: InputValidationErrorData['issues'],
-): TrpcError<'BAD_REQUEST', { issues: InputValidationErrorData['issues'] }> =>
+): TrpcError<
+  'BAD_REQUEST',
+  { issues: InputValidationErrorData['issues'] },
+  'InvalidInput'
+> =>
   new TrpcError({
     code: 'BAD_REQUEST',
+    tag: 'InvalidInput',
     message: 'Input validation failed',
     data: { issues },
     defined: true,
@@ -529,8 +536,9 @@ export const inputError = (
 /** @internal */
 export const outputError = (
   issues: InputValidationErrorData['issues'],
-): TrpcError<'INTERNAL_SERVER_ERROR'> =>
+): Failure<'InvalidOutput'> =>
   new TrpcError.InternalServerError({
+    tag: 'InvalidOutput',
     message: 'Output validation failed',
     cause: new Error(
       `Output validation failed: ${issues.map((i) => i.message).join('; ')}`,

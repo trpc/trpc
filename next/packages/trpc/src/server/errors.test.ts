@@ -4,6 +4,7 @@ import {
   createTrpcClient,
   httpLink,
   isDefinedError,
+  localLink,
   matchError,
   safe,
   TrpcError,
@@ -17,7 +18,12 @@ import {
   type UndeclaredError,
 } from '@trpc12/trpc/client';
 import { experimental_contract } from '@trpc12/trpc/contract';
-import { error, initTrpc, type OnErrorOpts } from '@trpc12/trpc/server';
+import {
+  error,
+  hasCode,
+  initTrpc,
+  type OnErrorOpts,
+} from '@trpc12/trpc/server';
 import { createTestServer } from '../fixtures/server.ts';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
@@ -238,7 +244,7 @@ test('a custom code without a status is a 400', async () => {
   expect(ctx.status()).toBe(400);
 });
 
-test("an error's _tag is its code, so Effect.catchTag narrows on it", async () => {
+test('every failure has its own _tag, and Effect.catchTag narrows on it', async () => {
   const failing = (
     id: string,
   ): Effect.Effect<
@@ -249,17 +255,91 @@ test("an error's _tag is its code, so Effect.catchTag narrows on it", async () =
       ? Effect.fail(error({ code: 'NOT_FOUND', data: { id } }))
       : Effect.fail(error<'FORBIDDEN', undefined>({ code: 'FORBIDDEN' }));
   const program = failing('1').pipe(
-    Effect.catchTag('NOT_FOUND', (e) => Effect.succeed(`missing ${e.data.id}`)),
+    Effect.catchTag('NotFound', (e) => Effect.succeed(`missing ${e.data.id}`)),
   );
   expectTypeOf(program).toEqualTypeOf<
     Effect.Effect<string, TrpcError<'FORBIDDEN', undefined>>
   >();
   expect(await Effect.runPromise(program)).toBe('missing 1');
-  expect(error({ code: 'NOT_FOUND' })._tag).toBe('NOT_FOUND');
+  expect(error({ code: 'NOT_FOUND' })._tag).toBe('NotFound');
+  expect(error({ code: 'OUT_OF_STOCK' })._tag).toBe('OUT_OF_STOCK');
 
   await using ctx = await setup();
   const [, err] = await safe(ctx.client.post.byId.query({ id: 'nope' }));
-  expect(err?._tag).toBe('NOT_FOUND');
+  expect(err?._tag).toBe('NotFound');
+  const [, invalid] = await safe(
+    ctx.client.post.byId.query({ id: 1 as never }),
+  );
+  expect(invalid?._tag).toBe('InvalidInput');
+  expect(invalid).toMatchObject({ code: 'BAD_REQUEST', defined: true });
+});
+
+test('a procedure the server lacks is a NOT_FOUND tagged ProcedureNotFound, on the wire too', async () => {
+  await using ctx = await setup();
+  const stale = createTrpcClient({
+    router: routerType<AppRouter & { gone: AppRouter['gated'] }>(),
+    links: [httpLink({ url: ctx.server.url })],
+  });
+  const [, err] = await safe(stale.gone.query());
+  expect(err?._tag).toBe('ProcedureNotFound');
+  expect(err).toMatchObject({ code: 'NOT_FOUND', defined: false });
+  if (err?._tag === 'ProcedureNotFound') {
+    expectTypeOf(err.code).toEqualTypeOf<'NOT_FOUND'>();
+  }
+  const res = await fetch(`${ctx.server.url}/gone`);
+  expect(await res.json()).toMatchObject({
+    json: { error: { code: 'NOT_FOUND', tag: 'ProcedureNotFound' } },
+  });
+});
+
+test("a failure only the server tells apart reaches clients as its code's class", async () => {
+  await using ctx = await setup();
+  const res = await fetch(`${ctx.server.url}/pay`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: '{',
+  });
+  const body = (await res.json()) as { json: { error: object } };
+  expect(body.json.error).toMatchObject({ code: 'PARSE_ERROR' });
+  expect(body.json.error).not.toHaveProperty('tag');
+  expect(ctx.errors.at(-1)?.error._tag).toBe('InvalidBody');
+});
+
+test("localLink folds a server-only tag to its code's class too, keeping it as the cause", async () => {
+  const tagged = new TrpcError.BadRequest({ tag: 'InvalidBatch' });
+  const local = {
+    thrownTagged: t.procedure.query((): string => {
+      throw tagged;
+    }),
+  };
+  const client = createTrpcClient({
+    router: routerType<typeof local & { gone: typeof local.thrownTagged }>(),
+    links: [localLink({ router: local })],
+  });
+  const [, err] = await safe(client.thrownTagged.query());
+  expect(err?._tag).toBe('BadRequest');
+  expect(err?.cause).toBe(tagged);
+  const [, missing] = await safe(client.gone.query());
+  expect(missing?._tag).toBe('ProcedureNotFound');
+});
+
+test('hasCode takes every error with a code out, whatever its tag', async () => {
+  const failing: Effect.Effect<
+    never,
+    | TrpcError<'NOT_FOUND', { id: string }>
+    | TrpcError<'NOT_FOUND', undefined, 'ProcedureNotFound'>
+    | TrpcError<'FORBIDDEN', undefined>
+  > = Effect.fail(new TrpcError.NotFound({ tag: 'ProcedureNotFound' }));
+  const program = failing.pipe(
+    Effect.catchIf(hasCode('NOT_FOUND'), (e) => Effect.succeed(e._tag)),
+  );
+  expectTypeOf(program).toEqualTypeOf<
+    Effect.Effect<
+      'NotFound' | 'ProcedureNotFound',
+      TrpcError<'FORBIDDEN', undefined>
+    >
+  >();
+  expect(await Effect.runPromise(program)).toBe('ProcedureNotFound');
 });
 
 test('a thrown TrpcError keeps its code but is not part of the typed union', async () => {
@@ -553,7 +633,14 @@ test('every built-in code has a class', () => {
   ]);
   const err = new TrpcError.PayloadTooLarge({ message: 'Too big' });
   expect(err).toBeInstanceOf(TrpcError);
-  expect(err._tag).toBe('PAYLOAD_TOO_LARGE');
+  expect(err._tag).toBe('PayloadTooLarge');
+  const batch = new TrpcError.PayloadTooLarge({ tag: 'BatchTooLarge' });
+  expect(batch._tag).toBe('BatchTooLarge');
+  expectTypeOf(batch).toEqualTypeOf<
+    TrpcError<'PAYLOAD_TOO_LARGE', undefined, 'BatchTooLarge'>
+  >();
+  // @ts-expect-error -- a tag of another code
+  new TrpcError.PayloadTooLarge({ tag: 'RouteNotFound' });
   expect(err).toMatchObject({
     code: 'PAYLOAD_TOO_LARGE',
     message: 'Too big',
@@ -573,7 +660,7 @@ test('a returned built-in class is a defined error, and catchTag narrows it', as
       Effect.gen(function* () {
         return yield* new TrpcError.Conflict({ message: 'Taken' });
       }).pipe(
-        Effect.catchTag('CONFLICT', (e) => Effect.succeed(`kept ${e.message}`)),
+        Effect.catchTag('Conflict', (e) => Effect.succeed(`kept ${e.message}`)),
       ),
     ),
   };

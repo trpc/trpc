@@ -186,13 +186,21 @@ export const singleCall = (
     ): Effect.Effect<HttpServerResponse.HttpServerResponse, AnyTrpcError> => {
       if (!procedure) {
         return Effect.fail(
-          protocolError('NOT_FOUND', `No procedure at path "${path}"`),
+          protocolError(
+            'NOT_FOUND',
+            `No procedure at path "${path}"`,
+            'ProcedureNotFound',
+          ),
         );
       }
       const type = procedure['~trpc'].type;
       if (type === 'mutation' && request.method !== 'POST') {
         return Effect.fail(
-          protocolError('METHOD_NOT_SUPPORTED', 'Mutations must use POST'),
+          protocolError(
+            'METHOD_NOT_SUPPORTED',
+            'Mutations must use POST',
+            'ProcedureTypeMismatch',
+          ),
         );
       }
       if (

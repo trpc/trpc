@@ -193,8 +193,9 @@ export interface NextResult<TCtx, TInput = Unset> {
 /**
  * What an Effect middleware's `next()` fails with: the error a later step
  * failed with, as clients will get it (a thrown value is an
- * `INTERNAL_SERVER_ERROR`). Its `_tag` is its code, so
- * `Effect.catchTag('NOT_FOUND', …)` takes it. The step that failed already
+ * `INTERNAL_SERVER_ERROR`). `Effect.catchTag` takes it by its `_tag`
+ * (`'NotFound'`, `'InvalidInput'`), and `Effect.catchIf(hasCode('NOT_FOUND'),
+ * …)` by its code. The step that failed already
  * put it in the procedure's error union, so failing with it again adds
  * nothing, and it keeps its cause.
  * @since 0.1.0

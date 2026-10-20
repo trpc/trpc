@@ -1,6 +1,6 @@
 import { Effect } from 'effect';
 import type { HttpServerRequest } from 'effect/http';
-import { TrpcError, type CodeError } from '../../internal/error.ts';
+import { TrpcError, type Failure } from '../../internal/error.ts';
 import { isJsonContentType } from '../../internal/protocol.ts';
 
 /**
@@ -56,7 +56,7 @@ export const makeCsrfGuard = (
 ): ((
   request: HttpServerRequest.HttpServerRequest,
   url: URL,
-) => Effect.Effect<void, CodeError<'FORBIDDEN'>>) => {
+) => Effect.Effect<void, Failure<'CrossSiteRequest'>>) => {
   if (option === false) return () => Effect.void;
   const trusted: ReadonlySet<string> = new Set(
     (typeof option === 'object' ? (option.trustedOrigins ?? []) : []).map(
@@ -80,6 +80,7 @@ export const makeCsrfGuard = (
       ? Effect.void
       : Effect.fail(
           new TrpcError.Forbidden({
+            tag: 'CrossSiteRequest',
             message: `Cross-origin ${request.method} requests must send content-type: application/json`,
           }),
         );

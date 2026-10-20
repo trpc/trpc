@@ -24,7 +24,7 @@ test('next() fails with the downstream error, so catchTag can map it', async () 
       t.middleware.effect()((opts) =>
         opts
           .next()
-          .pipe(Effect.catchTag('NOT_FOUND', () => Effect.fail(new Gone()))),
+          .pipe(Effect.catchTag('NotFound', () => Effect.fail(new Gone()))),
       ),
     )
     .query(() => error({ code: 'NOT_FOUND' }));
@@ -41,7 +41,7 @@ test('next() fails with the downstream error, so catchTag can map it', async () 
       t.middleware.effect()((opts) =>
         opts
           .next()
-          .pipe(Effect.catchTag('NOT_FOUND', () => Effect.succeed(ok(null)))),
+          .pipe(Effect.catchTag('NotFound', () => Effect.succeed(ok(null)))),
       ),
     )
     .query((opts) =>

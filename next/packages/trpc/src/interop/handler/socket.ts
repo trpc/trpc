@@ -122,6 +122,7 @@ function v11Session(
         if (!procedure || procedure['~trpc'].type !== method) {
           return yield* Effect.fail(
             new TrpcError.NotFound({
+              tag: 'ProcedureNotFound',
               message: `No "${method}"-procedure on path "${path}"`,
             }),
           );
@@ -132,7 +133,11 @@ function v11Session(
               ? undefined
               : (core.input.deserialize(params['input']) as unknown),
           catch: (cause) =>
-            new TrpcError.ParseError({ message: 'Invalid input', cause }),
+            new TrpcError.ParseError({
+              tag: 'InvalidBody',
+              message: 'Invalid input',
+              cause,
+            }),
         });
         const lastEventId =
           typeof params['lastEventId'] === 'string'
@@ -209,7 +214,10 @@ function v11Session(
       return sendError(
         null,
         undefined,
-        new TrpcError.ParseError({ message: 'Invalid message' }),
+        new TrpcError.ParseError({
+          tag: 'InvalidMessage',
+          message: 'Invalid message',
+        }),
       );
     }
     const { id, jsonrpc, method } = message;
@@ -223,7 +231,10 @@ function v11Session(
       return sendError(
         null,
         jsonrpc,
-        new TrpcError.ParseError({ message: '`id` is required' }),
+        new TrpcError.ParseError({
+          tag: 'InvalidMessage',
+          message: '`id` is required',
+        }),
       );
     }
     if (method === 'subscription.stop') return FiberMap.remove(calls, id);
@@ -232,6 +243,7 @@ function v11Session(
         id,
         jsonrpc,
         new TrpcError.ParseError({
+          tag: 'InvalidMessage',
           message: `Unknown method "${String(method)}"`,
         }),
       );
@@ -240,7 +252,10 @@ function v11Session(
       return sendError(
         id,
         jsonrpc,
-        new TrpcError.BadRequest({ message: `Duplicate id ${id}` }),
+        new TrpcError.BadRequest({
+          tag: 'InvalidRequestId',
+          message: `Duplicate id ${id}`,
+        }),
       );
     }
     return Effect.asVoid(
@@ -296,7 +311,10 @@ function v11Session(
           return sendError(
             null,
             undefined,
-            new TrpcError.ParseError({ message: 'Invalid JSON' }),
+            new TrpcError.ParseError({
+              tag: 'InvalidMessage',
+              message: 'Invalid JSON',
+            }),
           );
         }
         if (Array.isArray(parsed) && parsed.length > core.maxSocketBatch) {

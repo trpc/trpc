@@ -225,10 +225,12 @@ const METHODS = {
 /**
  * Creates a client whose calls are Effects. Interrupting the fiber aborts the
  * request; so does a query's or mutation's `signal`, failing it with
- * `CLIENT_CLOSED_REQUEST`, or `TIMEOUT` for `AbortSignal.timeout()`'s. A call fails with the same errors as the Promise client's, and
- * an error's `_tag` is its code, so `Effect.catchTag` takes a code out of
- * the union. It also catches the built-in error with that code, whose
- * `defined` is `false`.
+ * `ClientClosedRequest`, or `Timeout` for `AbortSignal.timeout()`'s. A
+ * call fails with the same errors as the Promise client's, a
+ * union of tagged errors: `Effect.catchTag` takes one failure out of it
+ * by its `_tag` (`'ProcedureNotFound'`, a declared class's name, the
+ * built-in `'NotFound'`). To take every error with a code, use
+ * `Effect.catchIf(hasCode('NOT_FOUND'), …)`.
  *
  * @example
  * ```ts
@@ -237,7 +239,7 @@ const METHODS = {
  *   links: [httpLink({ url })],
  * });
  * const post = yield* client.post.byId.query({ id: '1' }).pipe(
- *   Effect.catchTag('NOT_FOUND', () => Effect.succeed(null)),
+ *   Effect.catchTag('PostNotFound', () => Effect.succeed(null)),
  * );
  * ```
  * @since 0.1.0

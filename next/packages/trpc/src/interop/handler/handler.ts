@@ -517,6 +517,7 @@ export function createV11Handler<
             }).formData(),
           catch: (cause) =>
             new TrpcError.ParseError({
+              tag: 'InvalidBody',
               message: 'Invalid multipart body',
               cause,
             }),
@@ -583,6 +584,7 @@ export function createV11Handler<
       ? undefined
       : new TrpcError({
           code: 'METHOD_NOT_SUPPORTED',
+          tag: 'ProcedureTypeMismatch',
           message: `Unsupported ${request.method}-request to ${call.type} procedure at path "${call.path}"`,
         });
   };
@@ -600,6 +602,7 @@ export function createV11Handler<
         return {
           ok: false,
           error: new TrpcError.NotFound({
+            tag: 'ProcedureNotFound',
             message: `No procedure found on path "${call.path}"`,
           }),
         } as const;
@@ -610,6 +613,7 @@ export function createV11Handler<
         return {
           ok: false,
           error: new TrpcError.BadRequest({
+            tag: 'InvalidBatch',
             message: 'Cannot batch subscription calls',
           }),
         } as const;

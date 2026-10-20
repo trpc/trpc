@@ -108,7 +108,8 @@ test('errors are the typed client errors', async () => {
         'BAD_REQUEST',
         InputValidationErrorData<
           inferInputIssue<z.ZodObject<{ id: z.ZodString }>>
-        >
+        >,
+        'InvalidInput'
       >
     | TrpcError<'NOT_FOUND', { id: string }>,
     DansonForm,

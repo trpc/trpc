@@ -403,6 +403,7 @@ export const connectionReceiver: (
           if (!procedure || !kind) {
             return yield* Effect.fail(
               new TrpcError.NotFound({
+                tag: 'ProcedureNotFound',
                 message: `No procedure at path "${path}"`,
               }),
             );
@@ -410,6 +411,7 @@ export const connectionReceiver: (
           if (kind !== message.method) {
             return yield* Effect.fail(
               new TrpcError.MethodNotSupported({
+                tag: 'ProcedureTypeMismatch',
                 message: `"${path}" is a ${kind}, not a ${String(message.method)}`,
               }),
             );
@@ -497,7 +499,10 @@ export const connectionReceiver: (
         if (!isRecord(raw) || typeof raw['type'] !== 'string') {
           return sendError(
             null,
-            new TrpcError.ParseError({ message: 'Invalid message' }),
+            new TrpcError.ParseError({
+              tag: 'InvalidMessage',
+              message: 'Invalid message',
+            }),
           );
         }
         const message = raw as ClientMessage;
@@ -543,6 +548,7 @@ export const connectionReceiver: (
               return sendError(
                 null,
                 new TrpcError.BadRequest({
+                  tag: 'InvalidRequestId',
                   message: 'Each request needs a unique numeric id',
                 }),
               );
@@ -554,7 +560,10 @@ export const connectionReceiver: (
           default:
             return sendError(
               null,
-              new TrpcError.BadRequest({ message: 'Unknown message' }),
+              new TrpcError.BadRequest({
+                tag: 'UnknownMessage',
+                message: 'Unknown message',
+              }),
             );
         }
       });

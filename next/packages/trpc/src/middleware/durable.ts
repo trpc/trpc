@@ -20,7 +20,7 @@ import {
   TrpcError,
   withStatusHint,
   type AnyTrpcError,
-  type CodeError,
+  type Failure,
   type WireError,
 } from '../internal/error.ts';
 import { HEADER } from '../internal/protocol.ts';
@@ -134,6 +134,7 @@ const fingerprint = /* @__PURE__ */ Effect.fnUntraced(function* (
 
 const conflict = () =>
   new TrpcError.Conflict({
+    tag: 'CallIdConflict',
     message: 'This call id was used with a different input',
   });
 
@@ -175,7 +176,7 @@ export function experimental_durable<TReq extends MiddlewareRequirements = {}>(
   ReqInput<TReq>,
   ReqMeta<TReq>,
   {},
-  CodeError<'CONFLICT' | 'BAD_REQUEST'>,
+  Failure<'CallIdConflict' | 'InvalidDurableHeader' | 'UnsupportedResponse'>,
   Persistence.BackingPersistence,
   never,
   never,
@@ -201,12 +202,14 @@ export function experimental_durable<TReq extends MiddlewareRequirements = {}>(
       const callId = header(HEADER.callId);
       if (callId !== undefined && !CALL_ID.test(callId)) {
         return new TrpcError.BadRequest({
+          tag: 'InvalidDurableHeader',
           message: `${HEADER.callId} must be 1 to 128 letters, digits, "_", "-", "." or ":"`,
         });
       }
       const resumeFrom = header(HEADER.resumeFrom);
       if (resumeFrom !== undefined && !RESUME_FROM.test(resumeFrom)) {
         return new TrpcError.BadRequest({
+          tag: 'InvalidDurableHeader',
           message: `${HEADER.resumeFrom} must be a frame count`,
         });
       }
@@ -236,6 +239,7 @@ export function experimental_durable<TReq extends MiddlewareRequirements = {}>(
         if (entry.state === 'streamed') {
           if (!sink) {
             return new TrpcError.BadRequest({
+              tag: 'UnsupportedResponse',
               message:
                 'A streamed durable call resumes over unbatched HTTP only',
             });

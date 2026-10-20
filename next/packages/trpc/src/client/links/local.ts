@@ -124,6 +124,7 @@ export function localLink<TRouter extends AnyRouter>(
             return yield* Effect.fail(
               new TrpcError({
                 code: 'NOT_FOUND',
+                tag: 'ProcedureNotFound',
                 message: `No procedure at path "${op.path}"`,
               }),
             );
@@ -132,6 +133,7 @@ export function localLink<TRouter extends AnyRouter>(
             return yield* Effect.fail(
               new TrpcError({
                 code: 'METHOD_NOT_SUPPORTED',
+                tag: 'ProcedureTypeMismatch',
                 message: `"${op.path}" is a ${procedure['~trpc'].type}, not a ${op.type}`,
               }),
             );

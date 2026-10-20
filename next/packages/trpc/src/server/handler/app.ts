@@ -106,12 +106,16 @@ export const makeApp = (handler: HttpHandler): HttpAppShape['app'] =>
       );
     }
     if (pathname !== handler.endpoint && !pathname.startsWith(handler.under)) {
-      return Effect.fail(protocolError('NOT_FOUND', `Not found: ${pathname}`));
+      return Effect.fail(
+        protocolError('NOT_FOUND', `Not found: ${pathname}`, 'RouteNotFound'),
+      );
     }
     const rest = pathname.slice(handler.under.length);
     const path = decodePath(rest);
     if (path === undefined) {
-      return Effect.fail(protocolError('NOT_FOUND', `Not found: ${pathname}`));
+      return Effect.fail(
+        protocolError('NOT_FOUND', `Not found: ${pathname}`, 'RouteNotFound'),
+      );
     }
     return Effect.flatMap(parentSpan(request), (parent) =>
       rest === '' && request.headers[HEADER.batch] === '1'

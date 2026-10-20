@@ -1,5 +1,6 @@
 import type {
   BuiltinErrorCode,
+  ClientTags,
   TrpcError,
   UndeclaredCode,
 } from '../internal/error.ts';
@@ -49,24 +50,39 @@ export type ErrorData<
  * @stability stable
  */
 export type DefinedError<E, F extends OutputForm = DansonForm> =
-  E extends TrpcError<infer C, infer D>
-    ? TrpcError<C, ErrorData<D, F>> & { readonly defined: true }
+  E extends TrpcError<infer C, infer D, infer T>
+    ? TrpcError<C, ErrorData<D, F>, T> & { readonly defined: true }
     : never;
 
 /**
  * An error from outside the procedure's typed union, one member per
- * built-in code: network failures (`NETWORK_ERROR`), aborts
- * (`CLIENT_CLOSED_REQUEST`) and timeouts (`TIMEOUT`), unreadable responses (`BAD_RESPONSE`), crashes
- * (`INTERNAL_SERVER_ERROR`, masked in production), thrown built-in codes
- * and a proxy's statuses (`UNAUTHORIZED`, `BAD_GATEWAY`). It never has
- * `data`. Pass a code to name one: `BuiltinError<'NETWORK_ERROR'>`.
+ * built-in code's class: network failures (`NetworkError`), aborts
+ * (`ClientClosedRequest`) and timeouts (`Timeout`), unreadable responses
+ * (`BadResponse`), crashes
+ * (`InternalServerError`, masked in production), thrown built-in codes
+ * and a proxy's statuses (`Unauthorized`, `BadGateway`). The failures
+ * clients act on have their own member too ({@link ClientTags}):
+ * `ProcedureNotFound`, `ProcedureTypeMismatch` and `SerializerMismatch`.
+ * It never has `data`. Pass a code to name one:
+ * `BuiltinError<'NETWORK_ERROR'>`.
  * @since 0.1.0
  * @stability stable
  */
 export type BuiltinError<TCode extends BuiltinErrorCode = BuiltinErrorCode> =
   TCode extends BuiltinErrorCode
-    ? TrpcError<TCode, undefined> & { readonly defined: false }
+    ?
+        | (TrpcError<TCode, undefined> & { readonly defined: false })
+        | (TCode extends ClientTags[keyof ClientTags]
+            ? ClientTagError<TCode>
+            : never)
     : never;
+
+/** {@link BuiltinError}'s members for the {@link ClientTags} of `TCode`. @internal */
+export type ClientTagError<TCode extends BuiltinErrorCode> = {
+  [T in keyof ClientTags]: ClientTags[T] extends TCode
+    ? TrpcError<TCode, undefined, T> & { readonly defined: false }
+    : never;
+}[keyof ClientTags];
 
 /**
  * A `TrpcError` with a custom code that a procedure without `.errors()`

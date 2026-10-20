@@ -14,6 +14,7 @@ export function errorConstructors(map: ErrorMap): Record<string, unknown> {
     ) =>
       new TrpcError({
         code,
+        tag: spec.tag,
         message: opts.message ?? spec.message,
         data: opts.data,
         cause: opts.cause,

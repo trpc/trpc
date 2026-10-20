@@ -99,6 +99,134 @@ export type ReservedCodeMessage =
   "'unexpected' is matchError()'s catch-all key: name this code something else";
 
 /**
+ * The `_tag` of each built-in code's class, its name: `NOT_FOUND` is
+ * `TrpcError.NotFound`, tagged `NotFound`.
+ * @since 0.1.0
+ * @stability stable
+ */
+export interface CodeTags {
+  PARSE_ERROR: 'ParseError';
+  BAD_REQUEST: 'BadRequest';
+  UNSUPPORTED_PROTOCOL: 'UnsupportedProtocol';
+  UNAUTHORIZED: 'Unauthorized';
+  PAYMENT_REQUIRED: 'PaymentRequired';
+  FORBIDDEN: 'Forbidden';
+  NOT_FOUND: 'NotFound';
+  METHOD_NOT_SUPPORTED: 'MethodNotSupported';
+  TIMEOUT: 'Timeout';
+  CONFLICT: 'Conflict';
+  PRECONDITION_FAILED: 'PreconditionFailed';
+  PAYLOAD_TOO_LARGE: 'PayloadTooLarge';
+  UNSUPPORTED_MEDIA_TYPE: 'UnsupportedMediaType';
+  UNPROCESSABLE_CONTENT: 'UnprocessableContent';
+  TOO_MANY_REQUESTS: 'TooManyRequests';
+  CLIENT_CLOSED_REQUEST: 'ClientClosedRequest';
+  INTERNAL_SERVER_ERROR: 'InternalServerError';
+  NOT_IMPLEMENTED: 'NotImplemented';
+  BAD_GATEWAY: 'BadGateway';
+  SERVICE_UNAVAILABLE: 'ServiceUnavailable';
+  GATEWAY_TIMEOUT: 'GatewayTimeout';
+  NETWORK_ERROR: 'NetworkError';
+  BAD_RESPONSE: 'BadResponse';
+  CLIENT_ERROR: 'ClientError';
+  STREAM_INTERRUPTED: 'StreamInterrupted';
+}
+
+/**
+ * The failures tRPC tells apart within a built-in code, each with its own
+ * `_tag`, by the code it has. A failure that is just its code's meaning is
+ * that code's class (`PayloadTooLarge` for a body over `maxBodySize`).
+ * Clients see only {@link ClientTags}; the rest arrive as their code's
+ * class.
+ * @since 0.1.0
+ * @stability stable
+ */
+export interface FailureTags extends ClientTags {
+  /** A URL outside the endpoint, or no OpenAPI route for it. */
+  RouteNotFound: 'NOT_FOUND';
+  /** A batch with more calls than the handler's `batch.maxItems`. */
+  BatchTooLarge: 'PAYLOAD_TOO_LARGE';
+  /** A batch sent to a handler without `batch`. */
+  BatchingDisabled: 'BAD_REQUEST';
+  /** A batch body that isn't an array, or a batched subscription. */
+  InvalidBatch: 'BAD_REQUEST';
+  /** A request body or byte stream that failed while it was read. */
+  UnreadableBody: 'BAD_REQUEST';
+  /** A byte stream input read a second time. */
+  ByteStreamConsumed: 'BAD_REQUEST';
+  /** A body a middleware mounted before tRPC read without keeping it. */
+  BodyConsumed: 'INTERNAL_SERVER_ERROR';
+  /** A body that isn't JSON, multipart or a form, or doesn't decode. */
+  InvalidBody: 'PARSE_ERROR';
+  /** A multipart body without its `input` field. */
+  MissingInputField: 'BAD_REQUEST';
+  /** An OpenAPI path param that isn't valid, or doesn't fit the body. */
+  InvalidPathParam: 'BAD_REQUEST';
+  /** A cross-site OpenAPI request without a JSON content type. */
+  CrossSiteRequest: 'FORBIDDEN';
+  /** A socket message that isn't one. */
+  InvalidMessage: 'PARSE_ERROR';
+  /** A socket message of an unknown type. */
+  UnknownMessage: 'BAD_REQUEST';
+  /** A socket request without a unique numeric id. */
+  InvalidRequestId: 'BAD_REQUEST';
+  /** A contract procedure without an implementation. */
+  ProcedureNotImplemented: 'NOT_IMPLEMENTED';
+  /** A `Response`, or a streamed durable replay, over a transport that can't carry it. */
+  UnsupportedResponse: 'BAD_REQUEST';
+  /** An output that failed its schema. */
+  InvalidOutput: 'INTERNAL_SERVER_ERROR';
+  /** `experimental_durable()`: a call id reused with another input. */
+  CallIdConflict: 'CONFLICT';
+  /** `experimental_durable()`: a malformed call id or resume header. */
+  InvalidDurableHeader: 'BAD_REQUEST';
+  /** `experimental_connectionToken()`: a missing, malformed or forged token. */
+  InvalidConnectionToken: 'UNAUTHORIZED';
+  /** `experimental_connectionToken()`: a token past its `ttl`. */
+  ConnectionTokenExpired: 'UNAUTHORIZED';
+  /** An input that failed its schema: defined, with `data.issues`. */
+  InvalidInput: 'BAD_REQUEST';
+}
+
+/**
+ * The failures in {@link FailureTags} that reach clients with their tag,
+ * since a client acts on them: the server sends the first two, links make
+ * the third. Everything else arrives as its code's class.
+ * @since 0.1.0
+ * @stability stable
+ */
+export interface ClientTags {
+  /** The server has no procedure at the path: the client is newer than the server, so reload. */
+  ProcedureNotFound: 'NOT_FOUND';
+  /** The procedure is a query on the server and a mutation on the client, or the other way: reload. */
+  ProcedureTypeMismatch: 'METHOD_NOT_SUPPORTED';
+  /** The server and the link use different serializers. */
+  SerializerMismatch: 'UNSUPPORTED_PROTOCOL';
+}
+
+/**
+ * Every `_tag` a built-in code's errors can have: its class's and its
+ * {@link FailureTags}.
+ * @since 0.1.0
+ * @stability stable
+ */
+export type BuiltinTag<TCode extends BuiltinErrorCode = BuiltinErrorCode> =
+  | CodeTags[TCode]
+  | {
+      [T in keyof FailureTags]: FailureTags[T] extends TCode ? T : never;
+    }[keyof FailureTags];
+
+/**
+ * The `_tag` an error with code `TCode` has unless it names another: a
+ * built-in code's class name, or the code itself.
+ * @since 0.1.0
+ * @stability stable
+ */
+export type TagOfCode<TCode extends string> = TCode extends BuiltinErrorCode
+  ? CodeTags[TCode]
+  : TCode;
+
+/**
  * Instances of the built-in classes for `TCode`, one member per code, so
  * `Effect.catchTag` takes them one at a time:
  * `CodeError<'PARSE_ERROR' | 'PAYLOAD_TOO_LARGE'>`.
@@ -109,15 +237,41 @@ export type CodeError<TCode extends BuiltinErrorCode> =
   TCode extends BuiltinErrorCode ? TrpcError<TCode, undefined> : never;
 
 /**
+ * The error of a failure in {@link FailureTags}, one member per tag:
+ * `Failure<'ProcedureNotFound'>` is a `NOT_FOUND` tagged
+ * `ProcedureNotFound`.
+ * @since 0.1.0
+ * @stability stable
+ */
+export type Failure<TTag extends keyof FailureTags> = TTag extends unknown
+  ? TrpcError<FailureTags[TTag], undefined, TTag>
+  : never;
+
+/**
  * A class for a built-in code, like `TrpcError.NotFound`. Its instances are
- * `TrpcError<TCode, undefined>`; `defined: false` until a resolver returns
- * one.
+ * `TrpcError<TCode, undefined>`, tagged with the class's name unless `tag`
+ * names one of the code's {@link FailureTags}; `defined: false` until a
+ * resolver returns one.
  * @since 0.1.0
  * @stability stable
  */
 export interface BuiltinErrorClass<TCode extends BuiltinErrorCode> {
-  new (opts?: TaggedErrorOptions): TrpcError<TCode, undefined>;
+  new <TTag extends BuiltinTag<TCode> = CodeTags[TCode]>(
+    opts?: BuiltinErrorOptions<TTag>,
+  ): TrpcError<TCode, undefined, TTag>;
   readonly code: TCode;
+}
+
+/**
+ * What a {@link BuiltinErrorClass} takes.
+ * @since 0.1.0
+ * @stability stable
+ */
+export interface BuiltinErrorOptions<
+  TTag extends string = string,
+> extends TaggedErrorOptions {
+  /** One of the code's {@link FailureTags}. @default the class's name */
+  readonly tag?: TTag | undefined;
 }
 
 /**
@@ -125,9 +279,18 @@ export interface BuiltinErrorClass<TCode extends BuiltinErrorCode> {
  * @since 0.1.0
  * @stability stable
  */
-export interface TrpcErrorOptions<TCode extends string, TData> {
+export interface TrpcErrorOptions<
+  TCode extends string,
+  TData,
+  TTag extends string = string,
+> {
   /** A built-in code (`'NOT_FOUND'`) or a custom one (`'PAYMENT_REQUIRED'`). */
   code: TCode;
+  /**
+   * The `_tag`, naming this failure. @default a built-in code's class name
+   * (`NotFound`), or the code
+   */
+  tag?: TTag | undefined;
   message?: string | undefined;
   /** Sent to the client, serialized with the endpoint's serializer. */
   data?: TData;
@@ -176,20 +339,25 @@ const YieldableBase: new (args: {
 export class TrpcError<
   TCode extends string = string,
   TData = unknown,
+  TTag extends string = TagOfCode<TCode>,
 > extends YieldableBase {
   override readonly name = 'TrpcError';
-  /** The code, so `Effect.catchTag('NOT_FOUND', …)` narrows on it. */
-  readonly _tag: TCode;
+  /**
+   * What failed, so `Effect.catchTag('ProcedureNotFound', …)` takes this
+   * failure alone. Several tags can share a `code`.
+   */
+  readonly _tag: TTag;
+  /** The HTTP-like code, which `switch`, `matchError()` and the wire use. */
   readonly code: TCode;
   readonly data: TData;
   readonly defined: boolean;
 
-  constructor(opts: TrpcErrorOptions<TCode, TData>) {
+  constructor(opts: TrpcErrorOptions<TCode, TData, TTag>) {
     super({
       message: opts.message ?? opts.code,
       ...(opts.cause === undefined ? {} : { cause: opts.cause }),
     });
-    this._tag = opts.code;
+    this._tag = (opts.tag ?? defaultTag(opts.code)) as TTag;
     this.code = opts.code;
     this.data = opts.data as TData;
     this.defined = opts.defined ?? false;
@@ -248,14 +416,15 @@ export class TrpcError<
 
   /**
    * A public error class: yield or throw it and it reaches the client as a
-   * typed error, with no mapping. Its `_tag` is its code and its `data` is
-   * validated with the schema before it is sent. Errors that aren't marked
-   * public stay masked.
+   * typed error, with no mapping. Its `_tag` is `tag` (a built-in code's is
+   * its class name: `Tagged('NOT_FOUND')` is tagged `NotFound`), its `code`
+   * is `spec.code` (`tag` without one), and its `data` is validated with the
+   * schema before it is sent. Errors that aren't marked public stay masked.
    *
    * @example
    * ```ts
-   * class PostNotFound extends TrpcError.Tagged('POST_NOT_FOUND', {
-   *   status: 404,
+   * class PostNotFound extends TrpcError.Tagged('PostNotFound', {
+   *   code: 'NOT_FOUND',
    *   data: Schema.Struct({ id: Schema.String }),
    * }) {}
    *
@@ -269,17 +438,21 @@ export class TrpcError<
    * ```
    */
   static Tagged<
-    const TCode extends string,
+    const TTag extends string,
     TSchema extends AnySchema | undefined = undefined,
     const TStatus extends number | undefined = undefined,
+    const TCode extends string = TTag,
   >(
-    code: TCode extends 'unexpected' ? ReservedCodeMessage : TCode,
-    spec: TaggedErrorSpec<TSchema, TStatus> = {},
-  ): TaggedErrorClass<TCode, TSchema, TStatus> {
+    tag: TTag extends 'unexpected' ? ReservedCodeMessage : TTag,
+    spec: TaggedErrorSpec<TSchema, TStatus, TCode> = {},
+  ): TaggedErrorClass<TCode, TSchema, TStatus, TagOfCode<TTag>> {
     const hasData = spec.data !== undefined;
-    class Tagged extends TrpcError<TCode, unknown> {
+    const code = spec.code ?? tag;
+    tag = defaultTag(tag) as typeof tag;
+    class Tagged extends TrpcError<string, unknown, string> {
       static readonly [TAGGED] = true;
       static readonly code = code;
+      static readonly tag = tag;
       static readonly data = spec.data;
       static readonly status = spec.status;
       static readonly message = spec.message;
@@ -288,7 +461,8 @@ export class TrpcError<
           | TaggedErrorOptions
           | undefined;
         super({
-          code: code as TCode,
+          code,
+          tag,
           data: hasData ? args[0] : undefined,
           message: opts?.message ?? spec.message,
           cause: opts?.cause,
@@ -296,24 +470,39 @@ export class TrpcError<
         });
       }
     }
-    return Tagged as unknown as TaggedErrorClass<TCode, TSchema, TStatus>;
+    return Tagged as unknown as TaggedErrorClass<
+      TCode,
+      TSchema,
+      TStatus,
+      TagOfCode<TTag>
+    >;
   }
 }
+
+const codeTag = (code: string): string =>
+  code.replace(
+    /_?(\w)([A-Z]*)/g,
+    (_, first: string, rest: string) => first + rest.toLowerCase(),
+  );
+
+/**
+ * The `_tag` of an error with `code` that names no other: a built-in code's
+ * class name (`NotFound`), or the code.
+ * @internal
+ */
+export const defaultTag = (code: string): string =>
+  isBuiltinCode(code) ? codeTag(code) : code;
 
 // Named from the code (`PAYLOAD_TOO_LARGE` is `PayloadTooLarge`) so clients
 // don't ship 25 names.
 for (const code of Object.keys(ERROR_STATUS) as BuiltinErrorCode[]) {
-  (TrpcError as unknown as Record<string, unknown>)[
-    code.replace(
-      /_?(\w)([A-Z]*)/g,
-      (_, first: string, rest: string) => first + rest.toLowerCase(),
-    )
-  ] = class extends TrpcError<BuiltinErrorCode, undefined> {
-    static readonly code = code;
-    constructor(opts?: TaggedErrorOptions) {
-      super({ ...opts, code });
-    }
-  };
+  (TrpcError as unknown as Record<string, unknown>)[codeTag(code)] =
+    class extends TrpcError<BuiltinErrorCode, undefined, string> {
+      static readonly code = code;
+      constructor(opts?: BuiltinErrorOptions) {
+        super({ ...opts, code });
+      }
+    };
 }
 
 const TAGGED: unique symbol = Symbol.for('@trpc12/trpc/TaggedError');
@@ -326,7 +515,13 @@ const TAGGED: unique symbol = Symbol.for('@trpc12/trpc/TaggedError');
 export interface TaggedErrorSpec<
   TSchema,
   TStatus extends number | undefined = number | undefined,
+  TCode extends string = string,
 > {
+  /**
+   * The code clients `switch` and `matchError()` on, and the wire carries.
+   * @default the tag
+   */
+  readonly code?: TCode;
   /** Validates the error's `data`, and documents it in OpenAPI. */
   readonly data?: TSchema;
   /**
@@ -368,16 +563,18 @@ export interface TaggedErrorClass<
   TCode extends string,
   TSchema,
   TStatus extends number | undefined = number | undefined,
+  TTag extends string = TagOfCode<TCode>,
 > {
   new (
     ...args: [TSchema] extends [AnySchema]
       ? [data: OutOf<TSchema>, opts?: TaggedErrorOptions]
       : [opts?: TaggedErrorOptions]
-  ): TrpcError<TCode, TaggedData<TSchema>> & {
+  ): TrpcError<TCode, TaggedData<TSchema>, TTag> & {
     /** Type only: the class's status, for the TypeScript OpenAPI generator. */
     readonly '~status'?: TStatus;
   };
   readonly code: TCode;
+  readonly tag: TTag;
   readonly data: TSchema;
   readonly status: TStatus;
   readonly message: string | undefined;
@@ -459,10 +656,10 @@ export type AnyTrpcError = TrpcError<string, any>;
  * @stability stable
  */
 export function error<const TCode extends string, TData = undefined>(
-  opts: Omit<TrpcErrorOptions<TCode, TData>, 'defined'> &
+  opts: Omit<TrpcErrorOptions<TCode, TData>, 'defined' | 'tag'> &
     ReservedCodeCheck<TCode>,
 ): TrpcError<TCode, TData> {
-  return new TrpcError({ ...opts, defined: true });
+  return new TrpcError<TCode, TData>({ ...opts, defined: true });
 }
 
 /**
@@ -501,6 +698,26 @@ export function serverFailure(err: AnyTrpcError): boolean {
 export function isTrpcError(value: unknown): value is AnyTrpcError {
   return value instanceof TrpcError;
 }
+
+/**
+ * A refinement for errors with `code`, whatever their `_tag`, for Effect's
+ * `catchIf` and `filter`: `Effect.catchIf(hasCode('NOT_FOUND'), …)` takes
+ * every `NOT_FOUND` (a declared one, a thrown one, `ProcedureNotFound`) out
+ * of the error channel.
+ *
+ * @example
+ * ```ts
+ * client.post.byId.query({ id }).pipe(
+ *   Effect.catchIf(hasCode('NOT_FOUND'), () => Effect.succeed(null)),
+ * );
+ * ```
+ * @since 0.1.0
+ * @stability stable
+ */
+export const hasCode =
+  <const TCode extends string>(code: TCode) =>
+  <E>(err: E): err is Extract<E, { readonly code: TCode }> =>
+    isTrpcError(err) && err.code === code;
 
 /** Whether `value` carries a string `digest`, React's and Next's mark. */
 export const hasDigest = (value: unknown): boolean =>
@@ -576,6 +793,7 @@ export function withDefined<E extends AnyTrpcError>(
   return withStatusHint(
     new TrpcError({
       code: err.code,
+      tag: err._tag,
       message: err.message,
       data: err.data,
       defined,
@@ -585,17 +803,36 @@ export function withDefined<E extends AnyTrpcError>(
   ) as E;
 }
 
+const CLIENT_TAGS: { readonly [T in keyof ClientTags]: ClientTags[T] } = {
+  ProcedureNotFound: 'NOT_FOUND',
+  ProcedureTypeMismatch: 'METHOD_NOT_SUPPORTED',
+  SerializerMismatch: 'UNSUPPORTED_PROTOCOL',
+};
+
+/** Whether an undefined error with `code` keeps `tag` on a client. */
+const isClientTag = (tag: string, code: string): boolean =>
+  tag === defaultTag(code) ||
+  (Object.hasOwn(CLIENT_TAGS, tag) &&
+    CLIENT_TAGS[tag as keyof ClientTags] === code);
+
 /**
  * `err` as clients type it. Defined errors and custom codes stay as they
  * are: a server only sends an undefined custom code from a procedure that
  * declares no errors. A built-in code loses its `data`, which no schema
- * checked, and keeps `err` as the cause.
+ * checked, and a tag clients don't see ({@link ClientTags}), keeping `err`
+ * as the cause.
  * @internal
  */
 export function toUntypedError(err: AnyTrpcError): AnyTrpcError {
   if (!err.defined && !isBuiltinCode(err.code)) return keepUntyped(err);
-  if (err.defined || err.data === undefined) return err;
-  return new TrpcError({ code: err.code, message: err.message, cause: err });
+  const tagged = isClientTag(err._tag, err.code);
+  if (err.defined || (err.data === undefined && tagged)) return err;
+  return new TrpcError({
+    code: err.code,
+    tag: tagged ? err._tag : undefined,
+    message: err.message,
+    cause: err,
+  });
 }
 
 const keptUntyped = new WeakSet<AnyTrpcError>();
@@ -620,17 +857,37 @@ export const isKeptUntyped = (err: AnyTrpcError): boolean =>
  * @stability stable
  */
 export interface WireError {
-  error: { code: string; message: string; data?: unknown; defined: boolean };
+  error: {
+    code: string;
+    /** Only when it isn't the code's default and the client keeps it. */
+    tag?: string;
+    message: string;
+    data?: unknown;
+    defined: boolean;
+  };
 }
+
+/**
+ * The `_tag` the wire carries for `err`, when a client can't rebuild it from
+ * the code: a defined error's own tag, or one of {@link ClientTags}.
+ * @internal
+ */
+export const wireTag = (err: AnyTrpcError): string | undefined =>
+  err._tag !== defaultTag(err.code) &&
+  (err.defined || isClientTag(err._tag, err.code))
+    ? err._tag
+    : undefined;
 
 /**
  * @since 0.1.0
  * @stability stable
  */
 export function toWireError(err: AnyTrpcError): WireError {
+  const tag = wireTag(err);
   return {
     error: {
       code: err.code,
+      ...(tag === undefined ? {} : { tag }),
       message: err.message,
       ...(err.data === undefined ? {} : { data: err.data }),
       defined: err.defined,
@@ -655,6 +912,7 @@ export function fromWireError(body: unknown): TrpcError {
   return toUntypedError(
     new TrpcError({
       code,
+      tag: typeof inner['tag'] === 'string' ? inner['tag'] : undefined,
       message: typeof inner['message'] === 'string' ? inner['message'] : code,
       data: inner['data'],
       defined: inner['defined'] === true,

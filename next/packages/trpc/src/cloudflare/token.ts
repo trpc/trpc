@@ -1,6 +1,6 @@
 import { Clock, Duration, Effect, Redacted, Result, Schema } from 'effect';
 import { Base64Url } from 'effect/encoding';
-import { TrpcError, type CodeError } from '../internal/error.ts';
+import { TrpcError, type Failure } from '../internal/error.ts';
 
 /**
  * Options for {@link experimental_connectionToken}.
@@ -35,18 +35,22 @@ export interface ConnectionToken<A> {
   /** A token with `claims` that expires after `ttl`. */
   readonly sign: (claims: A) => Effect.Effect<string>;
   /**
-   * The claims of a token this secret signed. Fails with `UNAUTHORIZED`
-   * when it's missing, malformed, tampered with or expired.
+   * The claims of a token this secret signed. Fails with an `UNAUTHORIZED`
+   * tagged `ConnectionTokenExpired` past its `ttl`, and
+   * `InvalidConnectionToken` when it's missing, malformed or tampered with.
    */
   readonly verify: (
     token: unknown,
-  ) => Effect.Effect<A, CodeError<'UNAUTHORIZED'>>;
+  ) => Effect.Effect<
+    A,
+    Failure<'InvalidConnectionToken' | 'ConnectionTokenExpired'>
+  >;
 }
 
 const encoder = /* @__PURE__ */ new TextEncoder();
 
 const unauthorized = (message: string) =>
-  new TrpcError.Unauthorized({ message });
+  new TrpcError.Unauthorized({ tag: 'InvalidConnectionToken', message });
 
 /**
  * Signed tokens for hibernating connections. A Worker that has already
@@ -144,7 +148,12 @@ export function experimental_connectionToken<S extends Schema.Codec<any, any>>(
     };
     const now = yield* Clock.currentTimeMillis;
     if (typeof payload.exp !== 'number' || payload.exp <= now) {
-      return yield* Effect.fail(unauthorized('Expired connection token'));
+      return yield* Effect.fail(
+        new TrpcError.Unauthorized({
+          tag: 'ConnectionTokenExpired',
+          message: 'Expired connection token',
+        }),
+      );
     }
     return yield* Schema.decodeUnknownEffect(codec)(payload.c).pipe(
       Effect.mapError(() => unauthorized('Invalid connection token claims')),

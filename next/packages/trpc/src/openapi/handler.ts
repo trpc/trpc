@@ -27,6 +27,7 @@ import {
   TrpcError,
   type AnyTrpcError,
   type CodeError,
+  type Failure,
 } from '../internal/error.ts';
 import { timerOption } from '../internal/duration.ts';
 import { toAsyncIterable } from '../internal/effects.ts';
@@ -42,6 +43,7 @@ import {
   createHandlerCore,
   CurrentPlatform,
   readBytes,
+  type BodyError,
   type ContextOption,
   type CreateContextOpts,
   type LayerOption,
@@ -443,13 +445,7 @@ export function experimental_createOpenApiHandler<
     http: HttpServerRequest.HttpServerRequest,
   ): Effect.Effect<
     Body,
-    CodeError<
-      | 'PARSE_ERROR'
-      | 'BAD_REQUEST'
-      | 'UNSUPPORTED_MEDIA_TYPE'
-      | 'PAYLOAD_TOO_LARGE'
-      | 'INTERNAL_SERVER_ERROR'
-    >
+    BodyError | CodeError<'UNSUPPORTED_MEDIA_TYPE'> | Failure<'InvalidBody'>
   > =>
     Effect.gen(function* () {
       const bytes = yield* readBytes(http, maxBodySize);
@@ -465,6 +461,7 @@ export function experimental_createOpenApiHandler<
                   }).formData(),
                 catch: (cause) =>
                   new TrpcError.ParseError({
+                    tag: 'InvalidBody',
                     message: 'Invalid form body',
                     cause,
                   }),
@@ -490,6 +487,7 @@ export function experimental_createOpenApiHandler<
         try: () => ({ value: JSON.parse(text) as unknown, fromStrings: false }),
         catch: (cause) =>
           new TrpcError.ParseError({
+            tag: 'InvalidBody',
             message: 'Invalid JSON',
             cause,
           }),
@@ -547,6 +545,7 @@ export function experimental_createOpenApiHandler<
     if (!hasParams) return body.value;
     if (body.value !== undefined && !isPlainObject(body.value)) {
       throw new TrpcError.BadRequest({
+        tag: 'InvalidPathParam',
         message: 'A route with path params needs an object body',
       });
     }
@@ -654,6 +653,7 @@ export function experimental_createOpenApiHandler<
       if (!procedure) {
         return yield* Effect.fail(
           new TrpcError.NotFound({
+            tag: 'ProcedureNotFound',
             message: `The contract's "${entry.path}" is not in the router`,
           }),
         );
@@ -761,7 +761,10 @@ export function experimental_createOpenApiHandler<
           ? new TrpcError.MethodNotSupported({
               message: `${method} is not supported for ${url.pathname}`,
             })
-          : new TrpcError.NotFound({ message: `Not found: ${url.pathname}` }),
+          : new TrpcError.NotFound({
+              tag: 'RouteNotFound',
+              message: `Not found: ${url.pathname}`,
+            }),
       );
     });
 

@@ -6,7 +6,8 @@ import {
   TrpcError,
   type AnyTrpcError,
   type BuiltinErrorCode,
-  type CodeError,
+  type BuiltinTag,
+  type CodeTags,
   type WireError,
 } from '../../internal/error.ts';
 import { timerOption } from '../../internal/duration.ts';
@@ -67,10 +68,15 @@ export const makeHttpHandler = (
 };
 
 /** @internal */
-export const protocolError = <C extends BuiltinErrorCode>(
+export const protocolError = <
+  C extends BuiltinErrorCode,
+  T extends BuiltinTag<C> = CodeTags[C],
+>(
   code: C,
   message: string,
-): CodeError<C> => new TrpcError({ code, message }) as CodeError<C>;
+  tag?: T,
+): TrpcError<C, undefined, T> =>
+  new TrpcError({ code, message, tag }) as TrpcError<C, undefined, T>;
 
 /** An error as the client sees it: masked, then serialized. @internal */
 export const wire = (handler: HttpHandler, err: AnyTrpcError): unknown =>

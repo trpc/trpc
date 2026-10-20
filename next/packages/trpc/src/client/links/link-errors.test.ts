@@ -144,7 +144,7 @@ test('a custom link declares the link codes it makes', async () => {
   const code = await Effect.runPromise(
     effectClient.ping.query().pipe(
       Effect.map(() => 'ok'),
-      Effect.catchTag('NETWORK_ERROR', (e) => Effect.succeed(e.code)),
+      Effect.catchTag('NetworkError', (e) => Effect.succeed(e.code)),
       Effect.catch((e) => Effect.succeed(e.code)),
     ),
   );

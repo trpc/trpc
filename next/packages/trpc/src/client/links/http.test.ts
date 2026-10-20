@@ -221,7 +221,7 @@ test('a stream that ends early rejects open values with STREAM_INTERRUPTED', asy
   );
   expect(err).toBeInstanceOf(TrpcError);
   expect(err).toMatchObject({ code: 'STREAM_INTERRUPTED' });
-  expect(err).toSatisfy(Predicate.isTagged('STREAM_INTERRUPTED'));
+  expect(err).toSatisfy(Predicate.isTagged('StreamInterrupted'));
 });
 
 test("a custom fetch is any function with fetch's call shape", async () => {

@@ -7,6 +7,7 @@ import {
   TrpcError,
   routerType,
 } from '@trpc12/trpc/client';
+import { createEffectClient } from '@trpc12/trpc/effect';
 import { experimental_generateOpenApi } from '@trpc12/trpc/openapi';
 import { initTrpc } from '@trpc12/trpc/server';
 import { createTestServer } from '../fixtures/server.ts';
@@ -19,6 +20,11 @@ class PostNotFound extends TrpcError.Tagged('POST_NOT_FOUND', {
 }) {}
 
 class Gone extends TrpcError.Tagged('GONE') {}
+
+class PostMissing extends TrpcError.Tagged('PostMissing', {
+  code: 'NOT_FOUND',
+  data: Schema.Struct({ id: Schema.String }),
+}) {}
 
 class SqlError extends Data.TaggedError('SqlError')<{ query: string }> {}
 
@@ -37,6 +43,7 @@ const router = {
     .input(z.object({ id: z.string() }))
     .query((opts) => find(opts.input.id)),
   gone: t.procedure.query(() => Effect.fail(new Gone())),
+  missing: t.procedure.query(() => Effect.fail(new PostMissing({ id: 'x' }))),
   thrown: t.procedure.query((): string => {
     throw new PostNotFound({ id: 'x' }, { message: 'No such post' });
   }),
@@ -155,4 +162,47 @@ test('.errors() takes a tagged class, which documents it in OpenAPI', () => {
   const responses = JSON.stringify(doc.paths);
   expect(responses).toContain('"404"');
   expect(responses).toContain('POST_NOT_FOUND');
+});
+
+test("a tagged class can name its code: clients get its tag, and the code's status", async () => {
+  await using ctx = await setup();
+  const [, err] = await safe(ctx.client.missing.query());
+  expect(err?._tag).toBe('PostMissing');
+  expect(err).toMatchObject({
+    code: 'NOT_FOUND',
+    data: { id: 'x' },
+    defined: true,
+  });
+  expect((await fetch(`${ctx.url}/missing`)).status).toBe(404);
+  expect(PostMissing.code).toBe('NOT_FOUND');
+  expect(PostMissing.tag).toBe('PostMissing');
+  if (isDefinedError(err) && err.code === 'NOT_FOUND') {
+    expectTypeOf(err._tag).toEqualTypeOf<'PostMissing'>();
+    expectTypeOf(err.data).toEqualTypeOf<{ readonly id: string }>();
+  }
+
+  const effectClient = createEffectClient({
+    router: routerType<AppRouter>(),
+    links: [httpLink({ url: ctx.url })],
+  });
+  const id = await Effect.runPromise(
+    effectClient.missing.query().pipe(
+      Effect.map(() => 'found'),
+      Effect.catchTag('PostMissing', (e) => Effect.succeed(e.data.id)),
+    ),
+  );
+  expect(id).toBe('x');
+});
+
+test('OpenAPI documents a tag that differs from the code', () => {
+  const doc = experimental_generateOpenApi(
+    {
+      missing: t.procedure
+        .errors({ NOT_FOUND: PostMissing })
+        .query(() => Effect.fail(new PostMissing({ id: 'x' }))),
+    },
+    { info: { title: 'x', version: '1' } },
+  );
+  const responses = JSON.stringify(doc.paths);
+  expect(responses).toContain('"tag":{"const":"PostMissing"}');
 });

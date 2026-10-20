@@ -360,6 +360,7 @@ const checkDeclared = (
             : withStatusHint(
                 new TrpcError({
                   code: err.code,
+                  tag: err._tag,
                   message: err.message,
                   data,
                   defined: true,
@@ -742,6 +743,7 @@ export function callProcedure(
     if (!resolver) {
       return Effect.fail(
         new TrpcError.NotImplemented({
+          tag: 'ProcedureNotImplemented',
           message: `"${path}" is a contract procedure without an implementation`,
         }),
       );
@@ -802,6 +804,7 @@ export function callProcedure(
       if (!opts.allowResponse) {
         return Effect.fail(
           new TrpcError.BadRequest({
+            tag: 'UnsupportedResponse',
             message: `"${path}" returns a Response, which only an unbatched HTTP call or an in-process call can carry`,
           }),
         );

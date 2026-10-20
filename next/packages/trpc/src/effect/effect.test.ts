@@ -10,6 +10,7 @@ import {
 } from 'effect';
 import {
   createTrpcClient,
+  hasCode,
   httpLink,
   localLink,
   routerType,
@@ -244,13 +245,22 @@ test('typed errors land in the Effect error channel', async () => {
   const program = ctx.client.post.byId
     .query({ id: 'nope' })
     .pipe(
-      Effect.catchTag('NOT_FOUND', (err) =>
+      Effect.catchTag('NotFound', (err) =>
         Effect.succeed(err.defined ? `missing ${err.data.id}` : err.message),
       ),
     );
   expect(await Effect.runPromise(program)).toBe('missing nope');
   expectTypeOf<
-    Extract<Effect.Error<typeof program>, { code: 'NOT_FOUND' }>
+    Extract<Effect.Error<typeof program>, { code: 'NOT_FOUND' }>['_tag']
+  >().toEqualTypeOf<'ProcedureNotFound'>();
+  const anyNotFound = ctx.client.post.byId
+    .query({ id: 'nope' })
+    .pipe(
+      Effect.catchIf(hasCode('NOT_FOUND'), (err) => Effect.succeed(err._tag)),
+    );
+  expect(await Effect.runPromise(anyNotFound)).toBe('NotFound');
+  expectTypeOf<
+    Extract<Effect.Error<typeof anyNotFound>, { code: 'NOT_FOUND' }>
   >().toBeNever();
 
   const exit = await Effect.runPromiseExit(
@@ -265,7 +275,8 @@ test('typed errors land in the Effect error channel', async () => {
             'BAD_REQUEST',
             InputValidationErrorData<
               inferInputIssue<z.ZodObject<{ id: z.ZodString }>>
-            >
+            >,
+            'InvalidInput'
           >,
         DansonForm,
         Exclude<LinkErrorCode, 'STREAM_INTERRUPTED'>

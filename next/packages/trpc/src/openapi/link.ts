@@ -126,6 +126,7 @@ export function experimental_openApiLink(opts: OpenApiLinkOptions): TrpcLink<{
       if (!procedure) {
         return Effect.fail(
           new TrpcError.NotFound({
+            tag: 'ProcedureNotFound',
             message: `"${op.path}" is not in the contract`,
           }),
         );
