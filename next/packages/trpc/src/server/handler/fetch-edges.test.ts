@@ -312,6 +312,39 @@ test('batch: {} uses the default of 20 calls', async () => {
   ).toHaveLength(20);
 });
 
+test("an output that streams answers JSONL whatever accept says: the handler doesn't buffer it or fail", async () => {
+  await using server = await createTestServer({
+    router: {
+      plain: t.procedure.query(() => 'plain'),
+      feed: t.procedure.query(async function* () {
+        yield 1;
+        yield 2;
+      }),
+      report: t.procedure.query(() => ({
+        title: 'Report',
+        total: Promise.resolve(42),
+      })),
+    },
+    createContext,
+  });
+  for (const accept of ['application/json', 'text/html', '*/*']) {
+    const get = (path: string) =>
+      fetch(`${server.url}/${path}`, { headers: { accept } });
+    const plain = await get('plain');
+    expect(plain.headers.get('content-type')).toBe('application/json');
+    expect(await plain.json()).toEqual({ json: 'plain' });
+    for (const path of ['feed', 'report']) {
+      const res = await get(path);
+      expect(res.status).toBe(200);
+      expect(res.headers.get('content-type')).toMatch(/^application\/jsonl/);
+      expect(res.headers.get('vary')).toBe('accept');
+      const body = (await res.text()).trim().split('\n');
+      expect(body.length).toBeGreaterThan(1);
+      for (const line of body) expect(() => JSON.parse(line)).not.toThrow();
+    }
+  }
+});
+
 type Big = () => AsyncGenerator<string>;
 
 test.each([
