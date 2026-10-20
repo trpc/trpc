@@ -5,7 +5,7 @@
  * @module
  */
 export {
-  bodyStream,
+  drainingBodyStream,
   readBytes,
   responseOptions,
   type BodyError,

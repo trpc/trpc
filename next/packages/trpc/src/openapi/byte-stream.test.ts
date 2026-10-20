@@ -1,6 +1,10 @@
-import { Effect, Option, Schema, Stream } from 'effect';
+import { createServer } from 'node:http';
+import type { AddressInfo } from 'node:net';
+import { NodeHttpServer } from '@effect/platform-node';
+import { Effect, Exit, Layer, Option, Schema, Scope, Stream } from 'effect';
 import { createTrpcClient, routerType } from '@trpc12/trpc/client';
 import { experimental_toContract } from '@trpc12/trpc/contract';
+import { serve } from '@trpc12/trpc/http';
 import {
   experimental_createOpenApiHandler,
   experimental_openapi,
@@ -228,4 +232,39 @@ test('experimental_openApiLink sends a ReadableStream input as the application/o
     ['POST', '/api/uploads', 'application/octet-stream'],
     ['PUT', '/api/videos/v%201', 'application/octet-stream'],
   ]);
+});
+
+test('over HTTP, the server answers from the first chunk while the client is still sending', async () => {
+  await using handler = experimental_createOpenApiHandler({ router });
+  const server = createServer();
+  const scope = Scope.makeUnsafe();
+  await Effect.runPromise(
+    Layer.buildWithScope(
+      serve(handler).pipe(
+        Layer.provideMerge(
+          NodeHttpServer.layer(() => server, { port: 0, host: '127.0.0.1' }),
+        ),
+      ),
+      scope,
+    ),
+  );
+  await using _server = {
+    [Symbol.asyncDispose]: async () => {
+      server.closeAllConnections();
+      await Effect.runPromise(Scope.close(scope, Exit.void));
+    },
+  };
+  const port = (server.address() as AddressInfo).port;
+  const client = clientFor(`http://127.0.0.1:${port}`);
+
+  // Never closed: the answer comes while the body is still being sent, and
+  // the rest is drained rather than dropping the connection.
+  const open = new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(encoder.encode('first chunk'));
+    },
+  });
+  expect(await client.first.mutate(open)).toBe('first chunk');
+
+  expect(await client.upload.mutate(streamOf('a', 'b', 'c'))).toBe('abc');
 });

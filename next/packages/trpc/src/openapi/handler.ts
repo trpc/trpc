@@ -42,7 +42,7 @@ import {
 } from '../internal/protocol.ts';
 import type { MaybePromise, ProcedureType } from '../internal/types.ts';
 import {
-  bodyStream,
+  drainingBodyStream,
   createHandlerCore,
   CurrentPlatform,
   readBytes,
@@ -510,7 +510,7 @@ export function experimental_createOpenApiHandler<
     CodeError<'UNSUPPORTED_MEDIA_TYPE'> | Failure<'BodyConsumed'>
   > =>
     isOctetContentType(http.headers['content-type'] ?? null)
-      ? Effect.map(bodyStream(http), (value): Body => ({
+      ? Effect.map(drainingBodyStream(http), (value): Body => ({
           value,
           fromStrings: false,
         }))

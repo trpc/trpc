@@ -111,13 +111,9 @@ const drainingStream = (
   );
 };
 
-/**
- * The body as a web stream, unread, for a byte stream input to pull. A body
- * a Node parser already read (`express.raw()`) is replayed.
- * @internal
- */
-export const bodyStream = (
+const unreadBody = (
   request: HttpServerRequest.HttpServerRequest,
+  webAsIs: boolean,
 ): Effect.Effect<ReadableStream<Uint8Array>, Failure<'BodyConsumed'>> =>
   Effect.suspend(() => {
     const replayed = parsedBody(request);
@@ -125,7 +121,7 @@ export const bodyStream = (
     if (replayed) {
       return Effect.succeed(Stream.toReadableStream(Stream.make(replayed)));
     }
-    if (request.source instanceof Request) {
+    if (webAsIs && request.source instanceof Request) {
       return Effect.succeed(
         request.source.body ?? Stream.toReadableStream(Stream.empty),
       );
@@ -134,6 +130,27 @@ export const bodyStream = (
       drainingStream(request.stream, context),
     );
   });
+
+/**
+ * The body as a web stream, unread, for a byte stream input to pull. A body
+ * a Node parser already read (`express.raw()`) is replayed.
+ * @internal
+ */
+export const bodyStream = (
+  request: HttpServerRequest.HttpServerRequest,
+): Effect.Effect<ReadableStream<Uint8Array>, Failure<'BodyConsumed'>> =>
+  unreadBody(request, true);
+
+/**
+ * {@link bodyStream}, drained when cancelled even when it comes from a web
+ * `Request`: a handler that is only a web handler gets Node's requests
+ * wrapped in one, and cancelling that body closes the socket.
+ * @internal
+ */
+export const drainingBodyStream = (
+  request: HttpServerRequest.HttpServerRequest,
+): Effect.Effect<ReadableStream<Uint8Array>, Failure<'BodyConsumed'>> =>
+  unreadBody(request, false);
 
 /** What reading a body can fail with. @internal */
 export type BodyError =
