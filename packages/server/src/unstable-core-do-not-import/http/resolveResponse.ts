@@ -3,6 +3,7 @@ import {
   isObservable,
   observableToAsyncIterable,
 } from '../../observable/observable';
+import type { FormattedErrorShapes } from '../error/formatter';
 import { getErrorShape } from '../error/getErrorShape';
 import { getTRPCErrorFromUnknown, TRPCError } from '../error/TRPCError';
 import type { ProcedureType } from '../procedure';
@@ -27,6 +28,7 @@ import type {
   HTTPBaseHandlerOptions,
   ResolveHTTPRequestOptionsContextFn,
   TRPCRequestInfo,
+  TRPCRequestInfoProcedureCall,
 } from './types';
 
 /**
@@ -375,8 +377,18 @@ export async function resolveResponse<TRouter extends AnyRouter>(
       opts.req.signal,
       bodyCancelled.signal,
     ]);
+    const errorShapesByCall = new WeakMap<
+      TRPCRequestInfoProcedureCall,
+      FormattedErrorShapes
+    >();
+    const getCallErrorShapes = (
+      call: TRPCRequestInfoProcedureCall | undefined,
+    ) => (call ? errorShapesByCall.get(call) : undefined);
+
     const rpcCalls = info.calls.map(async (call): Promise<RPCResult> => {
       const proc = call.procedure;
+      const errorShapes: FormattedErrorShapes = new WeakMap();
+      errorShapesByCall.set(call, errorShapes);
       const combinedAbort = combinedAbortController(callSignal);
       try {
         if (opts.error) {
@@ -413,6 +425,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
           type: proc._def.type,
           signal: combinedAbort.signal,
           batchIndex: call.batchIndex,
+          errorShapes,
         });
         return [
           undefined,
@@ -467,6 +480,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
                   input: call!.result(),
                   path: call!.path,
                   type: info.type,
+                  errorShapes: getCallErrorShapes(call),
                 }),
               }
             : { result: { data: result.data } };
@@ -549,6 +563,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
                 input,
                 path,
                 type,
+                errorShapes: getCallErrorShapes(call),
               });
 
               return shape;
@@ -668,6 +683,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
                 input: call!.result(),
                 path: call!.path,
                 type: call!.procedure?._def.type ?? 'unknown',
+                errorShapes: getCallErrorShapes(call),
               }),
             };
           }
@@ -714,6 +730,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
             input,
             path,
             type,
+            errorShapes: getCallErrorShapes(call),
           });
 
           return shape;
@@ -769,6 +786,7 @@ export async function resolveResponse<TRouter extends AnyRouter>(
               input: call.result(),
               path: call.path,
               type: call.procedure?._def.type ?? 'unknown',
+              errorShapes: getCallErrorShapes(call),
             }),
           };
         }
