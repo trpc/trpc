@@ -303,6 +303,13 @@ describe('writeVercelOutput', () => {
           hops: [],
           landed: { kind: 'file', path: '/docs/server/routers' },
         });
+        for (const [from, to] of [
+          ['/index.html', '/'],
+          ['/docs/server/routers/index.html', '/docs/server/routers'],
+          ['/docs/server/routers.html', '/docs/server/routers'],
+        ] as const) {
+          expect(land(config.routes, served, from).hops).toEqual([to]);
+        }
 
         const broken = yield* setup(llmsTxt, [
           { destination: '/docs/gone', permanent: true, source: '/docs/old' },

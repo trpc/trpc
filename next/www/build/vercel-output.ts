@@ -134,6 +134,12 @@ export const routes = (
   ...noindex,
   hiddenRoute(decisions.basePath),
   { headers: { Location: '/$1' }, src: '^/(.+)/$', status: 308 },
+  // trpc.io answers a page's `index.html` too: `/docs/a/index.html`, `/index.html`.
+  {
+    headers: { Location: '/$1' },
+    src: '^/(?:(.+)/)?index\\.html$',
+    status: 308,
+  },
   { headers: { Location: '/$1' }, src: '^/(.+)\\.html$', status: 308 },
   {
     headers: { Location: `${v12.basePath}/${first}` },
