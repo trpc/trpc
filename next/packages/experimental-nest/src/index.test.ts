@@ -11,7 +11,7 @@ import {
   type CanActivate,
 } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import { Context, Effect, Layer, Schema } from 'effect';
+import { Context, Effect, Layer, ManagedRuntime, Schema } from 'effect';
 import { createTrpcClient, safe } from '@trpc12/trpc/client';
 import {
   type AnyContractRouter,
@@ -295,6 +295,48 @@ test('closing the app releases the module layer', async () => {
   expect(released).toBe(0);
   await nest.close();
   expect(released).toBe(1);
+});
+
+test('a caller-owned runtime provides the services, and closing the app leaves it to its owner', async () => {
+  let released = 0;
+  await using runtime = ManagedRuntime.make(
+    Layer.effect(
+      Counter,
+      Effect.acquireRelease(Effect.succeed({ next: Effect.succeed(2) }), () =>
+        Effect.sync(() => released++),
+      ),
+    ),
+  );
+  @Controller()
+  class CountController {
+    @Implement({ count: appContract.post.count })
+    count() {
+      return { count: impl.post.count.query(() => Counter.use((c) => c.next)) };
+    }
+  }
+  @Module({
+    imports: [TrpcModule.forRoot({ runtime })],
+    controllers: [CountController],
+  })
+  class RuntimeModule {}
+  const nest = await NestFactory.create(RuntimeModule, { logger: false });
+  await nest.listen(0, '127.0.0.1');
+  expect(await (await fetch(`${await nest.getUrl()}/count`)).json()).toBe(2);
+  await nest.close();
+  expect(released).toBe(0);
+  await runtime.dispose();
+  expect(released).toBe(1);
+});
+
+test('TrpcModule takes a layer or a runtime, not both', async () => {
+  const layer = Layer.succeed(Counter, { next: Effect.succeed(1) });
+  const runtime = ManagedRuntime.make(layer);
+  @Module({ imports: [TrpcModule.forRoot({ runtime, layer })] })
+  class BothModule {}
+  await expect(
+    NestFactory.create(BothModule, { logger: false, abortOnError: false }),
+  ).rejects.toThrow('pass `layer` or `runtime`, not both');
+  await runtime.dispose();
 });
 
 test('Nest guards run before the procedure', async () => {

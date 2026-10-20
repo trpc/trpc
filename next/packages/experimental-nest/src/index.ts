@@ -44,7 +44,7 @@ import {
   type OnApplicationShutdown,
   type OptionalFactoryDependency,
 } from '@nestjs/common';
-import { Effect, Exit, Scope, type Layer } from 'effect';
+import { Effect, Exit, Layer, Scope, type ManagedRuntime } from 'effect';
 import { HttpServerRequest } from 'effect/http';
 import { mergeMap, type Observable } from 'rxjs';
 import { experimental_toContract } from '@trpc12/trpc/contract';
@@ -75,17 +75,24 @@ import type { AnyProcedure, CreateContextOpts } from '@trpc12/trpc/server';
  */
 export interface TrpcModuleOptions extends Omit<
   BaseOpenApiHandlerOptions<never>,
-  'router' | 'prefix' | 'contract'
+  'router' | 'prefix' | 'contract' | 'layer' | 'runtime'
 > {
   /** Runs once per request; `platform` is the Nest `ExecutionContext`. */
   createContext?: (
     opts: CreateContextOpts<ExecutionContext>,
   ) => object | Promise<object>;
   /**
-   * Provides the Effect services the procedures need. Nest can't see which
-   * those are, so a missing one fails the call.
+   * Provides the Effect services the procedures need, built once and
+   * released when the app closes. Nest can't see which those are, so a
+   * missing one fails the call.
    */
   layer?: Layer.Layer<any, any, never>;
+  /**
+   * Provides the services instead of `layer`, from a runtime the caller
+   * owns and shares with the rest of the app. Closing the app leaves it
+   * running; `runtime.dispose()` releases it.
+   */
+  runtime?: ManagedRuntime.ManagedRuntime<any, any> | undefined;
 }
 
 /**
@@ -160,8 +167,17 @@ export class TrpcHost implements OnApplicationShutdown {
   readonly #node: (req: IncomingMessage, res: ServerResponse) => void;
 
   constructor(@Inject(TRPC_MODULE_OPTIONS) options: TrpcModuleOptions) {
+    const { runtime, ...rest } = options;
+    if (runtime && options.layer) {
+      throw new TypeError(
+        'TrpcModule: pass `layer` or `runtime`, not both',
+      );
+    }
     const handler = experimental_createOpenApiHandler({
-      ...options,
+      ...rest,
+      // The handler releases the layer it's given: this one only reads the
+      // runtime's services, so the runtime stays its owner's.
+      layer: runtime ? Layer.effectContext(runtime.contextEffect) : rest.layer,
       router: {},
       prefix: '',
     } as never) as OpenApiHandler<ExecutionContext>;
