@@ -6,7 +6,7 @@ import { emptyObject, identity, run } from '../utils';
 import type { EventSourceLike } from './sse.types';
 import type { inferTrackedOutput } from './tracked';
 import { isTrackedEnvelope } from './tracked';
-import { takeWithGrace } from './utils/asyncIterable';
+import { iteratorResource, takeWithGrace } from './utils/asyncIterable';
 import { makeAsyncResource } from './utils/disposable';
 import { readableStreamFrom } from './utils/readableStreamFrom';
 import {
@@ -109,8 +109,6 @@ export function sseStreamProducer<TValue = unknown>(
       data: JSON.stringify(client),
     };
 
-    type TIteratorValue = Awaited<TValue> | typeof PING_SYM;
-
     let iterable: AsyncIterable<TValue | typeof PING_SYM> = opts.data;
 
     if (opts.emitAndEndImmediately) {
@@ -124,27 +122,36 @@ export function sseStreamProducer<TValue = unknown>(
       iterable = withPing(iterable, ping.intervalMs);
     }
 
+    await using iterator = iteratorResource(iterable);
+
     // We need those declarations outside the loop for garbage collection reasons. If they were
-    // declared inside, they would not be freed until the next value is present.
-    let value: null | TIteratorValue;
+    // declared inside, they would not be freed until the next value is present. A `for await`
+    // loop doesn't free its value either (V8 14, Node 26), so the iterator is driven by hand.
+    let result: null | IteratorResult<TValue | typeof PING_SYM>;
     let chunk: null | SSEvent;
 
-    for await (value of iterable) {
-      if (value === PING_SYM) {
+    while (true) {
+      result = await iterator.next();
+      if (result.done) {
+        break;
+      }
+
+      if (result.value === PING_SYM) {
+        result = null;
         yield { event: PING_EVENT, data: '' };
         continue;
       }
 
-      chunk = isTrackedEnvelope(value)
-        ? { id: value[0], data: value[1] }
-        : { data: value };
+      chunk = isTrackedEnvelope(result.value)
+        ? { id: result.value[0], data: result.value[1] }
+        : { data: result.value };
+      result = null;
 
       chunk.data = JSON.stringify(serialize(chunk.data));
 
       yield chunk;
 
       // free up references for garbage collection
-      value = null;
       chunk = null;
     }
   }
