@@ -120,7 +120,7 @@ Each feature put back on top of all seven cuts (16.3 kB), which is what it would
 
 What the 16.3 kB holds: Effect 13.0 kB (the runtime and `Stream` core, 1.9 kB over the 11.1 kB floor) and tRPC 3.3 kB.
 
-`frames` and `streamed` have landed as `httpLink({ streams: experimental_httpStreams() })` ([`../decisions/http-streams-opt-in.md`](../decisions/http-streams-opt-in.md)), so their patches are gone from `patches.ts`. Built on the `batching()` and `sse()` imports, the cut saves 1.54 kB on the minimal client (36.6 to 35.1 kB), and 0.67 kB alone on `v12` (39.8 to 39.1 kB).
+`frames` and `streamed` have landed as `httpLink({ streams: experimental_httpStreams() })` ([`../decisions/http-streams-opt-in.md`](../decisions/http-streams-opt-in.md)), so their patches are gone from `patches.ts`. Built on the `batching()` and `sse()` imports, the cut saves 1.54 kB on the minimal client (36.6 to 35.1 kB), and 0.67 kB alone on `v12` (39.8 to 39.1 kB). Under the `json`, `iterable` and `fetch` patches, the minimal client goes from 22.6 to 16.7 kB.
 
 The same cuts on the full client (43.3 kB) stack to 28.2 kB; raw `fetch` alone is −7.6 kB there too. `retryLink` and danSON already bring the streaming core, so the features' own cuts save less (`sse` −1.5, `batch` −1.4, `iterable` −2.0).
 
