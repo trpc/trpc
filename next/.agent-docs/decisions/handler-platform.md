@@ -8,4 +8,4 @@
   - Passing it is required when its type isn't `undefined`.
 - Why: Workers hand `env` and `ctx` to `fetch(request, env, ctx)`, not to module scope, and the earlier `WeakMap` recipe was boilerplate every Workers app needed.
 - Lost: reading platform values in middleware without going through `ctx`.
-- Lives in: `packages/trpc/src/server/handler/fetch.ts`, `src/server/sockets/socket.ts`, `docs/adapters/fetch.md` (Platform arguments).
+- Lives in: `packages/trpc/src/server/handler/fetch.ts`, `src/server/sockets/socket.ts`, `www/docs/adapters/fetch.md` (Platform arguments).

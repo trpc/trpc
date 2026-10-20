@@ -2,6 +2,7 @@ import { NodeServices } from '@effect/platform-node';
 import { site, v12 } from '@trpc12/www/site';
 import { Effect, FileSystem, Path } from 'effect';
 import { expect, test } from 'vite-plus/test';
+import { packageDirs } from './packages.ts';
 
 const run = <A, E>(
   effect: Effect.Effect<A, E, FileSystem.FileSystem | Path.Path>,
@@ -9,7 +10,7 @@ const run = <A, E>(
 
 const root = new URL('../..', import.meta.url).pathname;
 /** The docs pages, which the site renders. */
-const docsDir = `${root}docs/`;
+const docsDir = `${root}www/docs/`;
 /** Where READMEs link the docs: on the site, so they follow `site.url` to trpc.io. */
 const docsUrl = `${site.url}${v12.basePath}/`;
 
@@ -18,7 +19,7 @@ const packages = await run(
     const fs = yield* FileSystem.FileSystem;
     const path = yield* Path.Path;
     const dir = path.join(root, 'packages');
-    return yield* Effect.forEach(yield* fs.readDirectory(dir), (name) =>
+    return yield* Effect.forEach(yield* packageDirs(root), (name) =>
       Effect.gen(function* () {
         const pkg = JSON.parse(
           yield* fs.readFileString(path.join(dir, name, 'package.json')),
@@ -97,11 +98,11 @@ test.each(
   packages
     .filter((opts) => !experimental.has(opts.name))
     .map((opts) => [opts.name] as const),
-)('%s is listed in docs/packages.md', (name) => {
+)('%s is listed in www/docs/packages.md', (name) => {
   expect(packagesPage).toContain(`\`${name}\``);
 });
 
-test('packages whose docs are in experiments are left out of docs/packages.md', () => {
+test('packages whose docs are in experiments are left out of www/docs/packages.md', () => {
   expect([...experimental].sort()).toEqual([
     '@trpc12/experimental-nest',
     '@trpc12/experimental-react',

@@ -10,4 +10,4 @@
 - Why: the meta was lost with no error. A union keeps `mergeRouters(group, more)` meaning what it reads as; the throw catches the one case that has no right answer.
 - Lost: per-router scoping (each input's meta over its own keys only), which never collides but leaves the result with no one meta for `routerMetaOf`; throwing on any meta (the review's recommendation), which rules out splitting a group across files; the type error, and the visible `[symbol]` key it adds to every `t.router()` type.
 - Open: a type error if router types come to carry their meta for another reason (the formulation measured is the one above).
-- Lives in: `packages/trpc/src/server/procedures/router.ts` (`mergeRouters`), `src/internal/describe.ts` (`flattenRoutes`), `tooling/bench/shapes.ts` (`merged`); tests in `src/server/procedures/routers.test.ts`; docs `docs/server/routers.md`, `docs/openapi/routes.md`.
+- Lives in: `packages/trpc/src/server/procedures/router.ts` (`mergeRouters`), `src/internal/describe.ts` (`flattenRoutes`), `tooling/bench/shapes.ts` (`merged`); tests in `src/server/procedures/routers.test.ts`; docs `www/docs/server/routers.md`, `www/docs/openapi/routes.md`.

@@ -6,4 +6,4 @@
 - (agent) Keys come from the TanStack helpers (`trpc.x.queryKey()`, `pathKey()`, from `createTrpcRsc` on the server) rather than from router objects, because procedures don't know their path until a router places them.
 - Why: one key hierarchy for the browser cache and the server data cache, and nothing Next-specific to keep in step with `'use cache'`, which is still changing.
 - Lost: automatic tagging of every server call; apps tag the cached functions they write.
-- Lives in: `packages/tanstack-query/src/keys.ts` (`cacheTags`, `revalidationTag`), `packages/tanstack-query/src/keys.test.ts`, `docs/integrations/rsc.md` (Next.js data cache).
+- Lives in: `packages/tanstack-query/src/keys.ts` (`cacheTags`, `revalidationTag`), `packages/tanstack-query/src/keys.test.ts`, `www/docs/integrations/rsc.md` (Next.js data cache).

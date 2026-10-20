@@ -109,6 +109,17 @@ export interface HibernatingWebSockets<TPlatform> {
   ): void;
   /** From `webSocketClose(ws, code, reason)` and `webSocketError(ws)`. */
   close(socket: HibernatableWebSocket, code?: number, reason?: string): void;
+  /**
+   * Ends what the adapter started: interrupts its calls and running
+   * subscriptions, then closes the object's tRPC sockets with 1012
+   * ("service restart"), so clients reconnect and resubscribe, and
+   * `experimental_hibernatingPublisher` stops sending through it. It takes
+   * no sockets after: `upgrade()` answers 503, and `accept()` and
+   * `message()` close the socket with 1012.
+   */
+  dispose(): Promise<void>;
+  /** `dispose()`, for `await using`. */
+  [Symbol.asyncDispose](): Promise<void>;
 }
 
 /** A parked publisher subscription: call id, publisher key, channel, path. */
@@ -407,7 +418,8 @@ export function experimental_createHibernatingWebSockets<TPlatform>(
   /**
    * Sends a published event to the sockets parked on its channel, from a
    * fiber the object owns: a publisher interrupted while it waits doesn't
-   * stop the delivery.
+   * stop the delivery, and `dispose()` stopping it doesn't interrupt the
+   * publisher.
    */
   const deliver: Deliver = (key, channel, event) =>
     Effect.suspend(() => {
@@ -419,19 +431,53 @@ export function experimental_createHibernatingWebSockets<TPlatform>(
               .map((sub) => [socket, attachment, sub] as const)
           : [];
       });
-      return Fiber.join(
-        run(
-          Effect.forEach(
-            targets,
-            ([socket, attachment, sub]) =>
-              sendEvent(socket, attachment, sub, tracked(event.id, event.data)),
-            { concurrency: 'unbounded', discard: true },
+      return Effect.asVoid(
+        Fiber.await(
+          run(
+            Effect.forEach(
+              targets,
+              ([socket, attachment, sub]) =>
+                sendEvent(
+                  socket,
+                  attachment,
+                  sub,
+                  tracked(event.id, event.data),
+                ),
+              { concurrency: 'unbounded', discard: true },
+            ),
           ),
         ),
       );
     });
 
   deliveries.set(opts.state, deliver);
+
+  const restart = (socket: HibernatableWebSocket) => {
+    try {
+      socket.close(1012, 'Service restart');
+    } catch {
+      // Already closed.
+    }
+  };
+  let disposed: Promise<void> | undefined;
+  const dispose = () => {
+    if (!disposed) {
+      if (deliveries.get(opts.state) === deliver) {
+        deliveries.delete(opts.state);
+      }
+      disposed = Effect.runPromise(
+        Effect.andThen(
+          Scope.close(owner, Exit.void),
+          Effect.sync(() => {
+            for (const socket of opts.state.getWebSockets?.() ?? []) {
+              if (current(socket)) restart(socket);
+            }
+          }),
+        ),
+      );
+    }
+    return disposed;
+  };
 
   const sockets: HibernatingWebSockets<unknown> = {
     upgrade(request, ...platform) {
@@ -449,6 +495,7 @@ export function experimental_createHibernatingWebSockets<TPlatform>(
         );
       }
       const accepted = Effect.sync(() => {
+        if (disposed) return HttpServerResponse.empty({ status: 503 });
         const { 0: client, 1: server } = new WebSocketPair();
         sockets.accept(server, request, ...platform);
         return HttpServerResponse.raw(
@@ -475,9 +522,11 @@ export function experimental_createHibernatingWebSockets<TPlatform>(
         socket.serializeAttachment({ ...attachment, headers: [] });
       }
       opts.state.acceptWebSocket(socket as never);
+      if (disposed) return restart(socket);
       run(Effect.asVoid(receiverFor(socket, platform[0])));
     },
     message(socket, data, ...platform) {
+      if (disposed) return restart(socket);
       run(
         Effect.flatMap(receiverFor(socket, platform[0]), (receiver) =>
           receiver
@@ -497,6 +546,8 @@ export function experimental_createHibernatingWebSockets<TPlatform>(
         // Already closed.
       }
     },
+    dispose,
+    [Symbol.asyncDispose]: dispose,
   };
   return sockets as HibernatingWebSockets<TPlatform>;
 }

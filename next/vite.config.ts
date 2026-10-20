@@ -90,15 +90,24 @@ export default defineConfig({
       'prefer-const': ['error', { ignoreReadBeforeAssign: true }],
       // Rethrowing from a `catch` keeps the caught error as `cause`.
       'preserve-caught-error': 'error',
-      // `vitest/no-hooks` without the loophole; clean up with `using`.
       'no-restricted-imports': [
         'error',
         {
-          paths: ['vite-plus/test', 'vitest', '@effect/vitest'].map((name) => ({
-            name,
-            importNames: ['onTestFinished'],
-            message: 'Return a Disposable and `using` it instead.',
-          })),
+          paths: [
+            // `vitest/no-hooks` without the loophole; clean up with `using`.
+            ...['vite-plus/test', '@effect/vitest'].map((name) => ({
+              name,
+              importNames: ['onTestFinished'],
+              message: 'Return a Disposable and `using` it instead.',
+            })),
+            // No workspace package depends on `vitest`: a local checkout
+            // resolves it through a hoisted copy, and CI fails to.
+            {
+              name: 'vitest',
+              message:
+                "Import from 'vite-plus/test', or '@effect/vitest' in a package that depends on it.",
+            },
+          ],
         },
       ],
       // From oRPC's. A `for…in` also walks keys inherited from a polluted
@@ -310,6 +319,6 @@ export default defineConfig({
   staged: {
     '*': 'vp check --fix',
     '*.ts': 'vp test related --run',
-    'docs/**/*.md': 'node tooling/docs-lint/docs-lint.ts',
+    'www/docs/**/*.md': 'node tooling/docs-lint/docs-lint.ts',
   },
 });

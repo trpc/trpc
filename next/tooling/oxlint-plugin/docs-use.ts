@@ -1,5 +1,5 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
-import { dirname, join, relative } from 'node:path';
+import { dirname, join } from 'node:path';
 
 /** Where a package or one of its exports is documented: on listed pages, and in which hidden experiments. */
 export interface DocsUse {
@@ -48,8 +48,6 @@ const build = (docs: string): Index => {
     listedMentions: new Set(),
   };
   for (const file of walk(docs).filter((f) => f.endsWith('.md'))) {
-    // The docs index lists every page, hidden ones too.
-    if (relative(docs, file) === 'README.md') continue;
     const text = readFileSync(file, 'utf8');
     const frontmatter = text.startsWith('---\n')
       ? text.slice(0, text.indexOf('\n---', 4))
@@ -90,10 +88,10 @@ const build = (docs: string): Index => {
 
 const cache = new Map<string, Index>();
 
-/** The nearest `docs/` above `root`, the package's directory. */
+/** The nearest `www/docs/` above `root`, the package's directory. */
 const docsDir = (root: string): string | undefined => {
   for (let dir = dirname(root); dir !== dirname(dir); dir = dirname(dir)) {
-    const docs = join(dir, 'docs');
+    const docs = join(dir, 'www', 'docs');
     if (existsSync(docs) && statSync(docs).isDirectory()) return docs;
   }
   return undefined;

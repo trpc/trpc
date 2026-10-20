@@ -8,6 +8,7 @@ import {
   type TrpcPromise,
   type TypedClientOptions,
 } from '@trpc12/trpc/client';
+import type { Scope } from 'effect';
 import {
   createStore,
   queryKey,
@@ -81,6 +82,8 @@ export type ReactClient<TClient> = ReactProcedures<TClient> & {
    * settle. Takes a path prefix (`'post'`) or a predicate; all by default.
    */
   invalidate(filter?: QueryFilter): Promise<void>;
+  /** Disposes the store, so `using trpc = createReactClient(…)` ends it. */
+  [Symbol.dispose](): void;
 };
 
 /**
@@ -98,6 +101,11 @@ export type ReactClientOptions<
    * @default typeof window === 'undefined'
    */
   isServer?: boolean | undefined;
+  /**
+   * Disposes the store when this scope closes, as `store.dispose()` does:
+   * a server client made in a request's scope ends with the request.
+   */
+  scope?: Scope.Scope | undefined;
 };
 
 const at = (node: unknown, path: readonly string[]): any =>
@@ -144,11 +152,13 @@ export function createReactClient(opts: {
   router: unknown;
   links: AtLeastOneLink;
   isServer?: boolean | undefined;
+  scope?: Scope.Scope | undefined;
 }): unknown {
   const client = createTrpcClient(opts);
   const store = createStore({
     links: opts.links,
     isServer: opts.isServer ?? typeof window === 'undefined',
+    scope: opts.scope,
     request: (path, input, callOptions, signal) =>
       at(client, path.split('.')).query(input, { ...callOptions, signal }),
   });
@@ -186,9 +196,11 @@ export function createReactClient(opts: {
         return at(client, path)(...args);
     }
   };
+  const dispose = () => store.dispose();
   const proxy = (path: readonly string[]): any =>
     new Proxy((...args: unknown[]) => method(path, args), {
       get(_target, key) {
+        if (path.length === 0 && key === Symbol.dispose) return dispose;
         if (typeof key !== 'string' || key === 'then') return undefined;
         if (path.length === 0 && key === 'client') return client;
         if (path.length === 0 && key === 'store') return store;

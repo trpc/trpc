@@ -92,10 +92,10 @@ export const v12Docs = docsVersion(
     status: 'experimental',
   },
   import.meta.glob<{ default: Doc }>([
-    '../../../docs/**/*.md',
-    '!../../../docs/**/README.md',
+    '../../docs/**/*.md',
+    '!../../docs/**/README.md',
   ]),
-  (slug) => `../../../docs/${slug}.md`,
+  (slug) => `../../docs/${slug}.md`,
   'getting-started',
 );
 

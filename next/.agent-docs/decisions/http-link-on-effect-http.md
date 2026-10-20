@@ -11,7 +11,8 @@
   - `FetchHttpClient.layer`, built once per link, with `HttpClient.withScope`.
   - The custom `fetch`, through the `FetchHttpClient.Fetch` reference.
   - `init` (`credentials`, `cache`, Next's `next`) through the `FetchHttpClient.RequestInit` service.
-  - Bodies: `HttpClientResponse.text` for JSON and errors, and `HttpClientResponse.stream` for JSONL, frames and SSE. Lines come from `Stream.decodeText` and `Stream.splitLines` (`textLines` and `sseEvents` in `internal/protocol.ts`, which OpenAPI's `parseSse` now wraps).
+  - Bodies: `HttpClientResponse.text` for JSON and errors, and `HttpClientResponse.stream` for JSONL, frames and SSE. Lines come from `Stream.decodeText` and `Stream.splitLines` (`textLines` and `sseEvents` in `internal/protocol.ts`, which `experimental_openApiLink` reads too).
+  - (agent, 2026-10-20) `parseSse`, `sseEvents` as an `AsyncIterable` over a web body, is gone: once `experimental_openApiLink` read `sseEvents` directly, only its own test used it. That test's case (a CRLF split across chunks) now runs on `sseEvents`.
   - Errors: an `HttpClientError` maps to what it wraps (its `reason.cause`), so an abort is still `CLIENT_CLOSED_REQUEST` and anything else `NETWORK_ERROR` with the cause's message.
 - (agent) What `HttpClient` can't express, kept narrow:
   - The web `Response`: `HttpClientResponse` keeps it private, yet raw responses (`trpc-response: 1`) promise it as the output ([`raw-responses.md`](./raw-responses.md)). `onResponse` gets web `Headers`; Effect's `Headers` keep one `set-cookie`, where `getSetCookie()` keeps all. `File` outputs read it with `res.blob()`, which a browser can keep on disk. So the per-request `Fetch` wrapper catches the web `Response` on its way out, next to the serializer check (`UNSUPPORTED_PROTOCOL`).
@@ -44,4 +45,4 @@
 - Open:
   - A client that never imports `HttpClient` can't shed it: it comes with `httpLink`.
   - Raw responses, `onResponse` and `File` outputs depend on catching the web `Response` in `fetch`; an `HttpClientResponse` accessor for it would remove the wrapper's capture.
-- Lives in: `packages/trpc/src/client/links/http/` (`batch.ts`, `transport.ts`, `sse.ts`, `link.ts`), `src/internal/protocol.ts` (`textLines`, `sseEvents`, `parseSse`), `tooling/bench/bench.ts` (`budgets`), `.agent-docs/notes/benchmarks.md` (Budgets); tests in `packages/trpc/src/client/links/http.test.ts`, `http-edges.test.ts`, `src/internal/protocol.test.ts`.
+- Lives in: `packages/trpc/src/client/links/http/` (`batch.ts`, `transport.ts`, `sse.ts`, `link.ts`), `src/internal/protocol.ts` (`textLines`, `sseEvents`), `tooling/bench/bench.ts` (`budgets`), `.agent-docs/notes/benchmarks.md` (Budgets); tests in `packages/trpc/src/client/links/http.test.ts`, `http-edges.test.ts`, `src/internal/protocol.test.ts`.

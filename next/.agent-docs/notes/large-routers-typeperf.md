@@ -2,7 +2,7 @@
 
 - **Date:** 2026-10-18
 - **Question:** With 1000–5000 procedures, what does a client (and the server) cost to type-check, where does that cost come from, and does the API need to change? Do large apps need several smaller clients?
-- **Feeds:** [`large-routers.md`](../decisions/large-routers.md), [`docs/server/large-routers.md`](https://v12.trpc.io/v12/docs/server/large-routers), [`examples/monorepo/`](../../examples/monorepo/)
+- **Feeds:** [`large-routers.md`](../decisions/large-routers.md), [`www/docs/server/large-routers.md`](https://v12.trpc.io/v12/docs/server/large-routers), [`examples/monorepo/`](../../examples/monorepo/)
 - **Code:** [`next/spikes/big-routers/`](../../spikes/big-routers/)
 
 ## Method

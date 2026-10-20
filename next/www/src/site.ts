@@ -21,7 +21,7 @@ export const site = {
 } as const;
 
 /**
- * The v12 docs, rendered from `next/docs`. v11 is the stable release, so it
+ * The v12 docs, rendered from `www/docs`. v11 is the stable release, so it
  * has `/docs` while v12 is experimental.
  */
 export const v12 = { basePath: '/v12/docs' } as const;

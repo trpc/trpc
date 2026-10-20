@@ -7,4 +7,4 @@
 - Why: `queryFilter()` matches only `type: 'query'`, so invalidating a list's infinite queries meant `pathFilter()` (every kind) or an exact `infiniteKey()`; v11 users reached for `infiniteQueryFilter`.
 - (agent) Keys keep their shape ([`tanstack-query-keys.md`](./tanstack-query-keys.md)); the flat `keyPrefix` half of the question is in [`query-key-prefix.md`](./query-key-prefix.md).
 - Lost: one more name on every query procedure's helpers, so a procedure can't be called `infiniteFilter`.
-- Lives in: `packages/tanstack-query/src/utils.ts` (`QueryProcedureUtils.infiniteFilter`), tested in `packages/tanstack-query/src/index.test.ts` and each adapter's tests; docs in `docs/integrations/tanstack-query/keys.md`.
+- Lives in: `packages/tanstack-query/src/utils.ts` (`QueryProcedureUtils.infiniteFilter`), tested in `packages/tanstack-query/src/index.test.ts` and each adapter's tests; docs in `www/docs/integrations/tanstack-query/keys.md`.

@@ -28,7 +28,17 @@ import type {
   SyncConfig,
   UtilsRecord,
 } from '@tanstack/db';
-import { Effect, Fiber, Match, Stream, SubscriptionRef } from 'effect';
+import {
+  Cause,
+  Effect,
+  Exit,
+  Fiber,
+  identity,
+  Match,
+  Scope,
+  Stream,
+  SubscriptionRef,
+} from 'effect';
 
 /**
  * An event of a live subscription. `snapshot` replaces every row, `upsert`
@@ -58,13 +68,20 @@ export interface TrackedLiveEvent<
 
 /**
  * Opens the live subscription:
- * `(opts) => client.post.live.subscribe(input, opts)`.
+ * `(opts) => client.post.live.subscribe(input, opts)`, an async iterable
+ * that aborting `signal` closes, or an Effect `Stream` (an Effect client's
+ * `subscribe()`), which is interrupted instead.
  * @since 0.1.0
  * @stability experimental
  */
 export type LiveSubscribe<TRow, TKey extends string | number> = (opts: {
   signal: AbortSignal;
-}) => AsyncIterable<LiveEvent<TRow, TKey> | TrackedLiveEvent<TRow, TKey>>;
+}) =>
+  | AsyncIterable<LiveEvent<TRow, TKey> | TrackedLiveEvent<TRow, TKey>>
+  | Stream.Stream<
+      LiveEvent<TRow, TKey> | TrackedLiveEvent<TRow, TKey>,
+      unknown
+    >;
 
 /**
  * `collection.utils` of a live collection.
@@ -111,6 +128,26 @@ interface Applied {
 const isTracked = <TRow, TKey extends string | number>(
   event: LiveEvent<TRow, TKey> | TrackedLiveEvent<TRow, TKey>,
 ): event is TrackedLiveEvent<TRow, TKey> => !('type' in event);
+
+/** Applies the subscription's events until it ends, fails, or is interrupted. */
+const feed = /* @__PURE__ */ Effect.fnUntraced(function* <TEvent>(
+  subscribe: (opts: {
+    signal: AbortSignal;
+  }) => AsyncIterable<TEvent> | Stream.Stream<TEvent, unknown>,
+  apply: (event: TEvent) => Effect.Effect<void>,
+  fail: (cause: unknown) => void,
+) {
+  const signal = yield* Effect.abortSignal;
+  const exit = yield* Stream.suspend(() => {
+    const source = subscribe({ signal });
+    return Stream.isStream(source)
+      ? source
+      : Stream.fromAsyncIterable(source, identity);
+  }).pipe(Stream.runForEach(apply), Effect.exit);
+  if (Exit.isFailure(exit) && !Cause.hasInterrupts(exit.cause)) {
+    fail(Cause.squash(exit.cause));
+  }
+});
 
 /**
  * A TanStack DB collection whose rows come from a live subscription. The
@@ -205,23 +242,18 @@ export function liveCollectionOptions<
         }));
       });
 
-    const controller = new AbortController();
-    const fiber = Effect.runFork(
-      Stream.fromAsyncIterable(
-        subscribe({ signal: controller.signal }),
-        (cause) => cause,
-      ).pipe(
-        Stream.runForEach(apply),
-        Effect.catch((cause) =>
-          Effect.sync(() => {
-            if (!controller.signal.aborted) params.markError(cause);
-          }),
-        ),
+    // Parallel finalizers, so cleanup aborts `signal` while the fiber is
+    // still being interrupted: an async generator awaiting a source that
+    // listens to the signal only settles `return()` once that source ends.
+    const scope = Scope.makeUnsafe('parallel');
+    Effect.runFork(
+      Scope.provide(
+        feed(subscribe, apply, (cause) => params.markError(cause)),
+        scope,
       ),
-    );
+    ).pipe(Fiber.runIn(scope));
     return () => {
-      controller.abort();
-      Effect.runFork(Fiber.interrupt(fiber));
+      Effect.runFork(Scope.close(scope, Exit.void));
     };
   };
 

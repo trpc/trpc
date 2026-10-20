@@ -8,6 +8,7 @@ import {
   keepEntryPointImports,
   type PackageJson,
 } from './pack.ts';
+import { packageDirs } from './packages.ts';
 import { unusedImportOutput } from './side-effects.ts';
 
 const run = <A, E>(effect: Effect.Effect<A, E, NodeServices.NodeServices>) =>
@@ -20,7 +21,7 @@ const packages = await run(
     const fs = yield* FileSystem.FileSystem;
     const path = yield* Path.Path;
     const dir = path.join(root, 'packages');
-    return yield* Effect.forEach(yield* fs.readDirectory(dir), (name) =>
+    return yield* Effect.forEach(yield* packageDirs(root), (name) =>
       Effect.map(
         fs.readFileString(path.join(dir, name, 'package.json')),
         (text) => ({

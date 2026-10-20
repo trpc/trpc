@@ -183,6 +183,58 @@ test('closing the socket stops its subscriptions', async () => {
   await vi.waitFor(() => expect(ticksStopped).toBe(before + 1));
 });
 
+test('dispose() ends the running subscriptions, closes the sockets with 1012, and takes none after', async () => {
+  const pairs = stubWorkers();
+  const state = fakeState();
+  const socket = new FakeSocket();
+  const idle = new FakeSocket();
+  const sockets = experimental_createHibernatingWebSockets(handler, { state });
+  sockets.accept(socket, request, platform);
+  sockets.accept(idle, request, platform);
+  const before = ticksStopped;
+  send(sockets, socket, {
+    id: 1,
+    type: 'request',
+    method: 'subscription',
+    path: 'ticks',
+  });
+  await vi.waitFor(() =>
+    expect(
+      socket.sent.filter((m) => (m as { type: string }).type === 'event')
+        .length,
+    ).toBeGreaterThan(1),
+  );
+
+  const other = new FakeSocket();
+  state.accepted.push(other);
+  const gone = new FakeSocket();
+  sockets.accept(gone, request, platform);
+  gone.close = () => {
+    throw new TypeError('already closed');
+  };
+
+  const disposing = sockets.dispose();
+  expect(sockets[Symbol.asyncDispose]()).toBe(disposing);
+  await disposing;
+  await vi.waitFor(() => expect(ticksStopped).toBe(before + 1));
+  expect(socket.closed).toEqual([1012, 'Service restart']);
+  expect(idle.closed).toEqual([1012, 'Service restart']);
+  expect(other.closed).toBeUndefined();
+  await experimental_createHibernatingWebSockets(handler, {
+    state: Object.assign(fakeState(), { getWebSockets: undefined }),
+  }).dispose();
+
+  const late = new FakeSocket();
+  sockets.accept(late, request, platform);
+  expect(late.closed).toEqual([1012, 'Service restart']);
+  const woken = new FakeSocket();
+  woken.serializeAttachment(socket.deserializeAttachment());
+  send(sockets, woken, { type: 'ping' });
+  expect(woken.closed).toEqual([1012, 'Service restart']);
+  expect((await sockets.upgrade(request, platform)).status).toBe(503);
+  expect(pairs).toEqual([]);
+});
+
 test('keep-alive pings are answered without waking the object', () => {
   class Pair {
     request: string;
@@ -418,6 +470,32 @@ test('publisher subscriptions hibernate: kept on the socket, sent to after a wak
   create(woken, pub, 2, 'again');
   await vi.waitFor(() => expect(pub.sent).toHaveLength(2));
   expect(events(sub, 1)).toHaveLength(1);
+});
+
+test('disposing an adapter leaves the newer one on the same object sending publisher events', async () => {
+  const state = fakeState();
+  let current!: ReturnType<typeof room>;
+  {
+    await using old = room(state);
+    current = room(state);
+    expect(old).not.toBe(current);
+  }
+  const sub = new FakeSocket();
+  const pub = new FakeSocket();
+  current.accept(sub, request);
+  current.accept(pub, request);
+  say(current, sub, {
+    id: 1,
+    type: 'request',
+    method: 'subscription',
+    path: 'onCreated',
+  });
+  await vi.waitFor(() =>
+    expect(sub.deserializeAttachment()).toHaveProperty('subs'),
+  );
+  create(current, pub, 1, 'hello');
+  await vi.waitFor(() => expect(events(sub, 1)).toHaveLength(1));
+  expect(sub.closed).toBeUndefined();
 });
 
 test('a hibernated subscription replays kept events after lastEventId', async () => {

@@ -1,4 +1,4 @@
-// The recipes in docs/subscriptions/backends.md, kept in sync by hand.
+// The recipes in www/docs/subscriptions/backends.md, kept in sync by hand.
 import { PgClient } from '@effect/sql-pg';
 import { NodeRedis } from '@effect/platform-node';
 import { Effect, Layer, Redacted, Stream } from 'effect';

@@ -2,7 +2,7 @@
   "name": "@trpc12/www",
   "version": "0.0.0",
   "private": true,
-  "description": "Documentation site for tRPC v12, rendered from next/docs",
+  "description": "Documentation site for tRPC v12, with its docs in www/docs",
   "type": "module",
   "exports": {
     "./site": "./src/site.ts"
@@ -34,6 +34,7 @@
     "@trpc12/trpc": "workspace:*",
     "d3-hierarchy": "3.1.2",
     "lucide-react": "1.55.0",
+    "minisearch": "7.2.0",
     "next-themes": "0.4.6",
     "react": "19.3.0",
     "react-dom": "19.3.0",

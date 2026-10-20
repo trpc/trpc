@@ -112,7 +112,7 @@ Some recommendations depend on measurements. These are run as throwaway spikes, 
 
 ### Docs and examples
 
-- User docs are Markdown in `docs/`, rendered by the site in `www/` with compiled examples ([`decisions/docs-website.md`](./decisions/docs-website.md)); design docs here.
+- User docs are Markdown in `www/docs/`, rendered by the site in `www/` with compiled examples ([`decisions/docs-website.md`](./decisions/docs-website.md)); design docs here.
 - JSDoc on every public export, with `@example`, `@since` and `@stability` (21).
 - A few examples linked via `workspace:*` (22). They are typechecked and built in CI.
 

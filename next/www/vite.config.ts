@@ -24,7 +24,8 @@ import v9Sections from './v9/sections.json' with { type: 'json' };
 import v10Sections from './v10/sections.json' with { type: 'json' };
 import v11Sections from './v11/sections.json' with { type: 'json' };
 
-const contentDir = new URL('../docs', import.meta.url).pathname;
+// The v12 docs, served at `/v12/docs`.
+const contentDir = new URL('docs', import.meta.url).pathname;
 const samplesDir = new URL('samples', import.meta.url).pathname;
 // A copy of trpc.io's blog (`build/old-docs-copy.ts`), served at `/blog`.
 const blogDir = new URL('blog', import.meta.url).pathname;
@@ -46,7 +47,12 @@ const lockfile = new URL('../pnpm-lock.yaml', import.meta.url).pathname;
 const faviconFile = new URL('public/favicon.svg', import.meta.url).pathname;
 const [pages, copiedPages, posts, favicon] = await Effect.runPromise(
   Effect.all([
-    docPages({ basePath: v12.basePath, contentDir, samplesDir }),
+    docPages({
+      basePath: v12.basePath,
+      contentDir,
+      datesSkipRenames: true,
+      samplesDir,
+    }),
     Effect.forEach(copies, (copy) =>
       Effect.map(
         docPages({
@@ -95,6 +101,8 @@ export default defineConfig({
       agentFiles: true,
       basePath: v12.basePath,
       contentDir,
+      contentPath: 'www/docs',
+      datesSkipRenames: true,
       manifestId: 'virtual:docs-manifest',
       samplesDir,
       sections,
@@ -177,11 +185,15 @@ export default defineConfig({
         { path: '/', sitemap: { changefreq: 'weekly', priority: 1 } },
         ...pages.map((page) => ({
           path: page.path,
-          sitemap: {
-            changefreq: 'weekly' as const,
-            lastmod: page.lastModified,
-            priority: 0.8,
-          },
+          // An experiment's page is `noindex`.
+          sitemap:
+            page.experiment === undefined
+              ? {
+                  changefreq: 'weekly' as const,
+                  lastmod: page.lastModified,
+                  priority: 0.8,
+                }
+              : { exclude: true },
         })),
         // trpc.io is where the older versions' docs are found; each page's
         // canonical link points there.
