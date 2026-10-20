@@ -5,15 +5,10 @@ import {
   TooltipTrigger,
 } from '@shared/ui/components/tooltip';
 import { cn } from '@shared/ui/lib/utils';
+import { Link } from '@tanstack/react-router';
 import { Heart } from 'lucide-react';
 
-import {
-  avatarUrl,
-  partners,
-  sponsors,
-  sponsorUrl,
-  topSponsors,
-} from '~/sponsors.ts';
+import { avatarUrl, partners, sponsors, topSponsors } from '~/sponsors.ts';
 
 import { PartnerLogo } from './partners.tsx';
 
@@ -91,16 +86,16 @@ export function SupportedBy() {
 
 export function SponsorButton(props: { readonly className?: string }) {
   return (
-    <a
+    <Link
       className={cn(
         buttonVariants({ variant: 'outline' }),
         'group gap-2 font-semibold',
         props.className,
       )}
-      href={sponsorUrl}
+      to="/sponsor"
     >
       <Heart className="fill-pink-500 text-pink-500 transition-transform duration-200 group-hover:scale-125" />
       Become a sponsor
-    </a>
+    </Link>
   );
 }

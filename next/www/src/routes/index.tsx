@@ -705,12 +705,7 @@ function HomePage() {
               companies and people below. Thank you!
             </p>
           </div>
-          <div className="flex flex-wrap items-center gap-4">
-            <Link className={`${docLink} text-sm`} to="/sponsor">
-              Tiers and perks <ArrowRight className="inline size-4" />
-            </Link>
-            <SponsorButton />
-          </div>
+          <SponsorButton />
         </div>
         {showPartners ? <PartnerCards /> : null}
         <SponsorCloud
