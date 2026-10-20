@@ -25,7 +25,7 @@ const page = t.procedure.query(() => ({
 }));
 ```
 
-Over HTTP, `httpLink` reads such outputs as JSONL (or binary frames, [Files](./files.md)); `wsLink` and `localLink` carry them as they are. Every [serializer](./serializers.md) streams deferred values.
+Over HTTP, `httpLink` reads such outputs as JSONL (or binary frames, [Files](./files.md)), with `streams: experimental_httpStreams()` for calls sent alone ([httpLink](../client/links/http.md#streamed-outputs-and-files)); `wsLink` and `localLink` carry them as they are. Every [serializer](./serializers.md) streams deferred values.
 
 ## Validating items
 
@@ -51,7 +51,12 @@ const chat = t.procedure
 
 ```ts twoslash
 // ---cut-start---
-import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import {
+  createTrpcClient,
+  experimental_httpStreams,
+  httpLink,
+  routerType,
+} from '@trpc12/trpc/client';
 import { stream } from '@trpc12/trpc/server';
 import { z } from 'zod';
 import { t } from './server.ts';
@@ -66,7 +71,12 @@ const chat = t.procedure
   });
 const client = createTrpcClient({
   router: routerType<{ chat: typeof chat }>(),
-  links: [httpLink({ url: 'http://localhost:3000/trpc' })],
+  links: [
+    httpLink({
+      url: 'http://localhost:3000/trpc',
+      streams: experimental_httpStreams(),
+    }),
+  ],
 });
 // ---cut-end---
 const it = await client.chat.mutate(); // AsyncIterable<Token, Summary>
