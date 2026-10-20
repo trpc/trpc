@@ -6,7 +6,7 @@
 import type { AppRouter } from '@acme/api';
 import {
   createTrpcClient,
-  httpLink,
+  httpStreamLink,
   routerType,
   safe,
 } from '@trpc12/trpc/client';
@@ -14,7 +14,9 @@ import {
 export async function run(url: string) {
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url, batch: true, headers: { authorization: 'ada' } })],
+    links: [
+      httpStreamLink({ url, batch: true, headers: { authorization: 'ada' } }),
+    ],
   });
 
   const post = await client.posts.byId.query({ id: '1' });

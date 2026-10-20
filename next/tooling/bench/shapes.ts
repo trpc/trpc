@@ -80,7 +80,7 @@ const mergeTens = (files: ReadonlyArray<string>) => {
 /** A chain like an app's: every built-in kind of link, and a custom one. */
 const appLinks: Shape['links'] = {
   imports: `import { Schema, Stream } from 'effect';
-import { dedupeLink, link, loggerLink, retryLink, splitLink, TrpcError, wsLink } from '@trpc12/trpc/client';
+import { dedupeLink, httpStreamLink, link, loggerLink, retryLink, splitLink, TrpcError, wsLink } from '@trpc12/trpc/client';
 
 class RateLimited extends TrpcError.Tagged('RATE_LIMITED', {
   status: 429,
@@ -98,13 +98,13 @@ const tenantLink = link<{ context: { tenant?: string }; errors: RateLimited }>((
     splitLink({
       condition: (op) => op.type === 'subscription',
       true: wsLink({ url: 'ws://localhost:3000/trpc' }),
-      false: httpLink({ url: 'http://localhost:3000/trpc', batch: true }),
+      false: httpStreamLink({ url: 'http://localhost:3000/trpc', batch: true }),
     }),
   ]`,
 };
 
 /**
- * `match`'s handlers: the procedure's codes, `httpLink`'s for a call that
+ * `match`'s handlers: the procedure's codes, `httpStreamLink`'s for a call that
  * doesn't stream, and the rest.
  */
 const handlers = [
@@ -200,7 +200,7 @@ const shapeList = {
     own: {
       module: '',
       imports: '',
-      client: `import { httpLink, routerType } from '@trpc12/trpc/client';\nimport { createEffectClient } from '@trpc12/trpc/effect';\nimport type { router } from './router';\n\nexport const client = createEffectClient({\n  router: routerType<typeof router>(),\n  links: [httpLink({ url: 'http://localhost:3000/trpc' })],\n});\n`,
+      client: `import { routerType } from '@trpc12/trpc/client';\nimport { createEffectClient, httpStreamLink } from '@trpc12/trpc/effect';\nimport type { router } from './router';\n\nexport const client = createEffectClient({\n  router: routerType<typeof router>(),\n  links: [httpStreamLink({ url: 'http://localhost:3000/trpc' })],\n});\n`,
     },
   },
   merged: {
