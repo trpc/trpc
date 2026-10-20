@@ -6,7 +6,7 @@
 - (agent) OpenAPI routes send it as the route's response; the document describes it as an untyped response.
 - Why: proxies, redirects and pre-built responses without leaving tRPC for a separate route.
 - Lost: one transport-independent output type for every procedure.
-- (agent) The client learns it from types, through a call option: `batch: false` (read by `httpLink`) sends a call alone, and `httpLink({ batch: true })` declares `{ batches: true }`, so on that chain a call to a procedure whose output may be a response (`Extract<Output, Response | HttpServerResponse>`) must pass `{ batch: false }`, a type error otherwise. No runtime contract, as `client.md` asks. `httpLink` uses overloads, not a generic, so it infers inside `switchLink`/`splitLink` options. Lost: automatic routing; a `batch: boolean` variable picks the non-batching overload.
+- (agent) The client learns it from types, through a call option: `batch: false` (read by `httpLink`) sends a call alone, and `httpLink({ batch: batching() })` declares `{ batches: true }`, so on that chain a call to a procedure whose output may be a response (`Extract<Output, Response | HttpServerResponse>`) must pass `{ batch: false }`, a type error otherwise. No runtime contract, as `client.md` asks. `httpLink` uses overloads, not a generic, so it infers inside `switchLink`/`splitLink` options. Lost: automatic routing. A `batch` that may be `undefined`, such as `on ? batching() : undefined`, counts as batching.
 
 ## In-process calls (agent)
 

@@ -14,6 +14,7 @@
 - **Bundler:** the budget's own: `rolldown@1.2.13`, ESM, `platform: 'browser'`, tree-shaken, minified, `NODE_ENV=production`, gzip level 9; kB = 1000 bytes. `effect@4.0.2`, `@trpc/client@11.19.0`, `@orpc/client@2.0.0-beta.44`.
 - **Per-module shares:** the bundle is built twice. The minified build gives the real total. Each module's rendered (tree-shaken) code from the unminified build is then minified on its own, and the total gzip is split in proportion to those sizes. Shares are estimates; they add up to the real total.
 - **Cuts:** `patches.ts` patches the shipped sources as rolldown loads them, with exact string replacements that fail when the source drifts. Each cut stands in for a feature moving behind its own import. The raw-`fetch` cut keeps the transport's shape (`Reply`, scoped abort through `Scope.addFinalizer`, `Stream.fromReadableStream` bodies) and drops only `effect/http`.
+- **Since:** SSE and batching are imports now (`sse()`, `batching()`, [`one-http-link.md`](../decisions/one-http-link.md)), so `patches.ts` has no `sse` or `batch` cut left. The tables below were measured before that.
 - **Floor:** `floor/steps.ts` exports one function per Effect API the client uses. `floor.ts` bundles exports 0..n together, so each row adds one API to the ones before.
 
 ## Results
