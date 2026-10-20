@@ -29,7 +29,12 @@ export {
   type ReactClientOptions,
   type ReactProcedures,
 } from './client.ts';
-export { useQuery, useQueryState, type QueryState } from './hooks.ts';
+export {
+  useQuery,
+  useQueryState,
+  type QueryState,
+  type UseQueryOptions,
+} from './hooks.ts';
 export {
   dehydrate,
   hydrate,

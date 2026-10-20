@@ -235,6 +235,133 @@ class Boundary extends Component<{ children: ReactNode }, { error?: Error }> {
   }
 }
 
+let picks = 0;
+function Picked(props: { post: QueryPromise<Post> }) {
+  picks++;
+  const picked = use(
+    useQuery(props.post, {
+      select: (post) => ({ title: post.title, first: post.tags[0] }),
+    }),
+  );
+  return (
+    <h2>
+      {picked.title} {picked.first}
+    </h2>
+  );
+}
+
+const h2 = (el: HTMLElement) => el.querySelector('h2')?.textContent;
+
+test('select picks a part and re-renders only when that part changes', async () => {
+  using _dom = domCleanup();
+  picks = 0;
+  const trpc = make([cacheLink({ staleTime: 60_000 })]);
+  // The first load is pending: select applies when it resolves.
+  const post = trpc.post.byId.query({ id: '1' });
+  const view = mount(<Picked post={post} />);
+  await waitFor(() => expect(h2(view.el)).toBe('Hello a'));
+  const before = picks;
+
+  // New data, without structuralSharingLink, but the same picked part.
+  trpc.post.byId.setData({ id: '1' }, (prev) => ({
+    ...prev!,
+    at: new Date(7),
+  }));
+  await tick(5);
+  expect(picks).toBe(before);
+
+  trpc.post.byId.setData({ id: '1' }, (prev) => ({
+    ...prev!,
+    title: 'Picked',
+  }));
+  await waitFor(() => expect(h2(view.el)).toBe('Picked a'));
+  expect(picks).toBe(before + 1);
+  expect(view.el.textContent).not.toContain('loading');
+  view.unmount();
+});
+
+test('select reads cached data without suspending, and keeps the parts that did not change', async () => {
+  using _dom = domCleanup();
+  const trpc = make([cacheLink({ staleTime: 60_000 })]);
+  const list = trpc.post.list.query({ limit: 2, order: 'asc' });
+  await list;
+  const seen: Array<ReadonlyArray<{ id: string; tags: string[] }>> = [];
+  function Ids() {
+    const rows = use(
+      useQuery(list, {
+        select: (posts) => posts.map((p) => ({ id: p.id, tags: p.tags })),
+      }),
+    );
+    seen.push(rows);
+    return <p>{rows.map((row) => row.id).join(',')}</p>;
+  }
+  const view = mount(<Ids />);
+  await waitFor(() => expect(view.el.textContent).toBe('1,2'));
+  expect(seen).toHaveLength(1);
+
+  db.posts.get('2')!.tags = ['c'];
+  await trpc.post.list.invalidate();
+  await waitFor(() => expect(seen).toHaveLength(2));
+  expect(seen[1]![0]).toBe(seen[0]![0]);
+  expect(seen[1]![1]).not.toBe(seen[0]![1]);
+  view.unmount();
+});
+
+test('select failures and failed loads reach the error boundary', async () => {
+  using _dom = domCleanup();
+  const trpc = make([cacheLink({ staleTime: 60_000 })]);
+  function Throws(props: { post: QueryPromise<Post>; when: string }) {
+    const title = use(
+      useQuery(props.post, {
+        select: (post) => {
+          if (post.title === props.when) throw new Error(`no ${post.title}`);
+          return post.title;
+        },
+      }),
+    );
+    return <h1>{title}</h1>;
+  }
+  const loaded = trpc.post.byId.query({ id: '1' });
+  await loaded;
+  const thrown = mount(
+    <Boundary>
+      <Throws post={loaded} when="Hello" />
+    </Boundary>,
+  );
+  await waitFor(() => expect(thrown.el.textContent).toBe('no Hello'));
+  thrown.unmount();
+
+  const loading = trpc.post.byId.query({ id: '2' });
+  const late = mount(
+    <Boundary>
+      <Throws post={loading} when="World" />
+    </Boundary>,
+  );
+  await waitFor(() => expect(late.el.textContent).toBe('no World'));
+  late.unmount();
+
+  // A load that fails, read while pending and once it has failed.
+  const missing = trpc.post.byId.query({ id: 'missing' });
+  const pendingView = mount(
+    <Boundary>
+      <Throws post={missing} when="" />
+    </Boundary>,
+  );
+  const reason = await missing.then(
+    () => '',
+    (error: Error) => error.message,
+  );
+  await waitFor(() => expect(pendingView.el.textContent).toBe(reason));
+  pendingView.unmount();
+  const failed = mount(
+    <Boundary>
+      <Throws post={missing} when="" />
+    </Boundary>,
+  );
+  await waitFor(() => expect(failed.el.textContent).toBe(reason));
+  failed.unmount();
+});
+
 test("useQuery() only takes a React client's query promise", async () => {
   using _dom = domCleanup();
   const foreign = Promise.resolve() as unknown as QueryPromise<Post>;

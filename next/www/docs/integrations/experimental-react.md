@@ -67,6 +67,31 @@ Built in, not a link. `use()` needs the same promise across renders, and these a
 
 `useQuery(promise)` returns the query's current promise and re-renders when it changes. `useQueryState(promise)` gives `isFetching`, `isStale`, `error`, `updatedAt` and `refetch()`, for spinners and retry buttons.
 
+## Picking a part with `select`
+
+`useQuery(promise, { select })` returns a promise of the part the component reads. The pick is shared structurally with the last one, so while that part doesn't change, the promise stays the same object and the component doesn't re-render, even when a refetch or `setData` changes the rest of the data. It works without `structuralSharingLink()`.
+
+```tsx twoslash
+// ---cut-start---
+import { createReactClient, useQuery } from '@trpc12/experimental-react';
+import { httpLink, routerType } from '@trpc12/trpc/client';
+import { use } from 'react';
+import type { AppRouter } from './server.ts';
+const trpc = createReactClient({
+  router: routerType<AppRouter>(),
+  links: [httpLink({ url: '/trpc' })],
+});
+const post = trpc.post.byId.query({ id: '1' });
+// ---cut-end---
+function Title() {
+  const title = use(useQuery(post, { select: (data) => data.title }));
+  //    ^?
+  return <h1>{title}</h1>;
+}
+```
+
+`select` runs on each new data, and on each render when it's an inline function, so keep it cheap. An error it throws rejects the promise, for the nearest error boundary. Pass the `.query()` promise, not a selected one, to `useQueryState`.
+
 ## Query links
 
 Without links, the cache does the least: an entry lives while a request is in flight or a mounted `useQuery` reads it. Everything else is a link, opt-in one by one:
