@@ -1,4 +1,4 @@
-import { Effect, Exit } from 'effect';
+import { Effect, Exit, Stream } from 'effect';
 import { toAsyncIterable } from '../internal/effects.ts';
 import {
   ERROR_STATUS,
@@ -370,32 +370,18 @@ async function settleSafely(
   }
 }
 
-async function* iterateSafely(
+// Leaving the loop early closes the source, as `for await` would.
+const iterateSafely = (
   iterable: AsyncIterable<unknown>,
-): AsyncGenerator<SafeResult<unknown, unknown>, void> {
-  const iterator = iterable[Symbol.asyncIterator]();
-  let done = false;
-  try {
-    for (;;) {
-      let step: IteratorResult<unknown>;
-      try {
-        step = await iterator.next();
-      } catch (cause) {
-        done = true;
-        yield failed(cause);
-        return;
-      }
-      if (step.done) {
-        done = true;
-        return;
-      }
-      yield succeeded(step.value);
-    }
-  } finally {
-    // The loop was left early (`break`): close the source, as `for await` would.
-    if (!done) await iterator.return?.();
-  }
-}
+): AsyncIterable<SafeResult<unknown, unknown>> =>
+  Stream.toAsyncIterable(
+    Stream.fromAsyncIterable(iterable, (cause) => cause).pipe(
+      Stream.map(succeeded),
+      Stream.catch((cause) =>
+        hasDigest(cause) ? Stream.die(cause) : Stream.succeed(failed(cause)),
+      ),
+    ),
+  );
 
 /**
  * A client whose queries and mutations resolve to `safe()` results.

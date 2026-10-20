@@ -264,6 +264,18 @@ test('safe() iterates without throwing, and closes the source when the loop is l
   expect(result.value).toEqual(
     Object.assign([1, undefined], { data: 1, error: undefined }),
   );
+
+  // A framework's control-flow error still throws.
+  const redirect = Object.assign(new Error('NEXT_REDIRECT'), {
+    digest: 'NEXT_REDIRECT;replace;/login;307;',
+  });
+  const redirecting: AsyncIterable<number> = {
+    async *[Symbol.asyncIterator]() {
+      yield 1;
+      throw redirect;
+    },
+  };
+  await expect(steps(safe(redirecting))).rejects.toBe(redirect);
 });
 
 test('an Effect client gets the typed failure from iterating a streamed output', async () => {
