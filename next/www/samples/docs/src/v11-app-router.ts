@@ -1,6 +1,6 @@
 /**
  * The v11 router type that `@trpc/client` 11 apps build against, made from
- * the v12 router (`docs/migrations/from-v11/serve-v11-clients.md`).
+ * the v12 router (`www/docs/migrations/from-v11/serve-v11-clients.md`).
  */
 import type {
   TRPCBuiltRouter,

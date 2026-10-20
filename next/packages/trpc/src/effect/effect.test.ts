@@ -468,7 +468,7 @@ test('every call runs in a span named after its path', async () => {
   expect(Option.getOrUndefined(db.parent)).toBe(calls[0]);
 });
 
-test('work forked with Effect.forkDetach outlives the response (docs/server/effect.md)', async () => {
+test('work forked with Effect.forkDetach outlives the response (www/docs/server/effect.md)', async () => {
   const t0 = initTrpc();
   let sent = false;
   const handler = createFetchHandler({

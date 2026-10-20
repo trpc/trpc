@@ -632,7 +632,7 @@ test('old apps keep their v11 AppRouter type', async () => {
   });
 });
 
-// The v11 router type from `docs/migrations/from-v11/serve-v11-clients.md`
+// The v11 router type from `www/docs/migrations/from-v11/serve-v11-clients.md`
 // (`www/samples/docs/src/v11-app-router.ts`), with `transformer` a parameter.
 type V11Record<TRouter> = {
   [K in keyof TRouter]: TRouter[K] extends AnyProcedure

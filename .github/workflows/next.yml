@@ -81,7 +81,7 @@ jobs:
       - run: pnpm bench budget
 
   www:
-    # The docs site: compiles every twoslash block in docs/ and the v11 docs'
+    # The docs site: compiles every twoslash block in www/docs/ and the v11 docs'
     # copies, and fails on broken links between pages.
     runs-on: ubuntu-latest
     # A cold twoslash cache (any lockfile change) compiles all ~530 blocks.

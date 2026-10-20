@@ -11,8 +11,8 @@ import { Cause, Console, Effect, Exit } from 'effect';
 import { decide } from '../decide.ts';
 
 decide(
-  // The site renders `next/docs`, which isn't a workspace package.
-  { dir: process.cwd(), inputs: ['docs'] },
+  // The docs are in `www/docs`, so the project's own directory has them.
+  { dir: process.cwd(), inputs: [] },
   { production: 'v12', remote: 'https://github.com/trpc/trpc.git' },
 ).pipe(
   Effect.catchCause((cause) =>

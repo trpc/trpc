@@ -9,7 +9,7 @@ const run = <A, E>(
 
 const root = new URL('../..', import.meta.url).pathname;
 /** The docs pages, which the site renders. */
-const docsDir = `${root}docs/`;
+const docsDir = `${root}www/docs/`;
 /** Where READMEs link the docs: on the site, so they follow `site.url` to trpc.io. */
 const docsUrl = `${site.url}${v12.basePath}/`;
 
@@ -97,11 +97,11 @@ test.each(
   packages
     .filter((opts) => !experimental.has(opts.name))
     .map((opts) => [opts.name] as const),
-)('%s is listed in docs/packages.md', (name) => {
+)('%s is listed in www/docs/packages.md', (name) => {
   expect(packagesPage).toContain(`\`${name}\``);
 });
 
-test('packages whose docs are in experiments are left out of docs/packages.md', () => {
+test('packages whose docs are in experiments are left out of www/docs/packages.md', () => {
   expect([...experimental].sort()).toEqual([
     '@trpc12/experimental-nest',
     '@trpc12/experimental-react',

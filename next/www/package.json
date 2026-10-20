@@ -2,7 +2,7 @@
   "name": "@trpc12/www",
   "version": "0.0.0",
   "private": true,
-  "description": "Documentation site for tRPC v12, rendered from next/docs",
+  "description": "Documentation site for tRPC v12, with its docs in www/docs",
   "type": "module",
   "exports": {
     "./site": "./src/site.ts"

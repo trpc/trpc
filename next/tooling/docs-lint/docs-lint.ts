@@ -1,13 +1,13 @@
 /**
- * Lints the code blocks in `docs/` with `rules`, since oxlint skips Markdown.
+ * Lints the code blocks in `www/docs/` with `rules`, since oxlint skips Markdown.
  * Each `ts`, `tsx`, `js` or `jsx` fence (and each `// @filename:` file of a
  * twoslash fence) is written to a temp file, padded with blank lines so
  * oxlint reports the Markdown file's lines. A block that doesn't parse fails
  * too: no rule could check it. The prose fails on package names and code
  * outside backticks (`bare-code.ts`).
  *
- *   pnpm lint:docs                     every page in docs/
- *   pnpm lint:docs docs/server/effect.md   just these pages
+ *   pnpm lint:docs                             every page in www/docs/
+ *   pnpm lint:docs www/docs/server/effect.md   just these pages
  *   pnpm lint:docs --fix               puts the prose's bare code in backticks first
  */
 import { fileURLToPath } from 'node:url';
@@ -109,7 +109,7 @@ export const codeBlocks = (markdown: string): ReadonlyArray<CodeBlock> => {
   return blocks;
 };
 
-/** `docs/x.md.3.ts`, the temp file of a block, back to `docs/x.md`. */
+/** `www/docs/x.md.3.ts`, the temp file of a block, back to `www/docs/x.md`. */
 export const markdownPaths = (output: string): string =>
   output.replaceAll(/(\S+?\.md)\.\d+\.(?:tsx?|jsx?)\b/g, '$1');
 
@@ -118,6 +118,8 @@ class DocsLintFailed extends Data.TaggedError('DocsLintFailed')<{
 }> {}
 
 const root = fileURLToPath(new URL('../../', import.meta.url));
+/** The pages, under `root`. */
+const docsDir = 'www/docs';
 const oxlint = fileURLToPath(
   new URL('node_modules/.bin/oxlint', import.meta.url),
 );
@@ -135,12 +137,12 @@ const markdownFiles = (paths: ReadonlyArray<string>) =>
           : Effect.succeed(relative);
       });
     }
-    const docs = yield* fs.readDirectory(path.join(root, 'docs'), {
+    const docs = yield* fs.readDirectory(path.join(root, docsDir), {
       recursive: true,
     });
     return docs
       .filter((file) => file.endsWith('.md'))
-      .map((file) => path.join('docs', file))
+      .map((file) => path.join(docsDir, file))
       .sort();
   });
 
@@ -187,7 +189,7 @@ const runOxlint = (dir: string, format: 'unix' | undefined) =>
   });
 
 /**
- * Lints the code blocks and the prose of `paths` (every page in `docs/` when
+ * Lints the code blocks and the prose of `paths` (every page in `www/docs/` when
  * empty).
  * Without a `format`, oxlint picks one for its environment.
  */
@@ -256,7 +258,7 @@ const main = (args: ReadonlyArray<string>) =>
     if (result.output) yield* Console.log(result.output);
     if (result.exitCode !== 0) {
       return yield* new DocsLintFailed({
-        message: `docs lint failed on docs/ (oxlint exited with ${result.exitCode} or the prose has bare code)`,
+        message: `docs lint failed on www/docs/ (oxlint exited with ${result.exitCode} or the prose has bare code)`,
       });
     }
   });
