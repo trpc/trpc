@@ -91,8 +91,9 @@ const baseCommit = Effect.fn('baseCommit')(function* (
     // that commit's tree.
     const present = yield* git(
       root,
-      'cat-file',
-      '-e',
+      'rev-parse',
+      '--quiet',
+      '--verify',
       `${previous.value}^{commit}`,
     ).pipe(
       Effect.as(true),
