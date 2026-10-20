@@ -14,7 +14,7 @@
 - Ship `matchError()` in `@trpc12/trpc/client`.
 - Ship type-safe error boundaries: the claim primitive in `@trpc12/tanstack-query` and `createErrorBoundary` in `@trpc12/tanstack-react-query`.
 
-Two spikes back this: [closed-error-unions](../notes/closed-error-unions.md) and [error-shells](../notes/error-shells.md).
+Two spikes back this: [closed-error-unions](https://github.com/trpc/trpc/blob/2efaa08186fbad70e754f3f45762ca30c858a530/next/.agent-docs/notes/closed-error-unions.md) and [error-shells](https://github.com/trpc/trpc/blob/2efaa08186fbad70e754f3f45762ca30c858a530/next/.agent-docs/notes/error-shells.md). Both shipped and were deleted: the closed union in `@trpc12/trpc/client`, the boundaries in `@trpc12/tanstack-react-query`.
 
 ## Today
 
@@ -22,7 +22,7 @@ Two spikes back this: [closed-error-unions](../notes/closed-error-unions.md) and
   - Built-in links declare no errors, so their failures (`NETWORK_ERROR`, `CLIENT_CLOSED_REQUEST`, `STREAM_INTERRUPTED`, `CLIENT_ERROR`, `PARSE_ERROR`) land in the open part, as `www/docs/client/custom-links.md` says.
   - `LinkDecl.errors` exists, but it adds `defined: true` errors.
 - **One thing keeps it open.** A thrown, undeclared `TrpcError` keeps its code on the wire (`normalizeCause`, `server/execution/execute.ts`). Only non-`TrpcError` throws are masked ([mask-unexpected-errors](../decisions/mask-unexpected-errors.md)).
-  - The census in [closed-error-unions](../notes/closed-error-unions.md#census-what-reaches-the-client-over-httplink) shows that every other failure arrives as a built-in code.
+  - The census in [closed-error-unions](https://github.com/trpc/trpc/blob/2efaa08186fbad70e754f3f45762ca30c858a530/next/.agent-docs/notes/closed-error-unions.md#census-what-reaches-the-client-over-httplink) shows that every other failure arrives as a built-in code.
   - `codeOfStatus` maps a proxy's 401, 502 and so on onto built-in codes.
 - **Narrowing** is `err.defined` then `code`, or `Effect.catchTag` on each failure's own `_tag` ([error-tags](../decisions/error-tags.md)). Nothing checks that every case is handled.
 - **TanStack adapters** type `error` with the full union in every component ([tanstack-query-types](../decisions/tanstack-query-types.md)). App-wide handling (`QueryCache` `onError`, error boundaries) is untyped and never narrows what a component sees.
@@ -117,7 +117,7 @@ rename.error; // TITLE_TAKEN | BAD_REQUEST: Auth owns UNAUTHORIZED, Root owns ev
 
 - **A: boundary mode.**
   - A boundary's hooks set `throwOnError` to "a boundary in my chain owns it". Each boundary renders its fallback for its own claims and re-throws the rest. Hooks throw outside their boundary.
-  - ✅ Built and tested ([error-shells](../notes/error-shells.md)); TanStack needs no changes.
+  - ✅ Built and tested ([error-shells](https://github.com/trpc/trpc/blob/2efaa08186fbad70e754f3f45762ca30c858a530/next/.agent-docs/notes/error-shells.md)); TanStack needs no changes.
   - ❌ The fallback replaces the subtree, so an owned mutation error unmounts the form.
 - **B: A, plus a side-effect mode.**
   - A boundary can instead react (a toast, a redirect, a sign-in modal) while its hooks swallow owned errors, leaving `error: null` and `status: 'error'`.

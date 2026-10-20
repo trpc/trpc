@@ -10,7 +10,7 @@
   - Q24.6: `PARSE_ERROR` is split, and a foreign or undecodable response becomes a client-side `BAD_RESPONSE`.
   - Q24.7: stale-client detection is later. The human chose this too: unknown paths stay a plain `NOT_FOUND` for now ([stale-client-error](./stale-client-error.md)).
   - Q24.8: no client-side validation of error `data` yet.
-- Why: a component's `error` lists only what it must handle, and app-wide failures are owned once. The spikes ([closed-error-unions](../notes/closed-error-unions.md), [error-shells](../notes/error-shells.md)) found two things:
+- Why: a component's `error` lists only what it must handle, and app-wide failures are owned once. The spikes ([closed-error-unions](https://github.com/trpc/trpc/blob/2efaa08186fbad70e754f3f45762ca30c858a530/next/.agent-docs/notes/closed-error-unions.md), [error-shells](https://github.com/trpc/trpc/blob/2efaa08186fbad70e754f3f45762ca30c858a530/next/.agent-docs/notes/error-shells.md)) found two things:
   - undeclared custom codes are the only thing keeping the union open;
   - shells need no TanStack changes.
 - Lost: thrown custom codes reaching the client untyped. With boundary mode, an owned mutation error unmounts the form.
@@ -18,4 +18,4 @@
 - Shipped: Q24.6 B, as a timed-out `signal` rather than a `timeout` option ([client-timeout-error](./client-timeout-error.md)).
 - Shipped, unexported: Q24.4 and Q24.5 as `[Boundary, useBoundary]` tuples from `createErrorBoundary()`, to be exported as `unstable_createErrorBoundary` once its open DX questions are answered ([error-boundaries](./error-boundaries.md)).
 - Open: error data on the client (Q24.8) awaits the human's answer to proposal 24.
-- Lives in: `proposals/24-error-ownership.md`, `spikes/closed-errors/`, `spikes/error-shells/`.
+- Lives in: `proposals/24-error-ownership.md`. The spikes, `spikes/closed-errors/` and `spikes/error-shells/`, are at [`2efaa0818`](https://github.com/trpc/trpc/tree/2efaa08186fbad70e754f3f45762ca30c858a530/next/spikes).
