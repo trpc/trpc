@@ -331,8 +331,8 @@ export const connectionReceiver: (
   core: SocketCoreShape,
   conn: Connection,
   opts: ConnectionReceiverOptions,
-) => Effect.Effect<ConnectionReceiver, never, Scope.Scope> = Effect.fnUntraced(
-  function* (core, conn, opts) {
+) => Effect.Effect<ConnectionReceiver, never, Scope.Scope> =
+  /* @__PURE__ */ Effect.fnUntraced(function* (core, conn, opts) {
     const calls = yield* FiberMap.make<number, void, never>();
     const ended = yield* Deferred.make<void>();
     const drained = yield* Deferred.make<void>();
@@ -576,5 +576,4 @@ export const connectionReceiver: (
     }
     yield* Effect.addFinalizer(() => Effect.sync(() => leave?.()));
     return { receive, close };
-  },
-);
+  });

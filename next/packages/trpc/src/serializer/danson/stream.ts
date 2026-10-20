@@ -435,79 +435,81 @@ export type ChunkQueue = Queue.Queue<[Status, unknown], unknown>;
 
 export const makeChunkQueues: (
   revive: (value: unknown) => unknown,
-) => Effect.Effect<ChunkQueues> = Effect.fnUntraced(function* (revive) {
-  const context = yield* Effect.context<never>();
-  const queues = new Map<number, ChunkQueue>();
-  let ended: Cause.Cause<unknown> | undefined;
-  const queueFor = (idx: number): Effect.Effect<ChunkQueue> =>
-    Effect.suspend(() => {
-      const known = queues.get(idx);
-      if (known) return Effect.succeed(known);
-      return Effect.map(
-        Queue.unbounded<[Status, unknown], unknown>(),
-        (made) => {
-          // Another fiber may have made it while this one yielded.
-          const raced = queues.get(idx);
-          if (raced) return raced;
-          queues.set(idx, made);
-          if (ended) Queue.failCauseUnsafe(made, ended);
-          return made;
-        },
+) => Effect.Effect<ChunkQueues> = /* @__PURE__ */ Effect.fnUntraced(
+  function* (revive) {
+    const context = yield* Effect.context<never>();
+    const queues = new Map<number, ChunkQueue>();
+    let ended: Cause.Cause<unknown> | undefined;
+    const queueFor = (idx: number): Effect.Effect<ChunkQueue> =>
+      Effect.suspend(() => {
+        const known = queues.get(idx);
+        if (known) return Effect.succeed(known);
+        return Effect.map(
+          Queue.unbounded<[Status, unknown], unknown>(),
+          (made) => {
+            // Another fiber may have made it while this one yielded.
+            const raced = queues.get(idx);
+            if (raced) return raced;
+            queues.set(idx, made);
+            if (ended) Queue.failCauseUnsafe(made, ended);
+            return made;
+          },
+        );
+      });
+    const take = (idx: number) =>
+      Stream.unwrap(Effect.map(queueFor(idx), Stream.fromQueue)).pipe(
+        Stream.ensuring(Effect.sync(() => queues.delete(idx))),
       );
-    });
-  const take = (idx: number) =>
-    Stream.unwrap(Effect.map(queueFor(idx), Stream.fromQueue)).pipe(
-      Stream.ensuring(Effect.sync(() => queues.delete(idx))),
-    );
-  const iterate = (idx: number) =>
-    take(idx).pipe(
-      Stream.takeWhile(([status]) => status !== RETURN),
-      Stream.mapEffect(([status, v]) =>
-        status === VALUE ? Effect.succeed(v) : Effect.fail(revive(v)),
-      ),
-    );
-  const runPromise = Effect.runPromiseWith(context);
-  const builders: DeferredBuilders = {
-    iterate,
-    // Chunk queues fail, never end, so a promise always gets its chunk.
-    Promise: (idx) => {
-      const p = runPromise(
-        iterate(idx).pipe(
-          Stream.take(1),
-          Stream.runCollect,
-          Effect.map(([v]) => v),
+    const iterate = (idx: number) =>
+      take(idx).pipe(
+        Stream.takeWhile(([status]) => status !== RETURN),
+        Stream.mapEffect(([status, v]) =>
+          status === VALUE ? Effect.succeed(v) : Effect.fail(revive(v)),
         ),
       );
-      p.catch(() => {});
-      return p;
-    },
-    AsyncIterable: (idx) => iterateWithReturn(take(idx), revive, context),
-    // Nothing queued ahead of a read: a failure errors the stream, which
-    // drops what's queued, so items before it would be lost.
-    ReadableStream: (idx) =>
-      Stream.toReadableStreamWith(iterate(idx), context, {
-        strategy: { highWaterMark: 0 },
-      }),
-  };
-  return {
-    offer: (idx, item) =>
-      Effect.flatMap(queueFor(idx), (queue) =>
-        Effect.asVoid(Queue.offer(queue, item)),
-      ),
-    fail: (idx, error) =>
-      Effect.flatMap(queueFor(idx), (queue) =>
-        Effect.asVoid(Queue.failCause(queue, Cause.fail(error))),
-      ),
-    end: (error) =>
-      Effect.sync(() => {
-        const cause = (ended = Cause.fail(error));
-        for (const queue of queues.values()) {
-          Queue.failCauseUnsafe(queue, cause);
-        }
-      }),
-    builders,
-  };
-});
+    const runPromise = Effect.runPromiseWith(context);
+    const builders: DeferredBuilders = {
+      iterate,
+      // Chunk queues fail, never end, so a promise always gets its chunk.
+      Promise: (idx) => {
+        const p = runPromise(
+          iterate(idx).pipe(
+            Stream.take(1),
+            Stream.runCollect,
+            Effect.map(([v]) => v),
+          ),
+        );
+        p.catch(() => {});
+        return p;
+      },
+      AsyncIterable: (idx) => iterateWithReturn(take(idx), revive, context),
+      // Nothing queued ahead of a read: a failure errors the stream, which
+      // drops what's queued, so items before it would be lost.
+      ReadableStream: (idx) =>
+        Stream.toReadableStreamWith(iterate(idx), context, {
+          strategy: { highWaterMark: 0 },
+        }),
+    };
+    return {
+      offer: (idx, item) =>
+        Effect.flatMap(queueFor(idx), (queue) =>
+          Effect.asVoid(Queue.offer(queue, item)),
+        ),
+      fail: (idx, error) =>
+        Effect.flatMap(queueFor(idx), (queue) =>
+          Effect.asVoid(Queue.failCause(queue, Cause.fail(error))),
+        ),
+      end: (error) =>
+        Effect.sync(() => {
+          const cause = (ended = Cause.fail(error));
+          for (const queue of queues.values()) {
+            Queue.failCauseUnsafe(queue, cause);
+          }
+        }),
+      builders,
+    };
+  },
+);
 
 export interface StreamErrorOptions {
   /** Turns a deserialized ERROR chunk into the value a deferred rejects with. */

@@ -254,24 +254,26 @@ export function blobHeaders(blob: Blob): Record<string, string> {
 export const readBlob: (
   res: Response,
   header: string,
-) => Effect.Effect<Blob, unknown> = Effect.fnUntraced(function* (res, header) {
-  const meta = yield* Effect.try({
-    try: () => JSON.parse(decodeURIComponent(header)) as BlobMeta,
-    catch: identity,
-  });
-  const body = yield* Effect.tryPromise({
-    try: () => res.blob(),
-    catch: identity,
-  });
-  return meta.name === undefined
-    ? body.slice(0, body.size, meta.type)
-    : new File([body], meta.name, {
-        type: meta.type,
-        ...(meta.lastModified === undefined
-          ? {}
-          : { lastModified: meta.lastModified }),
-      });
-});
+) => Effect.Effect<Blob, unknown> = /* @__PURE__ */ Effect.fnUntraced(
+  function* (res, header) {
+    const meta = yield* Effect.try({
+      try: () => JSON.parse(decodeURIComponent(header)) as BlobMeta,
+      catch: identity,
+    });
+    const body = yield* Effect.tryPromise({
+      try: () => res.blob(),
+      catch: identity,
+    });
+    return meta.name === undefined
+      ? body.slice(0, body.size, meta.type)
+      : new File([body], meta.name, {
+          type: meta.type,
+          ...(meta.lastModified === undefined
+            ? {}
+            : { lastModified: meta.lastModified }),
+        });
+  },
+);
 
 /** Whether a `content-type` names one of `types`, ignoring case and parameters. */
 export const hasMediaType = (
