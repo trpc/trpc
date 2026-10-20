@@ -205,12 +205,24 @@ test('dispose() ends the running subscriptions, closes the sockets with 1012, an
     ).toBeGreaterThan(1),
   );
 
+  const other = new FakeSocket();
+  state.accepted.push(other);
+  const gone = new FakeSocket();
+  sockets.accept(gone, request, platform);
+  gone.close = () => {
+    throw new TypeError('already closed');
+  };
+
   const disposing = sockets.dispose();
   expect(sockets[Symbol.asyncDispose]()).toBe(disposing);
   await disposing;
   await vi.waitFor(() => expect(ticksStopped).toBe(before + 1));
   expect(socket.closed).toEqual([1012, 'Service restart']);
   expect(idle.closed).toEqual([1012, 'Service restart']);
+  expect(other.closed).toBeUndefined();
+  await experimental_createHibernatingWebSockets(handler, {
+    state: Object.assign(fakeState(), { getWebSockets: undefined }),
+  }).dispose();
 
   const late = new FakeSocket();
   sockets.accept(late, request, platform);
