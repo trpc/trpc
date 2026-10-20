@@ -658,6 +658,23 @@ test('bracket notation round-trips', () => {
   ).toEqual({});
 });
 
+test('bracket notation keys named like built-in methods are plain fields', () => {
+  expect(
+    experimental_parseBracketNotation(
+      new URLSearchParams(
+        'toString=a&valueOf[x]=1&filter[hasOwnProperty][y]=2&tags[toString]=3',
+      ),
+    ),
+  ).toEqual({
+    toString: 'a',
+    valueOf: { x: '1' },
+    filter: { hasOwnProperty: { y: '2' } },
+    tags: { toString: '3' },
+  });
+  expect(typeof Object.prototype.toString).toBe('function');
+  expect(Object.prototype.hasOwnProperty.call({ a: 1 }, 'a')).toBe(true);
+});
+
 test('an unvalidated output is documented by its schema input side', () => {
   const t = initTrpc().concat(experimental_openapi());
   const doc = experimental_generateOpenApi(

@@ -57,7 +57,9 @@ export function experimental_parseBracketNotation(
         if (last) break;
         container = container[index] as Tree;
       } else {
-        const existing = container[segment];
+        const existing = Object.hasOwn(container, segment)
+          ? container[segment]
+          : undefined;
         if (last) {
           if (existing === undefined) container[segment] = value;
           else if (Array.isArray(existing)) existing.push(value);
