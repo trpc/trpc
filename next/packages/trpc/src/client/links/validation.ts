@@ -1,6 +1,5 @@
 import { Effect, Schema, Stream } from 'effect';
 import { TrpcError } from '../../internal/error.ts';
-import type { DecodedJsonForm } from '../../internal/types.ts';
 import type {
   ProcedureInternals,
   Step,
@@ -28,8 +27,9 @@ export interface ValidationLinkOptions {
   /**
    * Validate results. `'json'` decodes plain JSON results (`httpLink`'s
    * default serializer, `experimental_openApiLink`) with the Effect Schema's JSON codec,
-   * so `Date`s, `bigint`s and classes come back as their types. Errors'
-   * `data` and streamed (`stream()`) outputs stay plain JSON.
+   * so `Date`s, `bigint`s and classes come back as their types. Only
+   * results it checks are typed so; errors' `data`, streamed (`stream()`)
+   * outputs and unchecked results stay plain JSON.
    * @default true
    */
   output?: boolean | 'json';
@@ -93,10 +93,11 @@ const isEnvelope = (value: unknown): value is { id: string; data: unknown } =>
  * are checked against the output's type side, so Effect Schema
  * transformations don't run twice. Inputs from functions (context-aware) and
  * streamed (`stream()`) outputs are not checked. Paths the contract doesn't
- * have pass through. With `output: 'json'` the client types results as
- * the schemas' types again, not the JSON form plain-JSON links declare;
- * errors' `data` and streamed outputs aren't decoded, so they keep their
- * JSON form.
+ * have pass through. With `output: 'json'` the client types the results
+ * it decodes (`contract`'s procedures with an output schema that
+ * validates) as the schemas' types again, not the JSON form plain-JSON
+ * links declare; everything else, errors' `data` and streamed outputs
+ * included, keeps its JSON form.
  *
  * @example
  * ```ts
@@ -108,9 +109,9 @@ const isEnvelope = (value: unknown): value is { id: string; data: unknown } =>
  * @since 0.1.0
  * @stability experimental
  */
-export function experimental_validationLink(
-  opts: ValidationLinkOptions & { output: 'json' },
-): TrpcLink<{ form: DecodedJsonForm; builtinErrors: 'BAD_RESPONSE' }>;
+export function experimental_validationLink<TContract extends object>(
+  opts: ValidationLinkOptions & { contract: TContract; output: 'json' },
+): TrpcLink<{ decodes: TContract; builtinErrors: 'BAD_RESPONSE' }>;
 export function experimental_validationLink(
   opts: ValidationLinkOptions,
 ): TrpcLink<{ builtinErrors: 'BAD_RESPONSE' }>;

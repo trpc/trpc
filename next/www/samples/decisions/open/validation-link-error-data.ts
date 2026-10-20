@@ -1,14 +1,15 @@
 /**
  * The API `.agent-docs/open/validation-link-error-data.md` proposes, as
  * types: B and C decode declared errors' `data` under `output: 'json'`, so
- * the link's form keeps their types too, not only the outputs'. A is the
- * link as it is.
+ * their types keep the schemas' types there too, not only in the outputs
+ * the link decodes. Declaring danSON's form approximates that for the
+ * examples, which only call decoded procedures. A is the link as it is.
  */
 import type { TrpcLink, ValidationLinkOptions } from '@trpc12/trpc/client';
-import type { DansonForm, JsonForm } from '@trpc12/trpc/serializer';
+import type { DansonForm } from '@trpc12/trpc/serializer';
 
 type DecodingLink = TrpcLink<{
-  form: DansonForm & { readonly streamedOutput: JsonForm };
+  form: DansonForm;
   builtinErrors: 'BAD_RESPONSE';
 }>;
 

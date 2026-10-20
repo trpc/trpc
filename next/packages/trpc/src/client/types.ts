@@ -12,7 +12,6 @@ import type {
   OutputForm,
   ProcedureResponse,
   ProcedureType,
-  StreamedForm,
 } from '../internal/types.ts';
 import type {
   AnyProcedure,
@@ -24,9 +23,8 @@ import type { AnyLink, DeclContext, TrpcLink } from './link.ts';
 
 /**
  * An error's `data` as it arrives under a serializer's form, like outputs:
- * its JSON form unless the serializer keeps the types, or the form's
- * `errorData` when a link decodes only outputs
- * (`experimental_validationLink` with `output: 'json'`). Input validation
+ * its JSON form unless the serializer keeps the types; in a
+ * {@link DecodedResultForm}, the links' form. Input validation
  * issues are JSON already, so they keep theirs.
  * @since 0.1.0
  * @stability stable
@@ -251,6 +249,7 @@ export interface ChainTypes {
   readonly unsupported?: ProcedureType;
   readonly batches?: true;
   readonly form?: OutputForm;
+  readonly decodes?: object;
 }
 
 /** The form results arrive in: the client's, else the links', else plain JSON. @internal */
@@ -388,7 +387,7 @@ type DecorateCarried<
         >
       ): D['output'] extends AsyncIterable<any>
         ? StreamedPromise<
-            ClientValue<D['output'], StreamedForm<ResultForm<TForm, TLinks>>>,
+            ClientValue<D['output'], ResultForm<TForm, TLinks>>,
             StreamedError<D, ResultForm<TForm, TLinks>, TLinks>
           >
         : TrpcPromise<
@@ -412,7 +411,7 @@ type DecorateCarried<
           >
         ): D['output'] extends AsyncIterable<any>
           ? StreamedPromise<
-              ClientValue<D['output'], StreamedForm<ResultForm<TForm, TLinks>>>,
+              ClientValue<D['output'], ResultForm<TForm, TLinks>>,
               StreamedError<D, ResultForm<TForm, TLinks>, TLinks>
             >
           : TrpcPromise<
@@ -448,7 +447,18 @@ export type TrpcClient<
   TContext extends object = {},
   TForm extends OutputForm | undefined = undefined,
   TLinks extends ChainTypes = {},
-> = ClientRouter<TRouter, TContext, TForm, TLinks> & {
+> = (TForm extends OutputForm
+  ? ClientRouter<TRouter, TContext, TForm, TLinks>
+  : [Decodes<TLinks>] extends [never]
+    ? ClientRouter<TRouter, TContext, TForm, TLinks>
+    : DecodingRouter<
+        TRouter,
+        Decodes<TLinks>,
+        TContext,
+        TLinks,
+        ResultForm<undefined, TLinks>,
+        DecodedFormOf<ResultForm<undefined, TLinks>>
+      >) & {
   /**
    * Types only, never set: what {@link ClientTypes} reads. A method, so
    * its parameter doesn't change which clients are assignable to which.
@@ -457,7 +467,7 @@ export type TrpcClient<
     router: TRouter;
     context: TContext;
     links: TForm extends OutputForm
-      ? Omit<TLinks, 'form'> & { form: TForm }
+      ? Omit<TLinks, 'form' | 'decodes'> & { form: TForm }
       : TLinks;
   }): void;
 };
@@ -471,6 +481,108 @@ type ClientRouter<
   [K in keyof TRouter]: TRouter[K] extends AnyProcedure
     ? DecorateProcedure<TRouter[K], TContext, TForm, TLinks>
     : ClientRouter<Unlazy<TRouter[K]>, TContext, TForm, TLinks>;
+};
+
+/**
+ * The contract a chain's links decode results with (`decodes`), or `never`.
+ * An untyped one decodes nothing the types can know of.
+ * @internal
+ */
+export type Decodes<TLinks extends ChainTypes> = TLinks extends {
+  decodes: infer C extends object;
+}
+  ? IsAny<C> extends true
+    ? never
+    : C
+  : never;
+
+/**
+ * The form of a result a link decoded with its schema
+ * (`experimental_validationLink` with `output: 'json'`): the schema's
+ * types. Errors' `data` isn't decoded, so it keeps the links' form `E`.
+ * @internal
+ */
+export interface DecodedResultForm<E extends OutputForm> extends DansonForm {
+  readonly errorData: E;
+}
+
+/** {@link DecodedResultForm} over plain JSON, the common case: a generic one costs every call more. @internal */
+export interface DecodedJsonResultForm extends DansonForm {
+  readonly errorData: JsonForm;
+}
+
+/**
+ * The form of a decoded result on a chain whose links' form is `F`; a
+ * form that keeps every type already has the schemas' types.
+ * @internal
+ */
+export type DecodedFormOf<F extends OutputForm> = F['streaming'] extends true
+  ? F
+  : [F] extends [JsonForm]
+    ? DecodedJsonResultForm
+    : DecodedResultForm<F>;
+
+/**
+ * The form procedure `P`'s results arrive in on a chain whose links decode
+ * them with contract node `C`'s output schema: `TDecoded` if `C` is a
+ * procedure whose output is validated, else the links' form `F`. Streamed
+ * outputs pass through undecoded; a path the contract doesn't have, or a
+ * lazy subtree, has no node.
+ * @internal
+ */
+export type DecodedForm<
+  P,
+  C,
+  F extends OutputForm,
+  TDecoded extends OutputForm,
+> = C extends {
+  readonly '~trpc': {
+    readonly '~types'?: { readonly outputValidated: infer V };
+  };
+}
+  ? true extends V
+    ? ProcedureDefOf<P>['output'] extends AsyncIterable<any>
+      ? F
+      : TDecoded
+    : F
+  : F;
+
+/**
+ * The child of contract node `C` at key `K`, walked beside the router;
+ * `{}` (no procedures) where the contract has none.
+ * @internal
+ */
+export type ContractAt<C, K> = K extends keyof C ? C[K] : {};
+
+/**
+ * {@link ClientRouter} on a chain with a link that decodes results with
+ * contract `C`'s schemas: each procedure's results in its
+ * {@link DecodedForm}, `F` being the links' form and `TDecoded` the decoded
+ * one. Picked once per client, so other chains pay nothing.
+ */
+type DecodingRouter<
+  TRouter,
+  C,
+  TContext extends object,
+  TLinks extends ChainTypes,
+  F extends OutputForm,
+  TDecoded extends OutputForm,
+> = {
+  [K in keyof TRouter]: TRouter[K] extends AnyProcedure
+    ? DecorateDef<
+        ProcedureDefOf<TRouter[K]>,
+        TContext,
+        DecodedForm<TRouter[K], ContractAt<C, K>, F, TDecoded>,
+        TLinks
+      >
+    : DecodingRouter<
+        Unlazy<TRouter[K]>,
+        ContractAt<C, K>,
+        TContext,
+        TLinks,
+        F,
+        TDecoded
+      >;
 };
 
 /**
@@ -585,6 +697,11 @@ export type LinksTypes<TLinks extends ReadonlyArray<AnyLink>> = {
       : never
     : never;
   form: FirstForm<TLinks>;
+  decodes: DeclOf<TLinks[number]> extends infer D
+    ? D extends { decodes: infer C }
+      ? C
+      : never
+    : never;
 };
 
 /** An untyped link (`TrpcLink<any>`) could make any of them. */

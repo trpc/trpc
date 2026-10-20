@@ -298,6 +298,78 @@ test("output: 'json' types a streamed output's items in their JSON form, as they
   }
 });
 
+test("output: 'json' types as the schemas' types only the results it decodes", async () => {
+  const p = initTrpc();
+  const post = () => ({ id: '1', title: 'One', at });
+  const appRouter = {
+    decoded: p.procedure.output(Post).query(post),
+    coerced: p.procedure
+      .output(z.object({ at: z.coerce.date() }))
+      .mutation(() => ({ at })),
+    inferred: p.procedure.query(post),
+    trusted: p.procedure.output(Post, { validate: false }).query(post),
+    events: p.procedure.subscription(async function* () {
+      yield post();
+    }),
+    decodedEvents: p.procedure.output(Post).subscription(async function* () {
+      yield post();
+    }),
+    outside: { decoded: p.procedure.output(Post).query(post) },
+  } satisfies AnyRouter;
+  const { outside: _, ...linkContract } = appRouter;
+  await using http = await createTestServer({ router: appRouter });
+  const links = [
+    experimental_validationLink({ contract: linkContract, output: 'json' }),
+    httpLink({ url: http.url }),
+  ] as const;
+  const client = createTrpcClient({ router: appRouter, links: [...links] });
+
+  const decoded = await client.decoded.query();
+  expect(decoded.at).toBeInstanceOf(Date);
+  expectTypeOf(decoded.at).toEqualTypeOf<Date>();
+  const coerced = await client.coerced.mutate();
+  expect(coerced.at).toBeInstanceOf(Date);
+  expectTypeOf(coerced.at).toEqualTypeOf<Date>();
+  const inferred = await client.inferred.query();
+  expect(inferred.at).toBe(at.toISOString());
+  expectTypeOf(inferred.at).toEqualTypeOf<string>();
+  const trusted = await client.trusted.query();
+  expect(trusted.at).toBe(at.toISOString());
+  expectTypeOf(trusted.at).toEqualTypeOf<string>();
+  const outside = await client.outside.decoded.query();
+  expect(outside.at).toBe(at.toISOString());
+  expectTypeOf(outside.at).toEqualTypeOf<string>();
+  for await (const event of client.events.subscribe()) {
+    expect(event.at).toBe(at.toISOString());
+    expectTypeOf(event.at).toEqualTypeOf<string>();
+  }
+  for await (const event of client.decodedEvents.subscribe()) {
+    expect(event.at).toBeInstanceOf(Date);
+    expectTypeOf(event.at).toEqualTypeOf<Date>();
+  }
+
+  type Outputs = inferRouterOutputs<typeof client>;
+  expectTypeOf<Outputs['decoded']['at']>().toEqualTypeOf<Date>();
+  expectTypeOf<Outputs['inferred']['at']>().toEqualTypeOf<string>();
+  expectTypeOf<Outputs['trusted']['at']>().toEqualTypeOf<string>();
+  expectTypeOf<Outputs['outside']['decoded']['at']>().toEqualTypeOf<string>();
+
+  const effectClient = createEffectClient({
+    router: appRouter,
+    links: [...links],
+  });
+  const effectDecoded = await Effect.runPromise(effectClient.decoded.query());
+  expect(effectDecoded.at).toBeInstanceOf(Date);
+  expectTypeOf(effectDecoded.at).toEqualTypeOf<Date>();
+  const effectTrusted = await Effect.runPromise(effectClient.trusted.query());
+  expect(effectTrusted.at).toBe(at.toISOString());
+  expectTypeOf(effectTrusted.at).toEqualTypeOf<string>();
+  const effectOutside = await Effect.runPromise(
+    effectClient.outside.decoded.query(),
+  );
+  expectTypeOf(effectOutside.at).toEqualTypeOf<string>();
+});
+
 test('streamed outputs, unvalidated outputs, plain events, opt-outs and paths outside the contract', async () => {
   const p = initTrpc();
   const contractOf = {

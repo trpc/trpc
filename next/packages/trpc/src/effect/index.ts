@@ -47,6 +47,10 @@ import type {
   CallOptions,
   Carries,
   ChainTypes,
+  ContractAt,
+  DecodedForm,
+  DecodedFormOf,
+  Decodes,
   DuplicateSwitchCheck,
   LinksContext,
   LinksTypes,
@@ -57,7 +61,7 @@ import type {
   SubscribeOptions,
   UnmetNeedCheck,
 } from '../client/types.ts';
-import type { ClientValue, StreamedForm } from '../internal/types.ts';
+import type { ClientValue, OutputForm } from '../internal/types.ts';
 import type {
   AnyProcedure,
   ProcedureDef,
@@ -84,10 +88,11 @@ type DecorateEffectDef<
   D extends ProcedureDef,
   TContext extends object,
   TLinks extends ChainTypes,
+  TForm extends OutputForm | undefined = undefined,
 > =
   Carries<D['type'], TLinks> extends false
     ? NoLinkCarries<D['type']>
-    : DecorateEffectCarried<D, TContext, TLinks>;
+    : DecorateEffectCarried<D, TContext, TLinks, TForm>;
 
 /** A query's or mutation's Effect for a streamed output, as on the Promise client. */
 type StreamedEffect<V, E> = Effect.Effect<Streamed<V, E>, E>;
@@ -96,6 +101,7 @@ type DecorateEffectCarried<
   D extends ProcedureDef,
   TContext extends object,
   TLinks extends ChainTypes,
+  TForm extends OutputForm | undefined,
 > = D['type'] extends 'query'
   ? {
       query(
@@ -107,17 +113,14 @@ type DecorateEffectCarried<
         >
       ): D['output'] extends AsyncIterable<any>
         ? StreamedEffect<
-            ClientValue<
-              D['output'],
-              StreamedForm<ResultForm<undefined, TLinks>>
-            >,
-            StreamedError<D, ResultForm<undefined, TLinks>, TLinks>
+            ClientValue<D['output'], ResultForm<TForm, TLinks>>,
+            StreamedError<D, ResultForm<TForm, TLinks>, TLinks>
           >
         : Effect.Effect<
-            ClientValue<D['output'], ResultForm<undefined, TLinks>>,
+            ClientValue<D['output'], ResultForm<TForm, TLinks>>,
             | ClientError<
                 D['errors'],
-                ResultForm<undefined, TLinks>,
+                ResultForm<TForm, TLinks>,
                 UnstreamedLinkCodes<TLinks>
               >
             | DefinedError<ChainErrors<TLinks>>
@@ -134,17 +137,14 @@ type DecorateEffectCarried<
           >
         ): D['output'] extends AsyncIterable<any>
           ? StreamedEffect<
-              ClientValue<
-                D['output'],
-                StreamedForm<ResultForm<undefined, TLinks>>
-              >,
-              StreamedError<D, ResultForm<undefined, TLinks>, TLinks>
+              ClientValue<D['output'], ResultForm<TForm, TLinks>>,
+              StreamedError<D, ResultForm<TForm, TLinks>, TLinks>
             >
           : Effect.Effect<
-              ClientValue<D['output'], ResultForm<undefined, TLinks>>,
+              ClientValue<D['output'], ResultForm<TForm, TLinks>>,
               | ClientError<
                   D['errors'],
-                  ResultForm<undefined, TLinks>,
+                  ResultForm<TForm, TLinks>,
                   UnstreamedLinkCodes<TLinks>
                 >
               | DefinedError<ChainErrors<TLinks>>
@@ -154,13 +154,14 @@ type DecorateEffectCarried<
         subscribe(
           ...args: CallArgs<D['input'], SubscribeOptions<TContext>>
         ): Stream.Stream<
-          ClientValue<D['output'], ResultForm<undefined, TLinks>>,
-          SubscriptionError<D, ResultForm<undefined, TLinks>, TLinks>
+          ClientValue<D['output'], ResultForm<TForm, TLinks>>,
+          SubscriptionError<D, ResultForm<TForm, TLinks>, TLinks>
         >;
       };
 
 /**
- * The Effect client for a router.
+ * The Effect client for a router. Results follow the links' form, as on
+ * the Promise client, and the schemas' types where a link decodes them.
  * @since 0.1.0
  * @stability stable
  */
@@ -168,10 +169,51 @@ export type EffectClient<
   TRouter,
   TContext extends object = {},
   TLinks extends ChainTypes = {},
+> = [Decodes<TLinks>] extends [never]
+  ? EffectRouter<TRouter, TContext, TLinks>
+  : DecodingEffectRouter<
+      TRouter,
+      Decodes<TLinks>,
+      TContext,
+      TLinks,
+      ResultForm<undefined, TLinks>,
+      DecodedFormOf<ResultForm<undefined, TLinks>>
+    >;
+
+type EffectRouter<
+  TRouter,
+  TContext extends object,
+  TLinks extends ChainTypes,
 > = {
   [K in keyof TRouter]: TRouter[K] extends AnyProcedure
     ? DecorateEffectProcedure<TRouter[K], TContext, TLinks>
-    : EffectClient<Unlazy<TRouter[K]>, TContext, TLinks>;
+    : EffectRouter<Unlazy<TRouter[K]>, TContext, TLinks>;
+};
+
+/** `DecodingRouter` (the Promise client's) for the Effect client. */
+type DecodingEffectRouter<
+  TRouter,
+  C,
+  TContext extends object,
+  TLinks extends ChainTypes,
+  F extends OutputForm,
+  TDecoded extends OutputForm,
+> = {
+  [K in keyof TRouter]: TRouter[K] extends AnyProcedure
+    ? DecorateEffectDef<
+        ProcedureDefOf<TRouter[K]>,
+        TContext,
+        TLinks,
+        DecodedForm<TRouter[K], ContractAt<C, K>, F, TDecoded>
+      >
+    : DecodingEffectRouter<
+        Unlazy<TRouter[K]>,
+        ContractAt<C, K>,
+        TContext,
+        TLinks,
+        F,
+        TDecoded
+      >;
 };
 
 const METHODS = {

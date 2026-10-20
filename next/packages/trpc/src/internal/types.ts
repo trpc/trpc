@@ -121,18 +121,6 @@ export interface OutputForm {
   readonly keeps: unknown;
   /** Deferred values and files at any depth (danSON), or only at the root. */
   readonly streaming: boolean;
-  /**
-   * The form errors' `data` arrives in, for a `streaming` form whose
-   * outputs a link decodes ({@link DecodedJsonForm}); otherwise it's the
-   * outputs' form.
-   */
-  readonly errorData?: OutputForm;
-  /**
-   * The form a streamed output (an `AsyncIterable` or `ReadableStream`)
-   * arrives in, for a `streaming` form whose outputs a link decodes but
-   * whose streams it passes through ({@link DecodedJsonForm}).
-   */
-  readonly streamedOutput?: OutputForm;
 }
 
 /**
@@ -162,18 +150,6 @@ export interface SyncForm<TKeeps> extends OutputForm {
  * @stability stable
  */
 export type JsonForm = SyncForm<never>;
-
-/**
- * Plain JSON whose outputs a link decodes with their schemas, as
- * `experimental_validationLink`'s `output: 'json'` does: outputs arrive as
- * their types, errors' `data` and streamed outputs in plain JSON's form.
- * @since 0.1.0
- * @stability experimental
- */
-export interface DecodedJsonForm extends DansonForm {
-  readonly errorData: JsonForm;
-  readonly streamedOutput: JsonForm;
-}
 
 type Dropped = undefined | symbol | ((...args: any[]) => unknown);
 type JsonItem<T, K, D extends boolean> =
@@ -303,18 +279,6 @@ export type ClientValue<
   T,
   F extends OutputForm = DansonForm,
 > = F['streaming'] extends true ? Deserialized<T> : Framed<T, F['keeps']>;
-
-/**
- * The form a streamed output (an `AsyncIterable` or `ReadableStream`)
- * arrives in under form `F`: `F`'s `streamedOutput`, for a link that
- * passes streams through undecoded, else `F`.
- * @internal
- */
-export type StreamedForm<F extends OutputForm> = F extends {
-  readonly streamedOutput: infer S extends OutputForm;
-}
-  ? S
-  : F;
 
 /**
  * The output form of a serializer type; plain JSON's for `undefined`.

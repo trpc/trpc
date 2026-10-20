@@ -47,7 +47,6 @@ export {
 export type {
   ClientValue,
   DansonForm,
-  DecodedJsonForm,
   JsonForm,
   JsonOf,
   OutputForm,

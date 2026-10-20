@@ -41,7 +41,7 @@ const client = createTrpcClient({
 
 Results are checked against the output's type side, so Effect Schema transformations don't run a second time. With `experimental_openApiLink`, whose results are plain JSON, `output: 'json'` decodes them with the Effect Schema's JSON codec, so `Date`s, `bigint`s and classes come back as their types. Standard Schema outputs are validated as they are.
 
-Errors and streamed (`stream()`) query and mutation outputs pass through undecoded, so under `output: 'json'` they stay plain JSON, and their types say so: a `Date` in a declared error's `data` or in a streamed item is a `string`. Subscription events are decoded like results.
+The client types a result as its schema's type only where the link checks it: a procedure of `contract` with an output schema. Results of procedures without one, with `.output(schema, { validate: false })` or outside `contract`, errors, and streamed (`stream()`) query and mutation outputs pass through undecoded, so under `output: 'json'` they stay plain JSON, and their types say so: a `Date` among them is a `string`. Subscription events are decoded like results.
 
 See [Contract-first](../server/contract-first.md) for writing the contract, and [Calling REST from the client](../openapi/client.md) for `experimental_openApiLink`.
 

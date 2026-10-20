@@ -1,5 +1,13 @@
 import { Effect, Equal } from 'effect';
-import type { ClientTypes, ResultForm } from '../../client/types.ts';
+import type {
+  ChainTypes,
+  ClientTypes,
+  ContractAt,
+  DecodedForm,
+  DecodedFormOf,
+  Decodes,
+  ResultForm,
+} from '../../client/types.ts';
 import type {
   ClientValue,
   IsAny,
@@ -413,21 +421,35 @@ type OutputMap<R, F extends OutputForm> = {
     : OutputMap<Unlazy<R[K]>, F>;
 };
 
-/** {@link OutputMap} for a form whose streamed outputs arrive in form `S`. */
-type StreamedOutputMap<R, F extends OutputForm, S extends OutputForm> = {
+/**
+ * {@link OutputMap} on a chain whose links decode results with contract
+ * `C`'s schemas, as the client's calls are typed there.
+ */
+type DecodedOutputMap<
+  R,
+  C,
+  F extends OutputForm,
+  TDecoded extends OutputForm,
+> = {
   [K in keyof R]: R[K] extends AnyProcedure
-    ? ProcedureDefOf<R[K]>['output'] extends AsyncIterable<any>
-      ? ClientValue<ProcedureDefOf<R[K]>['output'], S>
-      : ClientValue<ProcedureDefOf<R[K]>['output'], F>
-    : StreamedOutputMap<Unlazy<R[K]>, F, S>;
+    ? ClientValue<
+        ProcedureDefOf<R[K]>['output'],
+        DecodedForm<R[K], ContractAt<C, K>, F, TDecoded>
+      >
+    : DecodedOutputMap<Unlazy<R[K]>, ContractAt<C, K>, F, TDecoded>;
 };
 
-/** Picked once per client, so forms without `streamedOutput` pay nothing per procedure. */
-type ClientOutputMap<R, F extends OutputForm> = F extends {
-  readonly streamedOutput: infer S extends OutputForm;
-}
-  ? StreamedOutputMap<R, F, S>
-  : OutputMap<R, F>;
+/** Picked once per client, so chains that decode nothing pay nothing per procedure. */
+type ClientOutputMap<R, TLinks extends ChainTypes> = [Decodes<TLinks>] extends [
+  never,
+]
+  ? OutputMap<R, ResultForm<undefined, TLinks>>
+  : DecodedOutputMap<
+      R,
+      Decodes<TLinks>,
+      ResultForm<undefined, TLinks>,
+      DecodedFormOf<ResultForm<undefined, TLinks>>
+    >;
 
 /** What a client type, or a client factory's, records; `never` for a router. */
 type SourceClient<T> = ClientTypes<T extends (...args: any) => infer C ? C : T>;
@@ -462,10 +484,7 @@ export type inferRouterInputs<T> = InputMap<
  */
 export type inferRouterOutputs<T> = [SourceClient<T>] extends [never]
   ? OutputMap<T, JsonForm>
-  : ClientOutputMap<
-      SourceClient<T>['router'],
-      ResultForm<undefined, SourceClient<T>['links']>
-    >;
+  : ClientOutputMap<SourceClient<T>['router'], SourceClient<T>['links']>;
 
 /** One field of every procedure's def; an untyped (`any`) subtree adds none. */
 type DefField<R, F extends keyof ProcedureDef> =

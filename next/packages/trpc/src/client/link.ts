@@ -163,6 +163,13 @@ export interface LinkDecl {
    */
   form?: OutputForm;
   /**
+   * A contract or router whose output schemas the link decodes results
+   * with, as `experimental_validationLink`'s `output: 'json'` does: calls
+   * to its procedures whose outputs are validated get the schemas' types,
+   * every other result and every error keeps the form.
+   */
+  decodes?: object;
+  /**
    * What the link offers the links before it, such as `'response'` for
    * `httpLink`'s `onResponse` reports.
    */
