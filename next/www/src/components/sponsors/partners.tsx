@@ -1,14 +1,9 @@
 import { cn } from '@shared/ui/lib/utils';
+import { Link } from '@tanstack/react-router';
 import { ArrowUpRight } from 'lucide-react';
 import type { CSSProperties, JSX } from 'react';
 
-import {
-  avatarUrl,
-  type Partner,
-  partners,
-  sponsorTiers,
-  sponsorUrl,
-} from '~/sponsors.ts';
+import { avatarUrl, type Partner, partners, sponsorTiers } from '~/sponsors.ts';
 
 import { CodeRabbitLogo, GreptileLogo, SerpApiLogo } from './partner-logos.tsx';
 
@@ -142,12 +137,12 @@ export function PartnersRail(props: { readonly className?: string }) {
           />
         </a>
       ))}
-      <a
+      <Link
         className="mt-1 text-xs text-muted-foreground hover:text-foreground"
-        href={sponsorUrl}
+        to="/sponsor"
       >
         Become a partner →
-      </a>
+      </Link>
     </section>
   );
 }
