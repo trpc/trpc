@@ -1,0 +1,16 @@
+# The repo develops on Node 26; the packages keep Node 24 users (human asked)
+
+- Human, 2026-10-20: "bump repo to node 26".
+- (agent) Development runs on Node 26.12.0, the newest 26.x on 2026-10-20 (26 isn't LTS yet). The three `.nvmrc` files and `../v11/.tool-versions` pin it, bumped together as [`v11-folder.md`](./v11-folder.md) asks. The dev workspaces' `engines.node` (`package.json`, `../v11/package.json`) is `^26.0.0`; pnpm 12 doesn't enforce it.
+- (agent) `next.yml`'s jobs read `next/.nvmrc` (`node-version-file`), as `next-sponsors.yml` already did, so the next bump is the `.nvmrc` files alone.
+- (agent) `@types/node` is `^26.0.0` everywhere in `next/`, the workspace root included: vite-plus resolves its optional `@types/node` peer from the root, and a root left on 24 split `vitest` into two peer variants, which broke `@effect/vitest`'s `it.layer`.
+- (agent) The published packages still declare no `engines`, and the dev bump doesn't drop Node 24 for users:
+  - `@trpc12/trpc` runs on Node, Bun, Deno and Workers through Effect's platform layers ([`platforms-through-effect-layers.md`](./platforms-through-effect-layers.md)), and `tooling/tsconfig/lib.json` compiles published code with `types: []`, so Node 26's types can't reach it. `@trpc12/experimental-nest`'s lib is the exception: it types `node`.
+  - `next.yml`'s `node-lts` job runs the packages' tests on Node 24, the active LTS, beside the other jobs on 26.
+- (agent) The docs site stays on Node 24 on Vercel, which offers only 22.x and 24.x (2026-10-20). `www/package.json`'s `engines.node` is `^24.11.0 || ^26.0.0`: Vercel reads it, picks the newest major it offers, so builds move to 26 once Vercel has it. The on-demand function's runtime is the Node that built it. The project's own Node setting stays 24.x.
+- (agent) v11 develops on 26 too, but its catalog keeps `@types/node` at `^24.13.4`: v11's published packages compile against it and support older Node. Its CI example matrix keeps 20.x and 22.x.
+- (agent) On Node 26 (V8 14), an async generator's `for await` loop keeps the last value alive while it waits for the next, even after the loop variable is set to `null`. v11's SSE producer (`../v11/packages/server/src/unstable-core-do-not-import/stream/sse.ts`) now drives its iterator by hand, as `withPing` and `takeWithGrace` already did, so `httpSubscriptionLink.memory.test.ts` (#6156) frees each value again.
+- Why: develop on the current Node without dropping the runtime most users run.
+- Lost: the docs build, examples and tooling no longer run on Node 24 in CI; only the packages' tests do.
+- Open: whether the packages support Node 22 (maintenance LTS until April 2027), which CI has never run; the Cursor Cloud environment's install still installs Node 24.21.0, and only its owner can change it; v11's other `for await` loops over subscriptions (WebSocket, JSONL) may keep their last value the same way, but no test covers them; the SSE fix isn't on `main`.
+- Lives in: `../.nvmrc`, `.nvmrc`, `../v11/.nvmrc`, `../v11/.tool-versions`, `package.json`, `../v11/package.json`, `www/package.json`, `www/build/on-demand.ts`, `../.github/workflows/next.yml`, `../.github/workflows/v11-subtree.yml`, `../v11/packages/server/src/unstable-core-do-not-import/stream/sse.ts`.
