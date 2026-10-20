@@ -9,6 +9,8 @@ import { packages } from './packages.ts';
 export interface DemoEnv {
   readonly fetch: Fetch;
   readonly history: RouterHistory;
+  /** The browser's user, one of the demo's `users`. */
+  readonly user?: string | undefined;
 }
 
 /** A demo's code, compiled and run once: start a session with it. */

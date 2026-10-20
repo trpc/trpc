@@ -11,7 +11,7 @@ import {
 import { cn } from '@shared/ui/lib/utils';
 import { type AnyRouter, createMemoryHistory } from '@tanstack/react-router';
 import { RotateCcw, Unplug, WifiOff } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 
 import { buildDemo, type DemoApp } from './app.ts';
 import { DemoBrowser, DemoRequests } from './browser.tsx';
@@ -81,6 +81,49 @@ function useBuild(demo: DemoDefinition, files: ReadonlyArray<DemoFile>) {
 }
 
 /**
+ * One browser running the demo's app, for `user` when the demo has users.
+ * A new build or a reload restarts its app where it was.
+ */
+function AppBrowser(props: {
+  readonly demo: DemoDefinition;
+  readonly session: Session;
+  readonly user: string | undefined;
+}) {
+  const session = props.session;
+  const user = props.user;
+  const [reloads, setReloads] = useState(0);
+  const [path, setPath] = useState(props.demo.start);
+  const router = useMemo<AnyRouter>(
+    () =>
+      session.app.getRouter({
+        fetch:
+          user === undefined
+            ? session.network.fetch
+            : session.network.fetchAs(user),
+        history: createMemoryHistory({ initialEntries: [path] }),
+        user,
+      }),
+    // `path` follows the app between restarts.
+    [session, user, reloads],
+  );
+  useEffect(
+    () =>
+      router.history.subscribe(() => {
+        setPath(router.history.location.href);
+      }),
+    [router],
+  );
+  return (
+    <DemoBrowser
+      key={reloads}
+      onReload={() => setReloads((count) => count + 1)}
+      router={router}
+      user={user}
+    />
+  );
+}
+
+/**
  * A demo, live: its code in an editor, its app in a browser, and the
  * requests between the app and its tRPC server.
  */
@@ -92,9 +135,7 @@ export function DemoFrame(props: {
   const [files, setFiles] = useState(() => edits.get(demo.id) ?? demo.files);
   const [file, setFile] = useState(demo.open);
   const [resets, setResets] = useState(0);
-  const [reloads, setReloads] = useState(0);
   const [latency, setLatency] = useState<number>(latencies[1].ms);
-  const [path, setPath] = useState(demo.start);
   const build = useBuild(demo, files);
   const session = build.session;
   const error = build.error;
@@ -104,24 +145,6 @@ export function DemoFrame(props: {
       session.network.latency = latency;
     }
   }, [latency, session]);
-
-  const router = useMemo<AnyRouter | undefined>(
-    () =>
-      session?.app.getRouter({
-        fetch: session.network.fetch,
-        history: createMemoryHistory({ initialEntries: [path] }),
-      }),
-    // A new build or a reload restarts the app where it was; `path` follows
-    // it in between.
-    [session, reloads],
-  );
-  useEffect(
-    () =>
-      router?.history.subscribe(() => {
-        setPath(router.history.location.href);
-      }),
-    [router],
-  );
 
   const failures = useFailures(session?.network);
   const connections = useConnections(session?.network);
@@ -205,12 +228,19 @@ export function DemoFrame(props: {
       <ResizablePanelGroup className="min-h-0 flex-1" orientation="vertical">
         <ResizablePanel defaultSize="42" minSize={120}>
           <div className="relative h-full">
-            {router && session ? (
-              <DemoBrowser
-                key={`${String(reloads)}`}
-                onReload={() => setReloads((count) => count + 1)}
-                router={router}
-              />
+            {session && demo.users ? (
+              <ResizablePanelGroup orientation="horizontal">
+                {demo.users.map((user, index) => (
+                  <Fragment key={user}>
+                    {index > 0 ? <ResizableHandle withHandle /> : null}
+                    <ResizablePanel minSize={160}>
+                      <AppBrowser demo={demo} session={session} user={user} />
+                    </ResizablePanel>
+                  </Fragment>
+                ))}
+              </ResizablePanelGroup>
+            ) : session ? (
+              <AppBrowser demo={demo} session={session} user={undefined} />
             ) : (
               <p className="p-4 text-sm text-muted-foreground">
                 {error

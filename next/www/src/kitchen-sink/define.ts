@@ -21,6 +21,11 @@ export interface DemoDefinition {
   readonly server: string;
   /** The URL the app opens at. */
   readonly start: string;
+  /**
+   * Who uses the app, a browser each, side by side: `getRouter()` gets the
+   * browser's user as `user`. Without them, one browser and no user.
+   */
+  readonly users?: ReadonlyArray<string>;
 }
 
 /**

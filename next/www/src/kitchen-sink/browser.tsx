@@ -60,11 +60,12 @@ function useLocation(router: AnyRouter) {
 
 /**
  * The demo's app in a browser of its own: back, forward, reload and an
- * address bar over its router's memory history.
+ * address bar over its router's memory history, and who's using it.
  */
 export function DemoBrowser(props: {
   readonly onReload: () => void;
   readonly router: AnyRouter;
+  readonly user?: string | undefined;
 }) {
   const router = props.router;
   const href = useLocation(router);
@@ -116,6 +117,14 @@ export function DemoBrowser(props: {
             value={typed ?? href}
           />
         </form>
+        {props.user === undefined ? null : (
+          <span
+            className="shrink-0 rounded-md bg-brand/15 px-1.5 py-0.5 text-xs font-medium text-brand"
+            title={`Signed in as ${props.user}`}
+          >
+            {props.user}
+          </span>
+        )}
       </div>
       <div className="min-h-0 flex-1 overflow-auto p-4">
         <AppBoundary onReload={props.onReload}>
