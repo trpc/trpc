@@ -2,7 +2,7 @@
 title: Should tRPC ship error shells, type-safe error boundaries that own some failures so the components below are typed without them?
 summary: A shell owns `UNAUTHORIZED` or offline for the tree under its boundary, so a `useQuery` below types `error` with only what's left to handle.
 area: tanstack
-recommended: B
+recommended: E
 questions: [Q24.4, Q24.5]
 links:
   - kind: spike
@@ -20,6 +20,9 @@ links:
   - kind: decision
     label: granular-errors
     url: ../decisions/granular-errors.md
+  - kind: decision
+    label: stability-jsdoc-tags
+    url: ../decisions/stability-jsdoc-tags.md
   - kind: docs
     label: TanStack Query errors
     url: https://v12.trpc.io/v12/docs/integrations/tanstack-query#errors
@@ -32,7 +35,7 @@ links:
 
 ## Why it matters
 
-Error shells are type-safe error boundaries, after [result-rpc](https://result-rpc.com/)'s shells. A shell claims some error codes for the tree under its `Boundary`. Its hooks throw those errors to the boundary, which renders a fallback, and type `error` without them, so a component lists only the failures it can do something about. The examples here are B's API; C changes what happens around it.
+Error shells are type-safe error boundaries, after [result-rpc](https://result-rpc.com/)'s shells. A shell claims some error codes for the tree under its `Boundary`. Its hooks throw those errors to the boundary, which renders a fallback, and type `error` without them, so a component lists only the failures it can do something about. The examples here are B's API; C and E change what's around it.
 
 **1. Shells own failures for the tree under them.**
 
@@ -337,9 +340,60 @@ doc.error; // without UNAUTHORIZED
 - ✅ Small, framework-free, no component API to support
 - ❌ Every app rewrites the boundary, the mounted-chain check and the shared reset boundary; the spike's first run got the reset wrong
 
+### E) Ship B now as `experimental_createShell`
+
+B's API and behavior, exported as `experimental_createShell` from `@trpc12/tanstack-react-query`, its docs page hidden in an experiment. Picking B settles the shape, so `createShell` ships without a prefix; E doesn't: an experimental export might change or go away in any release ([stability-jsdoc-tags](../decisions/stability-jsdoc-tags.md)), so apps can use shells while C and Suspense stay open, and what they run into answers them. It takes:
+
+- The spike's `shells.ts` (about 190 lines) moved into `packages/tanstack-react-query/src/`, on the shipped closed union, with its DOM and type tests; the spike is deleted.
+- `experimental_createShell` exported; `Shell`, `ShellSpec` and `Remaining` keep their names, tagged `@stability experimental`, as `trpc/jsdoc` requires.
+- A docs page in a new experiment in `www/src/experiments.ts`, so it's hidden from the sidebar and search engines and no listed page links it.
+- Later: promoting it is B, `createShell` with `experimental_createShell` as a `@deprecated` alias and a `PROMOTED` entry for the codemod. Dropping it removes one export.
+
+```tsx twoslash
+// ---cut-start---
+import { createTrpcContext } from '@trpc12/tanstack-react-query';
+import type { ReactNode } from 'react';
+import { experimental_createShellE as experimental_createShell } from '../open/error-shells.ts';
+import { z } from 'zod';
+import { authed } from './server.ts';
+const router = {
+  doc: {
+    byId: authed
+      .errors({ NOT_FOUND: { message: 'No such doc' } })
+      .input(z.object({ id: z.string() }))
+      .query((opts) => ({ id: opts.input.id, title: 'Hello' })),
+  },
+};
+const [, useTrpc] = createTrpcContext<typeof router>();
+const trpc = useTrpc();
+declare const id: string;
+type Fallback = (props: { error: unknown; reset: () => void }) => ReactNode;
+declare const Crashed: Fallback, SignIn: Fallback;
+// ---cut-end---
+// import { experimental_createShell } from '@trpc12/tanstack-react-query';
+const RootShell = experimental_createShell({
+  name: 'Root',
+  claims: [],
+  unexpected: true,
+  fallback: Crashed,
+});
+// Only the export carries the prefix; a shell's own methods keep their names
+const AuthShell = RootShell.extend({
+  name: 'Auth',
+  claims: ['UNAUTHORIZED'],
+  fallback: SignIn,
+});
+const doc = AuthShell.useQuery(trpc.doc.byId.queryOptions({ input: { id } }));
+```
+
+- ✅ Apps get type-safe error boundaries now, and their queries and forms show whether C or a Suspense flavour is needed before the shape is settled
+- ✅ Additive and cheap to drop: one export, one hidden page, nothing in TanStack
+- ❌ Apps that adopt it rename the import once it's promoted (the codemod does it)
+- ❌ Ships B's limits as they are: a mutation's fallback still unmounts the form
+
 ## Recommendation
 
-**B**, with the framework-free part in `@trpc12/tanstack-query` and `createShell` in `@trpc12/tanstack-react-query` first (Q24.5 A, see Details). It's built and tested, needs nothing from TanStack, and gives a component's `error` only what it must handle. Keep the side-effect mode (C) for when a real "session expired" form needs it.
+**E.** B's shape is built and tested and needs nothing from TanStack, but whether forms need C and Suspense needs its own flavour is best answered by apps using it, which an `experimental_` export allows without committing to the shape. React only, all in `@trpc12/tanstack-react-query` for now (Q24.5 B); when it's promoted to B, the framework-free part can move to `@trpc12/tanstack-query` (Q24.5 A, see Details) with its types re-exported, so nothing breaks.
 
 ## Blocked until answered
 
@@ -347,9 +401,9 @@ doc.error; // without UNAUTHORIZED
 
 ## Details
 
-**Where shells live (Q24.5), if they ship.** The claim predicate (`owns(error)`), `Remaining` and the `throwOnError` transform contain no React; each framework's boundary differs (Vue's `onErrorCaptured`, Solid's `<ErrorBoundary>`, Svelte's `<svelte:boundary>`). With D, this only picks the primitives' package.
+**Where shells live (Q24.5), if they ship.** The claim predicate (`owns(error)`), `Remaining` and the `throwOnError` transform contain no React; each framework's boundary differs (Vue's `onErrorCaptured`, Solid's `<ErrorBoundary>`, Svelte's `<svelte:boundary>`). With D, this only picks the primitives' package. With E, it can wait for promotion.
 
-- **A (recommended): the framework-free part in `@trpc12/tanstack-query`, `createShell` per adapter.** React first; `@trpc12/experimental-tanstack-vue-query` and the others when someone asks. Written and tested once, and other frameworks can use the primitives before their adapter has `createShell`. Two packages to keep in step for one feature.
+- **A (recommended for B): the framework-free part in `@trpc12/tanstack-query`, `createShell` per adapter.** React first; `@trpc12/experimental-tanstack-vue-query` and the others when someone asks. Written and tested once, and other frameworks can use the primitives before their adapter has `createShell`. Two packages to keep in step for one feature.
 - **B: React only, all in `@trpc12/tanstack-react-query`.** One package and the smallest surface; other adapters copy or move the code later.
 
 ```ts

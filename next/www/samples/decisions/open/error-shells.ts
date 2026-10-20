@@ -1,8 +1,8 @@
 /**
  * The APIs `.agent-docs/open/error-shells.md` proposes, as types, from the
  * spike (`spikes/error-shells/shells.ts`): B is `createShell` in boundary
- * mode, C adds a side-effect mode, D ships only the primitives. A is
- * TanStack's hooks as they are.
+ * mode, C adds a side-effect mode, D ships only the primitives, E ships B
+ * as an experimental export. A is TanStack's hooks as they are.
  */
 import type {
   QueryKey,
@@ -115,3 +115,6 @@ export interface ClaimsD<TCodes extends string> {
 export declare function claimsD<const TCodes extends string>(spec: {
   readonly claims: ReadonlyArray<TCodes>;
 }): ClaimsD<TCodes>;
+
+/** E: B's `createShell`, exported under its experimental name. */
+export declare const experimental_createShellE: typeof createShellB;
