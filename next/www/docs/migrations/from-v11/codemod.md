@@ -21,7 +21,7 @@ It keeps your formatting, and rewrites:
 
 - Imports from `@trpc/server`, `@trpc/server/adapters/fetch`, `@trpc/client` and `@trpc/tanstack-react-query` to their `@trpc12/*` entry points, with the names that changed: `initTRPC` to `initTrpc`, `TRPCError` and `TRPCClientError` to `TrpcError`, `fetchRequestHandler` to `createFetchHandler`, `createTRPCClient` to `createTrpcClient`, `TRPCClient` to `TrpcClient`, `createTRPCContext` to `createTrpcContext`, `createTRPCOptionsProxy` to `createTrpcQueryUtils`. `TRPCLink` stays imported from `@trpc/client`, for [`fromV11Link`](./links.md).
 - `initTRPC.context<Ctx>().meta<Meta>().create()` to `initTrpc<{ ctx: Ctx; meta: Meta }>()`, `t.router(routes)` to `routes`, `mergeRouters(a, b)` to `{ ...a, ...b }`, and `router.createCaller(ctx)` to `createRouterClient(router, { ctx })`.
-- `httpBatchLink`, `httpBatchStreamLink` and `httpSubscriptionLink` to `httpLink`, and their `transformer` to `serializer`.
+- `httpBatchLink`, `httpBatchStreamLink` and `httpSubscriptionLink` to `httpStreamLink`, and their `transformer` to `serializer`.
 - `createTRPCContext`'s result, destructured as a tuple, with `TRPCProvider`, `useTRPC` and `useTRPCClient` renamed wherever the project uses them.
 - Imports of `experimental_*` and `unstable_*` exports that moved on a stage, to their new names, and imports from `@trpc12/experimental-*` packages that were promoted, to the package's new name ([Stability](../../packages.md#stability)).
 
