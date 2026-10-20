@@ -7,89 +7,13 @@ import {
 } from '@shared/ui/components/dialog';
 import { cn } from '@shared/ui/lib/utils';
 import { useNavigate } from '@tanstack/react-router';
-import { FileText, Hash, Search } from 'lucide-react';
+import { FileText, FlaskConical, Hash, Search } from 'lucide-react';
 import { useState } from 'react';
 
-import {
-  type DocsVersion,
-  useDocsVersion,
-  useListedDocs,
-} from '~/content/docs.ts';
-import { stripInlineCode } from '~/content/inline-code.ts';
+import { useDocsVersion } from '~/content/docs.ts';
+import { type SearchEntry, searchDocs } from '~/content/search.ts';
 
 import { TextWithCode } from '~/components/text-with-code.tsx';
-
-interface SearchEntry {
-  readonly hash: string | undefined;
-  readonly haystack: string;
-  readonly id: string;
-  readonly page: string;
-  readonly slug: string;
-  readonly text: string;
-}
-
-function entriesOf(version: DocsVersion): ReadonlyArray<SearchEntry> {
-  return version.allDocs.flatMap((doc) => [
-    {
-      hash: undefined,
-      haystack: stripInlineCode(
-        `${doc.title} ${doc.label ?? ''} ${doc.description} ${doc.section}`,
-      ).toLowerCase(),
-      id: doc.slug,
-      page: doc.section,
-      slug: doc.slug,
-      text: doc.label ?? doc.title,
-    },
-    ...doc.headings.map((heading) => ({
-      hash: heading.id,
-      haystack: stripInlineCode(`${heading.text} ${doc.title}`).toLowerCase(),
-      id: `${doc.slug}#${heading.id}`,
-      page: doc.label ?? doc.title,
-      slug: doc.slug,
-      text: heading.text,
-    })),
-  ]);
-}
-
-/**
- * Each version's pages and headings, by the version as listed (with the
- * experiments that are on): search looks in the version being read.
- */
-const entriesByVersion = new WeakMap<DocsVersion, ReadonlyArray<SearchEntry>>();
-
-function entriesFor(version: DocsVersion) {
-  const cached = entriesByVersion.get(version);
-  if (cached) {
-    return cached;
-  }
-  const entries = entriesOf(version);
-  entriesByVersion.set(version, entries);
-  return entries;
-}
-
-function search(
-  version: DocsVersion,
-  query: string,
-): ReadonlyArray<SearchEntry> {
-  const entries = entriesFor(version);
-  const terms = query.toLowerCase().split(/\s+/).filter(Boolean);
-  if (terms.length === 0) {
-    return entries.filter((entry) => entry.hash === undefined).slice(0, 8);
-  }
-  return entries
-    .filter((entry) => terms.every((term) => entry.haystack.includes(term)))
-    .map((entry) => {
-      const text = entry.text.toLowerCase();
-      const score =
-        (text.startsWith(terms[0] ?? '') ? 4 : 0) +
-        (terms.every((term) => text.includes(term)) ? 2 : 0) +
-        (entry.hash === undefined ? 1 : 0);
-      return { entry, score };
-    })
-    .toSorted((a, b) => b.score - a.score)
-    .slice(0, 20)
-    .map((result) => result.entry);
-}
 
 export function SearchButton() {
   const [open, setOpen] = useState(false);
@@ -148,10 +72,11 @@ export function SearchButton() {
 
 function SearchPanel(props: { readonly onClose: () => void }) {
   const navigate = useNavigate();
-  const version = useListedDocs(useDocsVersion());
+  // Experiments' pages too: opening one turns its experiment on.
+  const version = useDocsVersion();
   const [query, setQuery] = useState('');
   const [active, setActive] = useState(0);
-  const results = search(version, query);
+  const results = searchDocs(version.allDocs, query);
   const selected = Math.min(active, Math.max(results.length - 1, 0));
 
   const go = (entry: SearchEntry) => {
@@ -238,6 +163,12 @@ function SearchPanel(props: { readonly onClose: () => void }) {
             <span className="truncate">
               <TextWithCode bare text={entry.text} />
             </span>
+            {entry.experimental ? (
+              <FlaskConical
+                aria-label="Experimental"
+                className="size-3.5 shrink-0 text-brand"
+              />
+            ) : null}
             <span className="ml-auto shrink-0 text-xs text-muted-foreground">
               <TextWithCode bare text={entry.page} />
             </span>
