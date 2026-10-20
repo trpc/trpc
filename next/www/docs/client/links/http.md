@@ -30,7 +30,7 @@ const client = createTrpcClient({
 
 `httpLink` doesn't batch, subscribe or read streamed outputs. Procedures lose `.subscribe()`, and a call whose output streams fails with `BAD_RESPONSE`. For those, use `httpStreamLink`.
 
-## httpStreamLink
+## `httpStreamLink`
 
 `httpStreamLink` takes the same options and adds batching, streamed outputs and subscriptions as server-sent events. It runs on Effect, so it brings the Effect runtime with it.
 
