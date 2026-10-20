@@ -56,6 +56,7 @@ Many agents push to `v12` at once, about a hundred commits a day, so a change th
 - Don't `git stash` in a checkout with worktrees: they share one stash, and `git stash pop` can take a sibling's changes. Commit work in progress, or copy the files aside.
 - `AGENTS.md`, `README.md`, `.agent-docs/README.md` and `vite.config.ts` are shared by most changes. Edit as little of them as you can: put the detail in the decision file, skill, page or code it's about, and add one line to the shared file that links it. Say a fact in one place and link to it elsewhere; a fact restated in `AGENTS.md`, `README.md` and a decision is three edits for the next change and three chances to conflict.
 - Git conflicts by line, and a Markdown bullet or paragraph is one line: two changes to different sentences of one bullet conflict. Give a new topic its own bullet instead of adding sentences to another topic's, and split a bullet that has grown several topics.
+- In a file many changes edit, write a list, not a Markdown table: Prettier pads every row to the widest cell, so widening one cell rewrites every row and conflicts with any other change to the table.
 - Resolving a `pnpm-lock.yaml` conflict by hand, take `v12`'s (`git checkout origin/v12 -- pnpm-lock.yaml`), run `pnpm install`, and commit the result. Don't merge the lockfile line by line.
 
 ## Docs
