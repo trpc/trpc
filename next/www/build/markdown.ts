@@ -2,6 +2,7 @@ import rehypeShiki from '@shikijs/rehype';
 import {
   createTransformerFactory,
   rendererRich,
+  type TwoslashRenderer,
   type TwoslashShikiFunction,
 } from '@shikijs/twoslash/core';
 import { Effect, FileSystem, Path } from 'effect';
@@ -21,7 +22,7 @@ import rehypeRaw from 'rehype-raw';
 import remarkGfm from 'remark-gfm';
 import remarkParse from 'remark-parse';
 import remarkRehype from 'remark-rehype';
-import type { ShikiTransformer } from 'shiki';
+import type { ShikiTransformer, ShikiTransformerContext } from 'shiki';
 import { createTwoslasher } from 'twoslash/core';
 // Twoslash runs the compiler through its JavaScript API, which TypeScript 7
 // doesn't have.
@@ -682,6 +683,49 @@ function twoslasherFor(root: string, tsLibDirectory: string) {
   return run;
 }
 
+/**
+ * Highlighted popup types, by text and options. A renderer highlights each
+ * hover's type on its own, and most recur (a page's `t`, `router`), so a
+ * build highlighted the same ones thousands of times.
+ */
+const popupHighlights = new Map<string, HastRoot>();
+
+/**
+ * `renderer` with its popups' highlighting (its only `codeToHast`) read
+ * from {@link popupHighlights}. Each use gets a copy, as later transformers
+ * change the tree.
+ */
+function reusingPopups(renderer: TwoslashRenderer): TwoslashRenderer {
+  const reusingHighlights = (
+    context: ShikiTransformerContext,
+  ): ShikiTransformerContext => {
+    const codeToHast: ShikiTransformerContext['codeToHast'] = (
+      code,
+      options,
+    ) => {
+      const key = JSON.stringify([code, options]);
+      let root = popupHighlights.get(key);
+      if (!root) {
+        root = context.codeToHast(code, options);
+        popupHighlights.set(key, root);
+      }
+      return structuredClone(root);
+    };
+    return Object.create(context, { codeToHast: { value: codeToHast } });
+  };
+  const methods = Object.entries(renderer).map(([name, method]) => {
+    if (typeof method !== 'function') {
+      return [name, method] as const;
+    }
+    function reusing(this: ShikiTransformerContext, ...args: Array<unknown>) {
+      return Reflect.apply(method, reusingHighlights(this), args);
+    }
+    return [name, reusing] as const;
+  });
+  // SAFETY: each method is the renderer's own, called with its arguments.
+  return Object.fromEntries(methods) as unknown as TwoslashRenderer;
+}
+
 const blockFilename = /^\/\/ @filename: (.+)$/gm;
 
 /** The app that inline blocks compile in, beside its `src/` files, unless a page's docs name another. */
@@ -812,7 +856,7 @@ const twoslashTransformer = Effect.fn('twoslashTransformer')(function* (
     flush: session?.flush ?? Effect.void,
     transformer: createTransformerFactory(
       twoslasher,
-      rendererRich({ jsdoc: false, queryRendering: 'line' }),
+      reusingPopups(rendererRich({ jsdoc: false, queryRendering: 'line' })),
     )({ explicitTrigger: true }),
   };
 });
