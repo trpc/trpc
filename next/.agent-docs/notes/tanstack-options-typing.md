@@ -3,7 +3,7 @@
 - **Date:** 2026-10-09
 - **Question:** Does 19's option bag (`queryOptions({ input, ...tanstack })`) type as well as v11's positional form against real TanStack types? How do `select`, `skipToken`, `DataTag` keys, explicit infinite `input: (pageParam) => …` vs v11's `cursor` convention, and `streamedOptions` behave?
 - **Feeds:** [19 — TanStack Query](../proposals/19-tanstack-query.md).
-- **Code:** [`next/spikes/tanstack-options/`](../../spikes/tanstack-options/). `core.ts` is a `declare`-only prototype over `@tanstack/query-core` 5.90.20 types; `useQuery`/`useInfiniteQuery` stand in for the framework packages. `tanstack-options.test-d.ts` (11 type tests) runs in `pnpm test`. TypeScript 7.0.2.
+- **Code:** [`next/spikes/tanstack-options/`](../../spikes/tanstack-options/). `core.ts` is a `declare`-only prototype over `@tanstack/query-core` 5.90.20 types; `useQuery`/`useInfiniteQuery` stand in for the framework packages. `tanstack-options.test-d.ts` (11 type tests) ran in `pnpm test` until the feature shipped; git has it. TypeScript 7.0.2.
 
 ## Results
 

@@ -3,7 +3,7 @@
 - **Date:** 2026-10-09
 - **Questions:** (1) Can danSON be ported with its async half on Effect `Stream` while staying wire-compatible with standalone `danson`? (2) Does QP-C (bracket notation + relaxed-JSON leaves + `$Type:value`) round-trip deterministically without a schema, and what does it cost?
 - **Feeds:** [11 — Serialization, query params and files](../proposals/11-serialization-and-files.md) (Q11.1, Q11.2, Q11.3, (e) hardening)
-- **Code:** [`next/spikes/danson/`](../../spikes/danson/). Tests run in `pnpm test`; numbers come from `node danson/compare.ts` (run in `next/spikes`).
+- **Code:** [`next/spikes/danson/`](../../spikes/danson/). `query.test.ts` runs in `pnpm test` (the port's `danson.test.ts` was removed once the port shipped; git has it); numbers come from `node danson/compare.ts` (run in `next/spikes`).
 
 ## What was built
 

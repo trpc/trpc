@@ -3,7 +3,7 @@
 - **Date:** 2026-10-09
 - **Question:** Can 09's contract builder and `t.implement()` check completeness and outputs with readable errors, and what does contract-first cost compared with implementation-first? Do 08's plain-object routers support duplicate-key checks on merge and `lazy()`?
 - **Feeds:** [09 — Contract-first](../proposals/09-contract-first.md) (Q9.1, Q9.2), [08 — Routers](../proposals/08-routers.md) (Q8.1, Q8.2).
-- **Code:** [`next/spikes/contracts/`](../../spikes/contracts/). `core.ts` is a `declare`-only prototype, and `contracts.test-d.ts` (12 type tests) runs in `pnpm test`. Typeperf: `node contracts/bench.ts [n] [runs]` in `next/spikes`. TypeScript 7.0.2.
+- **Code:** [`next/spikes/contracts/`](../../spikes/contracts/). `core.ts` is a `declare`-only prototype, and `contracts.test-d.ts` (12 type tests) ran in `pnpm test` until the feature shipped; git has it. Typeperf: `node contracts/bench.ts [n] [runs]` in `next/spikes`. TypeScript 7.0.2.
 
 ## Contract-first (09)
 

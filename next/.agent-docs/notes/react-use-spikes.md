@@ -2,7 +2,7 @@
 
 2026-10-16. Question (proposal 20 Q20.2, decision [react-use-package](../decisions/react-use-package.md)): should a `use()`-native React integration be a link cache or a React store?
 
-Code: `next/spikes/cache-link/` and `next/spikes/atom-trpc/`; run with `pnpm test` from `next/`. React 19.3.0, `react-dom/static` `prerender` for server renders, happy-dom with `react-dom/client` for browser renders, `effect` 4.0.2 and `@effect/atom-react` 4.0.2.
+Code: `next/spikes/cache-link/` and `next/spikes/atom-trpc/`; their tests were removed once `@trpc12/experimental-react` and `@trpc12/experimental-react-atom` shipped (git has them). React 19.3.0, `react-dom/static` `prerender` for server renders, happy-dom with `react-dom/client` for browser renders, `effect` 4.0.2 and `@effect/atom-react` 4.0.2.
 
 ## C: `cacheLink()`
 

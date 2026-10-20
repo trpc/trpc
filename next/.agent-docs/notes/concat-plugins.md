@@ -6,7 +6,7 @@
 - **Code:** [`next/spikes/concat-plugins/`](../../spikes/concat-plugins/).
   - `core.ts` is a `declare`-only builder with one mapped option bag (03 G-A, still open) and `.use`, `.input`, `.meta`, `.concat`, `.query`.
   - `audit-plugin.ts` is what a package would publish: it uses its own `t`.
-  - `concat-plugins.test-d.ts` (7 type tests) runs in `pnpm test`.
+  - `concat-plugins.test-d.ts` (7 type tests) ran in `pnpm test` until the feature shipped; git has it.
 - **Versions:** TypeScript 7.0.2.
 
 ## v11's model, kept

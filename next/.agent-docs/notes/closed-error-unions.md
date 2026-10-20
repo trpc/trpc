@@ -2,7 +2,7 @@
 
 2026-10-18. Question ([proposal 24](../proposals/24-error-ownership.md), Q24.1–Q24.3): what can a call fail with today, can the client's error union be closed the way [result-rpc](https://result-rpc.com/)'s is, and does exhaustive matching need it?
 
-Code: `next/spikes/closed-errors/`; run with `pnpm test` from `next/`. `effect` 4.0.2.
+Code: `next/spikes/closed-errors/`; its tests were removed once closed error unions shipped (git has them). `effect` 4.0.2.
 
 The lean below shipped ([closed-client-errors](../decisions/closed-client-errors.md)): the spike now checks the shipped union, and `matchError`'s catch-all is `builtin`. The census and findings describe the code before it.
 

@@ -3,7 +3,7 @@
 - **Date:** 2026-10-09
 - **Question:** How do inferred (S1) and declared (S2) services compare in type-check cost and error quality? Can Effect middleware (M-A) provide a service so that downstream procedures no longer require it?
 - **Feeds:** [02 — Effect integration](../proposals/02-effect-integration.md) (Q2.2), [06 — Context and middleware](../proposals/06-context-and-middleware.md) (Q6.6).
-- **Code:** [`next/spikes/effect-services/`](../../spikes/effect-services/). `core.ts` is a `declare`-only prototype, and `effect-services.test-d.ts` (8 type tests) runs in `pnpm test`. Typeperf: `node effect-services/bench.ts [n] [runs]` in `next/spikes`. Effect 4.0.2, TypeScript 7.0.2.
+- **Code:** [`next/spikes/effect-services/`](../../spikes/effect-services/). `core.ts` is a `declare`-only prototype, and `effect-services.test-d.ts` (8 type tests) ran in `pnpm test` until the feature shipped; git has it. Typeperf: `node effect-services/bench.ts [n] [runs]` in `next/spikes`. Effect 4.0.2, TypeScript 7.0.2.
 
 ## Service-providing middleware (06 (g))
 

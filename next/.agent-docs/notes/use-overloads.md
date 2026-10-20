@@ -5,7 +5,7 @@
 - **Feeds:** [root-extensions](../decisions/root-extensions.md), [keep-t-object](../decisions/keep-t-object.md).
 - **Code:** [`next/spikes/use-overloads/`](../../spikes/use-overloads/).
   - `core.ts` is the `declare`-only builder from [`concat-plugins`](./concat-plugins.md), with `concat` folded into `use` overloads, and a root with `use(extension)` and `use(middleware)`.
-  - `use-overloads.test-d.ts` (7 type tests) runs in `pnpm test`.
+  - `use-overloads.test-d.ts` (7 type tests) ran in `pnpm test` until the feature shipped; git has it.
 - **Versions:** TypeScript 7.0.2.
 
 ```ts

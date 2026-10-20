@@ -3,7 +3,7 @@
 - **Date:** 2026-10-09
 - **Question:** Which `createTRPCClient` shapes let links declare typed call options (`query(input, { ignoreCache: true })` only with `cacheLink()`) and context, and what breaks in each?
 - **Feeds:** [17 — Links](../proposals/17-links.md) (Q17.3, Q17.5)
-- **Code:** [`next/spikes/link-options/`](../../spikes/link-options/). `link-options.test-d.ts` runs in `pnpm test` (Vitest typecheck).
+- **Code:** [`next/spikes/link-options/`](../../spikes/link-options/). `link-options.test-d.ts` ran in `pnpm test` (Vitest typecheck) until the feature shipped; git has it.
 
 ## Model
 

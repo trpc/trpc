@@ -3,7 +3,7 @@
 - **Date:** 2026-10-09
 - **Question:** Can the types in 07's combined model be inferred: errors _returned_ from middleware and resolvers, declared error maps, `mapErrors`, the Effect `E` channel, and client narrowing through `safe()`? Where does inference break, and what does it cost on 1k procedures?
 - **Feeds:** [07 — Errors](../proposals/07-errors.md) (Q7.1–Q7.3, Q7.7), [02 — Effect](../proposals/02-effect-integration.md) (d) and Q2.3.
-- **Code:** [`next/spikes/returned-errors/`](../../spikes/returned-errors/). `core.ts` is a `declare`-only prototype using the names in 07's text (`error()`, `.errors()`, `mapErrors`, `safe()`, `defined`); it is not an API proposal. `returned-errors.test-d.ts` (20 type tests) runs in `pnpm test`. Typeperf: `node returned-errors/bench.ts [n] [runs]` in `next/spikes`.
+- **Code:** [`next/spikes/returned-errors/`](../../spikes/returned-errors/). `core.ts` is a `declare`-only prototype using the names in 07's text (`error()`, `.errors()`, `mapErrors`, `safe()`, `defined`); it is not an API proposal. `returned-errors.test-d.ts` (20 type tests) ran in `pnpm test` until the feature shipped; git has it. Typeperf: `node returned-errors/bench.ts [n] [runs]` in `next/spikes`.
 
 ## How the prototype infers errors
 

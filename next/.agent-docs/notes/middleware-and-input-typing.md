@@ -3,7 +3,7 @@
 - **Date:** 2026-10-09
 - **Question:** Can 05's `type<T>()` and input chaining (C-A), and 06's standalone dependency-declaring middleware, `mapInput` and `ok()` short-circuit, be typed with readable errors?
 - **Feeds:** [05 — Validation](../proposals/05-validation-and-schemas.md) (Q5.2, Q5.3), [06 — Context and middleware](../proposals/06-context-and-middleware.md) (Q6.2, Q6.3).
-- **Code:** [`next/spikes/middleware-typing/`](../../spikes/middleware-typing/). `core.ts` is a `declare`-only prototype using the proposals' names. It is not an API proposal. `middleware-typing.test-d.ts` (13 type tests) runs in `pnpm test`.
+- **Code:** [`next/spikes/middleware-typing/`](../../spikes/middleware-typing/). `core.ts` is a `declare`-only prototype using the proposals' names. It is not an API proposal. `middleware-typing.test-d.ts` (13 type tests) ran in `pnpm test` until the feature shipped; git has it.
 
 ## Results
 

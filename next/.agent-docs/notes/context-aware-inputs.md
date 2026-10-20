@@ -5,7 +5,7 @@
 - **Feeds:** [05 — Validation](../proposals/05-validation-and-schemas.md) (Q5.1, new Q5.6), [validation](../decisions/validation.md).
 - **Code:** [`next/spikes/context-aware-input/`](../../spikes/context-aware-input/).
   - `core.ts` is a small runtime builder that runs each call as an Effect, with a fiber hop between steps. Middleware is simplified to "return a ctx extension", and `provideService` stands in for 06 (g)'s service-providing Effect middleware. It is not an API proposal.
-  - `context-aware-input.test.ts` (16 runtime tests) and `.test-d.ts` (12 type tests) run in `pnpm test`.
+  - `context-aware-input.test.ts` (16 runtime tests) and `.test-d.ts` (12 type tests) ran in `pnpm test` until the feature shipped; git has them.
   - `bench.ts` measures per-call cost: `node context-aware-input/bench.ts [iterations]`.
 - **Versions:** zod 4.6.5, arktype 2.2.8, effect 4.0.2, TypeScript 7.0.2, Node 24.21.0, 4 vCPUs.
 
