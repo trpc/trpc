@@ -3,11 +3,12 @@ import type { TwoslashShikiReturn } from '@shikijs/twoslash/core';
 import { describe, expect, it } from '@effect/vitest';
 import { Effect, FileSystem, Path } from 'effect';
 
-import { renderMarkdown } from './markdown.ts';
+import { releaseTwoslashers, renderMarkdown } from './markdown.ts';
 import {
   fingerprint,
   makeTwoslashCache,
   type TwoslashBlock,
+  type TwoslashCache,
   type TwoslashCacheOptions,
 } from './twoslash-cache.ts';
 
@@ -395,5 +396,47 @@ describe('makeTwoslashCache', () => {
       expect(cached.stats).toEqual({ hits: 1, misses: 0 });
       expect(second).toEqual(first);
     }).pipe(Effect.provide(NodeServices.layer)),
+  );
+
+  it.effect(
+    'misses after an edit to a file of the app outside its tsconfig that the block imports',
+    () =>
+      Effect.gen(function* () {
+        const fs = yield* FileSystem.FileSystem;
+        const path = yield* Path.Path;
+        const dirs = yield* setup();
+        const stub = path.join(dirs.samplesDir, 'docs/open/stub.ts');
+        yield* fs.makeDirectory(path.dirname(stub));
+        yield* fs.writeFileString(stub, 'export declare const a: number;');
+        const markdown = [
+          '```ts twoslash',
+          "import { a } from '../open/stub';",
+          'const b = a;',
+          '//    ^?',
+          '```',
+        ].join('\n');
+        const render = (cache: TwoslashCache) =>
+          renderMarkdown(markdown, {
+            basePath: '/docs',
+            samplesDir: dirs.samplesDir,
+            slug: 'test',
+            sourceUrl: 'https://example.com',
+            twoslashCache: cache,
+          });
+
+        const first = makeTwoslashCache(dirs.options);
+        expect((yield* render(first)).typeQueries).toEqual([
+          ['const b: number'],
+        ]);
+
+        yield* fs.writeFileString(stub, 'export declare const a: string;');
+        // A twoslasher keeps the files it read, as a build's processes do.
+        releaseTwoslashers();
+        const edited = makeTwoslashCache(dirs.options);
+        expect((yield* render(edited)).typeQueries).toEqual([
+          ['const b: string'],
+        ]);
+        expect(edited.stats).toEqual({ hits: 0, misses: 1 });
+      }).pipe(Effect.provide(NodeServices.layer)),
   );
 });

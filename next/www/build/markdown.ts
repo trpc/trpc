@@ -791,19 +791,21 @@ const twoslashTransformer = Effect.fn('twoslashTransformer')(function* (
     const compiled = twoslasherFor(root, tsLibDirectory)(code, lang, options);
     const program = compiled.program;
     if (key !== undefined && program) {
-      // The files under the root outside `node_modules` are the app's,
-      // which the key covers, or a block's, which twoslash writes and
-      // then empties; a block can write one in `node_modules` too.
-      // TypeScript's own libs come with the key's tools.
-      const blockFiles = new Set(
-        Array.from(code.matchAll(blockFilename), (match) =>
-          path.join(root, match[1] ?? ''),
-        ),
+      // The app's files (its tsconfig's), which the key covers, and the
+      // block's, which twoslash writes and then empties (the code before
+      // its first `// @filename` in `index.<extension>`), aren't listed.
+      // Every other file is, with the app's own outside its tsconfig (the
+      // stubs in `decisions/open/`). TypeScript's own libs come with the
+      // key's tools.
+      const keyed = new Set(
+        [
+          'index.ts',
+          'index.tsx',
+          ...Array.from(code.matchAll(blockFilename), (match) => match[1]),
+          ...Object.keys(options?.extraFiles ?? {}),
+        ].map((name) => path.join(root, name ?? '')),
       );
-      const appFile = (fileName: string) =>
-        blockFiles.has(fileName) ||
-        (fileName.startsWith(`${root}/`) &&
-          !fileName.slice(root.length).includes('/node_modules/'));
+      const appFile = (fileName: string) => keyed.has(fileName);
       session?.set(
         key,
         compiled.result,
