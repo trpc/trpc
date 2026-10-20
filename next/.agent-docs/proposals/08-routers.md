@@ -96,7 +96,7 @@ export type AppRouter = typeof appRouter;
 - **Reserved keys:** keep the v11 runtime check. Also reserve keys starting with `~` (our def namespace).
 - **Inference helpers:** `inferRouterInputs`, `inferRouterOutputs` and `inferRouterErrors` (07), plus `inferContract<typeof router>` (01, 09).
 
-> **Spike (2026-10-09):** [`notes/contracts-and-routers-typing.md`](../notes/contracts-and-routers-typing.md).
+> **Spike (2026-10-09):** [`notes/contracts-and-routers-typing.md`](https://github.com/trpc/trpc/blob/d5c34c43000547776ca234ac47edafd48370e6fd/next/.agent-docs/notes/contracts-and-routers-typing.md).
 >
 > - Object spread can't detect duplicate keys, at the type level or at runtime. `{ ...a, ...b }` silently keeps `b`'s value, and the duplicate is gone before `createHandler()` sees it. The "Merging" bullet above therefore needs a variadic merge helper (prototyped) or has to accept silent overwrites.
 > - `lazy()` with default or named exports, and the client unwrapping it, both type fine.

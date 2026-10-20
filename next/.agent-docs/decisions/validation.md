@@ -13,5 +13,5 @@
 - Human, 2026-10-15 (Q5.4): "Yes", and "those validation errors should be inferrable automatically". Input validation errors include `data.issues` (`{ path, message }[]`) in every environment, and any procedure with an `.input()` has a defined `BAD_REQUEST` with typed `issues` in its error union.
 - (agent, Q5.1) V-A: Standard Schema and Effect Schema only.
 - (agent, Q5.3) C-A: inputs chain. Each schema sees the raw input, and object outputs are merged.
-- (agent, Q5.6) D-A: `.input(({ ctx, meta, path }) => schema)` is the context-aware form ([`../notes/context-aware-inputs.md`](../notes/context-aware-inputs.md)). D-C (Effect Schema services) works too, because inputs are decoded with the procedure's provided services.
+- (agent, Q5.6) D-A: `.input(({ ctx, meta, path }) => schema)` is the context-aware form ([`../notes/context-aware-inputs.md`](https://github.com/trpc/trpc/blob/d5c34c43000547776ca234ac47edafd48370e6fd/next/.agent-docs/notes/context-aware-inputs.md)). D-C (Effect Schema services) works too, because inputs are decoded with the procedure's provided services.
 - Lives in: `packages/trpc/src/server/validation/schema.ts`, `src/server/procedures/builder.ts`.

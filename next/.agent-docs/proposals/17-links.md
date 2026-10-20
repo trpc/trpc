@@ -112,7 +112,7 @@ The client merges the declarations of all links into its call-options type. The 
 | **D-D** Global `Register`        | `declare module … { interface Register { router: AppRouter } }`                                        | No generics at all. Global, so it breaks with multiple clients and libraries                                                                                               |
 | **D-E** Return annotation (oRPC) | `const client: TRPCClient<AppRouter, LinksOf<typeof links>> = createTRPCClient({ links })`             | Explicit. The user writes the link type twice                                                                                                                              |
 
-> **Spike (2026-10-09):** [`notes/link-call-options-typing.md`](../notes/link-call-options-typing.md). D-A and D-C type options and inline router-aware links with plain inference; D-B/D-E links cannot see the router; D-E is unsound unless checked. Merging costs ~7% instantiations on a 1k-procedure client. The link phantom must be invariant.
+> **Spike (2026-10-09):** [`notes/link-call-options-typing.md`](https://github.com/trpc/trpc/blob/d5c34c43000547776ca234ac47edafd48370e6fd/next/.agent-docs/notes/link-call-options-typing.md). D-A and D-C type options and inline router-aware links with plain inference; D-B/D-E links cannot see the router; D-E is unsound unless checked. Merging costs ~7% instantiations on a 1k-procedure client. The link phantom must be invariant.
 
 ### (d) Where link-declared fields go
 

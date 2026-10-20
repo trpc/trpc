@@ -118,7 +118,7 @@ t.procedure.input(type<{ id: string }>()).query(…); // no runtime validation
   t.procedure.input(A).input(B); // type error: no `.input()` after the first, as in oRPC's builder
   ```
 
-> **Spike (2026-10-09):** [`notes/middleware-and-input-typing.md`](../notes/middleware-and-input-typing.md). C-A types cleanly: object inputs merge, the client input is built from the schemas' input types, and middleware sees the inputs declared so far. Non-object or conflicting chains can be rejected on the offending `.input()` with a named error. The conflict check is shallow. `type<T>()` needs nothing special.
+> **Spike (2026-10-09):** [`notes/middleware-and-input-typing.md`](https://github.com/trpc/trpc/blob/d5c34c43000547776ca234ac47edafd48370e6fd/next/.agent-docs/notes/middleware-and-input-typing.md). C-A types cleanly: object inputs merge, the client input is built from the schemas' input types, and middleware sees the inputs declared so far. Non-object or conflicting chains can be rejected on the offending `.input()` with a named error. The conflict check is shallow. `type<T>()` needs nothing special.
 
 ### (d) Input as a function of `ctx`
 
@@ -187,7 +187,7 @@ t.procedure.input(type<{ id: string }>()).query(…); // no runtime validation
 
 - **D-D — None.** Validate the shape statically and check ctx-dependent rules in a middleware after `.input()`. This needs no new API.
 
-> **Spike (2026-10-09):** [`notes/context-aware-inputs.md`](../notes/context-aware-inputs.md) has runtime and type tests for D-A, D-B and D-C, plus a per-call benchmark. Effect 4 keeps AsyncLocalStorage context across fiber hops. Zod's `~standard.validate` runs every refinement twice when any refinement is async: it tries synchronously first, then reruns everything asynchronously. That affects all async Zod refinements, with or without D-B.
+> **Spike (2026-10-09):** [`notes/context-aware-inputs.md`](https://github.com/trpc/trpc/blob/d5c34c43000547776ca234ac47edafd48370e6fd/next/.agent-docs/notes/context-aware-inputs.md) has runtime and type tests for D-A, D-B and D-C, plus a per-call benchmark. Effect 4 keeps AsyncLocalStorage context across fiber hops. Zod's `~standard.validate` runs every refinement twice when any refinement is async: it tries synchronously first, then reruns everything asynchronously. That affects all async Zod refinements, with or without D-B.
 
 > ⚠️ **Parity:** procedures that use D-A have no static input schema. OpenAPI for them must come from `.route({ spec })`, or from a static `.input()` chained before the callback. This doesn't block the "OpenAPI support" row, because the callback is opt-in per procedure.
 

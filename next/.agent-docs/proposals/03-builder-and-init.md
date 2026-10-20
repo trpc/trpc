@@ -156,7 +156,7 @@ Moving transport options out of the root:
   }
   ```
 
-> **Spike (2026-10-09):** [`notes/builder-generics-typeperf.md`](../notes/builder-generics-typeperf.md). On 1k procedures, bags cost +15–25% check time and scale linearly. A flat mapped patch keeps hovers flat; `Omit & Patch` nests one layer per call.
+> **Spike (2026-10-09):** [`notes/builder-generics-typeperf.md`](https://github.com/trpc/trpc/blob/d5c34c43000547776ca234ac47edafd48370e6fd/next/.agent-docs/notes/builder-generics-typeperf.md). On 1k procedures, bags cost +15–25% check time and scale linearly. A flat mapped patch keeps hovers flat; `Omit & Patch` nests one layer per call.
 
 ### (c) The "generic builder" from the [brief](../decisions/brief.md)
 

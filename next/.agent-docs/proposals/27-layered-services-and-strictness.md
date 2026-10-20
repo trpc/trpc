@@ -159,7 +159,7 @@ createFetchHandler({
 ```
 
 - The prototype is `useService(builder, Key)`: `next` is an opaque `Effect<Next, never, Provides>`, `Provides` drops out, the key joins `requires`, the declared error joins the procedure's errors, and a procedure without the ctx the middleware reads is a compile error. `AuthLive` is built once per handler.
-- The shipped version would be an overload of `.use()` that takes a key; the middleware function, plugin and extension forms are already overloads ([use-overloads](../notes/use-overloads.md)).
+- The shipped version would be an overload of `.use()` that takes a key; the middleware function, plugin and extension forms are already overloads ([use-overloads](https://github.com/trpc/trpc/blob/d5c34c43000547776ca234ac47edafd48370e6fd/next/.agent-docs/notes/use-overloads.md)).
 - It works today as a pattern: an Effect middleware whose body yields the key and calls it. P2 is a type (`MiddlewareImpl`) and a `.use()` overload on top of that.
 
 - ✅ Effect-native, and the same shape as `effect/rpc` and `effect/http-api` middleware: tests swap `AuthLive` for a fake layer, and the procedures stay the same.

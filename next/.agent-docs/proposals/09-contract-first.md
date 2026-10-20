@@ -164,7 +164,7 @@ const client = createTRPCClient<typeof appContract>({
   createTRPCClient<AppContract>({ links: [httpLink({ url })] });
   ```
 
-> **Spike (2026-10-09):** [`notes/contracts-and-routers-typing.md`](../notes/contracts-and-routers-typing.md).
+> **Spike (2026-10-09):** [`notes/contracts-and-routers-typing.md`](https://github.com/trpc/trpc/blob/d5c34c43000547776ca234ac47edafd48370e6fd/next/.agent-docs/notes/contracts-and-routers-typing.md).
 >
 > - The Q9.1 terminal and options-bag forms produce identical types.
 > - `t.implement()` leaves expose only `.use()` and the matching terminal.

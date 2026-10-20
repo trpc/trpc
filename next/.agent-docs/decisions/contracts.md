@@ -1,7 +1,7 @@
 # Contracts use resolver-less terminals (human)
 
 - Human, 2026-10-09 (Q9.1): "first". Contract procedures use the procedure builder's verbs with a terminal that takes no resolver: `c.input(ById).output(Post).query()`.
-- Why: the verbs tRPC users already know, not a second syntax. The spike ([`../notes/contracts-and-routers-typing.md`](../notes/contracts-and-routers-typing.md)) showed it gives the same types as an options bag.
+- Why: the verbs tRPC users already know, not a second syntax. The spike ([`../notes/contracts-and-routers-typing.md`](https://github.com/trpc/trpc/blob/d5c34c43000547776ca234ac47edafd48370e6fd/next/.agent-docs/notes/contracts-and-routers-typing.md)) showed it gives the same types as an options bag.
 - Lost: the options bag `contract.procedure({ type, input, output })`.
 - (agent) `experimental_contract.create<{ meta }>()` has `.input()`, `.output()`, `.errors()`, `.route()`, `.meta()` and `.query()` / `.mutation()` / `.subscription({ tracked? })`. A contract procedure is an ordinary `Procedure` with `resolver: undefined`, so clients, `experimental_generateOpenApi` and `experimental_toContract` accept contracts and routers alike. The builder has its own small runtime, so a contract package doesn't load server execution code.
 - (agent) `subscription({ tracked: true })`: a tracked event is `{ id, data }` on the wire, so the contract has to say so for clients to be typed correctly.

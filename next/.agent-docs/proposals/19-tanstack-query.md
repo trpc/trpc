@@ -121,7 +121,7 @@ useInfiniteQuery(
 );
 ```
 
-> **Spike (2026-10-09):** [`notes/tanstack-options-typing.md`](../notes/tanstack-options-typing.md).
+> **Spike (2026-10-09):** [`notes/tanstack-options-typing.md`](https://github.com/trpc/trpc/blob/d5c34c43000547776ca234ac47edafd48370e6fd/next/.agent-docs/notes/tanstack-options-typing.md).
 >
 > - Against `@tanstack/query-core` 5.90 types, the option bag types identically to v11's positional form. That covers `select` inference, `skipToken`, `DataTag` keys for `getQueryData`, and excess-property errors on misspelled options.
 > - Explicit infinite `input: (pageParam) => …` has TanStack's usual pitfall: with `initialPageParam: undefined` and no annotation, the page param infers as `undefined`. v11's `cursor` convention avoids that.

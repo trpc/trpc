@@ -136,7 +136,7 @@ QP-C rules (to be prototyped):
 
 The OpenAPI handler uses the same bracket parser but coerces leaves using the schema instead of relaxed JSON (18).
 
-> **Spike (2026-10-09):** [`notes/danson-port-and-query-params.md`](../notes/danson-port-and-query-params.md). danSON ports onto Effect `Stream` with byte-identical output to `danson@0.13.1`. QP-C round-trips without a schema; URLs are 2–4× shorter than QP-A; empty containers don't need the fallback. Also found two hardening gaps in `danson@0.13.1` itself.
+> **Spike (2026-10-09):** [`notes/danson-port-and-query-params.md`](https://github.com/trpc/trpc/blob/d5c34c43000547776ca234ac47edafd48370e6fd/next/.agent-docs/notes/danson-port-and-query-params.md). danSON ports onto Effect `Stream` with byte-identical output to `danson@0.13.1`. QP-C round-trips without a schema; URLs are 2–4× shorter than QP-A; empty containers don't need the fallback. Also found two hardening gaps in `danson@0.13.1` itself.
 
 ### (d) Client types
 

@@ -145,7 +145,7 @@ const handler = createHandler({
 });
 ```
 
-> **Spike (2026-10-09):** [`notes/effect-services-typing.md`](../notes/effect-services-typing.md).
+> **Spike (2026-10-09):** [`notes/effect-services-typing.md`](https://github.com/trpc/trpc/blob/d5c34c43000547776ca234ac47edafd48370e6fd/next/.agent-docs/notes/effect-services-typing.md).
 >
 > - S1's router-wide union is cheap: about 9% more instantiations than S2 and no measurable check time at 1k–2k procedures. The cost concern above doesn't hold.
 > - Both reject an incomplete `layer`. An explicit check is needed to name the missing service, because `Layer`'s own variance error is unreadable.
@@ -252,7 +252,7 @@ It lives in `@trpc12/trpc/effect`. Per the [brief](../decisions/brief.md), anyth
 - Keep `Schema` and `effect/http` **out of the client's default path**.
 - Set a size budget after the first spike, and enforce it in CI with a bundle fixture (Effect's `packages/tools/bundle` is the model).
 
-> **Spike (2026-10-09):** [`notes/effect-client-bundle-size.md`](../notes/effect-client-bundle-size.md). With a minimal Effect client (Promise or Effect surface), Effect's runtime is most of the size: 8.8 KB min+gzip, vs 5.7 KB for v11's `httpBatchLink` client. A full client (retry, SSE, danSON streaming) is 23.7 KB vs 12.9 KB for v11. Streaming danSON (`Queue`) is the most expensive single piece. On 4.0.2, Schema is ~22 KB rather than 15 KB. Includes candidate budgets.
+> **Spike (2026-10-09):** [`notes/effect-client-bundle-size.md`](https://github.com/trpc/trpc/blob/d5c34c43000547776ca234ac47edafd48370e6fd/next/.agent-docs/notes/effect-client-bundle-size.md). With a minimal Effect client (Promise or Effect surface), Effect's runtime is most of the size: 8.8 KB min+gzip, vs 5.7 KB for v11's `httpBatchLink` client. A full client (retry, SSE, danSON streaming) is 23.7 KB vs 12.9 KB for v11. Streaming danSON (`Queue`) is the most expensive single piece. On 4.0.2, Schema is ~22 KB rather than 15 KB. Includes candidate budgets.
 
 ### (h) Effect version policy
 

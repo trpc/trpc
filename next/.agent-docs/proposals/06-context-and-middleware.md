@@ -105,7 +105,7 @@ t.procedure.use(withOrg); // type error: requires input.orgId and ctx.db
     .use(withOrg, (input) => ({ orgId: input.post.orgId }));
   ```
 
-> **Spike (2026-10-09):** [`notes/middleware-and-input-typing.md`](../notes/middleware-and-input-typing.md).
+> **Spike (2026-10-09):** [`notes/middleware-and-input-typing.md`](https://github.com/trpc/trpc/blob/d5c34c43000547776ca234ac47edafd48370e6fd/next/.agent-docs/notes/middleware-and-input-typing.md).
 >
 > - Standalone middleware needs no special `.use()` overload. `middleware<{ ctx; input }>()(fn)` is identity, and unmet requirements fail through parameter contravariance with a readable "Property 'orgId' is missing".
 > - `mapInput` is an arity overload.
@@ -131,7 +131,7 @@ t.procedure.use(withOrg); // type error: requires input.orgId and ctx.db
 
   - **Required ([keep-t-object](../decisions/keep-t-object.md)):** standalone packages must be able to publish plugins this way. A plugin's own `t` declares the ctx and meta it needs, and its middleware and inputs are what it adds.
 
-  > **Spike (2026-10-10):** [`notes/concat-plugins.md`](../notes/concat-plugins.md). `.concat()` works with `initTRPC<{ … }>()`. Requirements are checked against the current ctx (after middleware), and errors name the missing key ("db"), not v11's bare "Context mismatch". Plugin ctx and inputs flow on, plugins compose, and a published plugin's `.d.ts` is flat and readable. Every type a builder can contain must be exported: a private `unique symbol` broke declaration emit (TS2527).
+  > **Spike (2026-10-10):** [`notes/concat-plugins.md`](https://github.com/trpc/trpc/blob/d5c34c43000547776ca234ac47edafd48370e6fd/next/.agent-docs/notes/concat-plugins.md). `.concat()` works with `initTRPC<{ … }>()`. Requirements are checked against the current ctx (after middleware), and errors name the missing key ("db"), not v11's bare "Context mismatch". Plugin ctx and inputs flow on, plugins compose, and a published plugin's `.d.ts` is flat and readable. Every type a builder can contain must be exported: a private `unique symbol` broke declaration emit (TS2527).
 
 - **Router-level middleware** (`t.router(routes, { use: [mw] })` or oRPC's `os.use(mw).router(…)`):
   - ✅ Frequently requested.
@@ -214,7 +214,7 @@ const loggedProcedure = t.procedure
 
   The typing of "removes `CurrentUser` from R" needs a spike. It may land after v1.
 
-> **Spike (2026-10-09):** [`notes/effect-services-typing.md`](../notes/effect-services-typing.md). M-A with a declared `provides` works. `next()` requires the provided services, so a body that forgets to provide them is a type error (the `effect/rpc` `RpcMiddleware` trick). Procedures after the middleware drop the service from `R` and gain the middleware's own `R` and errors. The provided set can't be inferred from `Effect.provideService` on an opaque `next()`.
+> **Spike (2026-10-09):** [`notes/effect-services-typing.md`](https://github.com/trpc/trpc/blob/d5c34c43000547776ca234ac47edafd48370e6fd/next/.agent-docs/notes/effect-services-typing.md). M-A with a declared `provides` works. `next()` requires the provided services, so a body that forgets to provide them is a type error (the `effect/rpc` `RpcMiddleware` trick). Procedures after the middleware drop the service from `R` and gain the middleware's own `R` and errors. The provided set can't be inferred from `Effect.provideService` on an opaque `next()`.
 
 ## Recommendation
 

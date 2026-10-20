@@ -277,7 +277,7 @@ const base = t.procedure.use(
 );
 ```
 
-> **Spike (2026-10-09):** [`notes/returned-error-inference.md`](../notes/returned-error-inference.md). Type-level prototype of the combined model. The following all infer correctly: returned errors (middleware and resolvers), declared maps, `mapErrors`, `return yield* error()`, and client narrowing for all three `safe()` shapes. A yieldable `TRPCError` is itself an `Effect`, so "returned" and "failed" are one rule. Pitfalls: `any`/`unknown`/`{}` outputs swallow returned errors through subtype reduction, and narrowing by `code` without `defined` mixes in the unexpected branch. Typeperf on 1k procedures: split ctx/error inference costs +0.4% instantiations, whole-return inference +33%. The 02 (d.ii) check costs 7–9%.
+> **Spike (2026-10-09):** [`notes/returned-error-inference.md`](https://github.com/trpc/trpc/blob/d5c34c43000547776ca234ac47edafd48370e6fd/next/.agent-docs/notes/returned-error-inference.md). Type-level prototype of the combined model. The following all infer correctly: returned errors (middleware and resolvers), declared maps, `mapErrors`, `return yield* error()`, and client narrowing for all three `safe()` shapes. A yieldable `TRPCError` is itself an `Effect`, so "returned" and "failed" are one rule. Pitfalls: `any`/`unknown`/`{}` outputs swallow returned errors through subtype reduction, and narrowing by `code` without `defined` mixes in the unexpected branch. Typeperf on 1k procedures: split ctx/error inference costs +0.4% instantiations, whole-return inference +33%. The 02 (d.ii) check costs 7–9%.
 
 ## Recommendation
 
