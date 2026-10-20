@@ -151,7 +151,7 @@ From the whole tRPC Core Team, thank you for using and supporting tRPC.
 
 <a
       id="sponsor-button"
-      href="https://trpc.io/sponsor"
+      href="/sponsor"
       class="group flex h-12 w-max items-center gap-4 rounded-lg border-2 bg-zinc-200 px-4 py-2 transition hover:bg-zinc-100 dark:border-zinc-900 dark:bg-zinc-800 hover:dark:border-zinc-700 hover:dark:bg-zinc-900"
     >
       <svg

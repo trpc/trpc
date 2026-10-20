@@ -795,6 +795,29 @@ describe('resolveLink', () => {
     });
   });
 
+  it("links this site's own page where trpc.io redirects off the site", () => {
+    const sponsoring: Parameters<typeof resolveLink>[1] = {
+      ...context,
+      docs: {
+        ...context.docs,
+        redirects: [
+          {
+            destination: 'https://github.com/sponsors/trpc',
+            source: '/sponsor',
+          },
+        ],
+      },
+    };
+    expect(resolveLink('https://trpc.io/sponsor', sponsoring)).toEqual({
+      kind: 'url',
+      url: '/sponsor',
+    });
+    expect(resolveLink('/sponsor#tiers', sponsoring)).toEqual({
+      kind: 'url',
+      url: '/sponsor#tiers',
+    });
+  });
+
   it("resolves a post's file and its URL, after redirects, and a post's own links from the blog", () => {
     expect(
       resolveLink(

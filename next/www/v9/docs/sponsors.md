@@ -5,13 +5,13 @@ section: "tRPC"
 order: 7
 ---
 
-If you enjoy working with tRPC and want to support the project, consider giving a token appreciation by [GitHub Sponsors](https://trpc.io/sponsor)!
+If you enjoy working with tRPC and want to support the project, consider giving a token appreciation by [GitHub Sponsors](/sponsor)!
 
-Also, if your company is using tRPC and want to support long-term maintenance of tRPC, have a look at the [sponsorship tiers](https://trpc.io/sponsor) or [get in touch](mailto:alex@trpc.io) to discuss potential partnerships.
+Also, if your company is using tRPC and want to support long-term maintenance of tRPC, have a look at the [sponsorship tiers](/sponsor) or [get in touch](mailto:alex@trpc.io) to discuss potential partnerships.
 
 <a
       id="sponsor-button"
-      href="https://trpc.io/sponsor"
+      href="/sponsor"
       class="group flex h-12 w-max items-center gap-4 rounded-lg border-2 bg-zinc-200 px-4 py-2 transition hover:bg-zinc-100 dark:border-zinc-900 dark:bg-zinc-800 hover:dark:border-zinc-700 hover:dark:bg-zinc-900"
     >
       <svg

@@ -296,6 +296,12 @@ function hashOf(url: URL) {
 }
 
 /**
+ * trpc.io's paths this site has a page of its own at, which wins over
+ * trpc.io's redirect of the path (its `/sponsor` goes to GitHub Sponsors).
+ */
+const servedHere: ReadonlySet<string> = new Set(['/sponsor']);
+
+/**
  * Resolves a link as Docusaurus does: a path to an `.md` or `.mdx` file is
  * that file, relative to the linking file (or, from `/`, to the version's
  * docs dir or to `www/`);
@@ -400,6 +406,12 @@ export function resolveLink(
       kind: 'page',
       slug: own.slug,
       version: own.version,
+    };
+  }
+  if (servedHere.has(decoded.replace(/(.)\/$/, '$1'))) {
+    return {
+      kind: 'url',
+      url: `${target.pathname}${target.search}${target.hash}`,
     };
   }
   const pathname = redirected(decoded, context.docs.redirects) ?? decoded;
