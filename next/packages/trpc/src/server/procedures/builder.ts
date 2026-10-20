@@ -1,14 +1,16 @@
 import {
+  Data,
   Match,
   type Context,
   type Effect,
   type Scope,
   type Stream,
 } from 'effect';
-import type {
-  AnyTrpcError,
-  ReservedKeyCheck,
-  TrpcError,
+import {
+  makeErrorsYieldable,
+  type AnyTrpcError,
+  type ReservedKeyCheck,
+  type TrpcError,
 } from '../../internal/error.ts';
 import type {
   IsAny,
@@ -1099,6 +1101,7 @@ export function appendSteps(
 export function createBuilder(
   internals: BuilderInternals,
 ): AnyProcedureBuilder {
+  makeErrorsYieldable(Data.Error);
   const add = (step: Step) =>
     createBuilder({ ...internals, steps: [...internals.steps, step] });
   const build =
