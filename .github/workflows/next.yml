@@ -148,6 +148,9 @@ jobs:
       - run: pnpm --filter @trpc12/www decisions:layout
       # A URL without a page gets 404.html, which hydrates without a mismatch.
       - run: pnpm --filter @trpc12/www not-found:check
+      # The codemod runs on its page without cross-origin isolation, and the
+      # playground fits a phone.
+      - run: pnpm --filter @trpc12/www codemod-playground:check
 
   www-trpc-io:
     # The docs site as trpc.io's build (`site.url` at https://trpc.io), where
