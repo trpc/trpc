@@ -108,15 +108,16 @@ test('select as transform with initial data', async () => {
   const { client, App } = ctx;
 
   function MyComponent() {
-    // @ts-expect-error - initialData must match the procedure output, not the select
     client.greeting.useQuery(
       { name: 'foo' },
       {
+        // @ts-expect-error - initialData must match the procedure output, not the select
         select(data) {
           // remap text prop to foo
           return { foo: data.text };
         },
         initialData: {
+          // @ts-expect-error - initialData must match the procedure output, not the select
           foo: 'hello foo',
         },
       },

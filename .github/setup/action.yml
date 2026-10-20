@@ -3,22 +3,25 @@ description: Composite action that sets up pnpm
 runs:
   using: 'composite'
   steps:
-    - uses: pnpm/action-setup@v5
-    - uses: actions/setup-node@v6
+    - uses: pnpm/action-setup@v6
+    - uses: actions/setup-node@v7
       with:
-        node-version: 24.x
+        node-version-file: '.nvmrc'
 
     - name: Get pnpm store directory
       shell: bash
       id: pnpm-cache
       run: |
         echo "pnpm_cache_dir=$(pnpm store path)" >> $GITHUB_OUTPUT
-    - uses: actions/cache@v5
+    - uses: actions/cache@v6
       name: Setup pnpm cache
       with:
         path: ${{ steps.pnpm-cache.outputs.pnpm_cache_dir }}
-        key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+        key: ${{ runner.os }}-pnpm-store-${{ hashFiles('pnpm-lock.yaml') }}
         restore-keys: |
           ${{ runner.os }}-pnpm-store-
     - run: pnpm install
       shell: bash
+      env:
+        # `playwright@1.28.1` (via `konn`) downloads browsers on install; e2e uses the runner's Chrome
+        PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'

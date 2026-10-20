@@ -23,9 +23,8 @@ function assertIsRequestId(
 ): asserts obj is number | string | null {
   if (
     obj !== null &&
-    typeof obj === 'number' &&
-    isNaN(obj) &&
-    typeof obj !== 'string'
+    typeof obj !== 'string' &&
+    (typeof obj !== 'number' || isNaN(obj))
   ) {
     throw new Error('Invalid request id');
   }

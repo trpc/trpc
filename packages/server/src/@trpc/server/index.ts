@@ -22,6 +22,7 @@ export {
   type inferRouterContext,
   type inferClientTypes as inferTRPCClientTypes,
   type AnyClientTypes as AnyTRPCClientTypes,
+  type inferProcedureErrorShape,
   type inferTransformedProcedureOutput,
   type inferTransformedSubscriptionOutput,
   type AnyProcedure as AnyTRPCProcedure,
@@ -79,6 +80,10 @@ export {
    * @internal
    */
   type UnsetMarker as TRPCUnsetMarker,
+  /**
+   * @internal
+   */
+  type Unwrap as TRPCUnwrap,
 } from '../../unstable-core-do-not-import';
 
 export type {
