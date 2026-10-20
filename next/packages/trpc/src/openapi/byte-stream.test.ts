@@ -182,6 +182,19 @@ test("a byte stream's JSON Schema is binary, so a contract describes it", () => 
   });
 });
 
+test('a byte stream has no JSON form to decode or encode', async () => {
+  const json = Schema.toCodecJson(experimental_byteStream());
+  const decoded = await Effect.runPromiseExit(
+    Schema.decodeUnknownEffect(json)('bytes'),
+  );
+  const encoded = await Effect.runPromiseExit(
+    Schema.encodeUnknownEffect(json)(Stream.empty),
+  );
+  for (const exit of [decoded, encoded]) {
+    expect(String(exit)).toContain('A byte stream has no JSON form');
+  }
+});
+
 test('a handler built from a contract streams the body too', async () => {
   await using handler = experimental_createOpenApiHandler({
     router,
