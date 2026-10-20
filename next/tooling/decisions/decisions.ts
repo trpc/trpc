@@ -15,7 +15,7 @@ import { NodeRuntime, NodeServices } from '@effect/platform-node';
 import { Console, Data, Effect, FileSystem, Option, Path } from 'effect';
 import { Argument, Command, Flag } from 'effect/cli';
 import type { PlatformError } from 'effect/PlatformError';
-import { readOpenQuestions } from './open.ts';
+import { type InvalidOpenQuestion, readOpenQuestions } from './open.ts';
 
 export type Who = 'human' | 'human asked' | 'agent';
 
@@ -208,7 +208,9 @@ const listPending = (query: RegExp | undefined) =>
     const found = all.filter(
       (q) =>
         !query ||
-        query.test(`${q.title} ${q.summary} ${q.area} ${q.why} ${q.details ?? ''}`),
+        query.test(
+          `${q.title} ${q.summary} ${q.area} ${q.why} ${q.details ?? ''}`,
+        ),
     );
     for (const q of found) {
       yield* Console.log(`${q.file.padEnd(44)} [${q.area}] ${q.title}`);
@@ -257,7 +259,13 @@ export const decisionsCommand = Command.make(
     questions: Flag.Boolean('questions').pipe(Flag.withDefault(false)),
     pending: Flag.Boolean('pending').pipe(Flag.withDefault(false)),
   },
-  (opts) =>
+  (
+    opts,
+  ): Effect.Effect<
+    void,
+    InvalidDecision | InvalidOpenQuestion | PlatformError,
+    FileSystem.FileSystem | Path.Path
+  > =>
     opts.pending
       ? listPending(
           opts.terms.length > 0
@@ -265,17 +273,17 @@ export const decisionsCommand = Command.make(
             : undefined,
         )
       : opts.questions
-      ? listQuestions
-      : listDecisions({
-          who: Option.getOrUndefined(opts.who),
-          open: opts.open,
-          tentative: opts.tentative,
-          agentBullets: opts.agentBullets,
-          query:
-            opts.terms.length > 0
-              ? new RegExp(opts.terms.join(' '), 'i')
-              : undefined,
-        }),
+        ? listQuestions
+        : listDecisions({
+            who: Option.getOrUndefined(opts.who),
+            open: opts.open,
+            tentative: opts.tentative,
+            agentBullets: opts.agentBullets,
+            query:
+              opts.terms.length > 0
+                ? new RegExp(opts.terms.join(' '), 'i')
+                : undefined,
+          }),
 ).pipe(Command.withDescription('List and search the decision records'));
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

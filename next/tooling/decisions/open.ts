@@ -171,7 +171,10 @@ export const parseOpenQuestion = (
     if (!match) {
       return yield* fail('starts with a `---` frontmatter block');
     }
-    const frontmatter = yield* Effect.try(() => parseYaml(match[1]!)).pipe(
+    const frontmatter = yield* Effect.try({
+      catch: (cause) => cause,
+      try: () => parseYaml(match[1]!),
+    }).pipe(
       Effect.flatMap(Schema.decodeUnknownEffect(Frontmatter)),
       Effect.mapError((cause) =>
         fail(
@@ -180,17 +183,16 @@ export const parseOpenQuestion = (
       ),
     );
     const body = text.slice(match[0].length);
-    const { lead, parts } = splitHeadings(body, 2);
-    const heading = /^# (.+)$/m.exec(lead)?.[1]?.trim();
+    const sections = splitHeadings(body, 2);
+    const parts = sections.parts;
+    const heading = /^# (.+)$/m.exec(sections.lead)?.[1]?.trim();
     if (heading !== frontmatter.title) {
       problems.push(
         `the "# " heading must be the frontmatter's title, "${frontmatter.title}"; got "${heading ?? ''}"`,
       );
     }
     const titles = parts.map(([title]) => title);
-    const expected = titles.includes('Details')
-      ? sectionTitles
-      : required;
+    const expected = titles.includes('Details') ? sectionTitles : required;
     if (titles.join('|') !== expected.join('|')) {
       problems.push(
         `the "## " sections must be ${required.map((t) => `"${t}"`).join(', ')}, then an optional "Details", in that order; got ${titles.map((t) => `"${t}"`).join(', ')}`,
@@ -225,12 +227,14 @@ export const parseOpenQuestion = (
       problems.push('"## Options" needs at least two "### " options');
     }
     if (!options.some((option) => option.id === frontmatter.recommended)) {
-      problems.push(
-        `recommended: ${frontmatter.recommended} names no option`,
-      );
+      problems.push(`recommended: ${frontmatter.recommended} names no option`);
     }
     const isButton = frontmatter.links.map((link) => isButtonLink(link.kind));
-    if (isButton.some((button, index) => button && !isButton[index - 1] && index > 0)) {
+    if (
+      isButton.some(
+        (button, index) => button && !isButton[index - 1] && index > 0,
+      )
+    ) {
       problems.push('links: list spikes, PRs and previews first');
     }
     if (problems.length > 0) {
