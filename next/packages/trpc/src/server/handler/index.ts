@@ -9,7 +9,7 @@ export { strictestCacheControl } from './cache-control.ts';
 export { createHandlerCore } from './core.ts';
 export type { HandlerCore } from './core.ts';
 export { HttpApp, parentSpan } from './app.ts';
-export { createFetchHandler } from './fetch.ts';
+export { createFetchHandler, makeFetchHandler } from './fetch.ts';
 export type {
   BaseHandlerOptions,
   ContextOption,
@@ -17,6 +17,7 @@ export type {
   FetchHandler,
   FetchHandlerOptions,
   LayerOption,
+  MakeFetchHandlerOptions,
   OnErrorOpts,
   PlatformArgs,
   PlatformField,

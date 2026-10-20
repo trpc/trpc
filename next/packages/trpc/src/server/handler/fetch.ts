@@ -1,6 +1,7 @@
 import {
   Context,
   Effect,
+  Scope,
   type Duration,
   type Layer,
   type ManagedRuntime,
@@ -272,6 +273,20 @@ export type FetchHandlerOptions<
   SerializerOption;
 
 /**
+ * The options of {@link makeFetchHandler}: those of
+ * {@link createFetchHandler} without `layer` or `runtime`, since the
+ * services come from the Effect that makes the handler.
+ * @since 0.1.0
+ * @stability stable
+ */
+export type MakeFetchHandlerOptions<
+  TRouter extends AnyRouter,
+  TPlatform = undefined,
+> = BaseHandlerOptions<TRouter> &
+  ContextOption<inferRouterContext<TRouter>, TPlatform> &
+  SerializerOption;
+
+/**
  * A web-standard request handler.
  * @since 0.1.0
  * @stability stable
@@ -406,18 +421,70 @@ export function createFetchHandler<
   TRouter extends AnyRouter,
   TPlatform = undefined,
 >(opts: FetchHandlerOptions<TRouter, TPlatform>): FetchHandler<TPlatform> {
+  return buildFetchHandler(opts as BuildOptions, undefined)
+    .handler as FetchHandler<TPlatform>;
+}
+
+/**
+ * {@link createFetchHandler} as an Effect: the handler lives as long as
+ * the `Scope`, whose end disposes it, and procedures read their services
+ * from the Effect's context instead of a `layer`. Serve it with
+ * `@trpc12/trpc/http`'s `serve()`.
+ *
+ * @example
+ * ```ts
+ * const live = Layer.unwrap(
+ *   Effect.map(makeFetchHandler({ router: appRouter }), serve),
+ * ).pipe(
+ *   Layer.provide(PostRepo.Live),
+ *   Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 })),
+ * );
+ * ```
+ * @since 0.1.0
+ * @stability stable
+ */
+export function makeFetchHandler<
+  TRouter extends AnyRouter,
+  TPlatform = undefined,
+>(
+  opts: MakeFetchHandlerOptions<TRouter, TPlatform>,
+): Effect.Effect<
+  FetchHandler<TPlatform>,
+  never,
+  Scope.Scope | inferRouterServices<TRouter>
+> {
+  return Effect.map(
+    Effect.acquireRelease(
+      Effect.map(Effect.context<inferRouterServices<TRouter>>(), (services) =>
+        buildFetchHandler(
+          opts as BuildOptions,
+          Context.omit(Scope.Scope)(services),
+        ),
+      ),
+      (built) => built.close,
+    ),
+    (built) => built.handler,
+  ) as Effect.Effect<
+    FetchHandler<TPlatform>,
+    never,
+    Scope.Scope | inferRouterServices<TRouter>
+  >;
+}
+
+type BuildOptions = FetchHandlerOptions<AnyRouter, unknown> & {
+  createContext?: (o: CreateContextOpts<any>) => MaybePromise<object>;
+  layer?: Layer.Layer<any, any, never>;
+  runtime?: ManagedRuntime.ManagedRuntime<never, unknown> | undefined;
+};
+
+function buildFetchHandler(
+  opts: BuildOptions,
+  services: Context.Context<any> | undefined,
+): { handler: FetchHandler<unknown>; close: Effect.Effect<void> } {
   checkRouterKeys(opts.router);
   const drainTimeout = opts.websocket?.drainTimeout ?? '10 seconds';
   const drains = makeSocketDrains(drainTimeout);
-  const base = createHandlerCore({
-    ...(opts as typeof opts & {
-      createContext?: (o: CreateContextOpts<any>) => MaybePromise<object>;
-      layer?: Layer.Layer<any, any, never>;
-      runtime?: ManagedRuntime.ManagedRuntime<never, unknown> | undefined;
-    }),
-    drains,
-    drainTimeout,
-  });
+  const base = createHandlerCore({ ...opts, services, drains, drainTimeout });
   const handler = makeHttpHandler(opts, base);
   const sessions = makeSessions(handler, drains, opts.websocket);
   const app = makeApp(handler);
@@ -455,5 +522,5 @@ export function createFetchHandler<
       Context.add(HttpApp, { app, middleware, endpoint: handler.endpoint }),
     ),
   );
-  return fetchHandler as FetchHandler<TPlatform>;
+  return { handler: fetchHandler, close: base.close };
 }

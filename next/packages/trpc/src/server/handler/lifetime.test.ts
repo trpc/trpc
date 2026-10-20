@@ -4,6 +4,7 @@ import {
   createFetchHandler,
   createRouterClient,
   initTrpc,
+  makeFetchHandler,
 } from '@trpc12/trpc/server';
 import { expect, test } from 'vite-plus/test';
 
@@ -126,4 +127,27 @@ test('await using disposes a handler; a second dispose() waits for the first', a
     await first;
   }
   expect(events).toEqual(['released']);
+});
+
+test("makeFetchHandler reads services from its Effect's context, and the end of its scope disposes it", async () => {
+  const program = Effect.gen(function* () {
+    const handler = yield* makeFetchHandler({
+      router,
+      websocket: { drainTimeout: 0 },
+    });
+    const id = yield* Effect.promise(async () =>
+      (await get(handler, 'pool')).text(),
+    );
+    return { id, stuck: get(handler, 'stuck') };
+  }).pipe(Effect.scoped, Effect.provideService(Pool, { id: 7 }));
+  const served = await Effect.runPromise(program);
+  expect(served.id).toContain('7');
+  expect((await served.stuck).status).toBe(503);
+
+  const unprovided = () =>
+    Effect.runPromise(
+      // @ts-expect-error -- the router's procedures need Pool
+      Effect.scoped(makeFetchHandler({ router })),
+    );
+  expect(unprovided).toBeTypeOf('function');
 });

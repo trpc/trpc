@@ -135,6 +135,7 @@ export {
 } from './subscriptions/index.ts';
 export {
   createFetchHandler,
+  makeFetchHandler,
   type BaseHandlerOptions,
   type ContextOption,
   type CreateContextOpts,
@@ -142,6 +143,7 @@ export {
   type SerializerOption,
   type FetchHandler,
   type FetchHandlerOptions,
+  type MakeFetchHandlerOptions,
   type OnErrorOpts,
   type PlatformArgs,
   type PlatformField,

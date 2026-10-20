@@ -37,6 +37,8 @@ export interface CoreOptions {
   layer?: Layer.Layer<any, any, never> | undefined;
   /** The caller's runtime: calls read its services, and it outlives the handler. */
   runtime?: ManagedRuntime.ManagedRuntime<never, unknown> | undefined;
+  /** Services already built, the context of `makeFetchHandler`'s caller. */
+  services?: Context.Context<any> | undefined;
   exposeUnexpectedErrors?: boolean;
   onError?: (opts: OnErrorOpts) => void;
   /** The handler's socket connections, which `dispose()` drains first. */
@@ -142,7 +144,9 @@ export function createHandlerCore(opts: CoreOptions): HandlerCore {
   const expose = opts.exposeUnexpectedErrors ?? isDev();
   const owned = opts.layer ? ManagedRuntime.make(opts.layer) : undefined;
   /** The services, built once by the runtime on first use. */
-  const services = runtimeServices(owned ?? opts.runtime);
+  const services: Effect.Effect<Context.Context<any>> = opts.services
+    ? Effect.succeed(opts.services)
+    : runtimeServices(owned ?? opts.runtime);
   const drainTimeout = Duration.fromInputUnsafe(
     opts.drainTimeout ?? '10 seconds',
   );
