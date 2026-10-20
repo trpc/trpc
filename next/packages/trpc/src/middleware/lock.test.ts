@@ -1,5 +1,15 @@
 import { NodeRedis } from '@effect/platform-node';
-import { Deferred, type Duration, Effect, Fiber, Layer } from 'effect';
+import {
+  Clock,
+  Deferred,
+  type Duration,
+  Effect,
+  Fiber,
+  Layer,
+  type Scope,
+} from 'effect';
+import { Redis } from 'effect/persistence';
+import { TestClock } from 'effect/testing';
 import {
   createTrpcClient,
   httpLink,
@@ -10,6 +20,8 @@ import {
   experimental_lock,
   experimental_LockConflict,
   experimental_Locker,
+  experimental_LockTimeout,
+  type experimental_Lock,
   experimental_memoryLocker,
   experimental_redisLocker,
 } from '@trpc12/trpc/middleware';
@@ -212,6 +224,69 @@ test('the handler must provide experimental_Locker', () => {
   >().toEqualTypeOf<experimental_Locker>();
   // @ts-expect-error -- experimental_Locker is required
   createFetchHandler({ router: app.router });
+});
+
+/** Effect's `Redis`, where `SET` takes the lock from `freeAt` on; `tries` has each `SET`'s time. */
+const fakeRedis = (freeAt: number) => {
+  const tries: number[] = [];
+  const layer = Layer.effect(
+    Redis.Redis,
+    Redis.make({
+      send: <A,>(command: string) =>
+        Effect.map(Clock.currentTimeMillis, (now) => {
+          if (command !== 'SET') return null as A;
+          tries.push(now);
+          return (now >= freeAt ? 'OK' : null) as A;
+        }),
+      subscribe: () => Effect.die(new Error('unused')),
+    }),
+  );
+  return { tries, layer };
+};
+
+test('the Redis lock tries again every retryInterval, the last time at the timeout, and not after', async () => {
+  const acquire = <A, E>(
+    freeAt: number,
+    use: (
+      lock: Effect.Effect<
+        experimental_Lock,
+        experimental_LockTimeout,
+        Scope.Scope
+      >,
+    ) => Effect.Effect<A, E, Scope.Scope>,
+  ) => {
+    const redis = fakeRedis(freeAt);
+    return Effect.runPromise(
+      Effect.gen(function* () {
+        const locker = yield* experimental_Locker;
+        const fiber = yield* Effect.forkChild(
+          Effect.scoped(use(locker.acquire('k', { timeout: '250 millis' }))),
+        );
+        yield* TestClock.adjust('1 second');
+        return { got: yield* Fiber.join(fiber), tries: redis.tries };
+      }).pipe(
+        Effect.provide(
+          experimental_redisLocker({ retryInterval: '100 millis' }).pipe(
+            Layer.provide(redis.layer),
+          ),
+        ),
+        Effect.provide(TestClock.layer()),
+      ),
+    );
+  };
+
+  const held = await acquire(Infinity, Effect.flip);
+  expect(held.got).toBeInstanceOf(experimental_LockTimeout);
+  expect(held.tries).toEqual([0, 100, 200, 250]);
+
+  expect(await acquire(150, (lock) => lock)).toEqual({
+    got: { waited: true },
+    tries: [0, 100, 200],
+  });
+  expect(await acquire(0, (lock) => lock)).toEqual({
+    got: { waited: false },
+    tries: [0],
+  });
 });
 
 const redisUrl = process.env['REDIS_URL'];

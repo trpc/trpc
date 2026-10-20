@@ -1,4 +1,5 @@
 import {
+  Cause,
   Clock,
   Context,
   Data,
@@ -7,7 +8,7 @@ import {
   Effect,
   Layer,
   Option,
-  type Cause,
+  Schedule,
   type Scope,
 } from 'effect';
 import { Redis } from 'effect/persistence';
@@ -195,6 +196,23 @@ export interface experimental_RedisLockerOptions extends experimental_LockOption
   readonly retryInterval?: Duration.Input;
 }
 
+/**
+ * Every `interval` until `deadline` (epoch millis), the last delay cut so
+ * the last try lands on it.
+ */
+const retryUntil = (interval: number, deadline: number) =>
+  Schedule.fromStepWithMetadata(
+    Effect.succeed((meta: Schedule.InputMetadata<unknown>) => {
+      const left = deadline - meta.now;
+      return left <= 0
+        ? Cause.done(meta.attempt)
+        : Effect.succeed<[number, Duration.Duration]>([
+            meta.attempt,
+            Duration.millis(Math.min(interval, left)),
+          ]);
+    }),
+  );
+
 const releaseScript = /* @__PURE__ */ Redis.script(
   (key: string, token: string) => [key, token],
   {
@@ -237,8 +255,7 @@ export function experimental_redisLocker(
             const deadline =
               (yield* Clock.currentTimeMillis) +
               Duration.toMillis(resolved.timeout);
-            let waited = false;
-            while (true) {
+            const take = Effect.gen(function* () {
               const set = yield* Effect.orDie(
                 redis.send(
                   'SET',
@@ -249,14 +266,13 @@ export function experimental_redisLocker(
                   String(Math.max(1, Duration.toMillis(resolved.ttl))),
                 ),
               );
-              if (set === 'OK') return { waited };
-              const left = deadline - (yield* Clock.currentTimeMillis);
-              if (left <= 0) {
+              if (set !== 'OK') {
                 return yield* new experimental_LockTimeout({ key });
               }
-              waited = true;
-              yield* Effect.sleep(Math.min(retry, left));
-            }
+              const { attempt } = yield* Schedule.CurrentMetadata;
+              return { waited: attempt > 0 };
+            });
+            return yield* Effect.retry(take, retryUntil(retry, deadline));
           }),
       };
     }),
