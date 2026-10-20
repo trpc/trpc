@@ -41,8 +41,8 @@ const ada = {
 const stored = { ...ada, topics: ['math', 'engines'] };
 
 describe('the forms demo', () => {
-  it('is the one demo, with every file of its sample in the editor', () => {
-    expect(demoIds).toEqual(['forms']);
+  it('is a demo, with every file of its sample in the editor', () => {
+    expect(demoIds).toContain('forms');
     expect(forms.files.map((file) => file.name)).toContain(forms.open);
     expect(forms.files.map((file) => file.name)).toContain(forms.entry);
   });

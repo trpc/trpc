@@ -25,3 +25,4 @@ Each demo is an app in `www/samples/` that typechecks with the rest of the repo,
 ## Demos
 
 - [Forms](./forms.md): a react-hook-form form whose fields are checked by the same zod schema in the browser and on the server, with the server's errors put on the fields they're about.
+- [Optimistic updates](./optimistic.md): a todo list that changes before the server answers, and rolls back through the typed query key when the call fails.

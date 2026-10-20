@@ -9,6 +9,10 @@ export const demos = {
     sample: 'kitchen-sink-forms',
     title: 'Edit a profile',
   },
+  optimistic: {
+    sample: 'kitchen-sink-optimistic',
+    title: 'Todos, saved optimistically',
+  },
 } as const satisfies Record<
   string,
   { readonly sample: string; readonly title: string }

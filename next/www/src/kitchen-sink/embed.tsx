@@ -16,6 +16,7 @@ import type { DemoId } from './demos.ts';
 const definitions: Record<DemoId, () => Promise<{ default: DemoDefinition }>> =
   {
     forms: () => import('./forms.ts'),
+    optimistic: () => import('./optimistic.ts'),
   };
 
 interface FrameProps {
