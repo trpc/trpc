@@ -42,7 +42,7 @@ createFetchHandler({
 ```
 
 - Same-origin browsers send Better Auth's session cookie with each call. From another origin, set `httpLink({ init: () => ({ credentials: 'include' }) })` and allow credentials in [CORS](../adapters/overview.md#middleware-and-cors).
-- Over WebSockets, `createContext` gets the upgrade request's headers, so the cookie works there too.
+- Over WebSockets, `createContext` gets the upgrade request's headers, so the cookie works there too. Browsers send it with an upgrade from any site, so add [`cors()`](../adapters/overview.md#middleware-and-cors) with your origins.
 - Better Auth's own routes (`/api/auth/*`) stay on `auth.handler`; serve them next to the tRPC endpoint.
 
 ## Credits
