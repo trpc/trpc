@@ -1,4 +1,4 @@
-import { Effect, Exit, Stream } from 'effect';
+import { Effect, Exit, Predicate, Stream } from 'effect';
 import { toAsyncIterable } from '../internal/effects.ts';
 import {
   ERROR_STATUS,
@@ -29,6 +29,7 @@ import type {
   LinkErrorCode,
   TrpcIterable,
   TrpcPromise,
+  TrpcSubscription,
   UnmetNeedCheck,
 } from './types.ts';
 
@@ -383,8 +384,30 @@ const iterateSafely = (
     ),
   );
 
+/** A call's root `AsyncIterable`; a `ReadableStream`'s bytes have no typed failures. */
+const isStreamedOutput = (data: unknown): data is AsyncIterable<unknown> =>
+  Predicate.hasProperty(data, Symbol.asyncIterator) &&
+  !(typeof ReadableStream === 'function' && data instanceof ReadableStream);
+
+const settleStreamedSafely = async (
+  call: PromiseLike<unknown>,
+): Promise<SafeResult<unknown, unknown>> => {
+  const result = await settleSafely(call);
+  return isStreamedOutput(result.data)
+    ? succeeded(iterateSafely(result.data))
+    : result;
+};
+
+const safeMethods: Readonly<Record<string, (result: any) => unknown>> = {
+  query: settleStreamedSafely,
+  mutate: settleStreamedSafely,
+  subscribe: iterateSafely,
+};
+
 /**
- * A client whose queries and mutations resolve to `safe()` results.
+ * A client on which nothing throws: queries and mutations resolve to
+ * `safe()` results, and a streamed output and `subscribe()` yield each
+ * step as one.
  * @since 0.1.0
  * @stability stable
  */
@@ -392,19 +415,44 @@ export type SafeClient<TClient> = {
   [K in keyof TClient]: TClient[K] extends (
     ...args: infer A
   ) => TrpcPromise<infer T, infer E>
-    ? (...args: A) => Promise<SafeResult<T, E>>
-    : TClient[K] extends (...args: any[]) => any
-      ? TClient[K]
-      : SafeClient<TClient[K]>;
+    ? (
+        ...args: A
+      ) => Promise<
+        SafeResult<
+          T extends AsyncIterable<any>
+            ? T extends ReadableStream<any>
+              ? T
+              : T extends AsyncIterable<infer I>
+                ? AsyncIterable<SafeResult<I, E>>
+                : never
+            : T,
+          E
+        >
+      >
+    : TClient[K] extends (
+          ...args: infer A
+        ) => TrpcSubscription<infer T, infer E>
+      ? (...args: A) => AsyncIterable<SafeResult<T, E>>
+      : TClient[K] extends (...args: any[]) => any
+        ? TClient[K]
+        : SafeClient<TClient[K]>;
 };
 
 /**
- * Wraps a client so every query and mutation returns a `safe()` result.
+ * Wraps a client so nothing on it throws: every query and mutation returns
+ * a `safe()` result, and a streamed output and `subscribe()` are iterated
+ * as `safe()` iterates them, each item `[item, undefined]` and a failure a
+ * last `[undefined, error]`.
  *
  * @example
  * ```ts
  * const safeClient = createSafeClient(client);
  * const [post, error] = await safeClient.post.byId.query({ id });
+ *
+ * for await (const [event, err] of safeClient.onPost.subscribe()) {
+ *   if (err) return err.message;
+ *   render(event);
+ * }
  * ```
  * @since 0.1.0
  * @stability stable
@@ -417,7 +465,9 @@ export function createSafeClient<TClient extends object>(
     for (const key of path) target = target[key];
     const method = path.at(-1);
     const result = target(...args);
-    return method === 'query' || method === 'mutate' ? safe(result) : result;
+    return method !== undefined && Object.hasOwn(safeMethods, method)
+      ? safeMethods[method]!(result)
+      : result;
   });
 }
 

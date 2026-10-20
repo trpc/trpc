@@ -24,7 +24,7 @@ async function title(id: string) {
 
 Don't check `data` instead: an output can be `undefined`, `null` or `0` too, and the error would go unhandled. The result is also an object, `{ data, error }`, for code that reads it without destructuring.
 
-`createSafeClient(client)` returns a client whose every query and mutation is safe:
+`createSafeClient(client)` returns a client on which nothing throws: every query and mutation is safe, and so is iterating a [streamed output or a subscription](#streamed-outputs-and-subscriptions):
 
 ```ts twoslash
 // ---cut-start---
@@ -347,7 +347,52 @@ if (!err) {
 }
 ```
 
-`createSafeClient` resolves a streamed call to the same iterable, for `safe()` to iterate. `safe()` drops a generator's return value, as `for await` does: read it with the iterator itself. In the [Effect client](./effect.md), the call's error channel lists the stream's failures too, and its streamed output is the same iterable.
+A client from `createSafeClient` iterates them this way on its own: its streamed output and `subscribe()` yield `[item, error]`, with no `safe()` around them. A `ReadableStream` output stays as it is: its bytes have no typed failures.
+
+```ts twoslash
+// ---cut-start---
+import {
+  createSafeClient,
+  createTrpcClient,
+  httpLink,
+  routerType,
+} from '@trpc12/trpc/client';
+import { error } from '@trpc12/trpc/server';
+import { Stream } from 'effect';
+import { t } from './server.ts';
+declare function render(seat: string): void;
+const router = {
+  seats: t.procedure.query(() =>
+    Stream.fromIterable(['A1', 'A2']).pipe(
+      Stream.concat(
+        Stream.fail(error({ code: 'SOLD_OUT', data: { sold: 2 } })),
+      ),
+    ),
+  ),
+  onSale: t.procedure.subscription(() => Stream.make('A3')),
+};
+const client = createTrpcClient({
+  router: routerType<typeof router>(),
+  links: [httpLink({ url: 'http://localhost:3000/trpc' })],
+});
+// ---cut-end---
+const safeClient = createSafeClient(client);
+
+const [seats, err] = await safeClient.seats.query();
+if (!err) {
+  for await (const [seat, streamErr] of seats) {
+    if (streamErr) break;
+    render(seat);
+  }
+}
+
+for await (const [seat, saleErr] of safeClient.onSale.subscribe()) {
+  if (saleErr) break;
+  render(seat);
+}
+```
+
+`safe()` drops a generator's return value, as `for await` does: read it with the iterator itself. In the [Effect client](./effect.md), the call's error channel lists the stream's failures too, and its streamed output is the same iterable.
 
 ## Checking a caught value
 

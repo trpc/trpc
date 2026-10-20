@@ -80,7 +80,7 @@ Over HTTP the server reads a stream only as fast as the client reads the respons
 
 A returned `Stream`'s failures are the procedure's errors, inferred like returned ones: `Stream.fail(error({ code: 'SOLD_OUT' }))` types `SOLD_OUT` on the client, and once the procedure declares `.errors()`, failing with a code it doesn't list is a type error ([Errors](./errors.md#declaring-errors)). A generator has no failure type: what it throws is typed only when `.errors()` lists the code, as in a resolver, and a `TrpcError` it yields or returns is a value, an item or the final value, as in a subscription.
 
-The call resolves before its stream fails, so the client's iterable carries the call's errors, as a subscription does. `safe()` iterates it without throwing: each item is `[item, undefined]`, and a failure is a last `[undefined, error]`, which `matchError()` takes with the stream's codes and `STREAM_INTERRUPTED` as keys ([Errors without try/catch](../client/errors.md#streamed-outputs-and-subscriptions)):
+The call resolves before its stream fails, so the client's iterable carries the call's errors, as a subscription does. `safe()` iterates it without throwing, as a client from `createSafeClient` does on its own: each item is `[item, undefined]`, and a failure is a last `[undefined, error]`, which `matchError()` takes with the stream's codes and `STREAM_INTERRUPTED` as keys ([Errors without try/catch](../client/errors.md#streamed-outputs-and-subscriptions)):
 
 ```ts twoslash
 // ---cut-start---

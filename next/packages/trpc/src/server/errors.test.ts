@@ -643,7 +643,10 @@ test('createSafeClient wraps every call', async () => {
   expect(result.error?.code).toBe('NOT_FOUND');
 
   const ticks: number[] = [];
-  for await (const tick of safeClient.ticks.subscribe()) ticks.push(tick);
+  for await (const [tick, tickErr] of safeClient.ticks.subscribe()) {
+    if (tickErr) throw tickErr;
+    ticks.push(tick);
+  }
   expect(ticks).toEqual([1, 2]);
 });
 

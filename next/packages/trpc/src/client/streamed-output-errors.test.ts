@@ -10,6 +10,7 @@ import {
   type AtLeastOneLink,
   type AnyTrpcError,
   type LinkErrorCode,
+  type SafeResult,
   type TrpcIterable,
 } from '@trpc12/trpc/client';
 import { createEffectClient } from '@trpc12/trpc/effect';
@@ -147,19 +148,37 @@ test("a streamed output carries its stream's failures in the call's errors and i
     else expectTypeOf(tick).toEqualTypeOf<number>();
   }
 
+  // The safe client iterates safely on its own.
   const safeClient = createSafeClient(client);
+  type CheckoutError = ErrorOf<ReturnType<typeof client.checkout.mutate>>;
   const [checkout, checkoutErr] = await safeClient.checkout.mutate();
   if (!checkoutErr) {
-    for await (const [, streamErr] of safe(checkout)) {
+    expectTypeOf(checkout).toEqualTypeOf<
+      AsyncIterable<SafeResult<'reserved', CheckoutError>>
+    >();
+    for await (const [item, streamErr] of checkout) {
       if (streamErr) {
         matchError(streamErr, {
           ...offline,
           SOLD_OUT: (e) =>
             expectTypeOf(e.data).toEqualTypeOf<{ sku: string }>(),
         });
+        // @ts-expect-error: SOLD_OUT is the stream's, and needs its key
+        matchError(streamErr, offline);
+      } else {
+        expectTypeOf(item).toEqualTypeOf<'reserved'>();
       }
     }
   }
+  for await (const [tick, tickErr] of safeClient.ticks.subscribe(undefined, {
+    reconnect: false,
+  })) {
+    if (tickErr) matchError(tickErr, { ...offline, GONE: () => 'gone' });
+    else expectTypeOf(tick).toEqualTypeOf<number>();
+  }
+  expectTypeOf(safeClient.plain.query).returns.resolves.toEqualTypeOf<
+    SafeResult<{ n: number }, ErrorOf<ReturnType<typeof client.plain.query>>>
+  >();
 
   const effectClient = createEffectClient({
     router: routerType<AppRouter>(),
@@ -205,13 +224,16 @@ async function expectTypedFailures(links: AtLeastOneLink) {
 
   const safeClient = createSafeClient(client);
   const [checkout] = await safeClient.checkout.mutate();
-  const checkedOut = await steps(safe(checkout!));
+  const checkedOut = await steps(checkout!);
   expect(checkedOut.items).toEqual(['reserved']);
   expect(checkedOut.err).toMatchObject({
     code: 'SOLD_OUT',
     data: { sku: 'a1' },
     defined: true,
   });
+  const safeTicked = await steps(safeClient.ticks.subscribe());
+  expect(safeTicked.items).toEqual([1]);
+  expect(safeTicked.err).toMatchObject({ code: 'GONE', defined: true });
 
   const validated = await steps(safe(await client.validated.query()));
   expect(validated.err).toMatchObject({ code: 'SOLD_OUT', defined: true });
@@ -276,6 +298,43 @@ test('safe() iterates without throwing, and closes the source when the loop is l
     },
   };
   await expect(steps(safe(redirecting))).rejects.toBe(redirect);
+});
+
+test("createSafeClient iterates a streamed output without throwing, closes it when the loop is left, and keeps a ReadableStream's bytes", async () => {
+  let closed = false;
+  const safeClient = createSafeClient(
+    createRouterClient(
+      {
+        ...router,
+        endless: t.procedure.query(async function* () {
+          try {
+            for (let i = 0; ; i++) yield i;
+          } finally {
+            closed = true;
+          }
+        }),
+        bytes: t.procedure.query(
+          () => new ReadableStream<Uint8Array>({ start: (c) => c.close() }),
+        ),
+      },
+      { ctx: {} },
+    ),
+  );
+
+  const [feed] = await safeClient.feed.query();
+  const fed = await steps(feed!);
+  expect(fed.items).toEqual([1, 2]);
+  expect(fed.err).toMatchObject({ code: 'GONE', defined: true });
+
+  const [endless] = await safeClient.endless.query();
+  for await (const [n] of endless!) {
+    if (n === 2) break;
+  }
+  expect(closed).toBe(true);
+
+  const [bytes] = await safeClient.bytes.query();
+  expectTypeOf(bytes).toEqualTypeOf<ReadableStream<Uint8Array> | undefined>();
+  expect(bytes).toBeInstanceOf(ReadableStream);
 });
 
 test('an Effect client gets the typed failure from iterating a streamed output', async () => {

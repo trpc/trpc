@@ -268,7 +268,7 @@ const shapeList = {
     impl: streamedImpl,
     safeClient: true,
     consume: (i, call) =>
-      `export async function r${i}(): Promise<string> {\n  const [d, e] = await ${call};\n  if (e) return e.message;\n  for await (const [item, err] of safe(d)) return err ? err.message : item.v_${i};\n  return '';\n}`,
+      `export async function r${i}(): Promise<string> {\n  const [d, e] = await ${call};\n  if (e) return e.message;\n  for await (const [item, err] of d) return err ? err.message : item.v_${i};\n  return '';\n}`,
     own: { module: '', imports: `import { Stream } from 'effect';` },
   },
 } satisfies Record<string, Shape>;
