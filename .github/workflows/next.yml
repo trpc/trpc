@@ -16,9 +16,13 @@ on:
     # New effect@4 releases reach users without a push here.
     - cron: '0 6 * * 1'
 
+# A push to v12 runs to the end, so every pushed commit is covered by a
+# finished run: cancelling on each push left most runs cancelled. A newer push
+# still replaces a run that is waiting. A pull request's new push cancels its
+# old run.
 concurrency:
   group: next-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 defaults:
   run:
