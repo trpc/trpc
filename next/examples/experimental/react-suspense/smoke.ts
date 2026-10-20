@@ -1,8 +1,8 @@
 /**
  * Builds the app, serves the build with Vite's preview server and drives it
  * in headless Chrome: the server renders the posts, the browser hydrates them
- * without a request, and adding a post refetches the list once. Run with
- * `pnpm smoke`; `CHROME_PATH` picks the browser.
+ * without a request, and adding a post with useMutation refetches the list
+ * once. Run with `pnpm smoke`; `CHROME_PATH` picks the browser.
  */
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
@@ -58,7 +58,9 @@ try {
   await page.getByRole('button', { name: 'Add' }).click();
   await posts.getByText(title).waitFor();
   assert.deepEqual(calls, ['post.add', 'post.list']);
-  console.log('post.add: then one post.list refetch');
+  await page.getByRole('button', { name: 'Add' }).waitFor();
+  assert.equal(await page.getByLabel('Title').inputValue(), '');
+  console.log('useMutation: post.add, then one post.list refetch');
 
   await page.reload();
   await posts.getByText(title).waitFor();

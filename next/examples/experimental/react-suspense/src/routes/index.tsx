@@ -1,6 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 import {
   type QueryPromise,
+  useMutation,
   useQuery,
   useQueryState,
 } from '@trpc12/experimental-react';
@@ -18,8 +19,8 @@ import {
 import { Input } from '@shared/ui/components/input';
 import { Spinner } from '@shared/ui/components/spinner';
 import { Suspense, use } from 'react';
-import { useFormStatus } from 'react-dom';
 import type { Post } from '../server/router.ts';
+import type { Trpc } from '../trpc.ts';
 
 export const Route = createFileRoute('/')({
   loader: async (opts) => {
@@ -54,8 +55,7 @@ function Home() {
           </Suspense>
         </CardContent>
         <CardFooter>
-          {/* invalidateOnMutationLink refetches the list before this resolves. */}
-          <AddPost onAdd={(title) => trpc.post.add.mutate({ title })} />
+          <AddPost trpc={trpc} />
         </CardFooter>
       </Card>
     </main>
@@ -83,26 +83,36 @@ function Fetching(props: { posts: Promise<unknown> }) {
   return state.isFetching ? <Badge variant="secondary">fetching</Badge> : null;
 }
 
-function AddPost(props: { onAdd: (title: string) => Promise<unknown> }) {
+function AddPost(props: { trpc: Trpc }) {
+  // The call resolves once post.list has refetched; `invalidates` narrows
+  // standardLinks()' invalidateOnMutationLink, which would refetch every query.
+  const add = useMutation(props.trpc.post.add, { invalidates: 'post.list' });
   return (
     <form
-      className="flex w-full gap-2"
-      action={async (data) => {
-        const title = data.get('title');
-        if (typeof title === 'string' && title.trim()) await props.onAdd(title);
+      className="flex w-full flex-col gap-2"
+      onSubmit={(event) => {
+        event.preventDefault();
+        const form = event.currentTarget;
+        const title = new FormData(form).get('title');
+        if (typeof title !== 'string' || !title.trim()) return;
+        // A failure shows below, from add.error.
+        void add.mutate({ title }).then(
+          () => form.reset(),
+          () => undefined,
+        );
       }}
     >
-      <Input name="title" aria-label="Title" placeholder="New post" />
-      <Submit />
+      <div className="flex gap-2">
+        <Input name="title" aria-label="Title" placeholder="New post" />
+        <Button type="submit" disabled={add.isPending}>
+          {add.isPending ? <Spinner /> : 'Add'}
+        </Button>
+      </div>
+      {add.error && (
+        <p role="alert" className="text-sm text-destructive">
+          {add.error.message}
+        </p>
+      )}
     </form>
-  );
-}
-
-function Submit() {
-  const status = useFormStatus();
-  return (
-    <Button type="submit" disabled={status.pending}>
-      {status.pending ? <Spinner /> : 'Add'}
-    </Button>
   );
 }
