@@ -77,7 +77,7 @@ describe('onDemandRoutes', () => {
   });
 
   it('sends a decisions page with a choice in its query to the function', () => {
-    const decided = onDemandRoutes(['publisher']).slice(2);
+    const decided = all.filter((route) => route.src?.includes('/decisions'));
     expect(decided.map((route) => route.has)).toEqual(
       decisionSearchKeys.map((key) => [{ key, type: 'query' }]),
     );
