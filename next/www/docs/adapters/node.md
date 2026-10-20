@@ -24,6 +24,32 @@ serve(handler).pipe(
 );
 ```
 
+In an Effect program, `makeFetchHandler` makes the handler inside the layer: procedures read their services from the layers provided under it instead of a `layer` option, and releasing the layer disposes the handler before them.
+
+```ts twoslash
+// ---cut-start---
+import { createServer } from 'node:http';
+import { NodeHttpServer, NodeRuntime } from '@effect/platform-node';
+import { serve } from '@trpc12/trpc/http';
+import { appRouter } from './server.ts';
+declare const AppLive: Layer.Layer<never>;
+// ---cut-end---
+import { makeFetchHandler } from '@trpc12/trpc/server';
+import { Effect, Layer } from 'effect';
+
+const handler = makeFetchHandler({
+  router: appRouter,
+  createContext: () => ({ user: null }),
+});
+
+Layer.unwrap(Effect.map(handler, serve)).pipe(
+  Layer.provide(AppLive),
+  Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 })),
+  Layer.launch,
+  NodeRuntime.runMain,
+);
+```
+
 `serve` takes `endpoint`, the path WebSocket upgrades must use. Any Effect `HttpServer` layer works in place of Node's. On SIGTERM, `runMain` releases the layer, and `serve` first moves WebSocket clients to other servers ([Rolling deploys](./overview.md#rolling-deploys)), so Node doesn't wait on open sockets.
 
 ## Routes next to your own
