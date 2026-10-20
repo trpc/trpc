@@ -147,7 +147,9 @@ async function serve() {
   const testServer = Context.get(context, TestServer);
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: testServer.url, serializer, subscriptions: sse() })],
+    links: [
+      httpLink({ url: testServer.url, serializer, subscriptions: sse() }),
+    ],
   });
   return {
     db,

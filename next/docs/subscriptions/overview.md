@@ -47,7 +47,7 @@ for await (const post of client.onPost.subscribe()) {
 }
 ```
 
-Over HTTP, subscriptions are SSE requests, which `httpLink` sends when it's given `subscriptions: sse()` ([httpLink](../client/links/http.md#subscriptions)). Without it, procedures have no `.subscribe()`. Over WebSockets, `wsLink` carries them as they are.
+Over HTTP, subscriptions are SSE requests, which `httpLink` sends when it's given `subscriptions: sse()` ([`httpLink`](../client/links/http.md#subscriptions)). Without it, procedures have no `.subscribe()`. Over WebSockets, `wsLink` carries them as they are.
 
 `.output(Event)` validates each event (the `data` of `tracked()` events); `.output(stream(Event))` does the same, matching [streamed queries](../server/streaming.md).
 

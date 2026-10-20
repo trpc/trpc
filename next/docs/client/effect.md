@@ -77,7 +77,9 @@ import { Effect, Stream } from 'effect';
 
 const client = createEffectClient({
   router: routerType<typeof router>(),
-  links: [httpLink({ url: 'http://localhost:3000/trpc', subscriptions: sse() })],
+  links: [
+    httpLink({ url: 'http://localhost:3000/trpc', subscriptions: sse() }),
+  ],
 });
 
 const firstThree = client.ticks
