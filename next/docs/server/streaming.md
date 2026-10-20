@@ -25,7 +25,7 @@ const page = t.procedure.query(() => ({
 }));
 ```
 
-Over HTTP, `httpLink` reads such outputs as JSONL (or binary frames, [Files](./files.md)), with `streams: experimental_httpStreams()` for calls sent alone ([httpLink](../client/links/http.md#streamed-outputs-and-files)); `wsLink` and `localLink` carry them as they are. Every [serializer](./serializers.md) streams deferred values.
+Over HTTP, `httpLink` reads such outputs as JSONL (or binary frames, [Files](./files.md)), with `streams: experimental_httpStreams()` for calls sent alone ([`httpLink`](../client/links/http.md#streamed-outputs-and-files)); `wsLink` and `localLink` carry them as they are. Every [serializer](./serializers.md) streams deferred values.
 
 ## Validating items
 

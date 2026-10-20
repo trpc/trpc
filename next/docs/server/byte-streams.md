@@ -58,7 +58,7 @@ Both failures are in the procedure's error union, so the client can match `PAYLO
 
 ## Streaming back
 
-The output can stream while the body is still arriving: a mutation with `.output(stream(Item))` can send progress for the chunks it has read. The call goes alone, so `httpLink` reads it with `streams: experimental_httpStreams()` ([httpLink](../client/links/http.md#streamed-outputs-and-files)).
+The output can stream while the body is still arriving: a mutation with `.output(stream(Item))` can send progress for the chunks it has read. The call goes alone, so `httpLink` reads it with `streams: experimental_httpStreams()` ([`httpLink`](../client/links/http.md#streamed-outputs-and-files)).
 
 ```ts twoslash
 // ---cut-start---
