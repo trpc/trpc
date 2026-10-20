@@ -5,7 +5,7 @@ import { NodeHttpServer } from '@effect/platform-node';
 import { createCollection } from '@tanstack/db';
 import {
   createTrpcClient,
-  httpLink,
+  httpStreamLink,
   routerType,
   wsLink,
 } from '@trpc12/trpc/client';
@@ -146,7 +146,7 @@ async function serve() {
   const testServer = Context.get(context, TestServer);
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: testServer.url, serializer })],
+    links: [httpStreamLink({ url: testServer.url, serializer })],
   });
   return {
     db,

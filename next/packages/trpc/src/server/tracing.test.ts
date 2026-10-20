@@ -1,7 +1,7 @@
 import { Effect, Layer, Option, References, Stream, Tracer } from 'effect';
 import {
   createTrpcClient,
-  httpLink,
+  httpStreamLink,
   link,
   localLink,
   wsLink,
@@ -52,7 +52,7 @@ test('client and server spans share a trace through traceparent', async () => {
   const client = recorder();
   const trpc = createEffectClient({
     router,
-    links: [httpLink({ url: http.url })],
+    links: [httpStreamLink({ url: http.url })],
   });
 
   await Effect.runPromise(
@@ -111,7 +111,7 @@ test('a failed call records the error code on the client span', async () => {
   const client = recorder();
   const trpc = createEffectClient({
     router,
-    links: [httpLink({ url: http.url })],
+    links: [httpStreamLink({ url: http.url })],
   });
   await Effect.runPromise(
     trpc.post
@@ -127,14 +127,14 @@ test('without a tracer, or with propagation disabled, requests carry no trace he
   await using http = await createTestServer({ router });
   const plain = createTrpcClient({
     router: routerType<typeof router>(),
-    links: [httpLink({ url: http.url })],
+    links: [httpStreamLink({ url: http.url })],
   });
   await plain.post.query({ id: '1' });
 
   const client = recorder();
   const trpc = createEffectClient({
     router,
-    links: [httpLink({ url: http.url })],
+    links: [httpStreamLink({ url: http.url })],
   });
   await Effect.runPromise(
     trpc.post

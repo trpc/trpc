@@ -2,7 +2,7 @@ import { betterAuth } from 'better-auth';
 import { memoryAdapter } from 'better-auth/adapters/memory';
 import {
   createTrpcClient,
-  httpLink,
+  httpStreamLink,
   safe,
   routerType,
 } from '@trpc12/trpc/client';
@@ -58,7 +58,7 @@ test('a Better Auth session becomes the ctx user through a middleware', async ()
   const client = (headers: Record<string, string>) =>
     createTrpcClient({
       router: routerType<typeof router>(),
-      links: [httpLink({ url: server.url, headers })],
+      links: [httpStreamLink({ url: server.url, headers })],
     });
   const me = await client({ cookie }).me.query();
   expect(me).toEqual({ name: 'Ada', email: 'ada@example.com' });

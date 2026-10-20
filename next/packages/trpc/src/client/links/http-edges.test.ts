@@ -1,9 +1,9 @@
 import {
   createTrpcClient,
-  httpLink,
+  httpStreamLink,
   routerType,
   safe,
-  type HttpLinkOptions,
+  type HttpStreamLinkOptions,
 } from '@trpc12/trpc/client';
 import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
 import { expect, test } from 'vite-plus/test';
@@ -36,11 +36,11 @@ const real: typeof fetch = (input, init) =>
 
 function clientWith(
   fetch: typeof globalThis.fetch,
-  opts: Partial<HttpLinkOptions> = {},
+  opts: Partial<HttpStreamLinkOptions> = {},
 ) {
   return createTrpcClient({
     router: routerType<typeof router>(),
-    links: [httpLink({ url: 'http://localhost/trpc', fetch, ...opts })],
+    links: [httpStreamLink({ url: 'http://localhost/trpc', fetch, ...opts })],
   });
 }
 
@@ -151,7 +151,7 @@ test('a relative url with no page to resolve it against fails before fetch, as a
   const relative = createTrpcClient({
     router: routerType<typeof router>(),
     links: [
-      httpLink({
+      httpStreamLink({
         url: '/trpc',
         fetch: async () => {
           fetched++;

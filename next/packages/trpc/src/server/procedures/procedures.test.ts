@@ -1,7 +1,7 @@
 import { Context, Data, Effect, Layer, ManagedRuntime } from 'effect';
 import {
   createTrpcClient,
-  httpLink,
+  httpStreamLink,
   safe,
   type ClientError,
   type LinkErrorCode,
@@ -175,7 +175,7 @@ async function setup(user: string | null = 'ada', batch = false) {
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
     links: [
-      httpLink({
+      httpStreamLink({
         url: server.url,
         batch,
         fetch: async (input, init) => {
@@ -583,7 +583,7 @@ test('Effect middleware provides services and its failures are typed', async () 
   });
   const client = createTrpcClient({
     router: routerType<typeof provided>(),
-    links: [httpLink({ url: server.url })],
+    links: [httpStreamLink({ url: server.url })],
   });
   expect(await client.me.query()).toBe('kim');
 
@@ -954,7 +954,7 @@ test('chained inputs merge only plain objects; a subscription takes a stream() o
   });
   const client = createTrpcClient({
     router: routerType<typeof tickRouter>(),
-    links: [httpLink({ url: server.url })],
+    links: [httpStreamLink({ url: server.url })],
   });
   expect(await collect(client.ticks.subscribe())).toEqual([10, 20]);
 });

@@ -2,7 +2,7 @@ import { Effect } from 'effect';
 import {
   createSafeClient,
   createTrpcClient,
-  httpLink,
+  httpStreamLink,
   isDefinedError,
   matchError,
   safe,
@@ -140,7 +140,7 @@ async function setup(opts: { expose?: boolean } = {}) {
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
     links: [
-      httpLink({
+      httpStreamLink({
         url: server.url,
         fetch: async (input, init) => {
           const res = await fetch(input, init);
@@ -436,7 +436,7 @@ test('matchError needs a handler per defined code and link code, and unexpected 
   // @ts-expect-error: BAD_REQUEST is missing
   matchError(missing!, noInput);
   const { NETWORK_ERROR: _offline, ...noNetwork } = all;
-  // @ts-expect-error: NETWORK_ERROR, which httpLink declares, is missing
+  // @ts-expect-error: NETWORK_ERROR, which httpStreamLink declares, is missing
   matchError(missing!, noNetwork);
   const { unexpected: _rest, ...noCatchAll } = all;
   // @ts-expect-error: the catch-all is never implied
@@ -580,7 +580,7 @@ test('a returned built-in class is a defined error, and catchTag narrows it', as
   await using server = await createTestServer({ router });
   const client = createTrpcClient({
     router: routerType<typeof router>(),
-    links: [httpLink({ url: server.url })],
+    links: [httpStreamLink({ url: server.url })],
   });
   const [, err] = await safe(client.me.query());
   expect(err).toMatchObject({ code: 'UNAUTHORIZED', defined: true });

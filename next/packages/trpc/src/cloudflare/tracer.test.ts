@@ -5,7 +5,11 @@ import {
   type WorkersSpan,
   type WorkersTracing,
 } from '@trpc12/trpc/cloudflare';
-import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import {
+  createTrpcClient,
+  httpStreamLink,
+  routerType,
+} from '@trpc12/trpc/client';
 import { createFetchHandler, error, initTrpc } from '@trpc12/trpc/server';
 import { expect, test } from 'vite-plus/test';
 
@@ -90,7 +94,7 @@ function setup(snapshot: boolean) {
   const client = createTrpcClient({
     router: routerType<typeof router>(),
     links: [
-      httpLink({
+      httpStreamLink({
         url: 'http://localhost/trpc',
         fetch: (input, init) => handler.fetch(new Request(input, init)),
       }),
@@ -159,7 +163,7 @@ test('attributes of any type are recorded; non-Error failures and untraced spans
   const client = createTrpcClient({
     router: routerType<typeof router>(),
     links: [
-      httpLink({
+      httpStreamLink({
         url: 'http://localhost/trpc',
         fetch: (input, init) => handler.fetch(new Request(input, init)),
       }),

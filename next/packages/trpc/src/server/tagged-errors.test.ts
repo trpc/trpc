@@ -1,7 +1,7 @@
 import { Data, Effect, Predicate, Schema } from 'effect';
 import {
   createTrpcClient,
-  httpLink,
+  httpStreamLink,
   isDefinedError,
   safe,
   TrpcError,
@@ -72,7 +72,7 @@ async function setup() {
   const server = await createTestServer({ router });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: server.url })],
+    links: [httpStreamLink({ url: server.url })],
   });
   return {
     client,

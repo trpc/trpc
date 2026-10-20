@@ -2,7 +2,7 @@ import { NodeRedis } from '@effect/platform-node';
 import { Deferred, type Duration, Effect, Fiber, Layer } from 'effect';
 import {
   createTrpcClient,
-  httpLink,
+  httpStreamLink,
   routerType,
   safe,
 } from '@trpc12/trpc/client';
@@ -81,7 +81,7 @@ async function serve(
   const http = await createTestServer({ router, layer });
   const client = createTrpcClient({
     router: routerType<typeof router>(),
-    links: [httpLink({ url: http.url })],
+    links: [httpStreamLink({ url: http.url })],
   });
   return { http, client };
 }

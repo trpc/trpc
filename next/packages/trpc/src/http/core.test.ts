@@ -2,7 +2,7 @@ import { Effect, Layer } from 'effect';
 import { HttpMiddleware, HttpRouter, HttpServerResponse } from 'effect/http';
 import {
   createTrpcClient,
-  httpLink,
+  httpStreamLink,
   localLink,
   routerType,
   safe,
@@ -80,7 +80,7 @@ test('createContext gets the HttpServerRequest; on fetch runtimes its source is 
   await using server = await createTestServer({ router, createContext });
   const client = createTrpcClient({
     router: routerType<Router>(),
-    links: [httpLink({ url: server.url, headers: { cookie: 's=2' } })],
+    links: [httpStreamLink({ url: server.url, headers: { cookie: 's=2' } })],
   });
   expect(await client.whoami.query()).toEqual({ cookie: 's=2', web: false });
 });
@@ -187,7 +187,7 @@ test('a procedure can return its own response on unbatched HTTP calls (04 Q4.3)'
   });
   const client = createTrpcClient({
     router: routerType<Router>(),
-    links: [httpLink({ url: server.url })],
+    links: [httpStreamLink({ url: server.url })],
   });
   const csv = await client.csv.query();
   expectTypeOf(csv).toEqualTypeOf<Response>();
@@ -205,7 +205,7 @@ test('a procedure can return its own response on unbatched HTTP calls (04 Q4.3)'
 
   const batched = createTrpcClient({
     router: routerType<Router>(),
-    links: [httpLink({ url: server.url, batch: true })],
+    links: [httpStreamLink({ url: server.url, batch: true })],
   });
   const [ok, raw] = await Promise.allSettled([
     batched.whoami.query(),
@@ -232,7 +232,7 @@ test('a procedure can return its own response on unbatched HTTP calls (04 Q4.3)'
   const batching = (on: boolean) =>
     createTrpcClient({
       router: routerType<Router>(),
-      links: [httpLink({ url: server.url, batch: on })],
+      links: [httpStreamLink({ url: server.url, batch: on })],
     });
   // @ts-expect-error -- a `batch` that may be on counts as on
   await expect(batching(true).csv.query()).rejects.toMatchObject({

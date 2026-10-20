@@ -1,7 +1,7 @@
 import { Schema, Stream } from 'effect';
 import {
   createTrpcClient,
-  httpLink,
+  httpStreamLink,
   TrpcError,
   type TrpcIterable,
   routerType,
@@ -68,7 +68,7 @@ async function setup() {
   const server = await createTestServer({ router });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: server.url })],
+    links: [httpStreamLink({ url: server.url })],
   });
   return { client, [Symbol.asyncDispose]: () => server.close() };
 }
@@ -289,7 +289,7 @@ test('contracts take stream() outputs', async () => {
   });
   const client = createTrpcClient({
     router: appContract,
-    links: [httpLink({ url: server.url })],
+    links: [httpStreamLink({ url: server.url })],
   });
   const chat = await client.chat.mutate();
   expectTypeOf(chat).toEqualTypeOf<

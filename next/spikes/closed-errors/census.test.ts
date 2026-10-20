@@ -2,7 +2,7 @@ import { Schema } from 'effect';
 import {
   createTrpcClient,
   ERROR_STATUS,
-  httpLink,
+  httpStreamLink,
   isTrpcError,
   routerType,
   type AnyTrpcError,
@@ -43,7 +43,7 @@ function setup(opts: { fetch?: (handler: Fetch) => Fetch; closed?: boolean }) {
   const handler = createFetchHandler({ router: deployed });
   const direct: Fetch = (input, init) =>
     handler.fetch(new Request(input, init));
-  const http = httpLink({
+  const http = httpStreamLink({
     url: 'http://localhost/trpc',
     fetch: opts.fetch ? opts.fetch(direct) : direct,
   });
@@ -134,7 +134,7 @@ const census = async (closed: boolean) => {
   return rows;
 };
 
-test('what a call fails with, over httpLink', async () => {
+test('what a call fails with, over httpStreamLink', async () => {
   expect(await census(false)).toEqual({
     'returned NOT_FOUND': 'NOT_FOUND (defined)',
     'thrown Error': 'INTERNAL_SERVER_ERROR',

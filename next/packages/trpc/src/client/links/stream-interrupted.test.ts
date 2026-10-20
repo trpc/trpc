@@ -3,7 +3,7 @@ import type { Effect } from 'effect';
 import {
   createTrpcClient,
   experimental_messagePortLink,
-  httpLink,
+  httpStreamLink,
   matchError,
   routerType,
   safe,
@@ -49,7 +49,7 @@ test('STREAM_INTERRUPTED is in the union only for calls that stream: subscriptio
   const ws = wsLink({ url: 'ws://localhost/trpc' });
   const port = new MessageChannel().port1;
   for (const links of [
-    [httpLink({ url: 'http://localhost/trpc' })],
+    [httpStreamLink({ url: 'http://localhost/trpc' })],
     [ws],
     [experimental_messagePortLink({ port })],
   ] as const) {
@@ -79,7 +79,7 @@ test('STREAM_INTERRUPTED is in the union only for calls that stream: subscriptio
 
   const effectClient = createEffectClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: 'http://localhost/trpc' })],
+    links: [httpStreamLink({ url: 'http://localhost/trpc' })],
   });
   expectTypeOf<
     LinkCodesIn<Effect.Error<ReturnType<typeof effectClient.plain.query>>>
@@ -92,7 +92,7 @@ test('STREAM_INTERRUPTED is in the union only for calls that stream: subscriptio
 test('matchError takes STREAM_INTERRUPTED only for a call that streams', async () => {
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: 'http://localhost/trpc' })],
+    links: [httpStreamLink({ url: 'http://localhost/trpc' })],
   });
   const [, plain] = await safe(client.plain.query());
   const [, feed] = await safe(client.feed.query());
@@ -114,7 +114,7 @@ test('matchError takes STREAM_INTERRUPTED only for a call that streams', async (
   matchError(feed!, handlers);
 });
 
-/** `httpLink` over a fetch that keeps only the first `bytes` of each body. */
+/** `httpStreamLink` over a fetch that keeps only the first `bytes` of each body. */
 const cutAt = (bytes: (body: string) => number) => {
   const cutting: typeof fetch = async (input, init) => {
     const res = await fetch(input, init);
@@ -135,14 +135,16 @@ const cuts: ReadonlyArray<[string, (body: string) => number]> = [
   ['after the first line', (body) => body.indexOf('\n') + 1],
 ];
 
-test('httpLink: a cut response never fails a plain call with STREAM_INTERRUPTED, single or batched', async () => {
+test('httpStreamLink: a cut response never fails a plain call with STREAM_INTERRUPTED, single or batched', async () => {
   await using server = await createTestServer({ router, batch: true });
   const seen: Record<string, string> = {};
   for (const [name, bytes] of cuts) {
     for (const batch of [false, true]) {
       const client = createTrpcClient({
         router: routerType<AppRouter>(),
-        links: [httpLink({ url: server.url, batch, fetch: cutAt(bytes) })],
+        links: [
+          httpStreamLink({ url: server.url, batch, fetch: cutAt(bytes) }),
+        ],
       });
       const calls = {
         plain: () => client.plain.query(),
@@ -163,13 +165,13 @@ test('httpLink: a cut response never fails a plain call with STREAM_INTERRUPTED,
   expect(seen['batched plain before the first byte']).toBe('BAD_RESPONSE');
 });
 
-test('httpLink: once a streamed call resolved, what it left open is STREAM_INTERRUPTED', async () => {
+test('httpStreamLink: once a streamed call resolved, what it left open is STREAM_INTERRUPTED', async () => {
   await using server = await createTestServer({ router, batch: true });
   const firstLine = cutAt((body) => body.indexOf('\n') + 1);
   for (const batch of [false, true]) {
     const client = createTrpcClient({
       router: routerType<AppRouter>(),
-      links: [httpLink({ url: server.url, batch, fetch: firstLine })],
+      links: [httpStreamLink({ url: server.url, batch, fetch: firstLine })],
     });
     const out = await client.deferred.query();
     await expect(out.later).rejects.toMatchObject({

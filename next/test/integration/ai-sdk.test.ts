@@ -11,7 +11,11 @@ import {
   type UIMessage,
 } from 'ai';
 import { MockLanguageModelV4 } from 'ai/test';
-import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import {
+  createTrpcClient,
+  httpStreamLink,
+  routerType,
+} from '@trpc12/trpc/client';
 import { call, initTrpc } from '@trpc12/trpc/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
@@ -76,7 +80,7 @@ test('a procedure streams an AI SDK UI message stream that useChat can read', as
   });
   const client = createTrpcClient({
     router: routerType<typeof router>(),
-    links: [httpLink({ url: server.url })],
+    links: [httpStreamLink({ url: server.url })],
   });
   const transport: ChatTransport<UIMessage> = {
     sendMessages: (opts) =>

@@ -6,7 +6,7 @@ import { Effect, Exit, Option, Schema, Scope, Stream } from 'effect';
 import { toLambdaHandler, type LambdaV2Result } from '@trpc12/trpc/aws-lambda';
 import {
   createTrpcClient,
-  httpLink,
+  httpStreamLink,
   localLink,
   retryLink,
   routerType,
@@ -114,7 +114,7 @@ test('a byte stream input is the request body, which the resolver reads as an Ef
   await using server = await createTestServer({ router });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: server.url })],
+    links: [httpStreamLink({ url: server.url })],
   });
   expect(await client.echo.mutate(bytes('hello ', 'world'))).toBe(
     'hello world',
@@ -135,7 +135,7 @@ test('a File or Blob goes up as a byte stream with .stream()', async () => {
   await using server = await createTestServer({ router });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: server.url })],
+    links: [httpStreamLink({ url: server.url })],
   });
   const file = new File([new Uint8Array(300_000).fill(1)], 'big.bin');
   expect(await client.size.query(file.stream())).toBe(300_000);
@@ -146,7 +146,7 @@ test('the resolver reads the body while it arrives, and can stream its output ba
   await using server = await createTestServer({ router });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: server.url })],
+    links: [httpStreamLink({ url: server.url })],
   });
   let resolve!: () => void;
   const firstSeen = new Promise<void>((r) => (resolve = r));
@@ -171,7 +171,7 @@ test('maxBytes fails the stream with PAYLOAD_TOO_LARGE', async () => {
   await using server = await createTestServer({ router });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: server.url })],
+    links: [httpStreamLink({ url: server.url })],
   });
   expect(await client.limited.mutate(bytes('12345678'))).toBe('12345678');
   const [, err] = await safe(client.limited.mutate(bytes('12345', '6789')));
@@ -193,7 +193,7 @@ test('a resolver that stops reading, or never reads, still answers, and the serv
   await using server = await createTestServer({ router });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: server.url })],
+    links: [httpStreamLink({ url: server.url })],
   });
   const [, tooLarge] = await safe(client.limited.mutate(large(64)));
   expect(tooLarge).toMatchObject({ code: 'PAYLOAD_TOO_LARGE' });
@@ -209,7 +209,7 @@ test('a client that goes away mid-upload interrupts the resolver', async () => {
   await using server = await createTestServer({ router });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: server.url })],
+    links: [httpStreamLink({ url: server.url })],
   });
   const outcome = new Promise<string>((resolve) => watchers.push(resolve));
   const controller = new AbortController();
@@ -229,7 +229,7 @@ test('the body is read once; reading it again fails with BAD_REQUEST', async () 
   await using server = await createTestServer({ router });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: server.url })],
+    links: [httpStreamLink({ url: server.url })],
   });
   const [, err] = await safe(client.twice.mutate(bytes('x')));
   expect(err).toMatchObject({
@@ -242,7 +242,7 @@ test('a byte stream call leaves the batch and goes alone', async () => {
   await using server = await createTestServer({ router, batch: true });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: server.url, batch: true })],
+    links: [httpStreamLink({ url: server.url, batch: true })],
   });
   const results = await Promise.all([
     client.size.query(bytes('four')),
@@ -258,7 +258,7 @@ test('danSON and other serializers leave the body as it is', async () => {
   await using server = await createTestServer({ router, serializer });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: server.url, serializer, binary: true })],
+    links: [httpStreamLink({ url: server.url, serializer, binary: true })],
   });
   expect(await client.echo.mutate(bytes('danSON'))).toBe('danSON');
 });
@@ -269,7 +269,7 @@ test('retryLink never retries a byte stream call, as its body is read once', asy
     router: routerType<AppRouter>(),
     links: [
       retryLink({ retries: 2, delay: () => 0 }),
-      httpLink({ url: server.url }),
+      httpStreamLink({ url: server.url }),
     ],
   });
   attempts = 0;
@@ -283,7 +283,7 @@ test("handler.fetch takes a byte stream, for fetch runtimes (Workers, Deno, Bun,
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
     links: [
-      httpLink({
+      httpStreamLink({
         url: 'http://localhost/trpc',
         fetch: (input, init) =>
           handler.fetch(new Request(input as string, init)),
@@ -342,7 +342,7 @@ test('a Node (req, res) handler streams the body, or replays one express.raw() r
     await using server = await listenNode(before);
     const client = createTrpcClient({
       router: routerType<AppRouter>(),
-      links: [httpLink({ url: server.url })],
+      links: [httpStreamLink({ url: server.url })],
     });
     expect(await client.echo.mutate(bytes('on ', 'node'))).toBe('on node');
   }
@@ -352,7 +352,7 @@ test('a body another middleware read and dropped is an INTERNAL_SERVER_ERROR', a
   await using server = await listenNode(readFirst(false));
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: server.url })],
+    links: [httpStreamLink({ url: server.url })],
   });
   const [, err] = await safe(client.echo.mutate(bytes('gone')));
   expect(err).toMatchObject({

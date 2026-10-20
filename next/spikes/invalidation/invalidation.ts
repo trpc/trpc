@@ -81,7 +81,7 @@ const invalidateTargets = (
 
 /**
  * The client half. It needs `'response'` from a link after it
- * (`responseHttpLink` here; `httpLink` in the core change), which `chain()`
+ * (`responseHttpLink` here; `httpStreamLink` in the core change), which `chain()`
  * checks, and reads the `trpc-invalidate` header from the response it
  * reports. No ref header, no `fetch` wrapper, and batching is up to the
  * provider.

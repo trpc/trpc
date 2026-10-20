@@ -257,23 +257,31 @@ export const readBlob: (
 ) => Effect.Effect<Blob, unknown> = /* @__PURE__ */ Effect.fnUntraced(
   function* (res, header) {
     const meta = yield* Effect.try({
-      try: () => JSON.parse(decodeURIComponent(header)) as BlobMeta,
+      try: () => parseBlobMeta(header),
       catch: identity,
     });
     const body = yield* Effect.tryPromise({
       try: () => res.blob(),
       catch: identity,
     });
-    return meta.name === undefined
-      ? body.slice(0, body.size, meta.type)
-      : new File([body], meta.name, {
-          type: meta.type,
-          ...(meta.lastModified === undefined
-            ? {}
-            : { lastModified: meta.lastModified }),
-        });
+    return blobOf(meta, body);
   },
 );
+
+/** The `File` or `Blob` metadata in a header `blobHeaders()` wrote. @internal */
+export const parseBlobMeta = (header: string): BlobMeta =>
+  JSON.parse(decodeURIComponent(header)) as BlobMeta;
+
+/** `body` as the `File` or `Blob` `meta` describes. @internal */
+export const blobOf = (meta: BlobMeta, body: Blob): Blob =>
+  meta.name === undefined
+    ? body.slice(0, body.size, meta.type)
+    : new File([body], meta.name, {
+        type: meta.type,
+        ...(meta.lastModified === undefined
+          ? {}
+          : { lastModified: meta.lastModified }),
+      });
 
 /** Whether a `content-type` names one of `types`, ignoring case and parameters. */
 export const hasMediaType = (

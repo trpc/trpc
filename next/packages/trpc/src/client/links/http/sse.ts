@@ -18,7 +18,7 @@ import {
   makeDeferredDecoder,
   type DeferredDecoder,
 } from '../events.ts';
-import type { HttpLinkOptions } from './link.ts';
+import type { HttpStreamLinkOptions } from './link.ts';
 import { ok, type Transport } from './transport.ts';
 
 /**
@@ -28,7 +28,7 @@ import { ok, type Transport } from './transport.ts';
  */
 export function makeSubscriptions(
   transport: Transport,
-  opts: HttpLinkOptions,
+  opts: HttpStreamLinkOptions,
 ): (op: Operation) => OperationStream {
   const reconnectAttempts = opts.reconnect?.attempts ?? 5;
   const reconnectDelay =

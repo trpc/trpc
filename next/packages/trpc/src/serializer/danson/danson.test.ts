@@ -1,6 +1,6 @@
 import {
   createTrpcClient,
-  httpLink,
+  httpStreamLink,
   routerType,
   safe,
 } from '@trpc12/trpc/client';
@@ -140,7 +140,7 @@ function setup() {
   const client = createTrpcClient({
     router: routerType<typeof router>(),
     links: [
-      httpLink({
+      httpStreamLink({
         url: 'http://localhost/trpc',
         serializer: danson,
         fetch: (input, init) =>
@@ -338,7 +338,7 @@ test('a streamed head the client cannot read fails the call instead of hanging',
   const client = createTrpcClient({
     router: routerType<typeof router>(),
     links: [
-      httpLink({
+      httpStreamLink({
         url: 'http://localhost/trpc',
         serializer: danson,
         fetch: async () =>
@@ -469,7 +469,7 @@ test('forged streams: bad or missing file bytes, bare refs, unreadable frames an
     createTrpcClient({
       router: routerType<typeof router>(),
       links: [
-        httpLink({
+        httpStreamLink({
           url: 'http://localhost/trpc',
           serializer: danson,
           fetch: async () =>
@@ -530,7 +530,7 @@ test('forged streams: bad or missing file bytes, bare refs, unreadable frames an
   const split = createTrpcClient({
     router: routerType<typeof router>(),
     links: [
-      httpLink({
+      httpStreamLink({
         url: 'http://localhost/trpc',
         serializer: danson,
         fetch: async () =>
