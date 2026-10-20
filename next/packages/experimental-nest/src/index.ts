@@ -44,13 +44,7 @@ import {
   type OnApplicationShutdown,
   type OptionalFactoryDependency,
 } from '@nestjs/common';
-import {
-  Effect,
-  Exit,
-  Scope,
-  type Layer,
-  type ManagedRuntime,
-} from 'effect';
+import { Effect, Exit, Scope, type Layer, type ManagedRuntime } from 'effect';
 import { HttpServerRequest } from 'effect/http';
 import { mergeMap, type Observable } from 'rxjs';
 import { experimental_toContract } from '@trpc12/trpc/contract';
