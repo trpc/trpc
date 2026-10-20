@@ -44,7 +44,13 @@ import {
   type OnApplicationShutdown,
   type OptionalFactoryDependency,
 } from '@nestjs/common';
-import { Effect, Exit, Layer, Scope, type ManagedRuntime } from 'effect';
+import {
+  Effect,
+  Exit,
+  Scope,
+  type Layer,
+  type ManagedRuntime,
+} from 'effect';
 import { HttpServerRequest } from 'effect/http';
 import { mergeMap, type Observable } from 'rxjs';
 import { experimental_toContract } from '@trpc12/trpc/contract';
@@ -75,7 +81,7 @@ import type { AnyProcedure, CreateContextOpts } from '@trpc12/trpc/server';
  */
 export interface TrpcModuleOptions extends Omit<
   BaseOpenApiHandlerOptions<never>,
-  'router' | 'prefix' | 'contract' | 'layer' | 'runtime'
+  'router' | 'prefix' | 'contract'
 > {
   /** Runs once per request; `platform` is the Nest `ExecutionContext`. */
   createContext?: (
@@ -167,15 +173,11 @@ export class TrpcHost implements OnApplicationShutdown {
   readonly #node: (req: IncomingMessage, res: ServerResponse) => void;
 
   constructor(@Inject(TRPC_MODULE_OPTIONS) options: TrpcModuleOptions) {
-    const { runtime, ...rest } = options;
-    if (runtime && options.layer) {
+    if (options.runtime && options.layer) {
       throw new TypeError('TrpcModule: pass `layer` or `runtime`, not both');
     }
     const handler = experimental_createOpenApiHandler({
-      ...rest,
-      // The handler releases the layer it's given: this one only reads the
-      // runtime's services, so the runtime stays its owner's.
-      layer: runtime ? Layer.effectContext(runtime.contextEffect) : rest.layer,
+      ...options,
       router: {},
       prefix: '',
     } as never) as OpenApiHandler<ExecutionContext>;
