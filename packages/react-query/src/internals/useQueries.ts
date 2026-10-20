@@ -231,18 +231,39 @@ export type TRPCUseQueries<TRouter extends AnyRouter> = {
 /**
  * @internal
  */
-export type TRPCUseSuspenseQueries<TRouter extends AnyRouter> = <
-  TQueryOptions extends UseQueryOptionsForUseSuspenseQueries<
-    any,
-    any,
-    any,
-    any
-  >[],
->(
-  queriesCallback: (
-    t: UseSuspenseQueriesProcedureRecord<
-      TRouter['_def']['_config']['$types'],
-      TRouter['_def']['record']
-    >,
-  ) => readonly [...SuspenseQueriesOptions<TQueryOptions>],
-) => SuspenseQueriesResults<TQueryOptions>;
+export type TRPCUseSuspenseQueries<TRouter extends AnyRouter> = {
+  <
+    TQueryOptions extends UseQueryOptionsForUseSuspenseQueries<
+      any,
+      any,
+      any,
+      any
+    >[],
+  >(
+    queriesCallback: (
+      t: UseSuspenseQueriesProcedureRecord<
+        TRouter['_def']['_config']['$types'],
+        TRouter['_def']['record']
+      >,
+    ) => readonly [...SuspenseQueriesOptions<TQueryOptions>],
+  ): SuspenseQueriesResults<TQueryOptions>;
+  /**
+   * Same as the `TRPCUseQueries` fallback: matches callbacks that return a
+   * union of tuples, which can't be inferred through the tuple spread above.
+   */
+  <
+    TQueries extends readonly UseQueryOptionsForUseSuspenseQueries<
+      any,
+      any,
+      any,
+      any
+    >[],
+  >(
+    queriesCallback: (
+      t: UseSuspenseQueriesProcedureRecord<
+        TRouter['_def']['_config']['$types'],
+        TRouter['_def']['record']
+      >,
+    ) => TQueries,
+  ): SuspenseQueriesResults<[...TQueries]>;
+};

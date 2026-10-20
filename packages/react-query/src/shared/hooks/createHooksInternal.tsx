@@ -38,8 +38,10 @@ import type {
   TRPCUseQueries,
   TRPCUseSuspenseQueries,
   UseQueryOptionsForUseQueries,
+  UseQueryOptionsForUseSuspenseQueries,
 } from '../../internals/useQueries';
 import { createUtilityFunctions } from '../../utils/createUtilityFunctions';
+import type { UseSuspenseQueriesProcedureRecord } from '../proxy/useQueriesProxy';
 import { createUseQueries } from '../proxy/useQueriesProxy';
 import type { CreateTRPCReactOptions, UseMutationOverride } from '../types';
 import type {
@@ -734,7 +736,12 @@ export function createRootHooks<
   };
 
   const useSuspenseQueries: TRPCUseSuspenseQueries<TRouter> = (
-    queriesCallback,
+    queriesCallback: (
+      t: UseSuspenseQueriesProcedureRecord<
+        TRouter['_def']['_config']['$types'],
+        TRouter['_def']['record']
+      >,
+    ) => readonly UseQueryOptionsForUseSuspenseQueries<any, any, any, any>[],
   ) => {
     const { queryClient, client } = useContext();
 
