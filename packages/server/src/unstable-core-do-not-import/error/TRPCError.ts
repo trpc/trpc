@@ -7,6 +7,11 @@ class UnknownCauseError extends Error {
   constructor(cause: object) {
     super(getMessage(cause));
     Object.assign(this, cause);
+
+    if (isErrorLike(cause)) {
+      if (typeof cause.name === 'string') this.name = cause.name;
+      if (typeof cause.stack === 'string') this.stack = cause.stack;
+    }
   }
 }
 
@@ -14,6 +19,17 @@ function getMessage(cause: object) {
   if ('message' in cause) return String(cause.message);
 
   return undefined;
+}
+
+/**
+ * Errors from another realm (e.g. `node:vm`, iframes) fail `instanceof Error`
+ * but still carry the `[object Error]` brand.
+ */
+function isErrorLike(value: unknown): value is Error {
+  return (
+    value instanceof Error ||
+    Object.prototype.toString.call(value) === '[object Error]'
+  );
 }
 
 export function getCauseFromUnknown(cause: unknown): Error | undefined {
@@ -55,7 +71,7 @@ export function getTRPCErrorFromUnknown(cause: unknown): TRPCError {
   });
 
   // Inherit stack from error
-  if (cause instanceof Error && cause.stack) {
+  if (isErrorLike(cause) && cause.stack) {
     trpcError.stack = cause.stack;
   }
 
