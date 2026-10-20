@@ -59,6 +59,11 @@ export const experiments = {
       'Small apps to edit and run on the page, beside how they work: a react-hook-form form first.',
     label: 'Kitchen sink',
   },
+  benchmarks: {
+    description:
+      'Throughput, type-checking and bundle size against tRPC v11 and oRPC v2, and the features each has.',
+    label: 'Benchmarks and comparison',
+  },
 } as const satisfies Record<
   string,
   { readonly description: string; readonly label: string }
