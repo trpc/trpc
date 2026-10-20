@@ -92,6 +92,35 @@ function Title() {
 
 `select` runs on each new data, and on each render when it's an inline function, so keep it cheap. An error it throws rejects the promise, for the nearest error boundary. Pass the `.query()` promise, not a selected one, to `useQueryState`.
 
+## Polling
+
+`useQuery(promise, { refetchInterval })` refetches the query while the component is mounted, that long after each request settles, so a slow server never has two polls in flight. While the page is hidden, polling waits, and it refetches as soon as the page is visible again. The interval is milliseconds, a string like `'10 seconds'` or an Effect `Duration`; `false` or `undefined` stops it, so `refetchInterval: done ? false : 1000` polls until a job finishes.
+
+```tsx twoslash
+// ---cut-start---
+import { createReactClient, useQuery } from '@trpc12/experimental-react';
+import { httpLink, routerType } from '@trpc12/trpc/client';
+import { use } from 'react';
+import type { AppRouter } from './server.ts';
+const trpc = createReactClient({
+  router: routerType<AppRouter>(),
+  links: [httpLink({ url: '/trpc' })],
+});
+const posts = trpc.post.list.query();
+// ---cut-end---
+function Latest() {
+  const latest = use(
+    useQuery(posts, {
+      refetchInterval: '10 seconds',
+      select: (list) => list.at(-1)?.title,
+    }),
+  );
+  return <p>Latest: {latest}</p>;
+}
+```
+
+Each polling component has its own timer, as in TanStack Query; a poll that lands while a request is in flight joins it. Servers never poll.
+
 ## Query links
 
 Without links, the cache does the least: an entry lives while a request is in flight or a mounted `useQuery` reads it. Everything else is a link, opt-in one by one:

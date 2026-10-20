@@ -12,8 +12,9 @@ import {
   useQueryState,
   type QueryPromise,
 } from '@trpc12/experimental-react';
-import { localLink, routerType, type AnyLink } from '@trpc12/trpc/client';
+import { link, localLink, routerType, type AnyLink } from '@trpc12/trpc/client';
 import { createSerializer } from '@trpc12/trpc/serializer';
+import { type Duration, Effect, Stream } from 'effect';
 import { Component, Suspense, use, type ReactNode } from 'react';
 import { createRoot, hydrateRoot } from 'react-dom/client';
 import { prerender } from 'react-dom/static';
@@ -341,12 +342,24 @@ test('select failures and failed loads reach the error boundary', async () => {
   late.unmount();
 
   // A load that fails, read while pending and once it has failed.
-  const missing = trpc.post.byId.query({ id: 'missing' });
+  let open!: () => void;
+  const gate = new Promise<void>((resolve) => (open = resolve));
+  const gated = make([
+    cacheLink({ staleTime: 60_000 }),
+    link((opts) =>
+      Stream.unwrap(
+        Effect.promise(() => gate).pipe(Effect.as(opts.next(opts.op))),
+      ),
+    ),
+  ]);
+  const missing = gated.post.byId.query({ id: 'missing' });
   const pendingView = mount(
     <Boundary>
       <Throws post={missing} when="" />
     </Boundary>,
   );
+  await waitFor(() => expect(pendingView.el.textContent).toBe('loading'));
+  open();
   const reason = await missing.then(
     () => '',
     (error: Error) => error.message,
@@ -360,6 +373,68 @@ test('select failures and failed loads reach the error boundary', async () => {
   );
   await waitFor(() => expect(failed.el.textContent).toBe(reason));
   failed.unmount();
+});
+
+function Polled(props: {
+  post: QueryPromise<Post>;
+  every: Duration.Input | false;
+}) {
+  const post = use(useQuery(props.post, { refetchInterval: props.every }));
+  return <h1>{post.title}</h1>;
+}
+
+test('refetchInterval polls while mounted, and stops on unmount', async () => {
+  using _dom = domCleanup();
+  const trpc = make([cacheLink({ staleTime: 60_000 })]);
+  const post = trpc.post.byId.query({ id: '1' });
+  const view = mount(<Polled post={post} every="5 millis" />);
+  await waitFor(() => expect(h1(view.el)).toBe('Hello'));
+  db.posts.get('1')!.title = 'Polled';
+  await waitFor(() => expect(h1(view.el)).toBe('Polled'));
+  view.unmount();
+  const calls = db.calls.length;
+  await tick(20);
+  expect(db.calls).toHaveLength(calls);
+
+  const off = mount(<Polled post={post} every={false} />);
+  await tick(20);
+  expect(db.calls).toHaveLength(calls);
+  off.unmount();
+});
+
+test('refetchInterval waits while the page is hidden, and refetches once it is visible', async () => {
+  using _dom = domCleanup();
+  const trpc = make([cacheLink({ staleTime: 60_000 })]);
+  const post = trpc.post.byId.query({ id: '1' });
+  await post;
+  Object.defineProperty(document, 'visibilityState', {
+    configurable: true,
+    get: () => 'hidden',
+  });
+  const view = mount(<Polled post={post} every={5} />);
+  await waitFor(() => expect(h1(view.el)).toBe('Hello'));
+  db.posts.get('1')!.title = 'Visible';
+  await tick(30);
+  // Another hidden-to-hidden change doesn't wake it.
+  document.dispatchEvent(new Event('visibilitychange'));
+  await tick(5);
+  expect(db.calls).toEqual(['byId:1']);
+  delete (document as { visibilityState?: unknown }).visibilityState;
+  document.dispatchEvent(new Event('visibilitychange'));
+  await waitFor(() => expect(h1(view.el)).toBe('Visible'));
+
+  // Unmounting while it waits removes its listener.
+  Object.defineProperty(document, 'visibilityState', {
+    configurable: true,
+    get: () => 'hidden',
+  });
+  await tick(20);
+  const calls = db.calls.length;
+  view.unmount();
+  delete (document as { visibilityState?: unknown }).visibilityState;
+  document.dispatchEvent(new Event('visibilitychange'));
+  await tick(20);
+  expect(db.calls).toHaveLength(calls);
 });
 
 test("useQuery() only takes a React client's query promise", async () => {

@@ -1,4 +1,4 @@
-import { identity } from 'effect';
+import { Duration, identity } from 'effect';
 import { useCallback, useEffect, useState, useSyncExternalStore } from 'react';
 import type { QueryPromise } from './client.ts';
 import { replaceEqualDeep } from './share.ts';
@@ -46,6 +46,13 @@ export interface UseQueryOptions<T, U = T> {
    * doesn't change, even when the rest of the data does.
    */
   select?: ((data: T) => U) | undefined;
+  /**
+   * Polls: refetches the query this long after each request settles, while
+   * the component is mounted. While the page is hidden it waits, and
+   * refetches once the page is visible again. Milliseconds, a string like
+   * `'10 seconds'` or a `Duration`; `false` or `undefined` doesn't poll.
+   */
+  refetchInterval?: Duration.Input | false | undefined;
 }
 
 type Select = (data: unknown) => unknown;
@@ -114,14 +121,24 @@ const selectFrom = (
  * changes (a refetch, `setData`); the promise stays the same object while
  * it doesn't. While mounted, the entry is kept and links such as
  * `refetchOnMountLink()` see it. With `select`, it returns a promise of the
- * picked part, and re-renders only when that part changes.
+ * picked part, and re-renders only when that part changes. With
+ * `refetchInterval`, it polls while mounted.
  *
  * @example
  * ```tsx
  * function Post(props: { post: QueryPromise<Post> }) {
  *   const post = use(useQuery(props.post));
- *   const title = use(useQuery(props.post, { select: (p) => p.title }));
  *   return <h1>{post.title}</h1>;
+ * }
+ *
+ * function LiveTitle(props: { post: QueryPromise<Post> }) {
+ *   const title = use(
+ *     useQuery(props.post, {
+ *       select: (post) => post.title,
+ *       refetchInterval: '10 seconds',
+ *     }),
+ *   );
+ *   return <h1>{title}</h1>;
  * }
  * ```
  * @since 0.1.0
@@ -138,6 +155,13 @@ export function useQuery<T, E, U = T>(
     latest: identity,
     result: undefined,
   }));
+  const every = opts?.refetchInterval;
+  const interval =
+    every === undefined || every === false ? 0 : Duration.toMillis(every);
+  useEffect(
+    () => slot.store.poll(slot.entry, interval),
+    [slot.store, slot.entry, interval],
+  );
   const select = opts?.select as Select | undefined;
   const read = () => {
     const source = slot.entry.promise;

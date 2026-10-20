@@ -154,6 +154,14 @@ export interface QueryStore {
   subscribe(entry: QueryEntry, listener: () => void): () => void;
   /** A mounted reader. Returns the unmount. */
   mount(entry: QueryEntry): () => void;
+  /**
+   * Refetches the entry `interval` ms after each request settles, until the
+   * returned stop is called. While the page is hidden it waits, and
+   * refetches once the page is visible again. Does nothing on a server
+   * store, after `dispose()`, or for an interval that isn't positive and
+   * finite.
+   */
+  poll(entry: QueryEntry, interval: number): () => void;
   /** Writes an entry from another store (hydration); only newer data wins. */
   seed(path: string, input: unknown, data: unknown, updatedAt: number): void;
   /**
@@ -164,15 +172,17 @@ export interface QueryStore {
   dispose(): void;
 }
 
-/** Resolves once every fiber has ended, however each ended. */
+/** Waits until every fiber has ended, however each ended. */
+const awaitAll = (
+  fibers: Iterable<Fiber.Fiber<void> | undefined>,
+): Effect.Effect<void> =>
+  Effect.asVoid(
+    Fiber.awaitAll([...fibers].filter((fiber) => fiber !== undefined)),
+  );
+
 const settled = (
   fibers: Iterable<Fiber.Fiber<void> | undefined>,
-): Promise<void> =>
-  Effect.runPromise(
-    Effect.asVoid(
-      Fiber.awaitAll([...fibers].filter((fiber) => fiber !== undefined)),
-    ),
-  );
+): Promise<void> => Effect.runPromise(awaitAll(fibers));
 
 const disposedError = () =>
   new TrpcError({
@@ -180,6 +190,28 @@ const disposedError = () =>
     message:
       "The query's store was disposed: after dispose() it starts no requests",
   });
+
+const hidden = () =>
+  typeof document !== 'undefined' && document.visibilityState === 'hidden';
+
+/** Resumes at once while the page is visible, else once it's visible again. */
+const visible: Effect.Effect<void> = Effect.callback<void>((resume) => {
+  if (!hidden()) {
+    resume(Effect.void);
+    return;
+  }
+  const onChange = () => {
+    if (hidden()) return;
+    document.removeEventListener('visibilitychange', onChange);
+    resume(Effect.void);
+  };
+  document.addEventListener('visibilitychange', onChange);
+  return Effect.sync(() =>
+    document.removeEventListener('visibilitychange', onChange),
+  );
+});
+
+const noop = () => {};
 
 const owners = new WeakMap<Promise<unknown>, { store: Store; entry: Entry }>();
 
@@ -451,6 +483,25 @@ export function createStore(opts: StoreOptions): QueryStore {
         e.observers--;
         scheduleGc(e);
       };
+    },
+    poll(entry, interval) {
+      if (
+        opts.isServer ||
+        disposed ||
+        !(interval > 0) ||
+        !Number.isFinite(interval)
+      )
+        return noop;
+      const refetch = Effect.suspend(() => awaitAll([fetch(entry as Entry)]));
+      const fiber = run(
+        Effect.forever(
+          Effect.sleep(interval).pipe(
+            Effect.andThen(visible),
+            Effect.andThen(refetch),
+          ),
+        ),
+      );
+      return () => fiber.interruptUnsafe();
     },
     seed(path, input, data, updatedAt) {
       const key = queryKey(path, input);

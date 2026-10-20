@@ -19,6 +19,7 @@ import {
 import { createSerializer } from '@trpc12/trpc/serializer';
 import { Duration, Effect, Exit, Scope, Stream } from 'effect';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
+import { waitFor } from '../../trpc/src/fixtures/dom.ts';
 import {
   db,
   freshDb,
@@ -494,6 +495,50 @@ test('an answer that lands after its entry was removed is dropped', async () => 
   expect(removed.hasData).toBe(false);
   expect(trpc.post.byId.getData({ id: '2' })).toBeUndefined();
   expect(trpc.store.entries()).toHaveLength(1);
+});
+
+test('poll refetches after each request settles, until stopped', async () => {
+  using _db = freshDb();
+  const trpc = make([cacheLink({ staleTime: 60_000 })]);
+  const post = trpc.post.byId.query({ id: '1' });
+  await post;
+  const entry = trpc.store.entryOf(post)!;
+  const stop = trpc.store.poll(entry, 5);
+  db.posts.get('1')!.title = 'Polled';
+  await waitFor(() => expect(db.calls.length).toBeGreaterThanOrEqual(3));
+  expect(trpc.post.byId.getData({ id: '1' })?.title).toBe('Polled');
+  stop();
+  const calls = db.calls.length;
+  await tick(20);
+  expect(db.calls).toHaveLength(calls);
+});
+
+test('poll does nothing on a server store, after dispose(), or without a positive finite interval', async () => {
+  using _db = freshDb();
+  const server = make([], { isServer: true });
+  const post = server.post.byId.query({ id: '1' });
+  await post;
+  const entry = server.store.entryOf(post)!;
+  const stops = [
+    server.store.poll(entry, 5),
+    ...[0, -1, Number.NaN, Infinity].map((interval) => {
+      const browser = make([cacheLink()]);
+      void browser.post.byId.query({ id: '2' });
+      const read = browser.store.get('post.byId', { id: '2' })!;
+      return browser.store.poll(read, interval);
+    }),
+  ];
+  const disposed = make([cacheLink()]);
+  disposed.post.byId.setData(
+    { id: '1' },
+    { id: '1', title: 'Set', tags: [], at: new Date(0) },
+  );
+  const cached = disposed.store.get('post.byId', { id: '1' })!;
+  disposed.store.dispose();
+  stops.push(disposed.store.poll(cached, 5));
+  await tick(20);
+  expect(db.calls).toEqual(['byId:1', ...Array(4).fill('byId:2')]);
+  for (const stop of stops) stop();
 });
 
 test('without a serializer on the client, hydration uses JSON', async () => {
