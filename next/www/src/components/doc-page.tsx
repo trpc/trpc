@@ -1,4 +1,5 @@
 import { Badge } from '@shared/ui/components/badge';
+import { cn } from '@shared/ui/lib/utils';
 import { Link, notFound, Outlet } from '@tanstack/react-router';
 import {
   ArrowLeft,
@@ -35,6 +36,7 @@ import {
 import { stripInlineCode } from '~/content/inline-code.ts';
 import type { Doc } from '~/content/types.ts';
 import { experiments } from '~/experiments.ts';
+import { PageDemo } from '~/kitchen-sink/embed.tsx';
 import { useEnableOnVisit } from '~/flags.ts';
 import { absoluteUrl, ogImageUrl, pageHead, trpcPageUrl } from '~/seo.ts';
 import { site } from '~/site.ts';
@@ -42,7 +44,7 @@ import { partners } from '~/sponsors.ts';
 
 export function DocsLayout() {
   return (
-    <div className="mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 md:grid-cols-[14rem_minmax(0,1fr)]">
+    <div className="mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 md:grid-cols-[14rem_minmax(0,1fr)] has-data-demo-page:max-w-[112rem]">
       <aside className="hidden md:block">
         <div className="sticky top-14 max-h-[calc(100dvh-3.5rem)] overflow-y-auto py-8 pr-2">
           <DocsNav />
@@ -151,10 +153,19 @@ export function DocPage(props: {
   const parents = ancestors(version, doc.slug);
   const children = childrenOf(listed, doc.slug);
   const showPartners = partners.length > 0;
+  const demo = doc.demo;
   useEnableOnVisit(doc.experiment, doc.slug);
 
   return (
-    <div className="grid min-w-0 gap-10 py-8 xl:grid-cols-[minmax(0,1fr)_13rem]">
+    <div
+      className={cn(
+        'grid min-w-0 gap-10 py-8',
+        demo
+          ? 'xl:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)]'
+          : 'xl:grid-cols-[minmax(0,1fr)_13rem]',
+      )}
+      data-demo-page={demo}
+    >
       <article className="min-w-0">
         <VersionBanner slug={doc.slug} version={version} />
         <header className="mb-8 grid gap-3 border-b pb-6">
@@ -227,11 +238,12 @@ export function DocPage(props: {
           ) : null}
         </header>
         <CollapsedTableOfContents
-          className="mb-8 xl:hidden"
+          className={cn('mb-8', !demo && 'xl:hidden')}
           headings={doc.headings}
           key={doc.slug}
         />
         <DocBody html={doc.html} />
+        {demo ? <PageDemo demo={demo} html={doc.html} mode="inline" /> : null}
         {children.length > 0 ? (
           <section aria-labelledby="pages-under" className="mt-10">
             <h2
@@ -261,7 +273,9 @@ export function DocPage(props: {
           </section>
         ) : null}
         <footer className="mt-12 grid gap-6 border-t pt-6">
-          {showPartners ? <PartnersStrip className="xl:hidden" /> : null}
+          {showPartners ? (
+            <PartnersStrip className={cn(!demo && 'xl:hidden')} />
+          ) : null}
           {version.copied ? (
             <a
               className={footerLink}
@@ -318,10 +332,16 @@ export function DocPage(props: {
         </footer>
       </article>
       <aside className="hidden xl:block">
-        <div className="sticky top-22 grid gap-10">
-          <TableOfContents headings={doc.headings} key={doc.slug} />
-          {showPartners ? <PartnersRail /> : null}
-        </div>
+        {demo ? (
+          <div className="sticky top-22 h-[calc(100dvh-7rem)]">
+            <PageDemo demo={demo} html={doc.html} mode="aside" />
+          </div>
+        ) : (
+          <div className="sticky top-22 grid gap-10">
+            <TableOfContents headings={doc.headings} key={doc.slug} />
+            {showPartners ? <PartnersRail /> : null}
+          </div>
+        )}
       </aside>
     </div>
   );

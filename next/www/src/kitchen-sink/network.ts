@@ -39,7 +39,7 @@ export interface DemoNetwork {
   readonly failures: number;
   /** The latest 50, oldest first. */
   readonly requests: ReadonlyArray<DemoRequest>;
-  subscribe(listener: () => void): () => void;
+  readonly subscribe: (listener: () => void) => () => void;
 }
 
 /** The latencies a demo's toolbar offers. A network starts at `3G`. */

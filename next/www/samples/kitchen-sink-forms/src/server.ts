@@ -14,7 +14,8 @@ interface Change {
   readonly to: string;
 }
 
-// The demo's database lives in memory, in this page: Reload starts it over.
+// The demo's database lives in memory, in this page: each edit to the code
+// starts it over.
 const db = {
   profile: {
     name: 'Ada Lovelace',
