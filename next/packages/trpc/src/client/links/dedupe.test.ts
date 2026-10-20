@@ -305,6 +305,47 @@ test("a caller that stops reading stops counting: the others' signals abort the 
   expect(stub.ops[0]!.signal!.aborted).toBe(true);
 });
 
+test('aborting mid-stream ends only that caller, and its signal keeps no listener; the last one aborts the request', async () => {
+  const stub = stubbed(() =>
+    Stream.iterate(0, (n) => n + 1).pipe(Stream.tap(() => Effect.sleep(5))),
+  );
+  const listening = (signal: AbortSignal) => {
+    const added = vi.spyOn(signal, 'addEventListener');
+    const removed = vi.spyOn(signal, 'removeEventListener');
+    return () => {
+      const live = new Set(added.mock.calls.map((call) => call[1]));
+      for (const call of removed.mock.calls) live.delete(call[1]);
+      return live.size;
+    };
+  };
+  const [first, second] = [new AbortController(), new AbortController()];
+  const firstLive = listening(first.signal);
+  const secondLive = listening(second.signal);
+  const a = stub.client.forever
+    .subscribe(undefined, { signal: first.signal })
+    [Symbol.asyncIterator]();
+  const b = stub.client.forever
+    .subscribe(undefined, { signal: second.signal })
+    [Symbol.asyncIterator]();
+  expect(await Promise.all([a.next(), b.next()])).toEqual([
+    { done: false, value: 0 },
+    { done: false, value: 0 },
+  ]);
+  expect(firstLive()).toBeGreaterThan(0);
+
+  first.abort();
+  await expect(a.next()).resolves.toMatchObject({ done: true });
+  expect((await b.next()).value).toBeGreaterThan(0);
+  expect(stub.ops).toHaveLength(1);
+  expect(stub.ops[0]!.signal!.aborted).toBe(false);
+  await vi.waitFor(() => expect(firstLive()).toBe(0));
+
+  second.abort();
+  await expect(b.next()).resolves.toMatchObject({ done: true });
+  expect(stub.ops[0]!.signal!.aborted).toBe(true);
+  await vi.waitFor(() => expect(secondLive()).toBe(0));
+});
+
 test('a caller that leaves removes its abort listener, so a long-lived signal keeps no request', async () => {
   const stub = stubbed(() => Stream.fromEffect(Effect.as(Effect.sleep(5), 7)));
   const signal = new AbortController().signal;
