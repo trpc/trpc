@@ -42,7 +42,7 @@ export interface DocLink {
   readonly slug: string;
 }
 
-interface RenderedMarkdown {
+export interface RenderedMarkdown {
   /** Every heading's id, which links can point at. */
   readonly anchors: ReadonlyArray<string>;
   /** The `h2` and `h3` headings, for the table of contents. */
@@ -591,8 +591,9 @@ const twoslashers = new Map<string, Twoslasher>();
  * program with its own parse of the app's and libraries' types, 100–250 MB,
  * and a block's inline flags (`// @target: esnext`, `// @jsxImportSource:
  * preact`) make another, so keeping them all ran a cold build out of heap.
+ * A build renders in three processes (`render-pool.ts`), each with its own.
  */
-const liveEnvironments = 3;
+const liveEnvironments = 2;
 
 /** The live environments, least recently used first, each with what drops it from its twoslasher. */
 const usedEnvironments = new Map<Environment, () => void>();

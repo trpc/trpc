@@ -15,8 +15,10 @@ import {
   type DocLink,
   releaseTwoslashers,
   renderMarkdown,
+  type RenderOptions,
   resolveLink,
 } from './markdown.ts';
+import { makeRenderPool, type RenderPool } from './render-pool.ts';
 import { expandSnippets } from './snippets.ts';
 import {
   makeTwoslashCache,
@@ -82,9 +84,8 @@ const Frontmatter = Schema.Struct({
   description: Schema.String,
   /**
    * The experiment the page belongs to (`src/experiments.ts`). Built and
-   * served at its URL, found by the site's search and in `llms.txt`, but
-   * `noindex`, out of the sitemap, and out of the sidebar and pagination
-   * until the reader turns it on.
+   * served at its URL, in the sitemap and `llms.txt`, but out of the
+   * sidebar, search and pagination until the reader turns it on.
    */
   experiment: Schema.optional(Schema.Literals(experimentIds)),
   label: Schema.optional(Schema.String),
@@ -309,6 +310,13 @@ export const docPages = Effect.fn('docPages')(function* (dirs: PageDirs) {
   }));
 });
 
+/**
+ * The build's render processes, shared by the docs plugins so they don't
+ * start one set each. Started on a build's first page and ended once every
+ * module is transformed.
+ */
+let renderPool: RenderPool | undefined;
+
 /** Runs a build step from one of Vite's hooks. */
 function run<A, E>(effect: Effect.Effect<A, E, NodeServices.NodeServices>) {
   return Effect.runPromise(Effect.provide(effect, NodeServices.layer));
@@ -454,6 +462,28 @@ export function docsContent(options: ContentOptions): Plugin {
     commits ??= run(commitDates(options.contentDir, options.datesSkipRenames));
     return commits;
   };
+  /** Whether pages render in {@link renderPool}'s processes: in a build, not in dev, where a page renders on its own. */
+  let building = false;
+
+  const renderOn = (
+    markdown: string,
+    renderOptions: Omit<RenderOptions, 'twoslashCache'>,
+  ) => {
+    if (!building) {
+      return renderMarkdown(markdown, { ...renderOptions, twoslashCache });
+    }
+    renderPool ??= makeRenderPool();
+    return Effect.map(
+      renderPool.render(markdown, renderOptions, options.twoslashCache),
+      (output) => {
+        if (twoslashCache) {
+          twoslashCache.stats.hits += output.stats.hits;
+          twoslashCache.stats.misses += output.stats.misses;
+        }
+        return output.rendered;
+      },
+    );
+  };
 
   /** The v11 page on the same topic as `source`. */
   const v11Page = Effect.fn('v11Page')(function* (source: Source) {
@@ -497,14 +527,13 @@ export function docsContent(options: ContentOptions): Plugin {
   });
 
   const renderDoc = Effect.fn('renderDoc')(function* (source: Source) {
-    const result = yield* renderMarkdown(source.markdown, {
+    const result = yield* renderOn(source.markdown, {
       basePath,
       inlineApp: options.inlineApp,
       samplesDir,
       slug: source.slug,
       contentPath: options.contentPath,
       sourceUrl: options.sourceUrl,
-      twoslashCache,
     }).pipe(
       Effect.mapError(
         (error) =>
@@ -546,13 +575,12 @@ export function docsContent(options: ContentOptions): Plugin {
       file,
       samplesDir,
     });
-    const result = yield* renderMarkdown(expanded.markdown, {
+    const result = yield* renderOn(expanded.markdown, {
       basePath,
       samplesDir,
       slug: 'index',
       contentPath: options.contentPath,
       sourceUrl: options.sourceUrl,
-      twoslashCache,
     }).pipe(
       Effect.mapError(
         (error) =>
@@ -570,14 +598,13 @@ export function docsContent(options: ContentOptions): Plugin {
     file: string,
     markdown: string,
   ) {
-    const result = yield* renderMarkdown(markdown, {
+    const result = yield* renderOn(markdown, {
       basePath,
       inlineApp: options.inlineApp,
       samplesDir,
       slug: 'index',
       contentPath: options.contentPath,
       sourceUrl: options.sourceUrl,
-      twoslashCache,
     }).pipe(
       Effect.mapError(
         (error) =>
@@ -831,8 +858,16 @@ export function docsContent(options: ContentOptions): Plugin {
   }
 
   return {
+    configResolved(config) {
+      building = config.command === 'build';
+    },
     configurePreviewServer: serveAgentFiles,
     configureServer: serveAgentFiles,
+    // Before the chunks render, which is most of a build's memory.
+    async buildEnd() {
+      await renderPool?.close();
+      renderPool = undefined;
+    },
     async generateBundle() {
       releaseTwoslashers();
       if (this.environment.name !== 'client') {
