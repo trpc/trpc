@@ -9,6 +9,7 @@ export const packageNames = [
   '@tanstack/react-router',
   '@trpc12/tanstack-react-query',
   '@trpc12/trpc/client',
+  '@trpc12/trpc/serializer',
   '@trpc12/trpc/server',
   'effect',
   'lucide-react',

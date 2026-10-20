@@ -238,31 +238,63 @@ export const declarationBundle = Effect.fn('declarationBundle')(
   },
 );
 
+/** A sample's bundle as JSON, and the sample whose module serves it. */
+export interface SampleBundle {
+  readonly json: string;
+  readonly module: string;
+}
+
+/**
+ * Each sample's bundle. Samples whose bundles are equal (the same
+ * compiler options and package versions) share the first one's module,
+ * so a reader who opens a second demo fetches no declarations again.
+ */
+export const sampleBundles = Effect.fn('sampleBundles')(function* (
+  samples: ReadonlyArray<string>,
+) {
+  const modules = new Map<string, string>();
+  const bundles = new Map<string, SampleBundle>();
+  for (const sample of samples) {
+    const json = JSON.stringify(
+      yield* declarationBundle({
+        packages: packageNames,
+        sampleDir: `${samplesDir}/${sample}`,
+      }),
+    );
+    const module = modules.get(json) ?? sample;
+    modules.set(json, module);
+    bundles.set(sample, { json, module });
+  }
+  return bundles;
+});
+
 const moduleId = 'virtual:kitchen-sink-types';
 
 /**
  * `virtual:kitchen-sink-types` maps each demo's sample to a loader of its
- * declaration bundle, a module of its own that the type worker fetches
- * when an editor is first focused.
+ * declaration bundle, a module that the type worker fetches when an
+ * editor is first focused.
  */
 export function kitchenSinkTypes(): Plugin {
   const samples = [...new Set(Object.values(demos).map((demo) => demo.sample))];
+  let bundles: Promise<ReadonlyMap<string, SampleBundle>> | undefined;
+  const load = () => {
+    bundles ??= Effect.runPromise(sampleBundles(samples));
+    return bundles;
+  };
   return {
     async load(id) {
       if (id === `\0${moduleId}`) {
-        return `export default {\n${samples.map((sample) => `  ${JSON.stringify(sample)}: () => import(${JSON.stringify(`${moduleId}/${sample}`)}),`).join('\n')}\n};`;
+        const loaded = await load();
+        return `export default {\n${samples.map((sample) => `  ${JSON.stringify(sample)}: () => import(${JSON.stringify(`${moduleId}/${loaded.get(sample)?.module ?? sample}`)}),`).join('\n')}\n};`;
       }
       if (!id.startsWith(`\0${moduleId}/`)) {
         return undefined;
       }
-      const sample = id.slice(`\0${moduleId}/`.length);
-      const bundle = await Effect.runPromise(
-        declarationBundle({
-          packages: packageNames,
-          sampleDir: `${samplesDir}/${sample}`,
-        }),
+      const bundle = (await load()).get(id.slice(`\0${moduleId}/`.length));
+      return (
+        bundle && `export default JSON.parse(${JSON.stringify(bundle.json)});`
       );
-      return `export default JSON.parse(${JSON.stringify(JSON.stringify(bundle))});`;
     },
     name: 'kitchen-sink-types',
     resolveId(id) {

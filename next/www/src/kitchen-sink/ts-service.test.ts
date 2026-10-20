@@ -2,22 +2,36 @@ import { describe, expect, it } from '@effect/vitest';
 import { Effect } from 'effect';
 import ts from 'typescript6';
 
-import { declarationBundle } from '../../build/kitchen-sink-types.ts';
-import { samplesDir } from '../../build/paths.ts';
+import { sampleBundles } from '../../build/kitchen-sink-types.ts';
+import type { DemoDefinition } from './define.ts';
+import { type DemoId, demos } from './demos.ts';
+import files from './files.ts';
 import forms from './forms.ts';
 import type { DemoFile } from './modules.ts';
+import optimistic from './optimistic.ts';
 import { packageNames } from './package-names.ts';
 import { packages } from './packages.ts';
-import { createTypeService } from './ts-service.ts';
+import realtime from './realtime.ts';
+import { createTypeService, type DeclarationBundle } from './ts-service.ts';
 
-// Compiling every package a demo can import takes a couple of seconds, so
-// the tests share one bundle.
-const bundle = await Effect.runPromise(
-  declarationBundle({
-    packages: packageNames,
-    sampleDir: `${samplesDir}/kitchen-sink-forms`,
-  }),
+const definitions: Record<DemoId, DemoDefinition> = {
+  files,
+  forms,
+  optimistic,
+  realtime,
+};
+
+// Compiling every package a demo can import takes a couple of seconds a
+// sample, so the tests share the samples' bundles.
+const bundles = await Effect.runPromise(
+  sampleBundles(Object.values(demos).map((demo) => demo.sample)),
 );
+
+function bundleOf(id: DemoId): DeclarationBundle {
+  return JSON.parse(bundles.get(demos[id].sample)?.json ?? 'null');
+}
+
+const bundle = bundleOf('forms');
 
 function edited(name: string, edit: (code: string) => string) {
   return forms.files.map((file) =>
@@ -58,13 +72,26 @@ describe('the declaration bundle', () => {
     expect(trpc.some((path) => bundle.files[path]?.includes('/**'))).toBe(true);
     expect(paths).toContain('/lib/lib.dom.d.ts');
   });
+
+  it('is one module for every sample, whose options and packages are the same', () => {
+    expect(
+      new Set(Array.from(bundles.values(), (each) => each.module)).size,
+    ).toBe(1);
+  });
 });
 
 describe('createTypeService', () => {
-  it('checks the forms demo without errors', () => {
-    const service = createTypeService(ts, bundle, forms.files);
-    expect(errorFiles(service.check())).toEqual([]);
-  });
+  it.each(Object.keys(demos) as Array<DemoId>)(
+    'checks the %s demo without errors',
+    (id) => {
+      const service = createTypeService(
+        ts,
+        bundleOf(id),
+        definitions[id].files,
+      );
+      expect(errorFiles(service.check())).toEqual([]);
+    },
+  );
 
   it("turns the client's files red when the schema renames a field", () => {
     const service = createTypeService(ts, bundle, forms.files);
