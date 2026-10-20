@@ -25,14 +25,28 @@ The second pass gave `TrpcModule` a `runtime` option beside `layer`. To make pas
 
 ### A) Keep the type alias
 
-```ts
+```ts twoslash
+// @errors: 2300 2322
+// ---cut-start---
+import type { ExecutionContext } from '@nestjs/common';
+import { TrpcModule } from '@trpc12/experimental-nest';
+import type { CreateContextOpts } from '@trpc12/trpc/server';
+import { Context, type Layer, type ManagedRuntime } from 'effect';
+class Db extends Context.Service<Db, {}>()('Db') {
+  declare static readonly layer: Layer.Layer<Db>;
+}
+declare const runtime: ManagedRuntime.ManagedRuntime<Db, never>;
+declare function createContext(opts: CreateContextOpts<ExecutionContext>): {};
+// ---cut-end---
 TrpcModule.forRoot({ createContext, runtime }); // ok
-TrpcModule.forRoot({ createContext, layer: Db.layer, runtime }); // type error
+// Doesn't compile: `layer` and `runtime` together
+TrpcModule.forRoot({ createContext, layer: Db.layer, runtime });
 
 declare module '@trpc12/experimental-nest' {
+  // Doesn't compile: duplicate identifier, it's a type alias
   interface TrpcModuleOptions {
     tenant?: string;
-  } // error: duplicate identifier
+  }
 }
 ```
 
@@ -43,9 +57,22 @@ declare module '@trpc12/experimental-nest' {
 
 The exclusivity is only checked at runtime, by the `TypeError` the module already throws.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import type { ExecutionContext } from '@nestjs/common';
+import type { CreateContextOpts } from '@trpc12/trpc/server';
+import { Context, type Layer, type ManagedRuntime } from 'effect';
+import { TrpcModuleB as TrpcModule } from '../open/nest-module-options-interface.ts';
+class Db extends Context.Service<Db, {}>()('Db') {
+  declare static readonly layer: Layer.Layer<Db>;
+}
+declare const runtime: ManagedRuntime.ManagedRuntime<Db, never>;
+declare function createContext(opts: CreateContextOpts<ExecutionContext>): {};
+// ---cut-end---
 TrpcModule.forRoot({ createContext, layer: Db.layer, runtime }); // compiles, throws at startup
+```
 
+```ts
 declare module '@trpc12/experimental-nest' {
   interface TrpcModuleOptions {
     tenant?: string;
@@ -60,9 +87,24 @@ declare module '@trpc12/experimental-nest' {
 
 `TrpcModuleBaseOptions` is an interface with everything but `layer` and `runtime`; `TrpcModuleOptions` is it plus the exclusive union, as actions do with `CreateActionBaseOptions`.
 
-```ts
-TrpcModule.forRoot({ createContext, layer: Db.layer, runtime }); // type error
+```ts twoslash
+// @errors: 2322
+// ---cut-start---
+import type { ExecutionContext } from '@nestjs/common';
+import type { CreateContextOpts } from '@trpc12/trpc/server';
+import { Context, type Layer, type ManagedRuntime } from 'effect';
+import { TrpcModuleC as TrpcModule } from '../open/nest-module-options-interface.ts';
+class Db extends Context.Service<Db, {}>()('Db') {
+  declare static readonly layer: Layer.Layer<Db>;
+}
+declare const runtime: ManagedRuntime.ManagedRuntime<Db, never>;
+declare function createContext(opts: CreateContextOpts<ExecutionContext>): {};
+// ---cut-end---
+// Doesn't compile: `layer` and `runtime` together
+TrpcModule.forRoot({ createContext, layer: Db.layer, runtime });
+```
 
+```ts
 declare module '@trpc12/experimental-nest' {
   interface TrpcModuleBaseOptions {
     tenant?: string;

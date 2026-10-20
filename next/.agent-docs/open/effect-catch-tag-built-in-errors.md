@@ -30,13 +30,27 @@ Every `TrpcError`'s `_tag` is its code (the human's answer in `error-tags.md`), 
 
 `_tag` stays the code. The handler gets both and checks `defined` when it matters.
 
-```ts
+```ts twoslash
+// @errors: 2345
+// ---cut-start---
+import { httpLink, routerType } from '@trpc12/trpc/client';
+import { createEffectClient } from '@trpc12/trpc/effect';
+import { Effect } from 'effect';
+import type { AppRouter } from './server.ts';
+const client = createEffectClient({
+  router: routerType<AppRouter>(),
+  links: [httpLink({ url: 'http://localhost:3000/trpc' })],
+});
+// ---cut-end---
 const title = client.post.byId.query({ id: '1' }).pipe(
   Effect.map((post) => post.title),
   Effect.catchTag('NOT_FOUND', (err) =>
     Effect.succeed(err.defined ? `no post ${err.data.id}` : err.message),
   ),
 );
+
+// Doesn't compile: catchTag took both NOT_FOUNDs out of the union
+title.pipe(Effect.catchTag('NOT_FOUND', () => Effect.succeed('')));
 ```
 
 - ✅ Built, type-tested and documented; `catchTag` removes `NOT_FOUND` from the union, both kinds
@@ -47,14 +61,25 @@ const title = client.post.byId.query({ id: '1' }).pipe(
 
 Add a helper (name to pick, `catchDefined` here) to `@trpc12/trpc/effect` that catches a code only when `defined` is `true`, leaving the built-in one in the error channel.
 
-```ts
-import { catchDefined } from '@trpc12/trpc/effect';
-
+```ts twoslash
+// ---cut-start---
+import { httpLink, routerType } from '@trpc12/trpc/client';
+import { createEffectClient } from '@trpc12/trpc/effect';
+import { Effect } from 'effect';
+import { catchDefinedB as catchDefined } from '../open/effect-catch-tag-built-in-errors.ts';
+import type { AppRouter } from './server.ts';
+const client = createEffectClient({
+  router: routerType<AppRouter>(),
+  links: [httpLink({ url: 'http://localhost:3000/trpc' })],
+});
+// ---cut-end---
 const title = client.post.byId.query({ id: '1' }).pipe(
   Effect.map((post) => post.title),
   catchDefined('NOT_FOUND', (err) => Effect.succeed(`no post ${err.data.id}`)),
 );
 // a missing procedure's NOT_FOUND still fails the Effect
+title.pipe(Effect.catchTag('NOT_FOUND', (err) => Effect.succeed(err.message)));
+//                                       ^?
 ```
 
 - ✅ The handler sees only the error its procedure declared
@@ -65,13 +90,28 @@ const title = client.post.byId.query({ id: '1' }).pipe(
 
 Only declared errors get their code as `_tag`; built-in ones get one tag, such as `TrpcError`, so `catchTag('NOT_FOUND')` catches the declared one only.
 
-```ts
+```ts twoslash
+// @errors: 2345
+// ---cut-start---
+import { httpLink, routerType } from '@trpc12/trpc/client';
+import { Effect } from 'effect';
+import { createEffectClientC as createEffectClient } from '../open/effect-catch-tag-built-in-errors.ts';
+import type { AppRouter } from './server.ts';
+const client = createEffectClient({
+  router: routerType<AppRouter>(),
+  links: [httpLink({ url: 'http://localhost:3000/trpc' })],
+});
+// ---cut-end---
 const title = client.post.byId.query({ id: '1' }).pipe(
   Effect.catchTag('NOT_FOUND', (err) =>
     Effect.succeed(`no post ${err.data.id}`),
   ),
   Effect.catchTag('TrpcError', (err) => Effect.succeed(err.message)),
 );
+
+const call = client.post.byId.query({ id: '1' });
+// Doesn't compile: NETWORK_ERROR is tagged TrpcError now
+call.pipe(Effect.catchTag('NETWORK_ERROR', () => Effect.succeed(null)));
 ```
 
 - ✅ `catchTag` means "the error I declared", with no extra check

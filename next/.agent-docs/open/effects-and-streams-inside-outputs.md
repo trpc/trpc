@@ -33,7 +33,13 @@ A resolver may return a `Stream` at the top, and the client gets an `AsyncIterab
 
 Nested values must be promises or async iterables. An Effect user converts them by hand, outside the call's services and interruption.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { Effect, Stream } from 'effect';
+import { t, type Post } from './server.ts';
+declare const posts: Post[];
+declare const countPosts: Effect.Effect<number>;
+// ---cut-end---
 const feed = t.procedure.query(() => ({
   title: 'Feed',
   // before: arrives as { channel: {} }
@@ -51,15 +57,29 @@ const feed = t.procedure.query(() => ({
 
 A nested `Stream` streams like a nested async iterable, and a nested `Effect` settles like a nested promise. Both run in the call's fiber, with its services and signal. The client types them as `AsyncIterable` and `Promise`.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { Effect, Stream } from 'effect';
+import type { ClientOutputB } from '../open/effects-and-streams-inside-outputs.ts';
+import { t, type Post } from './server.ts';
+declare const posts: Post[];
+declare const countPosts: Effect.Effect<number>;
+declare function render(post: Post): void;
+// ---cut-end---
 const feed = t.procedure.query(() => ({
   title: 'Feed',
   items: Stream.fromIterable(posts),
   total: countPosts, // an Effect
 }));
+// ---cut-start---
+declare const client: {
+  feed: { query: () => Promise<ClientOutputB<typeof feed>> };
+};
+// ---cut-end---
 
 // client
 const { title, items, total } = await client.feed.query();
+//              ^?
 for await (const post of items) render(post);
 console.log(await total);
 ```
@@ -74,7 +94,12 @@ console.log(await total);
 
 A nested `Effect` or `Stream` fails the call with an `INTERNAL_SERVER_ERROR` that names its path and says to return it at the top or convert it.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { Stream } from 'effect';
+import { t, type Post } from './server.ts';
+declare const posts: Post[];
+// ---cut-end---
 const feed = t.procedure.query(() => ({
   items: Stream.fromIterable(posts),
 }));

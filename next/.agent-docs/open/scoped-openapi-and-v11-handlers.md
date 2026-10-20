@@ -34,7 +34,17 @@ links:
 
 ### A) Keep it as it is: wrap `create` yourself
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { createServer } from 'node:http';
+import { NodeHttpServer } from '@effect/platform-node';
+import { serve } from '@trpc12/trpc/http';
+import { experimental_createOpenApiHandler } from '@trpc12/trpc/openapi';
+import { initTrpc } from '@trpc12/trpc/server';
+import { Effect, Layer, type ManagedRuntime } from 'effect';
+const appRouter = { health: initTrpc().procedure.query(() => 'ok') };
+declare const runtime: ManagedRuntime.ManagedRuntime<never, never>;
+// ---cut-end---
 const openapi = Effect.acquireRelease(
   Effect.sync(
     () => experimental_createOpenApiHandler({ router: appRouter, runtime }), // or its own layer
@@ -55,13 +65,36 @@ Layer.unwrap(Effect.map(openapi, serve)).pipe(
 
 Each takes its `create` options without `layer` or `runtime`, reads services from the Effect's context, and disposes the handler when the scope ends.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { createServer } from 'node:http';
+import { NodeHttpServer, NodeRuntime } from '@effect/platform-node';
+import { serve } from '@trpc12/trpc/http';
+import type { V11Transformer } from '@trpc12/trpc/interop';
+import { initTrpc } from '@trpc12/trpc/server';
+import { Context, Effect, Layer } from 'effect';
+import {
+  experimental_makeOpenApiHandlerB as experimental_makeOpenApiHandler,
+  makeV11HandlerB as makeV11Handler,
+} from '../open/scoped-openapi-and-v11-handlers.ts';
+class Db extends Context.Service<Db, { ping: Effect.Effect<string> }>()('Db') {}
+const appRouter = {
+  health: initTrpc().procedure.query(() =>
+    Effect.gen(function* () {
+      return yield* (yield* Db).ping;
+    }),
+  ),
+};
+declare const AppLive: Layer.Layer<Db>;
+declare const superjson: V11Transformer;
+// ---cut-end---
 const openapi = experimental_makeOpenApiHandler({
   router: appRouter,
   prefix: '/api',
 });
 
 Layer.unwrap(Effect.map(openapi, serve)).pipe(
+  //                    ^?
   Layer.provide(AppLive),
   Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 })),
   Layer.launch,

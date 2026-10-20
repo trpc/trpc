@@ -36,7 +36,18 @@ links:
 
 Effect users run their service through the `runtime` they also pass to the handler, or read it later in Effect middleware.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { createFetchHandler } from '@trpc12/trpc/server';
+import { Context, Effect, ManagedRuntime, type Layer } from 'effect';
+import { appRouter as router, type User } from './server.ts';
+class Sessions extends Context.Service<
+  Sessions,
+  { fromCookie: (cookie: string | undefined) => Effect.Effect<User | null> }
+>()('Sessions') {
+  declare static readonly layer: Layer.Layer<Sessions>;
+}
+// ---cut-end---
 const runtime = ManagedRuntime.make(Sessions.layer);
 
 const handler = createFetchHandler({
@@ -61,7 +72,34 @@ const handler = createFetchHandler({
 
 The Effect runs in the request's fiber with the handler's services. It may fail with a `TrpcError`, which is the call's error. Promise and plain returns work as before.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { Context, Effect, Layer } from 'effect';
+import { z } from 'zod';
+import { createFetchHandlerB as createFetchHandler } from '../open/create-context-as-effect.ts';
+import { t, type Post, type User } from './server.ts';
+class Sessions extends Context.Service<
+  Sessions,
+  { fromCookie: (cookie: string | undefined) => Effect.Effect<User | null> }
+>()('Sessions') {
+  declare static readonly layer: Layer.Layer<Sessions>;
+}
+class PostRepo extends Context.Service<
+  PostRepo,
+  { find: (id: string) => Effect.Effect<Post | undefined> }
+>()('PostRepo') {
+  declare static readonly layer: Layer.Layer<PostRepo>;
+}
+const router = {
+  post: {
+    byId: t.procedure.input(z.object({ id: z.string() })).query((opts) =>
+      Effect.gen(function* () {
+        return yield* (yield* PostRepo).find(opts.input.id);
+      }),
+    ),
+  },
+};
+// ---cut-end---
 const handler = createFetchHandler({
   router,
   layer: Layer.mergeAll(PostRepo.layer, Sessions.layer),

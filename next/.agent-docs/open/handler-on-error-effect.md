@@ -33,7 +33,16 @@ links:
 
 Effect users report from an Effect middleware with `Effect.tapError`, or from the tracer.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
+import { Effect } from 'effect';
+const t = initTrpc();
+const router = { health: t.procedure.query(() => 'ok') };
+declare const Sentry: {
+  captureException: (error: unknown, hint: { extra: object }) => void;
+};
+// ---cut-end---
 const handler = createFetchHandler({
   router,
   onError: ({ error, path }) => {
@@ -57,7 +66,32 @@ const reported = t.middleware.effect()((opts) =>
 
 It runs in the request's fiber (or the socket call's), with the handler's services and the call's span. Returning nothing works as today.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { initTrpc, type AnyTrpcError } from '@trpc12/trpc/server';
+import { Context, Effect, Layer } from 'effect';
+import { createFetchHandlerB as createFetchHandler } from '../open/handler-on-error-effect.ts';
+class Db extends Context.Service<Db, { ping: Effect.Effect<string> }>()('Db') {}
+declare const AppLive: Layer.Layer<Db>;
+class Telemetry extends Context.Service<
+  Telemetry,
+  {
+    capture: (
+      error: AnyTrpcError,
+      extra: { path: string | undefined },
+    ) => Effect.Effect<void>;
+  }
+>()('Telemetry') {
+  declare static readonly layer: Layer.Layer<Telemetry>;
+}
+const router = {
+  health: initTrpc().procedure.query(() =>
+    Effect.gen(function* () {
+      return yield* (yield* Db).ping;
+    }),
+  ),
+};
+// ---cut-end---
 const handler = createFetchHandler({
   router,
   layer: Layer.mergeAll(AppLive, Telemetry.layer),
@@ -77,7 +111,20 @@ const handler = createFetchHandler({
 
 The handler logs each reported error with `Effect.logError` in the request's fiber, annotated with `path` and `type`. `onError` stays the Promise users' callback.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
+import { Context, Effect, Layer, Logger } from 'effect';
+class Db extends Context.Service<Db, { ping: Effect.Effect<string> }>()('Db') {}
+declare const AppLive: Layer.Layer<Db>;
+const router = {
+  health: initTrpc().procedure.query(() =>
+    Effect.gen(function* () {
+      return yield* (yield* Db).ping;
+    }),
+  ),
+};
+// ---cut-end---
 const handler = createFetchHandler({
   router,
   layer: Layer.mergeAll(AppLive, Logger.layer([Logger.consoleJson])),

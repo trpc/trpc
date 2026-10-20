@@ -33,7 +33,15 @@ A link is a function returning an `OperationStream`, a `Stream<unknown, AnyTrpcE
 
 A link takes what it needs as options. On the Effect client it may read optional services from the caller's fiber, untyped.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { httpLink, link, routerType } from '@trpc12/trpc/client';
+import { createEffectClient } from '@trpc12/trpc/effect';
+import { Context, Effect, Option, Stream } from 'effect';
+import type { AppRouter } from './server.ts';
+declare const url: string;
+declare const getToken: Effect.Effect<string>;
+// ---cut-end---
 class AuthToken extends Context.Service<
   AuthToken,
   { token: Effect.Effect<string> }
@@ -57,8 +65,8 @@ const client = createEffectClient({
   router: routerType<AppRouter>(),
   links: [authLink, httpLink({ url })],
 });
-const me = client.me
-  .query()
+const post = client.post.byId
+  .query({ id: '1' })
   .pipe(Effect.provideService(AuthToken, { token: getToken })); // forgetting it compiles
 ```
 
@@ -71,7 +79,24 @@ const me = client.me
 
 A link declares `services` as it declares `errors`. On the Effect client, every call's `Effect` and `Stream` requires them. The Promise client takes a `runtime` that provides them, required exactly when a link declares any.
 
-```ts
+```ts twoslash
+// @errors: 2345
+// ---cut-start---
+import { httpLink, routerType } from '@trpc12/trpc/client';
+import { Context, Effect, Layer, ManagedRuntime, Stream } from 'effect';
+import {
+  createEffectClientB as createEffectClient,
+  createTrpcClientB as createTrpcClient,
+  linkB as link,
+} from '../open/link-service-requirements.ts';
+import type { AppRouter } from './server.ts';
+declare const url: string;
+declare const getToken: Effect.Effect<string>;
+class AuthToken extends Context.Service<
+  AuthToken,
+  { token: Effect.Effect<string> }
+>()('AuthToken') {}
+// ---cut-end---
 const authLink = link<{ services: AuthToken }>(({ op, next }) =>
   Stream.unwrap(
     Effect.gen(function* () {
@@ -88,8 +113,13 @@ const client = createEffectClient({
   router: routerType<AppRouter>(),
   links: [authLink, httpLink({ url })],
 });
-const me = client.me.query(); // Effect<User, …, AuthToken>
-const provided = me.pipe(Effect.provideService(AuthToken, { token: getToken })); // leaving it out is a type error where the Effect runs
+const post = client.post.byId.query({ id: '1' });
+//    ^?
+const provided = post.pipe(
+  Effect.provideService(AuthToken, { token: getToken }),
+);
+// Doesn't compile: nothing provides AuthToken where the Effect runs
+await Effect.runPromise(post);
 
 // Promise client
 const runtime = ManagedRuntime.make(

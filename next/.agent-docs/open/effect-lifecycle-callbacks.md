@@ -33,7 +33,18 @@ The four helpers in `@trpc12/trpc/middleware` take callbacks that return `void` 
 
 The helpers stay as they are. The lifecycle docs link the Effect middleware form for callbacks that need services.
 
-```ts
+```ts twoslash
+// @errors: 2322
+// ---cut-start---
+import { onError } from '@trpc12/trpc/middleware';
+import { Context, Effect } from 'effect';
+import { t } from './server.ts';
+declare const log: { warn: (path: string, code: string) => void };
+class Metrics extends Context.Service<
+  Metrics,
+  { failed: (path: string, code: string) => Effect.Effect<void> }
+>()('Metrics') {}
+// ---cut-end---
 // Promise callbacks: the helpers
 t.procedure.use(onError((err, opts) => log.warn(opts.path, err.code)));
 
@@ -49,6 +60,9 @@ const logged = t.middleware.effect()((opts) =>
   ),
 );
 t.procedure.use(logged);
+
+// Doesn't compile: a helper's callback can't return an Effect
+t.procedure.use(onError((err) => Effect.logError(err.code)));
 ```
 
 - ✅ No change; the helpers stay part of the Effect-free surface the human asked for (`effect-first-public-apis.md`)
@@ -59,16 +73,31 @@ t.procedure.use(logged);
 
 The helpers take either kind of callback; an Effect callback's services join the procedure's requirements, like an Effect middleware's.
 
-```ts
-t.procedure.use(
-  onError((err, opts) =>
-    Effect.gen(function* () {
-      const metrics = yield* Metrics;
-      yield* metrics.failed(opts.path, err.code);
-    }),
-  ),
-);
-// the procedure now requires Metrics from the handler's layer
+```ts twoslash
+// @errors: 2345
+// ---cut-start---
+import { createFetchHandler } from '@trpc12/trpc/server';
+import { Context, Effect } from 'effect';
+import { onErrorB as onError } from '../open/effect-lifecycle-callbacks.ts';
+import { t } from './server.ts';
+class Metrics extends Context.Service<
+  Metrics,
+  { failed: (path: string, code: string) => Effect.Effect<void> }
+>()('Metrics') {}
+// ---cut-end---
+const ping = t.procedure
+  .use(
+    onError((err, opts) =>
+      Effect.gen(function* () {
+        const metrics = yield* Metrics;
+        yield* metrics.failed(opts.path, err.code);
+      }),
+    ),
+  )
+  .query(() => 'pong');
+
+// Doesn't compile: the procedure now requires Metrics from the handler's layer
+createFetchHandler({ router: { ping }, createContext: () => ({ user: null }) });
 ```
 
 - ✅ One helper whichever kind of code observes the call

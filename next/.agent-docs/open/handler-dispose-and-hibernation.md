@@ -30,7 +30,25 @@ links:
 
 Whoever disposes the handler disposes its adapters first.
 
-```ts
+```ts twoslash
+// ---cut-start---
+/// <reference types="@cloudflare/workers-types" />
+import { DurableObject } from 'cloudflare:workers';
+import { experimental_createHibernatingWebSockets } from '@trpc12/trpc/cloudflare';
+import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
+import { Context, Effect, type Layer } from 'effect';
+interface Env {}
+class Db extends Context.Service<Db, { ping: Effect.Effect<string> }>()('Db') {}
+declare const AppLive: Layer.Layer<Db>;
+const router = {
+  health: initTrpc().procedure.query(() =>
+    Effect.gen(function* () {
+      return yield* (yield* Db).ping;
+    }),
+  ),
+};
+type AppRouter = typeof router;
+// ---cut-end---
 const handler = createFetchHandler<AppRouter, { env: Env }>({
   router,
   layer: AppLive,
@@ -41,6 +59,9 @@ export class Room extends DurableObject<Env> {
     state: this.ctx,
   });
 }
+// ---cut-start---
+declare const room: Room;
+// ---cut-end---
 
 // wherever the handler ends (a test, say), in this order
 await room.sockets.dispose();
@@ -55,7 +76,25 @@ await handler.dispose();
 
 Each adapter's scope joins the handler's, so `handler.dispose()` (and the end of `makeFetchHandler`'s scope) disposes every adapter made from it before releasing the services. `sockets.dispose()` still ends one adapter on its own.
 
-```ts
+```ts twoslash
+// ---cut-start---
+/// <reference types="@cloudflare/workers-types" />
+import { DurableObject } from 'cloudflare:workers';
+import { experimental_createHibernatingWebSockets } from '@trpc12/trpc/cloudflare';
+import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
+import { Context, Effect, type Layer } from 'effect';
+interface Env {}
+class Db extends Context.Service<Db, { ping: Effect.Effect<string> }>()('Db') {}
+declare const AppLive: Layer.Layer<Db>;
+const router = {
+  health: initTrpc().procedure.query(() =>
+    Effect.gen(function* () {
+      return yield* (yield* Db).ping;
+    }),
+  ),
+};
+type AppRouter = typeof router;
+// ---cut-end---
 const handler = createFetchHandler<AppRouter, { env: Env }>({
   router,
   layer: AppLive,

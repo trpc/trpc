@@ -38,11 +38,33 @@ The human asked "can we also layer in deps in middlewares / base procedures / pl
 
 ### A) Keep it as it is: shared services come from the handler
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
+import { Context, Effect, Layer, ManagedRuntime } from 'effect';
+interface ScopedCache {
+  get: (key: string) => Effect.Effect<string | undefined>;
+}
+class Cache extends Context.Service<
+  Cache,
+  { scoped: (name: string) => ScopedCache }
+>()('Cache') {
+  declare static readonly layer: Layer.Layer<Cache, never, Redis>;
+}
+class CacheKey extends Context.Service<CacheKey, ScopedCache>()('CacheKey') {}
+class Redis extends Context.Service<Redis, {}>()('Redis') {}
+declare const RedisLive: Layer.Layer<Redis>;
+class Db extends Context.Service<Db, {}>()('Db') {
+  declare static readonly layer: Layer.Layer<Db>;
+}
+// ---cut-end---
 // a plugin
 export const cached = initTrpc().procedure.provide(CacheKey, () =>
   Effect.map(Cache, (cache) => cache.scoped('posts')),
 ); // requires Cache
+// ---cut-start---
+const router = { posts: cached.query(() => 'posts') };
+// ---cut-end---
 
 // the app has to know and provide the plugin's layer
 const runtime = ManagedRuntime.make(
@@ -60,7 +82,30 @@ createFetchHandler({ router, runtime });
 
 An overload of `.provide()` taking a `Layer`. Its services drop out of the router's required services; what the layer needs joins them. It's built the first time a procedure using it runs, in the runtime's memo map, so the same layer value is built once and shared (also with the app's own layer graph), and released when the runtime is.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import {
+  createFetchHandler,
+  type inferRouterServices,
+} from '@trpc12/trpc/server';
+import { Context, Effect, Layer, ManagedRuntime } from 'effect';
+import { z } from 'zod';
+import { initTrpcB as initTrpc } from '../open/provide-layer.ts';
+import type { Post } from './server.ts';
+const t = initTrpc();
+const ById = z.object({ id: z.string() });
+class Db extends Context.Service<
+  Db,
+  { post: (id: string) => Effect.Effect<Post> }
+>()('Db') {
+  declare static readonly layer: Layer.Layer<Db>;
+}
+class Redis extends Context.Service<Redis, {}>()('Redis') {}
+declare const RedisLive: Layer.Layer<Redis>;
+class Cache extends Context.Service<Cache, {}>()('Cache') {
+  declare static readonly layer: Layer.Layer<Cache, never, Redis>;
+}
+// ---cut-end---
 class PostRepo extends Context.Service<
   PostRepo,
   { find(id: string): Effect.Effect<Post> }
@@ -83,7 +128,8 @@ export const router = {
   },
 };
 
-// inferRouterServices<typeof router> is Db
+type Services = inferRouterServices<typeof router>;
+//   ^?
 createFetchHandler({ router, runtime: ManagedRuntime.make(Db.layer) });
 
 // a plugin brings its own layer

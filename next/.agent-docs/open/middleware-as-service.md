@@ -37,7 +37,17 @@ A middleware's implementation is written with its declaration, so swapping auth 
 
 The pattern works today: the middleware yields its implementation from a service the app provides.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { createFetchHandler, initTrpc, TrpcError } from '@trpc12/trpc/server';
+import { Context, Effect, Layer } from 'effect';
+import type { User } from './server.ts';
+const t = initTrpc<{ ctx: { token?: string } }>();
+class CurrentUser extends Context.Service<CurrentUser, User>()('CurrentUser') {}
+class Db extends Context.Service<Db, {}>()('Db') {
+  declare static readonly layer: Layer.Layer<Db>;
+}
+// ---cut-end---
 class Auth extends Context.Service<
   Auth,
   { verify(token?: string): Effect.Effect<User, TrpcError<'UNAUTHORIZED'>> }
@@ -51,6 +61,16 @@ const authed = t.procedure.use(
     }),
   ),
 );
+// ---cut-start---
+declare const AuthLive: Layer.Layer<Auth>;
+const router = {
+  me: authed.query(() =>
+    Effect.gen(function* () {
+      return yield* CurrentUser;
+    }),
+  ),
+};
+// ---cut-end---
 
 createFetchHandler({ router, layer: Layer.mergeAll(AuthLive, Db.layer) });
 ```
@@ -64,7 +84,27 @@ createFetchHandler({ router, layer: Layer.mergeAll(AuthLive, Db.layer) });
 
 An experimental `MiddlewareImpl<Provides, E, Ctx>` type and a `.use()` overload that takes a key.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { createFetchHandler, initTrpc, TrpcError } from '@trpc12/trpc/server';
+import { Context, Effect, Layer, Option } from 'effect';
+import type {
+  experimental_MiddlewareImplB as experimental_MiddlewareImpl,
+  WithUseKeyB,
+} from '../open/middleware-as-service.ts';
+import type { User } from './server.ts';
+const t0 = initTrpc<{ ctx: { token?: string } }>();
+declare const t: WithUseKeyB<typeof t0>;
+class CurrentUser extends Context.Service<CurrentUser, User>()('CurrentUser') {}
+class Sessions extends Context.Service<
+  Sessions,
+  { find: (token?: string) => Option.Option<User> }
+>()('Sessions') {}
+declare const SessionsLive: Layer.Layer<Sessions>;
+class Db extends Context.Service<Db, {}>()('Db') {
+  declare static readonly layer: Layer.Layer<Db>;
+}
+// ---cut-end---
 class Auth extends Context.Service<
   Auth,
   experimental_MiddlewareImpl<
@@ -87,9 +127,18 @@ const AuthLive = Layer.effect(
 );
 
 const authed = t.procedure.use(Auth); // provides CurrentUser, requires Auth, adds UNAUTHORIZED
+// ---cut-start---
+const router = {
+  me: authed.query(() =>
+    Effect.gen(function* () {
+      return yield* CurrentUser;
+    }),
+  ),
+};
+// ---cut-end---
 createFetchHandler({
   router,
-  layer: Layer.mergeAll(AuthLive, SessionsLive, Db.layer),
+  layer: Layer.mergeAll(AuthLive, Db.layer).pipe(Layer.provide(SessionsLive)),
 });
 ```
 

@@ -34,7 +34,23 @@ Some services live for one call: a transaction, a request-scoped logger. If `.pr
 
 Each Effect step of a query or mutation has a `Scope`, so a `.provide()` factory can acquire and release; an Effect middleware can provide a whole layer per call.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { Context, Effect, Exit, type Layer } from 'effect';
+import { t } from './server.ts';
+interface Transaction {
+  insert: (title: string) => Effect.Effect<string>;
+}
+class Db extends Context.Service<Db, {}>()('Db') {}
+class Tx extends Context.Service<Tx, Transaction>()('Tx') {
+  declare static readonly layer: Layer.Layer<Tx, never, Db>;
+}
+declare const db: {
+  begin: Effect.Effect<Transaction>;
+  commit: Effect.Effect<void>;
+  rollback: Effect.Effect<void>;
+};
+// ---cut-end---
 const inTx = t.procedure.provide(Tx, () =>
   Effect.acquireRelease(db.begin, (_, exit) =>
     Exit.isSuccess(exit) ? db.commit : db.rollback,
@@ -55,7 +71,20 @@ const withTx = t.procedure.use(
 
 ### B) `.provide(layer, { lifetime: 'call' })`
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { Context, Effect, type Layer } from 'effect';
+import type { WithCallLayerB } from '../open/per-call-layers.ts';
+import { t as t0 } from './server.ts';
+declare const t: WithCallLayerB<typeof t0>;
+class Db extends Context.Service<Db, {}>()('Db') {}
+class Tx extends Context.Service<
+  Tx,
+  { insert: (title: string) => Effect.Effect<string> }
+>()('Tx') {
+  declare static readonly layer: Layer.Layer<Tx, never, Db>;
+}
+// ---cut-end---
 const withTx = t.procedure.provide(Tx.layer, { lifetime: 'call' });
 
 const create = withTx.mutation(() =>
