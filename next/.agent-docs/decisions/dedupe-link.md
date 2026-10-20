@@ -16,4 +16,4 @@
 - Lost: `key(op)` replaces only the input comparison; call options and `lastEventId` are compared under it too. A subscription that must have its own connection needs `dedupe: false`.
 - Open: letting a call join after the first value when it would miss nothing (an output without streams, a subscription that sends no snapshot), which the link can't tell today.
 - Open: copying a stream in a query's output per caller, if `dedupe: false` turns out to be easy to forget.
-- Lives in: `packages/trpc/src/client/links/dedupe.ts`, `links/equal.ts`, `links/dedupe.test.ts`, `links/equal.test.ts`, `docs/client/links/dedupe.md`.
+- Lives in: `packages/trpc/src/client/links/dedupe.ts`, `links/equal.ts`, `links/dedupe.test.ts`, `links/equal.test.ts`, `www/docs/client/links/dedupe.md`.

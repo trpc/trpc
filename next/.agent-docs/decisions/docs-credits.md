@@ -12,4 +12,4 @@
 - (agent) Every docs page whose feature was built to match oRPC's ([`../reference/orpc-parity.md`](../reference/orpc-parity.md)) ends with a "Credits" section linking the oRPC docs page it follows: Contract-first (after Zodios and ts-rest), Errors, Validating on the client, Errors without try/catch, lifecycle hooks, rate limiting, locks, the publisher and its backends, Durable Objects, message ports, every OpenAPI page (the overview also credits trpc-openapi), TanStack Query (the Vue, Solid, Svelte and Angular adapters), Server Actions (`FormData` actions), NestJS, AI SDK and Better Auth. A credit names only what follows oRPC: Server Actions' `useActionState` and optimistic UI don't, so they aren't credited. Not credited: tracing (Effect's `Tracer`, not oRPC's shape) and middleware dedupe (the page doesn't cover it).
 - Why: v12 took these ideas from them, and readers who know them should see where.
 - Lost: a page listing every project credited; the credits are only on the pages that use their ideas.
-- Lives in: the `## Credits` sections in `next/docs/**/*.md`.
+- Lives in: the `## Credits` sections in `next/www/docs/**/*.md`.

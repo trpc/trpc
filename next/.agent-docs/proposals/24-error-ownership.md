@@ -19,7 +19,7 @@ Two spikes back this: [closed-error-unions](../notes/closed-error-unions.md) and
 ## Today
 
 - **The client's union is open.** `ClientError<E>` is `DefinedError<E> | UnexpectedError`, and `UnexpectedError` is `TrpcError<BuiltinErrorCode | (string & {}), unknown> & { defined: false }` (`packages/trpc/src/client/types.ts`).
-  - Built-in links declare no errors, so their failures (`NETWORK_ERROR`, `CLIENT_CLOSED_REQUEST`, `STREAM_INTERRUPTED`, `CLIENT_ERROR`, `PARSE_ERROR`) land in the open part, as `docs/client/custom-links.md` says.
+  - Built-in links declare no errors, so their failures (`NETWORK_ERROR`, `CLIENT_CLOSED_REQUEST`, `STREAM_INTERRUPTED`, `CLIENT_ERROR`, `PARSE_ERROR`) land in the open part, as `www/docs/client/custom-links.md` says.
   - `LinkDecl.errors` exists, but it adds `defined: true` errors.
 - **One thing keeps it open.** A thrown, undeclared `TrpcError` keeps its code on the wire (`normalizeCause`, `server/execution/execute.ts`). Only non-`TrpcError` throws are masked ([mask-unexpected-errors](../decisions/mask-unexpected-errors.md)).
   - The census in [closed-error-unions](../notes/closed-error-unions.md#census-what-reaches-the-client-over-httplink) shows that every other failure arrives as a built-in code.

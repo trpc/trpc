@@ -14,4 +14,4 @@
   - Batched changes (several rows in one transaction), and resuming across reloads with TanStack DB's sync metadata.
   - Inferring the row type when `getKey` is written before `subscribe`: both are context-sensitive, so TypeScript fixes the row from the first one. The docs write `subscribe` first.
 - Open: the server half (Q26.1: a `Publisher` subscription that can take a snapshot after it subscribes, or `@trpc12/trpc/live`); batched changes; on-demand collections (`loadSubset`).
-- Lives in: `packages/experimental-tanstack-db/`, `docs/integrations/tanstack-query/tanstack-db.md` (Real-time), `spikes/tanstack-db-realtime/`, `tooling/pack/docs.test.ts`.
+- Lives in: `packages/experimental-tanstack-db/`, `www/docs/integrations/tanstack-query/tanstack-db.md` (Real-time), `spikes/tanstack-db-realtime/`, `tooling/pack/docs.test.ts`.

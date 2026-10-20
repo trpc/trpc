@@ -4,6 +4,8 @@ All **implementation** for the rewrite lives here. The old v11 tree, in the repo
 
 Agents: start with [`AGENTS.md`](./AGENTS.md). Design docs live in [`.agent-docs/`](./.agent-docs/). Brief: [`.agent-docs/decisions/brief.md`](./.agent-docs/decisions/brief.md).
 
+User docs: [v12.trpc.io/v12/docs](https://v12.trpc.io/v12/docs), written in [`www/docs/`](./www/docs/).
+
 ```text
 next/
   AGENTS.md             agent instructions for this code root
@@ -25,11 +27,11 @@ next/
   shared/ui/            `@shared/ui`: vanilla shadcn components for the docs site; the tRPC brand is in its globals.css
   tooling/portability/  TS2742/TS2883 check: a consumer package that emits declarations
   tooling/tsconfig/     `@tooling/tsconfig`: the shared, strictest tsconfigs every package, suite and tool extends (examples stay standalone)
-  tooling/docs-lint/    lints the code blocks in docs/ (oxlint skips Markdown)
+  tooling/docs-lint/    lints the code blocks in www/docs/ (oxlint skips Markdown)
   tooling/vercel-ignore/  Vercel's ignored build step for the docs site: skips a deployment when nothing it renders changed
   tooling/release/      checks the Changesets release plan (`.changeset/config.json`): dependents bump with their dependencies
-  docs/                 Markdown user docs, a folder per sidebar section (index: docs/README.md)
-  www/                  `@trpc12/www`: the docs site, rendered from docs/ with compiled twoslash examples
+  www/                  `@trpc12/www`: the docs site, served at https://v12.trpc.io
+  www/docs/             the v12 docs: Markdown pages, a folder per sidebar section, with compiled twoslash examples
   www/samples/          the apps the docs' and home page's code blocks compile in
 ```
 
@@ -53,14 +55,14 @@ pnpm example
 | `pnpm install`      | Installs deps; `prepare` installs the git hook dispatcher                                                                                                         |
 | `pnpm typecheck`    | `tsc` (TypeScript 7) in every workspace package                                                                                                                   |
 | `pnpm check`        | `vp check`: format check, lint and type-aware lint/type check; then `pnpm lint:docs`                                                                              |
-| `pnpm lint:docs`    | Lints the code blocks in `docs/` with the rules that hold for examples (`tooling/docs-lint/`), since oxlint skips Markdown                                        |
+| `pnpm lint:docs`    | Lints the code blocks in `www/docs/` with the rules that hold for examples (`tooling/docs-lint/`), since oxlint skips Markdown                                    |
 | `pnpm fix`          | `vp check --fix`: format and autofix                                                                                                                              |
 | `pnpm test`         | `vp test run`: Vitest, including `*.test-d.ts` type tests                                                                                                         |
 | `pnpm coverage`     | `pnpm test` with v8 coverage over `packages/*/src`; fails below 98% statements, branches, functions or lines                                                      |
 | `pnpm test:bun`     | `@trpc12/trpc`'s Bun tests (`*.bun.test.ts`); needs `bun` on `PATH`                                                                                               |
 | `pnpm example`      | Runs every example's `smoke` script (`examples/*`; `realtime` needs Redis at `REDIS_URL` and Postgres at `DATABASE_URL`, `runtime-matrix` needs `bun` and `deno`) |
 | `pnpm build`        | `vp pack` per package (`tooling/pack/`): unbundled ESM and declarations in `dist/`, published through `publishConfig.exports`; also builds the docs site          |
-| `pnpm docs:dev`     | The docs site at http://localhost:3012, reloading as `docs/` changes                                                                                              |
+| `pnpm docs:dev`     | The docs site at http://localhost:3012, reloading as `www/docs/` changes                                                                                          |
 | `pnpm docs:build`   | Prerenders the site to `www/dist/client`, and its Vercel output to `www/.vercel/output`; fails on a type error in a twoslash block or a broken link               |
 | `pnpm bench budget` | Gzip size of the client bundles in `budgets` (`tooling/bench/bench.ts`), against their targets; reports only, never fails                                         |
 

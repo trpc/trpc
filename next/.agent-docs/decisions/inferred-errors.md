@@ -7,4 +7,4 @@
 - (agent) Verified, with type assertions on the client's union: returned from a resolver, yielded or failed in an Effect resolver, returned from Promise middleware and failed in Effect middleware (`packages/trpc/src/server/errors.test.ts`).
 - Why: typed errors without ceremony; the declaration is metadata for tools, not a requirement.
 - Lost: nothing; this is what's built.
-- Lives in: `packages/trpc/src/internal/error.ts`, `src/server/execution/declared.ts`, `src/openapi/typescript.ts`, `packages/trpc/src/server/errors.test.ts`, `docs/server/errors.md`.
+- Lives in: `packages/trpc/src/internal/error.ts`, `src/server/execution/declared.ts`, `src/openapi/typescript.ts`, `packages/trpc/src/server/errors.test.ts`, `www/docs/server/errors.md`.

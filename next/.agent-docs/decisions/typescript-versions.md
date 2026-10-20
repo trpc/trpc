@@ -5,4 +5,4 @@
 - (agent) The repo itself stays on TypeScript 7 only (`typescript: ^7.0.2` in every `devDependencies`); nothing in CI type-checks against 5.x, since the brief allows one TypeScript dev dependency. Re-check by hand when the declarations start using newer syntax.
 - Why: v11 supports TypeScript 5.7.2 and later, so v11 apps can install the preview without upgrading their compiler first.
 - Lost: a peer range that says the OpenAPI type generator needs TypeScript 7.
-- Lives in: `packages/trpc/package.json` (`peerDependencies.typescript`), `docs/getting-started.md`, `docs/openapi/document.md`.
+- Lives in: `packages/trpc/package.json` (`peerDependencies.typescript`), `www/docs/getting-started.md`, `www/docs/openapi/document.md`.

@@ -79,7 +79,7 @@ When the queue is empty, go to step 3 as if the human had said `done`.
    - **A skipped item:** the file stays or becomes `(agent)`, with a bullet `(agent) Skipped in the decision round, <date>; chose <option> because <reason>.` That keeps every skipped item findable with `pnpm decisions "decision round"`.
    - **A new topic:** create a new `decisions/<topic>.md` with Why, Lost, Open and Lives in bullets. Don't fill the Decision blocks in proposals.
    - **Questions:** every answered `Qn.m` must be cited by a decision file, so `pnpm decisions --questions` shows it.
-2. **Ripple:** update the proposals, `docs/`, `.agent-docs/reference/orpc-parity.md` and the notes that the answers change.
+2. **Ripple:** update the proposals, the docs pages in `next/www/docs/`, `.agent-docs/reference/orpc-parity.md` and the notes that the answers change.
 3. **Implement** what the answers require: code in Effect style, tests and docs. A `(human)` answer that reverses built code means changing that code, not just the docs. An answer of "spike it" means a spike under `spikes/` and a note in `.agent-docs/notes/`, not shipped code. For work that can't be finished (it needs credentials, an upstream release, or another answer), leave an `Open:` bullet saying what is missing.
 4. **Gates:** run `pnpm fix`, `pnpm check`, `pnpm typecheck`, `pnpm test` and `pnpm example`. Fix anything that fails.
 5. **Ship** semantic commits, one per logical change (decisions with their implementation). Run `git pull --rebase origin v12`, then `git push origin v12`, then watch CI with `gh run list --repo trpc/trpc --branch v12`. No PRs, never `main`, never force-push, no merge commits. A branch, when a human asks for one, is named `v12-<name>`.

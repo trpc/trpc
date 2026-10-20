@@ -67,4 +67,4 @@ The mutation starts a job and returns its id; a `tracked()` subscription streams
 
 Ship option 1 behind `streamedMutationOptions({ abortWhenUnobserved: true })` plus a `signal` per call, and document option 2 as the pattern for long jobs.
 
-Built since: both options are in `packages/tanstack-query/src/utils.ts` and `docs/integrations/tanstack-query.md`, tested in `packages/tanstack-query/src/index.test.ts` ([decision](../decisions/interruptible-streamed-mutations.md)).
+Built since: both options are in `packages/tanstack-query/src/utils.ts` and `www/docs/integrations/tanstack-query.md`, tested in `packages/tanstack-query/src/index.test.ts` ([decision](../decisions/interruptible-streamed-mutations.md)).

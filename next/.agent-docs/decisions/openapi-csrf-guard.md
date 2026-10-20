@@ -13,4 +13,4 @@
   - Without `Sec-Fetch-Site`, comparing only the host lets an `http://` page on the same host through to an `https://` API, as in Go. HSTS covers that, and every browser has sent Fetch Metadata since 2023.
   - Behind a proxy that rewrites `Host`, old browsers' same-origin forms are refused unless their origin is trusted.
 - Open: `GET` routes on mutations (`.route({ method: 'GET' })`) aren't checked; that is oRPC's navigation guard, if wanted.
-- Lives in: `packages/trpc/src/openapi/rest/csrf.ts` (`makeCsrfGuard`, `CsrfOptions`), the `csrf` option in `packages/trpc/src/openapi/handler.ts`, tests in `packages/trpc/src/openapi/csrf.test.ts`, docs in `docs/openapi/routes.md#cross-site-forms`.
+- Lives in: `packages/trpc/src/openapi/rest/csrf.ts` (`makeCsrfGuard`, `CsrfOptions`), the `csrf` option in `packages/trpc/src/openapi/handler.ts`, tests in `packages/trpc/src/openapi/csrf.test.ts`, docs in `www/docs/openapi/routes.md#cross-site-forms`.
