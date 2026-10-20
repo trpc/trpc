@@ -190,24 +190,90 @@ const parseSource = Effect.fn('parseSource')(function* (
 });
 
 /**
- * When `file` last changed in git, if it's committed. With `skipRenames`, a
- * rename doesn't count, even with edits.
+ * When each committed file under `dir` last changed in git, by absolute path.
+ * One `git log` for the dir, as starting a process per page from the build's
+ * large one took seconds. With `skipRenames`, a rename doesn't count, even
+ * with edits: a file's date is its last add or edit under any of its names,
+ * as `git log -1 --follow --diff-filter=AM` gives it.
  */
-const lastModified = Effect.fn('lastModified')(
-  function* (file: string, skipRenames = false) {
+const commitDates = Effect.fn('commitDates')(
+  function* (dir: string, skipRenames = false) {
     const path = yield* Path.Path;
     const spawner = yield* ChildProcessSpawner.ChildProcessSpawner;
-    const renames = skipRenames ? ['--follow', '--diff-filter=AM'] : [];
-    const date = yield* spawner.string(
-      ChildProcess.make(
-        'git',
-        ['log', '-1', ...renames, '--format=%cI', '--', file],
-        { cwd: path.dirname(file), stderr: 'ignore' },
-      ),
+    const git = (args: ReadonlyArray<string>) =>
+      spawner.string(
+        ChildProcess.make('git', ['-c', 'core.quotePath=false', ...args], {
+          cwd: dir,
+          stderr: 'ignore',
+        }),
+      );
+    const dates = new Map<string, string>();
+    if (!skipRenames) {
+      const log = yield* git([
+        'log',
+        '--format=%x00%cI',
+        '--name-only',
+        '--relative',
+        '--',
+        '.',
+      ]);
+      // Newest first, so a file's first commit is its last change.
+      for (const commit of log.split('\0').slice(1)) {
+        const [date = '', ...files] = commit.split('\n');
+        for (const file of files) {
+          const absolute = path.join(dir, file);
+          if (file !== '' && !dates.has(absolute)) {
+            dates.set(absolute, date);
+          }
+        }
+      }
+      return dates as ReadonlyMap<string, string>;
+    }
+    const [root, files, log] = yield* Effect.all(
+      [
+        git(['rev-parse', '--show-toplevel']),
+        git(['ls-files', '--full-name', '-z']),
+        // The whole repo's, as a page may have moved in from outside `dir`.
+        git(['log', '-M', '--format=%x00%cI', '--name-status']),
+      ],
+      { concurrency: 'unbounded' },
     );
-    return date.trim() || undefined;
+    // The name each file had at the commit being read, to the files.
+    const pending = new Map<string, Array<string>>();
+    for (const file of files.split('\0')) {
+      if (file !== '') {
+        pending.set(file, [path.join(root.trim(), file)]);
+      }
+    }
+    for (const commit of log.split('\0').slice(1)) {
+      if (pending.size === 0) {
+        break;
+      }
+      const [date = '', ...lines] = commit.split('\n');
+      const renamed: Array<readonly [string, Array<string>]> = [];
+      for (const line of lines) {
+        const [status = '', from = '', to = from] = line.split('\t');
+        const targets = pending.get(to);
+        if (targets === undefined) {
+          continue;
+        }
+        if (status.startsWith('R')) {
+          pending.delete(to);
+          renamed.push([from, targets]);
+        } else if (status === 'A' || status === 'M') {
+          pending.delete(to);
+          for (const target of targets) {
+            dates.set(target, date);
+          }
+        }
+      }
+      for (const [from, targets] of renamed) {
+        pending.set(from, [...(pending.get(from) ?? []), ...targets]);
+      }
+    }
+    return dates as ReadonlyMap<string, string>;
   },
-  Effect.orElseSucceed(() => undefined),
+  Effect.orElseSucceed((): ReadonlyMap<string, string> => new Map()),
 );
 
 /** Every page: `**\/*.md` under the content dir, except `README.md` files, which index the folder on GitHub. */
@@ -229,19 +295,18 @@ const readSources = Effect.fn('readSources')(function* (dirs: ContentDirs) {
 
 /** Pages for prerendering, the sitemap and their social cards. */
 export const docPages = Effect.fn('docPages')(function* (dirs: PageDirs) {
-  return yield* Effect.forEach(
-    yield* readSources(dirs),
-    (source) =>
-      Effect.map(lastModified(source.file, dirs.datesSkipRenames), (date) => ({
-        description: source.frontmatter.description,
-        experiment: source.frontmatter.experiment,
-        lastModified: date,
-        path: `${dirs.basePath}/${source.slug}`,
-        section: source.frontmatter.section,
-        title: source.frontmatter.title,
-      })),
+  const [sources, dates] = yield* Effect.all(
+    [readSources(dirs), commitDates(dirs.contentDir, dirs.datesSkipRenames)],
     { concurrency: 'unbounded' },
   );
+  return sources.map((source) => ({
+    description: source.frontmatter.description,
+    experiment: source.frontmatter.experiment,
+    lastModified: dates.get(source.file),
+    path: `${dirs.basePath}/${source.slug}`,
+    section: source.frontmatter.section,
+    title: source.frontmatter.title,
+  }));
 });
 
 /** Runs a build step from one of Vite's hooks. */
@@ -383,6 +448,12 @@ export function docsContent(options: ContentOptions): Plugin {
   const twoslashCache =
     options.twoslashCache && makeTwoslashCache(options.twoslashCache);
   const rendered = new Map<string, Promise<Rendered>>();
+  /** The pages' commit dates, read again after an edit, as the pages are. */
+  let commits: Promise<ReadonlyMap<string, string>> | undefined;
+  const lastModifiedDates = () => {
+    commits ??= run(commitDates(options.contentDir, options.datesSkipRenames));
+    return commits;
+  };
 
   /** The v11 page on the same topic as `source`. */
   const v11Page = Effect.fn('v11Page')(function* (source: Source) {
@@ -453,9 +524,8 @@ export function docsContent(options: ContentOptions): Plugin {
         headings: result.headings,
         html: result.html,
         label: source.frontmatter.label,
-        lastModified: yield* lastModified(
+        lastModified: (yield* Effect.promise(lastModifiedDates)).get(
           source.file,
-          options.datesSkipRenames,
         ),
         parent: source.frontmatter.parent,
         section: source.frontmatter.section,
@@ -791,6 +861,7 @@ export function docsContent(options: ContentOptions): Plugin {
         rendered.clear();
       } else {
         rendered.delete(context.file);
+        commits = undefined;
       }
       const graph = this.environment.moduleGraph;
       const stale = [...graph.idToModuleMap].flatMap(([id, module]) =>
