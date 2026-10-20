@@ -26,10 +26,9 @@ for (const [name, cut] of Object.entries(cuts)) {
 // SSE and batching are imports already (`sse()`, `batching()`), so every
 // fixture without them starts from queries and mutations only.
 const stacks: ReadonlyArray<readonly [string, readonly string[]]> = [
-  ['no streamed outputs or frames', ['frames', 'streamed']],
-  ['+ plain jsonSerializer', ['frames', 'streamed', 'json']],
-  ['+ hand-rolled iterable', ['frames', 'streamed', 'json', 'iterable']],
-  ['+ raw fetch', ['frames', 'streamed', 'json', 'iterable', 'fetch']],
+  ['plain jsonSerializer', ['json']],
+  ['+ hand-rolled iterable', ['json', 'iterable']],
+  ['+ raw fetch', ['json', 'iterable', 'fetch']],
   ['raw fetch, every feature kept', ['fetch']],
   ['raw fetch + plain jsonSerializer, features kept', ['fetch', 'json']],
 ];
