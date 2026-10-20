@@ -23,11 +23,7 @@ import { Context, Effect, Layer, Stream, type Duration } from 'effect';
 import { HttpServerRequest } from 'effect/http';
 import { Socket, SocketServer } from 'effect/socket';
 import { timerOption } from '../internal/duration.ts';
-import {
-  decodeLines,
-  encodeLine,
-  limitLineLength,
-} from '../internal/lines.ts';
+import { decodeLines, encodeLine, limitLineLength } from '../internal/lines.ts';
 import {
   parseSocketMessage,
   serveSocketConnection,
@@ -123,9 +119,7 @@ export function experimental_serveSocket(
     Effect.gen(function* () {
       const server = yield* SocketServer.SocketServer;
       yield* Effect.forkScoped(
-        server.run((socket) =>
-          serveOne(core, socket, idleTimeout, maxPayload),
-        ),
+        server.run((socket) => serveOne(core, socket, idleTimeout, maxPayload)),
       );
     }),
   );
