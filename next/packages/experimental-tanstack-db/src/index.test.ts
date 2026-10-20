@@ -370,6 +370,34 @@ test('a failed subscription puts the collection in its error status', async () =
   await posts.cleanup();
 });
 
+test('cleanup aborts the signal of a subscription that awaits it, and leaves no error', async () => {
+  let signal: AbortSignal | undefined;
+  let ended = false;
+  const posts = createCollection(
+    liveCollectionOptions<Post, string>({
+      subscribe: async function* (opts) {
+        signal = opts.signal;
+        try {
+          yield { type: 'snapshot', rows: [] };
+          await new Promise((_, reject) =>
+            opts.signal.addEventListener('abort', () =>
+              reject(opts.signal.reason),
+            ),
+          );
+        } finally {
+          ended = true;
+        }
+      },
+      getKey: (post) => post.id,
+    }),
+  );
+  await posts.preload();
+  await posts.cleanup();
+  expect(signal?.aborted).toBe(true);
+  await vi.waitFor(() => expect(ended).toBe(true));
+  expect(posts.status).toBe('cleaned-up');
+});
+
 test('cleanup closes the subscription', async () => {
   await using app = await serve();
   let closed = false;
