@@ -1,4 +1,10 @@
-import { Effect, Schema, SchemaTransformation, Stream } from 'effect';
+import {
+  Effect,
+  Schema,
+  SchemaGetter,
+  SchemaTransformation,
+  Stream,
+} from 'effect';
 import {
   TrpcError,
   type CodeError,
@@ -61,6 +67,8 @@ const isReadableStream = (u: unknown): u is ReadableStream<Uint8Array> =>
 
 const isByteStream = (u: unknown): u is experimental_ByteStream =>
   Stream.isStream(u);
+
+const noJson = () => 'A byte stream has no JSON form';
 
 const counted = (
   bytes: experimental_ByteStream,
@@ -134,8 +142,19 @@ export function experimental_byteStream(
   const maxBytes = opts.maxBytes ?? Infinity;
   return Schema.declare(isReadableStream, {
     expected: 'ReadableStream<Uint8Array>',
-    format: 'binary',
-    contentMediaType: CONTENT_TYPE.octet,
+    // JSON can't carry a stream. The link only gives the JSON Schema
+    // OpenAPI's binary string, so documents and contracts describe the bytes.
+    toCodecJson: () =>
+      Schema.link<ReadableStream<Uint8Array>>()(
+        Schema.String.annotate({
+          format: 'binary',
+          contentMediaType: CONTENT_TYPE.octet,
+        }),
+        {
+          decode: SchemaGetter.forbidden(noJson),
+          encode: SchemaGetter.forbidden(noJson),
+        },
+      ),
   })
     .pipe(
       Schema.decodeTo(

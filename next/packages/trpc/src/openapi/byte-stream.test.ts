@@ -167,6 +167,15 @@ test('a byte stream from another origin passes the CSRF guard, which only form b
   expect(await res.json()).toBe('cors');
 });
 
+test("a byte stream's JSON Schema is binary, so a contract describes it", () => {
+  const contract = experimental_toContract(router);
+  expect(contract.procedures['upload']?.input).toEqual({
+    type: 'string',
+    format: 'binary',
+    contentMediaType: 'application/octet-stream',
+  });
+});
+
 test('a handler built from a contract streams the body too', async () => {
   await using handler = experimental_createOpenApiHandler({
     router,
