@@ -1700,9 +1700,6 @@ importers:
         specifier: workspace:*
         version: link:../packages/trpc
     devDependencies:
-      '@effect/atom-react':
-        specifier: 4.0.2
-        version: 4.0.2(effect@4.0.2)(react@19.3.0)(scheduler@0.27.0)
       '@effect/platform-node':
         specifier: 4.0.2
         version: 4.0.2(effect@4.0.2)(redis@6.3.0(@opentelemetry/api@1.9.1))
@@ -1748,15 +1745,9 @@ importers:
       '@types/react-dom':
         specifier: 19.2.3
         version: 19.2.3(@types/react@19.3.0)
-      arktype:
-        specifier: 2.2.8
-        version: 2.2.8
       danson:
         specifier: 0.13.1
         version: 0.13.1
-      devalue:
-        specifier: 5.9.4
-        version: 5.9.4
       devalue-async:
         specifier: 0.7.2
         version: 0.7.2(devalue@5.9.4)
@@ -1772,9 +1763,6 @@ importers:
       rolldown:
         specifier: 1.2.13
         version: 1.2.13
-      scheduler:
-        specifier: 0.27.0
-        version: 0.27.0
       superjson:
         specifier: 2.2.6
         version: 2.2.6

@@ -3,15 +3,12 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "typecheck": "tsc --noEmit -p tsconfig.json",
-    "typeperf": "node builder-generics/bench.ts",
-    "bundle": "node effect-bundle/measure.ts"
+    "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
     "@trpc12/trpc": "workspace:*"
   },
   "devDependencies": {
-    "@effect/atom-react": "4.0.2",
     "@effect/platform-node": "4.0.2",
     "@modelcontextprotocol/sdk": "1.32.1",
     "@orpc/client": "2.0.0-beta.44",
@@ -27,15 +24,12 @@
     "@types/node": "^24.0.0",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.2.3",
-    "arktype": "2.2.8",
     "danson": "0.13.1",
-    "devalue": "5.9.4",
     "devalue-async": "0.7.2",
     "effect": "4.0.2",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "rolldown": "1.2.13",
-    "scheduler": "0.27.0",
     "superjson": "2.2.6",
     "typescript": "^7.0.2",
     "undici": "8.11.2",
