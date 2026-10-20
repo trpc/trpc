@@ -19,7 +19,7 @@ import {
   type DeferredDecoder,
 } from '../events.ts';
 import type { HttpLinkOptions } from './link.ts';
-import { ok, type Transport } from './transport.ts';
+import { bodyStream, ok, type Transport } from './transport.ts';
 
 /**
  * Subscriptions over SSE: one connection at a time, reconnecting with
@@ -124,7 +124,7 @@ export function makeSubscriptions(
             return yield* transport.readError(reply);
           }
           const decoder = makeDeferredDecoder(transport.serializer);
-          const ended = yield* sseEvents(reply.response.stream).pipe(
+          const ended = yield* sseEvents(bodyStream(reply)).pipe(
             Stream.mapEffect((event) => read(event, decoder)),
             Stream.takeUntil((done) => done),
             Stream.runLast,
