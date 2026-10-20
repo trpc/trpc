@@ -1,6 +1,6 @@
 import { Effect, Schema, Stream } from 'effect';
 import { TrpcError } from '../../internal/error.ts';
-import type { DansonForm } from '../../internal/types.ts';
+import type { DecodedJsonForm } from '../../internal/types.ts';
 import type {
   ProcedureInternals,
   Step,
@@ -28,7 +28,8 @@ export interface ValidationLinkOptions {
   /**
    * Validate results. `'json'` decodes plain JSON results (`httpLink`'s
    * default serializer, `experimental_openApiLink`) with the Effect Schema's JSON codec,
-   * so `Date`s, `bigint`s and classes come back as their types.
+   * so `Date`s, `bigint`s and classes come back as their types. Errors'
+   * `data` stays plain JSON.
    * @default true
    */
   output?: boolean | 'json';
@@ -93,7 +94,8 @@ const isEnvelope = (value: unknown): value is { id: string; data: unknown } =>
  * transformations don't run twice. Inputs from functions (context-aware) and
  * streamed (`stream()`) outputs are not checked. Paths the contract doesn't
  * have pass through. With `output: 'json'` the client types results as
- * the schemas' types again, not the JSON form plain-JSON links declare.
+ * the schemas' types again, not the JSON form plain-JSON links declare;
+ * errors' `data` isn't decoded, so it keeps its JSON form.
  *
  * @example
  * ```ts
@@ -107,7 +109,7 @@ const isEnvelope = (value: unknown): value is { id: string; data: unknown } =>
  */
 export function experimental_validationLink(
   opts: ValidationLinkOptions & { output: 'json' },
-): TrpcLink<{ form: DansonForm; builtinErrors: 'BAD_RESPONSE' }>;
+): TrpcLink<{ form: DecodedJsonForm; builtinErrors: 'BAD_RESPONSE' }>;
 export function experimental_validationLink(
   opts: ValidationLinkOptions,
 ): TrpcLink<{ builtinErrors: 'BAD_RESPONSE' }>;

@@ -23,7 +23,9 @@ import type { AnyLink, DeclContext, TrpcLink } from './link.ts';
 
 /**
  * An error's `data` as it arrives under a serializer's form, like outputs:
- * its JSON form unless the serializer keeps the types. Input validation
+ * its JSON form unless the serializer keeps the types, or the form's
+ * `errorData` when a link decodes only outputs
+ * (`experimental_validationLink` with `output: 'json'`). Input validation
  * issues are JSON already, so they keep theirs.
  * @since 0.1.0
  * @stability stable
@@ -32,7 +34,9 @@ export type ErrorData<
   D,
   F extends OutputForm = DansonForm,
 > = F['streaming'] extends true
-  ? D
+  ? F extends { readonly errorData: infer E extends OutputForm }
+    ? ErrorData<D, E>
+    : D
   : unknown extends D
     ? D
     : '~issues' extends keyof D

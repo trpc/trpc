@@ -1,10 +1,14 @@
-import { Schema } from 'effect';
+import { Effect, Schema } from 'effect';
 import {
+  createSafeClient,
   createTrpcClient,
   httpLink,
+  matchError,
   safe,
   experimental_validationLink,
+  TrpcError,
 } from '@trpc12/trpc/client';
+import { createSerializer } from '@trpc12/trpc/serializer';
 import {
   type AnyContractRouter,
   experimental_contract,
@@ -15,6 +19,7 @@ import {
   experimental_openapi,
   experimental_openApiLink,
 } from '@trpc12/trpc/openapi';
+import { createEffectClient } from '@trpc12/trpc/effect';
 import { createUntypedClient } from '@trpc12/trpc/extend';
 import { type AnyRouter, initTrpc, stream, tracked } from '@trpc12/trpc/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
@@ -150,6 +155,86 @@ test("output: 'json' decodes experimental_openApiLink's plain JSON into the sche
   expect(post.at).toBeInstanceOf(Date);
   expect(post.at.getTime()).toBe(at.getTime());
   await openapi.dispose();
+});
+
+test("output: 'json' types declared errors' data in its JSON form, as it arrives", async () => {
+  class PostGone extends TrpcError.Tagged('POST_GONE', {
+    status: 410,
+    data: Schema.Struct({ id: Schema.String, deletedAt: Schema.Date }),
+  }) {}
+  const gone = {
+    post: {
+      byId: c
+        .input(z.object({ id: z.string() }))
+        .output(Post)
+        .errors({ POST_GONE: PostGone })
+        .query(),
+    },
+  } satisfies AnyContractRouter;
+  const goneImpl = t.implement(gone);
+  const goneRouter = goneImpl.router({
+    post: {
+      byId: goneImpl.post.byId.query(
+        (opts) => new PostGone({ id: opts.input.id, deletedAt: at }),
+      ),
+    },
+  });
+
+  await using http = await createTestServer({ router: goneRouter });
+  const client = createTrpcClient({
+    router: gone,
+    links: [
+      experimental_validationLink({ contract: gone, output: 'json' }),
+      httpLink({ url: http.url }),
+    ],
+  });
+  const [, err] = await safe(client.post.byId.query({ id: '1' }));
+  if (!err) throw new Error('expected an error');
+  const deletedAt = matchError(err, {
+    NETWORK_ERROR: () => undefined,
+    BAD_RESPONSE: () => undefined,
+    BAD_REQUEST: () => undefined,
+    POST_GONE: (e) => e.data.deletedAt,
+    unexpected: () => undefined,
+  });
+  expect(deletedAt).toBe(at.toISOString());
+  expectTypeOf(deletedAt).toEqualTypeOf<string | undefined>();
+
+  const [, safeErr] = await createSafeClient(client).post.byId.query({
+    id: '1',
+  });
+  if (safeErr?.code !== 'POST_GONE') throw safeErr;
+  expectTypeOf(safeErr.data.deletedAt).toEqualTypeOf<string>();
+
+  const effectClient = createEffectClient({
+    router: gone,
+    links: [
+      experimental_validationLink({ contract: gone, output: 'json' }),
+      httpLink({ url: http.url }),
+    ],
+  });
+  const failed = await Effect.runPromise(
+    Effect.flip(effectClient.post.byId.query({ id: '1' })),
+  );
+  if (failed.code !== 'POST_GONE') throw failed;
+  expect(failed.data.deletedAt).toBe(at.toISOString());
+  expectTypeOf(failed.data.deletedAt).toEqualTypeOf<string>();
+
+  await using danson = await createTestServer({
+    router: goneRouter,
+    serializer: createSerializer(),
+  });
+  const kept = createTrpcClient({
+    router: gone,
+    links: [
+      experimental_validationLink({ contract: gone }),
+      httpLink({ url: danson.url, serializer: createSerializer() }),
+    ],
+  });
+  const [, keptErr] = await safe(kept.post.byId.query({ id: '1' }));
+  if (keptErr?.code !== 'POST_GONE') throw new Error('expected POST_GONE');
+  expect(keptErr.data.deletedAt).toEqual(at);
+  expectTypeOf(keptErr.data.deletedAt).toEqualTypeOf<Date>();
 });
 
 test('streamed outputs, unvalidated outputs, plain events, opt-outs and paths outside the contract', async () => {

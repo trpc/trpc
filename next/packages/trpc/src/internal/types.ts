@@ -121,6 +121,12 @@ export interface OutputForm {
   readonly keeps: unknown;
   /** Deferred values and files at any depth (danSON), or only at the root. */
   readonly streaming: boolean;
+  /**
+   * The form errors' `data` arrives in, for a `streaming` form whose
+   * outputs a link decodes ({@link DecodedJsonForm}); otherwise it's the
+   * outputs' form.
+   */
+  readonly errorData?: OutputForm;
 }
 
 /**
@@ -150,6 +156,17 @@ export interface SyncForm<TKeeps> extends OutputForm {
  * @stability stable
  */
 export type JsonForm = SyncForm<never>;
+
+/**
+ * Plain JSON whose outputs a link decodes with their schemas, as
+ * `experimental_validationLink`'s `output: 'json'` does: outputs arrive as
+ * their types, errors' `data` in plain JSON's form.
+ * @since 0.1.0
+ * @stability experimental
+ */
+export interface DecodedJsonForm extends DansonForm {
+  readonly errorData: JsonForm;
+}
 
 type Dropped = undefined | symbol | ((...args: any[]) => unknown);
 type JsonItem<T, K, D extends boolean> =
