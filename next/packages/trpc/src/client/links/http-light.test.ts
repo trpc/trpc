@@ -291,4 +291,98 @@ test('Promise links and Effect links share a chain, in either client', async () 
   const ticks: unknown[] = [];
   for await (const n of streamed.ticks.subscribe()) ticks.push(n);
   expect(ticks).toEqual([1, 2]);
+
+  const effectStream = createEffectClient({
+    router: routerType<typeof router>(),
+    links: [
+      tag,
+      httpStreamLink({ url: 'http://localhost/trpc', fetch: via(json) }),
+    ],
+  });
+  const collected = await Effect.runPromise(
+    Stream.runCollect(effectStream.ticks.subscribe()),
+  );
+  expect([...collected]).toEqual([1, 2]);
+});
+
+test('a Promise chain without a last link, or with an unmarked Effect link, fails', async () => {
+  const pass = promiseLink((args) => args.next(args.op));
+  const [, noLast] = await safe(
+    createTrpcClient({
+      router: routerType<typeof router>(),
+      links: [pass] as never,
+    }).echo.query(1),
+  );
+  expect(noLast).toMatchObject({
+    code: 'CLIENT_ERROR',
+    message: 'The last link must send the request (e.g. httpLink)',
+  });
+  const [, unmarked] = await safe(
+    createTrpcClient({
+      router: routerType<typeof router>(),
+      links: [(() => Stream.make(1)) as never],
+    }).echo.query(1),
+  );
+  expect(unmarked).toMatchObject({ code: 'CLIENT_ERROR' });
+  expect(String((unmarked as Error).cause ?? unmarked)).toContain(
+    'make Effect links with link()',
+  );
+});
+
+test("requests: init's next, byte stream and Blob bodies, bodiless responses", async () => {
+  const inits: RequestInit[] = [];
+  const empty = clientWith({
+    init: { next: { revalidate: 60 } },
+    fetch: async (_url, init) => {
+      inits.push(init);
+      return new Response(null, { status: 204 });
+    },
+  });
+  expect(
+    await empty.echo.query(1, { init: { next: { tags: ['posts'] } } }),
+  ).toBeUndefined();
+  expect((inits[0] as { next?: unknown }).next).toEqual({
+    revalidate: 60,
+    tags: ['posts'],
+  });
+
+  await empty.echo.query(new ReadableStream<Uint8Array>() as never);
+  expect(inits[1]).toMatchObject({ method: 'POST', duplex: 'half' });
+  expect(new Headers(inits[1]!.headers).get('content-type')).toBe(
+    'application/octet-stream',
+  );
+
+  const files = createTrpcClient({
+    router: routerType<typeof router>(),
+    links: [
+      httpLink({
+        url: 'http://localhost/trpc',
+        serializer: danson,
+        fetch: async (_url, init) => {
+          inits.push(init);
+          return new Response(null, { status: 204 });
+        },
+      }),
+    ],
+  });
+  await files.echo.query({ blob: new Blob(['ab']) });
+  const part = (inits[2]!.body as FormData).get('0') as File;
+  expect([part.name, await part.text()]).toEqual(['blob', 'ab']);
+
+  const [, offline] = await safe(
+    clientWith({ fetch: () => Promise.reject('offline') }).echo.query(1),
+  );
+  expect(offline).toMatchObject({
+    code: 'NETWORK_ERROR',
+    message: 'Network error',
+  });
+  const [, notTrpc] = await safe(
+    clientWith({
+      fetch: async () => new Response('{"json":{"nope":1}}', { status: 500 }),
+    }).echo.query(1),
+  );
+  expect(notTrpc).toMatchObject({
+    code: 'INTERNAL_SERVER_ERROR',
+    message: 'Unexpected 500 response',
+  });
 });
