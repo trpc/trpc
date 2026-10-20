@@ -10,7 +10,7 @@ import {
 } from '~/content/docs.ts';
 import { cn } from '@shared/ui/lib/utils';
 import { type HomeVersion, homeVersions } from '~/home-version.ts';
-import { site } from '~/site.ts';
+import { site, v12 } from '~/site.ts';
 
 import { ExperimentsMenu } from './experiments-menu.tsx';
 import { GitHubIcon } from './icons.tsx';
@@ -52,6 +52,22 @@ function DocsLinks(props: { readonly version: HomeVersion }) {
       {link.label}
     </Link>
   ));
+}
+
+function GitHubLink(props: { readonly version: HomeVersion }) {
+  return (
+    <a
+      aria-label="tRPC on GitHub"
+      className={cn(
+        buttonVariants({ size: 'icon-sm', variant: 'ghost' }),
+        'hidden sm:inline-flex',
+      )}
+      href={props.version === 'v12' ? v12.github : site.github}
+      title="tRPC on GitHub"
+    >
+      <GitHubIcon />
+    </a>
+  );
 }
 
 export function SiteHeader() {
@@ -119,17 +135,15 @@ export function SiteHeader() {
           ) : linked === 'v12' ? (
             <ExperimentsMenu />
           ) : null}
-          <a
-            aria-label="tRPC on GitHub"
-            className={cn(
-              buttonVariants({ size: 'icon-sm', variant: 'ghost' }),
-              'hidden sm:inline-flex',
-            )}
-            href={site.github}
-            title="tRPC on GitHub"
-          >
-            <GitHubIcon />
-          </a>
+          {onHome ? (
+            homeVersions.map((home) => (
+              <span data-home-panel={home} key={home}>
+                <GitHubLink version={home} />
+              </span>
+            ))
+          ) : (
+            <GitHubLink version={linked} />
+          )}
           <ThemeToggle />
         </div>
       </div>

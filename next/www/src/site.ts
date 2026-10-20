@@ -24,7 +24,11 @@ export const site = {
  * The v12 docs, rendered from `www/docs`. v11 is the stable release, so it
  * has `/docs` while v12 is experimental.
  */
-export const v12 = { basePath: '/v12/docs' } as const;
+export const v12 = {
+  basePath: '/v12/docs',
+  /** Where the header's GitHub links go while the reader browses v12. */
+  github: 'https://github.com/trpc/trpc/tree/v12',
+} as const;
 
 /**
  * The design decisions in `.agent-docs/`, rendered for browsing: the open
