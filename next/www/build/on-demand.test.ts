@@ -5,6 +5,7 @@ import { NodeServices } from '@effect/platform-node';
 import { describe, expect, it } from '@effect/vitest';
 import { Effect, FileSystem, Path } from 'effect';
 
+import { decisionSearchKeys } from '../src/content/decision-search.ts';
 import {
   flagsValue,
   onDemandFunction,
@@ -57,6 +58,21 @@ describe('onDemandRoutes', () => {
     expect(home?.has).toEqual([
       { key: 'version', type: 'query', value: '^v12$' },
     ]);
+  });
+
+  it('sends a decisions page with a choice in its query to the function', () => {
+    const decided = onDemandRoutes(['publisher']).slice(2);
+    expect(decided.map((route) => route.has)).toEqual(
+      decisionSearchKeys.map((key) => [{ key, type: 'query' }]),
+    );
+    const src = new RegExp(decided[0]?.src ?? '');
+    expect(src.exec('/v12/decisions')?.[1]).toBe('/v12/decisions');
+    expect(src.exec('/v12/decisions/open/mcp-oauth')?.[1]).toBe(
+      '/v12/decisions/open/mcp-oauth',
+    );
+    expect(src.test('/v12/decisions/open/mcp-oauth.md')).toBe(false);
+    expect(src.test('/v12/docs/server/overview')).toBe(false);
+    expect(decided[0]?.dest).toBe(`/${onDemandFunction}?${pathParam}=$1`);
   });
 });
 

@@ -1,7 +1,8 @@
 /**
  * The pages rendered on request instead of in the build: a URL whose query
- * turns on experiments (`?flags=`, `src/flags.ts`) or shows v12 on the home
- * page (`?version=v12`, `src/home-version.ts`). The build prerenders each
+ * turns on experiments (`?flags=`, `src/flags.ts`), shows v12 on the home
+ * page (`?version=v12`, `src/home-version.ts`) or holds a choice made on a
+ * decisions page (`src/content/decision-search.ts`). The build prerenders each
  * page once, without a query; every combination of flags is a different
  * page, so the host sends those requests to a function running the site's
  * server build, and its CDN caches each URL's response until the next
@@ -10,7 +11,9 @@
 import { Effect, FileSystem, Path } from 'effect';
 import type { Plugin } from 'vite';
 
+import { decisionSearchKeys } from '../src/content/decision-search.ts';
 import { experimentIds } from '../src/experiments.ts';
+import { decisions } from '../src/site.ts';
 import type { VercelRoute } from './old-routes.ts';
 
 /** The function's name, and the path routes rewrite to. */
@@ -56,6 +59,12 @@ export const onDemandRoutes = (
     has: [{ key: 'version', type: 'query', value: '^v12$' }],
     src: '^/$',
   },
+  // Any value: the page drops one it doesn't know, as the browser does.
+  ...decisionSearchKeys.map((key) => ({
+    dest: `/${onDemandFunction}?${pathParam}=$1`,
+    has: [{ key, type: 'query' }],
+    src: `^(${escapeRegExp(decisions.basePath)}(?:/[^.]*)?)$`,
+  })),
 ];
 
 /**

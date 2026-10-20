@@ -9,6 +9,8 @@ const srcDir = fileURLToPath(new URL('..', import.meta.url));
 const allowed = new Set([
   'components/decisions.tsx',
   'components/doc-body.tsx',
+  'content/decision-search.test.ts',
+  'content/decision-search.ts',
   'content/decision-types.ts',
   'content/decisions.test.ts',
   'content/decisions.ts',

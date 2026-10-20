@@ -1,4 +1,4 @@
-import { Link } from '@tanstack/react-router';
+import { Link, useNavigate, useSearch } from '@tanstack/react-router';
 import {
   ArrowLeft,
   ChevronRight,
@@ -15,7 +15,7 @@ import {
   ThumbsDown,
   ThumbsUp,
 } from 'lucide-react';
-import { type ReactNode, useEffect, useMemo, useState } from 'react';
+import { type ReactNode, useMemo, useState } from 'react';
 
 import { Badge } from '@shared/ui/components/badge';
 import { buttonVariants } from '@shared/ui/components/button';
@@ -25,19 +25,17 @@ import {
   CollapsibleTrigger,
 } from '@shared/ui/components/collapsible';
 import { Input } from '@shared/ui/components/input';
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from '@shared/ui/components/tabs';
-import {
-  ToggleGroup,
-  ToggleGroupItem,
-} from '@shared/ui/components/toggle-group';
 import { cn } from '@shared/ui/lib/utils';
 import { DocBody } from '~/components/doc-body.tsx';
 import { TextWithCode } from '~/components/text-with-code.tsx';
+import {
+  type DecisionsIndexSearch,
+  optionParam,
+  shownOption,
+  whoOf,
+  whoParamOf,
+  type WhoParam,
+} from '~/content/decision-search.ts';
 import type {
   Decision,
   DecisionMeta,
@@ -147,34 +145,55 @@ const matches = (query: string, ...texts: ReadonlyArray<string>) => {
   return words.every((word) => haystack.includes(word));
 };
 
-/** A single-choice filter: pressing the chosen chip again clears it. */
+/**
+ * A link's props marking it as the choice the page shows. `<Link>` replaces
+ * `aria-current` with `"page"` on a link to the URL it's on, query aside
+ * unless `includeSearch`; a chosen chip links to clearing it, so styles read
+ * `data-chosen`.
+ */
+const chooses = (chosen: boolean) => ({
+  activeOptions: { exact: true, includeSearch: true },
+  'aria-current': chosen ? ('true' as const) : undefined,
+  'data-chosen': chosen || undefined,
+});
+
+type IndexSearchUpdate = (prev: DecisionsIndexSearch) => DecisionsIndexSearch;
+
+/**
+ * A single-choice filter, as links to the index with each choice: the
+ * chosen chip's link clears it. On a phone the chips scroll sideways in one
+ * row, instead of wrapping into several.
+ */
 function ChipFilter<T extends string>(props: {
   readonly label: string;
-  readonly onChange: (value: T | undefined) => void;
   readonly options: ReadonlyArray<readonly [T, string, number]>;
+  readonly search: (value: T | undefined) => IndexSearchUpdate;
   readonly value: T | undefined;
 }) {
   return (
-    <ToggleGroup
+    <div
       aria-label={props.label}
-      className="flex-wrap"
-      onValueChange={(value) => props.onChange(value[0] as T | undefined)}
-      size="sm"
-      spacing={1}
-      value={props.value === undefined ? [] : [props.value]}
-      variant="outline"
+      className="-mx-4 flex gap-1 overflow-x-auto px-4 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0"
+      role="group"
     >
-      {props.options.map(([value, label, count]) => (
-        <ToggleGroupItem
-          className="aria-pressed:border-foreground/40"
-          key={value}
-          value={value}
-        >
-          {label}
-          <span className="text-muted-foreground tabular-nums">{count}</span>
-        </ToggleGroupItem>
-      ))}
-    </ToggleGroup>
+      {props.options.map(([value, label, count]) => {
+        const chosen = value === props.value;
+        return (
+          <Link
+            {...chooses(chosen)}
+            className="inline-flex h-7 shrink-0 items-center gap-1 rounded-md border border-input px-2.5 text-[0.8rem] font-medium whitespace-nowrap transition-colors hover:bg-muted data-chosen:border-foreground/40 data-chosen:bg-muted"
+            from="/v12/decisions/"
+            key={value}
+            resetScroll={false}
+            search={props.search(chosen ? undefined : value)}
+            to="."
+          >
+            {label}
+            <span className="text-muted-foreground tabular-nums">{count}</span>
+          </Link>
+        );
+      })}
+    </div>
   );
 }
 
@@ -249,16 +268,18 @@ function DecisionRow(props: { readonly decision: DecisionMeta }) {
 }
 
 export function DecisionsIndex() {
-  const [query, setQuery] = useState('');
-  const [area, setArea] = useState<string | undefined>();
-  const [status, setStatus] = useState<QuestionStatus | undefined>();
-  const [who, setWho] = useState<DecisionWho | undefined>();
-  const [withOpen, setWithOpen] = useState<'open' | undefined>();
+  const search = useSearch({ from: '/v12/decisions/' });
+  const navigate = useNavigate({ from: '/v12/decisions/' });
+  // What's typed, while the URL catches up: the box isn't held to the
+  // router's update of `?q=` between keystrokes.
+  const [draft, setDraft] = useState<string>();
+  const query = draft ?? search.q ?? '';
+  const who = whoOf(search.who);
 
   const questions = openQuestions.filter(
     (question) =>
-      (area === undefined || question.area === area) &&
-      (status === undefined || question.status === status) &&
+      (search.area === undefined || question.area === search.area) &&
+      (search.status === undefined || question.status === search.status) &&
       matches(
         query,
         question.title,
@@ -270,7 +291,7 @@ export function DecisionsIndex() {
   const records = decisionRecords.filter(
     (decision) =>
       (who === undefined || decision.who === who) &&
-      (withOpen === undefined || decision.open > 0) &&
+      (search.open === undefined || decision.open > 0) &&
       matches(
         query,
         decision.title,
@@ -304,7 +325,7 @@ export function DecisionsIndex() {
       (['human', 'human asked', 'agent'] as const).map(
         (value) =>
           [
-            value,
+            whoParamOf(value),
             whoLabels[value],
             decisionRecords.filter((decision) => decision.who === value).length,
           ] as const,
@@ -336,8 +357,18 @@ export function DecisionsIndex() {
           <Input
             aria-label="Filter questions and decisions"
             className="pl-8"
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Filter by words, a slug or a question number (Q24.4)"
+            onBlur={() => setDraft(undefined)}
+            onChange={(event) => {
+              const text = event.target.value;
+              setDraft(text);
+              void navigate({
+                replace: true,
+                resetScroll: false,
+                search: (prev) => ({ ...prev, q: text.trim() || undefined }),
+                to: '.',
+              });
+            }}
+            placeholder="Words, a slug or a question (Q24.4)"
             type="search"
             value={query}
           />
@@ -359,15 +390,15 @@ export function DecisionsIndex() {
         <div className="grid gap-2">
           <ChipFilter
             label="Status"
-            onChange={setStatus}
             options={statusOptions}
-            value={status}
+            search={(status) => (prev) => ({ ...prev, status })}
+            value={search.status}
           />
           <ChipFilter
             label="Area"
-            onChange={setArea}
             options={areaOptions}
-            value={area}
+            search={(area) => (prev) => ({ ...prev, area })}
+            value={search.area}
           />
         </div>
         {questions.length === 0 ? (
@@ -394,16 +425,15 @@ export function DecisionsIndex() {
             {records.length} of {decisionRecords.length}, newest first
           </span>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <ChipFilter
+        <div className="grid gap-2 sm:flex sm:flex-wrap">
+          <ChipFilter<WhoParam>
             label="Who decided"
-            onChange={setWho}
             options={whoOptions}
-            value={who}
+            search={(value) => (prev) => ({ ...prev, who: value })}
+            value={search.who}
           />
           <ChipFilter
             label="Open bullets"
-            onChange={setWithOpen}
             options={[
               [
                 'open',
@@ -411,7 +441,11 @@ export function DecisionsIndex() {
                 decisionRecords.filter((decision) => decision.open > 0).length,
               ],
             ]}
-            value={withOpen}
+            search={(value) => (prev) => ({
+              ...prev,
+              open: value === undefined ? undefined : true,
+            })}
+            value={search.open ? 'open' : undefined}
           />
         </div>
         {records.length === 0 ? (
@@ -465,9 +499,10 @@ function Section(props: {
   );
 }
 
+/** Side by side when its option's card has the room (a container query). */
 function ProsCons(props: { readonly option: QuestionOption }) {
   return (
-    <div className="grid gap-3 md:grid-cols-2">
+    <div className="grid gap-3 @xl:grid-cols-2">
       <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/5 p-3">
         <p className="mb-1 flex items-center gap-1.5 text-sm font-semibold text-emerald-700 dark:text-emerald-400">
           <ThumbsUp className="size-3.5" /> Pros
@@ -498,7 +533,10 @@ function OptionHeading(props: {
   readonly recommended: boolean;
 }) {
   return (
-    <h3 className="flex flex-wrap items-center gap-2 text-base font-semibold tracking-tight">
+    <h3
+      className="flex flex-wrap items-center gap-2 text-base font-semibold tracking-tight text-pretty"
+      id={`option-${props.option.id.toLowerCase()}`}
+    >
       <span>
         {props.option.id}) <TextWithCode text={props.option.title} />
       </span>
@@ -507,122 +545,135 @@ function OptionHeading(props: {
   );
 }
 
-const optionHash = (id: string) => `#option-${id.toLowerCase()}`;
+const pickerColumns: Record<number, string> = {
+  2: 'sm:grid-cols-2',
+  3: 'sm:grid-cols-2 lg:grid-cols-3',
+  4: 'sm:grid-cols-2 lg:grid-cols-4',
+};
 
+/** An option's prose, code, pros and cons, in a card. */
+function OptionCard(props: {
+  readonly hidden: boolean;
+  readonly option: QuestionOption;
+  readonly recommended: boolean;
+}) {
+  return (
+    <article
+      aria-labelledby={`option-${props.option.id.toLowerCase()}`}
+      className={cn(
+        'grid min-w-0 content-start gap-4 rounded-xl border p-3 @container sm:p-5',
+        props.recommended && 'border-amber-500/50',
+      )}
+      hidden={props.hidden}
+    >
+      <OptionHeading option={props.option} recommended={props.recommended} />
+      <DocBody html={props.option.html} />
+      <ProsCons option={props.option} />
+    </article>
+  );
+}
+
+/**
+ * The options, one at a time under a picker or all of them: side by side
+ * from `xl`, where two columns of code have the room, and one under another
+ * below it. The picker and the view are links to the URL showing them.
+ */
 function Options(props: { readonly question: OpenQuestion }) {
   const question = props.question;
-  const [selected, setSelected] = useState(question.recommended);
-  const [view, setView] = useState<'tabs' | 'side-by-side'>('tabs');
-  useEffect(() => {
-    const linked = question.options.find(
-      (option) => optionHash(option.id) === window.location.hash,
-    );
-    if (linked) {
-      setSelected(linked.id);
-    }
-  }, [question.options]);
-  const select = (id: string) => {
-    setSelected(id);
-    history.replaceState(history.state, '', optionHash(id));
-  };
+  const search = useSearch({ from: '/v12/decisions/open/$slug' });
+  const selected = shownOption(
+    search.option,
+    question.options.map((option) => option.id),
+    question.recommended,
+  );
+  const all = search.view === 'side-by-side';
+  const viewLink =
+    'inline-flex h-7 items-center gap-1.5 px-2.5 text-[0.8rem] font-medium whitespace-nowrap text-muted-foreground transition-colors hover:bg-muted hover:text-foreground data-chosen:bg-muted data-chosen:text-foreground [&_svg]:size-3.5';
   return (
-    <section className="grid gap-4">
+    <section aria-labelledby="options" className="grid gap-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h2 className="text-lg font-semibold tracking-tight">
+        <h2 className="text-lg font-semibold tracking-tight" id="options">
           {question.options.length} options
         </h2>
-        <ToggleGroup
+        <nav
           aria-label="How to show the options"
-          onValueChange={(value) => {
-            if (value[0] === 'tabs' || value[0] === 'side-by-side') {
-              setView(value[0]);
-            }
-          }}
-          size="sm"
-          spacing={0}
-          value={[view]}
-          variant="outline"
+          className="flex divide-x overflow-hidden rounded-md border"
         >
-          <ToggleGroupItem value="tabs">
+          <Link
+            {...chooses(!all)}
+            className={viewLink}
+            from="/v12/decisions/open/$slug"
+            resetScroll={false}
+            search={(prev) => ({ ...prev, view: undefined })}
+            to="."
+          >
             <PanelTop /> One at a time
-          </ToggleGroupItem>
-          <ToggleGroupItem value="side-by-side">
-            <Columns2 /> Side by side
-          </ToggleGroupItem>
-        </ToggleGroup>
+          </Link>
+          <Link
+            {...chooses(all)}
+            className={viewLink}
+            from="/v12/decisions/open/$slug"
+            resetScroll={false}
+            search={(prev) => ({ ...prev, view: 'side-by-side' })}
+            to="."
+          >
+            <Columns2 />
+            <span className="xl:hidden">All</span>
+            <span className="hidden xl:inline">Side by side</span>
+          </Link>
+        </nav>
       </div>
-      {view === 'tabs' ? (
-        <Tabs onValueChange={(value) => select(String(value))} value={selected}>
-          <TabsList
-            className="h-auto w-full flex-wrap justify-start gap-1"
-            variant="line"
+      {all ? null : (
+        <>
+          <nav
+            aria-label="Options"
+            className={cn(
+              'grid gap-2',
+              pickerColumns[Math.min(question.options.length, 4)],
+            )}
           >
             {question.options.map((option) => (
-              <TabsTrigger
-                className="h-auto flex-none justify-start px-2 py-1 text-left whitespace-normal"
+              <Link
+                {...chooses(option.id === selected)}
+                className="group flex min-w-0 items-start gap-2.5 rounded-lg border p-2.5 text-sm transition-colors hover:bg-accent/50 data-chosen:border-foreground/40 data-chosen:bg-accent"
+                from="/v12/decisions/open/$slug"
                 key={option.id}
-                value={option.id}
+                resetScroll={false}
+                search={(prev) => ({
+                  ...prev,
+                  option: optionParam(option.id, question.recommended),
+                })}
+                to="."
               >
-                <span className="font-mono">{option.id}</span>
-                <span className="max-w-64 truncate">
+                <span className="grid size-6 shrink-0 place-items-center rounded-md bg-muted font-mono text-xs font-semibold group-data-chosen:bg-foreground group-data-chosen:text-background">
+                  {option.id}
+                </span>
+                <span className="line-clamp-2 min-w-0 flex-1 pt-0.5 leading-snug font-medium text-pretty">
                   {stripInlineCode(option.title)}
                 </span>
                 {option.id === question.recommended ? (
                   <Star
                     aria-label="Recommended"
-                    className="fill-amber-500 text-amber-500"
+                    className="mt-1 size-3.5 shrink-0 fill-amber-500 text-amber-500"
                   />
                 ) : null}
-              </TabsTrigger>
+              </Link>
             ))}
-          </TabsList>
-          {question.options.map((option) => (
-            <TabsContent
-              className="grid gap-4 rounded-xl border p-4 sm:p-5"
-              id={optionHash(option.id).slice(1)}
-              keepMounted
-              key={option.id}
-              value={option.id}
-            >
-              <OptionHeading
-                option={option}
-                recommended={option.id === question.recommended}
-              />
-              <DocBody html={option.html} />
-              <ProsCons option={option} />
-            </TabsContent>
-          ))}
-        </Tabs>
-      ) : (
-        <div
-          className={cn(
-            'grid gap-4',
-            question.options.length === 2
-              ? 'lg:grid-cols-2'
-              : 'lg:grid-cols-2 2xl:grid-cols-3',
-          )}
-        >
-          {question.options.map((option) => (
-            <div
-              className={cn(
-                'grid min-w-0 content-start gap-3 rounded-xl border p-4',
-                option.id === question.recommended &&
-                  'border-amber-500/50 ring-1 ring-amber-500/30',
-              )}
-              key={option.id}
-            >
-              <OptionHeading
-                option={option}
-                recommended={option.id === question.recommended}
-              />
-              <DocBody className="prose-sm" html={option.html} />
-              <div className="grid gap-3">
-                <ProsCons option={option} />
-              </div>
-            </div>
-          ))}
-        </div>
+          </nav>
+        </>
       )}
+      {/* Every option is in the HTML, the unchosen ones hidden, so `curl`
+          and agents read them all. */}
+      <div className={cn('grid gap-4', all && 'xl:grid-cols-2')}>
+        {question.options.map((option) => (
+          <OptionCard
+            hidden={!all && option.id !== selected}
+            key={option.id}
+            option={option}
+            recommended={option.id === question.recommended}
+          />
+        ))}
+      </div>
     </section>
   );
 }
@@ -640,7 +691,7 @@ function QuestionLinks(props: { readonly question: OpenQuestion }) {
   return (
     <div className="grid gap-2">
       {buttons.length > 0 ? (
-        <div className="flex flex-wrap gap-2">
+        <div className="grid gap-2 sm:flex sm:flex-wrap">
           {buttons.map((link) => {
             const Icon = linkIcons[link.kind] ?? FileText;
             return (
@@ -649,14 +700,14 @@ function QuestionLinks(props: { readonly question: OpenQuestion }) {
                   buttonVariants({
                     variant: link.kind === 'pr' ? 'default' : 'outline',
                   }),
-                  'h-auto min-h-8 py-1 text-left whitespace-normal',
+                  'h-auto min-h-8 justify-start py-1 text-left whitespace-normal',
                 )}
                 href={link.href}
                 key={link.href}
               >
                 <Icon data-icon="inline-start" />
-                <span className="capitalize">{link.kind}</span>
-                <span className="font-normal opacity-80">
+                <span className="shrink-0 capitalize">{link.kind}</span>
+                <span className="min-w-0 font-normal [overflow-wrap:anywhere] opacity-80">
                   <TextWithCode bare text={link.label} />
                 </span>
               </a>
@@ -669,13 +720,15 @@ function QuestionLinks(props: { readonly question: OpenQuestion }) {
           {others.map((link) => (
             <li key={link.href}>
               <a
-                className="inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                className="inline-flex max-w-full items-center gap-1 rounded-md border px-2 py-0.5 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
                 href={link.href}
               >
-                <span className="text-xs tracking-wide uppercase opacity-70">
+                <span className="shrink-0 text-xs tracking-wide uppercase opacity-70">
                   {link.kind}
                 </span>
-                <TextWithCode bare text={link.label} />
+                <span className="min-w-0 [overflow-wrap:anywhere]">
+                  <TextWithCode bare text={link.label} />
+                </span>
               </a>
             </li>
           ))}
@@ -692,6 +745,8 @@ const markdownFits = '[&_.prose]:[contain:inline-size]';
 
 export function OpenQuestionPage(props: { readonly question: OpenQuestion }) {
   const question = props.question;
+  const search = useSearch({ from: '/v12/decisions/open/$slug' });
+  const navigate = useNavigate({ from: '/v12/decisions/open/$slug' });
   const recommended = question.options.find(
     (option) => option.id === question.recommended,
   );
@@ -751,7 +806,17 @@ export function OpenQuestionPage(props: { readonly question: OpenQuestion }) {
       </Section>
 
       {question.details === undefined ? null : (
-        <Collapsible className="rounded-xl border">
+        <Collapsible
+          className="rounded-xl border"
+          onOpenChange={(open) =>
+            void navigate({
+              resetScroll: false,
+              search: (prev) => ({ ...prev, details: open || undefined }),
+              to: '.',
+            })
+          }
+          open={search.details === true}
+        >
           <CollapsibleTrigger className="group flex w-full items-center gap-2 p-4 text-left font-semibold">
             <ChevronRight className="size-4 transition-transform group-data-[panel-open]:rotate-90" />
             Details
