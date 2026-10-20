@@ -36,8 +36,8 @@ export class JsonBytes extends Uint8Array<ArrayBuffer> {
   }
 }
 
-const encoder = new TextEncoder();
-const decoder = new TextDecoder();
+const encoder = /* @__PURE__ */ new TextEncoder();
+const decoder = /* @__PURE__ */ new TextDecoder();
 
 const record = (kind: number, payload: Uint8Array): Uint8Array => {
   const out = new Uint8Array(HEADER_SIZE + payload.byteLength);

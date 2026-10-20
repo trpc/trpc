@@ -9,9 +9,9 @@
  * ```ts
  * import { NodeRuntime, NodeSocketServer } from '@effect/platform-node';
  * import { Layer } from 'effect';
- * import { serveSocket } from '@trpc12/trpc/socket';
+ * import { experimental_serveSocket } from '@trpc12/trpc/socket';
  *
- * serveSocket(createFetchHandler({ router })).pipe(
+ * experimental_serveSocket(createFetchHandler({ router })).pipe(
  *   Layer.provide(NodeSocketServer.layer({ port: 4000 })),
  *   Layer.launch,
  *   NodeRuntime.runMain,
@@ -19,9 +19,10 @@
  * ```
  * @module
  */
-import { Context, Effect, Layer, Stream } from 'effect';
+import { Context, Effect, Layer, Stream, type Duration } from 'effect';
 import { HttpServerRequest } from 'effect/http';
 import { Socket, SocketServer } from 'effect/socket';
+import { timerOption } from '../internal/duration.ts';
 import { decodeLines, encodeLine } from '../internal/lines.ts';
 import {
   parseSocketMessage,
@@ -32,21 +33,21 @@ import {
 import { handlerContext } from '../server/handler/index.ts';
 
 /**
- * Options for {@link serveSocket}.
+ * Options for {@link experimental_serveSocket}.
  * @example
  * ```ts
- * serveSocket(handler, { idleTimeoutMs: false });
+ * experimental_serveSocket(handler, { idleTimeout: false });
  * ```
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
 export interface SocketOptions {
   /**
    * Close a connection that sends nothing for this long; `experimental_socketLink`'s
    * pings keep a live one open. `false` keeps silent connections.
-   * @default 60_000
+   * @default '60 seconds'
    */
-  readonly idleTimeoutMs?: number | false;
+  readonly idleTimeout?: Duration.Input | false;
 }
 
 /**
@@ -56,7 +57,7 @@ export interface SocketOptions {
  * const handler: SocketHandlerLike = createFetchHandler({ router });
  * ```
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
 export interface SocketHandlerLike {
   fetch(request: Request, ...platform: never[]): Promise<Response>;
@@ -65,12 +66,12 @@ export interface SocketHandlerLike {
 const serveOne = (
   core: SocketCoreShape,
   socket: Socket.Socket,
-  opts: SocketOptions,
+  idleTimeout: Duration.Duration | undefined,
 ): Effect.Effect<void> =>
   serveSocketConnection(core, socket, {
     request: HttpServerRequest.fromWeb(new Request('http://localhost/')),
     transport: 'socket',
-    idleTimeoutMs: opts.idleTimeoutMs ?? 60_000,
+    idleTimeout,
     messages: decodeLines(Socket.toStream(socket)).pipe(
       Stream.map(parseSocketMessage),
     ),
@@ -86,12 +87,12 @@ const serveOne = (
  *
  * @example
  * ```ts
- * serveSocket(handler).pipe(Layer.provide(NodeSocketServer.layer({ port: 4000 })));
+ * experimental_serveSocket(handler).pipe(Layer.provide(NodeSocketServer.layer({ port: 4000 })));
  * ```
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
-export function serveSocket(
+export function experimental_serveSocket(
   handler: SocketHandlerLike,
   opts: SocketOptions = {},
 ): Layer.Layer<
@@ -102,14 +103,15 @@ export function serveSocket(
   const core = Context.getOrUndefined(handlerContext(handler), SocketCore);
   if (!core) {
     throw new TypeError(
-      'serveSocket() needs a handler from createFetchHandler()',
+      'experimental_serveSocket() needs a handler from createFetchHandler()',
     );
   }
+  const idleTimeout = timerOption(opts.idleTimeout, '60 seconds');
   return Layer.effectDiscard(
     Effect.gen(function* () {
       const server = yield* SocketServer.SocketServer;
       yield* Effect.forkScoped(
-        server.run((socket) => serveOne(core, socket, opts)),
+        server.run((socket) => serveOne(core, socket, idleTimeout)),
       );
     }),
   );

@@ -1,8 +1,8 @@
 # Framework matrix (experimental)
 
-One server and one poll, with a page per tier-B TanStack Query adapter: Vue (`@trpc12/tanstack-vue-query`), Solid (`@trpc12/tanstack-solid-query`) and Svelte (`@trpc12/tanstack-svelte-query`). Each page reads `votes.list`, votes with `votes.cast` and invalidates with `pathFilter()`, and shows the `clock` subscription. See the [Vue](../../../docs/integrations/tanstack-query/vue.md), [Solid](../../../docs/integrations/tanstack-query/solid.md) and [Svelte](../../../docs/integrations/tanstack-query/svelte.md) pages.
+One server and one poll, with a page per tier-B TanStack Query adapter: Vue (`@trpc12/experimental-tanstack-vue-query`), Solid (`@trpc12/experimental-tanstack-solid-query`) and Svelte (`@trpc12/experimental-tanstack-svelte-query`). Each page reads `votes.list`, votes with `votes.cast` and invalidates with `pathFilter()`, and shows the `clock` subscription. See the [Vue](https://v12.trpc.io/v12/docs/integrations/tanstack-query/vue), [Solid](https://v12.trpc.io/v12/docs/integrations/tanstack-query/solid) and [Svelte](https://v12.trpc.io/v12/docs/integrations/tanstack-query/svelte) pages.
 
-The three adapters' APIs are stable, but their docs are still hidden (unreviewed), so the example lives here until they're reviewed. The server and `httpLink` are stable.
+The three adapters are experimental packages (`@trpc12/experimental-tanstack-*-query`): their docs are still hidden for review, and they might change or go away in any release. The server and `httpLink` are stable.
 
 The files follow the [examples layout](../../README.md):
 

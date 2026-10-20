@@ -1,4 +1,4 @@
-import { Effect, Redacted, Schema } from 'effect';
+import { Duration, Effect, Redacted, Schema } from 'effect';
 import { TestClock } from 'effect/testing';
 import {
   experimental_connectionToken,
@@ -11,7 +11,7 @@ import {
   createFetchHandler,
   initTrpc,
   lazy,
-  Publisher,
+  experimental_Publisher,
   type AnyRouter,
 } from '@trpc12/trpc/server';
 import { jsonSerializer } from '@trpc12/trpc/serializer';
@@ -318,9 +318,10 @@ test('headers past the 2 KB attachment limit are dropped with a warning', async 
   );
 });
 
-class Posts extends Publisher.Service<Posts, { created: { title: string } }>()(
-  'test/HibernatingPosts',
-) {}
+class Posts extends experimental_Publisher.Service<
+  Posts,
+  { created: { title: string } }
+>()('test/HibernatingPosts') {}
 
 const pt = initTrpc();
 
@@ -526,11 +527,11 @@ const RoomToken = experimental_connectionToken(
   Schema.Struct({ user: Schema.String }),
   {
     secret: 'test-secret',
-    ttlSeconds: 60,
+    ttl: '60 seconds',
   },
 );
 
-class Notes extends Publisher.Service<
+class Notes extends experimental_Publisher.Service<
   Notes,
   { [inbox: `inbox:${string}`]: { text: string } }
 >()('test/Notes') {}
@@ -764,6 +765,27 @@ test('a Redacted secret, the default ttl of an hour, and claims an older schema 
     message: 'Invalid connection token claims',
   });
   expect(malformed).toMatchObject({ message: 'Malformed connection token' });
+});
+
+test.each([
+  ['milliseconds', 90_000],
+  ['a Duration', Duration.minutes(1.5)],
+] as const)('a token ttl in %s', async (_, ttl) => {
+  const token = experimental_connectionToken(
+    Schema.Struct({ user: Schema.String }),
+    { secret: 'test-secret', ttl },
+  );
+  const [verified, expired] = await Effect.runPromise(
+    Effect.gen(function* () {
+      const minted = yield* token.sign({ user: 'ada' });
+      yield* TestClock.adjust('89 seconds');
+      const verified = yield* token.verify(minted);
+      yield* TestClock.adjust('2 seconds');
+      return [verified, yield* Effect.flip(token.verify(minted))] as const;
+    }).pipe(Effect.provide(TestClock.layer())),
+  );
+  expect(verified).toEqual({ user: 'ada' });
+  expect(expired).toMatchObject({ message: 'Expired connection token' });
 });
 
 test('a handler not from createFetchHandler, and upgrade() outside Workers, are refused', async () => {

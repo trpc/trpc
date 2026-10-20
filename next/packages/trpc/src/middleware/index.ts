@@ -33,7 +33,11 @@ export {
   onStart,
   onSuccess,
 } from '../server/procedures/index.ts';
-export { RateLimited, rateLimit, type RateLimitOptions } from './ratelimit.ts';
+export {
+  experimental_RateLimited,
+  experimental_rateLimit,
+  type RateLimitOptions,
+} from './ratelimit.ts';
 export {
   experimental_upstashRateLimiterStore,
   experimental_upstashRedis,

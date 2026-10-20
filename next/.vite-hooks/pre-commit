@@ -1,2 +1,4 @@
 cd "$(git rev-parse --show-toplevel)/next" || exit 1
-vp staged
+# The hook runner puts node_modules/.bin on PATH relative to the repo root,
+# which the cd above breaks.
+PATH="$PWD/node_modules/.bin:$PATH" vp staged

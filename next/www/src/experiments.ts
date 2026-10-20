@@ -1,8 +1,8 @@
 /**
  * The docs' experiments: features whose pages ship turned off. A page joins
- * one with `experiment: <id>` in its frontmatter; it's served at its URL but
- * out of the sidebar, search, pagination, the sitemap and `llms.txt`, and
- * `noindex`, until the reader turns its experiment on (`?flags=<id>`, the
+ * one with `experiment: <id>` in its frontmatter; it's served at its URL and
+ * in the sitemap and `llms.txt`, but out of the sidebar, search and
+ * pagination until the reader turns its experiment on (`?flags=<id>`, the
  * Experiments menu, or visiting one of its pages). Pure, so the build reads
  * it too.
  */
@@ -36,12 +36,13 @@ export const experiments = {
     label: 'TanStack Query beyond React',
   },
   'tanstack-db': {
-    description: "A TanStack DB collection over a procedure's queryOptions().",
+    description:
+      "TanStack DB collections over a procedure's `queryOptions()`, and real-time ones synced by a subscription.",
     label: 'TanStack DB',
   },
   'experimental-react': {
     description:
-      'Render-as-you-fetch with use() and Suspense, and atoms on Effect Atom.',
+      'Render-as-you-fetch with `use()` and Suspense, and atoms on Effect Atom.',
     label: 'React without TanStack Query',
   },
   integrations: {
@@ -50,8 +51,13 @@ export const experiments = {
   },
   'byte-streams': {
     description:
-      'Procedure inputs that are the request body, a ReadableStream<Uint8Array> read as an Effect Stream.',
+      'Procedure inputs that are the request body, a `ReadableStream<Uint8Array>` read as an Effect Stream.',
     label: 'Byte stream inputs',
+  },
+  'kitchen-sink': {
+    description:
+      'Small apps to edit and run on the page, beside how they work: a react-hook-form form first.',
+    label: 'Kitchen sink',
   },
 } as const satisfies Record<
   string,

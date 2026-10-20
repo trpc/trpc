@@ -20,11 +20,42 @@ const doc = experimental_generateOpenApi(await loadRouter(appRouter), {
 });
 ```
 
-The document has schemas for input, output and each declared error. `filter({ path, procedure })` drops operations. `target: 'rpc'` describes the RPC endpoint instead of the REST routes. `experimental_generateOpenApi` throws on a lazy subtree that hasn't loaded, so pass the result of `loadRouter()`.
+The document has schemas for input, output and each declared error. Each error's `code` is a constant. The `default` response covers the rest: untyped errors (`defined: false`, the `TrpcUntypedError` schema) and typed errors with any other built-in code. So a generated client narrows `error.defined && error.code === 'NOT_FOUND'` to the declared `NOT_FOUND` and its `data`. A zod `z.date()` output is a `date-time` string, as `JSON.stringify` sends it, and so is a `z.coerce.date()` input; a plain `z.date()` input rejects strings, so it stays `{}`. `filter({ path, procedure })` drops operations. `target: 'rpc'` describes the RPC endpoint instead of the REST routes. `experimental_generateOpenApi` throws on a lazy subtree that hasn't loaded, so pass the result of `loadRouter()`.
+
+## Security and tags
+
+`components.securitySchemes` declares how clients authenticate, and `security` says which schemes every operation needs. Docs UIs show a login form for them, and generated clients attach the credentials ([Generating a client with Hey API](./hey-api.md)). A procedure's `route.spec` overrides it, with `security: []` for a public route. `tags` describes the tags routes use, in the order docs UIs list them.
+
+```ts twoslash
+// ---cut-start---
+import { experimental_openapi } from '@trpc12/trpc/openapi';
+import { initTrpc } from '@trpc12/trpc/server';
+const t = initTrpc().concat(experimental_openapi());
+// ---cut-end---
+import { experimental_generateOpenApi } from '@trpc12/trpc/openapi';
+
+const router = {
+  me: t.procedure
+    .meta({ route: { tags: ['users'] } })
+    .query(() => ({ name: 'Ada' })),
+  health: t.procedure
+    .meta({ route: { spec: (op) => ({ ...op, security: [] }) } })
+    .query(() => 'ok'),
+};
+
+const doc = experimental_generateOpenApi(router, {
+  info: { title: 'API', version: '1.0.0' },
+  components: {
+    securitySchemes: { bearer: { type: 'http', scheme: 'bearer' } },
+  },
+  security: [{ bearer: [] }],
+  tags: [{ name: 'users', description: 'Accounts and sessions' }],
+});
+```
 
 ## From the types
 
-`experimental_generateOpenApi` only sees runtime schemas. `experimental_generateOpenApiFromTypes` from `@trpc12/trpc/openapi/typescript` also reads the router's types with the TypeScript 7 compiler, so it documents:
+`experimental_generateOpenApi` only sees runtime schemas. `experimental_generateOpenApiFromTypes` from `@trpc12/trpc/openapi/typescript` also reads the router's types with the TypeScript 7 compiler (it needs `typescript` 7 installed), so it documents:
 
 - errors that are only inferred (returned with `error()`, failed or yielded in an Effect), never declared, with their status: a `TrpcError.Tagged` class's literal `status`, the built-in code's status, or `400`;
 - the input and output of procedures without static schemas (no `.output()`, or a ctx-callback input).

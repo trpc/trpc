@@ -35,7 +35,7 @@ export interface HibernatingPublisherOptions {
  *
  * @example
  * ```ts
- * class Posts extends Publisher.Service<Posts, { created: Post }>()('Posts') {}
+ * class Posts extends experimental_Publisher.Service<Posts, { created: Post }>()('Posts') {}
  *
  * export class Room extends DurableObject<Env> {
  *   handler = createFetchHandler({
@@ -71,13 +71,13 @@ export function experimental_hibernatingPublisher<
         const shape: PublisherShape<PublisherEvents> = {
           publish: (channel, data) =>
             Effect.tap(memory.shape.publish(channel, data), (id) =>
-              Effect.promise(
-                async () =>
-                  await deliveries.get(opts.state)?.(
+              Effect.suspend(
+                () =>
+                  deliveries.get(opts.state)?.(
                     key,
                     channel,
                     tracked(id, data),
-                  ),
+                  ) ?? Effect.void,
               ),
             ),
           subscribe: (channel, o) =>

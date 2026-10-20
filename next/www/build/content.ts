@@ -5,12 +5,18 @@ import { removeTwoslashNotations } from 'twoslash/fallback';
 import type { Connect, Plugin } from 'vite';
 import { parse as parseYaml } from 'yaml';
 
-import { listedSections } from '../src/content/listed.ts';
+import { stripInlineCode } from '../src/content/inline-code.ts';
 import type { Doc, DocMeta, DocSection, Sample } from '../src/content/types.ts';
-import { experimentIds } from '../src/experiments.ts';
+import { experimentIds, experiments } from '../src/experiments.ts';
+import { demoIds, demos, isDemoId } from '../src/kitchen-sink/demos.ts';
 import { stripCollapseMarkers } from './collapse.ts';
 import { ContentError, messageOf } from './content-error.ts';
-import { type DocLink, renderMarkdown, resolveLink } from './markdown.ts';
+import {
+  type DocLink,
+  releaseTwoslashers,
+  renderMarkdown,
+  resolveLink,
+} from './markdown.ts';
 import { expandSnippets } from './snippets.ts';
 import {
   makeTwoslashCache,
@@ -43,6 +49,8 @@ export interface ContentOptions extends PageDirs {
   readonly siteUrl: string;
   /** Where the files around `contentDir` are browsable, for links to them. */
   readonly sourceUrl: string;
+  /** `contentDir`'s path under `sourceUrl` (`www/docs`), which links out of it resolve from: `docs` unless named. */
+  readonly contentPath?: string | undefined;
   /** What the project is, one line, for `llms.txt`. */
   readonly summary: string;
   /**
@@ -68,9 +76,8 @@ const Frontmatter = Schema.Struct({
   description: Schema.String,
   /**
    * The experiment the page belongs to (`src/experiments.ts`). Built and
-   * served at its URL, but out of the sidebar, search and pagination until
-   * the reader turns it on, and always out of the sitemap and `llms.txt`,
-   * and `noindex` for search engines.
+   * served at its URL, in the sitemap and `llms.txt`, but out of the
+   * sidebar, search and pagination until the reader turns it on.
    */
   experiment: Schema.optional(Schema.Literals(experimentIds)),
   label: Schema.optional(Schema.String),
@@ -386,12 +393,33 @@ export function docsContent(options: ContentOptions): Plugin {
     return undefined;
   });
 
+  /** The page's demo: one at most, since it runs beside the whole page. */
+  const demoOf = Effect.fn('demoOf')(function* (
+    source: Source,
+    ids: ReadonlyArray<string>,
+  ) {
+    const unknown = ids.filter((id) => !isDemoId(id));
+    if (unknown.length > 0) {
+      return yield* new ContentError({
+        message: `${source.file}: ${unknown.join(', ')} isn't a demo; the demos are ${demoIds.join(', ')} (src/kitchen-sink/demos.ts)`,
+      });
+    }
+    if (ids.length > 1) {
+      return yield* new ContentError({
+        message: `${source.file}: a page runs one demo, and this one has ${String(ids.length)}`,
+      });
+    }
+    const [id] = ids;
+    return id !== undefined && isDemoId(id) ? id : undefined;
+  });
+
   const renderDoc = Effect.fn('renderDoc')(function* (source: Source) {
     const result = yield* renderMarkdown(source.markdown, {
       basePath,
       inlineApp: options.inlineApp,
       samplesDir,
       slug: source.slug,
+      contentPath: options.contentPath,
       sourceUrl: options.sourceUrl,
       twoslashCache,
     }).pipe(
@@ -403,9 +431,11 @@ export function docsContent(options: ContentOptions): Plugin {
           }),
       ),
     );
+    const demo = yield* demoOf(source, result.demos);
     const page: Rendered = {
       anchors: result.anchors,
       doc: {
+        demo,
         description: source.frontmatter.description,
         experiment: source.frontmatter.experiment,
         headings: result.headings,
@@ -435,6 +465,7 @@ export function docsContent(options: ContentOptions): Plugin {
       basePath,
       samplesDir,
       slug: 'index',
+      contentPath: options.contentPath,
       sourceUrl: options.sourceUrl,
       twoslashCache,
     }).pipe(
@@ -459,6 +490,7 @@ export function docsContent(options: ContentOptions): Plugin {
       inlineApp: options.inlineApp,
       samplesDir,
       slug: 'index',
+      contentPath: options.contentPath,
       sourceUrl: options.sourceUrl,
       twoslashCache,
     }).pipe(
@@ -560,8 +592,16 @@ export function docsContent(options: ContentOptions): Plugin {
           return `\`\`\`${lang}${`${before.trimEnd()}${after}`.trimEnd()}\n${removeTwoslashNotations(withTypes(code, queries))}\`\`\``;
         },
       )
+      .replaceAll(/^```demo\n[\s\S]*?^```$/gm, () => {
+        // `renderDoc` checked the fence: it's the page's one demo.
+        const demo =
+          page.doc.demo === undefined ? undefined : demos[page.doc.demo];
+        return demo
+          ? `The web page runs this demo, editable, beside the text: [${demo.title}](${options.sourceUrl}/www/samples/${demo.sample}/src).`
+          : '';
+      })
       .replaceAll(/\]\(([^)\s]+)\)/g, (link, url: string) => {
-        const resolved = resolveLink(source.slug, url);
+        const resolved = resolveLink(source.slug, url, options.contentPath);
         if (resolved.kind === 'doc') {
           return `](${options.siteUrl}${basePath}/${resolved.link.slug}.md${resolved.link.hash ? `#${resolved.link.hash}` : ''})`;
         }
@@ -570,11 +610,18 @@ export function docsContent(options: ContentOptions): Plugin {
         }
         return link;
       });
+    const experiment = source.frontmatter.experiment;
     return [
-      `# ${source.frontmatter.title}`,
+      `# ${stripInlineCode(source.frontmatter.title)}`,
       '',
-      `> ${source.frontmatter.description}`,
+      `> ${stripInlineCode(source.frontmatter.description)}`,
       '',
+      ...(experiment === undefined
+        ? []
+        : [
+            `Experimental: ${experiments[experiment].label} might change or go away in any release.`,
+            '',
+          ]),
       body.trim(),
       '',
     ].join('\n');
@@ -587,7 +634,7 @@ export function docsContent(options: ContentOptions): Plugin {
       'Every page is also markdown: add `.md` to its URL, or request it with `Accept: text/markdown`.',
       '',
     ];
-    for (const section of listedSections(sections)) {
+    for (const section of sections) {
       lines.push(`## ${section.title}`, '');
       const parents = new Map(
         section.docs.map((doc) => [doc.slug, doc.parent]),
@@ -598,7 +645,7 @@ export function docsContent(options: ContentOptions): Plugin {
       };
       for (const doc of section.docs) {
         lines.push(
-          `${'  '.repeat(depth(doc.slug))}- [${doc.title}](${options.siteUrl}${basePath}/${doc.slug}.md): ${doc.description}`,
+          `${'  '.repeat(depth(doc.slug))}- [${stripInlineCode(doc.title)}](${options.siteUrl}${basePath}/${doc.slug}.md): ${doc.experiment === undefined ? '' : 'Experimental. '}${stripInlineCode(doc.description)}`,
         );
       }
       lines.push('');
@@ -615,8 +662,8 @@ export function docsContent(options: ContentOptions): Plugin {
   /**
    * Files for agents, by URL path: `llms.txt`, `llms-full.txt`, each page's
    * markdown at `<basePath>/<slug>.md`, `/index.md` (the home page's markdown,
-   * the same as `llms.txt`) and `/404.md`. An experiment's page has its markdown,
-   * but `llms.txt` and `llms-full.txt` leave it out.
+   * the same as `llms.txt`) and `/404.md`. An experiment's page is in them
+   * like any other, marked experimental.
    */
   async function agentFiles() {
     const sections = await manifest();
@@ -643,12 +690,10 @@ export function docsContent(options: ContentOptions): Plugin {
       '/llms-full.txt',
       [
         ...intro,
-        ...pages
-          .filter((entry) => entry.page.doc.experiment === undefined)
-          .map(
-            (entry) =>
-              `---\n\nSource: ${options.siteUrl}${basePath}/${entry.source.slug}\n\n${pageMarkdown(entry.source, entry.page)}`,
-          ),
+        ...pages.map(
+          (entry) =>
+            `---\n\nSource: ${options.siteUrl}${basePath}/${entry.source.slug}\n\n${pageMarkdown(entry.source, entry.page)}`,
+        ),
       ].join('\n'),
     );
     for (const entry of pages) {
@@ -704,6 +749,7 @@ export function docsContent(options: ContentOptions): Plugin {
     configurePreviewServer: serveAgentFiles,
     configureServer: serveAgentFiles,
     async generateBundle() {
+      releaseTwoslashers();
       if (this.environment.name !== 'client') {
         return;
       }

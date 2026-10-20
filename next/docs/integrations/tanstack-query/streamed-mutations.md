@@ -1,6 +1,6 @@
 ---
 title: Streamed mutations
-description: A mutation that returns an async iterable fills in as it streams, with chunksOptions(), and stops on unmount or on demand; long jobs pair a mutation with a subscription.
+description: A mutation that returns an async iterable fills in as it streams, with `chunksOptions()`, and stops on unmount or on demand; long jobs pair a mutation with a subscription.
 section: Integrations
 parent: integrations/tanstack-query
 order: 10

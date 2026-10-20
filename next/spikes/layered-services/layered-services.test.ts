@@ -1,4 +1,4 @@
-import { Context, Effect, Layer, Schema } from 'effect';
+import { Context, Effect, Layer, ManagedRuntime, Schema } from 'effect';
 import {
   createRouterClient,
   initTrpc,
@@ -110,19 +110,21 @@ test('provided services drop out of the router type; what their layers need join
   const ok = () =>
     createRouterClient(router, {
       ctx: {},
-      layer: Layer.mergeAll(DbLive, AuthLive),
+      runtime: ManagedRuntime.make(Layer.mergeAll(DbLive, AuthLive)),
     });
-  // @ts-expect-error the layer misses Auth
-  const missing = () => createRouterClient(router, { ctx: {}, layer: DbLive });
+  const missing = () =>
+    createRouterClient(router, {
+      ctx: {},
+      // @ts-expect-error the runtime misses Auth
+      runtime: ManagedRuntime.make(DbLive),
+    });
   expect([ok, missing]).toHaveLength(2);
 });
 
 test('a handler-lifetime layer is built once, shared by every procedure that provides it', async () => {
   log.length = 0;
-  const client = createRouterClient(router, {
-    ctx: {},
-    layer: Layer.mergeAll(DbLive, AuthLive),
-  });
+  await using runtime = ManagedRuntime.make(Layer.mergeAll(DbLive, AuthLive));
+  const client = createRouterClient(router, { ctx: {}, runtime });
   const results = await Promise.all([
     client.post.byId.query(),
     client.post.list.query(),
@@ -135,10 +137,10 @@ test('a handler-lifetime layer is built once, shared by every procedure that pro
 
 test("a layer the handler's layer also has is built once, by reference", async () => {
   log.length = 0;
-  const client = createRouterClient(router, {
-    ctx: {},
-    layer: Layer.mergeAll(Layer.provideMerge(PostRepoLive, DbLive), AuthLive),
-  });
+  await using runtime = ManagedRuntime.make(
+    Layer.mergeAll(Layer.provideMerge(PostRepoLive, DbLive), AuthLive),
+  );
+  const client = createRouterClient(router, { ctx: {}, runtime });
   await client.post.byId.query();
   await client.post.list.query();
   expect(log.filter((l) => l === 'repo build')).toHaveLength(1);
@@ -155,10 +157,8 @@ test('a call-lifetime layer may only fail with a TrpcError; a handler-lifetime o
 
 test("a call-lifetime layer is built per call, reusing the handler's services, and released after it", async () => {
   log.length = 0;
-  const client = createRouterClient(router, {
-    ctx: {},
-    layer: Layer.mergeAll(DbLive, AuthLive),
-  });
+  await using runtime = ManagedRuntime.make(Layer.mergeAll(DbLive, AuthLive));
+  const client = createRouterClient(router, { ctx: {}, runtime });
   expect(await client.write.mutate()).toBe(1);
   expect(await client.write.mutate()).toBe(2);
   expect(log.filter((l) => l.startsWith('tx'))).toEqual([
@@ -172,14 +172,14 @@ test("a call-lifetime layer is built per call, reusing the handler's services, a
 
 test('a middleware service is implemented by a layer built once, and provides per call', async () => {
   log.length = 0;
-  const layer = Layer.mergeAll(DbLive, AuthLive);
-  const anon = createRouterClient(router, { ctx: {}, layer });
+  await using runtime = ManagedRuntime.make(Layer.mergeAll(DbLive, AuthLive));
+  const anon = createRouterClient(router, { ctx: {}, runtime });
   await expect(anon.me.query()).rejects.toMatchObject({ code: 'UNAUTHORIZED' });
-  const ada = createRouterClient(router, { ctx: { token: 'ada' }, layer });
+  const ada = createRouterClient(router, { ctx: { token: 'ada' }, runtime });
   expect(await ada.me.query()).toBe('user-ada');
   expect(await ada.me.query()).toBe('user-ada');
-  // One build per client: each router client is its own handler runtime.
-  expect(log.filter((l) => l === 'auth build')).toHaveLength(2);
+  // One build per runtime, shared by both clients.
+  expect(log.filter((l) => l === 'auth build')).toHaveLength(1);
 });
 
 test("the middleware's error joins the procedure's error union", () => {
@@ -220,9 +220,10 @@ test('a strict procedure is checked against its declared output and errors', asy
   // @ts-expect-error the output is { id: string }
   strict(declared).query(() => Effect.succeed({ id: 1 }));
 
+  await using runtime = ManagedRuntime.make(AuthLive);
   const client = createRouterClient(
     { byId },
-    { ctx: { token: 'nobody' }, layer: AuthLive },
+    { ctx: { token: 'nobody' }, runtime },
   );
   await expect(client.byId.query()).rejects.toMatchObject({
     code: 'NOT_FOUND',

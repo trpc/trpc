@@ -34,6 +34,7 @@ export interface VercelRoute {
   readonly handle?: string;
   readonly has?: ReadonlyArray<unknown>;
   readonly headers?: Readonly<Record<string, string>>;
+  readonly missing?: ReadonlyArray<unknown>;
   readonly src?: string;
   readonly status?: number;
 }

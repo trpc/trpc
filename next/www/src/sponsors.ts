@@ -1,5 +1,29 @@
 import list from '../sponsors.json' with { type: 'json' };
 
+/**
+ * The sponsor tiers, by the least a sponsor gives a month (across KATT and
+ * the trpc organization), highest first.
+ */
+export const sponsorTiers = [
+  { label: 'Gold', minMonthlyDollars: 1000, tier: 'gold' },
+  { label: 'Silver', minMonthlyDollars: 500, tier: 'silver' },
+  { label: 'Bronze', minMonthlyDollars: 250, tier: 'bronze' },
+] as const;
+
+export type SponsorTier = (typeof sponsorTiers)[number]['tier'];
+
+/** The tiers whose sponsors the site features as partners. */
+export const partnerTiers: ReadonlyArray<SponsorTier> = ['gold', 'silver'];
+
+/** The tier of a sponsor who gives `monthlyDollars` a month, if any. */
+export function tierFor(monthlyDollars: number): SponsorTier | undefined {
+  return sponsorTiers.find((tier) => monthlyDollars >= tier.minMonthlyDollars)
+    ?.tier;
+}
+
+const isSponsorTier = (tier: unknown): tier is SponsorTier =>
+  sponsorTiers.some((entry) => entry.tier === tier);
+
 /** A sponsor, as `build/sponsors-sync.ts` writes them to `sponsors.json`. */
 export interface Sponsor {
   /** When they started, in ms since the epoch. */
@@ -8,12 +32,26 @@ export interface Sponsor {
   readonly link: string;
   readonly login: string;
   readonly name: string;
+  /**
+   * A tiered sponsor's place among the tiered sponsors: by what they give a
+   * month, then by what they've given in all; 1 is first.
+   */
+  readonly rank?: number;
+  /** Their tier, by what they give a month now; absent below the lowest. */
+  readonly tier?: SponsorTier;
   /** How much they've given, relative to the others: 1 to about 100. */
   readonly weight: number;
 }
 
+const entries: ReadonlyArray<
+  Omit<Sponsor, 'tier'> & { readonly tier?: string }
+> = list;
+
 /** Every sponsor, in the order they started. */
-export const sponsors: ReadonlyArray<Sponsor> = list;
+export const sponsors: ReadonlyArray<Sponsor> = entries.map(
+  ({ tier, ...sponsor }) =>
+    isSponsorTier(tier) ? { ...sponsor, tier } : sponsor,
+);
 
 /** The sponsors who have given the most, most first. */
 export const topSponsors = sponsors
@@ -30,11 +68,16 @@ export function avatarUrl(sponsor: Sponsor, size: number) {
 }
 
 /**
- * The sponsors featured as partners, with what the site says about them;
- * the README lists them as its top tier too (`build/sponsors-readme.ts`).
- * One who stops sponsoring drops out with the next sync of `sponsors.json`.
+ * What the site says about partners it has drawn a logo for
+ * (`components/sponsors/partner-logos.tsx`); a partner without an entry
+ * shows their avatar and name.
  */
-const partnerDetails = {
+const partnerDetails: Partial<
+  Record<
+    string,
+    { readonly accent: string; readonly blurb: string; readonly domain: string }
+  >
+> = {
   coderabbitai: {
     accent: '#FF570A',
     blurb: 'AI code reviews on every pull request, with fixes in one click.',
@@ -50,29 +93,39 @@ const partnerDetails = {
     blurb: 'Search engine results from Google and others, through one API.',
     domain: 'serpapi.com',
   },
-} as const;
-
-export type PartnerLogin = keyof typeof partnerDetails;
-
-export const partnerLogins: ReadonlyArray<string> = Object.keys(partnerDetails);
+};
 
 export interface Partner extends Sponsor {
   /** The brand's color, for the card's glow. */
   readonly accent: string;
   readonly blurb: string;
   readonly domain: string;
-  readonly login: PartnerLogin;
+  readonly tier: SponsorTier;
 }
 
-const isPartnerLogin = (login: string): login is PartnerLogin =>
-  Object.hasOwn(partnerDetails, login);
+const hostOf = (link: string) =>
+  URL.canParse(link) ? new URL(link).hostname.replace(/^www\./, '') : link;
 
-/** The partners who still sponsor, who have given the most first. */
+/**
+ * The sponsors in the partner tiers (silver and up), by rank. One who drops
+ * below silver, or stops sponsoring, drops out with the next sync of
+ * `sponsors.json`.
+ */
 export const partners: ReadonlyArray<Partner> = sponsors
-  .toSorted((a, b) => b.weight - a.weight)
-  .flatMap((sponsor) => {
-    const login = sponsor.login;
-    return isPartnerLogin(login)
-      ? [{ ...sponsor, ...partnerDetails[login], login }]
-      : [];
-  });
+  .flatMap((sponsor): Array<Partner> => {
+    const tier = sponsor.tier;
+    if (tier === undefined || !partnerTiers.includes(tier)) {
+      return [];
+    }
+    const details = partnerDetails[sponsor.login] ?? {
+      accent: '#888888',
+      blurb: sponsor.name,
+      domain: hostOf(sponsor.link),
+    };
+    return [{ ...sponsor, ...details, tier }];
+  })
+  .toSorted(
+    (a, b) =>
+      (a.rank ?? Number.POSITIVE_INFINITY) -
+        (b.rank ?? Number.POSITIVE_INFINITY) || b.weight - a.weight,
+  );

@@ -8,7 +8,7 @@ import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
 import { createSerializer } from '@trpc12/trpc/serializer';
 import {
   initTrpc,
-  Publisher,
+  experimental_Publisher,
   tracked,
   type PublisherEvents,
   type PublisherShape,
@@ -191,7 +191,9 @@ interface Post {
   id: string;
   at: Date;
 }
-class Posts extends Publisher.Service<Posts, { created: Post }>()('Posts') {}
+class Posts extends experimental_Publisher.Service<Posts, { created: Post }>()(
+  'Posts',
+) {}
 
 /** Just enough of XADD, XRANGE and PUBLISH. */
 const fakeRedis = Layer.effect(Redis.Redis)(

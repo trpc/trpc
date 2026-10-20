@@ -60,7 +60,7 @@ export const cachedQuery = <T>() =>
         return ok(cache.get(key) as T);
       }
       const result = yield* opts.next();
-      if (result.ok) cache.set(key, result.data);
+      cache.set(key, result.data);
       opts.response.headers.set('x-cache', 'miss');
       return result;
     }),

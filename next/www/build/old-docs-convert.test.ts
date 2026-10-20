@@ -18,6 +18,7 @@ import {
   searchParamsUrl,
   sidebarSections,
   styleOf,
+  tweetTimestamp,
 } from './old-docs-convert.ts';
 
 const page = (
@@ -604,35 +605,91 @@ describe('convertPost', () => {
     );
   });
 
-  it('links an embedded post on X, or says that it was deleted', () => {
+  it('renders a copied tweet as a Twitter-style card, alone or in the `<div>` that lays them out', () => {
+    const bird = /<svg class="tweet-bird"[^\n]*?<\/svg>/;
     const converted = convert(
       [
-        "import { Tweet } from 'react-tweet';",
-        '',
-        'Shipped:',
-        '',
-        '<Tweet id="123" />',
+        "import { StaticTweet } from '@site/src/components/StaticTweet';",
         '',
         'As Dan put it:',
         '',
-        '<div className="flex justify-center">',
-        '  <Tweet id="1756120297529368801" />',
+        '<div className="mb-4 flex w-full justify-center">',
+        '  <StaticTweet',
+        '    id="1756120297529368801"',
+        '    name="dan 2"',
+        '    username="dan_abramov2"',
+        '    avatarUrl="https://github.com/gaearon.png"',
+        `    text={'"use client" = Astro & co\\n"use server" = <tRPC>'}`,
+        '    createdAt="2024-02-10T00:58:00.000Z"',
+        '    archiveUrl="https://web.archive.org/web/2024/https://twitter.com/dan_abramov2"',
+        '  />',
         '</div>',
+        '',
+        '<StaticTweet',
+        '  id="1571922456239284224"',
+        '  name="Theo"',
+        '  username="theo"',
+        '  avatarUrl="https://github.com/t3dotgg.png"',
+        '  text={"Why? The \\"t\\"\\n\\nplease try @trpcio #typesafe https://github.com/trpc/trpc"}',
+        '  createdAt="2022-09-19T18:01:33.000Z"',
+        '/>',
       ].join('\n'),
     );
     expect(converted.problems).toEqual([]);
-    expect(converted.markdown.replace(/^---\n[\s\S]*?\n---\n\n/, '')).toBe(
+    const body = converted.markdown.replace(/^---\n[\s\S]*?\n---\n\n/, '');
+    expect(body.match(new RegExp(bird, 'g'))).toHaveLength(2);
+    expect(body.replaceAll(new RegExp(bird, 'g'), '<svg />')).toBe(
       [
-        'Shipped:',
-        '',
-        '[View the post on X](https://x.com/i/status/123)',
-        '',
         'As Dan put it:',
         '',
-        '> [!NOTE] Post deleted',
-        "> Dan Abramov's post on X that was embedded here has since been deleted.",
+        '<figure class="tweet">',
+        '<div class="tweet-header"><a class="tweet-author" href="https://twitter.com/dan_abramov2"><img class="tweet-avatar" src="https://github.com/gaearon.png" alt="" width="48" height="48" loading="lazy" /><span class="tweet-author-names"><span class="tweet-name">dan 2</span><span class="tweet-username">@dan_abramov2</span></span></a><svg /></div>',
+        '<blockquote class="tweet-text" cite="https://twitter.com/dan_abramov2/status/1756120297529368801">&quot;use client&quot; = Astro &amp; co<br />&quot;use server&quot; = &lt;tRPC&gt;</blockquote>',
+        '<div class="tweet-meta"><a href="https://twitter.com/dan_abramov2/status/1756120297529368801"><time datetime="2024-02-10T00:58:00.000Z">12:58 AM · Feb 10, 2024</time></a><span aria-hidden="true"> · </span><a class="tweet-archive" href="https://web.archive.org/web/2024/https://twitter.com/dan_abramov2">Archived copy</a></div>',
+        '<div class="tweet-footer"><a href="https://twitter.com/dan_abramov2/status/1756120297529368801">Read more on Twitter</a></div>',
+        '</figure>',
+        '',
+        '<figure class="tweet">',
+        '<div class="tweet-header"><a class="tweet-author" href="https://twitter.com/theo"><img class="tweet-avatar" src="https://github.com/t3dotgg.png" alt="" width="48" height="48" loading="lazy" /><span class="tweet-author-names"><span class="tweet-name">Theo</span><span class="tweet-username">@theo</span></span></a><svg /></div>',
+        '<blockquote class="tweet-text" cite="https://twitter.com/theo/status/1571922456239284224">Why? The &quot;t&quot;<br /><br />please try <a href="https://twitter.com/trpcio">@trpcio</a> <a href="https://twitter.com/hashtag/typesafe">#typesafe</a> <a href="https://github.com/trpc/trpc">github.com/trpc/trpc</a></blockquote>',
+        '<div class="tweet-meta"><a href="https://twitter.com/theo/status/1571922456239284224"><time datetime="2022-09-19T18:01:33.000Z">6:01 PM · Sep 19, 2022</time></a></div>',
+        '<div class="tweet-footer"><a href="https://twitter.com/theo/status/1571922456239284224">Read more on Twitter</a></div>',
+        '</figure>',
         '',
       ].join('\n'),
+    );
+  });
+
+  it("reports a tweet it can't render", () => {
+    const converted = convert(
+      [
+        "import { StaticTweet } from '@site/src/components/StaticTweet';",
+        '',
+        'Tweets:',
+        '',
+        '<StaticTweet name="A" username="a" text={\'\\u0041\'} />',
+        '',
+        '<StaticTweet name="A" username="a" likes="3" createdAt="2024-02-10" />',
+        '',
+        '<StaticTweet id="x" name="A" username="a" avatarUrl="a.png" text="A" createdAt="2024-02-10" />',
+      ].join('\n'),
+    );
+    expect(converted.problems).toEqual([
+      'blog/2025-03-21-announcing-trpc-11.mdx: `<StaticTweet name="A" username="a" text={\'\\u0041\'} />`: no conversion for `text`\'s escapes',
+      'blog/2025-03-21-announcing-trpc-11.mdx: `<StaticTweet name="A" username="a" likes="3" createdAt="2024-02-10" />`: no conversion for `likes`, no `id`, no `avatarUrl`, no `text`',
+      'blog/2025-03-21-announcing-trpc-11.mdx: `<StaticTweet id="x" name="A" username="a" avatarUrl="a.png" text="A" createdAt="2024-02-10" />`: `id` is no tweet id, or `username` no handle',
+    ]);
+  });
+
+  it("shows a tweet's time as Twitter's embeds do, in UTC", () => {
+    expect(tweetTimestamp(new Date('2024-02-10T00:58:00.000Z'))).toBe(
+      '12:58 AM · Feb 10, 2024',
+    );
+    expect(tweetTimestamp(new Date('2021-06-10T14:11:00.000Z'))).toBe(
+      '2:11 PM · Jun 10, 2021',
+    );
+    expect(tweetTimestamp(new Date('2022-03-26T12:05:00.000Z'))).toBe(
+      '12:05 PM · Mar 26, 2022',
     );
   });
 

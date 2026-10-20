@@ -2,9 +2,9 @@ import { Effect } from 'effect';
 import {
   experimental_durable,
   experimental_lock,
-  rateLimit,
+  experimental_rateLimit,
 } from '@trpc12/trpc/middleware';
-import { initTrpc, Publisher } from '@trpc12/trpc/server';
+import { initTrpc, experimental_Publisher } from '@trpc12/trpc/server';
 import { z } from 'zod';
 
 export interface Message {
@@ -13,7 +13,7 @@ export interface Message {
 }
 
 /** A room's messages. In a Durable Object, `experimental_hibernatingPublisher` provides it. */
-export class Messages extends Publisher.Service<
+export class Messages extends experimental_Publisher.Service<
   Messages,
   { message: Message }
 >()('Messages') {}
@@ -29,7 +29,10 @@ export const appRouter = {
   send: t.procedure
     .input(z.object({ from: z.string(), text: z.string().min(1) }))
     .use(
-      rateLimit<{ ctx: { room: string }; input: { from: string } }>({
+      experimental_rateLimit<{
+        ctx: { room: string };
+        input: { from: string };
+      }>({
         key: (opts) => `send:${opts.ctx.room}:${opts.input.from}`,
         limit: 3,
         window: '1 minute',

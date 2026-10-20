@@ -1,25 +1,45 @@
-import { Effect, Exit, type Layer } from 'effect';
+import { Effect, Exit, type Layer, type ManagedRuntime } from 'effect';
 import { createTrpcClient } from '../client/client.ts';
-import { localLink } from '../client/links/index.ts';
+import { localLink, type LocalLinkOptions } from '../client/links/index.ts';
 import { routerType, type TrpcClient } from '../client/types.ts';
 import { frameworkError } from '../internal/error.ts';
-import type { DansonForm, MaybePromise } from '../internal/types.ts';
-import { callProcedure, normalizeCause } from './execution/index.ts';
 import type {
-  Procedure,
-  ProcedureDef,
-  AnyRouter,
-  inferRouterContext,
-  inferRouterServices,
+  DansonForm,
+  MaybePromise,
+  ProcedureResponse,
+} from '../internal/types.ts';
+import {
+  callProcedure,
+  createResponseHandle,
+  inProcessOutput,
+  normalizeCause,
+  runtimeServices,
+} from './execution/index.ts';
+import type { RuntimeOption } from './handler/index.ts';
+import {
+  checkRouterKeys,
+  type Procedure,
+  type ProcedureDef,
+  type AnyRouter,
+  type inferRouterContext,
+  type inferRouterServices,
 } from './procedures/index.ts';
 
 type CtxOption<TCtx> = {} extends TCtx
   ? { ctx?: TCtx | (() => MaybePromise<TCtx>) }
   : { ctx: TCtx | (() => MaybePromise<TCtx>) };
 
-type ServicesOption<TServices> = [TServices] extends [never]
-  ? { layer?: Layer.Layer<never, any, never> }
-  : { layer: Layer.Layer<TServices, any, never> };
+type Runtime<TServices> = ManagedRuntime.ManagedRuntime<TServices, unknown>;
+
+/** A `layer` built for the call, or a caller-owned `runtime`. */
+type CallServicesOption<TServices> = [TServices] extends [never]
+  ? {
+      layer?: Layer.Layer<never, any, never>;
+      runtime?: Runtime<never> | undefined;
+    }
+  :
+      | { layer: Layer.Layer<TServices, any, never>; runtime?: undefined }
+      | { runtime: Runtime<TServices>; layer?: undefined };
 
 /**
  * Options for {@link createRouterClient}.
@@ -29,11 +49,13 @@ type ServicesOption<TServices> = [TServices] extends [never]
 export type RouterClientOptions<TRouter extends AnyRouter> = CtxOption<
   inferRouterContext<TRouter>
 > &
-  ServicesOption<inferRouterServices<TRouter>>;
+  RuntimeOption<inferRouterServices<TRouter>>;
 
 /**
- * Calls a router in-process with the same shape as the HTTP client (15
- * SC-A). Values are passed by reference, not serialized.
+ * Calls a router in-process with the same shape as the HTTP client. Values
+ * are passed by reference, not serialized. The router's Effect services
+ * come from `runtime`, which the caller owns: make it once with
+ * `ManagedRuntime.make(layer)` and dispose it when done.
  *
  * @example
  * ```ts
@@ -49,9 +71,10 @@ export function createRouterClient<TRouter extends AnyRouter>(
     ? [opts?: RouterClientOptions<TRouter>]
     : [opts: RouterClientOptions<TRouter>]
 ): TrpcClient<TRouter, {}, DansonForm, { builtinErrors: never }> {
+  checkRouterKeys(router);
   const o = (opts ?? {}) as {
     ctx?: object | (() => MaybePromise<object>);
-    layer?: Layer.Layer<never, any, never>;
+    runtime?: Runtime<never>;
   };
   const ctx = o.ctx;
   return createTrpcClient({
@@ -59,32 +82,41 @@ export function createRouterClient<TRouter extends AnyRouter>(
     links: [
       localLink({
         router,
-        layer: o.layer,
+        runtime: o.runtime,
         serializer: false,
         createContext: (typeof ctx === 'function'
           ? ctx
           : () => ctx ?? {}) as () => never,
-      }),
+      } as LocalLinkOptions<TRouter> & { serializer: false }),
     ],
   }) as TrpcClient<TRouter, {}, DansonForm, { builtinErrors: never }>;
 }
 
 /**
- * The options of {@link call}. `layer` is required when the procedure needs
- * Effect services.
+ * The options of {@link call}. `ctx` is required when the procedure needs
+ * any, and `layer` or `runtime` when it needs Effect services; otherwise
+ * the options can be left out.
  * @since 0.1.0
  * @stability stable
  */
-export type CallOptions<TDef extends ProcedureDef> = {
-  ctx: TDef['ctx'];
+export type CallOptions<TDef extends ProcedureDef> = ({} extends TDef['ctx']
+  ? { ctx?: TDef['ctx'] }
+  : { ctx: TDef['ctx'] }) & {
   signal?: AbortSignal;
   /** Passed to middleware and the resolver. @default '' */
   path?: string;
-} & ServicesOption<TDef['services']>;
+} & CallServicesOption<TDef['services']>;
+
+/** A returned `HttpServerResponse` reaches {@link call}'s caller as a web `Response`. */
+type CallOutput<T> = [Extract<T, ProcedureResponse>] extends [never]
+  ? T
+  : Exclude<T, ProcedureResponse> | globalThis.Response;
 
 /**
- * Calls one procedure directly. Throws the procedure's `TrpcError`s. The
- * `layer` is built for the call and released after it.
+ * Calls one procedure directly. Throws the procedure's `TrpcError`s. A
+ * `layer` is built for the call and released once it returns, before a
+ * streamed output is read; pass a caller-owned `runtime` for those. A
+ * returned response arrives as the web `Response` HTTP would send.
  *
  * @example
  * ```ts
@@ -96,23 +128,40 @@ export type CallOptions<TDef extends ProcedureDef> = {
 export async function call<TDef extends ProcedureDef>(
   procedure: Procedure<TDef>,
   input: TDef['input'],
-  opts: CallOptions<TDef>,
-): Promise<TDef['output']> {
-  const effect = callProcedure({
-    procedure,
-    path: opts.path ?? '',
-    ctx: opts.ctx,
-    input,
-    signal: opts.signal ?? new AbortController().signal,
-  });
-  const layer = (opts as { layer?: Layer.Layer<never, any, never> }).layer;
+  ...[opts]: {} extends CallOptions<TDef>
+    ? [opts?: CallOptions<TDef>]
+    : [opts: CallOptions<TDef>]
+): Promise<CallOutput<TDef['output']>> {
+  const o = (opts ?? {}) as {
+    ctx?: object;
+    signal?: AbortSignal;
+    path?: string;
+    layer?: Layer.Layer<never, any, never>;
+    runtime?: Runtime<never>;
+  };
+  const response = createResponseHandle();
+  const effect = Effect.flatMap(
+    callProcedure({
+      procedure,
+      path: o.path ?? '',
+      ctx: o.ctx ?? {},
+      input,
+      signal: o.signal ?? new AbortController().signal,
+      response,
+      allowResponse: true,
+    }),
+    (value) => inProcessOutput(value, response),
+  );
+  const provided = o.runtime
+    ? Effect.flatMap(runtimeServices(o.runtime), (services) =>
+        Effect.provideContext(effect, services),
+      )
+    : o.layer
+      ? Effect.provide(effect, o.layer)
+      : effect;
   const exit = await Effect.runPromiseExit(
-    (layer ? Effect.provide(effect, layer) : effect) as Effect.Effect<
-      TDef['output'],
-      never,
-      never
-    >,
-    { signal: opts.signal },
+    provided as Effect.Effect<CallOutput<TDef['output']>, never, never>,
+    { signal: o.signal },
   );
   if (Exit.isSuccess(exit)) return exit.value;
   const error = normalizeCause(exit.cause);

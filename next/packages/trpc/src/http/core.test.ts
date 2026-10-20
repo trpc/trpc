@@ -1,14 +1,22 @@
 import { Effect, Layer } from 'effect';
 import { HttpMiddleware, HttpRouter, HttpServerResponse } from 'effect/http';
-import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import {
+  createTrpcClient,
+  httpLink,
+  localLink,
+  routerType,
+  safe,
+} from '@trpc12/trpc/client';
 import { cors } from '@trpc12/trpc/http';
 import {
+  call,
   createFetchHandler,
   createRouterClient,
   initTrpc,
   Response as TrpcResponse,
 } from '@trpc12/trpc/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
+import { z } from 'zod';
 import { createTestServer } from '../fixtures/server.ts';
 
 const t = initTrpc<{ ctx: { cookie: string | null; web: boolean } }>();
@@ -221,11 +229,112 @@ test('a procedure can return its own response on unbatched HTTP calls (04 Q4.3)'
   expect(await alone.text()).toBe('a,b\n1,2\n');
   expect(server.requests.length - before).toBe(2);
 
+  const batching = (on: boolean) =>
+    createTrpcClient({
+      router: routerType<Router>(),
+      links: [httpLink({ url: server.url, batch: on })],
+    });
+  // @ts-expect-error -- a `batch` that may be on counts as on
+  await expect(batching(true).csv.query()).rejects.toMatchObject({
+    code: 'BAD_REQUEST',
+  });
+
   const caller = createRouterClient(router, {
     ctx: { cookie: null, web: false },
   });
-  await expect(caller.csv.query()).rejects.toMatchObject({
-    code: 'BAD_REQUEST',
+  expect(await (await caller.csv.query()).text()).toBe('a,b\n1,2\n');
+});
+
+test("in-process calls get a procedure's own response as a web Response, its errors still typed", async () => {
+  const s = initTrpc();
+  const encoder = new TextEncoder();
+  let finish = () => {};
+  const download = s.procedure
+    .errors({ GONE: { data: z.object({ name: z.string() }) } })
+    .input(z.object({ name: z.string() }))
+    .query((opts) => {
+      opts.response.headers.set('cache-control', 'no-store');
+      opts.response.headers.set('content-type', 'text/plain');
+      opts.response.headers.append('set-cookie', 'seen=1');
+      if (opts.input.name === 'gone') {
+        return opts.errors.GONE({ data: { name: opts.input.name } });
+      }
+      const body = new ReadableStream<Uint8Array>({
+        start: (controller) => {
+          controller.enqueue(encoder.encode('a,'));
+          finish = () => {
+            controller.enqueue(encoder.encode('b'));
+            controller.close();
+          };
+        },
+      });
+      return new Response(body, {
+        status: 201,
+        headers: { 'content-type': 'text/csv' },
+      });
+    });
+  const moved = s.procedure.query(() =>
+    HttpServerResponse.redirect('https://example.com/elsewhere', {
+      status: 307,
+    }),
+  );
+  const files = { download, moved };
+  const decoder = new TextDecoder();
+  const check = async (res: Response) => {
+    expect(res.status).toBe(201);
+    expect(res.headers.get('content-type')).toBe('text/csv');
+    expect(res.headers.get('cache-control')).toBe('no-store');
+    expect(res.headers.getSetCookie()).toEqual(['seen=1']);
+    const reader = res.body!.getReader();
+    const first = await reader.read();
+    expect(decoder.decode(first.value)).toBe('a,');
+    finish();
+    let rest = '';
+    for (let next = await reader.read(); !next.done; next = await reader.read())
+      rest += decoder.decode(next.value);
+    expect(rest).toBe('b');
+  };
+
+  const caller = createRouterClient(files);
+  const fromCaller = await caller.download.query({ name: 'report' });
+  expectTypeOf(fromCaller).toEqualTypeOf<Response>();
+  await check(fromCaller);
+  const redirect = await caller.moved.query();
+  expectTypeOf(redirect).toEqualTypeOf<Response>();
+  expect(redirect.status).toBe(307);
+  expect(redirect.headers.get('location')).toBe(
+    'https://example.com/elsewhere',
+  );
+
+  const client = createTrpcClient({
+    router: routerType<typeof files>(),
+    links: [localLink({ router: files })],
+  });
+  const fromLink = await client.download.query({ name: 'report' });
+  expectTypeOf(fromLink).toEqualTypeOf<Response>();
+  await check(fromLink);
+
+  const fromCall = await call(download, { name: 'report' });
+  expectTypeOf(fromCall).toEqualTypeOf<Response>();
+  await check(fromCall);
+  const movedByCall = await call(moved, undefined);
+  expectTypeOf(movedByCall).toEqualTypeOf<Response>();
+  expect(movedByCall.status).toBe(307);
+
+  const [, gone] = await safe(caller.download.query({ name: 'gone' }));
+  expectTypeOf<Extract<typeof gone, { defined: true }>['code']>().toEqualTypeOf<
+    'GONE' | 'BAD_REQUEST'
+  >();
+  expect(gone).toMatchObject({
+    code: 'GONE',
+    data: { name: 'gone' },
+    defined: true,
+  });
+  const [, goneByLink] = await safe(client.download.query({ name: 'gone' }));
+  expect(goneByLink).toMatchObject({ code: 'GONE', defined: true });
+  await expect(call(download, { name: 'gone' })).rejects.toMatchObject({
+    code: 'GONE',
+    defined: true,
   });
 });
 

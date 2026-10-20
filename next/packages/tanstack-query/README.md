@@ -18,11 +18,11 @@ await queryClient.invalidateQueries(trpc.post.pathFilter());
 
 ## Docs
 
-- [TanStack Query](https://github.com/trpc/trpc/blob/v12/next/docs/integrations/tanstack-query.md)
-- [Query keys and filters](https://github.com/trpc/trpc/blob/v12/next/docs/integrations/tanstack-query/keys.md)
-- [Subscriptions](https://github.com/trpc/trpc/blob/v12/next/docs/integrations/tanstack-query/subscriptions.md)
-- [Streamed mutations](https://github.com/trpc/trpc/blob/v12/next/docs/integrations/tanstack-query/streamed-mutations.md)
-- [Hydration and offline mutations](https://github.com/trpc/trpc/blob/v12/next/docs/integrations/tanstack-query/hydration.md)
-- [TanStack DB](https://github.com/trpc/trpc/blob/v12/next/docs/integrations/tanstack-query/tanstack-db.md)
+- [TanStack Query](https://v12.trpc.io/v12/docs/integrations/tanstack-query)
+- [Query keys and filters](https://v12.trpc.io/v12/docs/integrations/tanstack-query/keys)
+- [Subscriptions](https://v12.trpc.io/v12/docs/integrations/tanstack-query/subscriptions)
+- [Streamed mutations](https://v12.trpc.io/v12/docs/integrations/tanstack-query/streamed-mutations)
+- [Hydration and offline mutations](https://v12.trpc.io/v12/docs/integrations/tanstack-query/hydration)
+- [TanStack DB](https://v12.trpc.io/v12/docs/integrations/tanstack-query/tanstack-db)
 
-Part of the tRPC v12 preview: until 12.0.0, releases follow semver on `0.x`, and each export's `@stability` says how it is planned to ship ([Stability](https://github.com/trpc/trpc/blob/v12/next/docs/packages.md#stability)).
+Part of the tRPC v12 preview: until 12.0.0, releases follow semver on `0.x`, and each export's `@stability` says how it is planned to ship ([Stability](https://v12.trpc.io/v12/docs/packages#stability)).

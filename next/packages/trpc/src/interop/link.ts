@@ -6,14 +6,13 @@ import {
   type Operation,
   type TrpcLink,
 } from '../client/link.ts';
-import { withSubscriptions } from '../client/subscriptions.ts';
 import {
   isTrpcError,
-  toBuiltinError,
   TrpcError,
   type AnyTrpcError,
 } from '../internal/error.ts';
 import type { ProcedureType } from '../internal/types.ts';
+import { v11Shape, type V11ErrorShape } from './handler/index.ts';
 
 /**
  * The operation a v11 link receives.
@@ -118,29 +117,57 @@ const toV11Operation = (op: Operation): V11Operation => ({
 });
 
 /**
+ * A v12 error as v11 links read a `TRPCClientError`: `data.code`,
+ * `data.httpStatus` and `shape` in v11's form (`retryLink`'s
+ * `opts.error.data?.code`), with the v12 error as its `cause`. Not an
+ * `instanceof TRPCClientError`: that class is `@trpc/client`'s.
+ */
+class V11ClientError extends Error {
+  override readonly name = 'TRPCClientError';
+  override readonly cause: AnyTrpcError;
+  readonly shape: V11ErrorShape;
+  readonly data: V11ErrorShape['data'];
+  readonly meta: Record<string, unknown> | undefined = undefined;
+  constructor(cause: AnyTrpcError, path: string) {
+    super(cause.message, { cause });
+    this.cause = cause;
+    this.shape = v11Shape(cause, path);
+    this.data = this.shape.data;
+  }
+}
+
+/** The v12 error behind one a v11 link got from `next`, even rewrapped (`TRPCClientError.from(err)`). */
+const unwrapV11ClientError = (error: unknown): AnyTrpcError | undefined =>
+  error instanceof V11ClientError
+    ? error.cause
+    : error instanceof Error && error.cause instanceof V11ClientError
+      ? error.cause.cause
+      : undefined;
+
+/**
  * v11 errors are `TRPCClientError`s, with the code in `data.code`. The
  * v12 error is `defined: false`, so v11's `data` stays on the cause.
  */
 const fromV11Error = (error: unknown): AnyTrpcError => {
   if (isTrpcError(error)) return error;
+  const unwrapped = unwrapV11ClientError(error);
+  if (unwrapped) return unwrapped;
   const code = (error as { data?: { code?: unknown } } | undefined)?.data?.code;
   if (typeof code !== 'string') return toClientError(error);
-  return toBuiltinError(
-    new TrpcError({
-      code,
-      message: error instanceof Error ? error.message : code,
-      cause: error,
-    }),
-    'INTERNAL_SERVER_ERROR',
-  );
+  return new TrpcError({
+    code,
+    message: error instanceof Error ? error.message : code,
+    cause: error,
+  });
 };
 
 /**
  * Runs a v11 link (`TRPCLink` from `@trpc/client`) in a v12 chain, so
  * custom links keep working while you rewrite them as Effect links. The
- * v11 link sees v11 operations and observables; the errors it gets from
- * `next` are v12 `TrpcError`s, with the code on `code` and `data.code`
- * left as the procedure set it.
+ * v11 link sees v11 operations and observables, and the errors it gets
+ * from `next` read like `TRPCClientError`s: v11's `data.code`,
+ * `data.httpStatus` and `shape`, with the v12 `TrpcError` as `cause`.
+ * Passed on, they reach the v12 client as that `TrpcError`.
  *
  * @example
  * ```ts
@@ -156,68 +183,68 @@ const fromV11Error = (error: unknown): AnyTrpcError => {
  */
 export function fromV11Link(v11Link: V11Link): TrpcLink {
   const operationLink = v11Link({});
-  return withSubscriptions(
-    link((opts) =>
-      Stream.callback<unknown, AnyTrpcError>((queue) =>
-        Effect.gen(function* () {
-          const fibers = yield* FiberSet.make<void, never>();
-          const fork = yield* FiberSet.runtime(fibers)<never>();
-          const v11Next = (o: V11Operation) =>
-            v11Observable<V11ResultEnvelope>((observer) => {
-              if (o.type === 'subscription') {
-                observer.next?.({ result: { type: 'started' } });
-              }
-              const fiber = fork(
-                Stream.runForEach(
-                  opts.next({
-                    ...opts.op,
-                    id: o.id,
-                    type: o.type,
-                    path: o.path,
-                    input: o.input,
-                    context: o.context,
-                    signal: o.signal ?? undefined,
-                  }),
-                  (data) =>
-                    Effect.sync(() =>
-                      observer.next?.({ result: { type: 'data', data } }),
-                    ),
-                ).pipe(
-                  Effect.matchCause({
-                    onSuccess: () => observer.complete?.(),
-                    onFailure: (cause) => {
-                      if (!Cause.hasInterruptsOnly(cause)) {
-                        observer.error?.(clientErrorFromCause(cause));
-                      }
-                    },
-                  }),
-                ),
-              );
-              return () => fiber.interruptUnsafe();
-            });
-          const subscription = operationLink({
-            op: toV11Operation(opts.op),
-            next: v11Next,
-          }).subscribe({
-            next: (envelope: V11ResultEnvelope) => {
-              const { result } = envelope;
-              if (result.type === 'started' || result.type === 'state') return;
-              if (result.type === 'stopped') {
-                Queue.endUnsafe(queue);
-                return;
-              }
-              Queue.offerUnsafe(queue, result.data);
-              if (opts.op.type !== 'subscription') Queue.endUnsafe(queue);
-            },
-            error: (error) =>
-              Queue.failCauseUnsafe(queue, Cause.fail(fromV11Error(error))),
-            complete: () => Queue.endUnsafe(queue),
+  return link((opts) =>
+    Stream.callback<unknown, AnyTrpcError>((queue) =>
+      Effect.gen(function* () {
+        const fibers = yield* FiberSet.make<void, never>();
+        const fork = yield* FiberSet.runtime(fibers)<never>();
+        const v11Next = (o: V11Operation) =>
+          v11Observable<V11ResultEnvelope>((observer) => {
+            if (o.type === 'subscription') {
+              observer.next?.({ result: { type: 'started' } });
+            }
+            const fiber = fork(
+              Stream.runForEach(
+                opts.next({
+                  ...opts.op,
+                  id: o.id,
+                  type: o.type,
+                  path: o.path,
+                  input: o.input,
+                  context: o.context,
+                  signal: o.signal ?? undefined,
+                }),
+                (data) =>
+                  Effect.sync(() =>
+                    observer.next?.({ result: { type: 'data', data } }),
+                  ),
+              ).pipe(
+                Effect.matchCause({
+                  onSuccess: () => observer.complete?.(),
+                  onFailure: (cause) => {
+                    if (!Cause.hasInterruptsOnly(cause)) {
+                      observer.error?.(
+                        new V11ClientError(clientErrorFromCause(cause), o.path),
+                      );
+                    }
+                  },
+                }),
+              ),
+            );
+            return () => fiber.interruptUnsafe();
           });
-          yield* Effect.addFinalizer(() =>
-            Effect.sync(() => subscription.unsubscribe()),
-          );
-        }),
-      ),
+        const subscription = operationLink({
+          op: toV11Operation(opts.op),
+          next: v11Next,
+        }).subscribe({
+          next: (envelope: V11ResultEnvelope) => {
+            const { result } = envelope;
+            if (result.type === 'started' || result.type === 'state') return;
+            if (result.type === 'stopped') {
+              Queue.endUnsafe(queue);
+              return;
+            }
+            Queue.offerUnsafe(queue, result.data);
+            if (opts.op.type !== 'subscription') Queue.endUnsafe(queue);
+          },
+          error: (error) =>
+            Queue.failCauseUnsafe(queue, Cause.fail(fromV11Error(error))),
+          complete: () => Queue.endUnsafe(queue),
+        });
+        yield* Effect.addFinalizer(() =>
+          Effect.sync(() => subscription.unsubscribe()),
+        );
+      }),
     ),
   );
 }

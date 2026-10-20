@@ -1,6 +1,6 @@
 ---
 title: React
-description: '@trpc12/tanstack-react-query: the helpers as a module singleton or through context, Suspense, useSubscription, and server components.'
+description: '`@trpc12/tanstack-react-query`: the helpers as a module singleton or through context, Suspense, `useSubscription`, and server components.'
 section: Integrations
 parent: integrations/tanstack-query
 order: 1

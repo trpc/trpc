@@ -13,10 +13,10 @@ export interface experimental_UpstashOptions {
   /** `UPSTASH_REDIS_REST_TOKEN`. */
   readonly token: string;
   /** @default globalThis.fetch */
-  readonly fetch?: typeof fetch;
+  readonly fetch?: (url: string, init: RequestInit) => Promise<Response>;
 }
 
-const noSubscribe = new Redis.RedisError({
+const noSubscribe = /* @__PURE__ */ new Redis.RedisError({
   cause: new Error('Upstash REST has no SUBSCRIBE; connect over TCP instead'),
 });
 
@@ -86,7 +86,7 @@ export interface experimental_UpstashRateLimiterStoreOptions extends experimenta
 
 /**
  * Effect's `RateLimiterStore` on Upstash: Effect's Redis store, with its
- * Lua scripts, over {@link experimental_upstashRedis}. Each `rateLimit()`
+ * Lua scripts, over {@link experimental_upstashRedis}. Each `experimental_rateLimit()`
  * call is one REST request (two the first time a script runs).
  *
  * @example

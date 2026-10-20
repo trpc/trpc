@@ -52,17 +52,44 @@ export function sponsorshipNode(
       name: login.toUpperCase(),
       websiteUrl: null,
     },
-    tier: { monthlyPriceInDollars: 10 },
+    tier: { isOneTime: false, monthlyPriceInDollars: 10 },
     ...overrides,
   };
 }
 
-export function lifetimeNode(login: string, cents: number) {
-  return { amountInCents: cents, sponsor: { login } };
+/** A sponsors activity log entry, as GitHub sends it to the account's owner. */
+export function activityNode(
+  login: string,
+  action: string,
+  opts: {
+    readonly dollars?: number;
+    readonly isOneTime?: boolean;
+    readonly timestamp?: string;
+  } = {},
+) {
+  return {
+    action,
+    sponsor: { login },
+    sponsorsTier:
+      opts.dollars === undefined
+        ? null
+        : {
+            isOneTime: opts.isOneTime ?? false,
+            monthlyPriceInDollars: opts.dollars,
+          },
+    timestamp: opts.timestamp ?? '2025-01-01T00:00:00Z',
+  };
 }
 
-export const isLifetimeQuery = (sent: SentQuery) =>
-  sent.query.includes('lifetimeReceivedSponsorshipValues');
+/** An activity that has `login` pay exactly `cents`, once. */
+export const paymentNode = (login: string, cents: number) =>
+  activityNode(login, 'NEW_SPONSORSHIP', {
+    dollars: cents / 100,
+    isOneTime: true,
+  });
+
+export const isPaymentsQuery = (sent: SentQuery) =>
+  sent.query.includes('sponsorsActivities');
 
 export function fakeGithub(respond: (sent: SentQuery) => FakeReply) {
   const sent: Array<SentQuery> = [];

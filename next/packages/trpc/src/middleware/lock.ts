@@ -49,7 +49,7 @@ const LockTimeoutBase: new (args: {
 }) => Cause.YieldableError & {
   readonly _tag: 'LockTimeout';
   readonly key: string;
-} = Data.TaggedError('LockTimeout');
+} = /* @__PURE__ */ Data.TaggedError('LockTimeout');
 
 /**
  * {@link experimental_Locker}'s failure when `timeout` passes first.
@@ -103,9 +103,10 @@ export const experimental_Locker: Context.ServiceClass<
   experimental_Locker,
   '@trpc12/trpc/Locker',
   experimental_LockerShape
-> = Context.Service<experimental_Locker, experimental_LockerShape>()(
-  '@trpc12/trpc/Locker',
-);
+> = /* @__PURE__ */ Context.Service<
+  experimental_Locker,
+  experimental_LockerShape
+>()('@trpc12/trpc/Locker');
 
 const resolve = (
   defaults: experimental_LockOptions,
@@ -194,7 +195,7 @@ export interface experimental_RedisLockerOptions extends experimental_LockOption
   readonly retryInterval?: Duration.Input;
 }
 
-const releaseScript = Redis.script(
+const releaseScript = /* @__PURE__ */ Redis.script(
   (key: string, token: string) => [key, token],
   {
     numberOfKeys: 1,
@@ -263,7 +264,7 @@ export function experimental_redisLocker(
 }
 
 const LockConflictBase: TaggedErrorClass<'CONFLICT', undefined, 409> =
-  TrpcError.Tagged('CONFLICT', {
+  /* @__PURE__ */ TrpcError.Tagged('CONFLICT', {
     status: 409,
     message: 'Another call holds the lock',
   });
@@ -295,10 +296,9 @@ export interface experimental_LockMiddlewareOptions<
   }) => string;
 }
 
-const HeldLocks = Context.Reference<ReadonlyMap<string, boolean>>(
-  '@trpc12/trpc/HeldLocks',
-  { defaultValue: () => new Map() },
-);
+const HeldLocks = /* @__PURE__ */ Context.Reference<
+  ReadonlyMap<string, boolean>
+>('@trpc12/trpc/HeldLocks', { defaultValue: () => new Map() });
 
 /**
  * Runs the rest of the call under an {@link experimental_Locker} lock, so

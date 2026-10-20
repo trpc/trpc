@@ -169,6 +169,39 @@ test('implement() leaves only offer the contract terminal, inputs and errors', (
   });
 });
 
+test('an implementation keeps literals in async resolvers and generators', () => {
+  const Status = Schema.Struct({
+    status: Schema.Literals(['a', 'b']),
+    n: Schema.Number,
+  });
+  const Event = Schema.Struct({ kind: Schema.Literals(['x', 'y']) });
+  const c = experimental_contract.create();
+  const leaves = t.implement({
+    status: c.output(Status).query(),
+    guarded: c.output(Status).errors({ NOT_FOUND: {} }).mutation(),
+    events: c.output(Event).subscription(),
+  });
+
+  leaves.status.query(async () => ({ status: 'a', n: 1 }));
+  leaves.guarded.mutation(async (opts) =>
+    opts.ctx.user ? { status: 'b', n: 1 } : opts.errors.NOT_FOUND(),
+  );
+  leaves.events.subscription(async function* () {
+    yield { kind: 'x' };
+  });
+
+  // @ts-expect-error -- 'c' is not a status
+  leaves.status.query(async () => ({ status: 'c', n: 1 }));
+  leaves.guarded.mutation(async (opts) =>
+    // @ts-expect-error -- Q9.3: CONFLICT is not declared by the contract
+    opts.ctx.user ? { status: 'a', n: 1 } : error({ code: 'CONFLICT' }),
+  );
+  // @ts-expect-error -- 'z' is not a kind
+  leaves.events.subscription(async function* () {
+    yield { kind: 'z' };
+  });
+});
+
 test('impl.router() checks completeness at the type level and at runtime', () => {
   const byId = impl.post.byId.query(() => posts.get('1')!);
   const create = impl.post.create.mutation(() => posts.get('1')!);
@@ -291,6 +324,7 @@ test('impl.use() and impl.provide() run for every procedure of the contract', as
   void (() => {
     // @ts-expect-error -- Q9.3: health and post.* don't declare UNAUTHORIZED
     t.implement(appContract).use(authed);
+    t.implement(appContract).use((opts) => opts.next({ ctx: { a: 1 } }));
   });
 });
 

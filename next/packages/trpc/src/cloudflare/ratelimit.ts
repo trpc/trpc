@@ -1,4 +1,4 @@
-import { Duration, Effect, Layer } from 'effect';
+import { Clock, Duration, Effect, Layer } from 'effect';
 import { RateLimiter } from 'effect/persistence';
 
 const STATE = 'trpc-ratelimit';
@@ -77,12 +77,15 @@ export function experimental_durableRateLimitObject(
 ): DurableRateLimitObject {
   // Loaded once, then changed synchronously, so two calls can't interleave
   // between reading a counter and writing it.
-  let loaded: Promise<Stored> | undefined;
+  const load = Effect.runSync(
+    Effect.cached(
+      Effect.map(
+        Effect.promise(() => state.storage.get(STATE)),
+        (value) => (value as Stored | undefined) ?? {},
+      ),
+    ),
+  );
   let alarmAt = 0;
-  const load = () =>
-    (loaded ??= state.storage
-      .get(STATE)
-      .then((value) => (value as Stored | undefined) ?? {}));
 
   const fixedWindow = (
     stored: Stored,
@@ -132,38 +135,43 @@ export function experimental_durableRateLimitObject(
     return [next, elapsed] as const;
   };
 
-  const save = async (stored: Stored) => {
-    await state.storage.put(STATE, stored);
+  const save = Effect.fnUntraced(function* (stored: Stored) {
+    yield* Effect.promise(() => state.storage.put(STATE, stored));
     const expiry = expiryOf(stored);
     if (expiry > alarmAt) {
       alarmAt = expiry;
-      await state.storage.setAlarm(expiry);
+      yield* Effect.promise(() => state.storage.setAlarm(expiry));
     }
-  };
+  });
+
+  const consume = Effect.fnUntraced(function* (request: Request) {
+    const op = new URL(request.url).pathname;
+    const req = yield* Effect.promise(
+      () => request.json() as Promise<FixedWindowRequest & TokenBucketRequest>,
+    );
+    const stored = yield* load;
+    const now = yield* Clock.currentTimeMillis;
+    let result: readonly [number, number];
+    if (op === '/fixed-window') result = fixedWindow(stored, req, now);
+    else if (op === '/token-bucket') result = tokenBucket(stored, req, now);
+    else return new Response(null, { status: 404 });
+    yield* save(stored);
+    return Response.json(result);
+  });
+
+  const expire = Effect.gen(function* () {
+    const stored = yield* load;
+    const now = yield* Clock.currentTimeMillis;
+    if (stored.window && stored.window.expiresAt <= now) delete stored.window;
+    if (stored.bucket && stored.bucket.expiresAt <= now) delete stored.bucket;
+    alarmAt = 0;
+    if (stored.window || stored.bucket) return yield* save(stored);
+    yield* Effect.promise(() => state.storage.deleteAll());
+  });
 
   return {
-    async fetch(request) {
-      const op = new URL(request.url).pathname;
-      const req = (await request.json()) as FixedWindowRequest &
-        TokenBucketRequest;
-      const stored = await load();
-      const now = Date.now();
-      let result: readonly [number, number];
-      if (op === '/fixed-window') result = fixedWindow(stored, req, now);
-      else if (op === '/token-bucket') result = tokenBucket(stored, req, now);
-      else return new Response(null, { status: 404 });
-      await save(stored);
-      return Response.json(result);
-    },
-    async alarm() {
-      const stored = await load();
-      const now = Date.now();
-      if (stored.window && stored.window.expiresAt <= now) delete stored.window;
-      if (stored.bucket && stored.bucket.expiresAt <= now) delete stored.bucket;
-      alarmAt = 0;
-      if (stored.window || stored.bucket) return save(stored);
-      await state.storage.deleteAll();
-    },
+    fetch: (request) => Effect.runPromise(consume(request)),
+    alarm: () => Effect.runPromise(expire),
   };
 }
 
@@ -197,7 +205,7 @@ export interface experimental_DurableRateLimiterStoreOptions {
 
 /**
  * Effect's `RateLimiterStore` on Durable Objects: each key is an object
- * running {@link experimental_durableRateLimitObject}, so `rateLimit()`
+ * running {@link experimental_durableRateLimitObject}, so `experimental_rateLimit()`
  * counts one limit across every Worker instance, with whatever `limit` and
  * `window` each call passes. One subrequest per call. Adaptive limiting
  * (Effect's `RateLimiter.adaptiveConsume`) isn't stored: it always reports

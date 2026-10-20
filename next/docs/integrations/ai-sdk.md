@@ -1,6 +1,6 @@
 ---
 title: AI SDK
-description: Stream useChat responses from a procedure, and give procedures to the model as tools.
+description: Stream `useChat` responses from a procedure, and give procedures to the model as tools.
 section: Integrations
 order: 3
 experiment: integrations
@@ -62,7 +62,7 @@ const chat = useChat({
 
 - The chunks stream as JSONL (or [binary frames](../server/files.md)) and arrive as plain objects, so AI SDK's `structuredClone` works on them.
 - Stopping the chat aborts the call; `signal` reaches `streamText`, which stops the model.
-- `reconnectToStream` returning `null` means "nothing to resume". For resumable chats, keep the stream behind a [`Publisher`](../subscriptions/publisher.md) channel and return a subscription to it.
+- `reconnectToStream` returning `null` means "nothing to resume". For resumable chats, keep the stream behind a [`experimental_Publisher`](../subscriptions/publisher.md) channel and return a subscription to it.
 
 ## Procedures as tools
 

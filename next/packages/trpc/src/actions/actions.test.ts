@@ -169,6 +169,34 @@ test('defined errors are typed; unexpected ones are masked unless exposed', asyn
   expect(seen).toContain('db password is hunter2');
 });
 
+test('a layer that fails to build is an unexpected error, masked and seen by onError', async () => {
+  const seen: unknown[] = [];
+  let builds = 0;
+  const action = experimental_createAction({
+    ctx: { user: 'ada' },
+    exposeUnexpectedErrors: false,
+    layer: Layer.effect(
+      Clock,
+      Effect.suspend(() => {
+        builds++;
+        return Effect.fail(new Error('the clock is down'));
+      }),
+    ),
+    onError: (opts) => seen.push(opts.error.cause),
+  });
+  for (let i = 0; i < 2; i++) {
+    expect((await action(now)()).error).toMatchObject({
+      code: 'INTERNAL_SERVER_ERROR',
+      message: 'Internal server error',
+    });
+  }
+  expect(seen).toEqual([
+    new Error('the clock is down'),
+    new Error('the clock is down'),
+  ]);
+  expect(builds).toBe(1);
+});
+
 test("result: 'throw' returns the data and throws TrpcError", async () => {
   const callable = experimental_createCallable({
     ctx: { user: 'ada' },

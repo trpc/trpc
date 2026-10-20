@@ -91,6 +91,8 @@ const rich = await danson.getPost.query();
 
 `Date` (and anything with `toJSON`) becomes what `toJSON` returns, `Map`, `Set` and other objects without own keys become `{}`, `undefined` keys are dropped and `undefined` array items become `null`. Types that are already JSON are kept as written, so recursive and branded JSON types survive. `JsonOf<T, Keeps>` is that transform, for your own types.
 
+`inferRouterOutputs<typeof json>` and `inferRouterOutputs<typeof danson>` name those results by path. A router type has no links, so `inferRouterOutputs<typeof router>` is the plain JSON form ([Inferring types](../client/overview.md#inferring-types)).
+
 A typed error's `data` goes through the same serializer: `new TrpcError({ code: 'EXPIRED', data: { at: new Date() } })` reaches a plain-JSON client as `data: { at: string }`.
 
 In-process callers (`createRouterClient`, `createTrpcRsc`, `localLink({ serializer: false })`) pass values by reference, so they keep native types whatever the serializer.

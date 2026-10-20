@@ -14,6 +14,8 @@ A router is a plain object of procedures. A handler serves it; a client calls it
 
 `effect` is a peer dependency, so your app and `@trpc12/trpc` share one copy; code that uses Promises never imports it ([Packages](./packages.md)).
 
+The types need TypeScript 5.7 or later with `strict` on.
+
 `.input()` takes any Standard Schema (zod, Valibot, ArkType, …) or an Effect Schema ([Input and output](./server/procedures.md#input-and-output)). This page uses zod:
 
 ```package-install
@@ -128,7 +130,9 @@ if (err) {
   matchError(err, {
     BAD_REQUEST: (e) => e.data.issues,
     //                         ^?
-    builtin: (e) => e.message,
+    NETWORK_ERROR: () => 'You are offline',
+    BAD_RESPONSE: () => 'Try again later',
+    unexpected: (e) => e.message,
   });
 } else {
   created.id;
@@ -137,7 +141,7 @@ if (err) {
 
 `routerType<AppRouter>()` types the client from the router type alone, and the client also types what its links read (see [The client](./client/overview.md)).
 
-`safe()` resolves to `[data, error]` instead of throwing. Once `error` is handled, `data` is the output. `matchError()` takes a handler for each of the procedure's errors and one for the built-in ones (network failures, aborts, crashes), and leaving one out is a type error ([Errors without try/catch](./client/errors.md)).
+`safe()` resolves to `[data, error]` instead of throwing. Once `error` is handled, `data` is the output. `matchError()` takes a handler for each of the procedure's errors, for each code `httpLink` can fail the call with (`NETWORK_ERROR`, `BAD_RESPONSE`; a streamed output adds `STREAM_INTERRUPTED`), and `unexpected` for the rest (crashes, aborts, a proxy's status). Leaving one out is a type error ([Errors without try/catch](./client/errors.md)).
 
 ## Naming
 

@@ -26,7 +26,7 @@ Agent skills live in the repo-root `.agents/skills/<name>/SKILL.md` (for example
 
 ## Running
 
-`next/` is its own pnpm workspace. Node is pinned in `.nvmrc` (same version as `../v11/.nvmrc`). From `next/`:
+`next/` is its own pnpm workspace. Node is pinned in `.nvmrc` (same version as `../v11/.nvmrc` and the repo root's `../.nvmrc`; bump all three together). From `next/`:
 
 ```bash
 nvm use
@@ -59,7 +59,8 @@ User docs are Markdown in `docs/`, one short page per topic in a folder per side
 - Where a page's v11 topic is at another slug, name the v11 page in its frontmatter (`v11: server/data-transformers`); the version banner and switcher link the two.
 - The v11, v10 and v9 docs are generated copies in `www/v11/`, `www/v10/` and `www/v9/`, and so are the home page's v11 code steps in `www/v11/home/` and the blog in `www/blog/`: don't edit them, rerun the copy. Nothing reruns it automatically: after merging `main` into `v12`, or when asked to sync the old docs, follow [`.agents/skills/sync-old-docs/SKILL.md`](../.agents/skills/sync-old-docs/SKILL.md) ([`decisions/old-docs-copy.md`](./.agent-docs/decisions/old-docs-copy.md)). The v11 docs' Twoslash blocks compile in `www/samples/v11`, against the `@trpc/*` canary it pins.
 - The same copy writes trpc.io's redirects to `www/trpc-io-redirects.json`; the build redirects every old trpc.io URL to its page here and fails on one that lands nowhere ([`decisions/old-urls-and-seo.md`](./.agent-docs/decisions/old-urls-and-seo.md)). `www/old-docs.json` says where each old doc, post, partial and image went, and the copy fails on a file under `v11/www/docs`, `v11/www/versioned_docs` or `v11/www/blog` it neither copies nor lists in `notCopied`. `old-docs:check` fails when the copies aren't what the copy writes; nothing runs it but the sync.
-- The sponsors in `www/sponsors.json` and the root `README.md`'s sponsors section are written by `pnpm --filter @trpc12/www sponsors:sync` (needs KATT's `TRPC_GITHUB_TOKEN`; `sponsors:readme` redoes the README from `sponsors.json`): don't edit them by hand ([`decisions/docs-sponsors.md`](./.agent-docs/decisions/docs-sponsors.md)). After merging `main` into `v12`, the `post-merge` hook reruns `sponsors:readme` when `README.md` changed; commit what it writes.
+- The sponsors in `www/sponsors.json` and the root `README.md`'s sponsors section are written by `pnpm --filter @trpc12/www sponsors:sync` (needs KATT's `SPONSORS_SYNC_GITHUB_TOKEN`, or asks for it; `sponsors:readme` redoes the README from `sponsors.json`), and by `.github/workflows/next-sponsors.yml` daily when a sponsor joined, left or changed tier: don't edit them by hand ([`decisions/docs-sponsors.md`](./.agent-docs/decisions/docs-sponsors.md)). After merging `main` into `v12`, the `post-merge` hook reruns `sponsors:readme` when `README.md` changed; commit what it writes.
+- Put package names, import paths and code (`@trpc12/trpc/server`, `t.concat()`, `httpLink`, `ctx`) in backticks, in the frontmatter's `title`, `label` and `description` too: the site renders them as code and strips them for meta tags and `llms.txt`. `pnpm lint:docs` fails on bare ones and `pnpm lint:docs --fix` wraps them ([`tooling/docs-lint/bare-code.ts`](./tooling/docs-lint/bare-code.ts)).
 - Link pages with relative `.md` links (`../client/links.md#query-urls`); the build fails on a missing page or heading.
 - Prefer `ts twoslash` blocks: they compile in `www/samples/docs` (import its `./server.ts` and `./client.ts`, hiding the setup between `// ---cut-start---` and `// ---cut-end---`), and `// ^?` shows a type. An undeclared type error fails the build.
 - `pnpm docs:dev` serves the site; `pnpm docs:build` is the check. Compiled blocks are cached in `www/node_modules/.cache/twoslash`.
@@ -90,13 +91,13 @@ Source for this project's key dependencies is vendored under `.repos/`, pinned t
 ### Vendored packages
 
 - `effect` (ref `effect@4.0.2`) → `.repos/effect`
-- `orpc` (ref `v2.0.0-beta.44`) → `.repos/orpc`
-- `raf-query` (ref `a9f2aa77`, 0.11.1) → `.repos/raf-query`
+
+Only Effect is vendored ([`decisions/vendored-sources.md`](./.agent-docs/decisions/vendored-sources.md)).
 
 Managed by [vendor-src](https://www.npmjs.com/package/vendor-src), a devDependency of this workspace. Its config has to live at the repo root (`../vendor-src.json`, `"dir": "next/.repos"`), because vendor-src looks for the nearest directory with both `.git` and `package.json`. `rootAgentsMd` is off, so keep the list above in sync by hand when adding or bumping a vendored repo.
 
-Every repo ignores `.repos/**`, its own vendored sources: `raf-query` vendors TanStack Query, TanStack Router and another Effect, which would be most of the tree and none of it ours to read. `ignore` paths are pruned on `add` and `sync`; after adding one to a repo you don't want to sync, delete the matching paths by hand.
+Every repo ignores `.repos/**`, so a vendored repo's own vendored sources stay out of the tree. `ignore` paths are pruned on `add` and `sync`; after adding one to a repo you don't want to sync, delete the matching paths by hand.
 
-Every repo is git-only (`"packages": []`): vendor-src resolves installed packages from the repo root, which has no dependencies (`v11/` and `next/` are separate workspaces), so it can't tie a checkout to this workspace's lockfile. `vendor-src check` (run by `pnpm install`) skips git-only repos. `pnpm vendor:sync [name…]` moves each to its newest upstream ref: a tag to the highest tag with the same prefix (`effect@4.0.2` follows `effect@*`; prereleases only from a prerelease), a SHA (`raf-query`) to the default branch's `HEAD`.
+Every repo is git-only (`"packages": []`): vendor-src resolves installed packages from the repo root, which has no dependencies (`v11/` and `next/` are separate workspaces), so it can't tie a checkout to this workspace's lockfile. `vendor-src check` (run by `pnpm install`) skips git-only repos. `pnpm vendor:sync [name…]` moves each to its newest upstream ref: a tag to the highest tag with the same prefix (`effect@4.0.2` follows `effect@*`; prereleases only from a prerelease), a SHA to the default branch's `HEAD`.
 
-So sync `effect` and `orpc` only when bumping their installed versions to the same release, and sync other repos by name (`pnpm vendor:sync raf-query`). `vendor-src add` needs a clean working tree and creates `git subtree` merge commits. Sync needs only the checkouts it touches to be clean, and commits the new tree and the pruned `ignore` paths itself. Then commit `../vendor-src.json` (`.repos/AGENTS.md` is rewritten for you) and update the list above by hand.
+So sync `effect` only when bumping its installed version to the same release (`pnpm vendor:sync effect`). `vendor-src add` needs a clean working tree and creates `git subtree` merge commits. Sync needs only the checkouts it touches to be clean, and commits the new tree and the pruned `ignore` paths itself. Then commit `../vendor-src.json` (`.repos/AGENTS.md` is rewritten for you) and update the list above by hand.

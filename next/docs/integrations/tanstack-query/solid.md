@@ -1,16 +1,16 @@
 ---
 title: Solid
-description: '@trpc12/tanstack-solid-query: a context provider for the client, useTrpc() in components, and useSubscription with reactive getters.'
+description: '`@trpc12/experimental-tanstack-solid-query`: a context provider for the client, `useTrpc()` in components, and `useSubscription` with reactive getters.'
 section: Integrations
 parent: integrations/tanstack-query
 order: 4
 experiment: tanstack-query-frameworks
 ---
 
-`@trpc12/tanstack-solid-query` re-exports [`@trpc12/tanstack-query`](../tanstack-query.md) and adds a context for a client and its helpers, and a `useSubscription` whose fields are reactive.
+`@trpc12/experimental-tanstack-solid-query` re-exports [`@trpc12/tanstack-query`](../tanstack-query.md) and adds a context for a client and its helpers, and a `useSubscription` whose fields are reactive.
 
 ```package-install
-@trpc12/trpc effect @trpc12/tanstack-solid-query @tanstack/solid-query
+@trpc12/trpc effect @trpc12/experimental-tanstack-solid-query @tanstack/solid-query
 ```
 
 The [`examples/experimental/framework-matrix`](../../../examples/experimental/framework-matrix/README.md) app has a page per adapter (Vue, Solid and Svelte) on one server.
@@ -24,7 +24,7 @@ The [`examples/experimental/framework-matrix`](../../../examples/experimental/fr
 // @jsxImportSource: solid-js
 // ---cut-start---
 import { QueryClient, QueryClientProvider } from '@tanstack/solid-query';
-import { createTrpcContext } from '@trpc12/tanstack-solid-query';
+import { createTrpcContext } from '@trpc12/experimental-tanstack-solid-query';
 import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
 import type { JSX } from 'solid-js';
 import type { AppRouter } from './server.ts';
@@ -58,7 +58,7 @@ Pass an accessor to `useQuery`, so the options follow signals and props; a new i
 // @jsxImportSource: solid-js
 // ---cut-start---
 import { useMutation, useQuery, useQueryClient } from '@tanstack/solid-query';
-import { createTrpcContext } from '@trpc12/tanstack-solid-query';
+import { createTrpcContext } from '@trpc12/experimental-tanstack-solid-query';
 import type { AppRouter } from './server.ts';
 const [, useTrpc] = createTrpcContext<AppRouter>();
 // ---cut-end---
@@ -92,7 +92,7 @@ function Post(props: { id: string }) {
 import {
   createTrpcContext,
   useSubscription,
-} from '@trpc12/tanstack-solid-query';
+} from '@trpc12/experimental-tanstack-solid-query';
 import { z } from 'zod';
 import { t } from './server.ts';
 const router = {

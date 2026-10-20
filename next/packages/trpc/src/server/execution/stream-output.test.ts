@@ -3,18 +3,20 @@ import {
   createTrpcClient,
   httpLink,
   TrpcError,
+  type TrpcIterable,
   routerType,
 } from '@trpc12/trpc/client';
 import {
   type AnyContractRouter,
   experimental_contract,
 } from '@trpc12/trpc/contract';
-import { initTrpc, stream, tracked } from '@trpc12/trpc/server';
+import { call, initTrpc, stream, tracked } from '@trpc12/trpc/server';
 import { createTestServer } from '../../fixtures/server.ts';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
 
 const t = initTrpc();
+type ErrorOf<T> = T extends TrpcIterable<any, any, infer E> ? E : never;
 
 const Post = z.object({ id: z.string(), title: z.string().trim() });
 const Token = z.object({ text: z.string() });
@@ -85,7 +87,7 @@ test('stream(Item) validates and transforms each item of a streamed query', asyn
   await using ctx = await setup();
   const feed = await ctx.client.feed.query();
   expectTypeOf(feed).toEqualTypeOf<
-    AsyncIterable<{ id: string; title: string }>
+    TrpcIterable<{ id: string; title: string }, any, ErrorOf<typeof feed>>
   >();
   expect((await drain(feed)).items).toEqual([
     { id: '1', title: 'Hello' },
@@ -111,7 +113,7 @@ test('stream(Item, Return) validates the return value, and the client gets it', 
   await using ctx = await setup();
   const chat = await ctx.client.chat.mutate();
   expectTypeOf(chat).toEqualTypeOf<
-    AsyncIterable<{ text: string }, { tokens: number }>
+    TrpcIterable<{ text: string }, { tokens: number }, ErrorOf<typeof chat>>
   >();
   expect(await drain(chat)).toEqual({
     items: [{ text: 'He' }, { text: 'llo' }],
@@ -152,6 +154,125 @@ test('subscriptions validate each event with .output(Event) or .output(stream(Ev
   expect(b).toEqual([{ id: '1', title: 'b' }]);
 });
 
+test('in-process, a streamed output ends with its validated return value', async () => {
+  expect(await drain(await call(router.chat, undefined))).toEqual({
+    items: [{ text: 'He' }, { text: 'llo' }],
+    returned: { tokens: 2 },
+  });
+  const fromStream = t.procedure
+    .output(stream(Schema.Struct({ n: Schema.Number })))
+    .query(() => Stream.make({ n: 1 }));
+  expect(await drain(await call(fromStream, undefined))).toEqual({
+    items: [{ n: 1 }],
+    returned: undefined,
+  });
+  const bad = await drain(await call(router.badSummary, undefined)).then(
+    () => undefined,
+    (e: unknown) => e,
+  );
+  expect(bad).toBeInstanceOf(TrpcError);
+  expect(bad).toMatchObject({ code: 'INTERNAL_SERVER_ERROR' });
+});
+
+test('a streamed output reads its source one item per next(), and leaving closes it', async () => {
+  const pulled: number[] = [];
+  let closed = false;
+  async function* tokens() {
+    try {
+      for (let i = 0; ; i++) {
+        pulled.push(i);
+        yield { text: String(i) };
+      }
+    } finally {
+      await Promise.resolve();
+      closed = true;
+    }
+  }
+  const validated = t.procedure.output(stream(Token)).query(tokens);
+  const unvalidated = t.procedure.query(tokens);
+  for (const procedure of [validated, unvalidated]) {
+    pulled.length = 0;
+    closed = false;
+    const iterator = (await call(procedure, undefined))[Symbol.asyncIterator]();
+    expect(await iterator.next()).toEqual({
+      done: false,
+      value: { text: '0' },
+    });
+    expect(await iterator.next()).toEqual({
+      done: false,
+      value: { text: '1' },
+    });
+    expect(pulled).toEqual([0, 1]);
+    expect(await iterator.return?.('left')).toEqual({
+      done: true,
+      value: 'left',
+    });
+    expect(closed).toBe(true);
+    expect(await iterator.next()).toEqual({ done: true, value: undefined });
+  }
+});
+
+test('throw() on a streamed output closes its source and rejects with the error', async () => {
+  let closed = false;
+  async function* tokens() {
+    try {
+      yield { text: 'a' };
+      yield { text: 'b' };
+    } finally {
+      closed = true;
+    }
+  }
+  const validated = t.procedure.output(stream(Token)).query(tokens);
+  const unvalidated = t.procedure.query(tokens);
+  for (const procedure of [validated, unvalidated]) {
+    closed = false;
+    const iterator = (await call(procedure, undefined))[Symbol.asyncIterator]();
+    await iterator.next();
+    const thrown = new Error('stop');
+    await expect(iterator.throw?.(thrown)).rejects.toBe(thrown);
+    expect(closed).toBe(true);
+    expect(await iterator.next()).toEqual({ done: true, value: undefined });
+  }
+});
+
+test('an invalid item closes the source before the stream fails', async () => {
+  let closed = false;
+  const broken = t.procedure.output(stream(Post)).query(async function* () {
+    try {
+      yield { id: '1', title: 'ok' };
+      yield { id: 2 } as unknown as { id: string; title: string };
+      yield { id: '3', title: 'never' };
+    } finally {
+      closed = true;
+    }
+  });
+  const items: unknown[] = [];
+  const err = await (async () => {
+    for await (const item of await call(broken, undefined)) items.push(item);
+  })().then(
+    () => undefined,
+    (e: unknown) => e,
+  );
+  expect(items).toEqual([{ id: '1', title: 'ok' }]);
+  expect(err).toBeInstanceOf(TrpcError);
+  expect(closed).toBe(true);
+});
+
+test('stream() validates the items of a ReadableStream', async () => {
+  const fromWeb = t.procedure.output(stream(Post)).query(
+    () =>
+      new ReadableStream({
+        start(controller) {
+          controller.enqueue({ id: '1', title: ' Web ' });
+          controller.close();
+        },
+      }),
+  );
+  const items: unknown[] = [];
+  for await (const item of await call(fromWeb, undefined)) items.push(item);
+  expect(items).toEqual([{ id: '1', title: 'Web' }]);
+});
+
 test('contracts take stream() outputs', async () => {
   const c = experimental_contract.create();
   const appContract = {
@@ -172,7 +293,7 @@ test('contracts take stream() outputs', async () => {
   });
   const chat = await client.chat.mutate();
   expectTypeOf(chat).toEqualTypeOf<
-    AsyncIterable<{ text: string }, { tokens: number }>
+    TrpcIterable<{ text: string }, { tokens: number }, ErrorOf<typeof chat>>
   >();
   expect(await drain(chat)).toEqual({
     items: [{ text: 'a' }],

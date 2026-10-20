@@ -49,7 +49,7 @@ Bundle size, minified / gzip (`pnpm bench bundle`):
   - `?input=` read without `URLSearchParams`; danSON sorts serializers once, plain values skip class checks, `Date` via `toISOString`.
   - **The floor is Effect's `HttpServer`:** a bare `HttpRouter` route returning the same JSON does about 69k req/s here. Before spans went opt-in, v12 added about 9 µs per request on top; in-process about 6 µs: the call's span about 1.2 µs, the procedure call about 1.2 µs, `?input=` about 0.7 µs, danSON about 0.5 µs, the rest spread under 0.3 µs each.
   - oRPC at 59.9k is about 17 µs per request in total, v12 now about 21 µs, so matching it would leave v12 about 3 µs over Effect's floor.
-- **Type-checking:** v12 now checks faster than v11 (0.83s vs 0.92s) with 10% more instantiations; oRPC is 16% faster. What changed:
+- **Type-checking:** v12 now checks faster than v11 (0.83s vs 0.92s) with 10% more instantiations; oRPC is 16% faster. Since then, features have taken v12 to 1,445,822 instantiations and level with v11 (2026-10-19: 1.23s vs 1.19s, 342 MB); bisected in [`type-check-shapes.md`](./type-check-shapes.md), with the cost of each procedure shape. What changed:
   - Standard Schema types read from `~standard.types` instead of inferred; `InputDef` spelled out; resolver checks skip moot branches.
   - JSON-safe outputs skip the framing conditionals; link batching read once per chain.
   - **Split:** the client half (3,000 typed calls) checks faster than oRPC's (about 0.41s vs 0.45s). The router half is the gap: 498k instantiations vs 311k, about 166 per procedure vs 104. The resolver checks (unmapped Effect failures, output, `ok()` short-circuits) cost about 40 per procedure and the inferred `Procedure` type about 12; cheaper spellings tried so far (`NoInfer`, pre-filters, nested checks) were all slower.
@@ -63,8 +63,8 @@ Bundle size, minified / gzip (`pnpm bench bundle`):
 
 | client                                      |    gzip | target |
 | ------------------------------------------- | ------: | -----: |
-| minimal JSON (`httpLink`)                   | 39.2 kB |  18 kB |
-| full (`retryLink`, `httpLink`, danSON, SSE) | 43.3 kB |  25 kB |
+| minimal JSON (`httpLink`)                   | 39.6 kB |  18 kB |
+| full (`retryLink`, `httpLink`, danSON, SSE) | 43.7 kB |  25 kB |
 
 The raises below are from when CI failed above a ceiling, today's size plus 0.1 kB; each records what grew the clients.
 
@@ -75,6 +75,12 @@ The raises below are from when CI failed above a ceiling, today's size plus 0.1 
 - **Raised a third time, 2026-10-18:** `httpLink` batches through `Effect.request` and a `RequestResolver` instead of its own queue and flush, under the same ask: +789 B on the minimal client and +803 B on the full one. The ceilings moved to today's sizes plus 0.1 kB: 30,049 B and 34,026 B measured.
 
 - **Raised a fourth time, 2026-10-18:** the human: "For http link you can probably do some sort of data loader service that is decoupled from http logic. And you can probably use effects primitive for fetch etc". `httpLink` batches through an HTTP-agnostic data loader, sends through `effect/http`'s `HttpClient`, reads lines with `Stream.decodeText` and `Stream.splitLines`, and reconnects SSE with `Effect.repeat`: +9,135 B on the minimal client and +9,304 B on the full one, `HttpClient` 8.0 and 8.2 kB of it (per change in [`http-link-on-effect-http.md`](../decisions/http-link-on-effect-http.md)). The ceilings moved to today's sizes plus 0.1 kB: 39,184 B and 43,330 B measured.
+
+- **Grew, 2026-10-19 (no ceiling):** the JSON and sync serializers walk a value once and return a JSON-safe value as is instead of copying it through `JSON.parse(JSON.stringify())` (f03beb40b, `scan()` in `serializer/framed.ts`): +143 B on the minimal client and +146 B on the full one (39,333 → 39,476 B and 43,460 → 43,606 B, the commit's `framed.ts` swapped in and out on today's `v12`). In exchange, serializing a 50-row list takes 13.8 µs instead of 57.5 µs, and a short string 0.11 µs instead of 0.25 µs.
+
+- **Grew, 2026-10-19 (no ceiling):** `httpLink` fails a call whose streamed response ends before its result with `NETWORK_ERROR` instead of `STREAM_INTERRUPTED` (`headless` in `client/links/http/transport.ts`, [`link-errors.md`](../decisions/link-errors.md)): +36 B on the minimal client and +57 B on the full one (39,512 → 39,548 B and 43,644 → 43,701 B). Reusing the interrupt's message instead of its own saves 10 B.
+
+- **Grew, 2026-10-19 (no ceiling):** the typed client's proxy answers `request()` and `subscribe()` at its root through the untyped client, so an `any` router's `TrpcUntypedClient` type is true at runtime (first-release review, question 7, [`client.md`](../decisions/client.md)): +34 B on the minimal client and +32 B on the full one (39,548 → 39,582 B and 43,701 → 43,733 B).
 
 - **Cut so far:** the Promise client runs its links with `runLinks`. `runOperation`'s tracer check and client span never ran there (Promise clients run on Effect's native tracer), but they were bundled: `Tracer`, `Scope` spans and `encoding/Hex`, 1.7 kB gzipped on each client.
 - **The floor of links on Effect**, same bundler and gzip:

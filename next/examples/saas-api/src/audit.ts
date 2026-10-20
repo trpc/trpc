@@ -4,7 +4,7 @@
  * once, and it needs the `tenantId` tenancy adds, which `t.concat()` checks.
  * The app's layer implements `AuditLog`.
  */
-import { Context, Effect } from 'effect';
+import { Context, Effect, Exit } from 'effect';
 import { initTrpc, middleware } from '@trpc12/trpc/server';
 import { withSession, type User } from './tenancy.ts';
 
@@ -23,18 +23,20 @@ export class AuditLog extends Context.Service<
 const recordWrites = middleware.effect<{
   ctx: { user: User; tenantId: string };
 }>()((opts) =>
-  Effect.gen(function* () {
-    const result = yield* opts.next();
-    if (opts.type === 'mutation') {
-      yield* (yield* AuditLog).record({
-        tenantId: opts.ctx.tenantId,
-        userId: opts.ctx.user.id,
-        path: opts.path,
-        ok: result.ok,
-      });
-    }
-    return result;
-  }),
+  opts.type === 'mutation'
+    ? opts.next().pipe(
+        Effect.onExit((exit) =>
+          Effect.gen(function* () {
+            yield* (yield* AuditLog).record({
+              tenantId: opts.ctx.tenantId,
+              userId: opts.ctx.user.id,
+              path: opts.path,
+              ok: Exit.isSuccess(exit),
+            });
+          }),
+        ),
+      )
+    : opts.next(),
 );
 
 const a = initTrpc<{ ctx: { sessionToken: string | null } }>();

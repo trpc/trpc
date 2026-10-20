@@ -17,7 +17,7 @@ import {
   type AnyLink,
 } from '@trpc12/trpc/client';
 import { createSerializer } from '@trpc12/trpc/serializer';
-import { Effect, Stream } from 'effect';
+import { Duration, Effect, Stream } from 'effect';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import {
   db,
@@ -51,6 +51,28 @@ test('one promise per query while it loads, settled for use() once it has', asyn
   expect(posts[0]!.at).toEqual(new Date(0));
 });
 
+test('dispose() ends the requests in flight', async () => {
+  using _db = freshDb();
+  let ended = 0;
+  const trpc = createReactClient({
+    router: routerType<AppRouter>(),
+    links: [
+      cacheLink({ gcTime: 60_000 }),
+      link(() =>
+        Stream.never.pipe(Stream.ensuring(Effect.sync(() => ended++))),
+      ),
+    ],
+    isServer: false,
+  });
+  const post = trpc.post.byId.query({ id: '1' });
+  await tick(5);
+  expect(trpc.store.entryOf(post)?.snapshot.isFetching).toBe(true);
+  trpc.store.dispose();
+  await tick(5);
+  expect(ended).toBe(1);
+  expect(trpc.store.entries()).toHaveLength(0);
+});
+
 test('without links, an entry lives only while something holds it', async () => {
   using _db = freshDb();
   const trpc = make([]);
@@ -74,16 +96,23 @@ test('without links, an entry lives only while something holds it', async () => 
   expect(trpc.store.entries()).toHaveLength(0);
 });
 
-test('cacheLink serves fresh data without a request and keeps unread entries', async () => {
-  using _db = freshDb();
-  const trpc = make([cacheLink({ staleTime: 60_000, gcTime: 20 })]);
-  const first = trpc.post.byId.query({ id: '1' });
-  await first;
-  expect(trpc.post.byId.query({ id: '1' })).toBe(first);
-  expect(db.calls).toEqual(['byId:1']);
-  await tick(40);
-  expect(trpc.store.entries()).toHaveLength(0);
-});
+test.each([
+  ['milliseconds', 60_000, 20],
+  ['strings', '1 minute', '20 millis'],
+  ['Durations', Duration.minutes(1), Duration.millis(20)],
+] as const)(
+  'cacheLink serves fresh data without a request and keeps unread entries, with times in %s',
+  async (_, staleTime, gcTime) => {
+    using _db = freshDb();
+    const trpc = make([cacheLink({ staleTime, gcTime })]);
+    const first = trpc.post.byId.query({ id: '1' });
+    await first;
+    expect(trpc.post.byId.query({ id: '1' })).toBe(first);
+    expect(db.calls).toEqual(['byId:1']);
+    await tick(40);
+    expect(trpc.store.entries()).toHaveLength(0);
+  },
+);
 
 test('stale data is returned at once and refetched; changed data gets a new promise', async () => {
   using _db = freshDb();

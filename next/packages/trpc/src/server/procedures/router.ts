@@ -1,6 +1,10 @@
-import { Effect } from 'effect';
+import { Effect, Equal } from 'effect';
+import type { ClientTypes, ResultForm } from '../../client/types.ts';
 import type {
+  ClientValue,
   IsAny,
+  JsonForm,
+  OutputForm,
   Simplify,
   TypeError,
   UnionToIntersection,
@@ -13,7 +17,7 @@ import {
 } from './procedure.ts';
 
 /**
- * A router is a plain object of procedures and nested routers (08 A). Keys
+ * A router is a plain object of procedures and nested routers. Keys
  * are path segments: `{ post: { byId } }` serves `post.byId`.
  *
  * @example
@@ -62,7 +66,7 @@ export interface RouterOptions<TMeta = Record<string, unknown>> {
 const META = '~meta';
 
 /**
- * A router with router-level meta (08 Q8.3). The result is the same plain
+ * A router with router-level meta. The result is the same plain
  * object (with the meta kept off its keys), so types and RPC paths don't
  * change. Routers take no middleware: put it on a base procedure.
  *
@@ -111,7 +115,7 @@ export interface LazyDef {
 }
 
 /**
- * A subtree that loads on first use (08 Q8.4). Made by {@link lazy}.
+ * A subtree that loads on first use. Made by {@link lazy}.
  * @since 0.1.0
  * @stability stable
  */
@@ -135,7 +139,7 @@ export type AnyLazyRouter = LazyRouter<any>;
 export type Unlazy<T> = T extends LazyRouter<infer TRouter> ? TRouter : T;
 
 /**
- * Loads a subtree on its first call (08 Q8.4), for large routers in
+ * Loads a subtree on its first call, for large routers in
  * serverless functions that should start fast. The client types it as if it
  * were inline. `t.lazy(load, { meta })` also takes router-level meta, as
  * `t.router()` does.
@@ -165,9 +169,12 @@ export function lazyWith<TRouter extends AnyRouter>(
     meta: opts.meta,
     loaded: undefined,
     loadEffect: Effect.promise(load).pipe(
-      Effect.map((mod): AnyRouter =>
-        isLazyModule(mod) && !isProcedure(mod.default) ? mod.default : mod,
-      ),
+      Effect.map((mod): AnyRouter => {
+        const loaded =
+          isLazyModule(mod) && !isProcedure(mod.default) ? mod.default : mod;
+        checkRouterKeys(loaded);
+        return loaded;
+      }),
       Effect.tap((loaded) =>
         Effect.sync(() => {
           def.loaded = loaded;
@@ -204,6 +211,12 @@ type DuplicateKeys<T extends readonly unknown[], Seen = never> = T extends [
  * Merges routers. A key in more than one router is a type error and a
  * runtime error, unlike object spread, which silently keeps the last.
  *
+ * Router-level meta (`t.router({ meta }, …)`) merges too: the result has
+ * every meta key of its routers, so every procedure in it is under that
+ * meta, as if the routers had been written as one. Two routers setting one
+ * meta key to different values is a runtime error; nest them under their own
+ * keys instead, so each keeps its meta.
+ *
  * @example
  * ```ts
  * export const appRouter = mergeRouters(postRouter, userRouter);
@@ -217,16 +230,65 @@ export function mergeRouters<const T extends readonly AnyRouter[]>(
       ? unknown
       : TypeError<'mergeRouters: duplicate keys', DuplicateKeys<[...T]>>)
 ): Simplify<UnionToIntersection<T[number]>> {
-  const merged: Record<string, unknown> = {};
-  for (const router of routers) {
+  const merged: Record<string, AnyRouter[string]> = {};
+  const meta: Record<string, unknown> = {};
+  const metaFrom: Record<string, number> = {};
+  for (const [i, router] of routers.entries()) {
     for (const key of Object.keys(router)) {
       if (Object.hasOwn(merged, key)) {
         throw new Error(`mergeRouters: duplicate key "${key}"`);
       }
-      merged[key] = router[key];
+      merged[key] = router[key]!;
+    }
+    for (const [key, value] of Object.entries(routerMetaOf(router) ?? {})) {
+      if (value === undefined) continue;
+      if (!Object.hasOwn(meta, key)) {
+        meta[key] = value;
+        metaFrom[key] = i;
+      } else if (!Equal.equals(meta[key], value)) {
+        const first = metaFrom[key]!;
+        throw new Error(
+          `mergeRouters: routers ${first + 1} (${describeKeys(routers[first]!)}) and ${i + 1} (${describeKeys(router)}) set router meta "${key}" to different values (${JSON.stringify(meta[key])} and ${JSON.stringify(value)}); nest them under keys of their own instead ({ a: …, b: … }), so each keeps its meta`,
+        );
+      }
     }
   }
-  return merged as never;
+  return (
+    Object.keys(meta).length > 0 ? router({ meta }, merged) : merged
+  ) as never;
+}
+
+const describeKeys = (router: AnyRouter): string => {
+  const keys = Object.keys(router);
+  return `{ ${keys.slice(0, 3).join(', ')}${keys.length > 3 ? ', …' : ''} }`;
+};
+
+/**
+ * Throws on a router key no client can call: `then` (clients and their
+ * nested routers can be awaited, so they read `then` as undefined) or a key
+ * with a `.` (paths split on it). A lazy subtree is checked when it loads.
+ * @internal
+ */
+export function checkRouterKeys(router: AnyRouter, prefix = ''): void {
+  for (const key of Object.keys(router)) {
+    const path = `${prefix}${key}`;
+    if (key === 'then' || key.includes('.')) {
+      throw new Error(
+        key === 'then'
+          ? `Router key "${path}": "then" is reserved, because clients can be awaited; rename it`
+          : `Router key "${path}": "." separates path segments; nest it as { ${key.split('.')[0]}: { … } } instead`,
+      );
+    }
+    const node: unknown = router[key];
+    if (
+      typeof node === 'object' &&
+      node !== null &&
+      !isProcedure(node) &&
+      !isLazy(node)
+    ) {
+      checkRouterKeys(node as AnyRouter, `${path}.`);
+    }
+  }
 }
 
 /**
@@ -339,24 +401,55 @@ const loadAll = (router: AnyRouter): Effect.Effect<void> =>
     { concurrency: 'unbounded', discard: true },
   );
 
-type RouterMap<R, F extends 'input' | 'output' | 'errors'> = {
+type InputMap<R> = {
   [K in keyof R]: R[K] extends AnyProcedure
-    ? ProcedureDefOf<R[K]>[F]
-    : RouterMap<Unlazy<R[K]>, F>;
+    ? ProcedureDefOf<R[K]>['input']
+    : InputMap<Unlazy<R[K]>>;
 };
 
+type OutputMap<R, F extends OutputForm> = {
+  [K in keyof R]: R[K] extends AnyProcedure
+    ? ClientValue<ProcedureDefOf<R[K]>['output'], F>
+    : OutputMap<Unlazy<R[K]>, F>;
+};
+
+/** What a client type, or a client factory's, records; `never` for a router. */
+type SourceClient<T> = ClientTypes<T extends (...args: any) => infer C ? C : T>;
+
 /**
- * Every procedure's input, by path.
+ * Every procedure's input, by path, as the client's calls take it. `T` is
+ * a router type, a client's type or a client factory's.
+ *
+ * @example
+ * ```ts
+ * type NewPost = inferRouterInputs<AppRouter>['post']['create'];
+ * ```
  * @since 0.1.0
  * @stability stable
  */
-export type inferRouterInputs<R> = RouterMap<R, 'input'>;
+export type inferRouterInputs<T> = InputMap<
+  [SourceClient<T>] extends [never] ? T : SourceClient<T>['router']
+>;
 /**
- * Every procedure's output, by path.
+ * Every procedure's output, by path, as a client receives it. For a client's
+ * type (or a client factory's), outputs follow its links' serializer, as its
+ * calls do; for a router type, they are in plain JSON's form, the default
+ * serializer's (`Date` arrives as a `string`). A procedure's output as the
+ * server returns it is `inferProcedureOutput`.
+ *
+ * @example
+ * ```ts
+ * type Post = inferRouterOutputs<typeof client>['post']['byId'];
+ * ```
  * @since 0.1.0
  * @stability stable
  */
-export type inferRouterOutputs<R> = RouterMap<R, 'output'>;
+export type inferRouterOutputs<T> = [SourceClient<T>] extends [never]
+  ? OutputMap<T, JsonForm>
+  : OutputMap<
+      SourceClient<T>['router'],
+      ResultForm<undefined, SourceClient<T>['links']>
+    >;
 
 /** One field of every procedure's def; an untyped (`any`) subtree adds none. */
 type DefField<R, F extends keyof ProcedureDef> =
@@ -373,7 +466,7 @@ type DefField<R, F extends keyof ProcedureDef> =
  */
 export type inferRouterErrors<R> = DefField<R, 'errors'>;
 /**
- * The Effect services the handler's `layer` must provide (02 S1).
+ * The Effect services the handler's `layer` must provide.
  * @since 0.1.0
  * @stability stable
  */

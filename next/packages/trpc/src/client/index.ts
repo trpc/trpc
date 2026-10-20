@@ -32,6 +32,7 @@ export {
 export {
   link,
   type AnyLink,
+  type AtLeastOneLink,
   type EffectLinkOpts,
   type LinkDecl,
   type ReservedCallOptions,
@@ -42,7 +43,6 @@ export {
   type TrpcRequestInit,
   type TrpcLink,
 } from './link.ts';
-export { withSubscriptions } from './subscriptions.ts';
 export {
   dedupeLink,
   experimental_durableLink,
@@ -95,11 +95,12 @@ export {
   type SubscribeOptions,
   type TrpcClient,
   type TrpcPromise,
+  type UndeclaredError,
   type TrpcSubscription,
+  type TrpcIterable,
 } from './types.ts';
 export type { MessagePortLike } from '../server/sockets/index.ts';
 export {
-  ERROR_CATEGORY,
   ERROR_STATUS,
   isBuiltinCode,
   isDefinedError,
@@ -112,8 +113,7 @@ export {
   type TaggedErrorSpec,
   type BuiltinErrorClass,
   type BuiltinErrorCode,
-  type CategoryCode,
-  type ErrorCategory,
+  type UndeclaredCode,
   type TrpcErrorOptions,
 } from '../internal/error.ts';
 export type { Deserialized } from '../internal/types.ts';

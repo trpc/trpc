@@ -5,7 +5,7 @@
  *
  * @see ../../.agent-docs/proposals/01-packages-and-type-portability.md
  */
-import { Context, Effect, Layer, Schema, Stream } from 'effect';
+import { Context, Effect, Layer, ManagedRuntime, Schema, Stream } from 'effect';
 import {
   createTrpcClient,
   dedupeLink,
@@ -161,9 +161,17 @@ export const client = createTrpcClient({
   links: [link((opts) => opts.next(opts.op)), httpLink({ url: '/trpc' })],
 });
 
+export const runtime = ManagedRuntime.make(PostRepoLive);
+
 export const localClient = createTrpcClient({
   router: routerType<AppRouter>(),
-  links: [localLink({ router: appRouter, layer: PostRepoLive })],
+  links: [
+    localLink({
+      router: appRouter,
+      createContext: () => ({ user: null }),
+      runtime,
+    }),
+  ],
 });
 
 export const effectClient = createEffectClient({
@@ -257,5 +265,5 @@ export const restClient = createTrpcClient({
 
 export const caller = createRouterClient(appRouter, {
   ctx: { user: null },
-  layer: PostRepoLive,
+  runtime,
 });

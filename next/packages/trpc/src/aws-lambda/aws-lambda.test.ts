@@ -2,13 +2,14 @@ import { openAsBlob } from 'node:fs';
 import { mkdtemp, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { Schema } from 'effect';
+import { Duration, Schema } from 'effect';
 import {
   type LambdaContext,
   toLambdaHandler,
   toLambdaStreamingHandler,
   type LambdaPlatform,
   type LambdaResponseStream,
+  type LambdaV1Event,
   type LambdaV1Result,
   type LambdaV2Result,
   type LambdaEdgeResult,
@@ -138,6 +139,33 @@ test('ALB events keep the query string as sent and get a status line', async () 
   expect(JSON.parse(result.body).json.hi).toBe('alb x');
 });
 
+test('ALB results use the header fields the target group reads', async () => {
+  const login: LambdaV1Event = {
+    httpMethod: 'POST',
+    path: '/trpc/login',
+    body: '{}',
+    requestContext: { elb: { targetGroupArn: 'arn' } },
+  };
+  const single = (await lambda({
+    ...login,
+    headers: { 'content-type': 'application/json' },
+  })) as LambdaV1Result;
+  expect(single.headers['content-type']).toBe('application/json');
+  expect(single.headers['set-cookie']).toBe('b=2');
+  expect(single.multiValueHeaders).toEqual({});
+
+  const multi = (await lambda({
+    ...login,
+    multiValueHeaders: { 'content-type': ['application/json'] },
+  })) as LambdaV1Result;
+  expect(multi.headers).toEqual({});
+  expect(multi.multiValueHeaders['content-type']).toEqual(['application/json']);
+  expect(multi.multiValueHeaders['set-cookie']).toEqual([
+    'a=1; HttpOnly',
+    'b=2',
+  ]);
+});
+
 test('Lambda@Edge events', async () => {
   const result = (await lambda({
     Records: [
@@ -200,20 +228,27 @@ test('the streaming handler writes the prelude, then streams the body', async ()
   expect(body).toContain('data: {"json":2}');
 });
 
-test('the call is aborted before the Lambda deadline', async () => {
-  const started = Date.now();
-  const result = (await toLambdaHandler(handler, { timeoutMarginMs: 950 })(
-    {
-      version: '2.0',
-      rawPath: '/trpc/slow',
-      rawQueryString: '',
-      requestContext: { http: { method: 'GET' } },
-    },
-    { getRemainingTimeInMillis: () => 1000 },
-  )) as LambdaV2Result;
-  expect(Date.now() - started).toBeLessThan(1500);
-  expect(result.statusCode).not.toBe(200);
-});
+test.each([
+  ['milliseconds', 950],
+  ['a string', '950 millis'],
+  ['a Duration', Duration.millis(950)],
+] as const)(
+  'the call is aborted before the Lambda deadline, with a margin in %s',
+  async (_, timeoutMargin) => {
+    const started = Date.now();
+    const result = (await toLambdaHandler(handler, { timeoutMargin })(
+      {
+        version: '2.0',
+        rawPath: '/trpc/slow',
+        rawQueryString: '',
+        requestContext: { http: { method: 'GET' } },
+      },
+      { getRemainingTimeInMillis: () => 1000 },
+    )) as LambdaV2Result;
+    expect(Date.now() - started).toBeLessThan(1500);
+    expect(result.statusCode).not.toBe(200);
+  },
+);
 
 test('a handler without a platform type is accepted', () => {
   const plain = createFetchHandler({

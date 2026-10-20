@@ -4,7 +4,7 @@
     createQuery,
     useQueryClient,
   } from '@tanstack/svelte-query';
-  import { createSubscription } from '@trpc12/tanstack-svelte-query';
+  import { createSubscription } from '@trpc12/experimental-tanstack-svelte-query';
   import { frameworks } from '../frameworks.ts';
   import { ui } from '../ui.ts';
   import { useTrpc } from './trpc.ts';
@@ -25,7 +25,7 @@
     <div class={ui.header}>
       <div>
         <div class={ui.title}>Svelte</div>
-        <div class={ui.description}>@trpc12/tanstack-svelte-query</div>
+        <div class={ui.description}>@trpc12/experimental-tanstack-svelte-query</div>
       </div>
       <span class={ui.badge} data-testid="clock">
         {clock.data ? `tick ${clock.data.tick}` : 'connecting'}

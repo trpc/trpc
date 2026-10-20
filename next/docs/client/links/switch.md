@@ -1,5 +1,5 @@
 ---
-title: switchLink
+title: '`switchLink`'
 description: Pick one of several named chains per call, and let a call force one with a typed call option.
 section: Client
 parent: client/links

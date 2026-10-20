@@ -34,3 +34,4 @@ Agent-written working notes: research, spike results, benchmarks and anything wo
 | [Live queries and TanStack DB](./live-queries.md)                         | 26         | `live-queries/`             |
 | [Large routers typeperf](./large-routers-typeperf.md)                     | 01, 08, 16 | `big-routers/`              |
 | [Layered services and strictness](./layered-services-and-strictness.md)   | 27, 02     | `layered-services/`         |
+| [Type-check cost by procedure shape](./type-check-shapes.md)              | 01, 08     | `tooling/bench/`            |

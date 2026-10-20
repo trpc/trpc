@@ -1,7 +1,7 @@
 ---
 title: Validating on the client
-label: experimental_validationLink
-description: experimental_validationLink checks inputs before sending and results when they arrive, against a contract.
+label: '`experimental_validationLink`'
+description: '`experimental_validationLink` checks inputs before sending and results when they arrive, against a contract.'
 section: Contracts and OpenAPI
 order: 6
 experiment: contracts

@@ -1,7 +1,7 @@
 ---
 title: Hydration and offline mutations
 label: Hydration and offline
-description: hydrationOptions() sends the cache to the browser with the client's serializer, and persisted mutations resume with setMutationDefaults.
+description: "`hydrationOptions()` sends the cache to the browser with the client's serializer, and persisted mutations resume with `setMutationDefaults`."
 section: Integrations
 parent: integrations/tanstack-query
 order: 11

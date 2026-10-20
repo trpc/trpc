@@ -27,6 +27,9 @@ export default defineConfig({
       'packages/*/src/**/fixtures/generated/**',
       // TanStack Router writes these.
       '**/src/routeTree.gen.ts',
+      // `pnpm --filter @samples/docs generate:api` writes these.
+      'www/samples/docs/openapi.json',
+      'www/samples/docs/src/api/**',
       // `pnpm --filter @trpc12/www old-docs:copy` writes these.
       'www/v11/**',
       'www/v10/**',
@@ -46,6 +49,9 @@ export default defineConfig({
       'packages/*/src/**/fixtures/generated/**',
       // TanStack Router writes these.
       '**/src/routeTree.gen.ts',
+      // `pnpm --filter @samples/docs generate:api` writes these.
+      'www/samples/docs/openapi.json',
+      'www/samples/docs/src/api/**',
     ],
     options: {
       typeAware: true,
@@ -191,6 +197,13 @@ export default defineConfig({
         },
       },
       {
+        // The kitchen sink runs the demo code the reader edits, in the page.
+        files: ['www/src/kitchen-sink/modules.ts'],
+        rules: {
+          'typescript/no-implied-eval': 'off',
+        },
+      },
+      {
         files: ['spikes/**'],
         rules: {
           'no-console': 'off',
@@ -241,9 +254,9 @@ export default defineConfig({
           exclude: [
             '**/node_modules/**',
             '**/*.bun.test.ts',
-            'packages/tanstack-solid-query/src/index.test.ts',
-            'packages/tanstack-svelte-query/src/index.test.ts',
-            'packages/tanstack-svelte-query/src/ssr.test.ts',
+            'packages/experimental-tanstack-solid-query/src/index.test.ts',
+            'packages/experimental-tanstack-svelte-query/src/index.test.ts',
+            'packages/experimental-tanstack-svelte-query/src/ssr.test.ts',
           ],
           typecheck: {
             enabled: true,
@@ -254,19 +267,20 @@ export default defineConfig({
       },
       // A UI example tests with its own plugins and environment.
       'examples/experimental/framework-matrix/vite.config.ts',
-      browserBuild('solid', 'packages/tanstack-solid-query/src/index.test.ts', [
-        'solid-js',
-        '@tanstack/solid-query',
-      ]),
+      browserBuild(
+        'solid',
+        'packages/experimental-tanstack-solid-query/src/index.test.ts',
+        ['solid-js', '@tanstack/solid-query'],
+      ),
       {
         ...browserBuild(
           'svelte',
-          'packages/tanstack-svelte-query/src/index.test.ts',
+          'packages/experimental-tanstack-svelte-query/src/index.test.ts',
           [
             'svelte',
             '@tanstack/svelte-query',
             '@trpc12/tanstack-query',
-            '@trpc12/tanstack-svelte-query',
+            '@trpc12/experimental-tanstack-svelte-query',
           ],
         ),
         plugins: [svelte({ configFile: false })],
@@ -276,14 +290,16 @@ export default defineConfig({
         plugins: [svelte({ configFile: false })],
         test: {
           name: 'svelte-ssr',
-          include: ['packages/tanstack-svelte-query/src/ssr.test.ts'],
+          include: [
+            'packages/experimental-tanstack-svelte-query/src/ssr.test.ts',
+          ],
           server: {
             deps: {
               inline: [
                 'svelte',
                 '@tanstack/svelte-query',
                 '@trpc12/tanstack-query',
-                '@trpc12/tanstack-svelte-query',
+                '@trpc12/experimental-tanstack-svelte-query',
               ],
             },
           },

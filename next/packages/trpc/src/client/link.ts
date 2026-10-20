@@ -1,8 +1,10 @@
 import { Cause, Effect, Option, Stream, Tracer } from 'effect';
 import { HttpTraceContext } from 'effect/http';
 import {
+  isBuiltinCode,
+  isKeptUntyped,
   isTrpcError,
-  toBuiltinError,
+  toUntypedError,
   TrpcError,
   type AnyTrpcError,
 } from '../internal/error.ts';
@@ -199,6 +201,16 @@ export interface TrpcLink<TDecl extends LinkDecl = {}, TRouter = any> {
  */
 export type AnyLink = TrpcLink<any, any>;
 
+/**
+ * A client's `links`: at least one, since the last one sends the request.
+ * A spread before or after a link counts (`[...links, httpLink({ url })]`).
+ * @since 0.1.0
+ * @stability stable
+ */
+export type AtLeastOneLink<TRouter = any> =
+  | readonly [TrpcLink<any, TRouter>, ...TrpcLink<any, TRouter>[]]
+  | readonly [...TrpcLink<any, TRouter>[], TrpcLink<any, TRouter>];
+
 /** The `context` a link's declaration adds. @internal */
 export type DeclContext<TDecl> = TDecl extends { context: infer C }
   ? C extends object
@@ -208,11 +220,17 @@ export type DeclContext<TDecl> = TDecl extends { context: infer C }
 
 /**
  * Turns anything a link threw into a client error: a defined error, or a
- * built-in one with no `data`. An undeclared custom code is `CLIENT_ERROR`.
+ * built-in one with no `data`. An undeclared custom code is `CLIENT_ERROR`,
+ * unless the server sent it (`keepUntyped`).
  * @internal
  */
 export function toClientError(cause: unknown): AnyTrpcError {
-  if (isTrpcError(cause)) return toBuiltinError(cause, 'CLIENT_ERROR');
+  if (
+    isTrpcError(cause) &&
+    (cause.defined || isBuiltinCode(cause.code) || isKeptUntyped(cause))
+  ) {
+    return toUntypedError(cause);
+  }
   return new TrpcError({
     code: 'CLIENT_ERROR',
     message: cause instanceof Error ? cause.message : String(cause),
@@ -303,37 +321,6 @@ export function chainSerializer(
 ): AnySerializer | undefined {
   for (const current of links) {
     const found = serializers.get(current);
-    if (found) return found;
-  }
-  return undefined;
-}
-
-/**
- * Turns a subscription's stream into what `subscribe()` returns, ending
- * quietly when `signal` aborts. @internal
- */
-export type SubscriptionIterator = (
-  stream: OperationStream,
-  signal: AbortSignal | undefined,
-) => AsyncIterable<unknown>;
-
-const iterators = new WeakMap<AnyLink, SubscriptionIterator>();
-
-/** Records the iterator a link's subscriptions reach callers through. @internal */
-export function setSubscriptionIterator<L extends AnyLink>(
-  target: L,
-  iterate: SubscriptionIterator | undefined,
-): L {
-  if (iterate) iterators.set(target, iterate);
-  return target;
-}
-
-/** The first subscription iterator a chain records, looking into split branches. @internal */
-export function chainSubscriptionIterator(
-  links: ReadonlyArray<AnyLink>,
-): SubscriptionIterator | undefined {
-  for (const current of links) {
-    const found = iterators.get(current);
     if (found) return found;
   }
   return undefined;

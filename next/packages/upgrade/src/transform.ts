@@ -59,7 +59,7 @@ interface ModuleMap {
   readonly names: Readonly<Record<string, string>>;
 }
 
-const GUIDE = 'see docs/migrations/from-v11.md';
+const GUIDE = 'see https://v12.trpc.io/v12/docs/migrations/from-v11';
 const TRPC12 = /^@trpc12\/[^/]+(\/|$)/;
 
 const MODULES: Readonly<Record<string, ModuleMap>> = {
@@ -119,7 +119,10 @@ const KEPT: Readonly<Record<string, ReadonlySet<string>>> = {
   '@trpc/client': new Set(['TRPCLink']),
 };
 
-/** TanStack helpers whose input moved into their options: `queryOptions({ input })`. */
+/**
+ * TanStack helpers whose input moved into their options
+ * (`queryOptions({ input })`), or whose name is gone.
+ */
 const QUERY_HELPERS: Readonly<Record<string, string>> = {
   queryOptions:
     'queryOptions(input, opts) is queryOptions({ input, ...opts }) in v12',
@@ -132,17 +135,26 @@ const QUERY_HELPERS: Readonly<Record<string, string>> = {
     'infiniteQueryOptions(input, opts) is infiniteOptions({ input: (cursor) => ({ ...input, cursor }), ...opts }) in v12',
   infiniteQueryKey:
     'infiniteQueryKey(input) is infiniteKey({ input, initialPageParam }) in v12',
+  infiniteQueryFilter:
+    'infiniteQueryFilter(input, filters) is infiniteFilter({ input, ...filters }) in v12',
 };
+
+/** Helpers v12 has no method of that name for, so a call without arguments breaks too. */
+const GONE_HELPERS: ReadonlySet<string> = new Set([
+  'infiniteQueryOptions',
+  'infiniteQueryKey',
+  'infiniteQueryFilter',
+]);
+
+const OLD_CLIENTS =
+  'old clients: createV11Handler on this endpoint, createFetchHandler on another (https://v12.trpc.io/v12/docs/migrations/from-v11/serve-v11-clients)';
 
 const MODULE_NOTES: Readonly<Record<string, string>> = {
   '@trpc/server/observable':
     'observable(): subscriptions return an async generator or an Effect Stream; a v11 link keeps it under fromV11Link',
-  '@trpc/server/adapters/standalone':
-    'adapters: serve createFetchHandler() with serve() from @trpc12/trpc/http (docs/adapters/overview.md)',
-  '@trpc/server/adapters/express':
-    'adapters: mount createFetchHandler() with toNodeHandler from @trpc12/trpc/http (docs/adapters/node.md)',
-  '@trpc/server/adapters/ws':
-    'adapters: handler.websocket(socket, { request }) or serve() from @trpc12/trpc/http (docs/adapters/overview.md)',
+  '@trpc/server/adapters/standalone': `adapters: serve createFetchHandler() with serve() from @trpc12/trpc/http (https://v12.trpc.io/v12/docs/adapters/overview); ${OLD_CLIENTS}`,
+  '@trpc/server/adapters/express': `adapters: mount createFetchHandler() with toNodeHandler from @trpc12/trpc/http (https://v12.trpc.io/v12/docs/adapters/node); ${OLD_CLIENTS}`,
+  '@trpc/server/adapters/ws': `adapters: handler.websocket(socket, { request }) or serve() from @trpc12/trpc/http (https://v12.trpc.io/v12/docs/adapters/overview); ${OLD_CLIENTS}`,
   '@trpc/react-query':
     '@trpc/react-query has no v12 version: move to @trpc12/tanstack-react-query',
   '@trpc/next':
@@ -151,9 +163,11 @@ const MODULE_NOTES: Readonly<Record<string, string>> = {
 
 const NAME_NOTES: Readonly<Record<string, string>> = {
   FetchCreateContextFnOptions:
-    "CreateContextOpts: opts.req is opts.request, whose headers are a record (request.headers['authorization']); response headers go on the procedure's response handle, docs/server/responses.md",
+    "CreateContextOpts: opts.req is opts.request, whose headers are a record (request.headers['authorization']); response headers go on the procedure's response handle, https://v12.trpc.io/v12/docs/server/responses",
   TRPCLink:
     'TRPCLink: stays on @trpc/client; keep the link with fromV11Link(link) from @trpc12/trpc/interop, or rewrite it with link() as an Effect Stream function',
+  inferRouterOutputs:
+    "inferRouterOutputs<AppRouter> is plain JSON's form (Date is string), as v11's without a transformer; with a serializer, pass the client's type: inferRouterOutputs<typeof client>",
 };
 
 const ROOT_OPTION_NOTES: Readonly<Record<string, string>> = {
@@ -164,7 +178,7 @@ const ROOT_OPTION_NOTES: Readonly<Record<string, string>> = {
   isDev: 'isDev: use the handler option exposeUnexpectedErrors',
   isServer: 'isServer is gone',
   allowOutsideOfServer: 'allowOutsideOfServer is gone',
-  sse: 'sse: a handler option, createFetchHandler({ sse: { pingMs } })',
+  sse: 'sse: a handler option, createFetchHandler({ sse: { pingInterval } })',
   jsonl: 'jsonl: streaming needs no options in v12',
 };
 
@@ -488,7 +502,7 @@ export function upgradeSource(
           s.appendRight(prop['value'].end, ')');
           note(
             prop.start,
-            'createSyncSerializer<…>(transformer): list the types it rebuilds, docs/server/serializers.md',
+            'createSyncSerializer<…>(transformer): list the types it rebuilds, https://v12.trpc.io/v12/docs/server/serializers',
           );
         }
       } else if (name === 'maxURLLength') {
@@ -664,7 +678,10 @@ export function upgradeSource(
       }
       const helperNote =
         usesQueryHelpers && method && own(QUERY_HELPERS, method);
-      if (helperNote && node['arguments'].length > 0) {
+      if (
+        helperNote &&
+        (node['arguments'].length > 0 || GONE_HELPERS.has(method))
+      ) {
         note(callee['property'].start, helperNote);
       }
       if (method === 'createCallerFactory' && imported.size > 0) {
@@ -686,7 +703,7 @@ export function upgradeSource(
             s.appendLeft(node.end, `.fetch(${value})`);
             note(
               node.start,
-              'createFetchHandler: make the handler once, outside the request function; createContext gets { request, info }',
+              `createFetchHandler: make the handler once, outside the request function; createContext gets { request, info }; ${OLD_CLIENTS}`,
             );
           }
         } else if (

@@ -27,7 +27,9 @@ export async function main(url: string) {
   const reason = matchError(err, {
     NOT_FOUND: (e) => `no post ${e.data.id}`,
     BAD_REQUEST: (e) => `invalid input: ${e.data.issues.length} issues`,
-    builtin: (e) => `${e.code}: ${e.message}`,
+    NETWORK_ERROR: () => 'offline',
+    BAD_RESPONSE: (e) => `unreadable: ${e.message}`,
+    unexpected: (e) => `${e.code}: ${e.message}`,
   });
   console.log('post.byId failed:', reason);
   assert.equal(reason, 'no post 404');

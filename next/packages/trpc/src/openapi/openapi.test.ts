@@ -391,9 +391,7 @@ test('experimental_openApiLink calls the REST endpoints from a JSON contract (18
         contract,
         headers: { 'x-user': 'ada' },
         fetch: (input, init) => {
-          requests.push(
-            `${init?.method} ${(input instanceof Request ? input.url : String(input as string | URL)).slice(s.origin.length)}`,
-          );
+          requests.push(`${init.method} ${input.slice(s.origin.length)}`);
           return fetch(input, init);
         },
       }),
@@ -692,7 +690,7 @@ test('quiet subscriptions send keep-alive comments', async () => {
       }),
     },
     createContext: () => ({ user: null }),
-    sse: { pingMs: 10 },
+    sse: { pingInterval: 10 },
   });
   const res = await handler.fetch(new Request('http://localhost/api/slow'));
   const text = await res.text();
@@ -716,7 +714,7 @@ test('a cancelled subscription sends no keep-alives while it winds down', async 
       }),
     },
     createContext: () => ({ user: null }),
-    sse: { pingMs: 5 },
+    sse: { pingInterval: 5 },
   });
   const res = await handler.fetch(new Request('http://localhost/api/slow'));
   const reader = res.body!.getReader();
@@ -828,4 +826,210 @@ test('.meta({ route: { spec } }) replaces or extends the generated operation', (
     target: 'rpc',
   });
   expect(JSON.stringify(rpc)).not.toContain('apiKey');
+});
+
+test('security schemes, document-level security and tags', () => {
+  const doc = experimental_generateOpenApi(
+    {
+      me: t.procedure.query(() => 'me'),
+      health: t.procedure
+        .meta({ route: { spec: (op) => ({ ...op, security: [] }) } })
+        .query(() => 'ok'),
+    },
+    {
+      info: { title: 'x', version: '1' },
+      components: {
+        securitySchemes: {
+          bearer: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
+          key: { type: 'apiKey', in: 'header', name: 'x-api-key' },
+        },
+      },
+      security: [{ bearer: [] }, { key: [] }],
+      tags: [{ name: 'posts', description: 'Blog posts' }],
+    },
+  );
+  expect(doc.components.securitySchemes).toEqual({
+    bearer: { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
+    key: { type: 'apiKey', in: 'header', name: 'x-api-key' },
+  });
+  expect(doc.components.schemas).toHaveProperty('TrpcUntypedError');
+  expect(doc.security).toEqual([{ bearer: [] }, { key: [] }]);
+  expect(doc.tags).toEqual([{ name: 'posts', description: 'Blog posts' }]);
+  expect(doc.paths['/api/health']!['get']?.security).toEqual([]);
+});
+
+test('a body with a file is documented as multipart/form-data, and served', async () => {
+  const router = {
+    upload: t.procedure
+      .meta({ route: { method: 'POST', path: '/files' } })
+      .input(z.object({ name: z.string(), file: z.file() }))
+      .mutation(() => 'ok'),
+    gallery: t.procedure
+      .meta({ route: { method: 'POST', path: '/galleries/{id}' } })
+      .input(
+        z.object({
+          id: z.string(),
+          photos: z.array(z.instanceof(Blob)).optional(),
+        }),
+      )
+      .mutation((opts) => ({
+        id: opts.input.id,
+        sizes: opts.input.photos?.map((p) => p.size),
+      })),
+    avatar: t.procedure
+      .meta({
+        route: {
+          method: 'PUT',
+          path: '/avatar',
+          inputStructure: 'detailed',
+        },
+      })
+      .input(z.object({ body: z.object({ image: z.instanceof(File) }) }))
+      .mutation(() => 'ok'),
+    post: t.procedure
+      .meta({ route: { method: 'POST', path: '/posts' } })
+      .input(z.object({ title: z.string() }))
+      .mutation(() => 'ok'),
+  } satisfies AnyRouter;
+  const doc = experimental_generateOpenApi(router, {
+    info: { title: 'x', version: '1' },
+  });
+  const body = (path: string, method: string) =>
+    (
+      doc.paths[path]![method]!.requestBody as {
+        content: Record<string, { schema: Record<string, unknown> }>;
+      }
+    ).content;
+  const binary = { type: 'string', format: 'binary' };
+
+  const upload = body('/api/files', 'post');
+  expect(Object.keys(upload)).toEqual(['multipart/form-data']);
+  expect(upload['multipart/form-data']!.schema).toMatchObject({
+    properties: { name: { type: 'string' }, file: binary },
+  });
+  expect(
+    body('/api/galleries/{id}', 'post')['multipart/form-data']!.schema,
+  ).toMatchObject({ properties: { photos: { items: binary } } });
+  expect(body('/api/avatar', 'put')['multipart/form-data']!.schema).toEqual({
+    type: 'object',
+    properties: { image: binary },
+    required: ['image'],
+  });
+  expect(Object.keys(body('/api/posts', 'post'))).toEqual(['application/json']);
+
+  const handler = experimental_createOpenApiHandler({
+    router,
+    createContext: () => ({ user: null }),
+  });
+  const send = async (photos: string[]) => {
+    const form = new FormData();
+    for (const photo of photos) form.append('photos', new Blob([photo]));
+    const res = await handler.fetch(
+      new Request('http://localhost/api/galleries/g1', {
+        method: 'POST',
+        body: form,
+      }),
+    );
+    return res.json();
+  };
+  expect(await send(['ab', 'cde'])).toEqual({ id: 'g1', sizes: [2, 3] });
+  expect(await send(['ab'])).toEqual({ id: 'g1', sizes: [2] });
+  await handler.dispose();
+});
+
+test('the default error leaves out documented codes, so generated clients narrow on defined and code', () => {
+  const procedures = {
+    byId: t.procedure
+      .meta({ route: { path: '/posts/{id}' } })
+      .errors({ NOT_FOUND: { data: z.object({ id: z.string() }) } })
+      .input(z.object({ id: z.string() }))
+      .query(() => 'post'),
+  } satisfies AnyRouter;
+  const rest = experimental_generateOpenApi(procedures, {
+    info: { title: 'x', version: '1' },
+  });
+  const schema = (doc: typeof rest, path: string) =>
+    (
+      doc.paths[path]!['get']!.responses['default'] as {
+        content: Record<string, { schema: Record<string, unknown> }>;
+      }
+    ).content['application/json']!.schema;
+  const untyped = { $ref: '#/components/schemas/TrpcUntypedError' };
+  const fallback = schema(rest, '/api/posts/{id}');
+  expect(fallback).toEqual({
+    anyOf: [
+      untyped,
+      {
+        type: 'object',
+        properties: {
+          defined: { const: true },
+          code: { enum: expect.any(Array) },
+          message: { type: 'string' },
+          data: {},
+        },
+        required: ['defined', 'code', 'message'],
+      },
+    ],
+  });
+  const codes = (
+    fallback['anyOf'] as Record<string, Record<string, { enum: string[] }>>[]
+  )[1]!['properties']!['code']!.enum;
+  expect(codes).toContain('UNAUTHORIZED');
+  expect(codes).toContain('INTERNAL_SERVER_ERROR');
+  expect(codes).not.toContain('NOT_FOUND');
+  expect(codes).not.toContain('BAD_REQUEST');
+  expect(codes).not.toContain('NETWORK_ERROR');
+  expect(rest.components.schemas['TrpcUntypedError']).toEqual({
+    type: 'object',
+    properties: {
+      defined: { const: false },
+      code: { type: 'string' },
+      message: { type: 'string' },
+      data: {},
+    },
+    required: ['defined', 'code', 'message'],
+  });
+
+  const rpc = experimental_generateOpenApi(procedures, {
+    info: { title: 'x', version: '1' },
+    target: 'rpc',
+  });
+  expect(schema(rpc, '/trpc/byId')).toEqual({
+    type: 'object',
+    properties: {
+      json: { type: 'object', properties: { error: fallback } },
+    },
+    required: ['json'],
+  });
+});
+
+test('zod dates are documented as the date-time strings JSON sends', () => {
+  const doc = experimental_generateOpenApi(
+    {
+      events: t.procedure
+        .meta({ route: { method: 'POST', path: '/events' } })
+        .input(z.object({ since: z.coerce.date(), until: z.date().optional() }))
+        .output(z.object({ at: z.date(), ended: z.date().nullable() }))
+        .mutation(() => ({ at: new Date(0), ended: null })),
+    },
+    { info: { title: 'x', version: '1' } },
+  );
+  const op = doc.paths['/api/events']!['post']!;
+  const dateTime = { type: 'string', format: 'date-time' };
+  expect(
+    (op.responses['200'] as { content: Record<string, { schema: unknown }> })
+      .content['application/json']!.schema,
+  ).toMatchObject({
+    properties: {
+      at: dateTime,
+      ended: { anyOf: [dateTime, { type: 'null' }] },
+    },
+  });
+  expect(
+    (op.requestBody as { content: Record<string, { schema: unknown }> })
+      .content['application/json']!.schema,
+  ).toMatchObject({
+    // A plain `z.date()` input rejects the string a client sends.
+    properties: { since: dateTime, until: {} },
+  });
 });

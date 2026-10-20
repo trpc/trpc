@@ -1,6 +1,6 @@
 ---
 title: Fetch runtimes
-description: Cloudflare Workers, Next.js route handlers and other fetch runtimes take handler.fetch as it is.
+description: Cloudflare Workers, Next.js route handlers and other fetch runtimes take `handler.fetch` as it is.
 section: Adapters
 order: 5
 v11: server/adapters/fetch

@@ -33,24 +33,31 @@ import {
   firstValue,
   link,
   runOperation,
-  type TrpcLink,
+  type AtLeastOneLink,
 } from '../client/link.ts';
 import type {
   CallArgs,
+  StreamedError,
+  Streamed,
+  SubscriptionError,
+  UnstreamedLinkCodes,
+  ChainErrors,
+  ClientError,
+  DefinedError,
   CallOptions,
   Carries,
-  ChainLinkCodes,
   ChainTypes,
-  ClientError,
   DuplicateSwitchCheck,
   LinksContext,
   LinksTypes,
+  NoLinkCarries,
   ProcedureCallArgs,
   ResultForm,
   RouterOf,
   SubscribeOptions,
+  UnmetNeedCheck,
 } from '../client/types.ts';
-import type { ClientValue, DansonForm } from '../internal/types.ts';
+import type { ClientValue } from '../internal/types.ts';
 import type {
   AnyProcedure,
   ProcedureDef,
@@ -79,19 +86,16 @@ type DecorateEffectDef<
   TLinks extends ChainTypes,
 > =
   Carries<D['type'], TLinks> extends false
-    ? {}
-    : DecorateEffectCarried<
-        D,
-        TContext,
-        TLinks,
-        TLinks extends { errors: infer E } ? E : never
-      >;
+    ? NoLinkCarries<D['type']>
+    : DecorateEffectCarried<D, TContext, TLinks>;
+
+/** A query's or mutation's Effect for a streamed output, as on the Promise client. */
+type StreamedEffect<V, E> = Effect.Effect<Streamed<V, E>, E>;
 
 type DecorateEffectCarried<
   D extends ProcedureDef,
   TContext extends object,
   TLinks extends ChainTypes,
-  TLinkErrors,
 > = D['type'] extends 'query'
   ? {
       query(
@@ -101,14 +105,20 @@ type DecorateEffectCarried<
           CallOptions<TContext>,
           TLinks
         >
-      ): Effect.Effect<
-        ClientValue<D['output'], ResultForm<undefined, TLinks>>,
-        ClientError<
-          D['errors'] | TLinkErrors,
-          DansonForm,
-          ChainLinkCodes<TLinks>
-        >
-      >;
+      ): D['output'] extends AsyncIterable<any>
+        ? StreamedEffect<
+            ClientValue<D['output'], ResultForm<undefined, TLinks>>,
+            StreamedError<D, ResultForm<undefined, TLinks>, TLinks>
+          >
+        : Effect.Effect<
+            ClientValue<D['output'], ResultForm<undefined, TLinks>>,
+            | ClientError<
+                D['errors'],
+                ResultForm<undefined, TLinks>,
+                UnstreamedLinkCodes<TLinks>
+              >
+            | DefinedError<ChainErrors<TLinks>>
+          >;
     }
   : D['type'] extends 'mutation'
     ? {
@@ -119,25 +129,27 @@ type DecorateEffectCarried<
             CallOptions<TContext>,
             TLinks
           >
-        ): Effect.Effect<
-          ClientValue<D['output'], ResultForm<undefined, TLinks>>,
-          ClientError<
-            D['errors'] | TLinkErrors,
-            DansonForm,
-            ChainLinkCodes<TLinks>
-          >
-        >;
+        ): D['output'] extends AsyncIterable<any>
+          ? StreamedEffect<
+              ClientValue<D['output'], ResultForm<undefined, TLinks>>,
+              StreamedError<D, ResultForm<undefined, TLinks>, TLinks>
+            >
+          : Effect.Effect<
+              ClientValue<D['output'], ResultForm<undefined, TLinks>>,
+              | ClientError<
+                  D['errors'],
+                  ResultForm<undefined, TLinks>,
+                  UnstreamedLinkCodes<TLinks>
+                >
+              | DefinedError<ChainErrors<TLinks>>
+            >;
       }
     : {
         subscribe(
           ...args: CallArgs<D['input'], SubscribeOptions<TContext>>
         ): Stream.Stream<
           ClientValue<D['output'], ResultForm<undefined, TLinks>>,
-          ClientError<
-            D['errors'] | TLinkErrors,
-            DansonForm,
-            ChainLinkCodes<TLinks>
-          >
+          SubscriptionError<D, ResultForm<undefined, TLinks>, TLinks>
         >;
       };
 
@@ -164,7 +176,10 @@ const METHODS = {
 
 /**
  * Creates a client whose calls are Effects. Interrupting the fiber aborts the
- * request.
+ * request. A call fails with the same errors as the Promise client's, and
+ * an error's `_tag` is its code, so `Effect.catchTag` takes a code out of
+ * the union. It also catches the built-in error with that code, whose
+ * `defined` is `false`.
  *
  * @example
  * ```ts
@@ -173,7 +188,7 @@ const METHODS = {
  *   links: [httpLink({ url })],
  * });
  * const post = yield* client.post.byId.query({ id: '1' }).pipe(
- *   Effect.catchIf((e) => e.defined && e.code === 'NOT_FOUND', () => Effect.succeed(null)),
+ *   Effect.catchTag('NOT_FOUND', () => Effect.succeed(null)),
  * );
  * ```
  * @since 0.1.0
@@ -181,9 +196,11 @@ const METHODS = {
  */
 export function createEffectClient<
   TSource,
-  const TLinks extends ReadonlyArray<TrpcLink<any, RouterOf<TSource>>>,
+  const TLinks extends AtLeastOneLink<RouterOf<TSource>>,
 >(
-  opts: TypedClientOptions<TSource, TLinks> & DuplicateSwitchCheck<TLinks>,
+  opts: TypedClientOptions<TSource, TLinks> &
+    DuplicateSwitchCheck<TLinks> &
+    UnmetNeedCheck<TLinks>,
 ): EffectClient<RouterOf<TSource>, LinksContext<TLinks>, LinksTypes<TLinks>>;
 export function createEffectClient(opts: TrpcClientOptions): unknown {
   chainSwitchNames(opts.links);
@@ -199,13 +216,16 @@ export function createEffectClient(opts: TrpcClientOptions): unknown {
       unknown,
       SubscribeOptions<object> | undefined,
     ];
-    const op = makeOperation(
-      type,
-      path.slice(0, -1).join('.'),
-      input,
-      splitCallOptions(callOpts),
+    const procedurePath = path.slice(0, -1).join('.');
+    const callOptions = splitCallOptions(callOpts);
+    // Each run is its own operation, with its own id: socket links match
+    // responses by id, and an Effect may run more than once (`Effect.retry`).
+    const stream = Stream.suspend(() =>
+      runOperation(
+        opts.links,
+        makeOperation(type, procedurePath, input, callOptions),
+      ),
     );
-    const stream = Stream.suspend(() => runOperation(opts.links, op));
     return type === 'subscription' ? stream : firstValue(stream);
   });
 }

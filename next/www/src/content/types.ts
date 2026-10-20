@@ -1,4 +1,5 @@
 import type { ExperimentId } from '../experiments.ts';
+import type { DemoId } from '../kitchen-sink/demos.ts';
 
 export interface DocHeading {
   readonly depth: 2 | 3;
@@ -11,8 +12,8 @@ export interface DocMeta {
   readonly description: string;
   /**
    * The experiment (`src/experiments.ts`) the page belongs to: out of the
-   * sidebar, search and pagination until it's on, out of the sitemap and
-   * `llms.txt`, and `noindex`; still served at its URL.
+   * sidebar, search and pagination until it's on; still served at its URL
+   * and in the sitemap and `llms.txt`.
    */
   readonly experiment?: ExperimentId | undefined;
   readonly headings: ReadonlyArray<DocHeading>;
@@ -33,6 +34,8 @@ export interface DocMeta {
 }
 
 export interface Doc extends DocMeta {
+  /** The kitchen-sink demo the page runs beside its text, from its `demo` fence. */
+  readonly demo?: DemoId | undefined;
   /** The page, highlighted and compiled at build time. */
   readonly html: string;
 }

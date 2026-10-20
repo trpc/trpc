@@ -1,7 +1,7 @@
 ---
 title: Built-in middleware
 label: Overview
-description: The middleware in @trpc12/trpc/middleware, for logs and metrics, and how to apply it.
+description: The middleware in `@trpc12/trpc/middleware`, for logs and metrics, and how to apply it.
 section: Middleware
 order: 0
 ---
@@ -23,4 +23,4 @@ const logged = t.procedure.use(
 | --------------------------------- | ------------------------------------------------------------------------------------------------ | -------------------- |
 | [Lifecycle hooks](./lifecycle.md) | `onStart`, `onSuccess`, `onError` and `onFinish` run code around each call, for logs and metrics | nothing              |
 
-To add middleware, context, meta and errors to every procedure of an app from a package, see [Extensions](../server/extensions.md).
+To add middleware, context, `meta` and errors to every procedure of an app from a package, see [Extensions](../server/extensions.md).

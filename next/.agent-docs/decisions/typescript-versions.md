@@ -1,0 +1,8 @@
+# Users need TypeScript 5.7 or later with `strict`; the repo builds with 7 (agent)
+
+- (agent) The published declarations type-check on TypeScript 5.7, 5.8, 5.9, 6.0 and 7.0 (checked 2026-10-19 against the packed `@trpc12/trpc`, `@trpc12/tanstack-query` and `@trpc12/tanstack-react-query`: every `@trpc12/trpc` entry point, a router, a client, `useQuery` and `matchError`, with `skipLibCheck: false`). 5.6 fails on `Uint8Array<…>`, which Effect's own declarations use too, and 5.4 on `AsyncIterable<T, …>`. `strict: false` fails inside `client/types.d.ts` and loses the output form (a `Date` stays a `Date` over JSON). The declarations use `AsyncDisposable`, so `lib` needs `esnext.disposable` (or `esnext`) unless `skipLibCheck` is on, as for Effect.
+- (agent) So `@trpc12/trpc`'s optional `typescript` peer is `>=5.7.2`, not `^7.0.2`. npm checks an optional peer that's installed: with `^7.0.2`, `npm install @trpc12/trpc` failed with `ERESOLVE` in every app on TypeScript 5 or 6. The peer is there for `experimental_generateOpenApiFromTypes`, which imports TypeScript 7's `typescript/unstable/sync` and fails to load on older versions; its docs say it needs 7.
+- (agent) The repo itself stays on TypeScript 7 only (`typescript: ^7.0.2` in every `devDependencies`); nothing in CI type-checks against 5.x, since the brief allows one TypeScript dev dependency. Re-check by hand when the declarations start using newer syntax.
+- Why: v11 supports TypeScript 5.7.2 and later, so v11 apps can install the preview without upgrading their compiler first.
+- Lost: a peer range that says the OpenAPI type generator needs TypeScript 7.
+- Lives in: `packages/trpc/package.json` (`peerDependencies.typescript`), `docs/getting-started.md`, `docs/openapi/document.md`.

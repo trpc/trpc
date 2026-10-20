@@ -1,4 +1,8 @@
-import type { BuiltinErrorCode, TrpcError } from '../internal/error.ts';
+import type {
+  BuiltinErrorCode,
+  TrpcError,
+  UndeclaredCode,
+} from '../internal/error.ts';
 import type {
   ClientValue,
   DansonForm,
@@ -15,12 +19,7 @@ import type {
   ProcedureDefOf,
   Unlazy,
 } from '../server/procedures/index.ts';
-import type {
-  AnyLink,
-  DeclContext,
-  BuiltinCallOptions,
-  TrpcLink,
-} from './link.ts';
+import type { AnyLink, DeclContext, TrpcLink } from './link.ts';
 
 /**
  * An error's `data` as it arrives under a serializer's form, like outputs:
@@ -67,6 +66,17 @@ export type BuiltinError<TCode extends BuiltinErrorCode = BuiltinErrorCode> =
     : never;
 
 /**
+ * A `TrpcError` with a custom code that a procedure without `.errors()`
+ * threw rather than returned: `defined: false`, its code and `data`
+ * untyped. `matchError()` hands it to `unexpected`.
+ * @since 0.1.0
+ * @stability stable
+ */
+export type UndeclaredError = TrpcError<UndeclaredCode, unknown> & {
+  readonly defined: false;
+};
+
+/**
  * The built-in codes only links make, which a link declares with
  * `builtinErrors` so that calls through it can fail with them:
  * `NETWORK_ERROR` (no response, or the connection dropped), `BAD_RESPONSE`
@@ -81,10 +91,10 @@ export type LinkErrorCode =
   | 'STREAM_INTERRUPTED';
 
 /**
- * What a call can fail with: the procedure's defined errors and the
- * built-in ones. Every member has a literal `code`, so `switch (err.code)`
- * narrows it; `err.defined` tells a defined `NOT_FOUND` from a built-in one.
- * `TLinkCodes` are the {@link LinkErrorCode}s the client's links declare;
+ * What a call can fail with: the procedure's defined errors, the built-in
+ * ones, and an {@link UndeclaredError}. Every member but that one has a
+ * literal `code`, so `switch (err.code)` narrows it; `err.defined` tells a
+ * defined `NOT_FOUND` from a built-in one. `TLinkCodes` are the {@link LinkErrorCode}s the client's links declare;
  * the others are left out. Every link code by default.
  * @since 0.1.0
  * @stability stable
@@ -95,10 +105,56 @@ export type ClientError<
   TLinkCodes extends LinkErrorCode = LinkErrorCode,
 > =
   | DefinedError<E, F>
-  | BuiltinError<Exclude<BuiltinErrorCode, Exclude<LinkErrorCode, TLinkCodes>>>;
+  | BuiltinError<Exclude<BuiltinErrorCode, Exclude<LinkErrorCode, TLinkCodes>>>
+  | UndeclaredError;
 
-/** A call's errors: the procedure's in the result form, the links' as made. */
-type CallError<
+/**
+ * A query's or mutation's errors: the procedure's in the result form (a
+ * returned `Stream`'s failures among them), the links' as made.
+ * `STREAM_INTERRUPTED` fails a stream after its call has resolved, so it's
+ * left out unless the output is an `AsyncIterable` (whose error TanStack's
+ * streamed queries report); values deferred inside an output reject with
+ * it untyped.
+ * @internal
+ */
+export type CallError<
+  D extends ProcedureDef,
+  F extends OutputForm,
+  TLinks extends ChainTypes,
+> =
+  D['output'] extends AsyncIterable<any>
+    ? StreamedError<D, F, TLinks>
+    :
+        | ClientError<D['errors'], F, UnstreamedLinkCodes<TLinks>>
+        | DefinedError<ChainErrors<TLinks>>;
+
+/** {@link CallError} for an output that's an `AsyncIterable`. @internal */
+export type StreamedError<
+  D extends ProcedureDef,
+  F extends OutputForm,
+  TLinks extends ChainTypes,
+> =
+  | ClientError<
+      D['errors'],
+      F,
+      // An output that's `never` only fails, with a response that isn't a stream.
+      [D['output']] extends [never]
+        ? UnstreamedLinkCodes<TLinks>
+        : ChainLinkCodes<TLinks>
+    >
+  | DefinedError<ChainErrors<TLinks>>;
+
+/**
+ * A query's or mutation's `TrpcPromise` for a streamed output: the output
+ * is a {@link TrpcIterable} carrying the call's errors. The methods pick it
+ * with an inline conditional on the output, which calls that don't stream
+ * pay nothing for; an alias around both branches cost them more.
+ * @internal
+ */
+export type StreamedPromise<V, E> = TrpcPromise<Streamed<V, E>, E>;
+
+/** A subscription's errors: every link code its chain declares. @internal */
+export type SubscriptionError<
   D extends ProcedureDef,
   F extends OutputForm,
   TLinks extends ChainTypes,
@@ -126,8 +182,30 @@ export interface TrpcSubscription<T, E> extends AsyncIterable<T> {
 }
 
 /**
+ * A query's or mutation's streamed output (a generator or `Stream` on the
+ * server), carrying the call's errors as a subscription does: iterate it
+ * with `for await`, or through `safe()` to get each step as a result.
+ * @since 0.1.0
+ * @stability experimental
+ */
+export type TrpcIterable<T, TReturn, E> = AsyncIterable<T, TReturn> & {
+  readonly '~error'?: E;
+};
+
+/**
+ * A call's value `V` whose root `AsyncIterable` carries the call's errors
+ * `E`: a {@link TrpcIterable}, by intersection, which is cheaper than
+ * inferring its item and return types. A `ReadableStream` keeps its own
+ * type: its bytes have no typed failures.
+ * @internal
+ */
+export type Streamed<V, E> =
+  V extends ReadableStream<any> ? V : V & { readonly '~error'?: E };
+
+/**
  * Options for `query()` and `mutate()` (16 CS-A): `signal`, plus the fields
- * links read (17 F-B), typed from the links with `router:`.
+ * the client's links read (17 F-B), typed from what they declare: `headers`
+ * only with a link that sends them, such as `httpLink`.
  *
  * @example
  * ```ts
@@ -138,8 +216,7 @@ export interface TrpcSubscription<T, E> extends AsyncIterable<T> {
  */
 export type CallOptions<TContext extends object = {}> = {
   signal?: AbortSignal | undefined;
-} & BuiltinCallOptions &
-  TContext;
+} & TContext;
 
 /**
  * Options for `subscribe()`.
@@ -192,6 +269,15 @@ type Unbatchable<TLinks extends ChainTypes> =
   | (ResultForm<undefined, TLinks>['streaming'] extends true ? never : Blob);
 
 /**
+ * Only an output with one of these keys can be {@link Unbatchable}. Testing
+ * a key first is cheaper than comparing every output with `Response` and
+ * `Blob`, which a batching chain would otherwise do once per procedure.
+ */
+type BodyLike =
+  | { readonly arrayBuffer: unknown }
+  | { readonly '~effect/http/HttpServerResponse': unknown };
+
+/**
  * The arguments of `query()`/`mutate()`. A procedure that may return a
  * `Response`, or a `Blob` under a serializer that doesn't stream files,
  * can't be batched, so on a batching chain its calls must pass
@@ -206,9 +292,11 @@ export type ProcedureCallArgs<
 > =
   Batches<TLinks> extends false
     ? CallArgs<TInput, TOpts>
-    : [Extract<TOutput, Unbatchable<TLinks>>] extends [never]
+    : [Extract<TOutput, BodyLike>] extends [never]
       ? CallArgs<TInput, TOpts>
-      : [input: TInput, opts: TOpts & { batch: false }];
+      : [Extract<TOutput, Unbatchable<TLinks>>] extends [never]
+        ? CallArgs<TInput, TOpts>
+        : [input: TInput, opts: TOpts & { batch: false }];
 
 /** Read once per chain rather than once per procedure. */
 type Batches<TLinks extends ChainTypes> = TLinks extends { batches: infer B }
@@ -217,7 +305,8 @@ type Batches<TLinks extends ChainTypes> = TLinks extends { batches: infer B }
     : true
   : false;
 
-type ChainErrors<T extends ChainTypes> = T extends { errors: infer E }
+/** @internal */
+export type ChainErrors<T extends ChainTypes> = T extends { errors: infer E }
   ? E
   : never;
 
@@ -232,6 +321,12 @@ export type ChainLinkCodes<T extends ChainTypes> = T extends {
   ? C
   : LinkErrorCode;
 
+/** @internal */
+export type UnstreamedLinkCodes<T extends ChainTypes> = Exclude<
+  ChainLinkCodes<T>,
+  'STREAM_INTERRUPTED'
+>;
+
 /** Whether the links can carry procedures of type `T`. @internal */
 export type Carries<T, TLinks extends ChainTypes> = TLinks extends {
   unsupported: infer U;
@@ -240,6 +335,13 @@ export type Carries<T, TLinks extends ChainTypes> = TLinks extends {
     ? false
     : true
   : true;
+
+/**
+ * A procedure of type `_T` on a client whose links can't carry it: no
+ * methods, and the name says why in the error when one is called.
+ * @internal
+ */
+export interface NoLinkCarries<_T extends ProcedureType> {}
 
 /**
  * The client methods for one procedure.
@@ -262,7 +364,7 @@ type DecorateDef<
   TLinks extends ChainTypes,
 > =
   Carries<D['type'], TLinks> extends false
-    ? {}
+    ? NoLinkCarries<D['type']>
     : DecorateCarried<D, TContext, TForm, TLinks>;
 
 type DecorateCarried<
@@ -279,10 +381,20 @@ type DecorateCarried<
           CallOptions<TContext>,
           TLinks
         >
-      ): TrpcPromise<
-        ClientValue<D['output'], ResultForm<TForm, TLinks>>,
-        CallError<D, ResultForm<TForm, TLinks>, TLinks>
-      >;
+      ): D['output'] extends AsyncIterable<any>
+        ? StreamedPromise<
+            ClientValue<D['output'], ResultForm<TForm, TLinks>>,
+            StreamedError<D, ResultForm<TForm, TLinks>, TLinks>
+          >
+        : TrpcPromise<
+            ClientValue<D['output'], ResultForm<TForm, TLinks>>,
+            | ClientError<
+                D['errors'],
+                ResultForm<TForm, TLinks>,
+                UnstreamedLinkCodes<TLinks>
+              >
+            | DefinedError<ChainErrors<TLinks>>
+          >;
     }
   : D['type'] extends 'mutation'
     ? {
@@ -293,17 +405,27 @@ type DecorateCarried<
             CallOptions<TContext>,
             TLinks
           >
-        ): TrpcPromise<
-          ClientValue<D['output'], ResultForm<TForm, TLinks>>,
-          CallError<D, ResultForm<TForm, TLinks>, TLinks>
-        >;
+        ): D['output'] extends AsyncIterable<any>
+          ? StreamedPromise<
+              ClientValue<D['output'], ResultForm<TForm, TLinks>>,
+              StreamedError<D, ResultForm<TForm, TLinks>, TLinks>
+            >
+          : TrpcPromise<
+              ClientValue<D['output'], ResultForm<TForm, TLinks>>,
+              | ClientError<
+                  D['errors'],
+                  ResultForm<TForm, TLinks>,
+                  UnstreamedLinkCodes<TLinks>
+                >
+              | DefinedError<ChainErrors<TLinks>>
+            >;
       }
     : {
         subscribe(
           ...args: CallArgs<D['input'], SubscribeOptions<TContext>>
         ): TrpcSubscription<
           ClientValue<D['output'], ResultForm<TForm, TLinks>>,
-          CallError<D, ResultForm<TForm, TLinks>, TLinks>
+          SubscriptionError<D, ResultForm<TForm, TLinks>, TLinks>
         >;
       };
 

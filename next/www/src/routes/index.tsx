@@ -209,7 +209,8 @@ const v12Steps: ReadonlyArray<Step> = [
         <p>
           <code>safe()</code> turns a call into a result tuple whose error lists
           every way it can fail. <code>matchError()</code> makes you handle each
-          of the procedure&apos;s errors.
+          one: the procedure&apos;s errors, the ones its links can make, and{' '}
+          <code>unexpected</code> for the rest.
         </p>
       </>
     ),

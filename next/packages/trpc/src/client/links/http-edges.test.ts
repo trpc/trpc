@@ -108,7 +108,7 @@ test('fetch failures and pages that are not tRPC errors', async () => {
     message: 'INTERNAL_SERVER_ERROR',
   });
 
-  // A server that leaks undeclared custom codes and their data.
+  // A procedure without `.errors()` that threw a custom code: kept, untyped.
   const leaked = body(
     {
       error: {
@@ -120,14 +120,13 @@ test('fetch failures and pages that are not tRPC errors', async () => {
     },
     400,
   );
-  const [, folded] = await safe(leaked);
-  expect(folded).toMatchObject({
-    code: 'INTERNAL_SERVER_ERROR',
+  const [, kept] = await safe(leaked);
+  expect(kept).toMatchObject({
+    code: 'LEGACY_BILLING_TIMEOUT',
     message: 'billing down',
+    data: { host: '10.0.0.7' },
     defined: false,
-    cause: { code: 'LEGACY_BILLING_TIMEOUT' },
   });
-  expect(folded?.data).toBeUndefined();
   const [, conflict] = await safe(
     body(
       { error: { code: 'CONFLICT', message: 'taken', data: { a: 1 } } },
@@ -137,8 +136,14 @@ test('fetch failures and pages that are not tRPC errors', async () => {
   expect(conflict).toMatchObject({ code: 'CONFLICT', message: 'taken' });
   expect(conflict?.data).toBeUndefined();
 
-  const empty = clientWith(async () => new Response(null, { status: 200 }));
-  expect(await empty.echo.query(1)).toBeUndefined();
+  // A tRPC server writes `{}` for `undefined`, so an empty 200 is someone else's.
+  const empty = (status: number) =>
+    clientWith(async () => new Response(null, { status })).echo.query(1);
+  expect((await safe(empty(200)))[1]).toMatchObject({
+    code: 'BAD_RESPONSE',
+    message: 'Empty response body',
+  });
+  expect(await empty(204)).toBeUndefined();
 });
 
 test('a relative url with no page to resolve it against fails before fetch, as an invalid URL', async () => {
@@ -270,7 +275,7 @@ test('subscriptions: turned off, malformed events, unknown events', async () => 
     'data: {not json\n\n',
   ]) {
     const broken = clientWith(async () => sse(event), {
-      reconnect: { attempts: 0, delayMs: () => 1 },
+      reconnect: { attempts: 0, delay: () => 1 },
     });
     await expect(collect(broken.ticks.subscribe())).rejects.toMatchObject({
       code: 'NETWORK_ERROR',
@@ -285,13 +290,13 @@ test('a subscription retries a failed connect, then reads the stream', async () 
       ++attempts < 3
         ? Promise.reject(new TypeError('refused'))
         : real(input, init),
-    { reconnect: { attempts: 5, delayMs: () => 1 } },
+    { reconnect: { attempts: 5, delay: () => '1 millis' } },
   );
   expect(await collect(flaky.ticks.subscribe())).toEqual([1, 2]);
   expect(attempts).toBe(3);
 
   const empty = clientWith(async () => sse(''), {
-    reconnect: { attempts: 1, delayMs: () => 1 },
+    reconnect: { attempts: 1, delay: () => 1 },
   });
   await expect(collect(empty.ticks.subscribe())).rejects.toMatchObject({
     code: 'NETWORK_ERROR',
@@ -312,7 +317,7 @@ test('a subscription retries a failed connect, then reads the stream', async () 
   expect(Date.now() - started).toBeGreaterThanOrEqual(900);
 
   const down = clientWith(() => Promise.reject(new TypeError('refused')), {
-    reconnect: { attempts: 1, delayMs: () => 1 },
+    reconnect: { attempts: 1, delay: () => 1 },
   });
   await expect(collect(down.ticks.subscribe())).rejects.toMatchObject({
     code: 'NETWORK_ERROR',
@@ -328,7 +333,7 @@ test('a stream that ends inside a UTF-8 character, after an event, is lost', asy
   const cut = clientWith(
     async () =>
       new Response(bytes, { headers: { 'content-type': 'text/event-stream' } }),
-    { reconnect: { attempts: 0, delayMs: () => 1 } },
+    { reconnect: { attempts: 0, delay: () => 1 } },
   );
   const seen: unknown[] = [];
   await expect(

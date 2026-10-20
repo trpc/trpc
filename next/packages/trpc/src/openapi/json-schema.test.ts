@@ -4,6 +4,7 @@ import {
   experimental_openapi,
 } from '@trpc12/trpc/openapi';
 import {
+  ERROR_STATUS,
   initTrpc,
   type AnyRouter,
   type StandardSchemaV1,
@@ -248,4 +249,71 @@ test('experimental_generateOpenApi documents bodies, errors and filters any JSON
   const res = await api('/errors');
   expect(res.status).toBe(400);
   expect(await res.json()).toMatchObject({ code: 'ODD' });
+});
+
+test('files are found through $refs and media types, and a procedure can document every code', () => {
+  const doc = experimental_generateOpenApi(
+    {
+      photo: t.procedure
+        .meta({ route: { method: 'POST', path: '/photos' } })
+        .input(
+          described({
+            $defs: {
+              Upload: {
+                type: 'object',
+                properties: {
+                  image: { type: 'string', contentMediaType: 'image/png' },
+                  again: { $ref: '#/$defs/Upload' },
+                },
+              },
+            },
+            type: 'object',
+            properties: {
+              upload: { $ref: '#/$defs/Upload' },
+              self: { $ref: '#' },
+            },
+          }),
+        )
+        .mutation(() => 'ok'),
+      note: t.procedure
+        .meta({ route: { method: 'POST', path: '/notes' } })
+        .input(
+          described({
+            $defs: { Text: { type: 'string' } },
+            type: 'object',
+            properties: {
+              text: { $ref: '#/$defs/Text' },
+              meta: { type: 'string', contentMediaType: 'application/json' },
+              body: { type: 'string', contentMediaType: 'text/markdown' },
+            },
+          }),
+        )
+        .mutation(() => 'ok'),
+      everything: t.procedure
+        .meta({ route: { method: 'GET', path: '/everything' } })
+        .errors(
+          Object.fromEntries(
+            Object.entries(ERROR_STATUS)
+              .filter(([, status]) => status > 0)
+              .map(([code]) => [code, {}]),
+          ),
+        )
+        .query(() => 'ok'),
+    },
+    { info: { title: 'Files', version: '1.0.0' } },
+  );
+  const content = (path: string) =>
+    Object.keys(
+      (doc.paths[path]!['post']!['requestBody'] as { content: object }).content,
+    );
+  expect(content('/api/photos')).toEqual(['multipart/form-data']);
+  expect(content('/api/notes')).toEqual(['application/json']);
+  expect(
+    (
+      doc.paths['/api/everything']!['get']!['responses'] as Record<
+        string,
+        { content: Record<string, { schema: unknown }> }
+      >
+    )['default']!.content['application/json']!.schema,
+  ).toEqual({ anyOf: [{ $ref: '#/components/schemas/TrpcUntypedError' }] });
 });

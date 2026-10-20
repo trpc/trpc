@@ -1,6 +1,6 @@
 # anti-slop (vendored)
 
-Oxlint rules copied from [dmmulroy/anti-slop](https://github.com/dmmulroy/anti-slop) (MIT, see [`LICENSE`](./LICENSE)). We found them through [raf-query](https://github.com/KATT/raf-query), which vendors the same rules under `tooling/oxlint-plugins/anti-slop/` (readable at `.repos/raf-query/tooling/oxlint-plugins/anti-slop/`).
+Oxlint rules copied from [dmmulroy/anti-slop](https://github.com/dmmulroy/anti-slop) (MIT, see [`LICENSE`](./LICENSE)). We found them through [raf-query](https://github.com/KATT/raf-query), which vendors the same rules under [`tooling/oxlint-plugins/anti-slop/`](https://github.com/KATT/raf-query/tree/a9f2aa7743c64b548c6d982f5caffaf53f9a695a/tooling/oxlint-plugins/anti-slop).
 
 ## Pin
 

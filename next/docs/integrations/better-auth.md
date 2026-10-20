@@ -1,6 +1,6 @@
 ---
 title: Better Auth
-description: Read the Better Auth session in a middleware and type ctx.user with its user.
+description: Read the Better Auth session in a middleware and type `ctx.user` with its user.
 section: Integrations
 order: 4
 experiment: integrations
@@ -12,7 +12,7 @@ experiment: integrations
 @trpc12/trpc effect better-auth
 ```
 
-Put the headers in the ctx, then a [middleware](../server/middleware.md) turns the session into `ctx.user`:
+Put the headers in the `ctx`, then a [middleware](../server/middleware.md) turns the session into `ctx.user`:
 
 ```ts twoslash
 // ---cut-start---

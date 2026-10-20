@@ -23,6 +23,9 @@ export interface FrameSink {
 
 /** The call's sink, when its transport keeps frames. @internal */
 export const CurrentFrameSink: Context.Reference<FrameSink | undefined> =
-  Context.Reference<FrameSink | undefined>('@trpc12/trpc/FrameSink', {
-    defaultValue: () => undefined,
-  });
+  /* @__PURE__ */ Context.Reference<FrameSink | undefined>(
+    '@trpc12/trpc/FrameSink',
+    {
+      defaultValue: () => undefined,
+    },
+  );

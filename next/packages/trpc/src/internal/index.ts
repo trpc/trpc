@@ -9,6 +9,9 @@ export type {
   BuilderDef,
   BuilderInternals,
   ConcatCheck,
+  EveryLeafDeclares,
+  ImplementMetaCheck,
+  RootConcatCheck,
   ConcatOutputCheck,
   CurrentCtx,
   InputDef,
@@ -26,6 +29,7 @@ export type {
   UndeclaredCheck,
   EffectBodyCheck,
   EffectMiddlewareFactory,
+  MiddlewareErrors,
   ReqCtx,
   ReqInput,
   ReqMeta,
@@ -33,4 +37,10 @@ export type {
   LazyDef,
 } from '../server/procedures/index.ts';
 export type { DeclContext } from '../client/link.ts';
-export type { Unset } from './types.ts';
+export type { NoLinkCarries } from '../client/types.ts';
+export type {
+  ReservedCodeCheck,
+  ReservedCodeMessage,
+  ReservedKeyCheck,
+} from './error.ts';
+export type { TypeError, Unset } from './types.ts';

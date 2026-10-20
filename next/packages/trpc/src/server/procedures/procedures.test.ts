@@ -1,11 +1,13 @@
-import { Context, Data, Effect, Layer } from 'effect';
+import { Context, Data, Effect, Layer, ManagedRuntime } from 'effect';
 import {
   createTrpcClient,
   httpLink,
   safe,
   type ClientError,
+  type LinkErrorCode,
   routerType,
 } from '@trpc12/trpc/client';
+import type { DansonForm } from '@trpc12/trpc/serializer';
 import {
   call,
   error,
@@ -17,6 +19,7 @@ import {
   TrpcError,
   type inferInputIssue,
   type InputValidationErrorData,
+  type inferProcedureErrors,
   type TrackedEnvelope,
 } from '@trpc12/trpc/server';
 import { callProcedure } from '@trpc12/trpc/extend';
@@ -314,6 +317,102 @@ test('ok() short-circuits the chain; output validation still runs', async () => 
   numeric.output(z.number()).query(() => 2);
 });
 
+test('a middleware that only calls next() adds no errors', () => {
+  const shared = t.middleware((opts) => opts.next({ ctx: { b: 1 } }));
+  const standalone = middleware()((opts) => opts.next());
+  const sync = t.procedure
+    .use((opts) => opts.next({ ctx: { a: 1 } }))
+    .query(() => 1);
+  const async = t.procedure.use(async (opts) => opts.next()).query(() => 1);
+  const viaT = t.procedure.use(shared).query(() => 1);
+  const viaStandalone = t.procedure.use(standalone).query(() => 1);
+  expectTypeOf<inferProcedureErrors<typeof sync>>().toBeNever();
+  expectTypeOf<inferProcedureErrors<typeof async>>().toBeNever();
+  expectTypeOf<inferProcedureErrors<typeof viaT>>().toBeNever();
+  expectTypeOf<inferProcedureErrors<typeof viaStandalone>>().toBeNever();
+
+  const guarded = t.procedure
+    .use(shared)
+    .use((opts) =>
+      opts.ctx.user ? opts.next() : error({ code: 'UNAUTHORIZED' }),
+    )
+    .query(() => 1);
+  expectTypeOf<
+    inferProcedureErrors<typeof guarded>['code']
+  >().toEqualTypeOf<'UNAUTHORIZED'>();
+  // @ts-expect-error -- a middleware returns next(), ok() or a TrpcError
+  t.procedure.use((opts) => (opts.ctx.user ? opts.next() : 1));
+});
+
+test('a typed output keeps literals in async resolvers and generators', () => {
+  const Status = z.object({ status: z.enum(['a', 'b']), n: z.number() });
+  const Event = z.object({ kind: z.enum(['x', 'y']) });
+  const status = t.procedure.output(Status);
+  const declared = status.errors({ NOT_FOUND: {} });
+
+  status.query(async () => ({ status: 'a', n: 1 }));
+  status.mutation(async (opts) => ({
+    status: 'b',
+    n: opts.ctx.user ? 1 : 0,
+  }));
+  status.query(async function (opts) {
+    if (opts.ctx.user) return { status: 'a', n: 1 };
+    return { status: 'b', n: 2 };
+  });
+  const branch = status.query(async (opts) =>
+    opts.ctx.user ? { status: 'a', n: 1 } : error({ code: 'NOT_FOUND' }),
+  );
+  expectTypeOf<
+    inferProcedureErrors<typeof branch>['code']
+  >().toEqualTypeOf<'NOT_FOUND'>();
+  declared.query(async (opts) =>
+    opts.ctx.user ? { status: 'a', n: 1 } : opts.errors.NOT_FOUND(),
+  );
+  t.procedure
+    .use(async (opts) =>
+      opts.ctx.user ? ok({ status: 'a', n: 1 }) : opts.next(),
+    )
+    .output(Status)
+    .query(async () => ({ status: 'b', n: 1 }));
+
+  t.procedure.output(Event).subscription(async function* () {
+    yield { kind: 'x' };
+  });
+  t.procedure.output(Event).subscription(async function* () {
+    yield tracked('1', { kind: 'y' });
+  });
+  t.procedure.output(stream(Event)).query(async function* () {
+    yield { kind: 'x' };
+  });
+
+  // @ts-expect-error -- 'c' is not a status
+  status.query(async () => ({ status: 'c', n: 1 }));
+  // @ts-expect-error -- 'z' is not a kind
+  t.procedure.output(Event).subscription(async function* () {
+    yield { kind: 'z' };
+  });
+  declared.query(async (opts) =>
+    // @ts-expect-error -- CONFLICT is not declared
+    opts.ctx.user ? { status: 'a', n: 1 } : error({ code: 'CONFLICT' }),
+  );
+  // @ts-expect-error -- a plain schema can't take a stream, even one that accepts any object
+  t.procedure.output(z.object({})).query(async function* () {
+    yield {};
+  });
+  // @ts-expect-error -- DbError is not a TrpcError, whatever the output
+  t.procedure.output(z.unknown()).query(() => findPost('1'));
+  declared.query(() =>
+    // @ts-expect-error -- an Effect fails only with a declared TrpcError
+    Effect.fail(new Error('x')).pipe(Effect.as({ status: 'a' as const, n: 1 })),
+  );
+  declared.query(() =>
+    // @ts-expect-error -- CONFLICT is not declared, in a failure either
+    Effect.fail(error({ code: 'CONFLICT' })).pipe(
+      Effect.as({ status: 'a' as const, n: 1 }),
+    ),
+  );
+});
+
 test('lifecycle helpers observe the chain', async () => {
   await using ctx = await setup();
   events.length = 0;
@@ -330,6 +429,136 @@ test('lifecycle helpers observe the chain', async () => {
   ]);
 });
 
+test('lifecycle helpers type meta and input from the procedure, and ctx from a type argument', async () => {
+  const typed = initTrpc<{ ctx: Ctx; meta: { auth?: boolean } }>();
+  const seen: unknown[] = [];
+  const byId = typed.procedure
+    .meta({ auth: true })
+    .input(z.object({ id: z.string() }))
+    .use(
+      onFinish((_result, opts) => {
+        expectTypeOf(opts.meta.auth).toEqualTypeOf<boolean | undefined>();
+        expectTypeOf(opts.input).toEqualTypeOf<{ id: string }>();
+        expectTypeOf(opts.ctx).toBeUnknown();
+        seen.push(opts.meta.auth, opts.input.id);
+      }),
+    )
+    .use(onStart<Ctx>((opts) => void seen.push(opts.ctx.user)))
+    .query((opts) => opts.input.id);
+  expect(await call(byId, { id: '1' }, { ctx: { user: 'ada' } })).toBe('1');
+  expect(seen).toEqual(['ada', true, '1']);
+
+  const needsUser = initTrpc()
+    .procedure.use(onStart<{ user: string }>((opts) => void opts.ctx.user))
+    .query(() => 1);
+  // @ts-expect-error -- the hook's ctx is now a requirement of the procedure
+  const missing = () => call(needsUser, undefined);
+  expectTypeOf(missing).toBeFunction();
+  expect(await call(needsUser, undefined, { ctx: { user: 'bo' } })).toBe(1);
+});
+
+test('lifecycle helpers see an aborted call as CLIENT_CLOSED_REQUEST, and a throwing callback fails the call', async () => {
+  const controller = new AbortController();
+  const seen: string[] = [];
+  const aborted = t.procedure
+    .use(onFinish((result) => void seen.push(`finish ${result.ok}`)))
+    .use(onError((err) => void seen.push(`error ${err.code}`)))
+    .query(() =>
+      Effect.andThen(
+        Effect.sync(() => controller.abort()),
+        Effect.never,
+      ),
+    );
+  await expect(
+    call(aborted, undefined, {
+      ctx: { user: null },
+      signal: controller.signal,
+    }),
+  ).rejects.toMatchObject({ code: 'CLIENT_CLOSED_REQUEST' });
+  expect(seen).toEqual(['error CLIENT_CLOSED_REQUEST', 'finish false']);
+
+  for (const helper of [
+    onStart(() => Promise.reject(new Error('boom'))),
+    onSuccess(() => {
+      throw new Error('boom');
+    }),
+    onFinish(async () => {
+      throw new Error('boom');
+    }),
+  ]) {
+    const throwing = t.procedure.use(helper).query(() => 1);
+    await expect(
+      call(throwing, undefined, { ctx: { user: null } }),
+    ).rejects.toMatchObject({
+      code: 'INTERNAL_SERVER_ERROR',
+      message: 'boom',
+    });
+  }
+  const replaced = t.procedure
+    .use(
+      onError(() => {
+        throw new Error('boom');
+      }),
+    )
+    .query(() => error({ code: 'CONFLICT' }));
+  await expect(
+    call(replaced, undefined, { ctx: { user: null } }),
+  ).rejects.toMatchObject({ code: 'INTERNAL_SERVER_ERROR', message: 'boom' });
+});
+
+test("lifecycle helpers are Promise middleware when called, and their callbacks' next() is", async () => {
+  const outcomes: unknown[] = [];
+  const seen: unknown[] = [];
+  const helpers = [
+    onStart(() => void seen.push('start')),
+    onSuccess((data) => void seen.push(['success', data])),
+    onError((e) => void seen.push(['error', e.code])),
+    onFinish((result) => void seen.push(['finish', result.ok])),
+  ];
+  const results = [
+    { ok: true as const, data: 1 },
+    {
+      ok: false as const,
+      error: new TrpcError({ code: 'CONFLICT', message: 'taken' }),
+    },
+  ];
+  for (const result of results) {
+    for (const helper of helpers) {
+      expect(
+        await helper({
+          ctx: {},
+          input: undefined,
+          meta: {},
+          path: 'p',
+          type: 'query',
+          signal: new AbortController().signal,
+          response: { headers: new Headers(), status: undefined },
+          next: () => Promise.resolve(result),
+        }),
+      ).toBe(result);
+    }
+  }
+  expect(seen).toEqual([
+    'start',
+    ['success', 1],
+    ['finish', true],
+    'start',
+    ['error', 'CONFLICT'],
+    ['finish', false],
+  ]);
+
+  const peeking = t.procedure
+    .use(
+      onStart(async (o) => {
+        const result = await o.next();
+        outcomes.push(result.ok);
+      }),
+    )
+    .query(() => 2);
+  expect(await call(peeking, undefined, { ctx: { user: null } })).toBe(2);
+  expect(outcomes).toEqual([true]);
+});
+
 test('Effect middleware provides services and its failures are typed', async () => {
   await using ctx = await setup();
   expect(await ctx.client.me.query()).toBe('ada');
@@ -338,7 +567,12 @@ test('Effect middleware provides services and its failures are typed', async () 
   const res = await safe(anon.client.me.query());
   expect(res.error).toMatchObject({ code: 'UNAUTHORIZED', defined: true });
   expectTypeOf(res.error).toEqualTypeOf<
-    ClientError<TrpcError<'UNAUTHORIZED', undefined>> | undefined
+    | ClientError<
+        TrpcError<'UNAUTHORIZED', undefined>,
+        DansonForm,
+        Exclude<LinkErrorCode, 'STREAM_INTERRUPTED'>
+      >
+    | undefined
   >();
 
   // Only the Clock layer is passed: the middleware provides CurrentUser.
@@ -429,8 +663,62 @@ test('call() runs one procedure, with a layer for its services', async () => {
     call(router.post.byId, { id: 'missing-2' }, { ctx: { user: null } }),
   ).rejects.toMatchObject({ code: 'NOT_FOUND', defined: true });
 
-  // @ts-expect-error -- `timed` needs Clock, so `layer` is required
+  // @ts-expect-error -- `timed` needs Clock, so `layer` or `runtime` is required
   const missing = () => call(router.timed, undefined, { ctx: { user: null } });
+  expectTypeOf(missing).toBeFunction();
+  // @ts-expect-error -- `byId` needs a `Ctx`, so the options are required
+  const noCtx = () => call(router.post.byId, { id: '1' });
+  expectTypeOf(noCtx).toBeFunction();
+
+  const echo = initTrpc()
+    .procedure.input(z.string())
+    .query((opts) => opts.input);
+  expect(await call(echo, 'hi')).toBe('hi');
+  expect(await call(echo, 'hi', { path: 'echo' })).toBe('hi');
+});
+
+test('call() releases its layer once it returns; a runtime outlives a streamed output', async () => {
+  let builds = 0;
+  let open = false;
+  const ClockScoped = Layer.effect(
+    Clock,
+    Effect.acquireRelease(
+      Effect.sync(() => {
+        builds++;
+        open = true;
+        return { now: () => (open ? 1 : 0) };
+      }),
+      () =>
+        Effect.sync(() => {
+          open = false;
+        }),
+    ),
+  );
+  const ticks = initTrpc().procedure.query(() =>
+    Effect.gen(function* () {
+      const clock = yield* Clock;
+      return (async function* () {
+        yield clock.now();
+      })();
+    }),
+  );
+  const read = async (iterable: AsyncIterable<number>) => {
+    const out: number[] = [];
+    for await (const n of iterable) out.push(n);
+    return out;
+  };
+
+  expect(
+    await read(await call(ticks, undefined, { layer: ClockScoped })),
+  ).toEqual([0]);
+
+  await using runtime = ManagedRuntime.make(ClockScoped);
+  expect(await read(await call(ticks, undefined, { runtime }))).toEqual([1]);
+  expect(await read(await call(ticks, undefined, { runtime }))).toEqual([1]);
+  expect(builds).toBe(2);
+
+  // @ts-expect-error -- `ticks` needs Clock, so `layer` or `runtime` is required
+  const missing = () => call(ticks, undefined, {});
   expectTypeOf(missing).toBeFunction();
 });
 
@@ -469,6 +757,22 @@ test('procedures without async steps run synchronously', () => {
     signal: new AbortController().signal,
   });
   expect(Effect.runSync(run as Effect.Effect<unknown, unknown>)).toBe(2);
+
+  const seen: unknown[] = [];
+  const watched = initTrpc()
+    .procedure.use(onStart(() => void seen.push('start')))
+    .use(onSuccess((data) => void seen.push(data)))
+    .use(onFinish((result) => void seen.push(result.ok)))
+    .query(() => 3);
+  const watchedRun = callProcedure({
+    procedure: watched,
+    path: 'watched',
+    ctx: {},
+    input: undefined,
+    signal: new AbortController().signal,
+  });
+  expect(Effect.runSync(watchedRun as Effect.Effect<unknown, unknown>)).toBe(3);
+  expect(seen).toEqual(['start', true, 3]);
 });
 
 test('next({ input }) replaces the input for later steps, typed like ctx (#6892)', async () => {
@@ -538,6 +842,12 @@ test('calls that go wrong in unusual ways fail with one clear error', async () =
       opts.errors.CONFLICT({ data: 'same string' }),
     ),
     badMiddleware: u.procedure.use((() => 'nope') as never).query(() => 1),
+    rejectingMiddleware: u.procedure
+      .use(async () => {
+        await Promise.resolve();
+        throw new Error('rejected');
+      })
+      .query(() => 1),
     handBuiltFailure: u.procedure
       .use((() => ({
         ok: false,
@@ -586,6 +896,10 @@ test('calls that go wrong in unusual ways fail with one clear error', async () =
   expect(await failure('badMiddleware')).toEqual({
     code: 'INTERNAL_SERVER_ERROR',
     message: 'Middleware on "" must return next(), ok() or a TrpcError',
+  });
+  expect(await failure('rejectingMiddleware')).toEqual({
+    code: 'INTERNAL_SERVER_ERROR',
+    message: 'rejected',
   });
   expect(await failure('handBuiltFailure')).toEqual({
     code: 'FORBIDDEN',

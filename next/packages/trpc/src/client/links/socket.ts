@@ -30,12 +30,12 @@ import { jsonSerializer, type AnySerializer } from '../../serializer/index.ts';
 import type { MessagePortLike } from '../../server/sockets/index.ts';
 import {
   withSerializer,
+  type BuiltinCallOptions,
   type Operation,
   type OperationStream,
   type LinkDecl,
   type TrpcLink,
 } from '../link.ts';
-import { withSubscriptions } from '../subscriptions.ts';
 import { makeDeferredDecoder, badResponse, serializeInput } from './events.ts';
 
 /** One open connection. @internal */
@@ -59,15 +59,15 @@ type Signal = Data.TaggedEnum<{
   Moved: {};
   Fail: { readonly error: AnyTrpcError };
 }>;
-const Signal = Data.taggedEnum<Signal>();
+const Signal = /* @__PURE__ */ Data.taggedEnum<Signal>();
 
 type CallMessage = Exclude<
   ServerMessage,
   { type: 'pong' } | { type: 'init' } | { type: 'reconnect' }
 >;
 
-const LOST = Signal.Lost();
-const MOVED = Signal.Moved();
+const LOST = /* @__PURE__ */ Signal.Lost();
+const MOVED = /* @__PURE__ */ Signal.Moved();
 
 /**
  * How a call's time on one connection ended. `stale`: the connection was
@@ -148,16 +148,21 @@ export interface SocketLink<TDecl extends LinkDecl = {}>
   close(): Promise<void>;
 }
 
+interface KeepAlive {
+  interval: Duration.Duration;
+  timeout: Duration.Duration;
+}
+
 interface SocketTransport {
   /** The link's name, for errors. */
   name: string;
   /** Opens a connection, which closes with the scope. */
   connect: Effect.Effect<SocketConnection, unknown, Scope.Scope>;
   reconnect:
-    | { attempts: number; delayMs: (attempt: number) => number }
+    | { attempts: number; delay: (attempt: number) => Duration.Input }
     | undefined;
-  idleMs: number | undefined;
-  keepAlive: { intervalMs: number; timeoutMs: number } | undefined;
+  idleTimeout: Duration.Duration | undefined;
+  keepAlive: KeepAlive | undefined;
   /** Ask the server for binary messages. */
   binary?: boolean;
 }
@@ -168,6 +173,9 @@ interface SocketTransport {
  */
 type SocketErrors = 'NETWORK_ERROR' | 'BAD_RESPONSE' | 'STREAM_INTERRUPTED';
 
+/** The call option links that reconnect read. */
+type ReconnectOption = Pick<BuiltinCallOptions, 'reconnect'>;
+
 const lostError = () =>
   new TrpcError({ code: 'NETWORK_ERROR', message: 'The connection was lost' });
 
@@ -176,6 +184,11 @@ function makeSocketLink(
   opts: SocketLinkOptions,
 ): SocketLink<any> {
   const serializer = opts.serializer ?? jsonSerializer;
+  /**
+   * The link's lifetime: it holds the shared connection and the fibers the
+   * link starts outside a call's own (drops, calls whose output streams on).
+   */
+  const scope = Scope.makeUnsafe();
   /** Every call's inbox, so `close()` can fail them wherever they are. */
   const live = new Set<Queue.Queue<Signal>>();
   let current: Connection | undefined;
@@ -190,38 +203,39 @@ function makeSocketLink(
     }
   };
 
-  function dispatch(conn: Connection, raw: unknown) {
-    if (typeof raw !== 'object' || raw === null) return;
-    const message = raw as ServerMessage;
-    conn.received++;
-    if (message.type === 'pong') return;
-    if (message.type === 'init') {
-      if (message.serializer === serializer.name) return;
-      const error = new TrpcError({
-        code: 'UNSUPPORTED_PROTOCOL',
-        message: `The server uses the '${message.serializer}' serializer, but this ${transport.name} uses '${serializer.name}'. Pass the same serializer to the handler and ${transport.name}.`,
-      });
-      conn.refused = error;
-      for (const { inbox } of conn.calls.values())
-        Queue.offerUnsafe(inbox, Signal.Fail({ error }));
-      conn.calls.clear();
-      return;
-    }
-    if (message.type === 'reconnect') {
-      if (transport.reconnect) retire(conn);
-      return;
-    }
-    if (message.id === null) {
-      if (message.type !== 'error') return;
-      const signal = Signal.Fail({ error: revive(message) });
-      for (const { inbox } of conn.calls.values())
-        Queue.offerUnsafe(inbox, signal);
-      conn.calls.clear();
-      return;
-    }
-    const entry = conn.calls.get(message.id);
-    if (entry) Queue.offerUnsafe(entry.inbox, Signal.Message({ message }));
-  }
+  const dispatch = (conn: Connection, raw: unknown): Effect.Effect<void> =>
+    Effect.suspend(() => {
+      if (typeof raw !== 'object' || raw === null) return Effect.void;
+      const message = raw as ServerMessage;
+      conn.received++;
+      if (message.type === 'pong') return Effect.void;
+      if (message.type === 'init') {
+        if (message.serializer === serializer.name) return Effect.void;
+        const error = new TrpcError({
+          code: 'UNSUPPORTED_PROTOCOL',
+          message: `The server uses the '${message.serializer}' serializer, but this ${transport.name} uses '${serializer.name}'. Pass the same serializer to the handler and ${transport.name}.`,
+        });
+        conn.refused = error;
+        for (const { inbox } of conn.calls.values())
+          Queue.offerUnsafe(inbox, Signal.Fail({ error }));
+        conn.calls.clear();
+        return Effect.void;
+      }
+      if (message.type === 'reconnect') {
+        return transport.reconnect ? retire(conn) : Effect.void;
+      }
+      if (message.id === null) {
+        if (message.type !== 'error') return Effect.void;
+        const signal = Signal.Fail({ error: revive(message) });
+        for (const { inbox } of conn.calls.values())
+          Queue.offerUnsafe(inbox, signal);
+        conn.calls.clear();
+        return Effect.void;
+      }
+      const entry = conn.calls.get(message.id);
+      if (entry) Queue.offerUnsafe(entry.inbox, Signal.Message({ message }));
+      return Effect.void;
+    });
 
   /**
    * Invalidates the shared connection if it's still `conn`, so the next
@@ -235,13 +249,22 @@ function makeSocketLink(
       return RcRef.invalidate(connection);
     });
 
-  function lose(conn: Connection) {
-    if (conn.lost) return;
-    conn.lost = true;
-    for (const { inbox } of conn.calls.values()) Queue.offerUnsafe(inbox, LOST);
-    conn.calls.clear();
-    Effect.runFork(drop(conn));
-  }
+  /**
+   * Drops `conn` on a fiber of the link's: a connection's own fiber can't
+   * close the scope it runs in.
+   */
+  const forkDrop = (conn: Connection) =>
+    Effect.asVoid(Effect.forkIn(drop(conn), scope, { startImmediately: true }));
+
+  const lose = (conn: Connection): Effect.Effect<void> =>
+    Effect.suspend(() => {
+      if (conn.lost) return Effect.void;
+      conn.lost = true;
+      for (const { inbox } of conn.calls.values())
+        Queue.offerUnsafe(inbox, LOST);
+      conn.calls.clear();
+      return forkDrop(conn);
+    });
 
   /**
    * The server's `reconnect`: subscriptions are aborted here and sent again
@@ -249,39 +272,40 @@ function makeSocketLink(
    * dropped, so they resume from the last event they handled. Queries and
    * mutations finish here; nothing sent is sent again.
    */
-  function retire(conn: Connection) {
-    if (conn.retired || conn.lost) return;
-    conn.retired = true;
-    for (const [id, { inbox, moves }] of conn.calls) {
-      if (!moves) continue;
-      conn.calls.delete(id);
-      conn.socket.send({ id, type: 'abort' });
-      Queue.offerUnsafe(inbox, MOVED);
-    }
-    Effect.runFork(drop(conn));
-  }
+  const retire = (conn: Connection): Effect.Effect<void> =>
+    Effect.suspend(() => {
+      if (conn.retired || conn.lost) return Effect.void;
+      conn.retired = true;
+      for (const [id, { inbox, moves }] of conn.calls) {
+        if (!moves) continue;
+        conn.calls.delete(id);
+        conn.socket.send({ id, type: 'abort' });
+        Queue.offerUnsafe(inbox, MOVED);
+      }
+      return forkDrop(conn);
+    });
 
   /**
-   * Pings every `intervalMs`. A connection that answers nothing within
-   * `timeoutMs` of a ping is lost.
+   * Pings every `interval`. A connection that answers nothing within
+   * `timeout` of a ping is lost.
    */
-  const keepAlive = (
-    conn: Connection,
-    timing: { intervalMs: number; timeoutMs: number },
-  ) => {
+  const keepAlive = (conn: Connection, timing: KeepAlive) => {
     const answered = (received: number) =>
-      Effect.sleep(timing.timeoutMs).pipe(
+      Effect.sleep(timing.timeout).pipe(
         Effect.andThen(
-          Effect.sync(() => {
-            if (conn.lost || conn.received !== received) return;
-            lose(conn);
-            conn.socket.close();
-          }),
+          Effect.suspend(() =>
+            conn.lost || conn.received !== received
+              ? Effect.void
+              : Effect.andThen(
+                  lose(conn),
+                  Effect.sync(() => conn.socket.close()),
+                ),
+          ),
         ),
       );
     return Effect.gen(function* () {
       while (!conn.lost) {
-        yield* Effect.sleep(timing.intervalMs);
+        yield* Effect.sleep(timing.interval);
         const received = conn.received;
         conn.socket.send({ type: 'ping' });
         yield* Effect.forkChild(answered(received));
@@ -319,13 +343,11 @@ function makeSocketLink(
       return conn;
     }
     yield* socket.messages.pipe(
-      Stream.runForEach((message) =>
-        Effect.sync(() => dispatch(conn, message)),
-      ),
+      Stream.runForEach((message) => dispatch(conn, message)),
       Effect.ignore,
       // The messages ended on their own; a released connection interrupts
       // this fiber instead.
-      Effect.andThen(Effect.sync(() => lose(conn))),
+      Effect.andThen(lose(conn)),
       Effect.forkScoped,
     );
     socket.send({
@@ -343,15 +365,15 @@ function makeSocketLink(
   });
 
   /**
-   * Shared by every call and released when the last one ends; `idleMs`
+   * Shared by every call and released when the last one ends; `idleTimeout`
    * later the connection closes. A lost connection is invalidated, so the
    * next call opens a new one.
    */
   const connection = Effect.runSync(
     RcRef.make({
       acquire,
-      idleTimeToLive: transport.idleMs ?? Duration.infinity,
-    }).pipe(Scope.provide(Scope.makeUnsafe())),
+      idleTimeToLive: transport.idleTimeout ?? Duration.infinity,
+    }).pipe(Scope.provide(scope)),
   );
 
   /**
@@ -359,24 +381,23 @@ function makeSocketLink(
    * lost or retired (it's dropped, so the next try opens another). Fails
    * with the error `close()` gave the call while it waited.
    */
-  const connected = (
+  const connected = Effect.fnUntraced(function* (
     inbox: Queue.Queue<Signal>,
-  ): Effect.Effect<
+  ): Effect.fn.Return<
     Connection | 'stale' | undefined,
     AnyTrpcError,
     Scope.Scope
-  > =>
-    Effect.gen(function* () {
-      const signal = yield* Queue.poll(inbox);
-      if (Option.isSome(signal) && Signal.$is('Fail')(signal.value)) {
-        return yield* Effect.fail(signal.value.error);
-      }
-      const conn = yield* Effect.option(RcRef.get(connection));
-      if (Option.isNone(conn)) return undefined;
-      if (!conn.value.lost && !conn.value.retired) return conn.value;
-      yield* drop(conn.value);
-      return 'stale';
-    });
+  > {
+    const signal = yield* Queue.poll(inbox);
+    if (Option.isSome(signal) && Signal.$is('Fail')(signal.value)) {
+      return yield* Effect.fail(signal.value.error);
+    }
+    const conn = yield* Effect.option(RcRef.get(connection));
+    if (Option.isNone(conn)) return undefined;
+    if (!conn.value.lost && !conn.value.retired) return conn.value;
+    yield* drop(conn.value);
+    return 'stale';
+  });
 
   /**
    * Sends the call on one connection. `complete`; `moved` by the server's
@@ -384,108 +405,106 @@ function makeSocketLink(
    * answered anything, so the next reconnect counts from the first attempt
    * again.
    */
-  const attach = (
+  const attach = Effect.fnUntraced(function* (
     call: Call,
     inbox: Queue.Queue<Signal>,
     moves: boolean,
-  ): Effect.Effect<Outcome, AnyTrpcError> =>
-    Effect.gen(function* () {
-      const request = yield* Effect.try({
-        try: call.request,
-        catch: (cause) => cause as AnyTrpcError,
+  ): Effect.fn.Return<Outcome, AnyTrpcError, Scope.Scope> {
+    const request = yield* Effect.try({
+      try: call.request,
+      catch: (cause) => cause as AnyTrpcError,
+    });
+    // A stale connection's reference is released with this scope, so it
+    // can close.
+    const conn = yield* connected(inbox);
+    if (conn === 'stale') return 'stale';
+    if (!conn) return 'silent';
+    if (conn.refused) return yield* Effect.fail(conn.refused);
+    const { id } = call.op;
+    let complete = false;
+    yield* Effect.addFinalizer(() =>
+      Effect.sync(() => {
+        if (conn.calls.get(id)?.inbox !== inbox) return;
+        conn.calls.delete(id);
+        if (!complete) conn.socket.send({ id, type: 'abort' });
+      }),
+    );
+    // Checked as it's sent: nothing is sent on a retired connection.
+    const sent = yield* Effect.sync(() => {
+      if (conn.lost || conn.retired) return false;
+      conn.calls.set(id, { inbox, moves });
+      conn.socket.send(request);
+      return true;
+    });
+    if (!sent) return 'stale';
+    for (;;) {
+      const signal = yield* Queue.take(inbox);
+      const outcome = yield* Signal.$match(signal, {
+        Lost: () =>
+          Effect.succeed<Outcome>(conn.received > 0 ? 'heard' : 'silent'),
+        Moved: () => Effect.succeed<Outcome>('moved'),
+        Fail: (fail) => {
+          complete = true;
+          return Effect.fail(fail.error);
+        },
+        Message: ({ message }) => {
+          const { type } = message;
+          complete =
+            type === 'done' ||
+            type === 'error' ||
+            (type === 'result' && !message.deferred);
+          return Effect.map(
+            call.onMessage(message),
+            (done): Outcome | undefined => (done ? 'complete' : undefined),
+          );
+        },
       });
-      // A stale connection's reference is released with this scope, so it
-      // can close.
-      const conn = yield* connected(inbox);
-      if (conn === 'stale') return 'stale';
-      if (!conn) return 'silent';
-      if (conn.refused) return yield* Effect.fail(conn.refused);
-      const { id } = call.op;
-      let complete = false;
-      yield* Effect.addFinalizer(() =>
-        Effect.sync(() => {
-          if (conn.calls.get(id)?.inbox !== inbox) return;
-          conn.calls.delete(id);
-          if (!complete) conn.socket.send({ id, type: 'abort' });
-        }),
-      );
-      // Checked as it's sent: nothing is sent on a retired connection.
-      const sent = yield* Effect.sync(() => {
-        if (conn.lost || conn.retired) return false;
-        conn.calls.set(id, { inbox, moves });
-        conn.socket.send(request);
-        return true;
-      });
-      if (!sent) return 'stale';
-      for (;;) {
-        const signal = yield* Queue.take(inbox);
-        const outcome = yield* Signal.$match(signal, {
-          Lost: () =>
-            Effect.succeed<Outcome>(conn.received > 0 ? 'heard' : 'silent'),
-          Moved: () => Effect.succeed<Outcome>('moved'),
-          Fail: (fail) => {
-            complete = true;
-            return Effect.fail(fail.error);
-          },
-          Message: ({ message }) => {
-            const { type } = message;
-            complete =
-              type === 'done' ||
-              type === 'error' ||
-              (type === 'result' && !message.deferred);
-            return Effect.map(
-              call.onMessage(message),
-              (done): Outcome | undefined => (done ? 'complete' : undefined),
-            );
-          },
-        });
-        if (outcome) return outcome;
-      }
-    }).pipe(Effect.scoped);
+      if (outcome) return outcome;
+    }
+  }, Effect.scoped);
 
   /**
    * Runs a call to completion. A dropped connection fails it with
    * `NETWORK_ERROR`, unless it's a subscription the link reconnects.
    */
-  const run = (call: Call): Effect.Effect<void, AnyTrpcError> =>
-    Effect.gen(function* () {
-      const inbox = yield* Queue.unbounded<Signal>();
-      live.add(inbox);
-      yield* Effect.addFinalizer(() => Effect.sync(() => live.delete(inbox)));
-      const { reconnect } = transport;
-      const moves =
-        !!call.onReconnect &&
-        !!reconnect &&
-        call.op.context.reconnect !== false;
-      let attempt = 0;
-      for (;;) {
-        const outcome = yield* attach(call, inbox, moves);
-        if (outcome === 'complete') return;
-        if (outcome === 'stale') continue;
-        if (outcome === 'moved') {
-          attempt = 0;
-          if (call.onReconnect) yield* call.onReconnect;
-          continue;
-        }
-        if (outcome === 'heard') attempt = 0;
-        if (
-          !call.onReconnect ||
-          !reconnect ||
-          !moves ||
-          ++attempt > reconnect.attempts
-        ) {
-          return yield* Effect.fail(lostError());
-        }
-        yield* call.onReconnect;
-        // `close()` can fail the call while it waits.
-        const signal = yield* Queue.take(inbox).pipe(
-          Effect.timeoutOption(reconnect.delayMs(attempt)),
-        );
-        if (Option.isSome(signal) && Signal.$is('Fail')(signal.value)) {
-          return yield* Effect.fail(signal.value.error);
-        }
+  const run = Effect.fnUntraced(function* (
+    call: Call,
+  ): Effect.fn.Return<void, AnyTrpcError, Scope.Scope> {
+    const inbox = yield* Queue.unbounded<Signal>();
+    live.add(inbox);
+    yield* Effect.addFinalizer(() => Effect.sync(() => live.delete(inbox)));
+    const { reconnect } = transport;
+    const moves =
+      !!call.onReconnect && !!reconnect && call.op.context.reconnect !== false;
+    let attempt = 0;
+    for (;;) {
+      const outcome = yield* attach(call, inbox, moves);
+      if (outcome === 'complete') return;
+      if (outcome === 'stale') continue;
+      if (outcome === 'moved') {
+        attempt = 0;
+        if (call.onReconnect) yield* call.onReconnect;
+        continue;
       }
-    }).pipe(Effect.scoped);
+      if (outcome === 'heard') attempt = 0;
+      if (
+        !call.onReconnect ||
+        !reconnect ||
+        !moves ||
+        ++attempt > reconnect.attempts
+      ) {
+        return yield* Effect.fail(lostError());
+      }
+      yield* call.onReconnect;
+      // `close()` can fail the call while it waits.
+      const signal = yield* Queue.take(inbox).pipe(
+        Effect.timeoutOption(reconnect.delay(attempt)),
+      );
+      if (Option.isSome(signal) && Signal.$is('Fail')(signal.value)) {
+        return yield* Effect.fail(signal.value.error);
+      }
+    }
+  }, Effect.scoped);
 
   const request = (op: Operation, lastEventId?: string): ClientMessage => ({
     id: op.id,
@@ -524,7 +543,7 @@ function makeSocketLink(
                         Effect.flatMap((exit) => Deferred.done(result, exit)),
                       );
                       return message.deferred
-                        ? Effect.asVoid(Effect.forkDetach(settle))
+                        ? Effect.asVoid(Effect.forkIn(settle, scope))
                         : settle;
                     }),
                     Effect.as(!message.deferred),
@@ -543,7 +562,7 @@ function makeSocketLink(
         const fiber = yield* run(call).pipe(
           Effect.onError((cause) => Deferred.failCause(result, cause)),
           Effect.ensuring(decoder.close),
-          Effect.forkDetach,
+          Effect.forkIn(scope),
         );
         return yield* Deferred.await(result).pipe(
           Effect.onInterrupt(() => Fiber.interrupt(fiber)),
@@ -628,9 +647,7 @@ function makeSocketLink(
   const link: TrpcLink = ({ op }) =>
     op.type === 'subscription' ? subscription(op) : single(op);
   return withSerializer(
-    withSubscriptions(
-      Object.assign(link, { close, [Symbol.asyncDispose]: close }),
-    ),
+    Object.assign(link, { close, [Symbol.asyncDispose]: close }),
     serializer,
   );
 }
@@ -659,23 +676,27 @@ export interface ConnectionLinkOptions {
   reconnect?: {
     /** @default 5 */
     attempts?: number;
-    /** @default attempt => Math.min(1000 * 2 ** (attempt - 1), 30_000) */
-    delayMs?: (attempt: number) => number;
+    /**
+     * Delay before each reconnect: milliseconds, a string like `'2 seconds'`
+     * or a `Duration`.
+     * @default attempt => Math.min(1000 * 2 ** (attempt - 1), 30_000)
+     */
+    delay?: (attempt: number) => Duration.Input;
   };
   /**
    * Close the connection after this long without calls. The next call
    * reconnects.
    * @default undefined, stay open until `close()`
    */
-  idleMs?: number | undefined;
+  idleTimeout?: Duration.Input | undefined;
   /**
-   * Ping every `intervalMs`. A connection that answers nothing within
-   * `timeoutMs` of a ping is treated as lost, so it reconnects instead of waiting for
+   * Ping every `interval`. A connection that answers nothing within
+   * `timeout` of a ping is treated as lost, so it reconnects instead of waiting for
    * a close that a dead network never delivers. The traffic also keeps
    * proxies from dropping a quiet socket. `false` sends no pings.
-   * @default { intervalMs: 30_000, timeoutMs: 10_000 }
+   * @default { interval: '30 seconds', timeout: '10 seconds' }
    */
-  keepAlive?: false | { intervalMs?: number; timeoutMs?: number };
+  keepAlive?: false | { interval?: Duration.Input; timeout?: Duration.Input };
 }
 
 const connectionOptions = (
@@ -683,17 +704,24 @@ const connectionOptions = (
 ): Omit<SocketTransport, 'connect' | 'name'> => ({
   reconnect: {
     attempts: opts.reconnect?.attempts ?? 5,
-    delayMs:
-      opts.reconnect?.delayMs ??
+    delay:
+      opts.reconnect?.delay ??
       ((attempt) => Math.min(1000 * 2 ** (attempt - 1), 30_000)),
   },
-  idleMs: opts.idleMs,
+  idleTimeout:
+    opts.idleTimeout === undefined
+      ? undefined
+      : Duration.fromInputUnsafe(opts.idleTimeout),
   keepAlive:
     opts.keepAlive === false
       ? undefined
       : {
-          intervalMs: opts.keepAlive?.intervalMs ?? 30_000,
-          timeoutMs: opts.keepAlive?.timeoutMs ?? 10_000,
+          interval: Duration.fromInputUnsafe(
+            opts.keepAlive?.interval ?? '30 seconds',
+          ),
+          timeout: Duration.fromInputUnsafe(
+            opts.keepAlive?.timeout ?? '10 seconds',
+          ),
         },
 });
 
@@ -790,7 +818,11 @@ export interface WebSocketLinkOptions
  */
 export function wsLink<TOpts extends WebSocketLinkOptions>(
   opts: TOpts,
-): SocketLink<{ form: FormOfOptions<TOpts>; builtinErrors: SocketErrors }>;
+): SocketLink<{
+  context: ReconnectOption;
+  form: FormOfOptions<TOpts>;
+  builtinErrors: SocketErrors;
+}>;
 export function wsLink(opts: WebSocketLinkOptions): SocketLink<any> {
   const Impl = opts.WebSocket ?? globalThis.WebSocket;
   return makeSocketLink(
@@ -867,36 +899,37 @@ export function experimental_messagePortLink(
   const { port } = opts;
   // A port can't drop its listeners, so they're added once, on the first
   // connection, and every connection subscribes to what they hear.
-  const received = Effect.runSync(PubSub.unbounded<unknown>());
-  const portClosed = Deferred.makeUnsafe<void>();
-  const listen = () => {
-    const deliver = (message: unknown) =>
-      PubSub.publishUnsafe(received, message);
-    const closed = () => Deferred.doneUnsafe(portClosed, Effect.void);
-    if (port.on) {
-      port.on('message', deliver);
-      port.on('close', closed);
-    } else {
-      port.addEventListener?.('message', (event: { data: unknown }) =>
-        deliver(event.data),
-      );
-      port.addEventListener?.('close', closed);
-    }
-    port.start?.();
-  };
-  let listening = false;
+  const listening = Effect.runSync(
+    Effect.cached(
+      Effect.gen(function* () {
+        const received = yield* PubSub.unbounded<unknown>();
+        const closed = yield* Deferred.make<void>();
+        const deliver = (message: unknown) =>
+          PubSub.publishUnsafe(received, message);
+        const close = () => Deferred.doneUnsafe(closed, Effect.void);
+        if (port.on) {
+          port.on('message', deliver);
+          port.on('close', close);
+        } else {
+          port.addEventListener?.('message', (event: { data: unknown }) =>
+            deliver(event.data),
+          );
+          port.addEventListener?.('close', close);
+        }
+        port.start?.();
+        return { received, closed };
+      }),
+    ),
+  );
   return makeSocketLink(
     {
       name: 'experimental_messagePortLink',
       reconnect: undefined,
-      idleMs: undefined,
+      idleTimeout: undefined,
       keepAlive: undefined,
       connect: Effect.gen(function* () {
-        const messages = yield* PubSub.subscribe(received);
-        if (!listening) {
-          listening = true;
-          listen();
-        }
+        const heard = yield* listening;
+        const messages = yield* PubSub.subscribe(heard.received);
         const closed = yield* Deferred.make<void>();
         return {
           send: (message) => port.postMessage(message),
@@ -905,7 +938,7 @@ export function experimental_messagePortLink(
             Stream.interruptWhen(
               Effect.raceFirst(
                 Deferred.await(closed),
-                Deferred.await(portClosed),
+                Deferred.await(heard.closed),
               ),
             ),
           ),
@@ -933,7 +966,7 @@ export interface RawSocketLinkOptions
 
 /**
  * Sends every call over a raw socket (TCP, TLS, a Unix socket), to a
- * server run with `serveSocket()` from `@trpc12/trpc/socket`. Messages are the
+ * server run with `experimental_serveSocket()` from `@trpc12/trpc/socket`. Messages are the
  * WebSocket ones, one JSON value per line; reconnects, keep-alive pings
  * and resumed subscriptions work as on {@link wsLink}.
  *
@@ -951,7 +984,7 @@ export interface RawSocketLinkOptions
  */
 export function experimental_socketLink(
   opts: RawSocketLinkOptions,
-): SocketLink<{ builtinErrors: SocketErrors }> {
+): SocketLink<{ context: ReconnectOption; builtinErrors: SocketErrors }> {
   const connect = Effect.gen(function* () {
     const socket = yield* opts.socket;
     return yield* socketConnection(socket, {

@@ -1,4 +1,4 @@
-import { Context, Effect, ManagedRuntime, Stream, type Layer } from 'effect';
+import { Effect, Fiber, Stream, type ManagedRuntime } from 'effect';
 import {
   fromWireError,
   isTrpcError,
@@ -14,16 +14,20 @@ import type {
 import { jsonSerializer, type AnySerializer } from '../../serializer/index.ts';
 import {
   callProcedure,
+  createResponseHandle,
+  inProcessOutput,
   normalizeCause,
+  runtimeServices,
   unexpectedError,
 } from '../../server/execution/index.ts';
+import type { RuntimeOption } from '../../server/handler/index.ts';
 import {
   resolveProcedureEffect,
   type AnyRouter,
   type inferRouterContext,
+  type inferRouterServices,
 } from '../../server/procedures/index.ts';
 import { link, withSerializer, type TrpcLink } from '../link.ts';
-import { withSubscriptions } from '../subscriptions.ts';
 import { isByteStreamInput } from './events.ts';
 
 /**
@@ -31,22 +35,48 @@ import { isByteStreamInput } from './events.ts';
  * @since 0.1.0
  * @stability stable
  */
-export interface LocalLinkOptions<TRouter extends AnyRouter> {
+export type LocalLinkOptions<TRouter extends AnyRouter> = {
   router: TRouter;
-  /** Runs once per call. */
-  createContext?: () => MaybePromise<inferRouterContext<TRouter>>;
-  /** Provides the Effect services the router needs. */
-  layer?: Layer.Layer<never, any, never> | undefined;
   /**
    * Round-trip inputs and outputs through a serializer, as over the wire.
    * `false` passes values by reference, with native types.
    * @default jsonSerializer
    */
   serializer?: AnySerializer | false;
-}
+} & LocalContextOption<inferRouterContext<TRouter>> &
+  RuntimeOption<inferRouterServices<TRouter>>;
+
+/** `createContext` is required when the router's procedures need a `ctx`. */
+type LocalContextOption<TCtx> = {} extends TCtx
+  ? {
+      /** Runs once per call. */
+      createContext?: () => MaybePromise<TCtx>;
+    }
+  : {
+      /** Runs once per call. */
+      createContext: () => MaybePromise<TCtx>;
+    };
 
 /**
- * Runs calls in-process, without HTTP. For tests and SSR.
+ * Runs `f` on its own fiber with a signal that aborts if the caller is
+ * interrupted before `f` ends; a streamed output read after it ends isn't cut.
+ */
+const withSignal = <A, E>(
+  f: (signal: AbortSignal) => Effect.Effect<A, E>,
+): Effect.Effect<A, E> =>
+  Effect.withFiber((parent) =>
+    Effect.callback<A, E>((resume, signal) => {
+      const fiber = Effect.runForkWith(parent.context)(f(signal));
+      fiber.addObserver(resume);
+      return Fiber.interrupt(fiber);
+    }),
+  );
+
+/**
+ * Runs calls in-process, without HTTP. For tests and SSR. The router's
+ * Effect services come from `runtime`, which the caller owns and disposes.
+ * A procedure that returns a response gives the web `Response` an
+ * unbatched HTTP call would get, never serialized.
  *
  * @example
  * ```ts
@@ -71,10 +101,10 @@ export function localLink<TRouter extends AnyRouter>(
 ): TrpcLink<any> {
   const serializer =
     opts.serializer === false ? undefined : (opts.serializer ?? jsonSerializer);
-  const layer = opts.layer as Layer.Layer<any, any, never> | undefined;
-  const services = layer
-    ? Effect.orDie(ManagedRuntime.make(layer).contextEffect)
-    : Effect.succeed(Context.empty() as Context.Context<any>);
+  const services = runtimeServices(
+    (opts as { runtime?: ManagedRuntime.ManagedRuntime<never, unknown> })
+      .runtime,
+  );
   const roundtrip = (value: unknown, input?: boolean) => {
     // A byte stream input is the request body over HTTP, not serialized.
     if (!serializer || (input && isByteStreamInput(value))) return value;
@@ -86,74 +116,78 @@ export function localLink<TRouter extends AnyRouter>(
   };
 
   return withSerializer(
-    withSubscriptions(
-      link(({ op }) =>
-        Stream.unwrap(
-          Effect.gen(function* () {
-            const procedure = yield* resolveProcedureEffect(
-              opts.router,
-              op.path,
+    link(({ op }) =>
+      Stream.unwrap(
+        Effect.gen(function* () {
+          const procedure = yield* resolveProcedureEffect(opts.router, op.path);
+          if (!procedure) {
+            return yield* Effect.fail(
+              new TrpcError({
+                code: 'NOT_FOUND',
+                message: `No procedure at path "${op.path}"`,
+              }),
             );
-            if (!procedure) {
-              return yield* Effect.fail(
-                new TrpcError({
-                  code: 'NOT_FOUND',
-                  message: `No procedure at path "${op.path}"`,
-                }),
-              );
-            }
-            if (procedure['~trpc'].type !== op.type) {
-              return yield* Effect.fail(
-                new TrpcError({
-                  code: 'METHOD_NOT_SUPPORTED',
-                  message: `"${op.path}" is a ${procedure['~trpc'].type}, not a ${op.type}`,
-                }),
-              );
-            }
-            const context = yield* services;
-            const ctx = yield* Effect.promise(
-              async () => (await opts.createContext?.()) ?? {},
+          }
+          if (procedure['~trpc'].type !== op.type) {
+            return yield* Effect.fail(
+              new TrpcError({
+                code: 'METHOD_NOT_SUPPORTED',
+                message: `"${op.path}" is a ${procedure['~trpc'].type}, not a ${op.type}`,
+              }),
             );
-            const data = yield* callProcedure({
+          }
+          const context = yield* services;
+          const ctx = yield* Effect.promise(
+            async () => (await opts.createContext?.()) ?? {},
+          );
+          const response = createResponseHandle();
+          const data = yield* withSignal((interrupted) =>
+            callProcedure({
               procedure,
               path: op.path,
               ctx,
               input: roundtrip(op.input, true),
-              signal: op.signal ?? new AbortController().signal,
+              signal: op.signal
+                ? AbortSignal.any([op.signal, interrupted])
+                : interrupted,
               lastEventId: op.lastEventId,
-            }).pipe(Effect.provideContext(context));
+              response,
+              allowResponse: true,
+            }).pipe(
+              Effect.flatMap((value) => inProcessOutput(value, response)),
+              Effect.provideContext(context),
+            ),
+          );
 
-            if (op.type === 'subscription') {
-              return Stream.map(data as Stream.Stream<unknown>, (event) =>
-                roundtrip(event),
-              );
-            }
-            if (!serializer) return Stream.make(data);
-            const serialized = serializer.serializeDeferred(data, {
-              coerceError: (cause) =>
-                toWireError(
-                  isTrpcError(cause) ? cause : unexpectedError(cause),
-                ),
-            });
-            return Stream.fromEffect(
-              serializer.deserializeStream(
-                serialized.chunks
-                  ? Stream.concat(
-                      Stream.make(serialized.head),
-                      serialized.chunks,
-                    )
-                  : Stream.make(serialized.head),
-                {
-                  reviveError: (value) => fromWireError(value),
-                  ...streamErrors,
-                },
-              ),
+          if (op.type === 'subscription') {
+            return Stream.map(data as Stream.Stream<unknown>, (event) =>
+              roundtrip(event),
             );
-          }),
-        ).pipe(
-          Stream.catchCause((cause) => Stream.fail(normalizeCause(cause))),
-        ),
-      ),
+          }
+          if (
+            !serializer ||
+            (typeof globalThis.Response === 'function' &&
+              data instanceof globalThis.Response)
+          ) {
+            return Stream.make(data);
+          }
+          const serialized = serializer.serializeDeferred(data, {
+            coerceError: (cause) =>
+              toWireError(isTrpcError(cause) ? cause : unexpectedError(cause)),
+          });
+          return Stream.fromEffect(
+            serializer.deserializeStream(
+              serialized.chunks
+                ? Stream.concat(Stream.make(serialized.head), serialized.chunks)
+                : Stream.make(serialized.head),
+              {
+                reviveError: (value) => fromWireError(value),
+                ...streamErrors,
+              },
+            ),
+          );
+        }),
+      ).pipe(Stream.catchCause((cause) => Stream.fail(normalizeCause(cause)))),
     ),
     serializer,
   );

@@ -1,6 +1,6 @@
 ---
 title: Migrating from v11
-description: Serve v11 clients from the new router with createV11Handler, run the codemod, then move the clients.
+description: Serve v11 clients from the new router with `createV11Handler`, run the codemod, then move the clients.
 section: Migrations
 order: 1
 ---

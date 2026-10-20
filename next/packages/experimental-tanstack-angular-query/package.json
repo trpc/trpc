@@ -1,0 +1,56 @@
+{
+  "name": "@trpc12/experimental-tanstack-angular-query",
+  "version": "0.1.0",
+  "private": true,
+  "description": "tRPC for TanStack Angular Query: provideTrpc() and injectors for the client and its helpers, and injectSubscription.",
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "publishConfig": {
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    },
+    "access": "public"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.lib.json && tsc --noEmit -p tsconfig.json",
+    "build": "node ../../tooling/pack/pack.ts"
+  },
+  "dependencies": {
+    "@trpc12/tanstack-query": "workspace:*"
+  },
+  "devDependencies": {
+    "@angular/common": "22.2.2",
+    "@angular/compiler": "22.2.2",
+    "@angular/core": "22.2.2",
+    "@angular/platform-browser": "22.2.2",
+    "@angular/platform-server": "22.2.2",
+    "@tanstack/angular-query-experimental": "5.104.1",
+    "@tanstack/query-core": "5.104.1",
+    "@tooling/tsconfig": "workspace:*",
+    "@trpc12/trpc": "workspace:*",
+    "@types/node": "^24.0.0",
+    "effect": "4.0.2",
+    "happy-dom": "20.14.6",
+    "rxjs": "7.8.2",
+    "typescript": "^7.0.2",
+    "vite-plus": "1.1.0"
+  },
+  "peerDependencies": {
+    "@angular/core": ">=19",
+    "@tanstack/angular-query-experimental": "^5.104.0",
+    "@trpc12/trpc": "workspace:*",
+    "effect": "^4.0.0"
+  }
+}

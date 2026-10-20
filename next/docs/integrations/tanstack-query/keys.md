@@ -1,7 +1,7 @@
 ---
 title: Query keys and filters
 label: Keys and filters
-description: How tRPC's query keys are shaped, the filters that invalidate and read them, and keyPrefix for two APIs in one QueryClient.
+description: How tRPC's query keys are shaped, the filters that invalidate and read them, and `keyPrefix` for two APIs in one `QueryClient`.
 section: Integrations
 parent: integrations/tanstack-query
 order: 8
@@ -17,8 +17,9 @@ You rarely write a key: each helper makes its own, and has a function that retur
 | `trpc.pathKey()`, `trpc.post.pathKey()`                   | everything under a path: queries, infinite, streamed and live queries, mutations |
 | `trpc.post.pathFilter(filters?)`                          | the same, as filters for `invalidateQueries`, `cancelQueries`, `removeQueries` … |
 | `trpc.post.byId.queryKey({ input })`                      | the exact key `queryOptions()` uses, typed for `getQueryData`                    |
-| `trpc.post.byId.queryFilter({ input? })`                  | a procedure's queries, every input or one                                        |
+| `trpc.post.byId.queryFilter({ input? })`                  | a procedure's queries: every input, or those matching part of one                |
 | `trpc.post.list.infiniteKey({ input, initialPageParam })` | the exact key `infiniteOptions()` uses                                           |
+| `trpc.post.list.infiniteFilter({ input? })`               | a procedure's infinite queries: every input, or those matching part of one       |
 | `trpc.post.create.mutationKey()`, `mutationFilter()`      | a procedure's mutations, for `useIsMutating` and `useMutationState`              |
 | `trpc.x.streamedKey()`, `trpc.x.liveKey()`                | a subscription's query-cache forms                                               |
 
@@ -39,6 +40,8 @@ await queryClient.invalidateQueries(trpc.post.pathFilter());
 await queryClient.invalidateQueries(
   trpc.post.byId.queryFilter({ input: { id } }),
 );
+// post.list's infinite queries, every input
+await queryClient.invalidateQueries(trpc.post.list.infiniteFilter());
 
 // typed by the key: the procedure's output
 const key = trpc.post.byId.queryKey({ input: { id } });
@@ -49,7 +52,9 @@ queryClient.setQueryData(key, (old) =>
 );
 ```
 
-## Two APIs, one QueryClient
+`queryFilter()` covers a procedure's plain queries and `infiniteFilter()` its infinite ones; an `infiniteFilter({ input })` matches by the first page's input (what `input` returns for `initialPageParam`), so a field such as the cursor can be left out. `trpc.post.list.pathFilter()` covers every kind.
+
+## Two APIs, one `QueryClient`
 
 Keys start with the procedure path, so two tRPC APIs with a `post.byId` would share cache entries. Give one a `keyPrefix`:
 
@@ -71,6 +76,8 @@ const billing = createTrpcQueryUtils({
 billing.post.byId.queryKey({ input: { id } }); // [['billing', 'post', 'byId'], { input: { id }, type: 'query' }]
 billing.pathFilter(); // matches only billing's queries
 ```
+
+The prefix is the path's first segment, so the other API's root `trpc.pathFilter()` matches billing's queries too, and so would a top-level `billing` router of its own. Filter that API under a path instead, like `trpc.post.pathFilter()`.
 
 Every framework's `createTrpcContext({ keyPrefix: 'billing' })` and `createTrpcRsc({ keyPrefix })` take it too; the server and browser must use the same one.
 

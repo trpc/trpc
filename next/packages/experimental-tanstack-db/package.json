@@ -1,0 +1,45 @@
+{
+  "name": "@trpc12/experimental-tanstack-db",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Experimental: TanStack DB collections synced by a tRPC subscription, with snapshots, live changes and writes awaited until the server's change arrives.",
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "publishConfig": {
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    },
+    "access": "public"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.lib.json && tsc --noEmit -p tsconfig.json",
+    "build": "node ../../tooling/pack/pack.ts"
+  },
+  "devDependencies": {
+    "@effect/platform-node": "4.0.2",
+    "@tanstack/db": "0.15.0",
+    "@tooling/tsconfig": "workspace:*",
+    "@trpc12/trpc": "workspace:*",
+    "@types/node": "^24.0.0",
+    "effect": "4.0.2",
+    "typescript": "^7.0.2",
+    "vite-plus": "1.1.0",
+    "zod": "4.6.5"
+  },
+  "peerDependencies": {
+    "@tanstack/db": ">=0.15.0 <0.16.0",
+    "effect": "^4.0.0"
+  }
+}

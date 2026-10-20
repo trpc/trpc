@@ -1,4 +1,4 @@
-import { Effect, Stream } from 'effect';
+import { Effect, Stream, type Duration } from 'effect';
 import { serverFailure, type AnyTrpcError } from '../../internal/error.ts';
 import { HEADER } from '../../internal/protocol.ts';
 import type { IsAny, ProcedureType } from '../../internal/types.ts';
@@ -6,12 +6,11 @@ import {
   link,
   runLinks,
   type AnyLink,
+  type AtLeastOneLink,
   type Operation,
   type TrpcLink,
   chainSerializer,
-  chainSubscriptionIterator,
   chainSwitchNames,
-  setSubscriptionIterator,
   setSwitchNames,
   withSerializer,
 } from '../link.ts';
@@ -20,7 +19,7 @@ import { isByteStreamInput } from './events.ts';
 import { retrying, withResume, type Retries } from './resume.ts';
 
 /** @internal */
-export type Chain = AnyLink | ReadonlyArray<AnyLink>;
+export type Chain = AnyLink | AtLeastOneLink;
 
 /** @internal */
 export const asArray = (links: Chain): ReadonlyArray<AnyLink> =>
@@ -145,7 +144,6 @@ export function splitLink<
   );
   setSwitchNames(split, [...chainSwitchNames(yes), ...chainSwitchNames(no)]);
   withSerializer(split, chainSerializer([...yes, ...no]));
-  setSubscriptionIterator(split, chainSubscriptionIterator([...yes, ...no]));
   return split as TrpcLink<any, TRouter>;
 }
 
@@ -218,10 +216,11 @@ export interface RetryLinkOptions {
   /** @default 3 */
   retries?: number;
   /**
-   * Delay before each retry, given the error it retries (a `RateLimited`
-   * error's `data.retryAfter`, for one). @default attempt => 2 ** attempt * 100
+   * Delay before each retry, given the error it retries (an `experimental_RateLimited`
+   * error's `data.retryAfter`, for one): milliseconds, a string like
+   * `'2 seconds'` or a `Duration`. @default attempt => 2 ** attempt * 100
    */
-  delayMs?: (attempt: number, error: AnyTrpcError) => number;
+  delay?: (attempt: number, error: AnyTrpcError) => Duration.Input;
   /**
    * Whether to retry. By default: queries only, and only errors outside the
    * typed union (network failures, 5xx), never aborts, and never a call whose
@@ -233,6 +232,8 @@ export interface RetryLinkOptions {
     attempt: number;
   }) => boolean;
 }
+
+const backoff = (attempt: number) => 2 ** attempt * 100;
 
 const defaultRetry: NonNullable<RetryLinkOptions['retry']> = (opts) =>
   opts.op.type === 'query' &&
@@ -256,13 +257,13 @@ const defaultRetry: NonNullable<RetryLinkOptions['retry']> = (opts) =>
  */
 export function retryLink(opts: RetryLinkOptions = {}): TrpcLink {
   const retries = opts.retries ?? 3;
-  const delayMs = opts.delayMs ?? ((attempt: number) => 2 ** attempt * 100);
+  const delay = opts.delay ?? backoff;
   const shouldRetry = opts.retry ?? defaultRetry;
   return link((args) =>
     retrying(
       {
         retries,
-        delayMs,
+        delay,
         retry: (error, attempt) => shouldRetry({ op: args.op, error, attempt }),
       },
       () => args.next(args.op),
@@ -294,8 +295,8 @@ export interface DurableContext {
 export interface DurableLinkOptions {
   /** Retries after a lost response, with the same call id. @default 3 */
   retries?: number;
-  /** @default attempt => 2 ** attempt * 100 */
-  delayMs?: (attempt: number, error: AnyTrpcError) => number;
+  /** Delay before each retry. @default attempt => 2 ** attempt * 100 */
+  delay?: (attempt: number, error: AnyTrpcError) => Duration.Input;
 }
 
 const lostResponse = (error: AnyTrpcError) =>
@@ -326,7 +327,7 @@ export function experimental_durableLink(
   opts: DurableLinkOptions = {},
 ): TrpcLink<{ context: DurableContext }> {
   const retries = opts.retries ?? 3;
-  const delayMs = opts.delayMs ?? ((attempt: number) => 2 ** attempt * 100);
+  const delay = opts.delay ?? backoff;
   return link<{ context: DurableContext }>((args) => {
     const { op } = args;
     if (
@@ -337,7 +338,7 @@ export function experimental_durableLink(
     const callId = op.context.callId ?? crypto.randomUUID();
     const headers = new Headers(op.context.headers);
     headers.set(HEADER.callId, callId);
-    const resume: Retries = { retries, delayMs, retry: lostResponse };
+    const resume: Retries = { retries, delay, retry: lostResponse };
     const sent: Operation = {
       ...op,
       context: withResume({ ...op.context, headers, batch: false }, resume),

@@ -51,7 +51,7 @@ export const appRouter = impl.router({
 ```
 
 - An implementation may only return errors its contract declares. Middleware passed to `impl.use()` or `impl.provide()` runs for every procedure, so all of them must declare its errors.
-- The contract's meta keys must exist in `t`'s meta with types `t` accepts, because middleware reads them as `t`'s meta.
+- The contract's `meta` keys must exist in `t`'s `meta` with types `t` accepts, because middleware reads them as `t`'s `meta`.
 - Top-level contract keys named `router`, `use` or `provide` would shadow the implementer's methods, so `t.implement()` throws on them.
 
 ## Clients from a contract

@@ -49,7 +49,10 @@ export {
   type OpenApiDocument,
   type OpenApiInfo,
   type OpenApiOperation,
+  type OpenApiSecurityRequirement,
+  type OpenApiSecurityScheme,
   type OpenApiServer,
+  type OpenApiTag,
 } from './generate.ts';
 export {
   experimental_createOpenApiHandler,

@@ -43,9 +43,9 @@ import {
 } from '../server/handler/index.ts';
 import {
   type WebSocketLike,
+  HandlerDrains,
   isUpgrade,
   serveAsWebSocket,
-  SocketCore,
   UpgradeServer,
   upgradeTo,
 } from '../server/sockets/index.ts';
@@ -76,7 +76,7 @@ export interface WebSocketHandlerLike {
 export interface HttpOptions {
   /**
    * Only upgrade requests to this path; others get a 404.
-   * @default '/trpc'
+   * @default a `createFetchHandler()` handler's `endpoint`, else `'/trpc'`
    */
   endpoint?: string;
 }
@@ -135,7 +135,7 @@ export function cors(options: CorsOptions = {}): HttpMiddleware.HttpMiddleware {
  * Adapts a fetch handler to an Effect HTTP app. A `createFetchHandler()`
  * handler runs as its own `effect/http` app, so requests aren't converted
  * to web `Request`s, and its `middleware` wraps WebSocket upgrades too.
- * Upgrade requests to the endpoint become WebSocket connections (10).
+ * Upgrade requests to the endpoint become WebSocket connections.
  *
  * @example
  * ```ts
@@ -152,11 +152,11 @@ export function toHttpEffect(
   HttpServerError.HttpServerError,
   HttpServerRequest.HttpServerRequest
 > {
-  const endpoint = `/${(opts.endpoint ?? '/trpc').replace(/^\/+|\/+$/g, '')}`;
   const services = handlerContext(handler);
   const own = Context.getOrUndefined(services, HttpApp);
+  const endpoint = `/${(opts.endpoint ?? own?.endpoint ?? '/trpc').replace(/^\/+|\/+$/g, '')}`;
   const serveSocket = Context.getOrUndefined(services, UpgradeServer);
-  const drains = Context.getOrUndefined(services, SocketCore)?.drains;
+  const drains = Context.getOrUndefined(services, HandlerDrains);
   const fetch =
     own?.app ??
     Effect.flatMap(HttpServerRequest.HttpServerRequest, (request) =>
@@ -248,10 +248,7 @@ export function serve(
           disableListenLog: true,
         })
       : HttpServer.serve(toHttpEffect(handler, opts));
-  const drains = Context.getOrUndefined(
-    handlerContext(handler),
-    SocketCore,
-  )?.drains;
+  const drains = Context.getOrUndefined(handlerContext(handler), HandlerDrains);
   if (!drains) return served;
   // The drain is built after `served`, so it's released first: the server
   // waits on open WebSockets when it stops, so they're moved off before.

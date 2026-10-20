@@ -1,8 +1,0 @@
-blank_issues_enabled: true
-contact_links:
-  - name: Discord
-    url: https://discord.com/invite/TXEbwRBvQn
-    about: Join our Discord server to chat with the community and get help.
-  - name: GitHub Discussions
-    url: https://github.com/middleapi/orpc/discussions
-    about: Use discussions if you have questions, ideas, or need general help.

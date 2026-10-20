@@ -1,0 +1,53 @@
+{
+  "name": "@trpc12/experimental-tanstack-lit-query",
+  "version": "0.1.0",
+  "private": true,
+  "description": "tRPC for TanStack Lit Query: a provider element and @lit/context consumers for the client and its helpers, and createSubscriptionController.",
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
+  },
+  "publishConfig": {
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    },
+    "access": "public"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.lib.json && tsc --noEmit -p tsconfig.json",
+    "build": "node ../../tooling/pack/pack.ts"
+  },
+  "dependencies": {
+    "@trpc12/tanstack-query": "workspace:*"
+  },
+  "devDependencies": {
+    "@lit/context": "1.1.6",
+    "@tanstack/lit-query": "0.2.26",
+    "@tanstack/query-core": "5.104.1",
+    "@tooling/tsconfig": "workspace:*",
+    "@trpc12/trpc": "workspace:*",
+    "@types/node": "^24.0.0",
+    "effect": "4.0.2",
+    "happy-dom": "20.14.6",
+    "lit": "3.3.3",
+    "typescript": "^7.0.2",
+    "vite-plus": "1.1.0"
+  },
+  "peerDependencies": {
+    "@lit/context": "^1.1",
+    "@tanstack/lit-query": "^0.2.26",
+    "@trpc12/trpc": "workspace:*",
+    "effect": "^4.0.0",
+    "lit": "^3"
+  }
+}

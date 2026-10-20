@@ -42,8 +42,16 @@ const connect = () => {
   return { link, client, socket };
 };
 
+/** Takes a `wsLink` client, or an `experimental_messagePortLink` one without `reconnect`. */
 const subscribe = (
-  client: ReturnType<typeof connect>['client'],
+  client: {
+    feed: {
+      subscribe(
+        input?: undefined,
+        opts?: { reconnect?: false },
+      ): AsyncIterable<unknown>;
+    };
+  },
   opts?: { reconnect: false },
 ) => {
   const events: unknown[] = [];

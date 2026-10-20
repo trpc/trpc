@@ -70,14 +70,16 @@ const dirname = (path: string) => path.slice(0, path.search(/[\\/][^\\/]*$/));
 
 const has = (type: Type, flag: number) => (type.flags & flag) !== 0;
 
-const PRIMITIVES: ReadonlyArray<[number, Schema]> = [
+// Lists, not `A | B`: bundlers can't drop a module-level `|` (it may call
+// `valueOf`), so an unused table would stay in the bundle.
+const PRIMITIVES: ReadonlyArray<[ReadonlyArray<number>, Schema]> = [
   [
-    TypeFlags.String | TypeFlags.TemplateLiteral | TypeFlags.StringMapping,
+    [TypeFlags.String, TypeFlags.TemplateLiteral, TypeFlags.StringMapping],
     { type: 'string' },
   ],
-  [TypeFlags.Number | TypeFlags.Enum, { type: 'number' }],
-  [TypeFlags.Boolean, { type: 'boolean' }],
-  [TypeFlags.Null, { type: 'null' }],
+  [[TypeFlags.Number, TypeFlags.Enum], { type: 'number' }],
+  [[TypeFlags.Boolean], { type: 'boolean' }],
+  [[TypeFlags.Null], { type: 'null' }],
 ];
 
 const BINARY = new Set(['Blob', 'File']);
@@ -143,7 +145,8 @@ class TypeToSchema {
       )
     )
       return { const: (type as Type & { value: unknown }).value };
-    for (const [flag, schema] of PRIMITIVES) if (has(type, flag)) return schema;
+    for (const [flags, schema] of PRIMITIVES)
+      if (flags.some((flag) => has(type, flag))) return schema;
     if (type.isIntersectionType()) {
       const primitive = type
         .getTypes()

@@ -193,7 +193,7 @@ const addPart = (blob: Blob, ctx: PartsContext) => {
 
 /** `File` before `Blob`, since every `File` is a `Blob`. */
 const partSerializers: SerializeRecord = {
-  File: instancesOnly((v, ctx: PartsContext) =>
+  File: /* @__PURE__ */ instancesOnly((v, ctx: PartsContext) =>
     typeof File !== 'undefined' && v instanceof File
       ? ({
           part: addPart(v, ctx),
@@ -203,7 +203,7 @@ const partSerializers: SerializeRecord = {
         } satisfies PartRef)
       : false,
   ),
-  Blob: instancesOnly((v, ctx: PartsContext) =>
+  Blob: /* @__PURE__ */ instancesOnly((v, ctx: PartsContext) =>
     v instanceof Blob
       ? ({ part: addPart(v, ctx), type: v.type } satisfies PartRef)
       : false,

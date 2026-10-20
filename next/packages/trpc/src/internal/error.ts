@@ -61,63 +61,42 @@ export function isBuiltinCode(code: string): code is BuiltinErrorCode {
 }
 
 /**
- * The category of each built-in code, which `matchError()` handles as one:
- *
- * - `rejected`: the server refused the call: a built-in 4xx it threw, a
- *   request it couldn't take, or a link's own failure.
- * - `unavailable`: no usable answer came back; trying later may work.
- * - `failed`: the server broke. The message is masked in production.
- * - `aborted`: the call's `signal` stopped it.
- *
+ * The code of an `UndeclaredError`: a custom code the types don't know.
+ * Type only: no literal matches the pattern, so `case 'NOT_FOUND':` and
+ * `err.code === 'NOT_FOUND'` leave it out. At runtime it is the code sent.
  * @since 0.1.0
  * @stability stable
  */
-export const ERROR_CATEGORY = {
-  PARSE_ERROR: 'rejected',
-  BAD_REQUEST: 'rejected',
-  UNSUPPORTED_PROTOCOL: 'rejected',
-  UNAUTHORIZED: 'rejected',
-  PAYMENT_REQUIRED: 'rejected',
-  FORBIDDEN: 'rejected',
-  NOT_FOUND: 'rejected',
-  METHOD_NOT_SUPPORTED: 'rejected',
-  TIMEOUT: 'unavailable',
-  CONFLICT: 'rejected',
-  PRECONDITION_FAILED: 'rejected',
-  PAYLOAD_TOO_LARGE: 'rejected',
-  UNSUPPORTED_MEDIA_TYPE: 'rejected',
-  UNPROCESSABLE_CONTENT: 'rejected',
-  TOO_MANY_REQUESTS: 'unavailable',
-  CLIENT_CLOSED_REQUEST: 'aborted',
-  INTERNAL_SERVER_ERROR: 'failed',
-  NOT_IMPLEMENTED: 'failed',
-  BAD_GATEWAY: 'unavailable',
-  SERVICE_UNAVAILABLE: 'unavailable',
-  GATEWAY_TIMEOUT: 'unavailable',
-  NETWORK_ERROR: 'unavailable',
-  BAD_RESPONSE: 'unavailable',
-  CLIENT_ERROR: 'rejected',
-  STREAM_INTERRUPTED: 'unavailable',
-} as const;
+export type UndeclaredCode = `~undeclared:${string}`;
 
 /**
- * A category of built-in errors: `rejected`, `unavailable`, `failed` or
- * `aborted` ({@link ERROR_CATEGORY}).
+ * A type error when `TCode` is `unexpected`: that is `matchError()`'s
+ * catch-all key, and a defined error with that code would share it.
  * @since 0.1.0
  * @stability stable
  */
-export type ErrorCategory = (typeof ERROR_CATEGORY)[BuiltinErrorCode];
+export type ReservedCodeCheck<TCode extends string> = 'unexpected' extends TCode
+  ? string extends TCode
+    ? unknown
+    : { readonly '~reserved': ReservedCodeMessage }
+  : unknown;
 
 /**
- * The built-in codes in category `TCategory`.
+ * {@link ReservedCodeCheck} for an error map's keys.
  * @since 0.1.0
  * @stability stable
  */
-export type CategoryCode<TCategory extends ErrorCategory> = {
-  [C in BuiltinErrorCode]: (typeof ERROR_CATEGORY)[C] extends TCategory
-    ? C
-    : never;
-}[BuiltinErrorCode];
+export interface ReservedKeyCheck {
+  readonly unexpected?: ReservedCodeMessage;
+}
+
+/**
+ * The message of {@link ReservedCodeCheck}.
+ * @since 0.1.0
+ * @stability stable
+ */
+export type ReservedCodeMessage =
+  "'unexpected' is matchError()'s catch-all key: name this code something else";
 
 /**
  * Instances of the built-in classes for `TCode`, one member per code, so
@@ -168,10 +147,11 @@ const YieldableBase: new (args: {
  *
  * Return it (or `yield*` it in an Effect) from a resolver or middleware and
  * it becomes part of the procedure's typed error union, `defined: true` on
- * the client. Anything thrown is `defined: false`, with a built-in code and
- * no `data`: a thrown `TrpcError` with a custom code, and any other thrown
- * value, become `INTERNAL_SERVER_ERROR`, and their message is masked in
- * production.
+ * the client. A thrown one is `defined: false`: a built-in code loses its
+ * `data`, and a custom code keeps both, unless the procedure declares its
+ * errors with `.errors()` and not this one, which makes it
+ * `INTERNAL_SERVER_ERROR`. Any other thrown value is `INTERNAL_SERVER_ERROR`
+ * too, its message masked in production.
  *
  * @example
  * ```ts
@@ -293,7 +273,7 @@ export class TrpcError<
     TSchema extends AnySchema | undefined = undefined,
     const TStatus extends number | undefined = undefined,
   >(
-    code: TCode,
+    code: TCode extends 'unexpected' ? ReservedCodeMessage : TCode,
     spec: TaggedErrorSpec<TSchema, TStatus> = {},
   ): TaggedErrorClass<TCode, TSchema, TStatus> {
     const hasData = spec.data !== undefined;
@@ -308,7 +288,7 @@ export class TrpcError<
           | TaggedErrorOptions
           | undefined;
         super({
-          code,
+          code: code as TCode,
           data: hasData ? args[0] : undefined,
           message: opts?.message ?? spec.message,
           cause: opts?.cause,
@@ -479,7 +459,8 @@ export type AnyTrpcError = TrpcError<string, any>;
  * @stability stable
  */
 export function error<const TCode extends string, TData = undefined>(
-  opts: Omit<TrpcErrorOptions<TCode, TData>, 'defined'>,
+  opts: Omit<TrpcErrorOptions<TCode, TData>, 'defined'> &
+    ReservedCodeCheck<TCode>,
 ): TrpcError<TCode, TData> {
   return new TrpcError({ ...opts, defined: true });
 }
@@ -573,24 +554,33 @@ export function withDefined<E extends AnyTrpcError>(
 }
 
 /**
- * `err` as clients type it. Defined errors stay as they are. Anything else
- * keeps a built-in code but not its `data`, which no schema checked; a
- * custom code becomes `fallback`, with `err` as the cause.
+ * `err` as clients type it. Defined errors and custom codes stay as they
+ * are: a server only sends an undefined custom code from a procedure that
+ * declares no errors. A built-in code loses its `data`, which no schema
+ * checked, and keeps `err` as the cause.
  * @internal
  */
-export function toBuiltinError(
-  err: AnyTrpcError,
-  fallback: BuiltinErrorCode,
-): AnyTrpcError {
-  if (err.defined || (err.data === undefined && isBuiltinCode(err.code))) {
-    return err;
-  }
-  return new TrpcError({
-    code: isBuiltinCode(err.code) ? err.code : fallback,
-    message: err.message,
-    cause: err,
-  });
+export function toUntypedError(err: AnyTrpcError): AnyTrpcError {
+  if (!err.defined && !isBuiltinCode(err.code)) return keepUntyped(err);
+  if (err.defined || err.data === undefined) return err;
+  return new TrpcError({ code: err.code, message: err.message, cause: err });
 }
+
+const keptUntyped = new WeakSet<AnyTrpcError>();
+
+/**
+ * Marks an undefined error with a custom code that a server sends as it
+ * is, so links don't fold it into `CLIENT_ERROR` like their own.
+ * @internal
+ */
+export function keepUntyped<E extends AnyTrpcError>(err: E): E {
+  keptUntyped.add(err);
+  return err;
+}
+
+/** Whether {@link keepUntyped} marked `err`. @internal */
+export const isKeptUntyped = (err: AnyTrpcError): boolean =>
+  keptUntyped.has(err);
 
 /**
  * The JSON shape of an error on the wire.
@@ -621,8 +611,8 @@ const isRecord = (v: unknown): v is Record<string, unknown> =>
 
 /**
  * Rebuilds a {@link TrpcError} from a deserialized error body. An undefined
- * error with a custom code (a server that doesn't mask them) becomes
- * `INTERNAL_SERVER_ERROR`.
+ * error with a built-in code loses its `data`; one with a custom code keeps
+ * both, untyped.
  * @since 0.1.0
  * @stability stable
  */
@@ -630,14 +620,13 @@ export function fromWireError(body: unknown): TrpcError {
   const inner = isRecord(body) && isRecord(body['error']) ? body['error'] : {};
   const code =
     typeof inner['code'] === 'string' ? inner['code'] : 'INTERNAL_SERVER_ERROR';
-  return toBuiltinError(
+  return toUntypedError(
     new TrpcError({
       code,
       message: typeof inner['message'] === 'string' ? inner['message'] : code,
       data: inner['data'],
       defined: inner['defined'] === true,
     }),
-    'INTERNAL_SERVER_ERROR',
   ) as TrpcError;
 }
 

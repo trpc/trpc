@@ -1,6 +1,6 @@
 # React SPA example
 
-An issue tracker built with Vite+ and React 19 on [`@trpc12/tanstack-react-query`](../../docs/integrations/tanstack-query/react.md), without Next. It uses the same components as the docs site (`@shared/ui`, shadcn on Base UI with Tailwind 4) and only stable APIs.
+An issue tracker built with Vite+ and React 19 on [`@trpc12/tanstack-react-query`](https://v12.trpc.io/v12/docs/integrations/tanstack-query/react), without Next. It uses the same components as the docs site (`@shared/ui`, shadcn on Base UI with Tailwind 4) and only stable APIs.
 
 | Where                                            | What it shows                                                                                                                                                          |
 | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

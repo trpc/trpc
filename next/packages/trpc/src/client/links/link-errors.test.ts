@@ -35,6 +35,10 @@ const router = {
   ticks: t.procedure.subscription(async function* () {
     yield 1;
   }),
+  feed: t.procedure.query(async function* () {
+    yield 1;
+  }),
+  digest: t.procedure.query(() => ({ later: Promise.resolve(1) })),
 };
 type AppRouter = typeof router;
 
@@ -48,6 +52,8 @@ const typed = <T>(links: T) => links;
 const http = httpLink({ url: 'http://localhost/trpc' });
 const local = localLink({ router });
 
+type Unstreamed = Exclude<LinkErrorCode, 'STREAM_INTERRUPTED'>;
+
 test("a call's union has the link codes its links declare, and no others", () => {
   const overHttp = createTrpcClient({
     router: routerType<AppRouter>(),
@@ -55,7 +61,7 @@ test("a call's union has the link codes its links declare, and no others", () =>
   });
   expectTypeOf<
     LinkCodesIn<ErrorOf<typeof overHttp.echo.query>>
-  >().toEqualTypeOf<LinkErrorCode>();
+  >().toEqualTypeOf<Unstreamed>();
 
   const inProcess = createTrpcClient({
     router: routerType<AppRouter>(),
@@ -113,7 +119,7 @@ test("a call's union has the link codes its links declare, and no others", () =>
   expectTypeOf(overHttp).toExtend<TrpcClient<AppRouter>>();
   expectTypeOf<
     LinkCodesIn<ErrorOf<TrpcClient<AppRouter>['echo']['query']>>
-  >().toEqualTypeOf<LinkErrorCode>();
+  >().toEqualTypeOf<Unstreamed>();
   expectTypeOf<
     LinkCodesIn<ClientError<inferProcedureErrors<AppRouter['echo']>>>
   >().toEqualTypeOf<LinkErrorCode>();
@@ -147,7 +153,7 @@ test('a custom link declares the link codes it makes', async () => {
   expectTypeOf<LinkCodesIn<EffectError>>().toEqualTypeOf<'NETWORK_ERROR'>();
 });
 
-test("a link code's own key takes it from its category", async () => {
+test('every link code the client declares is a required key', async () => {
   await using server = await createTestServer({ router });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
@@ -174,29 +180,20 @@ test("a link code's own key takes it from its category", async () => {
         expectTypeOf(e.code).toEqualTypeOf<'NETWORK_ERROR'>();
         return 'offline';
       },
-      unavailable: (e) => `unavailable ${e.code}`,
-      builtin: (e) => `builtin ${e.code}`,
+      BAD_RESPONSE: () => 'unreadable',
+      unexpected: (e) => `unexpected ${e.code}`,
     });
   };
   expect(await explain('fine')).toBe('ok');
   expect(await explain('down')).toBe('offline');
-  expect(await explain('busy')).toBe('unavailable SERVICE_UNAVAILABLE');
+  expect(await explain('busy')).toBe('unexpected SERVICE_UNAVAILABLE');
 
   const [, err] = await safe(client.echo.query('down'));
-  // Without its own key, a link code goes to its category, as before.
-  expect(
-    matchError(err!, {
-      BAD_REQUEST: () => 'invalid',
-      builtin: (e) => `builtin ${e.code}`,
-    }),
-  ).toBe('builtin NETWORK_ERROR');
-  expect(
-    matchError(err!, {
-      BAD_REQUEST: () => 'invalid',
-      NETWORK_ERROR: () => 'offline',
-      builtin: (e) => `builtin ${e.code}`,
-    }),
-  ).toBe('offline');
+  // @ts-expect-error: NETWORK_ERROR and BAD_RESPONSE are missing
+  matchError(err!, {
+    BAD_REQUEST: () => 'invalid',
+    unexpected: (e: { code: string }) => `unexpected ${e.code}`,
+  });
 });
 
 test("httpLink fails with the codes it declares: a body that isn't JSON is BAD_RESPONSE", async () => {
@@ -225,15 +222,16 @@ test('matchError takes keys only for the link codes in the union', () => {
   });
   type Local = ErrorOf<typeof inProcess.ping.query>;
   const err = new TrpcError.InternalServerError() as Local;
-  expect(
-    matchError(err, {
-      // @ts-expect-error: localLink makes no NETWORK_ERROR
-      NETWORK_ERROR: () => 'offline',
-      builtin: (e) => e.code,
-    }),
-  ).toBe('INTERNAL_SERVER_ERROR');
+  expect(matchError(err, { unexpected: (e) => e.code })).toBe(
+    'INTERNAL_SERVER_ERROR',
+  );
+  matchError(err, {
+    // @ts-expect-error: localLink makes no NETWORK_ERROR
+    NETWORK_ERROR: () => 'offline',
+    unexpected: (e) => e.code,
+  });
 
-  // A category whose codes all have keys is gone.
+  // With only link codes left, so is `unexpected`.
   type OnlyLinks = BuiltinError<LinkErrorCode>;
   const lost = new TrpcError.NetworkError() as OnlyLinks;
   expect(
@@ -247,10 +245,10 @@ test('matchError takes keys only for the link codes in the union', () => {
     NETWORK_ERROR: () => 'offline',
     BAD_RESPONSE: () => 'bad',
     STREAM_INTERRUPTED: () => 'cut',
-    // @ts-expect-error: nothing is left for `unavailable`
-    unavailable: () => 'unavailable',
+    // @ts-expect-error: nothing is left for `unexpected`
+    unexpected: () => 'unexpected',
   });
-  // @ts-expect-error: STREAM_INTERRUPTED is left, for `unavailable` or `builtin`
+  // @ts-expect-error: STREAM_INTERRUPTED is missing
   matchError(lost, {
     NETWORK_ERROR: () => 'offline',
     BAD_RESPONSE: () => 'bad',
@@ -269,7 +267,9 @@ test('a defined error with a link code shares its key with the built-in one', ()
   const handle = (err: E) =>
     matchError(err, {
       NETWORK_ERROR: (e) => (e.defined ? `since ${e.data.since}` : 'offline'),
-      builtin: (e) => e.code,
+      BAD_RESPONSE: (e) => e.code,
+      STREAM_INTERRUPTED: (e) => e.code,
+      unexpected: (e) => e.code,
     });
   const defined = Object.assign(new Offline({ since: 1 }), {
     defined: true as const,

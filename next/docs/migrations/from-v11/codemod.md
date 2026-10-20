@@ -1,6 +1,6 @@
 ---
 title: The codemod
-description: '@trpc12/upgrade rewrites v11 imports, names, links and transformers to v12, keeps your formatting, and lists what is left as file:line:column steps.'
+description: '`@trpc12/upgrade` rewrites v11 imports, names, links and transformers to v12, keeps your formatting, and lists what is left as `file:line:column` steps.'
 section: Migrations
 parent: migrations/from-v11
 order: 2
@@ -36,7 +36,7 @@ src/server/index.ts:1:1 observable(): subscriptions return an async generator or
 1 file(s) to upgrade, 2 step(s) by hand
 ```
 
-The steps cover what needs a decision: an `errorFormatter` (declared errors, or [`createV11Handler`](./serve-v11-clients.md) for old clients), `observable()` subscriptions, the standalone, Express and `ws` adapters ([Adapters](../../adapters/overview.md)), `@trpc/react-query` and `@trpc/next`, which have no v12 version, `createWSClient`, `createCallerFactory`, `t.router` kept as a function, a subscription's `input.lastEventId` (the resolver's `lastEventId` in v12), your own `TRPCLink`s ([v11 links](./links.md)), TanStack helpers such as `queryOptions(input)` whose input moved into their options (`queryOptions({ input })`), and root options such as `isDev` and `sse` that moved to the handler. A file it can't parse is reported and left alone.
+The steps cover what needs a decision: an `errorFormatter` (declared errors, or [`createV11Handler`](./serve-v11-clients.md) for old clients), `observable()` subscriptions, the standalone, Express and `ws` adapters ([Adapters](../../adapters/overview.md)) and the `createFetchHandler` it rewrote (each says to serve old clients with `createV11Handler` on that endpoint), `@trpc/react-query` and `@trpc/next`, which have no v12 version, `createWSClient`, `createCallerFactory`, `t.router` kept as a function, a subscription's `input.lastEventId` (the resolver's `lastEventId` in v12), your own `TRPCLink`s ([v11 links](./links.md)), `inferRouterOutputs` (plain JSON's form for a router type; pass the client's type when you use a serializer, [Inferring types](../../client/overview.md#inferring-types)), TanStack helpers such as `queryOptions(input)` whose input moved into their options (`queryOptions({ input })`), `infiniteQueryFilter(input)`, which is `infiniteFilter({ input })`, and root options such as `isDev` and `sse` that moved to the handler. A file it can't parse is reported and left alone.
 
 ## From code
 

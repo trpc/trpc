@@ -1,4 +1,5 @@
 import { Badge } from '@shared/ui/components/badge';
+import { cn } from '@shared/ui/lib/utils';
 import { Link, notFound, Outlet } from '@tanstack/react-router';
 import {
   ArrowLeft,
@@ -21,6 +22,7 @@ import {
   CollapsedTableOfContents,
   TableOfContents,
 } from '~/components/toc.tsx';
+import { TextWithCode } from '~/components/text-with-code.tsx';
 import { VersionBanner } from '~/components/version-banner.tsx';
 import {
   ancestors,
@@ -31,8 +33,10 @@ import {
   neighbours,
   useListedDocs,
 } from '~/content/docs.ts';
+import { stripInlineCode } from '~/content/inline-code.ts';
 import type { Doc } from '~/content/types.ts';
 import { experiments } from '~/experiments.ts';
+import { PageDemo } from '~/kitchen-sink/embed.tsx';
 import { useEnableOnVisit } from '~/flags.ts';
 import { absoluteUrl, ogImageUrl, pageHead, trpcPageUrl } from '~/seo.ts';
 import { site } from '~/site.ts';
@@ -40,7 +44,7 @@ import { partners } from '~/sponsors.ts';
 
 export function DocsLayout() {
   return (
-    <div className="mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 md:grid-cols-[14rem_minmax(0,1fr)]">
+    <div className="mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 md:grid-cols-[14rem_minmax(0,1fr)] has-data-demo-page:max-w-[112rem]">
       <aside className="hidden md:block">
         <div className="sticky top-14 max-h-[calc(100dvh-3.5rem)] overflow-y-auto py-8 pr-2">
           <DocsNav />
@@ -69,13 +73,14 @@ export function docHead(version: DocsVersion, slug: string) {
     return { meta: [{ title: `Not found | ${site.name}` }] };
   }
   const path = `${version.basePath}/${meta.slug}`;
-  const description = meta.description || site.description;
+  const title = stripInlineCode(meta.title);
+  const description = stripInlineCode(meta.description) || site.description;
   if (version.copied) {
     return pageHead({
       canonical: trpcPageUrl(version.copied, meta.slug),
       description,
       path,
-      title: `${meta.title} (${version.id})`,
+      title: `${title} (${version.id})`,
       type: 'article',
     });
   }
@@ -83,14 +88,13 @@ export function docHead(version: DocsVersion, slug: string) {
     article: { modified: meta.lastModified, section: meta.section },
     description,
     markdownPath: `${path}.md`,
-    noindex: meta.experiment !== undefined,
     path,
     structuredData: [
       {
         '@type': 'TechArticle',
         dateModified: meta.lastModified,
         description,
-        headline: meta.title,
+        headline: title,
         image: ogImageUrl(path),
         inLanguage: 'en',
         isPartOf: { '@type': 'WebSite', name: site.name, url: site.url },
@@ -118,19 +122,19 @@ export function docHead(version: DocsVersion, slug: string) {
           ...ancestors(version, meta.slug).map((parent, index) => ({
             '@type': 'ListItem',
             item: absoluteUrl(`${version.basePath}/${parent.slug}`),
-            name: parent.title,
+            name: stripInlineCode(parent.title),
             position: 3 + index,
           })),
           {
             '@type': 'ListItem',
             item: absoluteUrl(path),
-            name: meta.title,
+            name: title,
             position: 3 + ancestors(version, meta.slug).length,
           },
         ],
       },
     ],
-    title: meta.title,
+    title,
     type: 'article',
   });
 }
@@ -149,10 +153,19 @@ export function DocPage(props: {
   const parents = ancestors(version, doc.slug);
   const children = childrenOf(listed, doc.slug);
   const showPartners = partners.length > 0;
+  const demo = doc.demo;
   useEnableOnVisit(doc.experiment, doc.slug);
 
   return (
-    <div className="grid min-w-0 gap-10 py-8 xl:grid-cols-[minmax(0,1fr)_13rem]">
+    <div
+      className={cn(
+        'grid min-w-0 gap-10 py-8',
+        demo
+          ? 'xl:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)]'
+          : 'xl:grid-cols-[minmax(0,1fr)_13rem]',
+      )}
+      data-demo-page={demo}
+    >
       <article className="min-w-0">
         <VersionBanner slug={doc.slug} version={version} />
         <header className="mb-8 grid gap-3 border-b pb-6">
@@ -170,7 +183,7 @@ export function DocPage(props: {
                     params={{ _splat: parent.slug }}
                     to={version.route}
                   >
-                    {parent.label ?? parent.title}
+                    <TextWithCode bare text={parent.label ?? parent.title} />
                   </Link>
                 </li>
               ))}
@@ -213,11 +226,11 @@ export function DocPage(props: {
             </p>
           ) : null}
           <h1 className="text-3xl font-bold tracking-tight text-balance sm:text-4xl">
-            {doc.title}
+            <TextWithCode text={doc.title} />
           </h1>
           {doc.description ? (
             <p className="text-lg text-pretty text-muted-foreground">
-              {doc.description}
+              <TextWithCode text={doc.description} />
             </p>
           ) : null}
           {version.id === 'v12' ? (
@@ -225,18 +238,19 @@ export function DocPage(props: {
           ) : null}
         </header>
         <CollapsedTableOfContents
-          className="mb-8 xl:hidden"
+          className={cn('mb-8', !demo && 'xl:hidden')}
           headings={doc.headings}
           key={doc.slug}
         />
         <DocBody html={doc.html} />
+        {demo ? <PageDemo demo={demo} html={doc.html} mode="inline" /> : null}
         {children.length > 0 ? (
           <section aria-labelledby="pages-under" className="mt-10">
             <h2
               className="mb-4 text-lg font-semibold tracking-tight"
               id="pages-under"
             >
-              Pages under {doc.label ?? doc.title}
+              Pages under <TextWithCode text={doc.label ?? doc.title} />
             </h2>
             <ul className="grid gap-3 sm:grid-cols-2">
               {children.map((child) => (
@@ -247,10 +261,10 @@ export function DocPage(props: {
                     to={version.route}
                   >
                     <span className="font-medium">
-                      {child.label ?? child.title}
+                      <TextWithCode bare text={child.label ?? child.title} />
                     </span>
                     <span className="text-sm text-pretty text-muted-foreground">
-                      {child.description}
+                      <TextWithCode text={child.description} />
                     </span>
                   </Link>
                 </li>
@@ -259,7 +273,9 @@ export function DocPage(props: {
           </section>
         ) : null}
         <footer className="mt-12 grid gap-6 border-t pt-6">
-          {showPartners ? <PartnersStrip className="xl:hidden" /> : null}
+          {showPartners ? (
+            <PartnersStrip className={cn(!demo && 'xl:hidden')} />
+          ) : null}
           {version.copied ? (
             <a
               className={footerLink}
@@ -286,7 +302,10 @@ export function DocPage(props: {
                   <ArrowLeft className="size-3" /> Previous
                 </span>
                 <span className="font-medium">
-                  {around.previous.label ?? around.previous.title}
+                  <TextWithCode
+                    bare
+                    text={around.previous.label ?? around.previous.title}
+                  />
                 </span>
               </Link>
             ) : (
@@ -302,7 +321,10 @@ export function DocPage(props: {
                   Next <ArrowRight className="size-3" />
                 </span>
                 <span className="font-medium">
-                  {around.next.label ?? around.next.title}
+                  <TextWithCode
+                    bare
+                    text={around.next.label ?? around.next.title}
+                  />
                 </span>
               </Link>
             ) : null}
@@ -310,10 +332,16 @@ export function DocPage(props: {
         </footer>
       </article>
       <aside className="hidden xl:block">
-        <div className="sticky top-22 grid gap-10">
-          <TableOfContents headings={doc.headings} key={doc.slug} />
-          {showPartners ? <PartnersRail /> : null}
-        </div>
+        {demo ? (
+          <div className="sticky top-22 h-[calc(100dvh-7rem)]">
+            <PageDemo demo={demo} html={doc.html} mode="aside" />
+          </div>
+        ) : (
+          <div className="sticky top-22 grid gap-10">
+            <TableOfContents headings={doc.headings} key={doc.slug} />
+            {showPartners ? <PartnersRail /> : null}
+          </div>
+        )}
       </aside>
     </div>
   );

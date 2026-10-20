@@ -37,7 +37,6 @@ export {
   type RootMiddleware,
   type RootOptions,
   type TrpcRoot,
-  type RootConcatCheck,
   type AnyProcedureBuilder,
   type DeclaredErrors,
   type ErrorConstructorOpts,
@@ -48,11 +47,9 @@ export {
   type ProvideOpts,
   type ResolverOpts,
   type SubscriptionResolverOpts,
-  type EveryLeafDeclares,
   type ImplementedRouter,
   type Implementer,
   type ImplementerRoot,
-  type ImplementMetaCheck,
   type ImplementRouter,
   type ImplementResult,
   type ProcedureImplementer,
@@ -66,8 +63,10 @@ export {
   type MiddlewareOpts,
   type MiddlewareRequirements,
   type MiddlewareResult,
+  type NextError,
   type NextFn,
   type NextInput,
+  type NextResult,
   type OkResult,
   type ResponseHandle,
   isProcedure,
@@ -126,8 +125,8 @@ export {
 export {
   tracked,
   type TrackedEnvelope,
-  makeMemoryPublisher,
-  Publisher,
+  experimental_makeMemoryPublisher,
+  experimental_Publisher,
   type MemoryPublisherOptions,
   type PublisherClass,
   type PublisherEvents,
@@ -146,6 +145,7 @@ export {
   type OnErrorOpts,
   type PlatformArgs,
   type PlatformField,
+  type RuntimeOption,
 } from './handler/index.ts';
 export type {
   MessagePortLike,
@@ -159,7 +159,6 @@ export {
   type RouterClientOptions,
 } from './caller.ts';
 export {
-  ERROR_CATEGORY,
   ERROR_STATUS,
   error,
   isDefinedError,
@@ -172,8 +171,7 @@ export {
   type TaggedErrorSpec,
   type BuiltinErrorClass,
   type BuiltinErrorCode,
-  type CategoryCode,
-  type ErrorCategory,
+  type UndeclaredCode,
   type TrpcErrorOptions,
 } from '../internal/error.ts';
-export type { ProcedureType, TypeError } from '../internal/types.ts';
+export type { ProcedureType } from '../internal/types.ts';

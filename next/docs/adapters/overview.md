@@ -62,7 +62,7 @@ const handler = createFetchHandler({
 
 ## Rolling deploys
 
-A server that stops closes its WebSockets, and clients lose the queries and mutations in flight. Drain it first: `handler.drain()` sends every WebSocket and socket client a `reconnect` message, and `wsLink` sends new calls on a new connection, moves its subscriptions there from their last event id, and closes the old connection once the calls it sent there finish ([wsLink](../client/links/ws.md#rolling-deploys)). The drain ends when every client has moved, or at its timeout, when the handler closes what's left (code 1012, "service restart") and interrupts those calls. While it runs, the handler answers WebSocket upgrades with a 503 (and closes sockets handed to `handler.websocket` with 1012), so clients back off and reconnect to another server.
+A server that stops closes its WebSockets, and clients lose the queries and mutations in flight. Drain it first: `handler.drain()` sends every WebSocket and socket client a `reconnect` message, and `wsLink` sends new calls on a new connection, moves its subscriptions there from their last event id, and closes the old connection once the calls it sent there finish ([`wsLink`](../client/links/ws.md#rolling-deploys)). The drain ends when every client has moved, or at its timeout, when the handler closes what's left (code 1012, "service restart") and interrupts those calls. While it runs, the handler answers WebSocket upgrades with a 503 (and closes sockets handed to `handler.websocket` with 1012), so clients back off and reconnect to another server.
 
 - `serve(handler)` drains when its layer is released, before the server stops, and answers upgrades with a 503 until it has: `NodeRuntime.runMain` releases it on SIGTERM.
 - `handler.dispose()` drains, then releases the `layer`; the handler takes no connections after.
@@ -75,8 +75,8 @@ process.once('SIGTERM', async () => {
 });
 ```
 
-The timeout is `createFetchHandler({ websocket: { drainTimeout } })`, 10 seconds by default; keep it under your platform's grace period. A `MessagePort` has nowhere to move, so the drain waits for its calls and then closes it. Cloudflare's hibernating sockets don't drain, since a deploy gives the Durable Object no hook to run one: clients reconnect and resume as after a dropped connection.
+The timeout is `createFetchHandler({ websocket: { drainTimeout } })`, `'10 seconds'` by default; keep it under your platform's grace period. Like every time option in tRPC, it takes an Effect `Duration.Input`: milliseconds, a string like `'30 seconds'`, or a `Duration`. A `MessagePort` has nowhere to move, so the drain waits for its calls and then closes it. Cloudflare's hibernating sockets don't drain, since a deploy gives the Durable Object no hook to run one: clients reconnect and resume as after a dropped connection.
 
 ## Compression
 
-@trpc12/trpc doesn't compress. Your CDN or proxy (Cloudflare, Vercel, nginx) already negotiates `Accept-Encoding`, and does it better. If you add a compressing `HttpMiddleware`, skip `application/jsonl`, `application/vnd.trpc.frames` and `text/event-stream` responses: a gzip stream buffers until its window fills, which stalls subscriptions and streamed results.
+`@trpc12/trpc` doesn't compress. Your CDN or proxy (Cloudflare, Vercel, nginx) already negotiates `Accept-Encoding`, and does it better. If you add a compressing `HttpMiddleware`, skip `application/jsonl`, `application/vnd.trpc.frames` and `text/event-stream` responses: a gzip stream buffers until its window fills, which stalls subscriptions and streamed results.

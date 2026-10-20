@@ -20,24 +20,27 @@ const RateLimitedBase: TaggedErrorClass<
   'TOO_MANY_REQUESTS',
   RateLimitedData,
   429
-> = TrpcError.Tagged('TOO_MANY_REQUESTS', {
+> = /* @__PURE__ */ TrpcError.Tagged('TOO_MANY_REQUESTS', {
   status: 429,
-  data: Schema.Struct({ limit: Schema.Number, retryAfter: Schema.Number }),
+  data: /* @__PURE__ */ Schema.Struct({
+    limit: Schema.Number,
+    retryAfter: Schema.Number,
+  }),
 });
 
 /**
- * The error {@link rateLimit} fails with: `429`, with the limit and the
+ * The error {@link experimental_rateLimit} fails with: `429`, with the limit and the
  * milliseconds until a retry can pass.
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
-export class RateLimited extends RateLimitedBase {}
+export class experimental_RateLimited extends RateLimitedBase {}
 
 /**
- * Options for {@link rateLimit}. `limit`, `window`, `algorithm` and `tokens`
+ * Options for {@link experimental_rateLimit}. `limit`, `window`, `algorithm` and `tokens`
  * are Effect's `RateLimiter.consume` options.
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
 export interface RateLimitOptions<TCtx, TInput, TMeta> {
   /** The bucket a call counts against, e.g. `({ ctx }) => \`login:${ctx.ip}\``. */
@@ -64,7 +67,7 @@ const seconds = (d: Duration.Duration) =>
  * Limits calls with Effect's `RateLimiter` (`effect/persistence`), so the
  * store is a layer: in memory for one instance, Redis for many. Sets
  * `RateLimit-Limit`, `RateLimit-Remaining` and `RateLimit-Reset`, plus
- * `Retry-After` when it fails with {@link RateLimited}. Store failures are
+ * `Retry-After` when it fails with {@link experimental_RateLimited}. Store failures are
  * defects (a masked 500).
  *
  * @example
@@ -72,7 +75,7 @@ const seconds = (d: Duration.Duration) =>
  * import { RateLimiter } from 'effect/persistence';
  *
  * const login = t.procedure
- *   .use(rateLimit<{ ctx: { ip: string } }>({ key: ({ ctx }) => `login:${ctx.ip}`, limit: 5, window: '1 minute' }))
+ *   .use(experimental_rateLimit<{ ctx: { ip: string } }>({ key: ({ ctx }) => `login:${ctx.ip}`, limit: 5, window: '1 minute' }))
  *   .mutation(…);
  *
  * createFetchHandler({
@@ -81,16 +84,18 @@ const seconds = (d: Duration.Duration) =>
  * });
  * ```
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
-export function rateLimit<TReq extends MiddlewareRequirements = {}>(
+export function experimental_rateLimit<
+  TReq extends MiddlewareRequirements = {},
+>(
   options: RateLimitOptions<ReqCtx<TReq>, ReqInput<TReq>, ReqMeta<TReq>>,
 ): EffectMiddleware<
   ReqCtx<TReq>,
   ReqInput<TReq>,
   ReqMeta<TReq>,
   {},
-  RateLimited,
+  experimental_RateLimited,
   RateLimiter.RateLimiter,
   never,
   never,
@@ -120,7 +125,7 @@ export function rateLimit<TReq extends MiddlewareRequirements = {}>(
               headers.set('ratelimit-reset', seconds(retryAfter));
               headers.set('retry-after', seconds(retryAfter));
               return Effect.fail(
-                new RateLimited({
+                new experimental_RateLimited({
                   limit: reason.limit,
                   retryAfter: Duration.toMillis(retryAfter),
                 }),

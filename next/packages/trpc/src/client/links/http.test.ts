@@ -9,6 +9,7 @@ import {
   type BuiltinCallOptions,
 } from '@trpc12/trpc/client';
 import { Predicate } from 'effect';
+import { createEffectClient } from '@trpc12/trpc/effect';
 import { error, initTrpc } from '@trpc12/trpc/server';
 import { createTestServer } from '../../fixtures/server.ts';
 import { expect, expectTypeOf, test, vi } from 'vite-plus/test';
@@ -223,6 +224,23 @@ test('a stream that ends early rejects open values with STREAM_INTERRUPTED', asy
   expect(err).toSatisfy(Predicate.isTagged('STREAM_INTERRUPTED'));
 });
 
+test("a custom fetch is any function with fetch's call shape", async () => {
+  await using server = await createTestServer({ router });
+  const urls: string[] = [];
+  // Not `typeof fetch`: under Bun's types that also needs `preconnect`.
+  const logging = (url: string, init: RequestInit) => {
+    urls.push(new URL(url).pathname);
+    return fetch(url, init);
+  };
+  const client = createTrpcClient({
+    router: routerType<AppRouter>(),
+    links: [httpLink({ url: server.url, fetch: logging })],
+  });
+  expect(await client.double.query({ n: 2 })).toBe(4);
+  expect(urls).toEqual(['/trpc/double']);
+  httpLink({ url: server.url, fetch: globalThis.fetch });
+});
+
 // --- responses -----------------------------------------------------------------
 
 const versioned = {
@@ -387,5 +405,10 @@ test('a link that needs the response must have a provider after it', () => {
       responsesLink(seen),
       splitLink({ condition: () => true, true: http, false: silent }),
     ],
+  });
+  createEffectClient({
+    router: routerType<typeof versioned>(),
+    // @ts-expect-error -- the Effect client checks it too
+    links: [http, responsesLink(seen)],
   });
 });

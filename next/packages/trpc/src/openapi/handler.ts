@@ -5,6 +5,7 @@ import {
   Exit,
   Fiber,
   Stream,
+  type Duration,
   type Layer,
 } from 'effect';
 import {
@@ -27,6 +28,7 @@ import {
   type AnyTrpcError,
   type CodeError,
 } from '../internal/error.ts';
+import { timerOption } from '../internal/duration.ts';
 import { toAsyncIterable } from '../internal/effects.ts';
 import type { JsonSchema } from '../internal/json-schema.ts';
 import {
@@ -120,9 +122,9 @@ export interface BaseOpenApiHandlerOptions<TRouter extends AnyRouter> {
     /**
      * Send a comment line this often while a subscription is quiet, so
      * proxies don't close it as idle. `false` sends none.
-     * @default 15_000
+     * @default '15 seconds'
      */
-    pingMs?: number | false;
+    pingInterval?: Duration.Input | false;
   };
   /**
    * The routes, from `experimental_toContract(await loadRouter(appRouter))` at build
@@ -157,7 +159,7 @@ export interface OpenApiHandler<TPlatform = undefined> {
   ) => Promise<Response>;
   /**
    * Serves `request` with one procedure, without matching routes, for
-   * frameworks that route requests themselves (`@trpc12/nest`). The
+   * frameworks that route requests themselves (`@trpc12/experimental-nest`). The
    * handler's `middleware`, `createContext` and `layer` apply as in `fetch`.
    */
   readonly serve: (
@@ -188,7 +190,7 @@ export interface OpenApiCall {
   readonly params?: Readonly<Record<string, string>>;
 }
 
-const SelectedCall = Context.Reference<OpenApiCall | undefined>(
+const SelectedCall = /* @__PURE__ */ Context.Reference<OpenApiCall | undefined>(
   '@trpc12/trpc/openapi/SelectedCall',
   { defaultValue: () => undefined },
 );
@@ -217,8 +219,8 @@ interface Body {
 }
 const noBody: Body = { value: undefined, fromStrings: false };
 
-const encoder = new TextEncoder();
-const decoder = new TextDecoder();
+const encoder = /* @__PURE__ */ new TextEncoder();
+const decoder = /* @__PURE__ */ new TextDecoder();
 
 const toError = (cause: unknown): AnyTrpcError =>
   isTrpcError(cause) ? cause : unexpectedError(cause);
@@ -283,7 +285,7 @@ export function experimental_createOpenApiHandler<
   );
   const prefix = normalizePrefix(opts.prefix);
   const maxBodySize = opts.maxBodySize ?? 1_048_576;
-  const ssePingMs = opts.sse?.pingMs ?? 15_000;
+  const ssePing = timerOption(opts.sse?.pingInterval, '15 seconds');
   const guardCsrf = makeCsrfGuard(opts.csrf);
 
   const makeEntry = (
@@ -592,12 +594,12 @@ export function experimental_createOpenApiHandler<
     // `: open` flushes headers on servers that hold them until the first chunk.
     const lines = Stream.concat(
       Stream.make(': open\n\n'),
-      ssePingMs === false
+      ssePing === undefined
         ? messages
         : Stream.merge(
             messages,
             Stream.fromEffectRepeat(
-              Effect.delay(Effect.succeed(': ping\n\n'), ssePingMs),
+              Effect.delay(Effect.succeed(': ping\n\n'), ssePing),
             ),
             { haltStrategy: 'left' },
           ),

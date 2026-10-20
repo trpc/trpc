@@ -1,10 +1,16 @@
 /**
  * The sponsors section of a README, between its `SPONSORS:LIST` markers:
- * the partners (`partnerLogins` in `src/sponsors.ts`, which the site
- * features too) in a row of big avatars, then everyone else, each tier
- * ordered by who has given the most.
+ * a table per tier (`sponsorTiers` in `src/sponsors.ts`), by rank, avatars
+ * smaller down the tiers, then everyone else as backers, by who has given
+ * the most.
  */
-import { avatarUrl, type Sponsor } from '../src/sponsors.ts';
+import {
+  avatarUrl,
+  partnerTiers,
+  type Sponsor,
+  type SponsorTier,
+  sponsorTiers,
+} from '../src/sponsors.ts';
 
 export const startMarker = '<!-- SPONSORS:LIST:START -->';
 export const endMarker = '<!-- SPONSORS:LIST:END -->';
@@ -16,7 +22,11 @@ interface Tier {
   readonly title: string;
 }
 
-const partnersTier: Tier = { columns: 3, size: 150, title: 'Partners' };
+const tierTables: Record<SponsorTier, Omit<Tier, 'title'>> = {
+  bronze: { columns: 4, size: 120 },
+  gold: { columns: 3, size: 180 },
+  silver: { columns: 3, size: 150 },
+};
 const backersTier: Tier = { columns: 6, size: 100, title: 'Backers' };
 
 function escapeHtml(text: string) {
@@ -45,21 +55,25 @@ function table(sponsors: ReadonlyArray<Sponsor>, tier: Tier) {
 }
 
 /** The tiers' Markdown (HTML tables, which GitHub renders with avatars). */
-export function sponsorsMarkdown(opts: {
-  readonly partners: ReadonlyArray<string>;
-  readonly sponsors: ReadonlyArray<Sponsor>;
-}) {
-  const partners = new Set(opts.partners);
-  const ranked = opts.sponsors.toSorted(
+export function sponsorsMarkdown(sponsors: ReadonlyArray<Sponsor>) {
+  const byWeight = sponsors.toSorted(
     (a, b) => b.weight - a.weight || a.createdAt - b.createdAt,
   );
+  const byRank = byWeight.toSorted(
+    (a, b) =>
+      (a.rank ?? Number.POSITIVE_INFINITY) -
+      (b.rank ?? Number.POSITIVE_INFINITY),
+  );
   const tiers = [
+    ...sponsorTiers.map((entry) => ({
+      sponsors: byRank.filter((sponsor) => sponsor.tier === entry.tier),
+      tier: {
+        ...tierTables[entry.tier],
+        title: `${entry.label} ${partnerTiers.includes(entry.tier) ? 'partners' : 'sponsors'}`,
+      },
+    })),
     {
-      sponsors: ranked.filter((sponsor) => partners.has(sponsor.login)),
-      tier: partnersTier,
-    },
-    {
-      sponsors: ranked.filter((sponsor) => !partners.has(sponsor.login)),
+      sponsors: byWeight.filter((sponsor) => sponsor.tier === undefined),
       tier: backersTier,
     },
   ];

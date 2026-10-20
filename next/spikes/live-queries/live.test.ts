@@ -12,7 +12,7 @@ import { TestServer } from '@trpc12/trpc/internal/testing';
 import {
   createFetchHandler,
   initTrpc,
-  makeMemoryPublisher,
+  experimental_makeMemoryPublisher,
 } from '@trpc12/trpc/server';
 import {
   Context,
@@ -268,7 +268,7 @@ test('a resume gets the commits after lastEventId, or a snapshot once the log ha
 test('commits the backend drops are read from the log', async () => {
   const lossy = Layer.effect(LiveCommits)(
     Effect.map(
-      makeMemoryPublisher<{ [table: `table:${string}`]: Commit }>({
+      experimental_makeMemoryPublisher<{ [table: `table:${string}`]: Commit }>({
         buffer: 100,
       }),
       (publisher) => {
@@ -452,7 +452,7 @@ test('live collections share one WebSocket and resume with changes after a drop'
   await using server = await serve();
   await using ws = wsLink({
     url: server.wsUrl,
-    reconnect: { delayMs: () => 10 },
+    reconnect: { delay: () => 10 },
   });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),

@@ -1,9 +1,9 @@
 /**
- * Effect helpers the client's streams share.
+ * Effect helpers the client's streams and the server's calls share.
  *
  * @internal
  */
-import { Effect, Stream } from 'effect';
+import { Effect, Exit, Stream } from 'effect';
 
 /**
  * `Stream.callback` options for a producer that must keep pace with its
@@ -33,6 +33,44 @@ export const returnUnawaited = <A>(
     };
   },
 });
+
+/**
+ * An `AbortSignal` shared by several steps that take one (`createContext`,
+ * then the resolver, then the stream it returns), aborted when a step it
+ * wraps is interrupted: what `Effect.tryPromise`'s signal is to one promise.
+ * @internal
+ */
+export interface InterruptSignal {
+  readonly signal: AbortSignal;
+  /**
+   * Aborts `signal` if `self` is interrupted. Wrap a stream itself, not
+   * only the effect that runs it: its finalizers may wait for a resolver
+   * that awaits the signal.
+   */
+  readonly abortOnInterrupt: {
+    <A, E, R>(self: Stream.Stream<A, E, R>): Stream.Stream<A, E, R>;
+    <A, E, R>(self: Effect.Effect<A, E, R>): Effect.Effect<A, E, R>;
+  };
+}
+
+/** @internal */
+export const interruptSignal = (): Effect.Effect<InterruptSignal> =>
+  Effect.sync(() => {
+    const controller = new AbortController();
+    const onExit = (exit: Exit.Exit<unknown, unknown>) =>
+      Exit.hasInterrupts(exit)
+        ? Effect.sync(() => controller.abort())
+        : Effect.void;
+    return {
+      signal: controller.signal,
+      abortOnInterrupt: ((
+        self: Stream.Stream<unknown, unknown, unknown> | Effect.Effect<unknown>,
+      ) =>
+        Stream.isStream(self)
+          ? Stream.onExit(self, onExit)
+          : Effect.onExit(self, onExit)) as InterruptSignal['abortOnInterrupt'],
+    };
+  });
 
 /**
  * `Stream.toAsyncIterable`, also ending quietly when `signal` aborts: the

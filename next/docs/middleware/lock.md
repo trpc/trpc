@@ -1,6 +1,6 @@
 ---
 title: Locks
-description: experimental_lock() runs calls with the same key one at a time, across instances.
+description: '`experimental_lock()` runs calls with the same key one at a time, across instances.'
 section: Middleware
 order: 3
 experiment: middleware

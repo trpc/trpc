@@ -1,19 +1,26 @@
 import { Effect } from 'effect';
 import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
 import { experimental_toContract } from '@trpc12/trpc/contract';
-import { getProcedure, resolveProcedure } from '@trpc12/trpc/extend';
+import {
+  getProcedure,
+  resolveProcedure,
+  routerMetaOf,
+} from '@trpc12/trpc/extend';
 import {
   experimental_createOpenApiHandler,
   experimental_generateOpenApi,
   experimental_openapi,
 } from '@trpc12/trpc/openapi';
 import {
+  createFetchHandler,
   createRouterClient,
   initTrpc,
   isLazy,
   lazy,
   loadRouter,
+  mergeRouters,
   type AnyRouter,
+  type inferRouterInputs,
 } from '@trpc12/trpc/server';
 import { createTestServer } from '../../fixtures/server.ts';
 import { loadRouterEffect, resolveProcedureEffect } from './router.ts';
@@ -177,6 +184,113 @@ test('router-level meta takes only the keys an extension gives a router form', (
   initTrpc().router({ meta: { route: { prefix: '/a' } } }, { users });
 });
 
+const openApiPaths = (router: AnyRouter) =>
+  Object.keys(
+    experimental_generateOpenApi(router, { info: { title: 'x', version: '1' } })
+      .paths,
+  );
+
+test("mergeRouters keeps a router's meta for everything merged with it", async () => {
+  const admin = t.router(
+    { meta: { route: { prefix: '/admin', tags: ['admin'] } } },
+    { users },
+  );
+  const merged = mergeRouters(admin, { health: users });
+  expect(Object.keys(merged)).toEqual(['users', 'health']);
+  expect(routerMetaOf(merged)).toEqual({
+    route: { prefix: '/admin', tags: ['admin'] },
+  });
+
+  const router = { api: merged, root: users };
+  expect(openApiPaths(router)).toEqual([
+    '/api/admin/users',
+    '/api/admin/health',
+    '/api/root',
+  ]);
+  const handler = experimental_createOpenApiHandler({ router });
+  expect(await (await get(handler, '/admin/health')).json()).toEqual(['ada']);
+  expect(
+    experimental_toContract(router).procedures['api.users']!.route,
+  ).toMatchObject({ path: '/admin/users', tags: ['admin'] });
+
+  await using server = await createTestServer({ router });
+  const client = createTrpcClient({
+    router: routerType<typeof router>(),
+    links: [httpLink({ url: server.url })],
+  });
+  expect(await client.api.health.query()).toEqual(['ada']);
+
+  expect(mergeRouters({ a: users }, { b: users })).not.toHaveProperty('~meta');
+});
+
+test("a root router's own route meta applies to every route", async () => {
+  const admin = t.router(
+    { meta: { route: { prefix: '/admin', tags: ['admin'] } } },
+    { users, ban },
+  );
+  expect(openApiPaths(admin)).toEqual([
+    '/api/admin/users',
+    '/api/admin/bans/{id}',
+  ]);
+  expect(openApiPaths(mergeRouters(admin, { health: users }))).toEqual([
+    '/api/admin/users',
+    '/api/admin/bans/{id}',
+    '/api/admin/health',
+  ]);
+  const handler = experimental_createOpenApiHandler({ router: admin });
+  expect(await (await get(handler, '/admin/users')).json()).toEqual(['ada']);
+  expect((await get(handler, '/users')).status).toBe(404);
+});
+
+test('mergeRouters throws when routers set a meta key to different values', () => {
+  const admin = t.router(
+    { meta: { route: { prefix: '/admin' } } },
+    { users, ban },
+  );
+  const billing = t.router(
+    { meta: { route: { prefix: '/billing' } } },
+    { invoices: users },
+  );
+  expect(() => mergeRouters(admin, { health: users }, billing)).toThrow(
+    'mergeRouters: routers 1 ({ users, ban }) and 3 ({ invoices }) set router meta "route" to different values ({"prefix":"/admin"} and {"prefix":"/billing"}); nest them under keys of their own instead ({ a: …, b: … }), so each keeps its meta',
+  );
+  const tagged = t.router(
+    { meta: { route: { prefix: '/admin', tags: ['x'] } } },
+    { invoices: users },
+  );
+  expect(() => mergeRouters(admin, tagged)).toThrow('router meta "route"');
+  expect(openApiPaths({ admin, billing })).toEqual([
+    '/api/admin/users',
+    '/api/admin/bans/{id}',
+    '/api/billing/invoices',
+  ]);
+});
+
+test('mergeRouters accepts routers whose meta is equal, and nests', () => {
+  const group = <const R extends AnyRouter>(routes: R) =>
+    t.router(
+      { meta: { route: { prefix: '/admin', tags: ['admin'] } } },
+      routes,
+    );
+  const inner = mergeRouters(group({ users }), { health: users });
+  const merged = mergeRouters(inner, group({ ban }), { stats: users });
+  expect(routerMetaOf(merged)).toEqual({
+    route: { prefix: '/admin', tags: ['admin'] },
+  });
+  expect(openApiPaths({ v1: merged })).toEqual([
+    '/api/admin/users',
+    '/api/admin/health',
+    '/api/admin/bans/{id}',
+    '/api/admin/stats',
+  ]);
+  expect(() =>
+    mergeRouters(merged, t.router({ meta: { route: { prefix: '/x' } } }, {})),
+  ).toThrow('router meta "route"');
+  expectTypeOf<inferRouterInputs<typeof merged>['ban']>().toEqualTypeOf<{
+    id: string;
+  }>();
+});
+
 test('lazy() takes a module with a default export or the router itself', async () => {
   const fromModule = lazy(async () => ({ default: { a: users } }));
   const direct = lazy(async () => ({ a: users }));
@@ -234,4 +348,25 @@ test('resolveProcedureEffect and loadRouterEffect load lazy subtrees as Effects'
     await Effect.runPromise(resolveProcedureEffect(router, 'admin.nope')),
   ).toBeUndefined();
   expect(await Effect.runPromise(loadRouterEffect(router))).toBe(router);
+});
+
+test('a router key no client can call is an error when it is served', async () => {
+  const q = t.procedure.query(() => 1);
+  const withKey = (key: string, node: AnyRouter[string]): AnyRouter =>
+    Object.fromEntries([[key, node]]);
+  expect(() =>
+    createFetchHandler({ router: { post: withKey('then', q) } }),
+  ).toThrow('Router key "post.then": "then" is reserved');
+  expect(() => createRouterClient({ 'post.byId': q })).toThrow(
+    'Router key "post.byId": "." separates path segments',
+  );
+  const router: AnyRouter = { admin: lazy(async () => withKey('then', q)) };
+  await expect(resolveProcedure(router, 'admin.then')).rejects.toThrow(
+    'Router key "then"',
+  );
+  expect(() =>
+    createFetchHandler({
+      router: { call: q, apply: q, nested: { thenable: q } },
+    }),
+  ).not.toThrow();
 });

@@ -1,6 +1,6 @@
 ---
 title: REST routes
-description: 'Serve the same router over REST: route meta, the handler, inputs, outputs and groups.'
+description: 'Serve the same router over REST: route `meta`, the handler, inputs, outputs and groups.'
 section: Contracts and OpenAPI
 order: 2
 experiment: contracts
@@ -8,7 +8,7 @@ experiment: contracts
 
 A procedure gets a REST route from its `route` meta, and `experimental_createOpenApiHandler` serves the routes next to the RPC handler ([OpenAPI](./overview.md)).
 
-## Route meta
+## Route `meta`
 
 The `experimental_openapi()` root extension adds a `route` meta key. A procedure without one is served at its path: `GET /api/post/byId` for queries, `POST /api/post/create` for mutations. `route` picks the method, path and status.
 
@@ -40,7 +40,7 @@ const create = t.procedure
 
 `route` also takes `summary`, `description`, `deprecated` and `operationId`. When two paths match, the one with more leading static segments wins: `/posts/latest` before `/posts/{id}`.
 
-`spec` overrides the generated operation in the document: an object replaces it, a function extends it. Later `.meta({ route })` calls merge into earlier ones key by key, and `spec` functions compose, so a base procedure can add `security` and its procedures add more:
+`spec` overrides the generated operation in the document: an object replaces it, a function extends it. Later `.meta({ route })` calls merge into earlier ones key by key, and `spec` functions compose, so a base procedure can add `security` and its procedures add more. Declare the `bearer` scheme in the document's `components.securitySchemes` ([security and tags](./document.md#security-and-tags)):
 
 ```ts twoslash
 // ---cut-start---
@@ -119,7 +119,7 @@ With the default `inputStructure: 'compact'`, path params merge with the query s
 
 - Query strings and forms use bracket notation (`?tags[]=a&author[name]=x`) and are coerced by the input's JSON Schema, so `?limit=10&published=true` gives a number and a boolean.
 - JSON bodies are taken as they are.
-- `multipart/form-data` fields can hold `File`s.
+- `multipart/form-data` fields can hold `File`s. The document describes a body with a `z.file()`, `z.instanceof(File)` or `z.instanceof(Blob)` in it as `multipart/form-data`, with the file as `format: binary`, so generated clients send a form. Repeat a field for an array; one value for an array field is an array of one.
 - Forms from another origin are refused unless it's trusted ([Cross-site forms](#cross-site-forms)).
 
 `inputStructure: 'detailed'` passes `{ params, query, headers, body }`, each with its own schema. `outputStructure: 'detailed'` lets the resolver return `{ status?, headers?, body }`.
@@ -177,9 +177,11 @@ const appRouter = {
 // RPC: admin.users. OpenAPI: GET /api/staff/users, tagged admin.
 ```
 
-The prefix goes before every route below the group: before an explicit `.meta({ route: { path } })`, and before the path derived from the keys below the group. Group tags come before a procedure's own. Groups nest.
+The prefix goes before every route below the group: before an explicit `.meta({ route: { path } })`, and before the path derived from the keys below the group. Group tags come before a procedure's own. Groups nest, and a group passed as the root router applies to every route.
 
-A router's `meta` takes only the keys an extension gives a router-level form, like `route`; other meta is set on procedures.
+`mergeRouters(admin, other)` keeps the group: every route of the result is in it, `other`'s too. Merging two groups with different `route` throws; nest them instead ([Routers](../server/routers.md)). Object spread (`{ ...admin }`) drops the group.
+
+A router's `meta` takes only the keys an extension gives a router-level form, like `route`; other `meta` is set on procedures.
 
 A `t.lazy(load, { meta: { route: { prefix } } })` subtree is scoped the same way ([Lazy subtrees](../server/routers.md#lazy-subtrees)).
 

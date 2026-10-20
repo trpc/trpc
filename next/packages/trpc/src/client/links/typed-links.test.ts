@@ -1,17 +1,26 @@
 import { Effect, Schema, Stream } from 'effect';
+import { MessageChannel } from 'node:worker_threads';
 import {
   createTrpcClient,
   dedupeLink,
+  experimental_messagePortLink,
   httpLink,
   link,
+  localLink,
   routerType,
   safe,
   splitLink,
   switchLink,
   TrpcError,
+  wsLink,
+  type AtLeastOneLink,
   type Operation,
 } from '@trpc12/trpc/client';
 import { createEffectClient } from '@trpc12/trpc/effect';
+import {
+  createUntypedClient,
+  type TrpcUntypedClient,
+} from '@trpc12/trpc/extend';
 import { initTrpc } from '@trpc12/trpc/server';
 import { createTestServer } from '../../fixtures/server.ts';
 import { expect, expectTypeOf, test, vi } from 'vite-plus/test';
@@ -134,6 +143,55 @@ test('links declare the call option fields calls may pass (17 D-C, F-B)', async 
     // @ts-expect-error -- no link declares `cache`
     void client.post.byId.query({ id: '1' }, { cache: false });
   });
+});
+
+test('a call takes the built-in options only when a link reads them', () => {
+  type OptionsOf<F> = F extends (input: any, opts?: infer O) => any
+    ? keyof NonNullable<O>
+    : never;
+  const url = 'http://localhost';
+  const ws = wsLink({ url: 'ws://localhost' });
+  const port = experimental_messagePortLink({
+    port: new MessageChannel().port1,
+  });
+  const clientOf = <const L extends AtLeastOneLink>(links: L) =>
+    createTrpcClient({ router: routerType<AppRouter>(), links });
+
+  const overHttp = clientOf([httpLink({ url })]);
+  expectTypeOf<OptionsOf<typeof overHttp.post.byId.query>>().toEqualTypeOf<
+    'signal' | 'headers' | 'init' | 'batch' | 'reconnect' | 'onResponse'
+  >();
+  const overWs = clientOf([ws]);
+  expectTypeOf<OptionsOf<typeof overWs.post.byId.query>>().toEqualTypeOf<
+    'signal' | 'reconnect'
+  >();
+  const inProcess = clientOf([localLink({ router })]);
+  expectTypeOf<
+    OptionsOf<typeof inProcess.post.byId.query>
+  >().toEqualTypeOf<'signal'>();
+  const overPort = clientOf([port]);
+  expectTypeOf<
+    OptionsOf<typeof overPort.post.byId.query>
+  >().toEqualTypeOf<'signal'>();
+  const split = clientOf([
+    splitLink({
+      condition: (op) => op.type === 'subscription',
+      true: ws,
+      false: httpLink({ url }),
+    }),
+  ]);
+  expectTypeOf<OptionsOf<typeof split.post.byId.query>>().toEqualTypeOf<
+    'signal' | 'headers' | 'init' | 'batch' | 'reconnect' | 'onResponse'
+  >();
+
+  void (() => {
+    // @ts-expect-error -- wsLink sends no HTTP headers
+    void overWs.post.byId.query({ id: '1' }, { headers: { 'x-a': '1' } });
+    // @ts-expect-error -- nothing in process reads `batch`
+    void inProcess.post.byId.query({ id: '1' }, { batch: false });
+  });
+  void ws[Symbol.asyncDispose]();
+  void port[Symbol.asyncDispose]();
 });
 
 test('splitLink sees typed paths, and merges both branches', async () => {
@@ -392,4 +450,73 @@ test('methods a chain cannot carry are missing from the client', () => {
     links: [queriesOnly, http],
   });
   expectTypeOf(effectClient.feed).not.toHaveProperty('subscribe');
+});
+
+test('links takes at least one link, since the last one sends the request', () => {
+  const http = httpLink({ url: 'http://localhost' });
+  createTrpcClient({
+    router: routerType<AppRouter>(),
+    // @ts-expect-error: no link sends the request
+    links: [],
+  });
+  createEffectClient({
+    router: routerType<AppRouter>(),
+    // @ts-expect-error: no link sends the request
+    links: [],
+  });
+  // @ts-expect-error: no link sends the request
+  createUntypedClient({ links: [] });
+  const array = [http];
+  createTrpcClient({
+    router: routerType<AppRouter>(),
+    // @ts-expect-error: an array type may be empty
+    links: array,
+  });
+  splitLink({
+    condition: () => true,
+    true: http,
+    // @ts-expect-error: a branch needs a link too
+    false: [],
+  });
+
+  // A spread before or after a link counts, and so does a tuple type.
+  const before = [dedupeLink()];
+  createTrpcClient({
+    router: routerType<AppRouter>(),
+    links: [...before, http],
+  });
+  createTrpcClient({
+    router: routerType<AppRouter>(),
+    links: [http, ...before],
+  });
+  const tuple = [http] as const;
+  createTrpcClient({ router: routerType<AppRouter>(), links: tuple });
+});
+
+test('an any router, like an AppRouter import that broke, gives the untyped client', async () => {
+  const live = {
+    ...router,
+    ticks: t.procedure.subscription(async function* () {
+      yield 1;
+      yield 2;
+    }),
+  } as const;
+  const client = createTrpcClient({
+    router: routerType<any>(),
+    links: [localLink({ router: live })],
+  });
+  expectTypeOf(client).toEqualTypeOf<TrpcUntypedClient>();
+  const fromValue = createTrpcClient({
+    router: live as any,
+    links: [localLink({ router: live })],
+  });
+  expectTypeOf(fromValue).toEqualTypeOf<TrpcUntypedClient>();
+
+  await expect(
+    client.request({ type: 'query', path: 'post.byId', input: { id: '7' } }),
+  ).resolves.toMatchObject({ id: '7' });
+  const ticks: unknown[] = [];
+  for await (const tick of client.subscribe({ path: 'ticks' }))
+    ticks.push(tick);
+  expect(ticks).toEqual([1, 2]);
 });

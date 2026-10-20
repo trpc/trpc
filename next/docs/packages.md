@@ -1,7 +1,7 @@
 ---
 title: Packages and stability
 label: Packages
-description: Every package and entry point, what each is for and where its docs are, and what experimental_, unstable_ and @stability promise.
+description: Every package and entry point, what each is for and where its docs are, and what `experimental_`, `unstable_` and `@stability` promise.
 section: Getting started
 order: 2
 ---
@@ -55,7 +55,7 @@ An `experimental_` feature might change or go away in any release:
 - It might not be well tested.
 - It might be dropped entirely.
 
-A package whose name starts with `experimental-` is experimental as a whole, so its exports have no prefix. There are no `unstable-` packages: an unstable feature stays, so its package has its final name, with its unstable exports named `unstable_*`.
+A package whose name starts with `experimental-` is experimental as a whole, so its exports have no prefix. A feature whose docs pages are in an experiment (off until you turn it on in the header's Experiments menu) is experimental, so it's named one of these two ways. There are no `unstable-` packages: an unstable feature stays, so its package has its final name, with its unstable exports named `unstable_*`.
 
 ### Promotion
 

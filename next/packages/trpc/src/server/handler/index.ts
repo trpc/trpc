@@ -8,12 +8,8 @@ export { readBytes, responseOptions } from './body.ts';
 export { strictestCacheControl } from './cache-control.ts';
 export { createHandlerCore } from './core.ts';
 export type { HandlerCore } from './core.ts';
-export {
-  CurrentPlatform,
-  HttpApp,
-  createFetchHandler,
-  parentSpan,
-} from './fetch.ts';
+export { HttpApp, parentSpan } from './app.ts';
+export { createFetchHandler } from './fetch.ts';
 export type {
   BaseHandlerOptions,
   ContextOption,
@@ -24,7 +20,9 @@ export type {
   OnErrorOpts,
   PlatformArgs,
   PlatformField,
+  RuntimeOption,
   SerializerOption,
 } from './fetch.ts';
 export { handlerContext, setHandlerContext } from './handler-context.ts';
+export { CurrentPlatform } from './platform.ts';
 export { withMiddleware } from './routes.ts';

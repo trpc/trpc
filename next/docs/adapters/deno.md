@@ -1,6 +1,6 @@
 ---
 title: Deno
-description: Deno.serve with handler.fetch, which upgrades WebSockets with Deno.upgradeWebSocket.
+description: '`Deno.serve` with `handler.fetch`, which upgrades WebSockets with `Deno.upgradeWebSocket`.'
 section: Adapters
 order: 4
 ---

@@ -1,6 +1,6 @@
 ---
 title: React without TanStack Query
-description: Render-as-you-fetch with use() and Suspense in @trpc12/experimental-react, where cache features are links.
+description: Render-as-you-fetch with `use()` and Suspense in `@trpc12/experimental-react`, where cache features are links.
 section: Integrations
 parent: integrations/react
 order: 3
@@ -34,7 +34,10 @@ import type { AppRouter } from './server';
 
 export const trpc = createReactClient({
   router: routerType<AppRouter>(),
-  links: [...standardLinks({ staleTime: 10_000 }), httpLink({ url: '/trpc' })],
+  links: [
+    ...standardLinks({ staleTime: '10 seconds' }),
+    httpLink({ url: '/trpc' }),
+  ],
 });
 
 // The route's loader starts the request; the navigation doesn't wait for it.

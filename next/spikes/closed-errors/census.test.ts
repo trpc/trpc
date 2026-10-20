@@ -138,7 +138,7 @@ test('what a call fails with, over httpLink', async () => {
   expect(await census(false)).toEqual({
     'returned NOT_FOUND': 'NOT_FOUND (defined)',
     'thrown Error': 'INTERNAL_SERVER_ERROR',
-    'thrown custom code': 'INTERNAL_SERVER_ERROR',
+    'thrown custom code': 'OUT_OF_STOCK',
     'thrown built-in code': 'CONFLICT',
     'procedure the server lacks': 'NOT_FOUND',
     'fetch rejects': 'NETWORK_ERROR',
@@ -157,7 +157,7 @@ test('closedLink leaves only defined errors and built-in codes', async () => {
   expect(codes.every((code) => code in ERROR_STATUS)).toBe(true);
 });
 
-test('matchError dispatches defined codes by name and the rest to builtin', async () => {
+test('matchError dispatches defined codes by name and the rest to unexpected', async () => {
   await using app = setup({ closed: true });
   const describe = async (call: Promise<unknown> & { '~error'?: unknown }) => {
     const result = await safeClosed(
@@ -167,7 +167,9 @@ test('matchError dispatches defined codes by name and the rest to builtin', asyn
       ? matchError(result.error, {
           NOT_FOUND: (err) => `no post ${err.data.id}`,
           BAD_REQUEST: (err) => `bad input: ${err.message}`,
-          builtin: (err) => `builtin ${err.code}`,
+          NETWORK_ERROR: () => 'offline',
+          BAD_RESPONSE: () => 'unreadable',
+          unexpected: (err) => `unexpected ${err.code}`,
         })
       : 'ok';
   };
@@ -175,7 +177,7 @@ test('matchError dispatches defined codes by name and the rest to builtin', asyn
     'no post 7',
   );
   expect(await describe(app.client.outOfStock.query())).toBe(
-    'builtin INTERNAL_SERVER_ERROR',
+    'unexpected INTERNAL_SERVER_ERROR',
   );
-  expect(await describe(app.client.added.query())).toBe('builtin NOT_FOUND');
+  expect(await describe(app.client.added.query())).toBe('unexpected NOT_FOUND');
 });

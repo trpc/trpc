@@ -44,7 +44,7 @@ export const invalidation = () => {
       next().pipe(
         Effect.tap((result) =>
           Effect.sync(() => {
-            if (!result.ok || !meta.invalidates?.length) return;
+            if (!meta.invalidates?.length) return;
             const targets = meta.invalidates.flatMap((entry) =>
               typeof entry === 'function' ? entry(result.data) : [entry],
             );

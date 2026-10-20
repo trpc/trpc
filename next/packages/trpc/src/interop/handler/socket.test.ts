@@ -7,7 +7,7 @@ import { serve } from '@trpc12/trpc/http';
 import { createV11Handler, type V11HandlerOptions } from '@trpc12/trpc/interop';
 import { error, initTrpc, tracked } from '@trpc12/trpc/server';
 import superjson from 'superjson';
-import { expect, test } from 'vite-plus/test';
+import { expect, test, vi } from 'vite-plus/test';
 import { z } from 'zod';
 
 const t = initTrpc<{ ctx: { user: string | null } }>();
@@ -106,6 +106,71 @@ test('malformed messages get PARSE_ERROR replies with no id', async () => {
   ws.close();
 });
 
+test("a message with more calls than batch.maxItems runs none and fails each by id, as v11's maxBatchSize does over HTTP", async () => {
+  const onError = vi.fn<() => void>();
+  await using app = await start({ batch: { maxItems: 2 }, onError });
+  const ws = await connect(app.url);
+  const echo = (id: number) => ({
+    id,
+    jsonrpc: '2.0',
+    method: 'mutation',
+    params: { path: 'echo', input: id },
+  });
+  ws.send([echo(1), echo(2), echo(3), { method: 'connectionParams' }]);
+  const refused = {
+    jsonrpc: '2.0',
+    error: {
+      message: 'Batch call exceeds maximum size',
+      code: -32600,
+      data: { code: 'BAD_REQUEST', httpStatus: 400 },
+    },
+  };
+  expect(await ws.until(3)).toEqual([
+    { id: 1, ...refused },
+    { id: 2, ...refused },
+    { id: 3, ...refused },
+  ]);
+  expect(onError).toHaveBeenCalledOnce();
+  ws.send([echo(4), echo(5)]);
+  expect(await ws.until(5)).toEqual(
+    expect.arrayContaining([
+      { id: 4, jsonrpc: '2.0', result: { type: 'data', data: 4 } },
+      { id: 5, jsonrpc: '2.0', result: { type: 'data', data: 5 } },
+    ]),
+  );
+  ws.send([{ id: 6, method: 'subscription.stop' }, 'x', 7]);
+  expect((await ws.until(6))[5]).toEqual({
+    id: null,
+    ...refused,
+    jsonrpc: undefined,
+  });
+  ws.close();
+});
+
+test('with batch: false, a WebSocket message keeps the default cap of 100 calls', async () => {
+  await using app = await start({ batch: false });
+  const ws = await connect(app.url);
+  const calls = (from: number, count: number) =>
+    Array.from({ length: count }, (_, i) => ({
+      id: from + i,
+      method: 'query',
+      params: { path: 'whoami' },
+    }));
+  ws.send(calls(0, 100));
+  const ran = await ws.until(100);
+  expect(ran.every((reply) => 'result' in (reply as object))).toBe(true);
+  ws.send(calls(100, 101));
+  const refused = (await ws.until(201)).slice(100);
+  expect(
+    refused.every(
+      (reply) =>
+        (reply as { error?: { message?: string } }).error?.message ===
+        'Batch call exceeds maximum size',
+    ),
+  ).toBe(true);
+  ws.close();
+});
+
 test('calls to missing paths, or with the wrong method, fail by id', async () => {
   await using app = await start();
   const ws = await connect(app.url);
@@ -118,19 +183,20 @@ test('calls to missing paths, or with the wrong method, fail by id', async () =>
       expect.objectContaining({
         id: 1,
         error: expect.objectContaining({
-          message: 'No procedure found on path "nowhere"',
+          message: 'No "query"-procedure on path "nowhere"',
         }),
       }),
       expect.objectContaining({
         id: 2,
         error: expect.objectContaining({
-          message: '"whoami" is a query, not a mutation',
+          message: 'No "mutation"-procedure on path "whoami"',
+          data: expect.objectContaining({ code: 'NOT_FOUND' }),
         }),
       }),
       expect.objectContaining({
         id: 3,
         error: expect.objectContaining({
-          message: 'No procedure found on path ""',
+          message: 'No "query"-procedure on path ""',
         }),
       }),
     ]),
@@ -255,7 +321,7 @@ test('inputs the transformer cannot read, and createContext errors, fail the cal
 });
 
 test('an idle connection closes; each message restarts the clock', async () => {
-  await using app = await start({ websocket: { idleTimeoutMs: 80 } });
+  await using app = await start({ websocket: { idleTimeout: 80 } });
   const ws = await connect(app.url);
   const opened = Date.now();
   for (let i = 0; i < 3; i++) {
@@ -267,4 +333,88 @@ test('an idle connection closes; each message restarts the clock', async () => {
   expect(closed.reason).toBe('Idle timeout');
   expect(Date.now() - opened).toBeGreaterThanOrEqual(190);
   expect(ws.replies).toEqual(['PONG', 'PONG', 'PONG']);
+});
+
+/** A server-side `WebSocket` as `Deno.upgradeWebSocket` or Bun hand it over. */
+class StandardSocket extends EventTarget {
+  readyState = 0;
+  readonly sent: unknown[] = [];
+  closed: { code: number | undefined; reason: string | undefined } | undefined;
+  send(data: string | Uint8Array) {
+    if (this.readyState !== 1) throw new Error('send before open');
+    this.sent.push(typeof data === 'string' ? JSON.parse(data) : data);
+  }
+  close(code?: number, reason?: string) {
+    this.closed = { code, reason };
+    this.readyState = 3;
+    this.dispatchEvent(Object.assign(new Event('close'), { code, reason }));
+  }
+  open() {
+    this.readyState = 1;
+    this.dispatchEvent(new Event('open'));
+  }
+  receive(message: unknown) {
+    this.dispatchEvent(
+      new MessageEvent('message', { data: JSON.stringify(message) }),
+    );
+  }
+}
+
+test('dispose() closes the sockets handed to websocket() and ends their subscriptions, without a stopped result', async () => {
+  let ended = 0;
+  const handler = createV11Handler({
+    router: {
+      ...router,
+      forever: t.procedure.subscription(async function* (opts) {
+        try {
+          yield 1;
+          await new Promise((resolve) =>
+            opts.signal.addEventListener('abort', resolve),
+          );
+        } finally {
+          ended++;
+        }
+      }),
+    },
+    createContext: () => ({ user: null }),
+  });
+  const socket = new StandardSocket();
+  handler.websocket(socket, { request: new Request('http://localhost/trpc') });
+  socket.open();
+  socket.receive({
+    id: 1,
+    method: 'subscription',
+    params: { path: 'forever' },
+  });
+  await vi.waitFor(() => expect(socket.sent).toHaveLength(2));
+  await handler.dispose();
+  // A stopped result would end the subscription in wsLink, which instead
+  // resends it with its lastEventId once it reconnects.
+  expect(socket.sent).toEqual([
+    { id: 1, result: { type: 'started' } },
+    { id: 1, result: { type: 'data', data: 1 } },
+  ]);
+  expect(socket.closed).toEqual({ code: 1012, reason: 'Service restart' });
+  expect(ended).toBe(1);
+
+  const late = new StandardSocket();
+  handler.websocket(late, { request: new Request('http://localhost/trpc') });
+  late.open();
+  await vi.waitFor(() =>
+    expect(late.closed).toEqual({ code: 1012, reason: 'Service restart' }),
+  );
+});
+
+test('dispose() leaves a socket still connecting to be refused once it opens', async () => {
+  const handler = createV11Handler({
+    router,
+    createContext: () => ({ user: null }),
+  });
+  const socket = new StandardSocket();
+  handler.websocket(socket, { request: new Request('http://localhost/trpc') });
+  await handler.dispose();
+  socket.open();
+  await vi.waitFor(() =>
+    expect(socket.closed).toEqual({ code: 1012, reason: 'Service restart' }),
+  );
 });

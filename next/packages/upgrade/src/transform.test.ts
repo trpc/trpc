@@ -163,7 +163,7 @@ export default {
     `);
     expect(messages(source)).toMatchInlineSnapshot(`
       [
-        "6:5 createFetchHandler: make the handler once, outside the request function; createContext gets { request, info }",
+        "6:5 createFetchHandler: make the handler once, outside the request function; createContext gets { request, info }; old clients: createV11Handler on this endpoint, createFetchHandler on another (https://v12.trpc.io/v12/docs/migrations/from-v11/serve-v11-clients)",
       ]
     `);
   });
@@ -179,7 +179,7 @@ export const createContext = (opts: FetchCreateContextFnOptions) => ({});
     `);
     expect(messages(source)).toMatchInlineSnapshot(`
       [
-        "1:15 CreateContextOpts: opts.req is opts.request, whose headers are a record (request.headers['authorization']); response headers go on the procedure's response handle, docs/server/responses.md",
+        "1:15 CreateContextOpts: opts.req is opts.request, whose headers are a record (request.headers['authorization']); response headers go on the procedure's response handle, https://v12.trpc.io/v12/docs/server/responses",
       ]
     `);
   });
@@ -193,8 +193,8 @@ import { something } from '@trpc/unknown';
     ).toMatchInlineSnapshot(`
       [
         "1:1 observable(): subscriptions return an async generator or an Effect Stream; a v11 link keeps it under fromV11Link",
-        "2:1 adapters: serve createFetchHandler() with serve() from @trpc12/trpc/http (docs/adapters/overview.md)",
-        "3:1 @trpc/unknown: no v12 module, see docs/migrations/from-v11.md",
+        "2:1 adapters: serve createFetchHandler() with serve() from @trpc12/trpc/http (https://v12.trpc.io/v12/docs/adapters/overview); old clients: createV11Handler on this endpoint, createFetchHandler on another (https://v12.trpc.io/v12/docs/migrations/from-v11/serve-v11-clients)",
+        "3:1 @trpc/unknown: no v12 module, see https://v12.trpc.io/v12/docs/migrations/from-v11",
       ]
     `);
   });
@@ -259,6 +259,22 @@ export const authLink: TRPCLink<AppRouter> = () => ({ op, next }) => next(op);
     ).toMatchInlineSnapshot(`
       [
         "1:15 TRPCLink: stays on @trpc/client; keep the link with fromV11Link(link) from @trpc12/trpc/interop, or rewrite it with link() as an Effect Stream function",
+      ]
+    `);
+  });
+
+  test("inferRouterOutputs keeps its name, with a note on the serializer's form", () => {
+    const source = `import type { inferRouterOutputs } from '@trpc/server';
+export type Post = inferRouterOutputs<AppRouter>['post']['byId'];
+`;
+    expect(upgrade(source).code).toMatchInlineSnapshot(`
+      "import type { inferRouterOutputs } from '@trpc12/trpc/server';
+      export type Post = inferRouterOutputs<AppRouter>['post']['byId'];
+      "
+    `);
+    expect(messages(source)).toMatchInlineSnapshot(`
+      [
+        "1:15 inferRouterOutputs<AppRouter> is plain JSON's form (Date is string), as v11's without a transformer; with a serializer, pass the client's type: inferRouterOutputs<typeof client>",
       ]
     `);
   });
@@ -511,7 +527,7 @@ const t = init.create();
     `);
     expect(messages(source)).toMatchInlineSnapshot(`
       [
-        "1:1 default or namespace import of @trpc/server: see docs/migrations/from-v11.md",
+        "1:1 default or namespace import of @trpc/server: see https://v12.trpc.io/v12/docs/migrations/from-v11",
       ]
     `);
   });
@@ -613,7 +629,7 @@ export const handle = (request: Request) =>
     expect(messages(source)).toMatchInlineSnapshot(`
       [
         "5:17 createCallerFactory: createRouterClient(router, { ctx }) makes a caller",
-        "7:3 createFetchHandler: make the handler once, outside the request function; createContext gets { request, info }",
+        "7:3 createFetchHandler: make the handler once, outside the request function; createContext gets { request, info }; old clients: createV11Handler on this endpoint, createFetchHandler on another (https://v12.trpc.io/v12/docs/migrations/from-v11/serve-v11-clients)",
       ]
     `);
   });
@@ -645,7 +661,7 @@ const app = <TRPCProvider {...props} trpcClient={client} />;
     `);
   });
 
-  test('helpers whose input moved into their options are notes', () => {
+  test('helpers whose input moved into their options, or whose name is gone, are notes', () => {
     const source = `import { useTRPC } from './trpc';
 function Posts() {
   const trpc = useTRPC();
@@ -655,6 +671,8 @@ function Posts() {
   trpc.post.byId.queryFilter({ id: '1' });
   trpc.post.feed.infiniteQueryOptions({ limit: 10 });
   trpc.post.feed.infiniteQueryKey({ limit: 10 });
+  trpc.post.feed.infiniteQueryFilter({ limit: 10 });
+  trpc.post.feed.infiniteQueryFilter();
   trpc.post.onAdd.subscriptionOptions(undefined, { onData });
   useMutation(trpc.post.add.mutationOptions({ onSuccess }));
 }
@@ -666,7 +684,9 @@ function Posts() {
         "7:18 queryFilter(input, filters) is queryFilter({ input, ...filters }) in v12",
         "8:18 infiniteQueryOptions(input, opts) is infiniteOptions({ input: (cursor) => ({ ...input, cursor }), ...opts }) in v12",
         "9:18 infiniteQueryKey(input) is infiniteKey({ input, initialPageParam }) in v12",
-        "10:19 subscriptionOptions(input, opts) is subscriptionOptions({ input, ...opts }) in v12",
+        "10:18 infiniteQueryFilter(input, filters) is infiniteFilter({ input, ...filters }) in v12",
+        "11:18 infiniteQueryFilter(input, filters) is infiniteFilter({ input, ...filters }) in v12",
+        "12:19 subscriptionOptions(input, opts) is subscriptionOptions({ input, ...opts }) in v12",
       ]
     `);
     // Without v11's TanStack integration, queryOptions() is someone else's.

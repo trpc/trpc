@@ -1,6 +1,6 @@
 ---
 title: Server Actions
-description: Turn procedures into React Server Actions that take typed input or FormData, with useActionState and optimistic updates.
+description: Turn procedures into React Server Actions that take typed input or `FormData`, with `useActionState` and optimistic updates.
 section: Integrations
 parent: integrations/react
 order: 2
@@ -9,7 +9,7 @@ v11: client/nextjs/server-actions
 
 Nothing here is Next-specific: it works with any React Server Components setup.
 
-`experimental_createAction` from `@trpc12/trpc/actions` makes a factory that sets the ctx, layer and result mode once. `action(procedure)` is then an async function that takes the input or a form's `FormData`:
+`experimental_createAction` from `@trpc12/trpc/actions` makes a factory that sets the `ctx`, layer and result mode once. `action(procedure)` is then an async function that takes the input or a form's `FormData`:
 
 ```ts twoslash
 'use server';
@@ -58,7 +58,7 @@ else console.log(result.data.title);
 - `FormData` is parsed with bracket notation (`tags[]=a`, `author[name]=ada`) and coerced from the input's JSON Schema (`'40'` becomes `40` where the schema wants a number). Framework fields such as Next's `$ACTION_ID_…` are dropped.
 - `result: 'safe'` (the default) returns `{ data }` or `{ error }`. Both are plain objects, because React sends an action's result to the browser: there an `Error` arrives without its class or `data`, and an array without extra fields, so the result is not `safe()`'s `[data, error]` ([Errors without try/catch](../client/errors.md)). `error` holds the `TrpcError`'s `code`, `message`, `defined` and `data` (defined errors only), and narrows on `code` and `defined` the same way. `result: 'throw'` returns the data and throws `TrpcError`.
 - Results reach the browser, so unexpected errors are masked outside development, as in handlers. `onError` sees them first.
-- A factory whose ctx or layer can't satisfy a procedure is a type error, and so is wrapping a subscription.
+- A factory whose `ctx` or layer can't satisfy a procedure is a type error, and so is wrapping a subscription.
 - Next's `redirect()`, `notFound()` and dynamic-API errors thrown in a procedure or `ctx` are rethrown as they are, not returned as errors, so Next can act on them. Any error with a string `digest` counts. The same holds for `call()`, `createRouterClient()` and `localLink` ([Server-side calls](../server/server-side-calls.md)).
 
 ## Form state and optimistic updates

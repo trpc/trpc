@@ -1,28 +1,23 @@
 import { Effect, Exit } from 'effect';
+import { toAsyncIterable } from '../internal/effects.ts';
 import {
-  ERROR_CATEGORY,
   ERROR_STATUS,
   frameworkError,
   hasDigest,
   isBuiltinCode,
-  TrpcError,
   type AnyTrpcError,
-  type CategoryCode,
-  type ErrorCategory,
 } from '../internal/error.ts';
-import type { ProcedureType } from '../internal/types.ts';
+import type { IsAny, ProcedureType } from '../internal/types.ts';
 import type { AnySerializer } from '../serializer/index.ts';
 import {
   chainSerializer,
-  chainSubscriptionIterator,
   chainSwitchNames,
   clientErrorFromCause,
   firstValue,
   runLinks,
   type Operation,
-  type AnyLink,
+  type AtLeastOneLink,
   type BuiltinCallOptions,
-  type TrpcLink,
 } from './link.ts';
 import type {
   DuplicateSwitchCheck,
@@ -32,6 +27,7 @@ import type {
   SubscribeOptions,
   TrpcClient,
   LinkErrorCode,
+  TrpcIterable,
   TrpcPromise,
   UnmetNeedCheck,
 } from './types.ts';
@@ -115,7 +111,7 @@ export interface UntypedCallOptions {
  */
 export interface TrpcClientOptions {
   /** The request chain. The last link sends the request. */
-  links: ReadonlyArray<AnyLink>;
+  links: AtLeastOneLink;
 }
 
 /**
@@ -125,7 +121,7 @@ export interface TrpcClientOptions {
  */
 export interface TypedClientOptions<
   TSource,
-  TLinks extends ReadonlyArray<TrpcLink<any, RouterOf<TSource>>>,
+  TLinks extends AtLeastOneLink<RouterOf<TSource>>,
 > {
   /** `routerType<AppRouter>()`, a contract, or the router itself. */
   router: TSource;
@@ -169,7 +165,6 @@ export function createUntypedClient(
 ): TrpcUntypedClient {
   const { links } = opts;
   chainSwitchNames(links);
-  const iterate = chainSubscriptionIterator(links);
   return {
     async request(o) {
       const op = makeOperation(o.type, o.path, o.input, o);
@@ -186,16 +181,8 @@ export function createUntypedClient(
     subscribe(o) {
       return {
         [Symbol.asyncIterator]() {
-          if (!iterate) {
-            const error = new TrpcError({
-              code: 'CLIENT_ERROR',
-              message:
-                'No link on this chain carries subscriptions; wrap a custom one in withSubscriptions()',
-            });
-            return { next: () => Promise.reject(error) };
-          }
           const op = makeOperation('subscription', o.path, o.input, o);
-          return iterate(runLinks(links, op), op.signal)[
+          return toAsyncIterable(runLinks(links, op), op.signal)[
             Symbol.asyncIterator
           ]();
         },
@@ -207,7 +194,10 @@ export function createUntypedClient(
 /**
  * Creates a typed client for a router (16 CS-A). With `router:` (17 D-C)
  * the call options are typed from what the links declare, and
- * router-aware links like `splitLink` see typed paths.
+ * router-aware links like `splitLink` see typed paths. An `any` router (an
+ * `AppRouter` import that doesn't resolve) gives the
+ * {@link TrpcUntypedClient}, whose `request()` and `subscribe()` work on
+ * any client.
  *
  * @example
  * ```ts
@@ -225,22 +215,28 @@ export function createUntypedClient(
  */
 export function createTrpcClient<
   TSource,
-  const TLinks extends ReadonlyArray<TrpcLink<any, RouterOf<TSource>>>,
+  const TLinks extends AtLeastOneLink<RouterOf<TSource>>,
 >(
   opts: TypedClientOptions<TSource, TLinks> &
     DuplicateSwitchCheck<TLinks> &
     UnmetNeedCheck<TLinks>,
-): TrpcClient<
-  RouterOf<TSource>,
-  LinksContext<TLinks>,
-  undefined,
-  LinksTypes<TLinks>
->;
+): IsAny<RouterOf<TSource>> extends true
+  ? TrpcUntypedClient
+  : TrpcClient<
+      RouterOf<TSource>,
+      LinksContext<TLinks>,
+      undefined,
+      LinksTypes<TLinks>
+    >;
 export function createTrpcClient(opts: TrpcClientOptions): unknown {
   const untyped = createUntypedClient(opts);
   const client = createRecursiveProxy((path, args) => {
     const method = path.at(-1) as keyof typeof METHODS | undefined;
     const type = method ? METHODS[method] : undefined;
+    const [root] = path;
+    if (path.length === 1 && (root === 'request' || root === 'subscribe')) {
+      return untyped[root](args[0] as never);
+    }
     if (!type) {
       throw new TypeError(
         `Call .query(), .mutate() or .subscribe() on a procedure, not ${path.join('.')}()`,
@@ -300,6 +296,9 @@ export type SafeResult<T, E> =
  * Awaits a call without throwing. A framework's control-flow error (Next's
  * `redirect()`, which an in-process call rethrows) still throws.
  *
+ * A streamed output or a subscription is iterated without throwing too:
+ * each step is a result, and a failure is the last one.
+ *
  * @example
  * ```ts
  * const [post, err] = await safe(client.post.byId.query({ id }));
@@ -310,26 +309,91 @@ export type SafeResult<T, E> =
  * post.title;
  *
  * const { data, error } = await safe(client.post.create.mutate(input));
+ *
+ * for await (const [token, err] of safe(tokens)) {
+ *   if (err) return err.message;
+ *   render(token);
+ * }
  * ```
  * @since 0.1.0
  * @stability stable
  */
-export async function safe<T, E = unknown>(
+export function safe<T, E>(
+  promise: TrpcPromise<T, E>,
+): Promise<SafeResult<T, E>>;
+/**
+ * Iterates a streamed output or a subscription without throwing: each item
+ * as `[item, undefined]`, and a failure as a last `[undefined, error]`. The
+ * generator's return value isn't kept.
+ * @since 0.1.0
+ * @stability experimental
+ */
+export function safe<T, E>(
+  iterable: TrpcIterable<T, any, E>,
+): AsyncIterable<SafeResult<T, E>>;
+// A call's `TrpcPromise` matches the first overload by reference; inferring
+// `T` through `then` here costs several times as many instantiations.
+export function safe<T, E = unknown>(
   promise: PromiseLike<T> & { readonly '~error'?: E },
-): Promise<SafeResult<T, E>> {
+): Promise<SafeResult<T, E>>;
+export function safe(
+  call: PromiseLike<unknown> | AsyncIterable<unknown>,
+):
+  | Promise<SafeResult<unknown, unknown>>
+  | AsyncIterable<SafeResult<unknown, unknown>> {
+  return 'then' in call && typeof call.then === 'function'
+    ? settleSafely(call)
+    : iterateSafely(call as AsyncIterable<unknown>);
+}
+
+const succeeded = (data: unknown): SafeResult<unknown, unknown> =>
+  Object.assign([data, undefined] as [unknown, undefined], {
+    data,
+    error: undefined,
+  });
+
+const failed = (cause: unknown): SafeResult<unknown, unknown> => {
+  if (hasDigest(cause)) throw cause;
+  return Object.assign([undefined, cause] as [undefined, unknown], {
+    data: undefined,
+    error: cause,
+  });
+};
+
+async function settleSafely(
+  promise: PromiseLike<unknown>,
+): Promise<SafeResult<unknown, unknown>> {
   try {
-    const data = await promise;
-    return Object.assign([data, undefined] as [T, undefined], {
-      data,
-      error: undefined,
-    });
+    return succeeded(await promise);
   } catch (cause) {
-    if (hasDigest(cause)) throw cause;
-    const error = cause as E;
-    return Object.assign([undefined, error] as [undefined, E], {
-      data: undefined,
-      error,
-    });
+    return failed(cause);
+  }
+}
+
+async function* iterateSafely(
+  iterable: AsyncIterable<unknown>,
+): AsyncGenerator<SafeResult<unknown, unknown>, void> {
+  const iterator = iterable[Symbol.asyncIterator]();
+  let done = false;
+  try {
+    for (;;) {
+      let step: IteratorResult<unknown>;
+      try {
+        step = await iterator.next();
+      } catch (cause) {
+        done = true;
+        yield failed(cause);
+        return;
+      }
+      if (step.done) {
+        done = true;
+        return;
+      }
+      yield succeeded(step.value);
+    }
+  } finally {
+    // The loop was left early (`break`): close the source, as `for await` would.
+    if (!done) await iterator.return?.();
   }
 }
 
@@ -371,78 +435,43 @@ export function createSafeClient<TClient extends object>(
   });
 }
 
-type DefinedOf<E> = Extract<E, { readonly defined: true }>;
-type BuiltinOf<E> = Exclude<E, { readonly defined: true }>;
-type LinkOf<E> = Extract<BuiltinOf<E>, { readonly code: LinkErrorCode }>;
-type CodeOf<E> = E extends { readonly code: infer C extends string }
-  ? C
-  : never;
-
-/** The built-in errors left for the categories: those no key in `TKeys` takes. */
-type RestOf<E, TKeys> = Exclude<
-  BuiltinOf<E>,
-  { readonly code: TKeys & LinkErrorCode }
->;
-
-type CategoriesOf<R> = {
-  [K in ErrorCategory]: [
-    Extract<R, { readonly code: CategoryCode<K> }>,
-  ] extends [never]
-    ? never
-    : K;
-}[ErrorCategory];
-
-type CategoryHandlers<R> = {
-  readonly [K in CategoriesOf<R>]: (
-    err: Extract<R, { readonly code: CategoryCode<K> }>,
-  ) => unknown;
-};
-
-type BuiltinHandlers<R> = [R] extends [never]
-  ? { readonly builtin?: never }
-  :
-      | (CategoryHandlers<R> & { readonly builtin?: never })
-      | (Partial<CategoryHandlers<R>> & {
-          readonly builtin: (err: R) => unknown;
-        });
+/** The errors with a key of their own: the defined ones and the links'. */
+type Keyed = { readonly defined: true } | { readonly code: LinkErrorCode };
+type KeyedOf<E extends AnyTrpcError> = Extract<E, Keyed>;
+type UnexpectedOf<E> = Exclude<E, Keyed>;
 
 /**
- * The handlers {@link matchError} takes for errors `E`: one per defined
- * code, each getting that error; optionally one per code a link declares
- * (`NETWORK_ERROR`, `BAD_RESPONSE`, `STREAM_INTERRUPTED`), which takes it
- * from its category; and one per category of the built-in errors left
- * (`rejected`, `unavailable`, `failed`, `aborted`, see `ERROR_CATEGORY`),
- * each getting that category's codes. `builtin` takes the categories not
- * listed; once no built-in error is left, both are type errors. `TKeys`
- * are the keys given, which take their codes from the categories.
+ * The handlers {@link matchError} takes for errors `E`, all required: one
+ * per defined code and one per code the client's links declare
+ * (`NETWORK_ERROR`, `BAD_RESPONSE`, `STREAM_INTERRUPTED`), each getting
+ * that error; and `unexpected`, which gets every other one: built-in codes
+ * nothing declared (a crash, an abort, a proxy's status, a procedure the
+ * server lacks) and undeclared errors. Once no other error is left,
+ * `unexpected` is a type error too.
  * @since 0.1.0
  * @stability stable
  */
-export type ErrorHandlers<E, TKeys = never> = {
-  readonly [C in CodeOf<DefinedOf<E>>]: (
-    err: Extract<DefinedOf<E> | LinkOf<E>, { readonly code: C }>,
-  ) => unknown;
-} & {
-  readonly [C in Exclude<CodeOf<LinkOf<E>>, CodeOf<DefinedOf<E>>>]?: (
-    err: Extract<LinkOf<E>, { readonly code: C }>,
-  ) => unknown;
-} & BuiltinHandlers<RestOf<E, TKeys>>;
+export type ErrorHandlers<E extends AnyTrpcError> = {
+  // Members sharing a code map to one key, whose handler gets their union.
+  readonly [K in KeyedOf<E> as K['code']]: (err: K) => unknown;
+} & ([UnexpectedOf<E>] extends [never]
+  ? {}
+  : { readonly unexpected: (err: UnexpectedOf<E>) => unknown });
 
-type HandlerKey<E, TKeys> =
-  | CodeOf<DefinedOf<E>>
-  | CodeOf<LinkOf<E>>
-  | ([RestOf<E, TKeys>] extends [never]
-      ? never
-      : CategoriesOf<RestOf<E, TKeys>> | 'builtin');
+/**
+ * A type error naming each of `matchError()`'s keys that no error of the
+ * call goes to. Over the keys alone, so it's cached when there are none.
+ */
+type Leftover<K extends PropertyKey> = {
+  [P in K]: `'${P & string}' handles no error of this call`;
+};
 
-type HandlerResult<H> = {
-  [K in keyof H]-?: H[K] extends (err: never) => infer R ? R : never;
-}[keyof H];
+type HandlerResult<H> = H[keyof H] extends (err: never) => infer R ? R : never;
 
 /**
  * Handles every error a call can fail with, or fails to compile: each
- * defined code needs its handler, and `builtin` takes the rest. Returns
- * what the handler returns.
+ * defined code and each code the links declare needs its handler, and
+ * `unexpected` takes the rest. Returns what the handler returns.
  *
  * @example
  * ```ts
@@ -451,8 +480,9 @@ type HandlerResult<H> = {
  *   return matchError(err, {
  *     BAD_REQUEST: (e) => e.data.issues.map((issue) => issue.message),
  *     TITLE_TAKEN: (e) => [`"${e.data.title}" is taken`],
- *     builtin: (e) =>
- *       e.code === 'NETWORK_ERROR' ? ['You are offline'] : [e.message],
+ *     NETWORK_ERROR: () => ['You are offline'],
+ *     BAD_RESPONSE: () => ['Try again later'],
+ *     unexpected: (e) => [e.message],
  *   });
  * }
  * ```
@@ -461,26 +491,22 @@ type HandlerResult<H> = {
  */
 export function matchError<
   E extends AnyTrpcError,
-  H extends ErrorHandlers<E, keyof H> & {
-    readonly [K in keyof H]: K extends HandlerKey<E, keyof H> ? unknown : never;
-  },
+  H extends ErrorHandlers<E> &
+    Leftover<Exclude<keyof H, keyof ErrorHandlers<E>>>,
 >(err: E, handlers: H): HandlerResult<H> {
   const table = handlers as unknown as Record<
     string,
     ((err: E) => HandlerResult<H>) | undefined
   >;
-  const own = (key: string | false) =>
-    key && Object.hasOwn(table, key) ? table[key] : undefined;
+  const own = (key: string) =>
+    Object.hasOwn(table, key) ? table[key] : undefined;
   const { code } = err;
-  const builtin = isBuiltinCode(code);
-  const handler =
-    (err.defined
-      ? own(code)
-      : (builtin &&
-          ERROR_STATUS[code] === 0 &&
-          code !== 'CLIENT_ERROR' &&
-          own(code)) ||
-        own(builtin && ERROR_CATEGORY[code])) ?? table['builtin'];
+  const keyed =
+    err.defined ||
+    (isBuiltinCode(code) &&
+      ERROR_STATUS[code] === 0 &&
+      code !== 'CLIENT_ERROR');
+  const handler = (keyed ? own(code) : undefined) ?? own('unexpected');
   if (!handler) throw err;
   return handler(err);
 }

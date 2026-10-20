@@ -28,6 +28,7 @@ import {
   HydrationBoundary as ClientHydrationBoundary,
   noop,
   QueryClient,
+  type InfiniteQueryExecuteOptions,
   type QueryExecuteOptions,
 } from '@tanstack/react-query';
 import {
@@ -57,7 +58,7 @@ const hasDigest = (error: unknown) =>
 
 /**
  * Options for {@link createTrpcRsc}: the router and its ctx (a function is
- * called once per request) and layer, as for `createRouterClient`.
+ * called once per request) and runtime, as for `createRouterClient`.
  * @since 0.1.0
  * @stability stable
  */
@@ -88,8 +89,15 @@ export interface TrpcRsc<TRouter extends AnyRouter> {
   caller: TrpcClient<TRouter, {}, DansonForm>;
   /** The request's query client. */
   getQueryClient: () => QueryClient;
-  /** Starts a query on the request's client without waiting for it. */
-  prefetch: (options: QueryExecuteOptions<any, any, any, any, any>) => void;
+  /**
+   * Starts a query on the request's client without waiting for it. Infinite
+   * options fetch their first page.
+   */
+  prefetch: (
+    options:
+      | QueryExecuteOptions<any, any, any, any, any>
+      | InfiniteQueryExecuteOptions<any, any, any, any, any>,
+  ) => void;
   /**
    * Sends the request's queries to the browser cache, pending ones as
    * promises that stream in. Render it around the client components that
@@ -143,7 +151,16 @@ export function createTrpcRsc<TRouter extends AnyRouter>(
     caller,
     getQueryClient,
     prefetch: (options) => {
-      void getQueryClient().query(options).catch(noop);
+      const client = getQueryClient();
+      void (
+        'getNextPageParam' in options
+          ? client.infiniteQuery(
+              options as InfiniteQueryExecuteOptions<any, any, any, any, any>,
+            )
+          : client.query(
+              options as QueryExecuteOptions<any, any, any, any, any>,
+            )
+      ).catch(noop);
     },
     HydrationBoundary: (props) => {
       const client = getQueryClient();

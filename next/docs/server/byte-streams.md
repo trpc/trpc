@@ -1,6 +1,6 @@
 ---
 title: Byte stream inputs
-description: experimental_byteStream() takes a ReadableStream<Uint8Array> as the request body, and the resolver reads it as an Effect Stream while it arrives.
+description: '`experimental_byteStream()` takes a `ReadableStream<Uint8Array>` as the request body, and the resolver reads it as an Effect Stream while it arrives.'
 section: Server
 order: 7.5
 experiment: byte-streams

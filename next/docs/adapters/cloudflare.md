@@ -1,6 +1,6 @@
 ---
 title: Cloudflare
-description: Everything in @trpc12/trpc/cloudflare. Durable Objects with hibernating WebSockets, publishers, durable calls, locks, rate limits and connection tokens, plus Workers Traces.
+description: Everything in `@trpc12/trpc/cloudflare`. Durable Objects with hibernating WebSockets, publishers, durable calls, locks, rate limits and connection tokens, plus Workers Traces.
 section: Adapters
 order: 7
 experiment: cloudflare
@@ -15,9 +15,13 @@ A Durable Object is one process that every request for its name reaches, so `Pos
 ```ts twoslash
 // ---cut-start---
 /// <reference types="@cloudflare/workers-types" />
-import { createFetchHandler, initTrpc, Publisher } from '@trpc12/trpc/server';
+import {
+  createFetchHandler,
+  initTrpc,
+  experimental_Publisher,
+} from '@trpc12/trpc/server';
 import type { Post } from './server.ts';
-class Posts extends Publisher.Service<
+class Posts extends experimental_Publisher.Service<
   Posts,
   { created: Post; deleted: { id: string } }
 >()('Posts') {}
@@ -99,7 +103,7 @@ export class Room extends DurableObject<Env> {
 
 - `sockets.upgrade()` runs the handler's `middleware` before it accepts the socket, so `cors()` answers an upgrade from another origin with a `403` and no socket is created ([Middleware and CORS](./overview.md#middleware-and-cors)). It returns a `Promise<Response>`.
 - When the object wakes, each socket's request URL, its `cookie` and `authorization` headers (`keepHeaders` to choose others) and its `connectionParams` are rebuilt from the socket's attachment, so `createContext` sees the same connection. The attachment has a 2 KB limit; past it, the headers are dropped with a `console.warn` (the connection stays). Browsers can't set WebSocket headers, so same-origin apps authenticate with cookies.
-- `wsLink`'s keep-alive pings are answered by the runtime (`setWebSocketAutoResponse`) without waking the object. The handler's `websocket.idleTimeoutMs` doesn't apply here: a timer would wake it.
+- `wsLink`'s keep-alive pings are answered by the runtime (`setWebSocketAutoResponse`) without waking the object. The handler's `websocket.idleTimeout` doesn't apply here: a timer would wake it.
 - A generator or `Stream` subscription keeps the object awake until it ends. Subscriptions to an `experimental_hibernatingPublisher` don't.
 - Already created the `WebSocketPair` yourself? `sockets.accept(server, request, platform)` instead of `upgrade()`. It skips `middleware`: check the origin before you create the pair.
 
@@ -111,7 +115,11 @@ Provide the object's [publisher](../subscriptions/publisher.md) with `experiment
 // ---cut-start---
 /// <reference types="@cloudflare/workers-types" />
 import { DurableObject } from 'cloudflare:workers';
-import { createFetchHandler, initTrpc, Publisher } from '@trpc12/trpc/server';
+import {
+  createFetchHandler,
+  initTrpc,
+  experimental_Publisher,
+} from '@trpc12/trpc/server';
 import { Effect } from 'effect';
 import { PostSchema as PostInput, type Post } from './server.ts';
 interface Env {}
@@ -122,7 +130,9 @@ import {
   experimental_hibernatingPublisher,
 } from '@trpc12/trpc/cloudflare';
 
-class Posts extends Publisher.Service<Posts, { created: Post }>()('Posts') {}
+class Posts extends experimental_Publisher.Service<Posts, { created: Post }>()(
+  'Posts',
+) {}
 
 const router = {
   create: t.procedure
@@ -165,16 +175,21 @@ export class Room extends DurableObject<Env> {
 /// <reference types="@cloudflare/workers-types" />
 import { DurableObject } from 'cloudflare:workers';
 import { experimental_hibernatingPublisher } from '@trpc12/trpc/cloudflare';
-import { createFetchHandler, initTrpc, Publisher } from '@trpc12/trpc/server';
+import {
+  createFetchHandler,
+  initTrpc,
+  experimental_Publisher,
+} from '@trpc12/trpc/server';
 import { Layer } from 'effect';
 import type { Persistence } from 'effect/persistence';
 interface Message {
   from: string;
   text: string;
 }
-class Messages extends Publisher.Service<Messages, { message: Message }>()(
-  'Messages',
-) {}
+class Messages extends experimental_Publisher.Service<
+  Messages,
+  { message: Message }
+>()('Messages') {}
 declare function durableObjectPersistence(
   storage: DurableObjectStorage,
 ): Layer.Layer<Persistence.BackingPersistence>;
@@ -243,7 +258,7 @@ Bind `LOCKS` to `Locks` in `wrangler.jsonc` (a `new_sqlite_classes` migration). 
 
 ## Rate limits
 
-`experimental_durableRateLimiterStore(env.RATE_LIMITS)` is a store for `rateLimit()` ([Rate limiting](../middleware/rate-limit.md#cloudflare)) that every Worker instance shares: one object per key, counting with its own clock in its storage. The object delegates to `experimental_durableRateLimitObject(this.ctx)`, and its alarm deletes the counters once they expire:
+`experimental_durableRateLimiterStore(env.RATE_LIMITS)` is a store for `experimental_rateLimit()` ([Rate limiting](../middleware/rate-limit.md#cloudflare)) that every Worker instance shares: one object per key, counting with its own clock in its storage. The object delegates to `experimental_durableRateLimitObject(this.ctx)`, and its alarm deletes the counters once they expire:
 
 ```ts twoslash
 // ---cut-start---
@@ -329,7 +344,7 @@ import { experimental_connectionToken } from '@trpc12/trpc/cloudflare';
 
 const RoomToken = experimental_connectionToken(
   Schema.Struct({ room: Schema.String, user: Schema.String }),
-  { secret: env.TOKEN_SECRET, ttlSeconds: 600 },
+  { secret: env.TOKEN_SECRET, ttl: '10 minutes' },
 );
 
 // ---cut-start---
@@ -355,12 +370,16 @@ export type WorkerRouter = typeof workerRouter;
 // @filename: room.ts
 import { DurableObject } from 'cloudflare:workers';
 import { experimental_hibernatingPublisher } from '@trpc12/trpc/cloudflare';
-import { createFetchHandler, initTrpc, Publisher } from '@trpc12/trpc/server';
+import {
+  createFetchHandler,
+  initTrpc,
+  experimental_Publisher,
+} from '@trpc12/trpc/server';
 import { Effect } from 'effect';
 import { RoomToken } from './token.ts';
 interface Env {}
 const t = initTrpc<{ ctx: { room: string; user: string } }>();
-class Notes extends Publisher.Service<
+class Notes extends experimental_Publisher.Service<
   Notes,
   { [inbox: `inbox:${string}`]: { text: string } }
 >()('Notes') {}
@@ -406,7 +425,7 @@ const link = wsLink({
 });
 ```
 
-- `verify` fails with `UNAUTHORIZED` when the token is missing, malformed, signed with another secret or past `ttlSeconds` (default an hour). It reads the time from Effect's `Clock`.
+- `verify` fails with `UNAUTHORIZED` when the token is missing, malformed, signed with another secret or past `ttl` (default `'1 hour'`). It reads the time from Effect's `Clock`.
 - The claims are encoded with the schema and readable by the client; keep secrets out of them.
 - Expiry is checked whenever `createContext` runs: on each call, and when a subscription starts. A parked subscription keeps getting events after the token expires, until the socket closes or the client reconnects.
 

@@ -103,7 +103,7 @@ const latest = t.procedure
 
 ## Metadata
 
-`.meta()` attaches data to a procedure that middleware reads as `opts.meta`. Meta keys a root doesn't declare are a type error, so declare them on `initTrpc`:
+`.meta()` attaches data to a procedure that middleware and the resolver read as `opts.meta`. Meta keys a root doesn't declare are a type error, so declare them on `initTrpc`:
 
 ```ts twoslash
 import { initTrpc } from '@trpc12/trpc/server';
@@ -114,3 +114,5 @@ const admin = t.procedure.meta({ auth: true }).query(() => 'secret');
 ```
 
 A later `.meta()` replaces a key unless its root says how to merge it ([Extensions](./extensions.md)).
+
+Routers take `meta` too, for the keys an extension gives a router-level form, like an OpenAPI group's `route`; `mergeRouters` merges it ([Routers](./routers.md)).

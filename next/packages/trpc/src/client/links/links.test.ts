@@ -1,4 +1,4 @@
-import { Effect, Schema, Stream } from 'effect';
+import { Duration, Effect, Exit, Schema, Stream } from 'effect';
 import {
   createTrpcClient,
   httpLink,
@@ -8,12 +8,10 @@ import {
   retryLink,
   safe,
   splitLink,
-  switchLink,
   type LoggerEvent,
-  type TrpcLink,
   routerType,
-  withSubscriptions,
 } from '@trpc12/trpc/client';
+import { createEffectClient } from '@trpc12/trpc/effect';
 import { createUntypedClient } from '@trpc12/trpc/extend';
 import { createV11Handler } from '@trpc12/trpc/interop';
 import {
@@ -198,36 +196,43 @@ test('loggerLink sees requests, results and errors', async () => {
   expect(last.direction === 'error' && last.error.code).toBe('NOT_FOUND');
 });
 
-test('retryLink retries network failures on queries only', async () => {
-  await using server = await serve();
-  let failures = 2;
-  const attempts: string[] = [];
-  const flakyFetch: typeof fetch = (input, init) => {
-    attempts.push(init?.method ?? 'GET');
-    if (failures-- > 0) return Promise.reject(new TypeError('fetch failed'));
-    return fetch(input, init);
-  };
-  const client = createTrpcClient({
-    router: routerType<AppRouter>(),
-    links: [
-      retryLink({ retries: 3, delayMs: () => 1 }),
-      httpLink({ url: server.url, fetch: flakyFetch }),
-    ],
-  });
-  expect(await client.whoami.query()).toBe('anonymous');
-  expect(attempts).toEqual(['GET', 'GET', 'GET']);
+test.each([
+  ['milliseconds', (): Duration.Input => 1],
+  ['a string', (): Duration.Input => '1 millis'],
+  ['a Duration', (): Duration.Input => Duration.millis(1)],
+] as const)(
+  'retryLink retries network failures on queries only, with a delay in %s',
+  async (_, delay) => {
+    await using server = await serve();
+    let failures = 2;
+    const attempts: string[] = [];
+    const flakyFetch: typeof fetch = (input, init) => {
+      attempts.push(init?.method ?? 'GET');
+      if (failures-- > 0) return Promise.reject(new TypeError('fetch failed'));
+      return fetch(input, init);
+    };
+    const client = createTrpcClient({
+      router: routerType<AppRouter>(),
+      links: [
+        retryLink({ retries: 3, delay }),
+        httpLink({ url: server.url, fetch: flakyFetch }),
+      ],
+    });
+    expect(await client.whoami.query()).toBe('anonymous');
+    expect(attempts).toEqual(['GET', 'GET', 'GET']);
 
-  failures = 1;
-  attempts.length = 0;
-  const [, err] = await safe(client.add.mutate({ a: 1, b: 1 }));
-  expect(err).toMatchObject({ code: 'NETWORK_ERROR' });
-  expect(attempts).toEqual(['POST']);
+    failures = 1;
+    attempts.length = 0;
+    const [, err] = await safe(client.add.mutate({ a: 1, b: 1 }));
+    expect(err).toMatchObject({ code: 'NETWORK_ERROR' });
+    expect(attempts).toEqual(['POST']);
 
-  attempts.length = 0;
-  const [, notFound] = await safe(client.find.query({ id: 'x' }));
-  expect(notFound).toMatchObject({ code: 'NOT_FOUND' });
-  expect(attempts).toHaveLength(1);
-});
+    attempts.length = 0;
+    const [, notFound] = await safe(client.find.query({ id: 'x' }));
+    expect(notFound).toMatchObject({ code: 'NOT_FOUND' });
+    expect(attempts).toHaveLength(1);
+  },
+);
 
 test('aborting a call rejects with CLIENT_CLOSED_REQUEST and aborts the server', async () => {
   await using server = await serve();
@@ -275,6 +280,33 @@ test('localLink runs the router in-process, through the serializer', async () =>
   expect(today).toBe('2026-10-10T00:00:00.000Z');
   const [, err] = await safe(client.find.query({ id: 'x' }));
   expect(err).toMatchObject({ code: 'NOT_FOUND', defined: true });
+  // @ts-expect-error -- the router's procedures read `ctx.token`
+  localLink({ router });
+  localLink({ router: { ping: initTrpc().procedure.query(() => 'pong') } });
+});
+
+test("interrupting a localLink call aborts the procedure's signal", async () => {
+  const seen = { aborted: 0 };
+  const local = {
+    wait: initTrpc().procedure.query(
+      (opts) =>
+        new Promise<string>((resolve) =>
+          opts.signal.addEventListener('abort', () => {
+            seen.aborted++;
+            resolve('aborted');
+          }),
+        ),
+    ),
+  };
+  const client = createEffectClient({
+    router: routerType<typeof local>(),
+    links: [localLink({ router: local })],
+  });
+  const exit = await Effect.runPromiseExit(
+    client.wait.query().pipe(Effect.timeout('20 millis')),
+  );
+  expect(Exit.isFailure(exit)).toBe(true);
+  await vi.waitFor(() => expect(seen.aborted).toBe(1));
 });
 
 test('localLink fails unknown paths and wrong methods; deferred failures arrive as errors', async () => {
@@ -535,52 +567,11 @@ test('what a link fails, dies or ends with becomes a client error', async () => 
   });
 });
 
-test('subscriptions need a link marked withSubscriptions, found through splitLink and switchLink', async () => {
-  const events = () => Stream.make(1, 2);
-  const read = async (links: ReadonlyArray<TrpcLink<any, any>>) => {
-    const client = createTrpcClient({
-      router: routerType<typeof router>(),
-      links,
-    });
-    const ticks: number[] = [];
-    for await (const n of client.ticks.subscribe()) ticks.push(n);
-    return ticks;
-  };
-
-  await expect(read([link(events)])).rejects.toMatchObject({
-    code: 'CLIENT_ERROR',
-    message:
-      'No link on this chain carries subscriptions; wrap a custom one in withSubscriptions()',
-  });
-  expect(await read([withSubscriptions(link(events))])).toEqual([1, 2]);
-  expect(
-    await read([
-      splitLink({
-        condition: (op) => op.type === 'subscription',
-        true: withSubscriptions(link(events)),
-        false: link(events),
-      }),
-    ]),
-  ).toEqual([1, 2]);
-  expect(
-    await read([
-      switchLink({
-        name: 'via',
-        links: {
-          plain: link(events),
-          events: [withSubscriptions(link(events))],
-        },
-        pick: () => 'events',
-      }),
-    ]),
-  ).toEqual([1, 2]);
-});
-
 test('errors a link makes outside the union get a built-in code and no data', async () => {
   const failing = (err: TrpcError) =>
     createTrpcClient({
       router: routerType<typeof router>(),
-      links: [withSubscriptions(link(() => Stream.fail(err)))],
+      links: [link(() => Stream.fail(err))],
     });
   const [, custom] = await safe(
     failing(

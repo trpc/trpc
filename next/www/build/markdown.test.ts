@@ -3,7 +3,12 @@ import { describe, expect, it } from '@effect/vitest';
 import { Effect, FileSystem, Path } from 'effect';
 
 import { brokenLinks } from './content.ts';
-import { anchorsOf, renderMarkdown, resolveLink } from './markdown.ts';
+import {
+  anchorsOf,
+  releaseTwoslashers,
+  renderMarkdown,
+  resolveLink,
+} from './markdown.ts';
 
 /**
  * A samples dir whose `docs` and `v11` apps compile inline blocks, each with
@@ -167,6 +172,44 @@ describe('renderMarkdown', () => {
       }).pipe(Effect.provide(NodeServices.layer)),
   );
 
+  it.effect(
+    'compiles with the right flags after their environment was dropped, and after a release',
+    () =>
+      Effect.gen(function* () {
+        const block = (flags: string) =>
+          [
+            '```ts twoslash',
+            flags,
+            'const m = [null];',
+            '//    ^?',
+            '```',
+          ].join('\n');
+        // More sets of flags than environments stay alive: the first set's
+        // is dropped by the time it's back.
+        const rendered = yield* render(
+          [
+            block(''),
+            block('// @target: es2017'),
+            block('// @target: es2019'),
+            block('// @target: es2020'),
+            block('// @strict: false'),
+            block(''),
+          ].join('\n\n'),
+        );
+        expect(rendered.typeQueries).toEqual([
+          ['const m: null[]'],
+          ['const m: null[]'],
+          ['const m: null[]'],
+          ['const m: null[]'],
+          ['const m: any[]'],
+          ['const m: null[]'],
+        ]);
+        releaseTwoslashers();
+        const again = yield* render(block('// @strict: false'));
+        expect(again.typeQueries).toEqual([['const m: any[]']]);
+      }).pipe(Effect.provide(NodeServices.layer)),
+  );
+
   it.effect('fails on a compile error the block does not expect', () =>
     Effect.gen(function* () {
       const error = yield* Effect.flip(
@@ -303,6 +346,28 @@ describe('renderMarkdown', () => {
       expect(rendered.html).toMatch(/<div data-tab="Zod" data-active="">/);
     }).pipe(Effect.provide(NodeServices.layer)),
   );
+
+  it.effect('turns a `demo` fence into the place the page runs it', () =>
+    Effect.gen(function* () {
+      const rendered = yield* render(
+        'Before.\n\n```demo\nforms\n```\n\nAfter.',
+      );
+      expect(rendered.demos).toEqual(['forms']);
+      expect(rendered.html).toMatch(
+        /<div class="demo-slot not-prose" data-demo="forms"><p>[^<]+<\/p><\/div>/,
+      );
+      expect(rendered.html).not.toContain('<pre');
+    }).pipe(Effect.provide(NodeServices.layer)),
+  );
+
+  it.effect("fails on a `demo` fence that doesn't hold an id", () =>
+    Effect.gen(function* () {
+      const error = yield* Effect.flip(render('```demo\n<forms>\n```'));
+      expect(error.message).toContain(
+        `A demo fence holds a demo's id, not "<forms>"`,
+      );
+    }).pipe(Effect.provide(NodeServices.layer)),
+  );
 });
 
 describe('resolveLink', () => {
@@ -321,6 +386,19 @@ describe('resolveLink', () => {
     expect(resolveLink('adapters/node', '../../README.md')).toEqual({
       kind: 'source',
       path: 'README.md',
+    });
+  });
+
+  it('resolves from where contentPath puts the docs folder', () => {
+    expect(
+      resolveLink('server/files', '../../../examples/a/README.md', 'www/docs'),
+    ).toEqual({ kind: 'source', path: 'examples/a/README.md' });
+    expect(
+      resolveLink('client/links', '../server/router.md#lazy', 'www/docs'),
+    ).toEqual({ kind: 'doc', link: { hash: 'lazy', slug: 'server/router' } });
+    expect(resolveLink('a', '../README.md', 'www/docs')).toEqual({
+      kind: 'source',
+      path: 'www/README.md',
     });
   });
 

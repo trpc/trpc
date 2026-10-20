@@ -300,7 +300,7 @@ test('a subscription that fails mid-stream ends with an error event', async () =
 });
 
 test('cancelling a stream, or aborting a request, interrupts the procedure', async () => {
-  const handler = make({ sse: { pingMs: false } });
+  const handler = make({ sse: { pingInterval: false } });
   const res = await api(handler, '/forever');
   const reader = res.body!.getReader();
   expect(new TextDecoder().decode((await reader.read()).value)).toBe(
@@ -549,12 +549,7 @@ test('experimental_openApiLink subscriptions yield plain and tracked events, the
   const events: unknown[] = [];
   let failure: unknown;
   try {
-    for await (const event of app.client.feed.subscribe(
-      { fail: true },
-      {
-        reconnect: false,
-      },
-    )) {
+    for await (const event of app.client.feed.subscribe({ fail: true })) {
       events.push(event);
     }
   } catch (err) {

@@ -116,23 +116,21 @@ const isDeferred = (value: unknown) =>
 const running = new WeakMap<object, Map<string, Deferred.Deferred<Ran>>>();
 
 /** A SHA-256 of the serialized input; `''` for inputs with files. */
-const fingerprint = (
+const fingerprint = /* @__PURE__ */ Effect.fnUntraced(function* (
   serializer: Pick<Serializer, 'serialize'>,
   input: unknown,
-) =>
-  Effect.promise(async () => {
-    let json: string;
-    try {
-      json = JSON.stringify(serializer.serialize(input));
-    } catch {
-      return '';
-    }
-    const digest = await crypto.subtle.digest(
-      'SHA-256',
-      new TextEncoder().encode(json),
-    );
-    return Base64.encode(new Uint8Array(digest));
-  });
+) {
+  let json: string;
+  try {
+    json = JSON.stringify(serializer.serialize(input));
+  } catch {
+    return '';
+  }
+  const digest = yield* Effect.promise(() =>
+    crypto.subtle.digest('SHA-256', new TextEncoder().encode(json)),
+  );
+  return Base64.encode(new Uint8Array(digest));
+});
 
 const conflict = () =>
   new TrpcError.Conflict({
@@ -267,10 +265,14 @@ export function experimental_durable<TReq extends MiddlewareRequirements = {}>(
           yield* Effect.sleep(pollInterval);
           continue;
         }
+        // Another call on this instance claimed it while the store answered.
+        if (local.has(key)) continue;
         break;
       }
 
-      const deferred = yield* Deferred.make<Ran>();
+      // Claimed in the same step as the check above: a yield between them
+      // would let a second call claim it too.
+      const deferred = Deferred.makeUnsafe<Ran>();
       local.set(key, deferred);
       const claim: Entry = { state: 'running', input };
       yield* store.set(key, claim, claimTtl).pipe(Effect.orDie);
@@ -283,7 +285,10 @@ export function experimental_durable<TReq extends MiddlewareRequirements = {}>(
             Effect.repeat(Schedule.spaced(Duration.divideUnsafe(claimTtl, 2))),
             Effect.forkChild,
           );
-        const result = yield* opts.next() as Effect.Effect<Result>;
+        const result: Result = yield* Effect.catch(
+          opts.next() as Effect.Effect<Result, AnyTrpcError>,
+          (error) => Effect.succeed({ ok: false as const, error }),
+        );
         yield* Fiber.interrupt(heartbeat);
         const entry = stored(serializer, result, input);
         // A streamed output's claim stays until the handler starts its log.
@@ -311,7 +316,8 @@ export function experimental_durable<TReq extends MiddlewareRequirements = {}>(
               .pipe(Effect.orDie),
           );
       }
-      return joined.result;
+      const result = joined.result;
+      return result.ok ? result : yield* Effect.fail(result.error);
     }),
   );
 }

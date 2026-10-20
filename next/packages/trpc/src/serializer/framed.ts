@@ -1,19 +1,17 @@
-import { Cause, Deferred, Effect, Exit, Queue, Stream } from 'effect';
+import { Deferred, Effect, Exit, Stream } from 'effect';
 import type { JsonForm, SyncForm } from '../internal/types.ts';
 import type { Serializer } from './index.ts';
 import {
-  deferredBuilders,
   deferredChunks,
   isAsyncIterable,
   isPromiseLike,
+  makeChunkQueues,
   sourceOf,
   streamErrorsOf,
   toDansonError,
   toDeserializeError,
   type Chunk,
-  type ChunkQueue,
   type PendingSource,
-  type Status,
   type SerializeReturn,
   DansonError,
   type JsonValue,
@@ -62,35 +60,72 @@ const isPlainObject = (v: unknown): v is Record<string, unknown> => {
   return proto === Object.prototype || proto === null;
 };
 
+/** What one walk over a value found. */
+interface Scanned {
+  /** The value, with its deferred values replaced by `null`. */
+  readonly value: unknown;
+  readonly slots: Slot[];
+  /** A `File` or `Blob` sits in it. */
+  readonly blob: boolean;
+  /**
+   * It is JSON already: `JSON.parse(JSON.stringify(value))` would give an
+   * equal value, so plain JSON can skip that copy.
+   */
+  readonly json: boolean;
+}
+
 /**
  * Takes the deferred values out of plain objects and arrays, leaving `null`
- * in their place, and lists where they were. Only the containers on a path to
- * a deferred value are copied. Other objects (a `Map`, a class instance) are
- * the transformer's to handle.
+ * in their place, and lists where they were (with no `register`, they stay).
+ * Only the containers on a path to a deferred value are copied. Other
+ * objects (a `Map`, a class instance) are the transformer's to handle. One
+ * walk also finds `File`s and `Blob`s and whether the value is JSON as is.
  */
-function holes(
+function scan(
   value: unknown,
-  register: (deferred: Parameters<typeof sourceOf>[0]) => number,
-): { value: unknown; slots: Slot[] } {
+  register?: (deferred: Parameters<typeof sourceOf>[0]) => number,
+): Scanned {
   const slots: Slot[] = [];
   const path: Array<string | number> = [];
-  const open = new Set<object>();
+  // Containers being walked; shallow, so a list beats a `Set`.
+  const open: object[] = [];
+  let blob = false;
+  let json = true;
   const walk = (v: unknown): unknown => {
-    const kind = kindOf(v);
+    if (typeof v !== 'object' || v === null) {
+      if (
+        json &&
+        v !== null &&
+        typeof v !== 'string' &&
+        typeof v !== 'boolean' &&
+        !(typeof v === 'number' && Number.isFinite(v))
+      ) {
+        json = false;
+      }
+      return v;
+    }
+    const kind = register && kindOf(v);
     if (kind) {
       slots.push([[...path], register(v as never), kind]);
       return null;
     }
     const array = Array.isArray(v);
-    if (!array && !isPlainObject(v)) return v;
-    if (open.has(v as object)) return v;
-    open.add(v as object);
+    if (!array && !isPlainObject(v)) {
+      json = false;
+      if (v instanceof Blob) blob = true;
+      else if (!blob && (v instanceof Map || v instanceof Set)) {
+        blob = holdsBlob(v);
+      }
+      return v;
+    }
+    if (open.includes(v)) {
+      json = false;
+      return v;
+    }
+    if (json && 'toJSON' in v) json = false;
+    open.push(v);
     let copy: Record<string | number, unknown> | undefined;
-    const keys: Array<string | number> = array
-      ? Array.from((v as unknown[]).keys())
-      : Object.keys(v as object);
-    for (const key of keys) {
-      const item = (v as Record<string | number, unknown>)[key];
+    const replace = (key: string | number, item: unknown) => {
       path.push(key);
       const next = walk(item);
       path.pop();
@@ -100,11 +135,18 @@ function holes(
         ) as never;
         copy![key] = next;
       }
+    };
+    if (array) {
+      const items = v as unknown[];
+      for (let i = 0; i < items.length; i++) replace(i, items[i]);
+    } else {
+      for (const key of Object.keys(v)) replace(key, v[key]);
     }
-    open.delete(v as object);
+    open.pop();
     return copy ?? v;
   };
-  return { value: walk(value), slots };
+  const out = walk(value);
+  return { value: out, slots, blob, json };
 }
 
 function setAt(
@@ -155,15 +197,19 @@ function framedSerializer(
   kind: 'sync' | 'none',
   transformer: SyncTransformer,
 ): Serializer<any> {
-  const serialize = (value: unknown): SerializeReturn => {
-    if (holdsBlob(value)) {
+  const encode = (scanned: Scanned): SerializeReturn => {
+    if (scanned.blob) {
       throw new DansonError(
         'A File or Blob needs a streaming serializer such as createSerializer(); a root file output can be a raw response instead',
       );
     }
-    const json = transformer.serialize(value);
+    if (kind === 'none' && scanned.json) {
+      return { json: scanned.value as JsonValue };
+    }
+    const json = transformer.serialize(scanned.value);
     return json === undefined ? {} : { json: json as JsonValue };
   };
+  const serialize = (value: unknown): SerializeReturn => encode(scan(value));
   const deserialize = (value: SerializeReturn): any =>
     value.json === undefined ? undefined : transformer.deserialize(value.json);
 
@@ -176,15 +222,14 @@ function framedSerializer(
       const pending: PendingSource[] = [];
       let next = 0;
       const register = (v: Parameters<typeof sourceOf>[0]) => {
-        if (isPromiseLike(v)) Promise.resolve(v).catch(() => {});
         const idx = next++;
         pending.push([idx, sourceOf(v)]);
         return idx;
       };
       const payload = (v: unknown): FramedPayload => {
-        const holed = holes(v, register);
-        const out = serialize(holed.value);
-        return holed.slots.length > 0 ? { ...out, d: holed.slots } : out;
+        const scanned = scan(v, register);
+        const out = encode(scanned);
+        return scanned.slots.length > 0 ? { ...out, d: scanned.slots } : out;
       };
       const head = payload(value);
       if (pending.length === 0) return { head, chunks: undefined };
@@ -202,65 +247,47 @@ function framedSerializer(
       const errors = streamErrorsOf(opts);
       return Effect.gen(function* () {
         const head = yield* Deferred.make<T, E | DansonError>();
-        const queues = new Map<number, ChunkQueue>();
-        const queueFor = (idx: number) => {
-          let q = queues.get(idx);
-          if (!q) {
-            q = Effect.runSync(Queue.unbounded<[Status, unknown], unknown>());
-            queues.set(idx, q);
-          }
-          return q;
-        };
-        const take = (idx: number) =>
-          Stream.fromQueue(queueFor(idx)).pipe(
-            Stream.ensuring(Effect.sync(() => queues.delete(idx))),
-          );
-        const builders = deferredBuilders(take, errors.revive);
+        const chunks = yield* makeChunkQueues(errors.revive);
         const revivePayload = (p: FramedPayload): unknown => {
           let v: unknown = deserialize(p);
           for (const [path, idx, kind] of p.d ?? []) {
-            queueFor(idx);
-            v = setAt(v, path, builders[kind](idx));
+            v = setAt(v, path, chunks.builders[kind](idx));
           }
           return v;
         };
+        const read = (frame: FramedPayload) =>
+          Effect.try({
+            try: () => revivePayload(frame),
+            catch: toDeserializeError,
+          });
         let first = true;
         yield* frames.pipe(
-          Stream.runForEach((frame) =>
-            Effect.try({
-              try: () => {
-                if (first) {
-                  first = false;
-                  Deferred.doneUnsafe(
-                    head,
-                    Effect.succeed(revivePayload(frame as FramedPayload) as T),
-                  );
-                  return;
-                }
-                const [idx, status, json] = frame as Chunk;
-                Queue.offerUnsafe(queueFor(idx), [
-                  status,
-                  revivePayload(json as FramedPayload),
-                ]);
-              },
-              catch: toDeserializeError,
-            }),
-          ),
+          Stream.runForEach((frame) => {
+            if (first) {
+              first = false;
+              return Effect.flatMap(read(frame as FramedPayload), (value) =>
+                Deferred.succeed(head, value as T),
+              );
+            }
+            const [idx, status, json] = frame as Chunk;
+            return Effect.flatMap(read(json as FramedPayload), (value) =>
+              chunks.offer(idx, [status, value]),
+            );
+          }),
           Effect.onExit((exit) =>
-            Effect.sync(() => {
-              const error = errors.ended(exit);
+            Effect.andThen(
               // A no-op once the head is out; a head frame that failed to read leaves it open.
-              Deferred.doneUnsafe(
+              Deferred.done(
                 head,
                 Exit.isFailure(exit)
-                  ? Effect.failCause(exit.cause)
-                  : Effect.fail(errors.interrupted() as never),
-              );
-              for (const q of queues.values()) {
-                Queue.failCauseUnsafe(q, Cause.fail(error));
-              }
-            }),
+                  ? Exit.failCause(exit.cause)
+                  : Exit.fail(errors.interrupted() as never),
+              ),
+              chunks.end(errors.ended(exit)),
+            ),
           ),
+          // The frames are read for as long as the deferred values they
+          // feed, past the caller's fiber.
           Effect.forkDetach,
         );
         return yield* Deferred.await(head);
@@ -322,14 +349,11 @@ export function createSyncSerializer<TKeeps = never>(
  * @since 0.1.0
  * @stability stable
  */
-export const jsonSerializer: Serializer<JsonForm> = framedSerializer(
-  'json',
-  'none',
-  {
+export const jsonSerializer: Serializer<JsonForm> =
+  /* @__PURE__ */ framedSerializer('json', 'none', {
     serialize: (value) => {
       const text = JSON.stringify(value);
       return text === undefined ? undefined : JSON.parse(text);
     },
     deserialize: (value) => value,
-  },
-);
+  });

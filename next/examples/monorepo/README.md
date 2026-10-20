@@ -1,6 +1,6 @@
 # Monorepo example
 
-A tRPC API split into domain packages, with apps that type-check against the server's built declarations instead of its source. The layout scales to thousands of procedures: see [Large routers](../../docs/server/large-routers.md).
+A tRPC API split into domain packages, with apps that type-check against the server's built declarations instead of its source. The layout scales to thousands of procedures: see [Large routers](https://v12.trpc.io/v12/docs/server/large-routers).
 
 ```
 packages/

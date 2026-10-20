@@ -3,7 +3,7 @@ import { Context } from 'effect';
 /**
  * Each of our handlers' services (its HTTP app, socket core and upgrade
  * server), for the adapters that are handed the handler object:
- * `toHttpEffect()`, `serveSocket()` and the hibernating Durable Object.
+ * `toHttpEffect()`, `experimental_serveSocket()` and the hibernating Durable Object.
  * They get the user's plain object, so the lookup is by its identity.
  */
 const contexts = new WeakMap<object, Context.Context<never>>();

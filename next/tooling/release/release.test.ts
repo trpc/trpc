@@ -37,7 +37,7 @@ test('a bump releases every package that depends on the bumped one, peers includ
         json.peerDependencies?.['@trpc12/trpc'] !== undefined,
     )
     .map((json) => json.name);
-  expect(dependents).toContain('@trpc12/nest');
+  expect(dependents).toContain('@trpc12/experimental-nest');
   expect(bumps({ '@trpc12/trpc': 'patch' })).toEqual(
     Object.fromEntries(
       ['@trpc12/trpc', ...dependents].map((name) => [name, 'patch']),
@@ -48,13 +48,13 @@ test('a bump releases every package that depends on the bumped one, peers includ
 test('packages version independently', () => {
   expect(bumps({ '@trpc12/tanstack-query': 'patch' })).toEqual({
     '@trpc12/tanstack-query': 'patch',
-    '@trpc12/tanstack-angular-query': 'patch',
-    '@trpc12/tanstack-lit-query': 'patch',
-    '@trpc12/tanstack-preact-query': 'patch',
+    '@trpc12/experimental-tanstack-angular-query': 'patch',
+    '@trpc12/experimental-tanstack-lit-query': 'patch',
+    '@trpc12/experimental-tanstack-preact-query': 'patch',
     '@trpc12/tanstack-react-query': 'patch',
-    '@trpc12/tanstack-solid-query': 'patch',
-    '@trpc12/tanstack-svelte-query': 'patch',
-    '@trpc12/tanstack-vue-query': 'patch',
+    '@trpc12/experimental-tanstack-solid-query': 'patch',
+    '@trpc12/experimental-tanstack-svelte-query': 'patch',
+    '@trpc12/experimental-tanstack-vue-query': 'patch',
   });
   expect(bumps({ '@trpc12/upgrade': 'minor' })).toEqual({
     '@trpc12/upgrade': 'minor',
@@ -74,7 +74,9 @@ test('only the packages in packages/ are released', () => {
 test('a breaking bump needs a breaking bump on each dependent', () => {
   const adapters = published
     .map((json) => json.name)
-    .filter((name) => /^@trpc12\/tanstack-.+-query$/.test(name));
+    .filter((name) =>
+      /^@trpc12\/(experimental-)?tanstack-.+-query$/.test(name),
+    );
   const breaking = changeset({ '@trpc12/tanstack-query': 'minor' });
   expect(
     underBumpedDependents(workspace, releasePlan(workspace, [breaking])),
@@ -82,7 +84,7 @@ test('a breaking bump needs a breaking bump on each dependent', () => {
   expect(
     underBumpedDependents(workspace, releasePlan(workspace, [breaking]))[0],
   ).toMatch(
-    /^@trpc12\/tanstack-query 0\.1\.0 → 0\.2\.0 is breaking, so @trpc12\/tanstack-\w+-query needs "minor" in a changeset too, not "patch"$/,
+    /^@trpc12\/tanstack-query 0\.1\.0 → 0\.2\.0 is breaking, so @trpc12\/(experimental-)?tanstack-\w+-query needs "minor" in a changeset too, not "patch"$/,
   );
   const carried = changeset({
     '@trpc12/tanstack-query': 'minor',

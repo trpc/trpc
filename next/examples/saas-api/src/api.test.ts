@@ -1,6 +1,7 @@
 /**
  * In-process tests: `createRouterClient` and `call()` skip HTTP and the
- * serializer, `localLink` keeps the serializer and the client's links.
+ * serializer, `localLink` keeps the serializer and the client's links. Each
+ * test owns its runtime, so `await using` releases its services.
  */
 import {
   createTrpcClient,
@@ -11,6 +12,7 @@ import {
   type LoggerEvent,
 } from '@trpc12/trpc/client';
 import { call, createRouterClient } from '@trpc12/trpc/server';
+import { ManagedRuntime } from 'effect';
 import { expect, test } from 'vite-plus/test';
 import { appRouter } from './router.ts';
 import { projectsRouter } from './routers/projects.ts';
@@ -24,11 +26,12 @@ function signedIn(email: string, tenant = 'acme') {
     sessionToken: session.token,
     tenantSlug: tenant,
   };
-  return { db, ctx, layer: appLayer(db) };
+  const runtime = ManagedRuntime.make(appLayer(db));
+  return { db, ctx, runtime, [Symbol.asyncDispose]: () => runtime.dispose() };
 }
 
-test('createRouterClient: ctx and layer passed in, values by reference', async () => {
-  const app = signedIn('ada@acme.test');
+test('createRouterClient: ctx and runtime passed in, values by reference', async () => {
+  await using app = signedIn('ada@acme.test');
   const caller = createRouterClient(appRouter, app);
 
   const project = await caller.project.create.mutate({ name: '  Billing  ' });
@@ -54,7 +57,7 @@ test('createRouterClient: ctx and layer passed in, values by reference', async (
 });
 
 test('tenancy runs withSession once, though audit starts with it too', async () => {
-  const app = signedIn('ada@acme.test');
+  await using app = signedIn('ada@acme.test');
   const caller = createRouterClient(appRouter, app);
   await caller.project.create.mutate({ name: 'Once' });
   expect(app.db.sessionLookups).toBe(1);
@@ -64,46 +67,44 @@ test('tenancy runs withSession once, though audit starts with it too', async () 
 });
 
 test('roles, memberships and plan limits are typed errors', async () => {
-  const viewer = createRouterClient(appRouter, signedIn('cy@acme.test'));
+  await using cy = signedIn('cy@acme.test');
+  const viewer = createRouterClient(appRouter, cy);
   const [, role] = await safe(viewer.project.create.mutate({ name: 'Nope' }));
   expect(role?.code === 'INSUFFICIENT_ROLE' && role.data).toEqual({
     required: 'member',
     actual: 'viewer',
   });
 
-  const outsider = createRouterClient(
-    appRouter,
-    signedIn('bob@acme.test', 'globex'),
-  );
+  await using bob = signedIn('bob@acme.test', 'globex');
+  const outsider = createRouterClient(appRouter, bob);
   const [, forbidden] = await safe(outsider.project.list.query());
   expect(forbidden?.code === 'FORBIDDEN' && forbidden.data).toEqual({
     tenant: 'globex',
   });
 
-  const free = createRouterClient(
-    appRouter,
-    signedIn('ada@acme.test', 'globex'),
-  );
+  await using ada = signedIn('ada@acme.test', 'globex');
+  const free = createRouterClient(appRouter, ada);
   const [, quota] = await safe(free.project.create.mutate({ name: 'Second' }));
   expect(quota?.code === 'QUOTA_EXCEEDED' && quota.data).toEqual({
     plan: 'free',
     limit: 1,
   });
 
+  await using runtime = ManagedRuntime.make(appLayer(SaasDb.seeded()));
   const anonymous = createRouterClient(appRouter, {
     ctx: { sessionToken: null, tenantSlug: 'acme' },
-    layer: appLayer(SaasDb.seeded()),
+    runtime,
   });
   expect(await anonymous.health.query()).toBe('ok');
   const [, unauthorized] = await safe(anonymous.auth.me.query());
   expect(unauthorized?.code).toBe('UNAUTHORIZED');
 });
 
-test('call(): one procedure, its errors thrown', async () => {
-  const app = signedIn('bob@acme.test');
+test('call(): one procedure, its errors thrown, its layer built per call', async () => {
+  await using app = signedIn('bob@acme.test');
   const byId = projectsRouter.project.byId;
   const byIdCall = (projectId: string) =>
-    call(byId, { projectId }, { ctx: app.ctx, layer: app.layer });
+    call(byId, { projectId }, { ctx: app.ctx, layer: appLayer(app.db) });
 
   const project = [...app.db.projects.values()][0]!;
   expect((await byIdCall(project.id)).name).toBe('Website');
@@ -114,7 +115,7 @@ test('call(): one procedure, its errors thrown', async () => {
 });
 
 test('localLink: through the serializer and the links before it', async () => {
-  const app = signedIn('ada@acme.test');
+  await using app = signedIn('ada@acme.test');
   const log: LoggerEvent[] = [];
   const client = createTrpcClient({
     router: routerType<typeof appRouter>(),
@@ -122,7 +123,7 @@ test('localLink: through the serializer and the links before it', async () => {
       loggerLink({ log: (event) => log.push(event) }),
       localLink({
         router: appRouter,
-        layer: app.layer,
+        runtime: app.runtime,
         createContext: () => app.ctx,
       }),
     ],
@@ -135,8 +136,9 @@ test('localLink: through the serializer and the links before it', async () => {
     'down admin.members',
   ]);
 
-  // The CSV export is an HTTP response, which in-process calls can't carry.
+  // The CSV export is its own HTTP response; in-process it's a web Response.
   const projectId = (await client.project.list.query())[0]!.id;
-  const [, raw] = await safe(client.project.exportCsv.query({ projectId }));
-  expect(raw?.code).toBe('BAD_REQUEST');
+  const csv = await client.project.exportCsv.query({ projectId });
+  expect(csv.headers.get('content-type')).toBe('text/csv');
+  expect((await csv.text()).split('\n')[0]).toBe('id,title,done');
 });

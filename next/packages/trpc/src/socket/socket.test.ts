@@ -16,7 +16,7 @@ import {
   tracked,
   type CreateContextOpts,
 } from '@trpc12/trpc/server';
-import { serveSocket } from '@trpc12/trpc/socket';
+import { experimental_serveSocket } from '@trpc12/trpc/socket';
 import { expect, test, vi } from 'vite-plus/test';
 import { z } from 'zod';
 
@@ -78,7 +78,7 @@ const router = {
   }),
 };
 
-async function serve(opts: { idleTimeoutMs?: number | false } = {}) {
+async function serve(opts: { idleTimeout?: number | false } = {}) {
   const scope = Scope.makeUnsafe();
   const handler = createFetchHandler({
     router,
@@ -93,7 +93,7 @@ async function serve(opts: { idleTimeoutMs?: number | false } = {}) {
   const server = Context.get(
     await Effect.runPromise(
       Layer.buildWithScope(
-        serveSocket(handler, opts).pipe(
+        experimental_serveSocket(handler, opts).pipe(
           Layer.provideMerge(
             NodeSocketServer.layer({ port: 0, host: '127.0.0.1' }),
           ),
@@ -194,11 +194,11 @@ test('a client that stops reading pauses a subscription, which returns when the 
 });
 
 test('a dropped connection reconnects for the next call', async () => {
-  await using server = await serve({ idleTimeoutMs: 50 });
+  await using server = await serve({ idleTimeout: 50 });
   await using link = experimental_socketLink({
     socket: server.socket,
     keepAlive: false,
-    reconnect: { attempts: 3, delayMs: () => 10 },
+    reconnect: { attempts: 3, delay: () => 10 },
   });
   const client = createTrpcClient({
     router: routerType<typeof router>(),

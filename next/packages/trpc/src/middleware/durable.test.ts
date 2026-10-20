@@ -1,4 +1,4 @@
-import { Effect, Layer, Schema } from 'effect';
+import { Duration, Effect, Layer, Schema } from 'effect';
 import { Persistence } from 'effect/persistence';
 import {
   createTrpcClient,
@@ -172,6 +172,33 @@ test('instances sharing a store wait for the one running the call', async () => 
   await b.dispose();
 });
 
+test('calls with one id that start together on one instance run it once, with a store that answers later', async () => {
+  const app = makeRouter();
+  const memory = await Effect.runPromise(
+    Effect.service(Persistence.BackingPersistence).pipe(
+      Effect.provide(Persistence.layerBackingMemory),
+    ),
+  );
+  const handler = createFetchHandler({
+    router: app.router,
+    layer: Layer.succeed(Persistence.BackingPersistence, {
+      make: (id) =>
+        Effect.map(memory.make(id), (store) => ({
+          ...store,
+          get: (key: string) =>
+            Effect.tap(store.get(key), () => Effect.sleep(1)),
+        })),
+    }),
+  });
+  const results = await Promise.all([
+    post(handler, 'slow', undefined, 'together'),
+    post(handler, 'slow', undefined, 'together'),
+  ]);
+  for (const res of results) expect(await res.json()).toEqual({ json: 1 });
+  expect(app.runs.slow).toBe(1);
+  await handler.dispose();
+});
+
 test('experimental_durableLink retries a lost response with the same id', async () => {
   const app = makeRouter();
   await using http = await createTestServer({
@@ -183,7 +210,7 @@ test('experimental_durableLink retries a lost response with the same id', async 
   const client = createTrpcClient({
     router: app.router,
     links: [
-      experimental_durableLink({ delayMs: () => 0 }),
+      experimental_durableLink({ delay: () => Duration.zero }),
       httpLink({
         url: http.url,
         batch: true,
@@ -388,7 +415,7 @@ test('experimental_durableLink resumes a streamed output mid-stream, on another 
   const client = createTrpcClient({
     router: app.router,
     links: [
-      experimental_durableLink({ delayMs: () => 0 }),
+      experimental_durableLink({ delay: () => '0 millis' }),
       httpLink({
         url: 'http://localhost/trpc',
         fetch: async (url, init) => {
@@ -419,7 +446,7 @@ test('a resume that fails, then answers without frames, fails what was still ope
   const client = createTrpcClient({
     router: app.router,
     links: [
-      experimental_durableLink({ delayMs: () => 0 }),
+      experimental_durableLink({ delay: () => 0 }),
       httpLink({
         url: 'http://localhost/trpc',
         fetch: async (url, init) => {
@@ -599,7 +626,7 @@ test('inputs with files are kept without a fingerprint; an error that cannot be 
       }),
     odd: t.procedure.use(experimental_durable()).mutation(async function* () {
       yield 1;
-      throw new TrpcError({ code: 'CONFLICT', data: { fn: () => 1 } });
+      throw new TrpcError({ code: 'ODD', data: { fn: () => 1 } });
     }),
   } satisfies AnyRouter;
   const danson = createSerializer();

@@ -10,7 +10,13 @@ import { fileURLToPath } from 'node:url';
 import { NodeRuntime, NodeServices } from '@effect/platform-node';
 import { Data, Effect, FileSystem, Path, Schema } from 'effect';
 
+import { indexable, indexedHost } from '../src/seo.ts';
 import { copiedVersions, site, v12 } from '../src/site.ts';
+import {
+  onDemandRoutes,
+  pageCacheControl,
+  writeOnDemandFunction,
+} from './on-demand.ts';
 import {
   oldRedirects,
   onTrpcIoRoutes,
@@ -71,41 +77,34 @@ const acceptsMarkdown = [
 /** A v12 page, the only docs with markdown. Slugs nest: `/v12/docs/client/links`. */
 const docPath = `^${v12.basePath}/([\\w/-]+)`;
 
-const robotsMeta = /<meta\b[^>]*\bname="robots"[^>]*>/;
-
-/** Whether a prerendered page asks search engines not to index it. */
-export const isNoindex = (html: string) =>
-  robotsMeta.exec(html)?.[0].includes('noindex') ?? false;
-
-const escapeRegExp = (text: string) =>
-  text.replaceAll(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
 /**
- * `X-Robots-Tag: noindex` for the pages `paths` and their markdown, which
- * has no `<meta>` of its own: the experiments' docs pages.
+ * `X-Robots-Tag: noindex` on every response (pages, markdown, `llms.txt`,
+ * images), unless the build is `indexable`; then on every host but trpc.io
+ * (an old alias, the deployment's own URLs).
  */
-export const noindexRoutes = (
-  paths: ReadonlyArray<string>,
-): ReadonlyArray<VercelRoute> =>
-  paths.length === 0
-    ? []
-    : [
-        {
-          continue: true,
-          headers: { 'X-Robots-Tag': 'noindex' },
-          src: `^(?:${paths.map(escapeRegExp).join('|')})(?:\\.md)?$`,
-        },
-      ];
+export const noindexRoute = (
+  siteUrl: string,
+  vercelEnv: string,
+): VercelRoute => ({
+  continue: true,
+  headers: { 'X-Robots-Tag': 'noindex' },
+  ...(indexable(siteUrl, vercelEnv)
+    ? {
+        missing: [
+          { type: 'host', value: `^${indexedHost.replaceAll('.', '\\.')}$` },
+        ],
+      }
+    : {}),
+  src: '^/.*$',
+});
 
-/**
- * `old`: the redirects that keep trpc.io's URLs working (`old-routes.ts`).
- * `noindex`: the pages search engines shouldn't index.
- */
+/** `old`: the redirects that keep trpc.io's URLs working (`old-routes.ts`). */
 export const routes = (
   first: string,
   old: ReadonlyArray<VercelRoute> = [],
-  noindex: ReadonlyArray<string> = [],
+  noindex: VercelRoute = noindexRoute(site.url, ''),
 ): ReadonlyArray<VercelRoute> => [
+  noindex,
   { headers: { Location: '/$1' }, src: '^/(.+)/$', status: 308 },
   { headers: { Location: '/$1' }, src: '^/(.+)\\.html$', status: 308 },
   {
@@ -128,10 +127,7 @@ export const routes = (
   },
   {
     continue: true,
-    headers: {
-      'Cache-Control':
-        'public, max-age=0, s-maxage=86400, stale-while-revalidate=604800',
-    },
+    headers: { 'Cache-Control': pageCacheControl },
     src: '^/(?!assets/).*$',
   },
   {
@@ -142,7 +138,6 @@ export const routes = (
     },
     src: '^/.*$',
   },
-  ...noindexRoutes(noindex),
   {
     continue: true,
     headers: {
@@ -170,6 +165,7 @@ export const routes = (
     has: acceptsMarkdown,
     src: `${docPath}$`,
   },
+  ...onDemandRoutes(),
   { handle: 'filesystem' },
   { handle: 'error' },
   { dest: '/404.md', has: acceptsMarkdown, src: '^/.*$', status: 404 },
@@ -221,16 +217,10 @@ export const writeVercelOutput = Effect.fn('writeVercelOutput')(function* (
   )).map((file) => file.split(path.sep).join('/'));
   const served = servedPaths(files);
   const old = oldRedirects({ redirects: trpcRedirects, served });
-  const noindex = yield* Effect.filter(
-    files.filter((file) => file.endsWith('/index.html')),
-    (file) =>
-      Effect.map(fs.readFileString(path.join(staticDir, file)), isNoindex),
-    { concurrency: 'unbounded' },
-  );
   const allRoutes = routes(
     first,
     [...redirectRoutes(old.redirects), ...onTrpcIoRoutes(site.url)],
-    noindex.map((file) => `/${file.slice(0, -'/index.html'.length)}`),
+    noindexRoute(site.url, process.env['VERCEL_ENV'] ?? ''),
   );
   const missingAnchors = yield* Effect.filter(old.redirects, (redirect) => {
     const url = new URL(redirect.location, site.url);
@@ -271,6 +261,7 @@ export const writeVercelOutput = Effect.fn('writeVercelOutput')(function* (
     path.join(output, 'config.json'),
     `${JSON.stringify(config, null, 2)}\n`,
   );
+  yield* writeOnDemandFunction(root, output);
 });
 
 if (import.meta.main) {

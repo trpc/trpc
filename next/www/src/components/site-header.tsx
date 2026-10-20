@@ -114,7 +114,7 @@ export function SiteHeader() {
           {/* The experiments are v12's, so v11 readers don't see the menu. */}
           {onHome ? (
             <span data-home-panel="v12">
-              <ExperimentsMenu />
+              <ExperimentsMenu hidden={homeSearch.version !== 'v12'} />
             </span>
           ) : linked === 'v12' ? (
             <ExperimentsMenu />

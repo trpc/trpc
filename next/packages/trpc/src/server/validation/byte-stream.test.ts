@@ -268,7 +268,7 @@ test('retryLink never retries a byte stream call, as its body is read once', asy
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
     links: [
-      retryLink({ retries: 2, delayMs: () => 0 }),
+      retryLink({ retries: 2, delay: () => 0 }),
       httpLink({ url: server.url }),
     ],
   });

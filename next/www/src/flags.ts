@@ -12,8 +12,24 @@ import { type ExperimentId, experimentIds } from './experiments.ts';
  */
 export const flagParam = 'flags';
 
-/** The root route's search: `?flags=` when it names any experiment. */
+/**
+ * The Experiments menu's query parameter: `?experiments=open` opens it, and
+ * `?experiments=<id>` opens it on one experiment, showing its pages. Links
+ * keep `?flags=` but not this, so the menu closes on navigating.
+ */
+export const menuParam = 'experiments';
+
+/** The menu with no experiment picked. */
+export const menuOpen = 'open';
+
+export type MenuState = typeof menuOpen | ExperimentId;
+
+/**
+ * The root route's search: `?flags=` when it names any experiment, and
+ * `?experiments=` while the menu is open.
+ */
 export interface FlagSearch {
+  readonly experiments?: MenuState | undefined;
   readonly flags?: string | undefined;
 }
 
@@ -46,13 +62,26 @@ export function withFlag(
   );
 }
 
+/** The menu state `param` names, or `undefined` for a closed menu. */
+export function menuStateOf(param: unknown): MenuState | undefined {
+  if (param === menuOpen) {
+    return menuOpen;
+  }
+  return experimentIds.find((id) => id === param);
+}
+
 /**
  * The root route's `validateSearch`: keeps `?flags=` with only the known
- * experiments in it, and drops it when it names none.
+ * experiments in it, and drops it when it names none; keeps `?experiments=`
+ * when it's `open` or an experiment.
  */
 export function validateFlagSearch(search: Record<string, unknown>) {
   const value = flagParamFor(flagsIn(search[flagParam]));
-  const validated: FlagSearch = value === undefined ? {} : { flags: value };
+  const menu = menuStateOf(search[menuParam]);
+  const validated: FlagSearch = {
+    ...(menu === undefined ? {} : { experiments: menu }),
+    ...(value === undefined ? {} : { flags: value }),
+  };
   return validated;
 }
 
@@ -89,31 +118,61 @@ export function useHydrated() {
 }
 
 /**
- * The experiments the URL turns on. The prerendered page was built without
- * a query string, so this is empty until the page has hydrated, and an
- * experiment's pages appear right after.
+ * The experiments the URL turns on, the same on the server and in the
+ * browser: a URL with `?flags=` is rendered on demand (`build/on-demand.ts`),
+ * so its HTML already lists their pages, and the prerendered pages are the
+ * URLs without it.
  */
 export function useFlagsOn() {
-  const hydrated = useHydrated();
   const param = useSearch({
     select: (search) => search.flags,
     strict: false,
   });
-  return hydrated ? flagsIn(param) : [];
+  return flagsIn(param);
 }
 
-/** Rewrites `?flags=` to turn on `next`, leaving the page where it is. */
-export function useSetFlags() {
+/**
+ * Rewrites the root route's search in place: the same history entry, no
+ * scrolling, the hash kept.
+ */
+function useReplaceSearch() {
   const navigate = useNavigate();
-  return (next: ReadonlyArray<ExperimentId>) =>
+  return (update: (prev: FlagSearch) => FlagSearch) =>
     void navigate({
       hash: true,
       hashScrollIntoView: false,
       replace: true,
       resetScroll: false,
-      search: (prev) => ({ ...prev, flags: flagParamFor(next) }),
+      search: (prev) => update(prev),
       to: '.',
     });
+}
+
+/** Rewrites `?flags=` to turn on `next`, leaving the page where it is. */
+export function useSetFlags() {
+  const replaceSearch = useReplaceSearch();
+  return (next: ReadonlyArray<ExperimentId>) =>
+    replaceSearch((prev) => ({ ...prev, flags: flagParamFor(next) }));
+}
+
+/**
+ * The Experiments menu's state, from `?experiments=`. It opens once the page
+ * has hydrated: the menu is a popup, which only renders in the browser.
+ */
+export function useMenuState() {
+  const hydrated = useHydrated();
+  const state = useSearch({
+    select: (search) => search.experiments,
+    strict: false,
+  });
+  return hydrated ? state : undefined;
+}
+
+/** Opens the menu on `state`, or closes it, like `useSetFlags`. */
+export function useSetMenuState() {
+  const replaceSearch = useReplaceSearch();
+  return (state: MenuState | undefined) =>
+    replaceSearch((prev) => ({ ...prev, experiments: state }));
 }
 
 /**

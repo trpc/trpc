@@ -1,5 +1,5 @@
 ---
-title: dedupeLink
+title: '`dedupeLink`'
 description: Share one request between identical queries or subscriptions that haven't sent anything back yet.
 section: Client
 parent: client/links

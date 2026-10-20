@@ -17,7 +17,7 @@
  * ```
  * @module
  */
-import { Effect, Result, Stream } from 'effect';
+import { Duration, Effect, Result, Stream } from 'effect';
 import { Base64 } from 'effect/encoding';
 
 /**
@@ -234,7 +234,7 @@ export interface LambdaFetchHandler {
  * Options for {@link toLambdaHandler} and {@link toLambdaStreamingHandler}.
  * @example
  * ```ts
- * toLambdaHandler(handler, { timeoutMarginMs: 500 });
+ * toLambdaHandler(handler, { timeoutMargin: '500 millis' });
  * ```
  * @since 0.1.0
  * @stability stable
@@ -243,9 +243,9 @@ export interface LambdaHandlerOptions {
   /**
    * Abort the call this long before Lambda's deadline, so it ends with an
    * error response instead of a timeout.
-   * @default 1000
+   * @default '1 second'
    */
-  readonly timeoutMarginMs?: number;
+  readonly timeoutMargin?: Duration.Input;
 }
 
 const isV2 = (event: LambdaEvent): event is LambdaV2Event =>
@@ -360,15 +360,29 @@ const toRequest = (event: LambdaEvent, signal: AbortSignal): Request =>
       ? v2Request(event, signal)
       : v1Request(event, signal);
 
-const deadline = (
+const marginOf = (options: LambdaHandlerOptions) =>
+  Duration.toMillis(options.timeoutMargin ?? '1 second');
+
+/**
+ * The fetch handler's response to `event`. Its request's signal aborts when
+ * the call is interrupted, or `margin` milliseconds before Lambda's deadline.
+ */
+const respond = (
+  handler: LambdaFetchHandler,
+  event: LambdaEvent,
   context: LambdaContext,
   margin: number,
-): Effect.Effect<AbortSignal> =>
-  Effect.sync(() => {
+): Effect.Effect<Response> =>
+  Effect.promise((interrupted) => {
     const remaining = context.getRemainingTimeInMillis?.();
-    return remaining === undefined
-      ? new AbortController().signal
-      : AbortSignal.timeout(Math.max(0, remaining - margin));
+    const signal =
+      remaining === undefined
+        ? interrupted
+        : AbortSignal.any([
+            interrupted,
+            AbortSignal.timeout(Math.max(0, remaining - margin)),
+          ]);
+    return handler.fetch(toRequest(event, signal), { event, context });
   });
 
 const toResult = (
@@ -415,16 +429,29 @@ const toResult = (
     }
     const multiValueHeaders: Record<string, Array<string>> = {};
     if (cookies.length > 0) multiValueHeaders['set-cookie'] = cookies;
+    if (!isAlb(event)) {
+      return {
+        statusCode: response.status,
+        headers,
+        multiValueHeaders,
+        body,
+        isBase64Encoded: !text,
+      } satisfies LambdaV1Result;
+    }
+    // An ALB reads only `multiValueHeaders` when the target group enables
+    // them (its events then carry `multiValueHeaders`), and only `headers`
+    // otherwise, which holds one `set-cookie`.
+    const multi = event.multiValueHeaders != null;
+    if (multi) {
+      for (const [k, v] of Object.entries(headers)) multiValueHeaders[k] = [v];
+    } else if (cookies.length > 0) {
+      headers['set-cookie'] = cookies.at(-1)!;
+    }
     return {
       statusCode: response.status,
-      ...(isAlb(event)
-        ? {
-            statusDescription:
-              `${response.status} ${response.statusText}`.trim(),
-          }
-        : {}),
-      headers,
-      multiValueHeaders,
+      statusDescription: `${response.status} ${response.statusText}`.trim(),
+      headers: multi ? {} : headers,
+      multiValueHeaders: multi ? multiValueHeaders : {},
       body,
       isBase64Encoded: !text,
     } satisfies LambdaV1Result;
@@ -451,16 +478,12 @@ export function toLambdaHandler(
   handler: LambdaFetchHandler,
   options: LambdaHandlerOptions = {},
 ): (event: LambdaEvent, context?: LambdaContext) => Promise<LambdaResult> {
-  const margin = options.timeoutMarginMs ?? 1000;
+  const margin = marginOf(options);
   return (event, context = {}) =>
     Effect.runPromise(
-      Effect.gen(function* () {
-        const signal = yield* deadline(context, margin);
-        const response = yield* Effect.promise(() =>
-          handler.fetch(toRequest(event, signal), { event, context }),
-        );
-        return yield* toResult(event, response);
-      }),
+      Effect.flatMap(respond(handler, event, context, margin), (response) =>
+        toResult(event, response),
+      ),
     );
 }
 
@@ -512,14 +535,11 @@ export function toLambdaStreamingHandler(
   stream: LambdaResponseStream,
   context?: LambdaContext,
 ) => Promise<void> {
-  const margin = options.timeoutMarginMs ?? 1000;
+  const margin = marginOf(options);
   return (event, stream, context = {}) =>
     Effect.runPromise(
       Effect.gen(function* () {
-        const signal = yield* deadline(context, margin);
-        const response = yield* Effect.promise(() =>
-          handler.fetch(toRequest(event, signal), { event, context }),
-        );
+        const response = yield* respond(handler, event, context, margin);
         const headers: Record<string, string> = {};
         for (const [k, v] of response.headers) {
           if (k !== 'set-cookie') headers[k] = v;

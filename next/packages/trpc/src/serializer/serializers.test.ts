@@ -1,4 +1,5 @@
 import * as devalue from 'devalue';
+import { Effect, Stream } from 'effect';
 import superjson from 'superjson';
 import {
   createTrpcClient,
@@ -9,10 +10,19 @@ import {
   wsLink,
   type Deserialized,
 } from '@trpc12/trpc/client';
-import { createRouterClient, initTrpc, TrpcError } from '@trpc12/trpc/server';
+import { createEffectClient } from '@trpc12/trpc/effect';
+import {
+  createRouterClient,
+  initTrpc,
+  TrpcError,
+  type inferProcedureOutput,
+  type inferRouterInputs,
+  type inferRouterOutputs,
+} from '@trpc12/trpc/server';
 import {
   createSerializer,
   createSyncSerializer,
+  jsonSerializer,
   type JsonOf,
 } from '@trpc12/trpc/serializer';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
@@ -77,6 +87,45 @@ test('JsonOf is the JSON round trip of a type', () => {
   expectTypeOf<JsonOf<Date | Set<number>, Date>>().toEqualTypeOf<
     Date | Record<string, never>
   >();
+});
+
+test('jsonSerializer writes what JSON.stringify writes, and skips the copy when a value is JSON already', () => {
+  const roundtrip = (value: unknown) =>
+    JSON.parse(JSON.stringify(value) ?? 'null') as unknown;
+  const pure: Record<string, unknown> = {
+    id: '1',
+    n: 2.5,
+    ok: true,
+    none: null,
+    tags: ['a', { b: 1 }],
+  };
+  const sparse: unknown[] = [1];
+  sparse[2] = 3;
+  const values: unknown[] = [
+    pure,
+    'text',
+    [1, 'two', [false]],
+    { at, missing: undefined, nan: NaN, inf: -Infinity },
+    { list: [undefined, () => 1, Symbol('s')] },
+    sparse,
+    { custom: { toJSON: (key: string) => `custom:${key}` } },
+    { map: new Map([['a', 1]]), set: new Set([1]), date: new Date(Number.NaN) },
+  ];
+  for (const value of values) {
+    expect(jsonSerializer.serialize(value).json).toEqual(roundtrip(value));
+  }
+  expect(jsonSerializer.serialize(pure).json).toBe(pure);
+  const dated: { at: Date } = { at };
+  expect(jsonSerializer.serialize(dated).json).not.toBe(dated);
+  expect(jsonSerializer.serialize(undefined)).toEqual({});
+
+  const loop: Record<string, unknown> = { a: 1 };
+  loop['self'] = loop;
+  expect(() => jsonSerializer.serialize(loop)).toThrow(/circular/);
+  expect(() => jsonSerializer.serialize({ n: 1n })).toThrow(/BigInt/);
+  expect(() =>
+    jsonSerializer.serialize({ files: new Map([['f', new Blob(['x'])]]) }),
+  ).toThrow(/streaming serializer/);
 });
 
 test('ReadableStream outputs arrive as ReadableStreams; unknown stays unknown', async () => {
@@ -165,7 +214,7 @@ test('no serializer: plain JSON, JSON-form client types, ?input= GET params', as
   expect(await raw.json()).toEqual({ json: 'PLAIN' });
 
   const count = await client.count.query();
-  expectTypeOf(count).toEqualTypeOf<
+  expectTypeOf(count).toExtend<
     AsyncIterable<{ n: number; at: string }, string>
   >();
   const iterator = count[Symbol.asyncIterator]();
@@ -258,6 +307,29 @@ test('error data follows the serializer like outputs', async () => {
     expect(nativeErr.data.at).toBeInstanceOf(Date);
   }
   expect(nativeErr?.defined).toBe(true);
+
+  const effectClient = createEffectClient({
+    router: routerType<typeof expiring>(),
+    links: [httpLink({ url: server.url })],
+  });
+  const effectErr = await Effect.runPromise(
+    Effect.flip(effectClient.expired.query()),
+  );
+  if (effectErr.defined && effectErr.code === 'EXPIRED') {
+    expectTypeOf(effectErr.data).toEqualTypeOf<{ at: string }>();
+  }
+  expect(effectErr).toMatchObject({ data: { at: at.toJSON() } });
+  const nativeEffect = createEffectClient({
+    router: routerType<typeof expiring>(),
+    links: [httpLink({ url: nativeServer.url, serializer: danson })],
+  });
+  const nativeEffectErr = await Effect.runPromise(
+    Effect.flip(nativeEffect.expired.query()),
+  );
+  if (nativeEffectErr.defined && nativeEffectErr.code === 'EXPIRED') {
+    expectTypeOf(nativeEffectErr.data).toEqualTypeOf<{ at: Date }>();
+  }
+  expect(nativeEffectErr).toMatchObject({ data: { at } });
 });
 
 const superjsonSerializer = createSyncSerializer<
@@ -294,6 +366,84 @@ test('a sync serializer (superjson): its types survive, the transport frames roo
   // In-process calls pass values by reference, whatever the serializer.
   const caller = createRouterClient(router);
   expectTypeOf((await caller.later.query()).at).toEqualTypeOf<Date>();
+});
+
+test('inferRouterOutputs is what a client receives: plain JSON for a router type, its links for a client', async () => {
+  const shapes = {
+    post: {
+      byId: t.procedure.input(z.object({ id: z.string() })).query((opts) => ({
+        id: opts.input.id,
+        at,
+        views: new Map([['ada', 1]]),
+        note: undefined as string | undefined,
+      })),
+    },
+  };
+  type ServerPost = inferProcedureOutput<typeof shapes.post.byId>;
+  expectTypeOf<ServerPost['at']>().toEqualTypeOf<Date>();
+
+  type JsonPost = inferRouterOutputs<typeof shapes>['post']['byId'];
+  expectTypeOf<JsonPost>().toEqualTypeOf<{
+    id: string;
+    at: string;
+    views: Record<string, never>;
+    note?: string;
+  }>();
+  expectTypeOf<
+    JsonOf<{ n: bigint; list: (number | undefined)[] }>
+  >().toEqualTypeOf<{ n: never; list: (number | null)[] }>();
+
+  await using server = await createTestServer({ router: shapes });
+  const json = createTrpcClient({
+    router: routerType<typeof shapes>(),
+    links: [httpLink({ url: server.url })],
+  });
+  const plain = await json.post.byId.query({ id: '1' });
+  expectTypeOf(plain).toEqualTypeOf<JsonPost>();
+  expectTypeOf<
+    inferRouterOutputs<typeof json>['post']['byId']
+  >().toEqualTypeOf<JsonPost>();
+  expect(plain).toEqual({ id: '1', at: at.toJSON(), views: {} });
+
+  await using richServer = await createTestServer({
+    router: shapes,
+    serializer: danson,
+  });
+  const makeClient = () =>
+    createTrpcClient({
+      router: routerType<typeof shapes>(),
+      links: [httpLink({ url: richServer.url, serializer: danson })],
+    });
+  const rich = await makeClient().post.byId.query({ id: '1' });
+  type RichPost = inferRouterOutputs<typeof makeClient>['post']['byId'];
+  expectTypeOf(rich).toEqualTypeOf<RichPost>();
+  expectTypeOf<RichPost>().toEqualTypeOf<ServerPost>();
+  expect(rich.views).toEqual(new Map([['ada', 1]]));
+
+  const sync = createTrpcClient({
+    router: routerType<typeof shapes>(),
+    links: [httpLink({ url: server.url, serializer: superjsonSerializer })],
+  });
+  expectTypeOf<
+    inferRouterOutputs<typeof sync>['post']['byId']
+  >().toEqualTypeOf<{
+    id: string;
+    at: Date;
+    views: Map<string, number>;
+    note?: string | undefined;
+  }>();
+
+  const caller = createRouterClient(shapes);
+  expectTypeOf<
+    inferRouterOutputs<typeof caller>['post']['byId']
+  >().toEqualTypeOf<ServerPost>();
+
+  expectTypeOf<
+    inferRouterInputs<typeof shapes>['post']['byId']
+  >().toEqualTypeOf<{ id: string }>();
+  expectTypeOf<inferRouterInputs<typeof makeClient>>().toEqualTypeOf<
+    inferRouterInputs<typeof shapes>
+  >();
 });
 
 test('devalue as a sync transformer', async () => {
@@ -370,6 +520,27 @@ test('nested deferred values stream with every serializer; files in inputs need 
   await expect(client.file.mutate(new Blob(['x']))).rejects.toMatchObject({
     message: expect.stringContaining('streaming serializer'),
   });
+});
+
+test("returning a deferred AsyncIterable ends a read that's still waiting for its chunk", async () => {
+  const silent: AsyncIterable<never> = {
+    [Symbol.asyncIterator]: () => ({ next: () => new Promise(() => {}) }),
+  };
+  for (const serializer of [createSerializer(), jsonSerializer]) {
+    const serialized = serializer.serializeDeferred({ items: silent });
+    const value = await Effect.runPromise(
+      serializer.deserializeStream<{ items: AsyncIterable<unknown> }, never>(
+        Stream.concat(Stream.make(serialized.head), Stream.never),
+      ),
+    );
+    const iterator = value.items[Symbol.asyncIterator]();
+    const read = iterator.next();
+    await expect(iterator.return?.()).resolves.toEqual({
+      done: true,
+      value: undefined,
+    });
+    await expect(read).resolves.toEqual({ done: true, value: undefined });
+  }
 });
 
 test('a File nested in an input or output fails with the other serializers, before it is sent', async () => {

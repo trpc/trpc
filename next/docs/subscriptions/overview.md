@@ -1,13 +1,13 @@
 ---
 title: Subscriptions
 label: Overview
-description: Streams of events over SSE or WebSockets, with tracked() ids so reconnects resume.
+description: Streams of events over SSE or WebSockets, with `tracked()` ids so reconnects resume.
 section: Subscriptions
 order: 1
 v11: server/subscriptions
 ---
 
-A subscription returns an async generator, an `AsyncIterable` or an Effect `Stream`. Clients iterate it with `for await`. Breaking out of the loop, or aborting `signal`, closes the connection.
+A subscription returns an async generator, an `AsyncIterable` or an Effect `Stream`. Clients iterate it with `for await`, or through `safe()` to get a failure as a result ([Errors without try/catch](../client/errors.md#streamed-outputs-and-subscriptions)). Breaking out of the loop, or aborting `signal`, closes the connection.
 
 ```ts twoslash
 // ---cut-start---
@@ -77,20 +77,20 @@ const client = createTrpcClient({
 client.onPost.subscribe(undefined, { lastEventId: '42' }); // resume from a known id
 ```
 
-`httpLink` reconnects a dropped subscription with backoff (`reconnect: { attempts, delayMs }`). `wsLink` resends `lastEventId` after reconnecting, and when a draining server asks it to move to a new connection ([Rolling deploys](../client/links/ws.md#rolling-deploys)). A subscription without `tracked()` ids has nothing to resume from, so a reconnect or a move starts it over: the resolver runs again without `lastEventId`. A subscription whose resolver has side effects that must not rerun can opt out with `subscribe(input, { reconnect: false })`; a dropped connection then ends it with `NETWORK_ERROR`.
+`httpLink` reconnects a dropped subscription with backoff (`reconnect: { attempts, delay }`). `wsLink` resends `lastEventId` after reconnecting, and when a draining server asks it to move to a new connection ([Rolling deploys](../client/links/ws.md#rolling-deploys)). A subscription without `tracked()` ids has nothing to resume from, so a reconnect or a move starts it over: the resolver runs again without `lastEventId`. A subscription whose resolver has side effects that must not rerun can opt out with `subscribe(input, { reconnect: false })`; a dropped connection then ends it with `NETWORK_ERROR`.
 
-While a subscription is quiet, the handler sends a `: ping` comment every 15 seconds so proxies don't close it as idle. Set `createFetchHandler({ sse: { pingMs } })`, or `false` to turn it off.
+While a subscription is quiet, the handler sends a `: ping` comment every 15 seconds so proxies don't close it as idle. Set `createFetchHandler({ sse: { pingInterval } })` (`'30 seconds'`, say), or `false` to turn it off.
 
-## Reading with EventSource
+## Reading with `EventSource`
 
-The stream is standard SSE, so a browser `EventSource` (or `curl`) can read a subscription without the client. Input goes in the query string as `httpLink` sends it (`/trpc/onPost?input={"channel":"news"}`, URL-encoded). Each `message` event's `data` is a serialized value: for a `tracked()` event, its `{ id, data }`, with the id also in `event.lastEventId`. An `EventSource` reconnects with `Last-Event-ID` by itself, so close it on the `done` event, or it reconnects when the stream ends. Failures arrive as `error` events with `data`:
+The stream is standard SSE, so a browser `EventSource` (or `curl`) can read a subscription without the client. Input goes in the query string as `httpLink` sends it (`/trpc/onPost?input={"channel":"news"}`, URL-encoded). Each `message` event's `data` is a serialized value, as a query's response body is (`{"json":…}` with the default serializer): for a `tracked()` event, its `{ id, data }`, with the id also in `event.lastEventId`. An `EventSource` reconnects with `Last-Event-ID` by itself, so close it on the `done` event, or it reconnects when the stream ends. Failures arrive as `error` events with `data`:
 
 ```ts twoslash
 // ---cut-start---
 declare function render(data: unknown): void;
 // ---cut-end---
 const source = new EventSource('/trpc/onPost');
-source.onmessage = (event) => render(JSON.parse(event.data));
+source.onmessage = (event) => render(JSON.parse(event.data).json);
 source.addEventListener('done', () => source.close());
 ```
 

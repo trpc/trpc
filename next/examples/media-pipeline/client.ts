@@ -263,7 +263,9 @@ export async function main(url: string) {
   const reason = matchError(missing, {
     PHOTO_NOT_FOUND: (e) => `no photo ${e.data.id}`,
     BAD_REQUEST: (e) => `invalid input: ${e.data.issues.length} issues`,
-    builtin: (e) => `${e.code}: ${e.message}`,
+    NETWORK_ERROR: () => 'offline',
+    BAD_RESPONSE: (e) => `unreadable: ${e.message}`,
+    unexpected: (e) => `${e.code}: ${e.message}`,
   });
   console.log('photos.report failed:', reason);
   assert.equal(reason, 'no photo nope');

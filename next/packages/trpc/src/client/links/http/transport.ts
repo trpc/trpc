@@ -39,6 +39,8 @@ import { resumeOf, retrying, type Retries } from '../resume.ts';
 import type { Batch } from './batch.ts';
 import type { HttpLinkOptions } from './link.ts';
 
+const NO_BODY_STATUSES = new Set([204, 205, 304]);
+
 const isAbort = (cause: unknown) =>
   cause instanceof Error && cause.name === 'AbortError';
 
@@ -63,6 +65,20 @@ export function toHttpError(cause: unknown): AnyTrpcError {
     cause,
   });
 }
+
+/**
+ * A streamed response that ends before its head never answered the call, so
+ * it failed like a cut connection; `STREAM_INTERRUPTED` is for values still
+ * open after the call resolved.
+ */
+const headless = (error: AnyTrpcError): AnyTrpcError =>
+  error.code === 'STREAM_INTERRUPTED'
+    ? new TrpcError({
+        code: 'NETWORK_ERROR',
+        message: 'The response ended before its result',
+        cause: error,
+      })
+    : error;
 
 /**
  * Calls batch together only when their `init`s are equal. `undefined` for
@@ -463,11 +479,8 @@ export function makeTransport(
     if (!ok(reply)) return readError(reply);
     const blob = reply.web.headers.get(HEADER.blob);
     if (blob !== null) {
-      return Effect.tryPromise({
-        // The web body: a browser can keep a large `Blob` on disk.
-        try: () => readBlob(reply.web, blob),
-        catch: toHttpError,
-      });
+      // The web body: a browser can keep a large `Blob` on disk.
+      return Effect.mapError(readBlob(reply.web, blob), toHttpError);
     }
     if (streamed(reply)) {
       const frames = readStream(reply) as Stream.Stream<Frame, AnyTrpcError>;
@@ -481,17 +494,21 @@ export function makeTransport(
           ...streamErrors,
         })
         .pipe(
-          Effect.mapError(toHttpError),
+          Effect.mapError((error) => headless(toHttpError(error))),
           Effect.catchDefect((defect) => Effect.fail(toHttpError(defect))),
         );
     }
     return reply.response.text.pipe(
       Effect.flatMap((text) =>
-        Effect.try({
-          try: () =>
-            text ? serializer.deserialize(JSON.parse(text)) : undefined,
-          catch: badResponse('Invalid response body'),
-        }),
+        // A tRPC server always writes a body (`{}` for `undefined`), except
+        // for a status that can't have one.
+        text === '' && !NO_BODY_STATUSES.has(reply.response.status)
+          ? Effect.fail(badResponse('Empty response body')())
+          : Effect.try({
+              try: () =>
+                text ? serializer.deserialize(JSON.parse(text)) : undefined,
+              catch: badResponse('Invalid response body'),
+            }),
       ),
       Effect.mapError(toHttpError),
     );

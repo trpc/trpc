@@ -1,5 +1,5 @@
 import { NodeRedis } from '@effect/platform-node';
-import { type Duration, Effect, Fiber, Layer } from 'effect';
+import { Deferred, type Duration, Effect, Fiber, Layer } from 'effect';
 import {
   createTrpcClient,
   httpLink,
@@ -22,7 +22,8 @@ const t = initTrpc();
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 function makeRouter(opts: {
-  work: number;
+  /** Milliseconds, or what `by`'s resolver waits for. */
+  work: number | ((by: string) => Promise<unknown>);
   timeout?: Duration.Input;
   ttl?: Duration.Input;
 }) {
@@ -57,7 +58,9 @@ function makeRouter(opts: {
           const { input } = args;
           log.push(`start ${input.by}`);
           start(input.by).resolve();
-          await sleep(opts.work);
+          await (typeof opts.work === 'number'
+            ? sleep(opts.work)
+            : opts.work(input.by));
           log.push(`end ${input.by}`);
           return { by: input.by, waited: args.ctx.lock.waited };
         }),
@@ -83,10 +86,38 @@ async function serve(
   return { http, client };
 }
 
+/** A memory locker that resolves `asked` once `key` is acquired `times` times. */
+function countingLocker(key: string, times: number) {
+  const asked = Deferred.makeUnsafe<void>();
+  let count = 0;
+  const layer = Layer.effect(
+    experimental_Locker,
+    Effect.gen(function* () {
+      const locker = yield* experimental_Locker;
+      return {
+        acquire: (k, options) =>
+          Effect.suspend(() => {
+            if (k === key && ++count === times) {
+              Deferred.doneUnsafe(asked, Effect.void);
+            }
+            return locker.acquire(k, options);
+          }),
+      };
+    }),
+  ).pipe(Layer.provide(experimental_memoryLocker()));
+  return { layer, asked: Effect.runPromise(Deferred.await(asked)) };
+}
+
 test('calls with the same key run one at a time; others run alongside', async () => {
-  const app = makeRouter({ work: 40 });
+  const locker = countingLocker('invoice:1', 2);
+  const app = makeRouter({
+    work: (by) =>
+      by === 'a'
+        ? Promise.all([locker.asked, app.started('c')])
+        : Promise.resolve(),
+  });
   const { log } = app;
-  const server = await serve(app.router, experimental_memoryLocker());
+  const server = await serve(app.router, locker.layer);
   const { client } = server;
   await using _ = server.http;
   const [a, b, c] = await Promise.all([

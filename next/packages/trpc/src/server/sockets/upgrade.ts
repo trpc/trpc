@@ -34,27 +34,18 @@ export const UpgradeServer: Context.ServiceClass<
   UpgradeServer,
   '@trpc12/trpc/UpgradeServer',
   ServeSocket
-> = Context.Service<UpgradeServer, ServeSocket>()('@trpc12/trpc/UpgradeServer');
-
-interface NodeDuplexLike {
-  readonly writableLength: number;
-  readonly destroyed: boolean;
-}
+> = /* @__PURE__ */ Context.Service<UpgradeServer, ServeSocket>()(
+  '@trpc12/trpc/UpgradeServer',
+);
 
 /**
  * The TCP socket under a Node upgrade (`IncomingMessage.socket`). `ws`
  * writes to it directly, so what it hasn't sent yet is `ws`'s
- * `bufferedAmount`, which Effect's `Socket` keeps to itself.
+ * `bufferedAmount`, which Effect's `Socket` keeps to itself. Bun's
+ * request is a web `Request`, without one.
  */
-const nodeSocketOf = (
-  request: HttpServerRequest.HttpServerRequest,
-): NodeDuplexLike | undefined => {
-  const socket = (request.source as { socket?: Partial<NodeDuplexLike> })
-    ?.socket;
-  return typeof socket?.writableLength === 'number'
-    ? (socket as NodeDuplexLike)
-    : undefined;
-};
+const nodeSocketOf = (request: HttpServerRequest.HttpServerRequest) =>
+  (request.source as { socket?: { readonly writableLength: number } }).socket;
 
 /** Upgrades `request` and serves its socket until it closes. @internal */
 export const upgradeTo = (
@@ -64,11 +55,7 @@ export const upgradeTo = (
   Effect.flatMap(request.upgrade, (socket) => {
     const tcp = nodeSocketOf(request);
     return serve(
-      tcp
-        ? withBufferedAmount(socket, () =>
-            tcp.destroyed ? 0 : tcp.writableLength,
-          )
-        : socket,
+      tcp ? withBufferedAmount(socket, () => tcp.writableLength) : socket,
     );
   });
 
@@ -76,7 +63,7 @@ const OPEN = 1;
 const CLOSING = 2;
 const CLOSED = 3;
 
-const encoder = new TextEncoder();
+const encoder = /* @__PURE__ */ new TextEncoder();
 const byteLength = (data: string | Uint8Array) =>
   typeof data === 'string' ? encoder.encode(data).byteLength : data.byteLength;
 
@@ -95,7 +82,7 @@ export const serveAsWebSocket = (
   runSocket({
     socket,
     frames: socketFrames(socket),
-    idleTimeoutMs: false,
+    idleTimeout: undefined,
     open: (outbox) =>
       Effect.gen(function* () {
         const unsent = bufferedAmountOf(socket);
@@ -125,7 +112,7 @@ export const serveAsWebSocket = (
             return readyState;
           },
           get bufferedAmount() {
-            return queuedBytes + (readyState === OPEN ? (unsent?.() ?? 0) : 0);
+            return queuedBytes + unsent();
           },
           send(data) {
             if (readyState !== OPEN) return;

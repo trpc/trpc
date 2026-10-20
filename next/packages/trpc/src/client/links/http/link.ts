@@ -1,4 +1,4 @@
-import { Stream } from 'effect';
+import { Stream, type Duration } from 'effect';
 import { TrpcError } from '../../../internal/error.ts';
 import type { FormOfOptions, MaybePromise } from '../../../internal/types.ts';
 import {
@@ -7,11 +7,11 @@ import {
 } from '../../../serializer/index.ts';
 import {
   withSerializer,
+  type BuiltinCallOptions,
   type Operation,
   type TrpcLink,
   type TrpcRequestInit,
 } from '../../link.ts';
-import { withSubscriptions } from '../../subscriptions.ts';
 import { makeBatcher } from './batch.ts';
 import { makeSubscriptions } from './sse.ts';
 import { makeTransport } from './transport.ts';
@@ -52,8 +52,12 @@ export interface HttpLinkOptions<
     | ((opts: {
         ops: ReadonlyArray<Operation>;
       }) => MaybePromise<TrpcRequestInit | undefined>);
-  /** A custom `fetch`. */
-  fetch?: typeof globalThis.fetch;
+  /**
+   * A custom `fetch`, called with the URL as a string. Any function with
+   * that call shape fits, so a wrapper needn't copy extras like Bun's
+   * `fetch.preconnect`.
+   */
+  fetch?: (url: string, init: RequestInit) => Promise<Response>;
   /**
    * Queries whose URL would be longer than this are sent with a body, as
    * `longQuery` says.
@@ -91,26 +95,35 @@ export interface HttpLinkOptions<
   reconnect?: {
     /** @default 5 */
     attempts?: number;
-    /** @default attempt => Math.min(1000 * 2 ** (attempt - 1), 30_000) */
-    delayMs?: (attempt: number) => number;
+    /**
+     * Delay before each reconnect: milliseconds, a string like `'2 seconds'`
+     * or a `Duration`.
+     * @default attempt => Math.min(1000 * 2 ** (attempt - 1), 30_000)
+     */
+    delay?: (attempt: number) => Duration.Input;
   };
 }
 
 /**
- * What `httpLink` declares: its serializer's form, the responses it reports
+ * What `httpLink` declares: the call options it reads (`headers`, `init`,
+ * `batch`, `reconnect`, `onResponse`), its serializer's form, the responses it reports
  * to `onResponse`, the errors it makes (`NETWORK_ERROR` when `fetch`
  * fails or a connection drops, `BAD_RESPONSE` for a page that isn't tRPC's
  * or a body that doesn't decode, `STREAM_INTERRUPTED` for a stream that
- * stops early), batching when on, and no subscriptions when they're off.
+ * stops early), batching unless it's off (a `batch` that may be on, such
+ * as a `boolean`, counts as on), and no subscriptions when they're off.
  * @since 0.1.0
  * @stability stable
  */
 export type HttpLinkDecl<TOpts> = {
+  context: BuiltinCallOptions;
   form: FormOfOptions<TOpts>;
   provides: 'response';
   builtinErrors: 'NETWORK_ERROR' | 'BAD_RESPONSE' | 'STREAM_INTERRUPTED';
-} & (TOpts extends { batch: true | { maxItems?: number } }
-  ? { batches: true }
+} & ('batch' extends keyof TOpts
+  ? [Exclude<TOpts[keyof TOpts & 'batch'], undefined>] extends [false]
+    ? {}
+    : { batches: true }
   : {}) &
   (TOpts extends { subscriptions: false }
     ? { unsupported: 'subscription' }
@@ -149,7 +162,7 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
   const subscription = makeSubscriptions(transport, opts);
 
   return withSerializer(
-    withSubscriptions((({ op }) => {
+    (({ op }) => {
       if (op.type === 'subscription') {
         if (opts.subscriptions === false) {
           return Stream.fail(
@@ -166,7 +179,7 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
           ? batched(op)
           : transport.single(op),
       );
-    }) as TrpcLink<any>),
+    }) as TrpcLink<any>,
     serializer,
   );
 }

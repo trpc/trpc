@@ -35,6 +35,7 @@ import {
 import {
   makeEffectMiddleware,
   type EffectMiddlewareFactory,
+  type MiddlewareErrors,
   type MiddlewareFunction,
 } from './middleware.ts';
 
@@ -71,6 +72,13 @@ export interface RootOptions<TMeta> {
    * ```
    */
   mergeMeta?: MetaMerge<TMeta>;
+  /**
+   * Whether a procedure that throws a `TrpcError` it could return logs a
+   * warning, once per procedure and code, when `NODE_ENV` is
+   * `development`. A thrown error reaches clients untyped.
+   * @default true
+   */
+  warnThrownErrors?: boolean;
 }
 
 /**
@@ -106,7 +114,7 @@ export interface TrpcRoot<
   /** The base procedure builder. */
   procedure: ProcedureBuilder<TDef>;
   /**
-   * Adds a root extension (03 Q3.6): a procedure builder from a package's
+   * Adds a root extension: a procedure builder from a package's
    * own `initTrpc`, whose middleware, declared errors and provided services
    * every procedure then starts with. Its root ctx is what it needs from
    * yours; its meta type joins yours, with its default meta underneath.
@@ -149,7 +157,7 @@ export interface TrpcRoot<
    */
   middleware: RootMiddleware<CurrentCtx<TDef>, TDef['meta']>;
   /**
-   * Implements a contract (09): a mirror of the contract whose leaves are
+   * Implements a contract: a mirror of the contract whose leaves are
    * builders pre-loaded with the contract's input, output, errors and route.
    * Leaves only offer `.use()`, `.provide()` and the contract's terminal, and
    * may only return errors the contract declares. `impl.router()` checks
@@ -172,7 +180,7 @@ export interface TrpcRoot<
     contract: TContract & ImplementMetaCheck<TDef['meta'], TContract>,
   ): ImplementResult<TDef, TContract>;
   /**
-   * A router with router-level meta (08 Q8.3), for the meta keys that have
+   * A router with router-level meta, for the meta keys that have
    * a router-level form ({@link RouterMeta}). Types and RPC paths don't
    * change, and it takes no middleware.
    *
@@ -272,14 +280,22 @@ export type ExtendedDef<
 export interface RootMiddleware<TCtx extends object, TMeta extends object> {
   <
     $Ctx extends object = {},
-    $Err extends AnyTrpcError = never,
+    $Err extends MiddlewareErrors = never,
     $Ok = never,
     $Input = Unset,
   >(
     fn: MiddlewareFunction<TCtx, unknown, TMeta, $Ctx, $Err, $Ok, $Input>,
-  ): MiddlewareFunction<TCtx, unknown, TMeta, $Ctx, $Err, $Ok, $Input>;
+  ): MiddlewareFunction<
+    TCtx,
+    unknown,
+    TMeta,
+    $Ctx,
+    Extract<$Err, AnyTrpcError>,
+    $Ok,
+    $Input
+  >;
   /**
-   * An Effect middleware (06 M-A): `next()` returns an `Effect`. Declare the
+   * An Effect middleware: `next()` returns an `Effect`. Declare the
    * services it provides with `t.middleware.effect<{ provides: S }>()(fn)`.
    *
    * @example
@@ -328,6 +344,7 @@ export function initTrpc<TConfig extends RootConfig = {}>(
       mergeMeta: opts.mergeMeta,
       output: undefined,
       errors: {},
+      warnThrown: opts.warnThrownErrors === false ? false : undefined,
     }),
   ) as never;
 }

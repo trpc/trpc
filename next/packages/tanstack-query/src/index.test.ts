@@ -20,11 +20,13 @@ import {
   createTrpcClient,
   localLink,
   type ClientError,
+  type LinkErrorCode,
   routerType,
 } from '@trpc12/trpc/client';
 import {
   createSerializer,
   createSyncSerializer,
+  type DansonForm,
 } from '@trpc12/trpc/serializer';
 import {
   createRouterClient,
@@ -107,15 +109,50 @@ test('errors are the typed client errors', async () => {
           inferInputIssue<z.ZodObject<{ id: z.ZodString }>>
         >
       >
-    | TrpcError<'NOT_FOUND', { id: string }>
+    | TrpcError<'NOT_FOUND', { id: string }>,
+    DansonForm,
+    Exclude<LinkErrorCode, 'STREAM_INTERRUPTED'>
   >;
   expectTypeOf(result.error).toEqualTypeOf<Expected>();
+  // A streamed query's error is its stream's, which can be cut.
+  const reply = new QueryObserver(
+    queryClient,
+    app.trpc.chat.reply.queryOptions({ input: { prompt: 'hi' } }),
+  );
+  type ReplyError = NonNullable<
+    ReturnType<typeof reply.getCurrentResult>['error']
+  >;
+  expectTypeOf<
+    Extract<ReplyError['code'], 'STREAM_INTERRUPTED'>
+  >().toEqualTypeOf<'STREAM_INTERRUPTED'>();
   const error = result.error;
   expect(error.defined).toBe(true);
   if (error.defined) {
     expect(error.code).toBe('NOT_FOUND');
     expect(error.data).toEqual({ id: 'nope' });
   }
+});
+
+test("a streamed query's error has its stream's typed failures, as they arrive", async () => {
+  await using app = await createApp();
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  const observer = new QueryObserver(
+    queryClient,
+    app.trpc.chat.soldOut.queryOptions(),
+  );
+  const result = await until(observer, (r) => r.status === 'error');
+  type Defined = Extract<typeof result.error, { readonly defined: true }>;
+  expectTypeOf<Defined>().toEqualTypeOf<
+    TrpcError<'SOLD_OUT', { sku: string }> & { readonly defined: true }
+  >();
+  expect(result.error).toMatchObject({
+    code: 'SOLD_OUT',
+    data: { sku: 'a1' },
+    defined: true,
+  });
+  expect(result.data).toEqual(['last']);
 });
 
 test('select, initialData and misspelled options are typed', async () => {
@@ -234,6 +271,80 @@ test('pathFilter and queryFilter invalidate what they match', async () => {
   });
   expect(stale()).toHaveLength(4);
   expect(app.trpc.post.pathKey()).toEqual([['post']]);
+});
+
+test('queryFilter takes part of the input and matches every query it fits', async () => {
+  await using app = await createApp({ posts: 5 });
+  const queryClient = new QueryClient();
+  await Promise.all(
+    [{ limit: 2 }, { limit: 2, cursor: 2 }, { limit: 3, cursor: 2 }].map(
+      (input) => queryClient.query(app.trpc.post.list.queryOptions({ input })),
+    ),
+  );
+  const stale = () =>
+    queryClient
+      .getQueryCache()
+      .findAll({ stale: true })
+      .map((q) => q.queryKey);
+
+  await queryClient.invalidateQueries({
+    ...app.trpc.post.list.queryFilter({ input: { cursor: 2 } }),
+    refetchType: 'none',
+  });
+  expect(stale()).toEqual([
+    [['post', 'list'], { input: { limit: 2, cursor: 2 }, type: 'query' }],
+    [['post', 'list'], { input: { limit: 3, cursor: 2 }, type: 'query' }],
+  ]);
+  // @ts-expect-error a field the input doesn't have
+  app.trpc.post.list.queryFilter({ input: { page: 1 } });
+});
+
+test("infiniteFilter matches only the procedure's infinite queries, by part of the input", async () => {
+  await using app = await createApp({ posts: 5 });
+  const queryClient = new QueryClient();
+  const pages = (limit: number) =>
+    app.trpc.post.list.infiniteOptions({
+      input: (cursor: number | undefined) => ({ limit, cursor }),
+      initialPageParam: undefined,
+      getNextPageParam: (page) => page.nextCursor,
+    });
+  await Promise.all([
+    queryClient.infiniteQuery(pages(2)),
+    queryClient.infiniteQuery(pages(3)),
+    queryClient.query(app.trpc.post.list.queryOptions({ input: { limit: 2 } })),
+    queryClient.query(app.trpc.post.byId.queryOptions({ input: { id: '1' } })),
+  ]);
+  const stale = () =>
+    queryClient
+      .getQueryCache()
+      .findAll({ stale: true })
+      .map((q) => q.queryKey);
+
+  expect(app.trpc.post.list.infiniteFilter()).toEqual({
+    queryKey: [['post', 'list'], { type: 'infinite' }],
+  });
+  await queryClient.invalidateQueries({
+    ...app.trpc.post.list.infiniteFilter({ input: { limit: 3 } }),
+    refetchType: 'none',
+  });
+  expect(stale()).toEqual([
+    [['post', 'list'], { input: { limit: 3 }, type: 'infinite' }],
+  ]);
+  await queryClient.invalidateQueries({
+    ...app.trpc.post.list.infiniteFilter(),
+    refetchType: 'none',
+  });
+  expect(stale()).toEqual([
+    [['post', 'list'], { input: { limit: 2 }, type: 'infinite' }],
+    [['post', 'list'], { input: { limit: 3 }, type: 'infinite' }],
+  ]);
+
+  const filter = app.trpc.post.list.infiniteFilter();
+  expectTypeOf(queryClient.getQueryData(filter.queryKey)?.pages).toEqualTypeOf<
+    { items: Post[]; nextCursor: number | undefined }[] | undefined
+  >();
+  // @ts-expect-error a field the input doesn't have
+  app.trpc.post.list.infiniteFilter({ input: { page: 1 } });
 });
 
 test('keyPrefix keeps two APIs apart in one QueryClient', async () => {
@@ -572,8 +683,7 @@ test('streamedOptions collect subscription events; liveOptions keep the latest',
   expect(db.openTickers).toBe(1);
 
   stopLive();
-  await sleep(30);
-  expect(db.openTickers).toBe(0);
+  await vi.waitFor(() => expect(db.openTickers).toBe(0));
   expect(
     queryClient.getQueryData(
       app.trpc.clock.ticks.liveKey({ input: { from: 10 } }),
@@ -592,7 +702,7 @@ test('SubscriptionObserver tracks status, events and restarts', async () => {
   );
   const unsubscribe = observer.subscribe((r) => results.push(r.status));
   expect(observer.getCurrentResult().status).toBe('connecting');
-  await sleep(30);
+  await vi.waitFor(() => expect(db.listeners.size).toBe(1));
 
   app.addPost('Hello');
   const active = await until(observer, (r) => r.status === 'active');
@@ -601,8 +711,7 @@ test('SubscriptionObserver tracks status, events and restarts', async () => {
   expectTypeOf(active.data).toEqualTypeOf<Post>();
 
   unsubscribe();
-  await sleep(20);
-  expect(db.listeners.size).toBe(0);
+  await vi.waitFor(() => expect(db.listeners.size).toBe(0));
 
   const countdown = new SubscriptionObserver(
     app.trpc.clock.countdown.subscriptionOptions({ input: { from: 2 } }),
@@ -645,8 +754,7 @@ test('observers with the same key share one subscription', async () => {
   const stopA = a.subscribe(() => {});
   const stopB = b.subscribe(() => {});
   expect(b.getCurrentResult().status).toBe('connecting');
-  await sleep(30);
-  expect(db.listeners.size).toBe(1);
+  await vi.waitFor(() => expect(db.listeners.size).toBe(1));
 
   app.addPost('One');
   const [ra, rb] = await Promise.all([
@@ -670,8 +778,7 @@ test('observers with the same key share one subscription', async () => {
   expect(late.getCurrentResult().status).toBe('connecting');
   stopB();
   stopLate();
-  await sleep(20);
-  expect(db.listeners.size).toBe(0);
+  await vi.waitFor(() => expect(db.listeners.size).toBe(0));
 
   const own = new SubscriptionObserver({
     ...app.trpc.post.onAdd.subscriptionOptions({
@@ -681,10 +788,35 @@ test('observers with the same key share one subscription', async () => {
   });
   const stopOwn = own.subscribe(() => {});
   const stopShared = observe('c').subscribe(() => {});
-  await sleep(30);
-  expect(db.listeners.size).toBe(2);
+  await vi.waitFor(() => expect(db.listeners.size).toBe(2));
   stopOwn();
   stopShared();
+});
+
+test('leaving a hand-written subscription aborts its signal while its generator awaits', async () => {
+  await using app = await createApp();
+  let signal: AbortSignal | undefined;
+  let finished = false;
+  const observer = new SubscriptionObserver({
+    ...app.trpc.clock.ticks.subscriptionOptions({ input: { from: 0 } }),
+    subscribe: async function* (opts) {
+      signal = opts.signal;
+      try {
+        yield 1;
+        await new Promise((_resolve, reject) => {
+          opts.signal.addEventListener('abort', reject, { once: true });
+        });
+      } finally {
+        finished = true;
+      }
+    },
+  });
+  const unsubscribe = observer.subscribe(() => {});
+  await until(observer, (r) => r.status === 'active');
+  unsubscribe();
+  expect(signal?.aborted).toBe(true);
+  await vi.waitFor(() => expect(finished).toBe(true));
+  expect(observer.getCurrentResult().status).toBe('active');
 });
 
 test('context reaches the links, typed from what they declare', async () => {

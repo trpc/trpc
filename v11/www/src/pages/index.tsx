@@ -385,7 +385,6 @@ const HomeHead: React.FC = () => {
   return (
     <Head>
       <body className="homepage" />
-      <script async src="https://platform.twitter.com/widgets.js" />
       <link
         rel="preload"
         href="https://assets.trpc.io/www/v10/v10-dark-landscape.png"

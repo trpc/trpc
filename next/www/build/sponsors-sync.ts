@@ -2,12 +2,18 @@
  * Syncs the sponsors from GitHub: `pnpm --filter @trpc12/www sponsors:sync`
  * reads who sponsors KATT and the trpc organization, and what each has paid,
  * then writes `sponsors.json` (which the site shows) and the sponsors
- * section of the repo's `README.md`. It needs `TRPC_GITHUB_TOKEN`, a token
- * of KATT's (an admin of the organization) that can read both accounts'
- * sponsorships: a classic token with `read:user` and `read:org`.
+ * section of the repo's `README.md`. It needs a token of KATT's (an admin
+ * of the organization) that can read both accounts' sponsorships: a classic
+ * token with `read:user` and `read:org`, from `SPONSORS_SYNC_GITHUB_TOKEN` or, in a
+ * terminal, asked for when that isn't set.
+ *
+ * `--only-when-sponsors-change` writes nothing while the same sponsors are
+ * listed in the same tiers, so the daily CI run
+ * (`.github/workflows/next-sponsors.yml`) commits only when one joined,
+ * left or changed tier.
  *
  * `--readme-only` rewrites the README from `sponsors.json` without GitHub,
- * for after changing the partners (`partnerLogins` in `src/sponsors.ts`).
+ * for after changing how it's laid out (`sponsors-readme.ts`).
  *
  * The weighing is in `sponsors-list.ts`; who sponsors outside GitHub, and
  * money GitHub doesn't attribute, is `sponsorsConfig` here.
@@ -21,13 +27,15 @@ import {
   Effect,
   FileSystem,
   Layer,
+  Match,
+  Option,
   type Redacted,
   Schema,
 } from 'effect';
-import { Command, Flag } from 'effect/cli';
+import { Command, Flag, Prompt } from 'effect/cli';
 import { FetchHttpClient } from 'effect/http';
 
-import { partnerLogins, type Sponsor } from '../src/sponsors.ts';
+import { type Sponsor, sponsorTiers } from '../src/sponsors.ts';
 import {
   fetchLifetimeValues,
   fetchSponsorships,
@@ -55,13 +63,7 @@ export const sponsorsConfig: SponsorsConfig = {
       websiteUrl: 'https://serpapi.com/',
     },
   ],
-  extra: [
-    {
-      dollars: 1500,
-      login: 'greptileai',
-      why: 'Three months sponsored from a private account',
-    },
-  ],
+  extra: [],
   shownPrivately: ['madisonredtfeldt'],
 };
 
@@ -71,6 +73,10 @@ const SponsorSchema = Schema.Struct({
   link: Schema.String,
   login: Schema.String,
   name: Schema.String,
+  rank: Schema.optionalKey(Schema.Number),
+  tier: Schema.optionalKey(
+    Schema.Literals(sponsorTiers.map((entry) => entry.tier)),
+  ),
   weight: Schema.Number,
 });
 
@@ -90,10 +96,7 @@ export const writeReadme = Effect.fn('writeReadme')(function* (opts: {
 }) {
   const fs = yield* FileSystem.FileSystem;
   const before = yield* fs.readFileString(opts.readme);
-  const after = withSponsorsBlock(
-    before,
-    sponsorsMarkdown({ partners: partnerLogins, sponsors: opts.sponsors }),
-  );
+  const after = withSponsorsBlock(before, sponsorsMarkdown(opts.sponsors));
   if (after === undefined) {
     return yield* new SponsorsSyncError({
       message: `${opts.readme} has no <!-- SPONSORS:LIST:START --> followed by <!-- SPONSORS:LIST:END --> to write the sponsors between`,
@@ -106,23 +109,29 @@ export const writeReadme = Effect.fn('writeReadme')(function* (opts: {
   return true;
 });
 
+const readSponsorsFile = Effect.fn('readSponsorsFile')(function* (
+  sponsorsFile: string,
+) {
+  const fs = yield* FileSystem.FileSystem;
+  return yield* fs.readFileString(sponsorsFile).pipe(
+    Effect.flatMap(
+      Schema.decodeUnknownEffect(
+        Schema.fromJsonString(Schema.Array(SponsorSchema)),
+      ),
+    ),
+    Effect.mapError(
+      (cause) =>
+        new SponsorsSyncError({
+          message: `${sponsorsFile}: ${cause.message}`,
+        }),
+    ),
+  );
+});
+
 /** Rewrites `readme`'s sponsors section from `sponsorsFile`. */
 export const readmeFromSponsorsFile = Effect.fn('readmeFromSponsorsFile')(
   function* (opts: SponsorsFiles) {
-    const fs = yield* FileSystem.FileSystem;
-    const sponsors = yield* fs.readFileString(opts.sponsorsFile).pipe(
-      Effect.flatMap(
-        Schema.decodeUnknownEffect(
-          Schema.fromJsonString(Schema.Array(SponsorSchema)),
-        ),
-      ),
-      Effect.mapError(
-        (cause) =>
-          new SponsorsSyncError({
-            message: `${opts.sponsorsFile}: ${cause.message}`,
-          }),
-      ),
-    );
+    const sponsors = yield* readSponsorsFile(opts.sponsorsFile);
     const changed = yield* writeReadme({ readme: opts.readme, sponsors });
     return changed
       ? `Wrote ${sponsors.length} sponsors to ${opts.readme}.`
@@ -134,11 +143,15 @@ export const readmeFromSponsorsFile = Effect.fn('readmeFromSponsorsFile')(
  * Fetches the accounts' sponsors, then writes them to `sponsorsFile` and
  * `readme`. Writes nothing when GitHub reports no sponsors or no payments,
  * which means the token can't see them, rather than emptying the list.
+ * With `onlyWhenSponsorsChange`, also writes nothing while `sponsorsFile`
+ * lists the same sponsors in the same tiers, however their weights, ranks
+ * or details changed.
  */
 export const syncSponsors = Effect.fn('syncSponsors')(function* (
   opts: SponsorsFiles & {
     readonly accounts: ReadonlyArray<SponsoredAccount>;
     readonly config: SponsorsConfig;
+    readonly onlyWhenSponsorsChange?: boolean;
     readonly token: Redacted.Redacted;
   },
 ) {
@@ -159,12 +172,12 @@ export const syncSponsors = Effect.fn('syncSponsors')(function* (
   const logins = opts.accounts.map((account) => account.login).join(' and ');
   if (sponsorships.length === 0) {
     return yield* new SponsorsSyncError({
-      message: `GitHub reports no sponsors of ${logins}; is TRPC_GITHUB_TOKEN theirs? Wrote nothing.`,
+      message: `GitHub reports no sponsors of ${logins}; is SPONSORS_SYNC_GITHUB_TOKEN theirs? Wrote nothing.`,
     });
   }
   if (lifetimeValues.length === 0) {
     return yield* new SponsorsSyncError({
-      message: `GitHub reports nothing paid to ${logins}; is TRPC_GITHUB_TOKEN theirs? Wrote nothing.`,
+      message: `GitHub reports nothing paid to ${logins}; is SPONSORS_SYNC_GITHUB_TOKEN theirs? Wrote nothing.`,
     });
   }
   const sponsors = sponsorsList({
@@ -173,6 +186,19 @@ export const syncSponsors = Effect.fn('syncSponsors')(function* (
     now: yield* Clock.currentTimeMillis,
     sponsorships,
   });
+  if (opts.onlyWhenSponsorsChange === true) {
+    const lineup = (sponsor: Sponsor) =>
+      `${sponsor.login} ${sponsor.tier ?? ''}`;
+    const listed = new Set(
+      (yield* readSponsorsFile(opts.sponsorsFile)).map(lineup),
+    );
+    if (
+      listed.size === sponsors.length &&
+      sponsors.every((sponsor) => listed.has(lineup(sponsor)))
+    ) {
+      return `No sponsor joined, left or changed tier among the ${sponsors.length} in ${opts.sponsorsFile}; wrote nothing.`;
+    }
+  }
   const fs = yield* FileSystem.FileSystem;
   yield* fs.writeFileString(opts.sponsorsFile, sponsorsJson(sponsors));
   yield* writeReadme({ readme: opts.readme, sponsors });
@@ -186,18 +212,52 @@ if (import.meta.main) {
     readme: here('../../../README.md'),
     sponsorsFile: here('../sponsors.json'),
   };
-  const token = Config.Redacted('TRPC_GITHUB_TOKEN').pipe(
-    Effect.mapError(
-      () =>
-        new SponsorsSyncError({
-          message:
-            "TRPC_GITHUB_TOKEN isn't set: it has to be a token of KATT's with read:user and read:org (or use --readme-only).",
-        }),
+  const tokenNeeded = "a token of KATT's with read:user and read:org";
+  const token = Effect.gen(function* () {
+    const fromEnv = yield* Config.option(
+      Config.Redacted('SPONSORS_SYNC_GITHUB_TOKEN'),
+    );
+    if (Option.isSome(fromEnv)) {
+      return fromEnv.value;
+    }
+    if (!process.stdin.isTTY) {
+      return yield* new SponsorsSyncError({
+        message: `SPONSORS_SYNC_GITHUB_TOKEN isn't set: it has to be ${tokenNeeded} (or use --readme-only).`,
+      });
+    }
+    return yield* Prompt.run(
+      Prompt.Password({
+        message: `GitHub token (${tokenNeeded})`,
+        validate: (value) =>
+          value === ''
+            ? Effect.fail('Paste a token, or set SPONSORS_SYNC_GITHUB_TOKEN')
+            : Effect.succeed(value),
+      }),
+    );
+  }).pipe(
+    Effect.catch((error) =>
+      Match.valueTags(error, {
+        ConfigError: (configError) =>
+          Effect.fail(
+            new SponsorsSyncError({
+              message: `SPONSORS_SYNC_GITHUB_TOKEN: ${configError.message}`,
+            }),
+          ),
+        QuitError: () =>
+          Effect.fail(new SponsorsSyncError({ message: 'No token entered.' })),
+        SponsorsSyncError: (syncError) => Effect.fail(syncError),
+      }),
     ),
   );
   const command = Command.make(
     'sponsors-sync',
     {
+      onlyWhenSponsorsChange: Flag.Boolean('only-when-sponsors-change').pipe(
+        Flag.withDescription(
+          'Write nothing unless a sponsor joined, left or changed tier (what CI runs), not for new weights, ranks or details',
+        ),
+        Flag.withDefault(false),
+      ),
       readmeOnly: Flag.Boolean('readme-only').pipe(
         Flag.withDescription(
           "Rewrite the README's sponsors from sponsors.json, without GitHub",
@@ -214,6 +274,7 @@ if (import.meta.main) {
                 ...paths,
                 accounts: sponsoredAccounts,
                 config: sponsorsConfig,
+                onlyWhenSponsorsChange: opts.onlyWhenSponsorsChange,
                 token: value,
               }),
             ),

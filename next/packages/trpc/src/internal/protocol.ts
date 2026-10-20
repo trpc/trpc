@@ -1,4 +1,4 @@
-import { Stream } from 'effect';
+import { Effect, identity, Stream } from 'effect';
 import type { ProcedureType } from './types.ts';
 
 /**
@@ -247,19 +247,33 @@ export function blobHeaders(blob: Blob): Record<string, string> {
   };
 }
 
-/** Rebuilds a `File` or `Blob` from a response that `blobHeaders()` marked. */
-export async function readBlob(res: Response, header: string): Promise<Blob> {
-  const meta = JSON.parse(decodeURIComponent(header)) as BlobMeta;
-  const body = await res.blob();
-  return meta.name === undefined
-    ? body.slice(0, body.size, meta.type)
-    : new File([body], meta.name, {
-        type: meta.type,
-        ...(meta.lastModified === undefined
-          ? {}
-          : { lastModified: meta.lastModified }),
-      });
-}
+/**
+ * Rebuilds a `File` or `Blob` from a response that `blobHeaders()` marked,
+ * failing with what the header's parse or the body's read threw.
+ */
+export const readBlob: (
+  res: Response,
+  header: string,
+) => Effect.Effect<Blob, unknown> = /* @__PURE__ */ Effect.fnUntraced(
+  function* (res, header) {
+    const meta = yield* Effect.try({
+      try: () => JSON.parse(decodeURIComponent(header)) as BlobMeta,
+      catch: identity,
+    });
+    const body = yield* Effect.tryPromise({
+      try: () => res.blob(),
+      catch: identity,
+    });
+    return meta.name === undefined
+      ? body.slice(0, body.size, meta.type)
+      : new File([body], meta.name, {
+          type: meta.type,
+          ...(meta.lastModified === undefined
+            ? {}
+            : { lastModified: meta.lastModified }),
+        });
+  },
+);
 
 /** Whether a `content-type` names one of `types`, ignoring case and parameters. */
 export const hasMediaType = (

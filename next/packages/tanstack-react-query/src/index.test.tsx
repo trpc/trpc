@@ -29,9 +29,11 @@ import {
   routerType,
   TrpcError,
   type BuiltinError,
+  type BuiltinErrorCode,
   type LinksContext,
   type LinksTypes,
   type TrpcClient,
+  type UndeclaredError,
 } from '@trpc12/trpc/client';
 import { createRouterClient } from '@trpc12/trpc/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
@@ -138,7 +140,11 @@ test("each hook's error is what the call fails with, network and aborts included
     const create = useMutation(trpc.post.create.mutationOptions());
     const added = useSubscription(trpc.post.onAdd.subscriptionOptions());
 
-    expectTypeOf(greeting.error).toEqualTypeOf<BuiltinError | null>();
+    expectTypeOf(greeting.error).toEqualTypeOf<
+      | BuiltinError<Exclude<BuiltinErrorCode, 'STREAM_INTERRUPTED'>>
+      | UndeclaredError
+      | null
+    >();
     expectTypeOf(post.error).toEqualTypeOf<ByIdError | null>();
     expectTypeOf(first.error).toEqualTypeOf<ByIdError | null>();
     expectTypeOf(feed.error).toEqualTypeOf<CallErrorOf<
@@ -160,10 +166,9 @@ test("each hook's error is what the call fails with, network and aborts included
         {matchError(post.error, {
           NOT_FOUND: (err) => `missing ${err.data.id}`,
           BAD_REQUEST: (err) => `invalid ${err.data.issues.length}`,
-          rejected: (err) => `rejected ${err.code}`,
-          unavailable: (err) => `unavailable ${err.code}`,
-          failed: (err) => `failed ${err.code}`,
-          aborted: () => 'aborted',
+          NETWORK_ERROR: () => 'offline',
+          BAD_RESPONSE: (err) => `unreadable ${err.message}`,
+          unexpected: (err) => `unexpected ${err.code}`,
         })}
       </p>
     );
@@ -177,9 +182,7 @@ test("each hook's error is what the call fails with, network and aborts included
     links: [httpLink({ url: 'http://127.0.0.1:1/trpc', serializer })],
   });
   using view = mount(<Post id="1" />, down);
-  await waitFor(() =>
-    expect(text(view.el, '.error')).toBe('unavailable NETWORK_ERROR'),
-  );
+  await waitFor(() => expect(text(view.el, '.error')).toBe('offline'));
 });
 
 test('useMutation invalidates with pathFilter', async () => {
@@ -272,6 +275,57 @@ test('useInfiniteQuery loads pages on demand', async () => {
   click(view.el, 'button');
   await waitFor(() => expect(view.el.querySelectorAll('li')).toHaveLength(5));
   expect(view.el.querySelector('button')).toBeNull();
+});
+
+test('useMutation invalidates infinite queries with infiniteFilter', async () => {
+  await using app = await createApp({ posts: 3 });
+  function Feed() {
+    const trpc = useTrpc();
+    const queryClient = useQueryClient();
+    const feed = useInfiniteQuery(
+      trpc.post.list.infiniteOptions({
+        input: (cursor: number | undefined) => ({ limit: 2, cursor }),
+        initialPageParam: undefined,
+        getNextPageParam: (page) => page.nextCursor,
+      }),
+    );
+    const create = useMutation(
+      trpc.post.create.mutationOptions({
+        onSuccess: () =>
+          queryClient.invalidateQueries(
+            trpc.post.list.infiniteFilter({ input: { limit: 2 } }),
+          ),
+      }),
+    );
+    return (
+      <>
+        <ul>
+          {feed.data?.pages
+            .flatMap((page) => page.items)
+            .map((post) => (
+              <li key={post.id}>{post.title}</li>
+            ))}
+        </ul>
+        <button className="more" onClick={() => void feed.fetchNextPage()}>
+          more
+        </button>
+        <button
+          className="add"
+          onClick={() => create.mutate({ title: 'From React' })}
+        >
+          add
+        </button>
+      </>
+    );
+  }
+  using view = mount(<Feed />, app.client);
+  await waitFor(() => expect(view.el.querySelectorAll('li')).toHaveLength(2));
+  click(view.el, '.more');
+  await waitFor(() => expect(view.el.querySelectorAll('li')).toHaveLength(3));
+  click(view.el, '.add');
+  await waitFor(() =>
+    expect(text(view.el, 'li:last-child')).toBe('From React'),
+  );
 });
 
 test('useSuspenseInfiniteQuery takes select, typed by what it returns', async () => {

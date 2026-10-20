@@ -144,8 +144,10 @@ export interface TestServerClass extends Context.ServiceClass<
  * @since 0.1.0
  * @stability internal
  */
-export const TestServer: TestServerClass = Object.assign(
-  Context.Service<TestServer, TestServerShape>()('@trpc12/trpc/TestServer'),
+export const TestServer: TestServerClass = /* @__PURE__ */ Object.assign(
+  /* @__PURE__ */ Context.Service<TestServer, TestServerShape>()(
+    '@trpc12/trpc/TestServer',
+  ),
   {
     layer: <TRouter extends AnyRouter>(opts: TestServerOptions<TRouter>) =>
       Layer.effect(TestServer)(make(opts)),

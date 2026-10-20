@@ -1,5 +1,15 @@
-import { Match, type Context, type Effect, type Stream } from 'effect';
-import type { AnyTrpcError, TrpcError } from '../../internal/error.ts';
+import {
+  Match,
+  type Context,
+  type Effect,
+  type Scope,
+  type Stream,
+} from 'effect';
+import type {
+  AnyTrpcError,
+  ReservedKeyCheck,
+  TrpcError,
+} from '../../internal/error.ts';
 import type {
   IsAny,
   MaybePromise,
@@ -16,6 +26,7 @@ import type {
 import {
   isEffectMiddleware,
   type EffectMiddleware,
+  type MiddlewareErrors,
   type MiddlewareFunction,
   type NextInput,
   type ResponseHandle,
@@ -46,7 +57,7 @@ import type {
 import type { TrackedEnvelope } from '../subscriptions/index.ts';
 
 /**
- * The builder's state: one mapped bag (03 G-A).
+ * The builder's state: one mapped bag.
  * @since 0.1.0
  * @stability stable
  */
@@ -91,7 +102,7 @@ export type CurrentCtx<TDef extends BuilderDef> = Overwrite<
 >;
 
 /**
- * What a context-aware input callback receives (05 D-A).
+ * What a context-aware input callback receives.
  * @since 0.1.0
  * @stability stable
  */
@@ -113,7 +124,7 @@ export type ErrorConstructorOpts<TData> = {
 } & (undefined extends TData ? { data?: TData } : { data: TData });
 
 /**
- * Typed constructors for the errors declared with `.errors()` (07 A). The
+ * Typed constructors for the errors declared with `.errors()`. The
  * errors they make are `defined` even when thrown from deep helper code.
  * @since 0.1.0
  * @stability stable
@@ -178,17 +189,27 @@ type OutputOf<R> = R extends AnyTrpcError
     : R extends Effect.Effect<infer A, any, any>
       ? Exclude<A, AnyTrpcError>
       : R;
+// A returned `Stream`'s failures are the call's too: clients get them from
+// iterating the output.
 type ErrorsOf<R> = R extends AnyTrpcError
   ? R
   : R extends Effect.Effect<infer A, infer E, any>
     ? Extract<E | A, AnyTrpcError>
-    : never;
+    : R extends Stream.Stream<any, infer E, any>
+      ? Extract<E, AnyTrpcError>
+      : never;
+// `any` is what a resolver that fails its `Returns` bound is inferred to
+// need: without the guard every router it is in would need a layer.
 type ServicesOf<R> = R extends AnyTrpcError
   ? never
   : R extends Effect.Effect<any, any, infer S>
-    ? S
+    ? IsAny<S> extends true
+      ? never
+      : S
     : R extends Stream.Stream<any, any, infer S>
-      ? S
+      ? IsAny<S> extends true
+        ? never
+        : S
       : never;
 
 /**
@@ -245,28 +266,105 @@ export type SplitStream<R> =
 
 // --- resolver checks ------------------------------------------------------------------
 
-type OutputConstraint<TDef extends BuilderDef> = TDef['outputIn'] extends Unset
+// A typed output checks the resolver's return with a bound on `$Ret`, and
+// the return position is `$Ret | bound` so that `async` bodies and `yield`s
+// take the bound's members as their contextual type. `$Ret & …` there
+// loses literals in both, and a check on `$Ret` beside the bound fixes
+// `$Ret` to the bound before the resolver is inferred, so every check of a
+// typed output lives in the bound. Its hints are interfaces nothing real
+// matches, keyed by their text so a message ends on "Property '<hint>' is
+// missing". TypeScript reports a wrong union member against the members
+// whose literal `code` and `name` it matches: an undeclared error's `code`
+// matches only `UnlistedError`'s, and a failure that isn't a `TrpcError`
+// has a `name` other than `'TrpcError'`, which leaves `UnmappedFailure`.
+
+type Listed<TErrors> = AnyTrpcError extends TErrors
+  ? TErrors
+  : TErrors | UnlistedError;
+
+/**
+ * Names the hint for a returned error the procedure doesn't list. It has
+ * every key of a `TrpcError` but `data`, which `error()` would infer from.
+ */
+interface UnlistedError extends Omit<AnyTrpcError, 'data'> {
+  readonly '.errors() lists every error the resolver may return: declare this one, or return a declared one': true;
+}
+
+type Mapped<TErrors> = Listed<TErrors> | UnmappedFailure;
+
+/** Names the hint for an Effect or Stream failure that isn't a `TrpcError`. */
+interface UnmappedFailure extends Error {
+  readonly 'Map Effect failures to a TrpcError (e.g. Effect.catchTag) before returning them': true;
+}
+
+/**
+ * What a resolver may return for an output schema type `TOutput`: the
+ * value or an error as they are, in a `Promise`, or as an `Effect` that
+ * fails only with those errors.
+ * @internal
+ */
+export type Returns<TOutput, TErrors> =
+  | ValueOf<TOutput, TErrors>
+  | Listed<TErrors>
+  | Promise<ValueOf<TOutput, TErrors> | Listed<TErrors>>
+  | Effect.Effect<
+      ValueOf<TOutput, TErrors> | Listed<TErrors>,
+      Mapped<TErrors>,
+      any
+    >
+  | (TOutput extends StreamOutput<any, any>
+      ? never
+      : StreamWithoutStreamSchema);
+
+/** What a subscription may return for an event `TEvent`. @internal */
+export type Yields<TEvent, TErrors> =
+  | AsyncIterable<TEvent, any, any>
+  | Stream.Stream<TEvent, Mapped<TErrors>, any>
+  | Listed<TErrors>;
+
+/** The value a query or mutation resolves to for an output schema. */
+type ValueOf<TOut, TErrors> =
+  TOut extends StreamOutput<infer I, infer R>
+    ? AsyncIterable<I, R, any> | Stream.Stream<I, Mapped<TErrors>, any>
+    : TOut;
+
+/** Names the hint for a stream returned for a plain output schema. */
+interface StreamWithoutStreamSchema extends AsyncIterable<
+  TypeError<'A streamed output validates each item with .output(stream(Item))'>
+> {}
+
+/** The errors a resolver may return: the declared ones, once there are any. */
+type Returnable<TDef extends BuilderDef> = [keyof TDef['declared']] extends [
+  never,
+]
+  ? AnyTrpcError
+  : TDef['declared'][keyof TDef['declared']];
+
+type ReturnsFor<TDef extends BuilderDef> = TDef['outputIn'] extends Unset
   ? unknown
-  :
-      | MaybePromise<ResultOf<TDef['outputIn']> | AnyTrpcError>
-      | Effect.Effect<ResultOf<TDef['outputIn']> | AnyTrpcError, any, any>;
+  : AsyncIterable<any, any, any> extends TDef['outputIn']
+    ? unknown
+    : ShortsCheck<TDef, ResultOf<TDef['outputIn']>> extends TypeError<any, any>
+      ? ShortsCheck<TDef, ResultOf<TDef['outputIn']>>
+      : Returns<TDef['outputIn'], Returnable<TDef>>;
+
+type YieldsFor<TDef extends BuilderDef> = TDef['outputIn'] extends Unset
+  ? unknown
+  : AsyncIterable<any, any, any> extends TDef['outputIn']
+    ? unknown
+    : Yields<
+        | EventOutput<TDef['outputIn']>
+        | TrackedEnvelope<EventOutput<TDef['outputIn']>>,
+        Returnable<TDef>
+      >;
 
 type EventConstraint<TDef extends BuilderDef> = TDef['outputIn'] extends Unset
   ? unknown
-  :
-      | AsyncIterable<
-          | EventOutput<TDef['outputIn']>
-          | TrackedEnvelope<EventOutput<TDef['outputIn']>>,
-          any,
-          any
-        >
-      | Stream.Stream<
-          | EventOutput<TDef['outputIn']>
-          | TrackedEnvelope<EventOutput<TDef['outputIn']>>,
-          any,
-          any
-        >
-      | AnyTrpcError;
+  : Yields<
+      | EventOutput<TDef['outputIn']>
+      | TrackedEnvelope<EventOutput<TDef['outputIn']>>,
+      any
+    >;
 
 /**
  * A query or mutation that streams needs `.output(stream(Item))`: a plain
@@ -317,16 +415,37 @@ type UnmappedCheck<TUnmapped> = [TUnmapped] extends [never]
       TUnmapped
     >;
 
-// The resolver checks of `query` and `mutation`. Each conditional on the
-// resolver's return is instantiated on every inference pass, so they read
-// the `SplitReturn` the procedure type needs anyway, and skip what the
-// builder makes moot.
-type OutputChecks<
+// Without a typed output, the checks go on the return: each conditional on
+// it is instantiated on every inference pass, so they read the
+// `SplitReturn` the procedure type needs anyway, and skip what the builder
+// makes moot.
+type ResolverReturn<
   TDef extends BuilderDef,
   $Ret,
 > = TDef['outputIn'] extends Unset
-  ? unknown
-  : OutputConstraint<TDef> & StreamOutputCheck<TDef, $Ret>;
+  ? $Ret &
+      UnmappedCheck<SplitReturn<$Ret>['unmapped']> &
+      ShortsFor<TDef, $Ret> &
+      DeclaredCheck<TDef, $Ret>
+  : AsyncIterable<any, any, any> extends TDef['outputIn']
+    ? $Ret &
+        StreamOutputCheck<TDef, $Ret> &
+        UnmappedCheck<SplitReturn<$Ret>['unmapped']> &
+        ShortsFor<TDef, $Ret> &
+        DeclaredCheck<TDef, $Ret>
+    : $Ret | ReturnsFor<TDef>;
+
+type SubscriptionReturn<
+  TDef extends BuilderDef,
+  $Ret,
+> = TDef['outputIn'] extends Unset
+  ? $Ret & StrictErrors<$Ret> & DeclaredStreamCheck<TDef, $Ret>
+  : AsyncIterable<any, any, any> extends TDef['outputIn']
+    ? $Ret &
+        EventConstraint<TDef> &
+        StrictErrors<$Ret> &
+        DeclaredStreamCheck<TDef, $Ret>
+    : $Ret | YieldsFor<TDef>;
 
 /**
  * Checks values from `ok()` short-circuits against the procedure's output.
@@ -470,6 +589,45 @@ export type DeclaredErrors<M> = {
   >;
 };
 
+/**
+ * Declared errors are exhaustive: once a procedure has `.errors()`, its
+ * resolver may return only those, and a streamed output fail only with
+ * those. Middleware's errors aren't checked.
+ * @since 0.1.0
+ * @stability stable
+ */
+// Takes the resolver's return rather than its errors: a procedure without
+// `.errors()` then never splits it here.
+export type DeclaredCheck<TDef extends BuilderDef, $Ret> = [
+  keyof TDef['declared'],
+] extends [never]
+  ? unknown
+  : ErrorsIn<
+      SplitReturn<$Ret>['errors'],
+      TDef['declared'][keyof TDef['declared']]
+    >;
+
+/**
+ * {@link DeclaredCheck} for a subscription.
+ * @since 0.1.0
+ * @stability stable
+ */
+export type DeclaredStreamCheck<TDef extends BuilderDef, $Ret> = [
+  keyof TDef['declared'],
+] extends [never]
+  ? unknown
+  : ErrorsIn<
+      SplitStream<$Ret>['errors'],
+      TDef['declared'][keyof TDef['declared']]
+    >;
+
+type ErrorsIn<TErrors, TDeclared> = [TErrors] extends [TDeclared]
+  ? unknown
+  : TypeError<
+      '.errors() lists every error the resolver may return: declare this one, or return a declared one',
+      Exclude<TErrors, TDeclared>
+    >;
+
 // --- the builder -------------------------------------------------------------------
 
 /**
@@ -483,6 +641,8 @@ export interface BuilderInternals {
   readonly output: OutputSchema | undefined;
   readonly validateOutput?: false | undefined;
   readonly errors: ErrorMap;
+  /** `false`: from `initTrpc({ warnThrownErrors: false })`. */
+  readonly warnThrown?: false | undefined;
   /** How `.meta()` merges keys set again; from `initTrpc` and extensions. */
   readonly mergeMeta?: MetaMerge<any> | undefined;
 }
@@ -522,7 +682,7 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
    */
   input<$S extends AnySchema>(schema: $S): ProcedureBuilder<InputDef<TDef, $S>>;
   /**
-   * Adds an input schema built from the ctx (05 D-A). The callback runs per
+   * Adds an input schema built from the ctx. The callback runs per
    * call, so build schemas outside it where possible.
    *
    * @example
@@ -539,7 +699,7 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
   /**
    * Types and documents the result with a schema, without running it: the
    * resolver and the client both get the schema's input type, since no
-   * transform runs (04 Q4.4).
+   * transform runs.
    *
    * @example
    * ```ts
@@ -587,7 +747,7 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
   >;
 
   /**
-   * Declares errors (07 A): each gets a typed constructor on the resolver's
+   * Declares errors: each gets a typed constructor on the resolver's
    * `errors`, its `data` is validated, and it is documented in OpenAPI.
    * Errors made by the constructors are `defined` even when thrown.
    *
@@ -601,7 +761,7 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
    * ```
    */
   errors<const $Map extends ErrorMapInput>(
-    map: $Map,
+    map: $Map & ReservedKeyCheck,
   ): ProcedureBuilder<
     With<
       TDef,
@@ -627,7 +787,7 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
    */
   use<
     $Ctx extends object = {},
-    $Err extends AnyTrpcError = never,
+    $Err extends MiddlewareErrors = never,
     $Ok = never,
     $Input = Unset,
     $Needs extends object = {},
@@ -649,13 +809,13 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
         ctx: WithNeeds<TDef, $Needs>;
         ctxAdded: Overwrite<TDef['ctxAdded'], $Ctx>;
         inputOut: NextInput<TDef['inputOut'], $Input>;
-        errors: TDef['errors'] | $Err;
+        errors: TDef['errors'] | Extract<$Err, AnyTrpcError>;
         shorts: TDef['shorts'] | $Ok;
       }
     >
   >;
   /**
-   * Adds an Effect middleware (06 M-A), made with `t.middleware.effect` or
+   * Adds an Effect middleware, made with `t.middleware.effect` or
    * `middleware.effect`. Its failures join the error union and the services
    * it provides are no longer required from the handler's `layer`.
    */
@@ -800,13 +960,8 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
    * t.procedure.input(z.object({ id: z.string() })).query(({ input }) => db.find(input.id));
    * ```
    */
-  query<$Ret>(
-    resolver: (
-      opts: ResolverOpts<TDef>,
-    ) => $Ret &
-      OutputChecks<TDef, $Ret> &
-      UnmappedCheck<SplitReturn<$Ret>['unmapped']> &
-      ShortsFor<TDef, $Ret>,
+  query<$Ret extends ReturnsFor<TDef>>(
+    resolver: (opts: ResolverOpts<TDef>) => ResolverReturn<TDef, $Ret>,
   ): Procedure<{
     type: 'query';
     ctx: TDef['ctx'];
@@ -817,8 +972,8 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
       : StreamedOutput<TDef['outputOut']>;
     errors: TDef['errors'] | SplitReturn<$Ret>['errors'];
     services:
-      | TDef['requires']
-      | Exclude<SplitReturn<$Ret>['services'], TDef['provided']>;
+      | Exclude<TDef['requires'], Scope.Scope>
+      | Exclude<SplitReturn<$Ret>['services'], TDef['provided'] | Scope.Scope>;
   }>;
 
   /**
@@ -829,13 +984,8 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
    * t.procedure.input(z.object({ title: z.string() })).mutation(({ input }) => db.create(input));
    * ```
    */
-  mutation<$Ret>(
-    resolver: (
-      opts: ResolverOpts<TDef>,
-    ) => $Ret &
-      OutputChecks<TDef, $Ret> &
-      UnmappedCheck<SplitReturn<$Ret>['unmapped']> &
-      ShortsFor<TDef, $Ret>,
+  mutation<$Ret extends ReturnsFor<TDef>>(
+    resolver: (opts: ResolverOpts<TDef>) => ResolverReturn<TDef, $Ret>,
   ): Procedure<{
     type: 'mutation';
     ctx: TDef['ctx'];
@@ -846,8 +996,8 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
       : StreamedOutput<TDef['outputOut']>;
     errors: TDef['errors'] | SplitReturn<$Ret>['errors'];
     services:
-      | TDef['requires']
-      | Exclude<SplitReturn<$Ret>['services'], TDef['provided']>;
+      | Exclude<TDef['requires'], Scope.Scope>
+      | Exclude<SplitReturn<$Ret>['services'], TDef['provided'] | Scope.Scope>;
   }>;
 
   /**
@@ -862,10 +1012,10 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
    * });
    * ```
    */
-  subscription<$Ret>(
+  subscription<$Ret extends YieldsFor<TDef>>(
     resolver: (
       opts: SubscriptionResolverOpts<TDef>,
-    ) => $Ret & EventConstraint<TDef> & StrictErrors<$Ret>,
+    ) => SubscriptionReturn<TDef, $Ret>,
   ): Procedure<{
     type: 'subscription';
     ctx: TDef['ctx'];
@@ -961,6 +1111,7 @@ export function createBuilder(
         output: internals.output,
         validateOutput: internals.validateOutput,
         errors: internals.errors,
+        warnThrown: internals.warnThrown,
         resolver,
       },
     });

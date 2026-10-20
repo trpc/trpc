@@ -5,7 +5,7 @@
     "link": "https://maxgreenwald.me/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "login": "mgreenw",
     "name": "Max Greenwald",
-    "weight": 8
+    "weight": 6
   },
   {
     "createdAt": 1633034677000,
@@ -13,7 +13,7 @@
     "link": "https://github.com/hidrb",
     "login": "hidrb",
     "name": "Dr. B",
-    "weight": 33
+    "weight": 28
   },
   {
     "createdAt": 1644656389000,
@@ -21,7 +21,7 @@
     "link": "https://iamkhan.io/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "login": "debuglebowski",
     "name": "Kalle",
-    "weight": 4
+    "weight": 3
   },
   {
     "createdAt": 1656515723000,
@@ -29,7 +29,7 @@
     "link": "https://github.com/dmaykov",
     "login": "dmaykov",
     "name": "Dmitry Maykov",
-    "weight": 7
+    "weight": 5
   },
   {
     "createdAt": 1657316052000,
@@ -37,7 +37,7 @@
     "link": "https://chrisbradley.dev/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "login": "chrisbradleydev",
     "name": "Chris Bradley",
-    "weight": 7
+    "weight": 5
   },
   {
     "createdAt": 1661242015000,
@@ -45,22 +45,6 @@
     "link": "https://www.fanvue.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "login": "fanvue",
     "name": "fanvue",
-    "weight": 6
-  },
-  {
-    "createdAt": 1671157456000,
-    "imgSrc": "https://avatars.githubusercontent.com/u/95662801?v=4",
-    "link": "https://backyard.ai/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
-    "login": "ahoylabs",
-    "name": "Ahoy Labs",
-    "weight": 84
-  },
-  {
-    "createdAt": 1687018575000,
-    "imgSrc": "https://avatars.githubusercontent.com/u/49917220?u=ceb7a6b68f6366882ac7bc599383382f48e41e94&v=4",
-    "link": "https://github.com/drwpwrs",
-    "login": "drwpwrs",
-    "name": "Drew Powers",
     "weight": 5
   },
   {
@@ -69,7 +53,7 @@
     "link": "https://drizzle.team/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "login": "drizzle-team",
     "name": "Drizzle Team",
-    "weight": 5
+    "weight": 3
   },
   {
     "createdAt": 1706115991000,
@@ -77,7 +61,7 @@
     "link": "https://www.spencermckenney.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "login": "spencemc",
     "name": "Spencer McKenney",
-    "weight": 5
+    "weight": 3
   },
   {
     "createdAt": 1707060132000,
@@ -85,7 +69,7 @@
     "link": "https://proxidize.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "login": "proxidize",
     "name": "Proxidize",
-    "weight": 17
+    "weight": 15
   },
   {
     "createdAt": 1708012798000,
@@ -93,15 +77,7 @@
     "link": "https://unkey.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "login": "unkeyed",
     "name": "Unkey",
-    "weight": 40
-  },
-  {
-    "createdAt": 1710001498000,
-    "imgSrc": "https://avatars.githubusercontent.com/u/457653?u=548c6e3482bd0c0d935d99b9c564fdbbe0d8da5d&v=4",
-    "link": "https://www.stefan-wallin.se/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
-    "login": "StefanWallin",
-    "name": "Stefan Wallin",
-    "weight": 3
+    "weight": 38
   },
   {
     "createdAt": 1714092353000,
@@ -109,7 +85,7 @@
     "link": "https://github.com/maiconcarraro",
     "login": "maiconcarraro",
     "name": "Maicon Carraro",
-    "weight": 4
+    "weight": 3
   },
   {
     "createdAt": 1717016104000,
@@ -117,7 +93,7 @@
     "link": "https://github.com/infodusha",
     "login": "infodusha",
     "name": "Andrei Karushev",
-    "weight": 4
+    "weight": 3
   },
   {
     "createdAt": 1724917223000,
@@ -125,7 +101,7 @@
     "link": "https://liminity.se/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "login": "liminityab",
     "name": "Liminity AB",
-    "weight": 13
+    "weight": 12
   },
   {
     "createdAt": 1729879193000,
@@ -133,7 +109,7 @@
     "link": "https://github.com/ryanmagoon",
     "login": "ryanmagoon",
     "name": "Ryan Magoon",
-    "weight": 13
+    "weight": 26
   },
   {
     "createdAt": 1737645299000,
@@ -141,15 +117,9 @@
     "link": "https://www.coderabbit.ai/?utm_source=github&utm_medium=referral&ref=trpc&utm_campaign=trpc",
     "login": "coderabbitai",
     "name": "CodeRabbit",
-    "weight": 94
-  },
-  {
-    "createdAt": 1739302642000,
-    "imgSrc": "https://avatars.githubusercontent.com/u/67328248?v=4",
-    "link": "https://venue.ink/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
-    "login": "venuelive",
-    "name": "Venue Ink",
-    "weight": 3
+    "rank": 1,
+    "tier": "silver",
+    "weight": 100
   },
   {
     "createdAt": 1743099912000,
@@ -157,7 +127,9 @@
     "link": "https://greptile.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "login": "greptileai",
     "name": "Greptile",
-    "weight": 102
+    "rank": 2,
+    "tier": "silver",
+    "weight": 86
   },
   {
     "createdAt": 1745489411000,
@@ -165,23 +137,7 @@
     "link": "https://bestkru.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "login": "BestKru",
     "name": "BestKru",
-    "weight": 9
-  },
-  {
-    "createdAt": 1764800371000,
-    "imgSrc": "https://avatars.githubusercontent.com/u/158637456?v=4",
-    "link": "https://github.com/Ferry-Health",
-    "login": "Ferry-Health",
-    "name": "Ferry Health",
-    "weight": 15
-  },
-  {
-    "createdAt": 1767946292000,
-    "imgSrc": "https://avatars.githubusercontent.com/u/1405370?u=8a516a20206354bedf5e1f7639649f3214562d84&v=4",
-    "link": "https://erik.bjareholt.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
-    "login": "ErikBjare",
-    "name": "Erik Bjäreholt",
-    "weight": 1
+    "weight": 8
   },
   {
     "createdAt": 1770553222000,
@@ -189,7 +145,7 @@
     "link": "https://aerius.se/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "login": "aeriusventilation",
     "name": "Aerius Ventilation AB",
-    "weight": 3
+    "weight": 4
   },
   {
     "createdAt": 1770768000000,
@@ -197,7 +153,9 @@
     "link": "https://serpapi.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "login": "SerpApi",
     "name": "SerpApi",
-    "weight": 78
+    "rank": 3,
+    "tier": "silver",
+    "weight": 55
   },
   {
     "createdAt": 1773658081000,
@@ -205,14 +163,14 @@
     "link": "https://automatio.ai/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
     "login": "shtefcs",
     "name": "Stefan Smiljkovic",
-    "weight": 2
+    "weight": 4
   },
   {
-    "createdAt": 1776323065000,
-    "imgSrc": "https://avatars.githubusercontent.com/u/274467786?u=7fbbec207f709377f3bf6e4aa8b1d2ef69861d59&v=4",
-    "link": "https://www.netrouting.com/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
-    "login": "netroutingcom",
-    "name": "Netrouting.com",
-    "weight": 2
+    "createdAt": 1786777883000,
+    "imgSrc": "https://avatars.githubusercontent.com/u/203708130?v=4",
+    "link": "https://usevault.app/?ref=trpc&utm_source=github&utm_medium=referral&utm_campaign=trpc",
+    "login": "vault-technology-corporation",
+    "name": "Vault",
+    "weight": 1
   }
 ]

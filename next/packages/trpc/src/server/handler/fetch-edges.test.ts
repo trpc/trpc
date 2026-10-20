@@ -1,7 +1,13 @@
 import { request as httpRequest } from 'node:http';
 import { Effect, Fiber, Predicate, Stream } from 'effect';
-import { HttpRouter, HttpServerRequest, HttpServerResponse } from 'effect/http';
+import {
+  HttpEffect,
+  HttpRouter,
+  HttpServerRequest,
+  HttpServerResponse,
+} from 'effect/http';
 import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import { toHttpEffect } from '@trpc12/trpc/http';
 import { jsonSerializer } from '@trpc12/trpc/serializer';
 import { createFetchHandler, error, initTrpc, lazy } from '@trpc12/trpc/server';
 import { expect, test, vi } from 'vite-plus/test';
@@ -74,6 +80,24 @@ test('a raw request path with dot segments is resolved like a URL', async () => 
     req.end();
   });
   expect(JSON.parse(body)).toEqual({ json: 'hello ada' });
+});
+
+test('a path with a malformed escape is a 404, through fetch and toHttpEffect alike', async () => {
+  const errors: string[] = [];
+  const handler = createFetchHandler({
+    router,
+    createContext,
+    onError: (opts) => errors.push(opts.error.message),
+  });
+  const viaApp = HttpEffect.toWebHandler(toHttpEffect(handler));
+  for (const serve of [handler.fetch, viaApp]) {
+    const response = await serve(new Request('http://localhost/trpc/%E0%A4'));
+    expect(response.status).toBe(404);
+  }
+  expect(errors).toEqual([
+    'Not found: /trpc/%E0%A4',
+    'Not found: /trpc/%E0%A4',
+  ]);
 });
 
 test('unreadable inputs are protocol errors', async () => {

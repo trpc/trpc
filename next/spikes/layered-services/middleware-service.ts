@@ -16,13 +16,18 @@
  * ```
  */
 import { Effect, type Context } from 'effect';
-import type { BuilderDef, CurrentCtx, With } from '@trpc12/trpc/internal';
+import type {
+  BuilderDef,
+  CurrentCtx,
+  TypeError,
+  With,
+} from '@trpc12/trpc/internal';
 import {
   middleware,
   type AnyTrpcError,
+  type NextError,
   type ProcedureBuilder,
   type ProcedureType,
-  type TypeError,
 } from '@trpc12/trpc/server';
 
 /** What the wrapped call succeeds with: opaque, as `RpcMiddleware.SuccessValue` is. */
@@ -37,7 +42,7 @@ export interface MiddlewareImpl<
   Ctx = unknown,
 > {
   (
-    next: Effect.Effect<Next, never, Provides>,
+    next: Effect.Effect<Next, NextError, Provides>,
     opts: {
       readonly ctx: Ctx;
       readonly meta: unknown;
@@ -45,7 +50,7 @@ export interface MiddlewareImpl<
       readonly type: ProcedureType;
       readonly signal: AbortSignal;
     },
-  ): Effect.Effect<Next, E>;
+  ): Effect.Effect<Next, E | NextError>;
 }
 
 type CtxCheck<TDef extends BuilderDef, Ctx> =

@@ -17,6 +17,7 @@ import type {
   BuilderDef,
   SplitReturn,
   StrictErrors,
+  TypeError,
   UndeclaredCheck,
   Unset,
 } from '@trpc12/trpc/internal';
@@ -25,7 +26,6 @@ import type {
   Procedure,
   ProcedureBuilder,
   ResolverOpts,
-  TypeError,
 } from '@trpc12/trpc/server';
 
 type Value<T> = T extends Unset ? undefined : T;

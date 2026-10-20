@@ -1,11 +1,11 @@
 ---
 title: Extensions
-description: Packages that add middleware, ctx, meta keys, errors and services to every procedure with t.concat().
+description: Packages that add middleware, `ctx`, `meta` keys, errors and services to every procedure with `t.concat()`.
 section: Server
 order: 10
 ---
 
-A package can add middleware, ctx, meta keys, declared errors and Effect services to every procedure of an app. An extension is a procedure builder from the package's own `initTrpc`: its root ctx is what it needs from the app's, its meta type joins the app's (its default meta goes underneath), and the app adds it with `t.concat()`, the same method a procedure builder takes a plugin with:
+A package can add middleware, `ctx`, `meta` keys, declared errors and Effect services to every procedure of an app. An extension is a procedure builder from the package's own `initTrpc`: its root `ctx` is what it needs from the app's, its `meta` type joins the app's (its default `meta` goes underneath), and the app adds it with `t.concat()`, the same method a procedure builder takes a plugin with:
 
 ```ts twoslash
 // ---cut-start---
@@ -43,9 +43,9 @@ t.procedure
   .mutation((opts) => opts.ctx.remaining);
 ```
 
-Extensions chain, and `t.middleware` sees what they add. [`examples/saas-api`](../../examples/saas-api/src/tenancy.ts) has two: a tenancy extension that adds the caller's tenant and role, and an audit extension that starts with the same session middleware, so it runs once. `t.concat()` is a type error when the root lacks ctx the extension needs, declares one of its meta keys with another type, or already has an output from another extension. An extension's `.output()` is every procedure's, so they can't take another. Services an extension provides with `.provide()` don't need the handler's `layer`; services it only uses do.
+Extensions chain, and `t.middleware` sees what they add. [`examples/saas-api`](../../examples/saas-api/src/tenancy.ts) has two: a tenancy extension that adds the caller's tenant and role, and an audit extension that starts with the same session middleware, so it runs once. `t.concat()` is a type error when the root lacks `ctx` the extension needs, declares one of its `meta` keys with another type, or already has an output from another extension. An extension's `.output()` is every procedure's, so they can't take another. Services an extension provides with `.provide()` don't need the handler's `layer`; services it only uses do.
 
-## Merging meta
+## Merging `meta`
 
 Meta keys a root doesn't declare are a type error, and a later `.meta()` replaces a key unless its root says how to merge it. An extension sets that for its own keys with `initTrpc({ mergeMeta })`.
 

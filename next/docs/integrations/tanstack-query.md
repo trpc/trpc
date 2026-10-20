@@ -79,7 +79,7 @@ useMutationState({
 
 | Procedure    | Helpers                                                                                                                                                                        |
 | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| query        | `queryOptions()`, `queryKey()`, `queryFilter()`, `infiniteOptions()`, `infiniteKey()`                                                                                          |
+| query        | `queryOptions()`, `queryKey()`, `queryFilter()`, `infiniteOptions()`, `infiniteKey()`, `infiniteFilter()`                                                                      |
 | mutation     | `mutationOptions()`, `mutationKey()`, `mutationFilter()`, and for a streamed output `streamedMutationOptions()` ([Streamed mutations](./tanstack-query/streamed-mutations.md)) |
 | subscription | `subscriptionOptions()`, `liveOptions()`, `streamedOptions()` ([Subscriptions](./tanstack-query/subscriptions.md))                                                             |
 
@@ -104,10 +104,9 @@ if (post.error) {
   const message = matchError(post.error, {
     NOT_FOUND: (err) => `No post ${err.data.id}`,
     BAD_REQUEST: () => 'Invalid id',
-    rejected: (err) => err.message,
-    unavailable: () => 'Offline, retrying soon',
-    failed: () => 'Something broke',
-    aborted: () => null,
+    NETWORK_ERROR: () => 'Offline, retrying soon',
+    BAD_RESPONSE: () => 'Try again later',
+    unexpected: (err) => err.message,
   });
 }
 ```

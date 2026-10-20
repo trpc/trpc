@@ -1,5 +1,5 @@
 import { request as httpRequest } from 'node:http';
-import { Stream } from 'effect';
+import { Duration, Stream } from 'effect';
 import { cors } from '@trpc12/trpc/http';
 import {
   createTrpcClient,
@@ -56,6 +56,20 @@ const router = {
     await sleep(50);
     return opts.signal.aborted ? 'aborted' : 'done';
   }),
+  /** Answers once its call is aborted. */
+  held: t.procedure.query(
+    (opts) =>
+      new Promise<string>((resolve) =>
+        opts.signal.addEventListener('abort', () => resolve('aborted')),
+      ),
+  ),
+  /** Sends `0`, then nothing until its call is aborted. */
+  heldTicks: t.procedure.subscription(async function* (opts) {
+    yield 0;
+    await new Promise((resolve) =>
+      opts.signal.addEventListener('abort', resolve),
+    );
+  }),
   report: t.procedure.query(() => ({
     title: 'Report',
     total: (async () => {
@@ -111,7 +125,7 @@ const router = {
 type AppRouter = typeof router;
 
 async function setup(
-  opts: { user?: string; idleMs?: number; params?: boolean } = {},
+  opts: { user?: string; idleTimeout?: Duration.Input; params?: boolean } = {},
 ) {
   const server = await createTestServer({
     router,
@@ -129,8 +143,8 @@ async function setup(
   current = server;
   const link = wsLink({
     url: server.wsUrl,
-    reconnect: { delayMs: () => 10 },
-    idleMs: opts.idleMs,
+    reconnect: { delay: () => Duration.millis(10) },
+    idleTimeout: opts.idleTimeout,
     ...(opts.params
       ? { connectionParams: async () => ({ token: 'kim' }) }
       : {}),
@@ -223,8 +237,8 @@ test('aborting a call sends an abort and aborts the server signal', async () => 
 test('close() fails calls in flight, and the next call reconnects', async () => {
   await using ctx = await setup();
   const upgrades = countUpgrades(ctx.server);
-  const pending = ctx.client.slow.query();
-  const ticks = ctx.client.ticks.subscribe()[Symbol.asyncIterator]();
+  const pending = ctx.client.held.query();
+  const ticks = ctx.client.heldTicks.subscribe()[Symbol.asyncIterator]();
   expect(await ticks.next()).toEqual({ done: false, value: 0 });
   await ctx.link.close();
   await expect(pending).rejects.toMatchObject({
@@ -258,7 +272,7 @@ test('close() fails a subscription waiting to reconnect at once', async () => {
   });
   const url = server.wsUrl;
   await server.close();
-  const link = wsLink({ url, reconnect: { delayMs: () => 60_000 } });
+  const link = wsLink({ url, reconnect: { delay: () => 60_000 } });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
     links: [link],
@@ -347,7 +361,7 @@ test('deferred values inside subscription events', async () => {
 });
 
 test('an idle connection closes and the next call reconnects', async () => {
-  await using ctx = await setup({ idleMs: 10 });
+  await using ctx = await setup({ idleTimeout: '10 millis' });
   const upgrades = countUpgrades(ctx.server);
   await ctx.client.whoami.query();
   await sleep(40);
@@ -395,6 +409,37 @@ test('a client with another protocol version gets a connection error', async () 
     body: { json: { error: { code: 'UNSUPPORTED_PROTOCOL' } } },
   });
   expect((await closed).code).toBe(1002);
+});
+
+test('an array of requests is one invalid message: the protocol has no batches to cap', async () => {
+  await using ctx = await setup();
+  const socket = new WebSocket(ctx.server.wsUrl);
+  await new Promise((resolve) => socket.addEventListener('open', resolve));
+  const replies: unknown[] = [];
+  socket.addEventListener('message', (e) =>
+    replies.push(JSON.parse(String(e.data))),
+  );
+  const hello = (id: number) => ({
+    id,
+    type: 'request',
+    method: 'query',
+    path: 'hello',
+    input: { json: { name: 'a' } },
+  });
+  socket.send(JSON.stringify([hello(1), hello(2)]));
+  socket.send(JSON.stringify(hello(3)));
+  await vi.waitFor(() => expect(replies).toHaveLength(2));
+  socket.close();
+  expect(replies).toMatchObject([
+    {
+      id: null,
+      type: 'error',
+      body: {
+        json: { error: { code: 'PARSE_ERROR', message: 'Invalid message' } },
+      },
+    },
+    { id: 3, type: 'result' },
+  ]);
 });
 
 test('a call keeps the connectionParams it arrived under, despite a later init', async () => {
@@ -517,7 +562,7 @@ test('wsLink replaces a connection that stops answering pings', async () => {
   await using link = wsLink({
     url: server.wsUrl,
     WebSocket: DeafSocket,
-    keepAlive: { intervalMs: 20, timeoutMs: 20 },
+    keepAlive: { interval: '20 millis', timeout: Duration.millis(20) },
   });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
@@ -533,11 +578,11 @@ test('wsLink replaces a connection that stops answering pings', async () => {
   expect(sockets).toHaveLength(2);
 });
 
-test('the server closes a socket that sends nothing for idleTimeoutMs, and pings keep it open', async () => {
+test('the server closes a socket that sends nothing for idleTimeout, and pings keep it open', async () => {
   await using server = await createTestServer({
     router,
     createContext: () => ({ user: null, transport: 'websocket' }),
-    websocket: { idleTimeoutMs: 80 },
+    websocket: { idleTimeout: '80 millis' },
   });
   const open = async () => {
     const socket = new WebSocket(server.wsUrl);
@@ -592,7 +637,7 @@ test('handler.websocket serves a standard socket that opens after the call, and 
   const handler = createFetchHandler({
     router,
     createContext: () => ({ user: 'deno', transport: 'websocket' }),
-    websocket: { idleTimeoutMs: 80 },
+    websocket: { idleTimeout: Duration.millis(80) },
   });
   const socket = new StandardSocket();
   handler.websocket(socket, { request: new Request('http://localhost/trpc') });
@@ -678,4 +723,52 @@ test('a websocket.upgrade that throws answers 400', async () => {
   );
   expect(response.status).toBe(400);
   await handler.dispose();
+});
+
+/** A socket whose peer never answers the close handshake: only its session's end lets go of it. */
+class UnansweredSocket extends StandardSocket {
+  listeners = 0;
+  override addEventListener(
+    ...args: Parameters<EventTarget['addEventListener']>
+  ) {
+    this.listeners++;
+    super.addEventListener(...args);
+  }
+  override removeEventListener(
+    ...args: Parameters<EventTarget['removeEventListener']>
+  ) {
+    this.listeners--;
+    super.removeEventListener(...args);
+  }
+  override close(code?: number, reason?: string) {
+    this.closed = { code, reason };
+    this.readyState = 2;
+  }
+}
+
+test('dispose() ends the sessions handler.websocket started, even when the peer never answers the close', async () => {
+  const handler = createFetchHandler({
+    router,
+    createContext: () => ({ user: 'deno', transport: 'websocket' }),
+    websocket: { drainTimeout: 0 },
+  });
+  const socket = new UnansweredSocket();
+  socket.open();
+  handler.websocket(socket, { request: new Request('http://localhost/trpc') });
+  socket.receive({ type: 'init', version: '12' });
+  await vi.waitFor(() =>
+    expect(socket.sent).toContainEqual({ type: 'init', serializer: 'json' }),
+  );
+  expect(socket.listeners).toBeGreaterThan(0);
+
+  await handler.dispose();
+  expect(socket.closed).toEqual({ code: 1012, reason: 'Service restart' });
+  expect(socket.listeners).toBe(0);
+
+  const late = new StandardSocket();
+  late.open();
+  handler.websocket(late, { request: new Request('http://localhost/trpc') });
+  await vi.waitFor(() =>
+    expect(late.closed).toEqual({ code: 1012, reason: 'Service restart' }),
+  );
 });

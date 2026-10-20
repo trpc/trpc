@@ -1,6 +1,6 @@
 ---
 title: Message ports
-description: Serve calls over a MessagePort, a web Worker or a worker_threads port.
+description: Serve calls over a `MessagePort`, a web Worker or a `worker_threads` port.
 section: Adapters
 order: 8
 experiment: adapters

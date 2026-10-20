@@ -4,20 +4,21 @@
 - Human, 2026-10-11: "One package, one subpath per framework applies when there's no other deps. In the here we have both tanstack and react as peer dependencies". A subpath of `@trpc12/trpc` is only for code whose dependencies `@trpc12/trpc` already has. An integration that brings its own (peer) dependencies is a separate package.
 - TanStack Query is one package per TanStack adapter, named after TanStack's own (`@tanstack/react-query` → `@trpc12/tanstack-react-query`):
 
-  | Package                          | Peers besides `@trpc12/trpc`                            |
-  | -------------------------------- | ------------------------------------------------------- |
-  | `@trpc12/tanstack-query`         | `@tanstack/query-core`                                  |
-  | `@trpc12/tanstack-react-query`   | `@tanstack/react-query`, `react`                        |
-  | `@trpc12/tanstack-preact-query`  | `@tanstack/preact-query`, `preact`                      |
-  | `@trpc12/tanstack-vue-query`     | `@tanstack/vue-query`, `vue`                            |
-  | `@trpc12/tanstack-solid-query`   | `@tanstack/solid-query`, `solid-js`                     |
-  | `@trpc12/tanstack-svelte-query`  | `@tanstack/svelte-query`, `svelte`                      |
-  | `@trpc12/tanstack-angular-query` | `@tanstack/angular-query-experimental`, `@angular/core` |
-  | `@trpc12/tanstack-lit-query`     | `@tanstack/lit-query`, `lit`, `@lit/context`            |
+  | Package                                       | Peers besides `@trpc12/trpc`                            |
+  | --------------------------------------------- | ------------------------------------------------------- |
+  | `@trpc12/tanstack-query`                      | `@tanstack/query-core`                                  |
+  | `@trpc12/tanstack-react-query`                | `@tanstack/react-query`, `react`                        |
+  | `@trpc12/experimental-tanstack-preact-query`  | `@tanstack/preact-query`, `preact`                      |
+  | `@trpc12/experimental-tanstack-vue-query`     | `@tanstack/vue-query`, `vue`                            |
+  | `@trpc12/experimental-tanstack-solid-query`   | `@tanstack/solid-query`, `solid-js`                     |
+  | `@trpc12/experimental-tanstack-svelte-query`  | `@tanstack/svelte-query`, `svelte`                      |
+  | `@trpc12/experimental-tanstack-angular-query` | `@tanstack/angular-query-experimental`, `@angular/core` |
+  | `@trpc12/experimental-tanstack-lit-query`     | `@tanstack/lit-query`, `lit`, `@lit/context`            |
 
 - (agent) This answers Q19.1 (proposal 19): per-framework packages, not one agnostic package with `./react`.
 - (agent) Each framework package depends on `@trpc12/tanstack-query` and re-exports it, so an app imports from one package.
+- (agent) `@trpc12/tanstack-query`'s `@tanstack/query-core` peer is optional (`peerDependenciesMeta`): each TanStack adapter pins its own `query-core` version, and npm installed a required peer at the newest one beside it. Measured 2026-10-19 with the packed packages, an app on `@tanstack/react-query` 5.104.1 (latest `query-core` 5.104.4): `npm install` gave two copies, so `skipToken` from `@tanstack/react-query` went into the key as an input instead of disabling the query, and every `useQuery(trpc.….queryOptions())` was a type error (two `QueryClient` classes). Optional, npm and pnpm (`hoist=false` too) both resolve the adapter's copy. `tooling/pack/pack.test.ts` requires a dependency's peers to be the dependent's peers too, or optional.
 - Why: optional peers on subpaths still show up in every install. Package managers warn about or auto-install them, and a user of one framework sees the other six in `peerDependencies`. Separate packages give each framework accurate, required peers.
 - Lost: one package with optional peers per subpath (the first TanStack build's layout). Seven more packages to version and publish.
 - Human, 2026-10-15 (Q19.6): "Later or never". Pinia Colada isn't planned; if it is ever built, it is `@trpc12/pinia-colada`.
-- Lives in: `packages/tanstack-*/package.json`.
+- Lives in: `packages/tanstack-*/package.json`, `tooling/pack/pack.test.ts` (forwarded or optional peers).

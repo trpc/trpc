@@ -43,6 +43,12 @@
   },
   "peerDependencies": {
     "@tanstack/query-core": "^5.104.0",
-    "@trpc12/trpc": "workspace:*"
+    "@trpc12/trpc": "workspace:*",
+    "effect": "^4.0.0"
+  },
+  "peerDependenciesMeta": {
+    "@tanstack/query-core": {
+      "optional": true
+    }
   }
 }

@@ -2,16 +2,16 @@
 
 - `@trpc12/tanstack-query` holds the framework-agnostic core on `@tanstack/query-core`. Each adapter package ([`integration-packages.md`](./integration-packages.md)) adds only what can't be agnostic, context and a subscription primitive, so the type mapping and key format live in one place:
 
-  | Package                          | Context helpers                                                                 | Subscription primitive                        |
-  | -------------------------------- | ------------------------------------------------------------------------------- | --------------------------------------------- |
-  | `@trpc12/tanstack-query`         | —                                                                               | `SubscriptionObserver`                        |
-  | `@trpc12/tanstack-react-query`   | `createTrpcContext()` → `[TrpcProvider, useTrpc, useTrpcClient, context]`       | `useSubscription(options)`                    |
-  | `@trpc12/tanstack-preact-query`  | same as React                                                                   | `useSubscription(options)`                    |
-  | `@trpc12/tanstack-vue-query`     | `{ TrpcPlugin, provideTrpc, useTrpc, useTrpcClient }`                           | `useSubscription(MaybeRefOrGetter)` → refs    |
-  | `@trpc12/tanstack-solid-query`   | `[TrpcProvider, useTrpc, useTrpcClient]`                                        | `useSubscription(accessor)` → getters         |
-  | `@trpc12/tanstack-svelte-query`  | `[useTrpc, setTrpcContext, useTrpcClient]` (Svelte 5 runes)                     | `createSubscription(getter)` → getters        |
-  | `@trpc12/tanstack-angular-query` | `{ provideTrpc, injectTrpc, injectTrpcClient }`                                 | `injectSubscription(fn)` → signals            |
-  | `@trpc12/tanstack-lit-query`     | `TrpcProvider` element class, `useTrpc(host)`, `useTrpcClient(host)`, `context` | `createSubscriptionController(host, options)` |
+  | Package                                       | Context helpers                                                                 | Subscription primitive                        |
+  | --------------------------------------------- | ------------------------------------------------------------------------------- | --------------------------------------------- |
+  | `@trpc12/tanstack-query`                      | —                                                                               | `SubscriptionObserver`                        |
+  | `@trpc12/tanstack-react-query`                | `createTrpcContext()` → `[TrpcProvider, useTrpc, useTrpcClient, context]`       | `useSubscription(options)`                    |
+  | `@trpc12/experimental-tanstack-preact-query`  | same as React                                                                   | `useSubscription(options)`                    |
+  | `@trpc12/experimental-tanstack-vue-query`     | `{ TrpcPlugin, provideTrpc, useTrpc, useTrpcClient }`                           | `useSubscription(MaybeRefOrGetter)` → refs    |
+  | `@trpc12/experimental-tanstack-solid-query`   | `[TrpcProvider, useTrpc, useTrpcClient]`                                        | `useSubscription(accessor)` → getters         |
+  | `@trpc12/experimental-tanstack-svelte-query`  | `[useTrpc, setTrpcContext, useTrpcClient]` (Svelte 5 runes)                     | `createSubscription(getter)` → getters        |
+  | `@trpc12/experimental-tanstack-angular-query` | `{ provideTrpc, injectTrpc, injectTrpcClient }`                                 | `injectSubscription(fn)` → signals            |
+  | `@trpc12/experimental-tanstack-lit-query`     | `TrpcProvider` element class, `useTrpc(host)`, `useTrpcClient(host)`, `context` | `createSubscriptionController(host, options)` |
 
 - `createTrpcContext<T>()` takes one type argument ([`tanstack-context-shape.md`](./tanstack-context-shape.md)): a client factory's type, a client's type, or a router type (a `routerType()` value's type or a contract). Names follow each adapter: `use*` (React, Preact, Vue, Solid), `create*` (Svelte), `inject*`/`provide*` (Angular), controllers (Lit).
 - (agent) From a client factory or client type it reads the router, link context and link types ([`replaceable-serializers.md`](./replaceable-serializers.md)).
@@ -23,4 +23,4 @@
 - (agent) `useQueries` takes `queryOptions()` as they are (tested with React's `combine` and `QueriesObserver`). `mutationFilter({ ...filters })` gives `useMutationState`, `useIsMutating` and `isMutating()` the procedure's mutation key, with `predicate` typed by the procedure; it returns TanStack's plain `MutationFilters`, which is what those APIs accept.
 - Open: `svelte-check` once it supports TypeScript 7.
 - (agent) Checked 2026-10-16: `svelte-check` 4.7.6 still peers `typescript` `^5 || ^6`, so the Open waits on upstream.
-- Lives in: `packages/tanstack-*/src/`, `packages/tanstack-query/src/utils.ts` (`mutationFilter`), `packages/tanstack-*-query/src/ssr.test.ts`, `packages/tanstack-svelte-query/src/fixtures/Ssr.svelte`, `vite.config.ts` (`svelte-ssr` project), `docs/integrations/tanstack-query.md`.
+- Lives in: `packages/tanstack-*/src/`, `packages/tanstack-query/src/utils.ts` (`mutationFilter`), `packages/tanstack-*-query/src/ssr.test.ts`, `packages/experimental-tanstack-svelte-query/src/fixtures/Ssr.svelte`, `vite.config.ts` (`svelte-ssr` project), `docs/integrations/tanstack-query.md`.

@@ -8,7 +8,7 @@ import {
 import {
   createTrpcContext,
   useSubscription,
-} from '@trpc12/tanstack-solid-query';
+} from '@trpc12/experimental-tanstack-solid-query';
 import { For } from 'solid-js';
 import { frameworks } from '../frameworks.ts';
 import type { Client, makeClient } from '../trpc.ts';
@@ -33,7 +33,9 @@ function Poll() {
         <div class={ui.header}>
           <div>
             <div class={ui.title}>Solid</div>
-            <div class={ui.description}>@trpc12/tanstack-solid-query</div>
+            <div class={ui.description}>
+              @trpc12/experimental-tanstack-solid-query
+            </div>
           </div>
           <span class={ui.badge} data-testid="clock">
             {clock.data ? `tick ${clock.data.tick}` : 'connecting'}

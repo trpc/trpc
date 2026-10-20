@@ -46,6 +46,8 @@ interface RenderedMarkdown {
   readonly anchors: ReadonlyArray<string>;
   /** The `h2` and `h3` headings, for the table of contents. */
   readonly headings: ReadonlyArray<DocHeading>;
+  /** The ids of the page's `demo` fences, in order. */
+  readonly demos: ReadonlyArray<string>;
   readonly html: string;
   readonly links: ReadonlyArray<DocLink>;
   /** Each `twoslash` block's `// ^?` types, in order. */
@@ -157,10 +159,15 @@ export type ResolvedLink =
  * Links are written as relative paths between the `.md` files
  * (`../client/links.md#batching`), so they work on GitHub too. A link to a
  * page points at `<basePath>/<slug>`, and a link out of the docs folder (an
- * example, a design note) points at the file on GitHub. A path from `/` is
- * a page of the site, as written.
+ * example, a design note) points at the file on GitHub, by its path from
+ * where `contentPath` (the folder's path there) puts the folder. A path from
+ * `/` is a page of the site, as written.
  */
-export function resolveLink(fromSlug: string, url: string): ResolvedLink {
+export function resolveLink(
+  fromSlug: string,
+  url: string,
+  contentPath = 'docs',
+): ResolvedLink {
   if (
     /^[a-z][a-z\d+.-]*:/i.test(url) ||
     url.startsWith('#') ||
@@ -168,26 +175,32 @@ export function resolveLink(fromSlug: string, url: string): ResolvedLink {
   ) {
     return { kind: 'other' };
   }
-  const base = new URL(`file:///docs/${fromSlug}.md`);
+  const folder = `/${contentPath}/`;
+  const base = new URL(`file://${folder}${fromSlug}.md`);
   const target = new URL(url, base);
   const hash = target.hash
     ? decodeURIComponent(target.hash.slice(1))
     : undefined;
   const pathname = decodeURIComponent(target.pathname);
-  const page = /^\/docs\/(.+)\.md$/.exec(pathname);
-  if (page?.[1]) {
-    return { kind: 'doc', link: { hash, slug: page[1] } };
+  const slug = pathname.startsWith(folder)
+    ? /^(.+)\.md$/.exec(pathname.slice(folder.length))?.[1]
+    : undefined;
+  if (slug !== undefined) {
+    return { kind: 'doc', link: { hash, slug } };
   }
   return { kind: 'source', path: `${pathname.slice(1)}${target.hash}` };
 }
 
+/** The options a page's links resolve with. */
+type LinkOptions = 'basePath' | 'contentPath' | 'slug' | 'sourceUrl';
+
 function remarkLinks(
-  options: Pick<RenderOptions, 'basePath' | 'slug' | 'sourceUrl'>,
+  options: Pick<RenderOptions, LinkOptions>,
   links: Array<DocLink>,
 ) {
   return () => (tree: MdastRoot) => {
     visit(tree, 'link', (node: Link) => {
-      const resolved = resolveLink(options.slug, node.url);
+      const resolved = resolveLink(options.slug, node.url, options.contentPath);
       if (resolved.kind === 'doc') {
         links.push(resolved.link);
         node.url = `${options.basePath}/${resolved.link.slug}${resolved.link.hash ? `#${resolved.link.hash}` : ''}`;
@@ -275,6 +288,32 @@ function remarkPackageInstall() {
         type: 'paragraph',
       };
       parent.children[index] = tabs;
+    });
+  };
+}
+
+/**
+ * A `demo` fence holds a kitchen-sink demo's id (`src/kitchen-sink/demos.ts`)
+ * and becomes the place the page runs it, which `DocPage` fills in the
+ * browser. Its content shows until then.
+ */
+function remarkDemos(demos: Array<string>) {
+  return () => (tree: MdastRoot) => {
+    visit(tree, 'code', (node: Code, index, parent) => {
+      if (node.lang !== 'demo' || !parent || index === undefined) {
+        return;
+      }
+      const id = node.value.trim();
+      if (!/^[a-z][a-z\d-]*$/.test(id)) {
+        throw new Error(
+          `A demo fence holds a demo's id, not ${JSON.stringify(id)}`,
+        );
+      }
+      demos.push(id);
+      parent.children[index] = {
+        type: 'html',
+        value: `<div class="demo-slot not-prose" data-demo="${id}"><p>The demo runs here, in your browser.</p></div>`,
+      };
     });
   };
 }
@@ -546,6 +585,43 @@ interface SeenProgram {
 /** A twoslasher per project root; each keeps a TypeScript environment per set of compiler options. */
 const twoslashers = new Map<string, Twoslasher>();
 
+/**
+ * How many TypeScript environments stay alive, across roots. Each is a
+ * program with its own parse of the app's and libraries' types, 100–250 MB,
+ * and a block's inline flags (`// @target: esnext`, `// @jsxImportSource:
+ * preact`) make another, so keeping them all ran a cold build out of heap.
+ */
+const liveEnvironments = 3;
+
+/** The live environments, least recently used first, each with what drops it from its twoslasher. */
+const usedEnvironments = new Map<Environment, () => void>();
+
+function useEnvironment(environment: Environment, drop: () => void) {
+  usedEnvironments.delete(environment);
+  usedEnvironments.set(environment, drop);
+  for (const [oldest, dropOldest] of usedEnvironments) {
+    if (usedEnvironments.size <= liveEnvironments) {
+      break;
+    }
+    usedEnvironments.delete(oldest);
+    dropOldest();
+    oldest.languageService.dispose();
+  }
+}
+
+/**
+ * Lets go of every twoslasher and its environments, once the pages are
+ * compiled: the prerender runs in the same process. A later block makes a
+ * new one.
+ */
+export function releaseTwoslashers() {
+  twoslashers.clear();
+  for (const environment of usedEnvironments.keys()) {
+    environment.languageService.dispose();
+  }
+  usedEnvironments.clear();
+}
+
 function twoslasherFor(root: string, tsLibDirectory: string) {
   const existing = twoslashers.get(root);
   if (existing) {
@@ -557,6 +633,13 @@ function twoslasherFor(root: string, tsLibDirectory: string) {
   // deleted instead: an emptied `a.ts` still resolves, so a later block's
   // `import './a'` would find it, with no text, before its own `a.tsx`.
   const environments = new (class extends Map<string, Environment> {
+    override get(key: string) {
+      const environment = super.get(key);
+      if (environment) {
+        useEnvironment(environment, () => this.delete(key));
+      }
+      return environment;
+    }
     override set(key: string, environment: Environment) {
       const createFile = environment.createFile.bind(environment);
       environment.createFile = (fileName, content) => {
@@ -570,7 +653,9 @@ function twoslasherFor(root: string, tsLibDirectory: string) {
         }
         environment.deleteFile(fileName);
       };
-      return super.set(key, environment);
+      super.set(key, environment);
+      useEnvironment(environment, () => this.delete(key));
+      return this;
     }
   })();
   const twoslasher = createTwoslasher({
@@ -736,16 +821,19 @@ export interface RenderOptions {
   readonly slug: string;
   /** Where the files around the docs folder are browsable, for links to them. */
   readonly sourceUrl: string;
+  /** The docs folder's path under `sourceUrl` (`www/docs`), which links out of it resolve from: `docs` unless named. */
+  readonly contentPath?: string | undefined;
   /** Where compiled blocks are kept between renders and builds. */
   readonly twoslashCache?: TwoslashCache | undefined;
 }
 
 /** Markdown to hast, up to highlighting the code blocks. */
 function parsing(
-  options: Pick<RenderOptions, 'basePath' | 'slug' | 'sourceUrl'>,
+  options: Pick<RenderOptions, LinkOptions>,
   headings: Array<DocHeading>,
   anchors: Array<string>,
   links: Array<DocLink>,
+  demos: Array<string>,
 ) {
   return unified()
     .use(remarkParse)
@@ -753,6 +841,7 @@ function parsing(
     .use(remarkAlerts)
     .use(remarkHeadingIds)
     .use(remarkLinks(options, links))
+    .use(remarkDemos(demos))
     .use(remarkPackageInstall)
     .use(remarkCodeMeta)
     .use(remarkRehype, { allowDangerousHtml: true })
@@ -767,6 +856,7 @@ export const anchorsOf = Effect.fn('anchorsOf')(function* (markdown: string) {
     { basePath: '/docs', slug: 'index', sourceUrl: '' },
     [],
     anchors,
+    [],
     [],
   );
   yield* Effect.tryPromise({
@@ -785,6 +875,7 @@ export const renderMarkdown = Effect.fn('renderMarkdown')(function* (
   const headings: Array<DocHeading> = [];
   const anchors: Array<string> = [];
   const links: Array<DocLink> = [];
+  const demos: Array<string> = [];
   const typeQueries: Array<ReadonlyArray<string>> = [];
   let collapseId = 0;
   // Setting up Twoslash reads a sample app, which a page without blocks
@@ -797,7 +888,7 @@ export const renderMarkdown = Effect.fn('renderMarkdown')(function* (
         options.inlineApp ?? defaultInlineApp,
       )
     : undefined;
-  const processor = parsing(options, headings, anchors, links)
+  const processor = parsing(options, headings, anchors, links, demos)
     .use(rehypeShiki, {
       defaultColor: false,
       // Loading all of Shiki's languages took seconds per process, so
@@ -837,6 +928,7 @@ export const renderMarkdown = Effect.fn('renderMarkdown')(function* (
   }).pipe(Effect.ensuring(blocks?.flush ?? Effect.void));
   const rendered: RenderedMarkdown = {
     anchors,
+    demos,
     headings,
     html: toHtml(tree),
     links,

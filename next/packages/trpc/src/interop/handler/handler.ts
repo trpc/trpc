@@ -1,4 +1,17 @@
-import { Cause, Context, Effect, Exit, Stream, type Layer } from 'effect';
+import {
+  Cause,
+  Context,
+  Effect,
+  Exit,
+  Stream,
+  type Duration,
+  type Layer,
+} from 'effect';
+import { timerOption } from '../../internal/duration.ts';
+import {
+  interruptSignal,
+  type InterruptSignal,
+} from '../../internal/effects.ts';
 import {
   HttpEffect,
   HttpServerRequest,
@@ -56,11 +69,15 @@ import {
 } from '../../server/procedures/index.ts';
 import {
   fromWebSocketLike,
+  HandlerDrains,
+  makeSocketDrains,
+  type SocketDrains,
   type WebSocketLike,
   UpgradeServer,
 } from '../../server/sockets/index.ts';
 import { isTracked } from '../../server/subscriptions/index.ts';
 import {
+  BATCH_TOO_LARGE,
   v11Shape,
   type V11ErrorFormatterOpts,
   type V11ErrorShape,
@@ -117,7 +134,10 @@ export interface BaseV11HandlerOptions<TRouter extends AnyRouter> {
   errorFormatter?: (opts: V11ErrorFormatterOpts) => V11ErrorShape;
   /**
    * Accept `httpBatchLink` and `httpBatchStreamLink` batches, as v11 does
-   * by default, of at most `maxItems` calls (v11 had no cap).
+   * by default, of at most `maxItems` calls (v11's `maxBatchSize`, which
+   * it left unlimited). `maxItems` also caps the calls in one `wsLink`
+   * message, whose array of calls is answered as v11 answers an HTTP batch
+   * over `maxBatchSize`; with `false`, sockets keep the default cap.
    * @default { maxItems: 100 }
    */
   batch?: boolean | { maxItems?: number };
@@ -141,9 +161,9 @@ export interface BaseV11HandlerOptions<TRouter extends AnyRouter> {
     /**
      * Send a v11 `ping` event this often while a subscription is quiet.
      * `false` sends none.
-     * @default 15_000
+     * @default '15 seconds'
      */
-    pingMs?: number | false;
+    pingInterval?: Duration.Input | false;
   };
   websocket?: {
     /**
@@ -151,7 +171,7 @@ export interface BaseV11HandlerOptions<TRouter extends AnyRouter> {
      * included, for this long. `false` keeps silent sockets open.
      * @default false
      */
-    idleTimeoutMs?: number | false;
+    idleTimeout?: Duration.Input | false;
   };
 }
 
@@ -183,7 +203,11 @@ export interface V11Handler<TPlatform = undefined> {
     socket: WebSocketLike,
     opts: { request: Request } & PlatformField<TPlatform>,
   ): void;
-  /** Releases the `layer`'s resources. */
+  /**
+   * Closes the open WebSockets (1012, "service restart"), so `wsLink`
+   * reconnects elsewhere and resends its subscriptions, then releases the
+   * `layer`'s resources. The handler takes no WebSockets after.
+   */
   dispose(): Promise<void>;
 }
 
@@ -201,6 +225,10 @@ export interface V11Core {
   ) => V11ErrorShape;
   /** A query's or mutation's output with its promises settled. */
   readonly settle: (value: unknown) => Effect.Effect<unknown, AnyTrpcError>;
+  /** The open WebSockets, which `dispose()` closes. */
+  readonly drains: SocketDrains;
+  /** The most calls one WebSocket message's array may carry: `batch.maxItems`. */
+  readonly maxSocketBatch: number;
 }
 
 interface Call {
@@ -223,8 +251,10 @@ type Outcome =
       readonly headers?: Headers;
     };
 
-const decoder = new TextDecoder();
+const decoder = /* @__PURE__ */ new TextDecoder();
 const identity: V11Transformer = { serialize: (v) => v, deserialize: (v) => v };
+
+const DEFAULT_MAX_BATCH = 100;
 
 const fail = <C extends BuiltinErrorCode>(code: C, message: string) =>
   Effect.fail(new TrpcError({ code, message }) as CodeError<C>);
@@ -289,24 +319,6 @@ const parseJson = (text: string) =>
       }),
   });
 
-/** Aborted when the fiber handling the request is interrupted (the client left). */
-const callSignal = Effect.acquireRelease(
-  Effect.sync(() => new AbortController()),
-  (controller, exit) =>
-    Exit.hasInterrupts(exit)
-      ? Effect.sync(() => controller.abort())
-      : Effect.void,
-);
-
-const abortOnInterrupt =
-  (controller: AbortController) =>
-  <A, E>(stream: Stream.Stream<A, E>): Stream.Stream<A, E> =>
-    Stream.onExit(stream, (exit) =>
-      Exit.hasInterrupts(exit)
-        ? Effect.sync(() => controller.abort())
-        : Effect.void,
-    );
-
 /**
  * Serves a v12 router to v11 clients (`@trpc/client` 11), so the server
  * can deploy before every client updates: `httpLink`, `httpBatchLink`,
@@ -361,7 +373,7 @@ export function createV11Handler<
         : transformer;
   const endpoint = `/${(opts.endpoint ?? '/trpc').replace(/^\/+|\/+$/g, '')}`;
   const maxBodySize = opts.maxBodySize ?? 1_048_576;
-  const ssePingMs = opts.sse?.pingMs ?? 15_000;
+  const ssePing = timerOption(opts.sse?.pingInterval, '15 seconds');
   const batch =
     opts.batch === false
       ? undefined
@@ -369,7 +381,7 @@ export function createV11Handler<
           maxItems:
             (typeof opts.batch === 'object'
               ? opts.batch.maxItems
-              : undefined) ?? 100,
+              : undefined) ?? DEFAULT_MAX_BATCH,
         };
 
   const errorShape: V11Core['errorShape'] = (err, path, type, procedure) => {
@@ -384,6 +396,8 @@ export function createV11Handler<
     output,
     errorShape,
     settle,
+    drains: makeSocketDrains(0),
+    maxSocketBatch: batch?.maxItems ?? DEFAULT_MAX_BATCH,
   };
 
   const json = (
@@ -623,7 +637,7 @@ export function createV11Handler<
     url: URL,
     call: Call & { procedure: AnyProcedure },
     prepared: Exit.Exit<{ ctx: object; input: unknown }, AnyTrpcError>,
-    controller: AbortController,
+    interrupt: InterruptSignal,
   ) =>
     Effect.gen(function* () {
       const response = createResponseHandle();
@@ -638,7 +652,7 @@ export function createV11Handler<
               path: call.path,
               ctx: prepared.value.ctx,
               input: prepared.value.input,
-              signal: controller.signal,
+              signal: interrupt.signal,
               response,
               lastEventId:
                 request.headers['last-event-id'] ??
@@ -685,13 +699,13 @@ export function createV11Handler<
       const frames = Stream.concat(
         Stream.make(frame('connected', '{}')),
         events,
-      ).pipe(abortOnInterrupt(controller));
+      ).pipe((self) => interrupt.abortOnInterrupt(self));
       const body =
-        ssePingMs === false
+        ssePing === undefined
           ? frames
           : Stream.merge(
               frames,
-              Stream.tick(ssePingMs).pipe(
+              Stream.tick(ssePing).pipe(
                 Stream.drop(1),
                 Stream.map(() => frame('ping', '')),
               ),
@@ -717,9 +731,8 @@ export function createV11Handler<
     calls: ReadonlyArray<Call>,
     isBatch: boolean,
   ): Effect.Effect<HttpServerResponse.HttpServerResponse, AnyTrpcError> =>
-    Effect.scoped(
+    Effect.flatMap(interruptSignal(), (interrupt) =>
       Effect.gen(function* () {
-        const controller = yield* callSignal;
         const prepared = yield* Effect.exit(
           Effect.gen(function* () {
             const inputs = yield* readInputs(
@@ -735,7 +748,7 @@ export function createV11Handler<
               calls: calls.flatMap((c) =>
                 c.type === 'unknown' ? [] : [{ path: c.path, type: c.type }],
               ),
-              signal: controller.signal,
+              signal: interrupt.signal,
             });
             return { inputs, ctx };
           }),
@@ -751,7 +764,7 @@ export function createV11Handler<
                 calls[i]!,
                 prepared.value.ctx,
                 prepared.value.inputs[i],
-                controller.signal,
+                interrupt.signal,
                 !isBatch,
               );
 
@@ -768,7 +781,7 @@ export function createV11Handler<
                     ctx: prepared.value.ctx,
                     input: prepared.value.inputs[0],
                   }),
-              controller,
+              interrupt,
             );
           }
           const result = yield* outcome(0);
@@ -822,7 +835,7 @@ export function createV11Handler<
             },
           });
           return HttpServerResponse.stream(
-            Stream.encodeText(lines.pipe(abortOnInterrupt(controller))),
+            Stream.encodeText(interrupt.abortOnInterrupt(lines)),
             { status: 200, contentType: 'application/json' },
           );
         }
@@ -855,7 +868,7 @@ export function createV11Handler<
           `[${results.map((r) => r.text).join(',')}]`,
           headers,
         );
-      }),
+      }).pipe((self) => interrupt.abortOnInterrupt(self)),
     );
 
   const app: Effect.Effect<
@@ -864,6 +877,10 @@ export function createV11Handler<
     HttpServerRequest.HttpServerRequest
   > = Effect.gen(function* () {
     const request = yield* HttpServerRequest.HttpServerRequest;
+    // v11 answers HEAD with an empty 204, for health checks and Lambda warm-ups.
+    if (request.method === 'HEAD') {
+      return HttpServerResponse.empty({ status: 204 });
+    }
     const url = new URL(request.url, 'http://localhost');
     const isBatch = url.searchParams.get('batch') === '1';
     const rest = url.pathname.startsWith(`${endpoint}/`)
@@ -910,7 +927,7 @@ export function createV11Handler<
         );
       }
       if (isBatch && batch && paths.length > batch.maxItems) {
-        return yield* fail('BAD_REQUEST', 'Batch call exceeds maximum size');
+        return yield* fail('BAD_REQUEST', BATCH_TOO_LARGE);
       }
       const procedures = yield* Effect.forEach(
         paths,
@@ -951,7 +968,7 @@ export function createV11Handler<
   }) as never;
 
   const middleware = opts.middleware ?? [];
-  const idleTimeoutMs = opts.websocket?.idleTimeoutMs ?? false;
+  const idleTimeout = timerOption(opts.websocket?.idleTimeout, false);
   const served = middleware.reduceRight<
     Effect.Effect<HttpServerResponse.HttpServerResponse, any, any>
   >((inner, m) => m(inner), app);
@@ -974,21 +991,25 @@ export function createV11Handler<
           serveV11Socket(core, effectSocket, {
             request: HttpServerRequest.fromWeb(o.request),
             platform: o.platform,
-            idleTimeoutMs,
+            idleTimeout,
           }),
         ),
       );
     },
-    dispose: base.dispose,
+    async dispose() {
+      await Effect.runPromise(core.drains.drain({ final: true }));
+      await base.dispose();
+    },
   };
   setHandlerContext(
     handler,
     Context.make(HttpApp, { app, middleware }).pipe(
+      Context.add(HandlerDrains, core.drains),
       Context.add(UpgradeServer, (socket, request) =>
         serveV11Socket(core, socket, {
           request,
           platform: undefined,
-          idleTimeoutMs,
+          idleTimeout,
         }),
       ),
     ),

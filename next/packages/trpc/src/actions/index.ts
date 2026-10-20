@@ -16,7 +16,7 @@
  * ```
  * @module
  */
-import { Context, Effect, Exit, ManagedRuntime, type Layer } from 'effect';
+import { Effect, Exit, ManagedRuntime, type Layer } from 'effect';
 import type { SafeResult } from '../client/client.ts';
 import type { ClientError } from '../client/types.ts';
 import { inputJsonSchema } from '../internal/describe.ts';
@@ -35,6 +35,7 @@ import {
   callProcedure,
   isUnexpectedError,
   normalizeCause,
+  runtimeServices,
 } from '../server/execution/index.ts';
 import type {
   AnyProcedure,
@@ -255,12 +256,9 @@ function makeFactory<TMode extends ActionResultMode>(
 ) {
   const mode: ActionResultMode = opts.result ?? 'safe';
   const expose = opts.exposeUnexpectedErrors ?? isDev();
-  const runtime = opts.layer ? ManagedRuntime.make(opts.layer) : undefined;
-  let services: Promise<Context.Context<any>> | undefined;
-  const getServices = () =>
-    (services ??= runtime
-      ? runtime.context()
-      : Promise.resolve(Context.empty() as Context.Context<any>));
+  const services = runtimeServices(
+    opts.layer ? ManagedRuntime.make(opts.layer) : undefined,
+  );
   const publicError = (err: AnyTrpcError): AnyTrpcError =>
     isUnexpectedError(err) && !expose
       ? new TrpcError.InternalServerError({ message: 'Internal server error' })
@@ -272,14 +270,19 @@ function makeFactory<TMode extends ActionResultMode>(
       const input =
         raw instanceof FormData ? fromFormData(procedure, raw) : raw;
       const ctx = typeof opts.ctx === 'function' ? await opts.ctx() : opts.ctx;
-      const exit = await Effect.runPromiseExitWith(await getServices())(
-        callProcedure({
-          procedure,
-          path: '',
-          ctx: ctx ?? {},
-          input,
-          signal: new AbortController().signal,
-        }),
+      const exit = await Effect.runPromiseExit(
+        Effect.flatMap(services, (context) =>
+          Effect.provideContext(
+            callProcedure({
+              procedure,
+              path: '',
+              ctx: ctx ?? {},
+              input,
+              signal: new AbortController().signal,
+            }),
+            context,
+          ),
+        ),
       );
       if (Exit.isSuccess(exit)) {
         return mode === 'throw' ? exit.value : toResult(exit.value, undefined);

@@ -1,4 +1,4 @@
-import { Duration, Effect } from 'effect';
+import { Context, Duration, Effect } from 'effect';
 
 /** Drains one connection within `timeout`: asks its client to move, waits, closes. @internal */
 export type DrainConnection = (
@@ -69,3 +69,22 @@ export const makeSocketDrains = (
       }),
   };
 };
+
+/** @internal */
+export interface HandlerDrains {
+  readonly _: unique symbol;
+}
+
+/**
+ * The socket connections of one of our handlers (the v12 one or
+ * `createV11Handler`), so `serve()` drains them before the server stops
+ * and refuses upgrades meanwhile.
+ * @internal
+ */
+export const HandlerDrains: Context.ServiceClass<
+  HandlerDrains,
+  '@trpc12/trpc/HandlerDrains',
+  SocketDrains
+> = /* @__PURE__ */ Context.Service<HandlerDrains, SocketDrains>()(
+  '@trpc12/trpc/HandlerDrains',
+);

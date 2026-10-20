@@ -32,8 +32,65 @@ export interface OpenApiDocument {
   readonly openapi: '3.1.1';
   readonly info: OpenApiInfo;
   readonly servers?: ReadonlyArray<OpenApiServer>;
+  readonly security?: ReadonlyArray<OpenApiSecurityRequirement>;
+  readonly tags?: ReadonlyArray<OpenApiTag>;
   readonly paths: Record<string, Record<string, OpenApiOperation>>;
-  readonly components: { readonly schemas: Record<string, JsonSchema> };
+  readonly components: {
+    readonly schemas: Record<string, JsonSchema>;
+    readonly securitySchemes?: Readonly<Record<string, OpenApiSecurityScheme>>;
+  };
+}
+
+/**
+ * A security scheme in `components.securitySchemes`. Generated clients (Hey
+ * API's `auth`, for one) read it with each operation's `security` to attach
+ * credentials.
+ * @since 0.1.0
+ * @stability experimental
+ */
+export type OpenApiSecurityScheme = { readonly description?: string } & (
+  | {
+      readonly type: 'http';
+      /** `bearer` or `basic`, or another HTTP auth scheme. */
+      readonly scheme: string;
+      readonly bearerFormat?: string;
+    }
+  | {
+      readonly type: 'apiKey';
+      readonly in: 'header' | 'query' | 'cookie';
+      readonly name: string;
+    }
+  | {
+      readonly type: 'oauth2';
+      readonly flows: Readonly<Record<string, unknown>>;
+    }
+  | { readonly type: 'openIdConnect'; readonly openIdConnectUrl: string }
+  | { readonly type: 'mutualTLS' }
+);
+
+/**
+ * Security schemes that together authorize a request, by name, with OAuth
+ * scopes (`[]` for other schemes). A list of them is alternatives; `[]`
+ * makes an operation public.
+ * @since 0.1.0
+ * @stability experimental
+ */
+export type OpenApiSecurityRequirement = Readonly<
+  Record<string, ReadonlyArray<string>>
+>;
+
+/**
+ * A tag the document describes, in the order docs UIs list them.
+ * @since 0.1.0
+ * @stability experimental
+ */
+export interface OpenApiTag {
+  readonly name: string;
+  readonly description?: string;
+  readonly externalDocs?: {
+    readonly url: string;
+    readonly description?: string;
+  };
 }
 
 /**
@@ -68,6 +125,7 @@ export interface OpenApiOperation {
   readonly description?: string;
   readonly tags?: ReadonlyArray<string>;
   readonly deprecated?: boolean;
+  readonly security?: ReadonlyArray<OpenApiSecurityRequirement>;
   readonly parameters?: ReadonlyArray<Record<string, unknown>>;
   readonly requestBody?: Record<string, unknown>;
   readonly responses: Record<string, Record<string, unknown>>;
@@ -81,6 +139,20 @@ export interface OpenApiOperation {
 export interface GenerateOpenApiOptions {
   info: OpenApiInfo;
   servers?: ReadonlyArray<OpenApiServer>;
+  /**
+   * Merged into the document's `components`; `schemas` the generator
+   * writes win over yours.
+   */
+  components?: {
+    readonly schemas?: Readonly<Record<string, JsonSchema>>;
+    readonly securitySchemes?: Readonly<Record<string, OpenApiSecurityScheme>>;
+  };
+  /**
+   * The security every operation needs unless its `route.spec` sets its own
+   * (`security: []` for a public one).
+   */
+  security?: ReadonlyArray<OpenApiSecurityRequirement>;
+  tags?: ReadonlyArray<OpenApiTag>;
   /**
    * `'openapi'` documents the REST mapping {@link experimental_createOpenApiHandler}
    * serves (`route` meta). `'rpc'` documents the RPC endpoint of
@@ -97,7 +169,12 @@ export interface GenerateOpenApiOptions {
   filter?: (opts: { path: string; procedure: AnyProcedure }) => boolean;
 }
 
-const ERROR_SCHEMA = 'TrpcError';
+const UNTYPED_ERROR = 'TrpcUntypedError';
+
+/** The built-in codes a server can answer with; the rest are client-side only. */
+const SERVER_CODES = /* @__PURE__ */ Object.entries(ERROR_STATUS)
+  .filter(([, status]) => status > 0)
+  .map(([code]) => code);
 
 /** Moves `$defs` into `components.schemas` and rewrites their `$ref`s. */
 function hoist(
@@ -169,6 +246,45 @@ const objectProperties = (
     );
   });
 };
+
+const isBinary = (node: Schema) =>
+  node['format'] === 'binary' ||
+  node['contentEncoding'] === 'binary' ||
+  (typeof node['contentMediaType'] === 'string' &&
+    !/json|^text\//.test(node['contentMediaType']));
+
+const hasBinary = (
+  node: unknown,
+  components: Record<string, JsonSchema>,
+  seen = new Set<unknown>(),
+): boolean => {
+  if (typeof node !== 'object' || node === null || seen.has(node)) return false;
+  seen.add(node);
+  if (Array.isArray(node))
+    return node.some((n) => hasBinary(n, components, seen));
+  const schema = node as Schema;
+  const ref = schema['$ref'];
+  if (typeof ref === 'string' && ref.startsWith('#/components/schemas/')) {
+    const target = components[ref.slice('#/components/schemas/'.length)];
+    if (hasBinary(target, components, seen)) return true;
+  }
+  return (
+    isBinary(schema) ||
+    Object.entries(schema).some(
+      ([key, value]) =>
+        key !== 'not' && key !== '$ref' && hasBinary(value, components, seen),
+    )
+  );
+};
+
+/** JSON can't carry a file, so a body with one is `multipart/form-data`, which the handler reads as bracket notation. */
+const bodyContent = (
+  schema: JsonSchema | undefined,
+  components: Record<string, JsonSchema>,
+) => ({
+  [hasBinary(schema, components) ? 'multipart/form-data' : 'application/json']:
+    { schema },
+});
 
 const isStructured = (schema: JsonSchema) =>
   typeof schema === 'object' &&
@@ -273,19 +389,36 @@ function errorResponses(
       },
     };
   }
+  // Typed errors this operation doesn't document can only have the other
+  // built-in codes, so `defined && code === 'NOT_FOUND'` narrows to the 404.
+  const others = SERVER_CODES.filter((code) => !codes.has(code));
+  const fallback: Schema = {
+    anyOf: [
+      { $ref: `#/components/schemas/${UNTYPED_ERROR}` },
+      ...(others.length
+        ? [
+            {
+              type: 'object',
+              properties: {
+                defined: { const: true },
+                code: { enum: others },
+                message: { type: 'string' },
+                data: {},
+              },
+              required: ['defined', 'code', 'message'],
+            },
+          ]
+        : []),
+    ],
+  };
   responses['default'] = {
-    description: 'An error outside the typed union',
+    description: 'An untyped error, or a typed one with another built-in code',
     content: {
       'application/json': {
         schema:
           target === 'rpc'
-            ? rpcWrap({
-                type: 'object',
-                properties: {
-                  error: { $ref: `#/components/schemas/${ERROR_SCHEMA}` },
-                },
-              })
-            : { $ref: `#/components/schemas/${ERROR_SCHEMA}` },
+            ? rpcWrap({ type: 'object', properties: { error: fallback } })
+            : fallback,
       },
     },
   };
@@ -331,10 +464,10 @@ export function generateDocument(
       ? normalizePrefix(opts.prefix ?? '/trpc')
       : normalizePrefix(opts.prefix);
   const components: Record<string, JsonSchema> = {
-    [ERROR_SCHEMA]: {
+    [UNTYPED_ERROR]: {
       type: 'object',
       properties: {
-        defined: { type: 'boolean' },
+        defined: { const: false },
         code: { type: 'string' },
         message: { type: 'string' },
         data: {},
@@ -414,7 +547,7 @@ export function generateDocument(
       if (body !== undefined && !usesQuery(route.method)) {
         requestBody = {
           required: true,
-          content: { 'application/json': { schema: body } },
+          content: bodyContent(body, components),
         };
       }
     } else {
@@ -451,7 +584,7 @@ export function generateDocument(
             required: Boolean(
               ((body as Schema)['required'] as unknown[] | undefined)?.length,
             ),
-            content: { 'application/json': { schema: body } },
+            content: bodyContent(body, components),
           };
       }
     }
@@ -510,7 +643,12 @@ export function generateDocument(
     openapi: '3.1.1',
     info: opts.info,
     ...(opts.servers ? { servers: opts.servers } : {}),
+    ...(opts.security ? { security: opts.security } : {}),
+    ...(opts.tags ? { tags: opts.tags } : {}),
     paths,
-    components: { schemas: components },
+    components: {
+      ...opts.components,
+      schemas: { ...opts.components?.schemas, ...components },
+    },
   };
 }

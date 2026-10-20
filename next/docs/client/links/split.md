@@ -1,5 +1,5 @@
 ---
-title: splitLink
+title: '`splitLink`'
 description: Send each call down one of two chains, picked from its path, type or input.
 section: Client
 parent: client/links

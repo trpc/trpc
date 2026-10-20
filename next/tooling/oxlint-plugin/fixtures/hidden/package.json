@@ -1,0 +1,7 @@
+{
+  "name": "@fixture/hidden-thing",
+  "private": true,
+  "exports": {
+    ".": "./index.ts"
+  }
+}

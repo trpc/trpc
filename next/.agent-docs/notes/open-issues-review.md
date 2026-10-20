@@ -8,7 +8,7 @@ Method: `gh issue list --repo trpc/trpc --state open --limit 1000 --json number,
 
 - #7626, sync validation: Standard Schema results, resolvers and `provide` values that aren't promises no longer go through a promise. A procedure with no async step runs under `Effect.runSync` (`procedures.test.ts`).
 - #6997 and #6800, "excessively deep" types: a recursive `JsonValue` output failed in vNext too. `Deserialized<T>` now returns plain data (no thenables, iterables or functions) as it is, which also keeps branded tuples identical (#6500) (`basics.test.ts`).
-- SSE keep-alives: the `fetch-sse` decision promised them but the handler sent none. Both the RPC and OpenAPI handlers now send `: ping` every 15 s (`sse.pingMs`).
+- SSE keep-alives: the `fetch-sse` decision promised them but the handler sent none. Both the RPC and OpenAPI handlers now send `: ping` every 15 s (`sse.pingInterval`).
 - #1937, #7180, #6670, files over RPC: `File` and `Blob` anywhere in an input, sent by `httpLink` as `multipart/form-data` (proposal 11 (f)). Outputs since the second round (below).
 - #7022, tracing: every call runs in a `trpc.<path>` server span with `rpc.method`, `trpc.type` and `trpc.error.code` (`effect.test.ts`).
 - #7064, per-call reconnect: `{ reconnect: false }` on a subscription call fails with `NETWORK_ERROR` instead of rerunning it.
@@ -135,7 +135,7 @@ A human answered the "Worth considering" list; each answer is a `decisions/` fil
 | #7345, #7258, #7384, #6819        | the batch stream's content type                           | `application/jsonl`, or frames when asked for                                                                          |
 | #7627, #7626                      | sync validation first                                     | sync schemas run without a promise (first round)                                                                       |
 | #7461, #6868                      | `iterate()` on subscriptions                              | subscriptions are `AsyncIterable`                                                                                      |
-| #7182, #6849, #6742               | `FormData`, typed errors, Solid                           | files in inputs and outputs, `.errors()`, `@trpc12/tanstack-solid-query`                                               |
+| #7182, #6849, #6742               | `FormData`, typed errors, Solid                           | files in inputs and outputs, `.errors()`, `@trpc12/experimental-tanstack-solid-query`                                  |
 | #7318, #7388, #7616, #7621, #7428 | v11 React Query hook types                                | vNext has no hooks of its own; TanStack's types apply                                                                  |
 | #6681                             | type-instantiation benchmarks                             | `tooling/bench` measures tsc instantiations                                                                            |
 | #7362                             | the automatic JSX runtime                                 | `"jsx": "react-jsx"` everywhere                                                                                        |

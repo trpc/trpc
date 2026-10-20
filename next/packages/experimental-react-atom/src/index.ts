@@ -20,6 +20,8 @@
  */
 import {
   Duration,
+  Equal,
+  Hash,
   Layer,
   Schema,
   SchemaTransformation,
@@ -30,11 +32,11 @@ import {
 import { AsyncResult, Atom, Reactivity } from 'effect/reactivity';
 import {
   createTrpcClient,
+  type AtLeastOneLink,
   getClientSerializer,
   type LinksContext,
   type LinksTypes,
   type RouterOf,
-  type TrpcLink,
   type TypedClientOptions,
 } from '@trpc12/trpc/client';
 import { createEffectClient, type EffectClient } from '@trpc12/trpc/effect';
@@ -46,7 +48,7 @@ import {
 } from '@trpc12/trpc/serializer';
 
 /** Keys use danSON, so inputs with `Date`s and `Map`s key apart. */
-const keySerializer = createSerializer();
+const keySerializer = /* @__PURE__ */ createSerializer();
 
 /**
  * Reactivity keys: a list, or lists by namespace, as `Reactivity` takes them.
@@ -148,7 +150,7 @@ export type AtomClient<TEffectClient> = AtomProcedures<TEffectClient> & {
  */
 export type AtomClientOptions<
   TSource,
-  TLinks extends ReadonlyArray<TrpcLink<any, RouterOf<TSource>>>,
+  TLinks extends AtLeastOneLink<RouterOf<TSource>>,
 > = TypedClientOptions<TSource, TLinks> & {
   /**
    * How query results are encoded for `Hydration.dehydrate`. Must match the
@@ -222,6 +224,25 @@ const keyString = (key: Key): string =>
       : Duration.toMillis(Duration.fromInputUnsafe(key.options.timeToLive)),
   ]);
 
+/**
+ * An atom's identity, equal by its key string, so `Atom.family` keeps the
+ * key only while it keeps the atom.
+ */
+class AtomKey implements Equal.Equal {
+  readonly key: Key;
+  readonly id: string;
+  constructor(key: Key) {
+    this.key = key;
+    this.id = keyString(key);
+  }
+  [Equal.symbol](that: Equal.Equal): boolean {
+    return that instanceof AtomKey && that.id === this.id;
+  }
+  [Hash.symbol](): number {
+    return Hash.string(this.id);
+  }
+}
+
 const at = (client: unknown, path: string): any =>
   path.split('.').reduce((node: any, segment) => node[segment], client);
 
@@ -247,7 +268,7 @@ const at = (client: unknown, path: string): any =>
  */
 export function createAtomClient<
   TSource,
-  const TLinks extends ReadonlyArray<TrpcLink<any, RouterOf<TSource>>>,
+  const TLinks extends AtLeastOneLink<RouterOf<TSource>>,
 >(
   opts: AtomClientOptions<TSource, TLinks>,
 ): AtomClient<
@@ -255,7 +276,7 @@ export function createAtomClient<
 >;
 export function createAtomClient(opts: {
   router: unknown;
-  links: ReadonlyArray<TrpcLink<any, any>>;
+  links: AtLeastOneLink;
   serializer?: AnySerializer | undefined;
 }): unknown {
   const client = createEffectClient(opts);
@@ -267,10 +288,9 @@ export function createAtomClient(opts: {
     success: serializerSchema(serializer),
   });
   const runtime = Atom.runtime(Layer.empty);
-  const keys = new Map<string, Key>();
 
-  const atoms = Atom.family((id: string) => {
-    const key = keys.get(id)!;
+  const atoms = Atom.family((atomKey: AtomKey) => {
+    const key = atomKey.key;
     const { options } = key;
     let atom: Atom.Atom<any> =
       key.type === 'query'
@@ -285,7 +305,7 @@ export function createAtomClient(opts: {
     // still send the request.
     if (key.type === 'query') {
       atom = Atom.serializable(atom, {
-        key: `trpc:${id}`,
+        key: `trpc:${atomKey.id}`,
         schema: resultSchema as Schema.Codec<unknown, unknown>,
       });
     }
@@ -300,11 +320,7 @@ export function createAtomClient(opts: {
     }
     return atom;
   });
-  const atomFor = (key: Key) => {
-    const id = keyString(key);
-    if (!keys.has(id)) keys.set(id, key);
-    return atoms(id);
-  };
+  const atomFor = (key: Key) => atoms(new AtomKey(key));
 
   const mutations = Atom.family((path: string) =>
     runtime.fn<{ input: unknown; reactivityKeys?: ReactivityKeys }>()(

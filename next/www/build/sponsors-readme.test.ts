@@ -8,37 +8,49 @@ import {
   withSponsorsBlock,
 } from './sponsors-readme.ts';
 
-function sponsor(login: string, weight: number, createdAt = 0): Sponsor {
+function sponsor(
+  login: string,
+  weight: number,
+  createdAt = 0,
+  tiered: Pick<Sponsor, 'rank' | 'tier'> = {},
+): Sponsor {
   return {
     createdAt,
     imgSrc: `https://avatars.githubusercontent.com/u/${login}?v=4`,
     link: `https://${login}.dev/?ref=trpc&utm_source=github`,
     login,
     name: login,
+    ...tiered,
     weight,
   };
 }
 
 describe('sponsorsMarkdown', () => {
-  it('puts the partners first, then everyone else, each by who gave the most', () => {
+  it('puts each tier first, by rank, then everyone else by who gave the most', () => {
     expect(
-      sponsorsMarkdown({
-        partners: ['p1', 'p2'],
-        sponsors: [
-          sponsor('b1', 3),
-          sponsor('p1', 50),
-          sponsor('b2', 9),
-          sponsor('p2', 100),
-        ],
-      }),
+      sponsorsMarkdown([
+        sponsor('b1', 3),
+        sponsor('s2', 100, 0, { rank: 3, tier: 'silver' }),
+        sponsor('g', 50, 0, { rank: 1, tier: 'gold' }),
+        sponsor('b2', 9),
+        sponsor('s1', 20, 0, { rank: 2, tier: 'silver' }),
+      ]),
     ).toBe(
       [
-        '### Partners',
+        '### Gold partners',
         '',
         '<table>',
         '  <tr>',
-        '   <td align="center"><a href="https://p2.dev/?ref=trpc&amp;utm_source=github"><img src="https://avatars.githubusercontent.com/u/p2?v=4&amp;s=300" width="150" alt="p2"/><br />p2</a></td>',
-        '   <td align="center"><a href="https://p1.dev/?ref=trpc&amp;utm_source=github"><img src="https://avatars.githubusercontent.com/u/p1?v=4&amp;s=300" width="150" alt="p1"/><br />p1</a></td>',
+        '   <td align="center"><a href="https://g.dev/?ref=trpc&amp;utm_source=github"><img src="https://avatars.githubusercontent.com/u/g?v=4&amp;s=360" width="180" alt="g"/><br />g</a></td>',
+        '  </tr>',
+        '</table>',
+        '',
+        '### Silver partners',
+        '',
+        '<table>',
+        '  <tr>',
+        '   <td align="center"><a href="https://s1.dev/?ref=trpc&amp;utm_source=github"><img src="https://avatars.githubusercontent.com/u/s1?v=4&amp;s=300" width="150" alt="s1"/><br />s1</a></td>',
+        '   <td align="center"><a href="https://s2.dev/?ref=trpc&amp;utm_source=github"><img src="https://avatars.githubusercontent.com/u/s2?v=4&amp;s=300" width="150" alt="s2"/><br />s2</a></td>',
         '  </tr>',
         '</table>',
         '',
@@ -55,10 +67,9 @@ describe('sponsorsMarkdown', () => {
   });
 
   it('breaks a tier into rows, and orders equal weights by who started first', () => {
-    const markdown = sponsorsMarkdown({
-      partners: [],
-      sponsors: Array.from({ length: 8 }, (_, i) => sponsor(`s${i}`, 1, 8 - i)),
-    });
+    const markdown = sponsorsMarkdown(
+      Array.from({ length: 8 }, (_, i) => sponsor(`s${i}`, 1, 8 - i)),
+    );
     expect(markdown.match(/<tr>/g)).toHaveLength(2);
     expect(markdown.match(/alt="s\d"/g)).toEqual([
       'alt="s7"',
@@ -70,20 +81,17 @@ describe('sponsorsMarkdown', () => {
       'alt="s1"',
       'alt="s0"',
     ]);
-    expect(markdown).not.toContain('### Partners');
+    expect(markdown).not.toContain('partners');
   });
 
   it('escapes names and links as HTML', () => {
-    const markdown = sponsorsMarkdown({
-      partners: [],
-      sponsors: [
-        {
-          ...sponsor('x', 1),
-          link: 'https://x.dev/?a="b"',
-          name: 'Dr. <B> & "Co"',
-        },
-      ],
-    });
+    const markdown = sponsorsMarkdown([
+      {
+        ...sponsor('x', 1),
+        link: 'https://x.dev/?a="b"',
+        name: 'Dr. <B> & "Co"',
+      },
+    ]);
     expect(markdown).toContain('href="https://x.dev/?a=&quot;b&quot;"');
     expect(markdown).toContain(
       'alt="Dr. &lt;B&gt; &amp; &quot;Co&quot;"/><br />Dr. &lt;B&gt; &amp; &quot;Co&quot;</a>',

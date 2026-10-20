@@ -1,6 +1,10 @@
 import { Effect, Stream } from 'effect';
-import type { Operation, OperationStream, TrpcLink } from '../client/link.ts';
-import { withSubscriptions } from '../client/subscriptions.ts';
+import type {
+  BuiltinCallOptions,
+  Operation,
+  OperationStream,
+  TrpcLink,
+} from '../client/link.ts';
 import type { ContractJson } from '../contract/index.ts';
 import {
   codeOfStatus,
@@ -39,7 +43,8 @@ export interface OpenApiLinkOptions {
   headers?:
     | HeadersInit
     | ((opts: { op: Operation }) => HeadersInit | Promise<HeadersInit>);
-  fetch?: typeof globalThis.fetch;
+  /** A custom `fetch`, called with the URL as a string. */
+  fetch?: (url: string, init: RequestInit) => Promise<Response>;
 }
 
 const isAbort = (cause: unknown) =>
@@ -91,6 +96,7 @@ const hasBlob = (value: unknown): boolean =>
  * @stability experimental
  */
 export function experimental_openApiLink(opts: OpenApiLinkOptions): TrpcLink<{
+  context: Pick<BuiltinCallOptions, 'headers'>;
   form: JsonForm;
   builtinErrors: 'NETWORK_ERROR' | 'BAD_RESPONSE';
 }> {
@@ -230,7 +236,7 @@ export function experimental_openApiLink(opts: OpenApiLinkOptions): TrpcLink<{
     }
   }
 
-  return withSubscriptions(({ op }): OperationStream => {
+  return ({ op }): OperationStream => {
     if (op.type !== 'subscription') {
       return Stream.fromEffect(
         Effect.tryPromise({
@@ -249,5 +255,5 @@ export function experimental_openApiLink(opts: OpenApiLinkOptions): TrpcLink<{
         ).pipe(Stream.ensuring(Effect.sync(() => controller.abort())));
       }),
     );
-  });
+  };
 }

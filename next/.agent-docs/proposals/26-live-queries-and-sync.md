@@ -13,7 +13,7 @@ v12 already has the transport half: `tracked()` ids resume subscriptions on SSE 
 **Recommendation:**
 
 - An experimental `@trpc12/trpc/live` with the protocol, `Live.feed()` over a small source interface, and a memory source. Database sources are guides, as publisher backends are.
-- `@trpc12/tanstack-db` with `liveCollectionOptions` and `awaitVersion`.
+- `@trpc12/experimental-tanstack-db` with `liveCollectionOptions` and `awaitVersion`.
 - Mutations return their version in their output.
 - Pooling: `wsLink` and HTTP/2 first, with a pooled feed subscription for HTTP/1.1.
 
@@ -29,7 +29,7 @@ The [live-queries](../notes/live-queries.md) spike backs this: 7 tests over SSE 
   - TanStack DB query collections from `queryOptions()` as they are ([tanstack-db-collections](../decisions/tanstack-db-collections.md)): refetch-based, no streaming.
   - TanStack Query `liveOptions`/`streamedOptions`, shared per key by `SubscriptionCache` ([tanstack-query-subscriptions](../decisions/tanstack-query-subscriptions.md)): the latest event or all events, not rows.
   - The `onResponse` call option, so a link before `httpLink` can read response headers ([declared-invalidation-later](../decisions/declared-invalidation-later.md)).
-- **oRPC** has `experimental_liveOptions` (the latest event into TanStack Query's cache, `.repos/orpc/packages/tanstack-query/src/live-query.ts`), and no row protocol or TanStack DB adapter.
+- **oRPC** has `experimental_liveOptions` (the latest event into TanStack Query's cache, [`packages/tanstack-query/src/live-query.ts`](https://github.com/middleapi/orpc/blob/v2.0.0-beta.44/packages/tanstack-query/src/live-query.ts)), and no row protocol or TanStack DB adapter.
 - **Sync engines** (Electric, Zero, PowerSync, Replicache) each define this contract themselves: shapes or queries, a snapshot, ordered changes, a cursor to resume from, and a way to wait for a write (Electric's `awaitTxId`).
 
 ## Goals
@@ -123,7 +123,7 @@ const todos = createCollection(
 );
 ```
 
-- **A: `liveCollectionOptions({ getKey, feed })` in a new `@trpc12/tanstack-db`** (the spike).
+- **A: `liveCollectionOptions({ getKey, feed })` in a new `@trpc12/experimental-tanstack-db`** (the spike).
   - The feed is any `subscribe` call, so it works with `httpLink`, `wsLink` and a pool.
   - `utils.awaitVersion(v)` resolves when the collection accepts the commit. TanStack DB 0.15's commit receipt waits for the optimistic transaction that's awaiting it, so waiting for the receipt would deadlock.
   - ✅ A separate package for a pre-1.0 dependency ([integration-packages](../decisions/integration-packages.md)).
@@ -177,7 +177,7 @@ Given up: a procedure type that gives SSR and the collection from one definition
 - **Q26.1** Where the live protocol and its server half live: A `@trpc12/trpc/live` (experimental) · B a recipe · C a `live` procedure type
 - **Q26.2** Versions: A contiguous integers per source · B opaque strings · C one version space
 - **Q26.3** A mutation's version: A in the output · B a response header · C B plus a `wsLink` provider
-- **Q26.4** TanStack DB adapter: A `@trpc12/tanstack-db` · B in `@trpc12/tanstack-query` · C on the options proxy
+- **Q26.4** TanStack DB adapter: A `@trpc12/experimental-tanstack-db` · B in `@trpc12/tanstack-query` · C on the options proxy
 - **Q26.5** Pooling: A `wsLink`/HTTP/2 only · B plus a pooled feed subscription · C subscription batching in `httpLink` · D a per-client stream
 - **Q26.6** Shapes: A procedure inputs, on-demand later · B TanStack DB predicates as input
 

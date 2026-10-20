@@ -1,19 +1,24 @@
 import {
   Cause,
+  Channel,
   Context,
   Effect,
   Exit,
   References,
   Stream,
   Tracer,
+  type Array as Arr,
+  type ManagedRuntime,
 } from 'effect';
 import { HttpServerResponse } from 'effect/http';
 import {
   isBuiltinCode,
+  isKeptUntyped,
   isTrpcError,
+  keepUntyped,
   statusOf,
   taggedSpec,
-  toBuiltinError,
+  toUntypedError,
   TrpcError,
   withDefined,
   withStatusHint,
@@ -21,7 +26,7 @@ import {
   type CodeError,
 } from '../../internal/error.ts';
 import { returnUnawaited } from '../../internal/effects.ts';
-import { errorConstructors, isDeclaredError } from './declared.ts';
+import { errorConstructors } from './declared.ts';
 import { CurrentFrameSink } from './frame-sink.ts';
 import type {
   MiddlewareOpts,
@@ -48,13 +53,21 @@ const unexpectedErrors = new WeakSet<AnyTrpcError>();
 const isThenable = (value: unknown): value is PromiseLike<unknown> =>
   typeof (value as PromiseLike<unknown> | null)?.then === 'function';
 
-/** Runs user code; only a returned promise makes the call asynchronous. */
-const attempt = <A>(fn: () => A | PromiseLike<A>): Effect.Effect<A> =>
-  Effect.suspend(() => {
-    const ret = fn();
-    return isThenable(ret)
-      ? Effect.promise(async () => ret)
-      : Effect.succeed(ret as A);
+/**
+ * Runs Promise middleware; only a returned promise makes the step
+ * asynchronous. `signal` aborts when the step's fiber is interrupted, so
+ * the `next()` calls it runs on fibers of their own are interrupted too.
+ */
+const attempt = <A>(
+  fn: (signal: AbortSignal) => A | PromiseLike<A>,
+): Effect.Effect<A> =>
+  Effect.callback<A>((resume, signal) => {
+    const ret = fn(signal);
+    if (!isThenable(ret)) return resume(Effect.succeed(ret));
+    ret.then(
+      (value) => resume(Effect.succeed(value as A)),
+      (cause) => resume(Effect.die(cause)),
+    );
   });
 
 /** Wraps a thrown non-`TrpcError` value. Its message is masked in production. @internal */
@@ -69,26 +82,57 @@ export function unexpectedError(
   return err;
 }
 
+const noServices = /* @__PURE__ */ Effect.succeed(
+  /* @__PURE__ */ Context.empty() as Context.Context<any>,
+);
+
+/**
+ * A runtime's services, built by it on first use. Read on every call, since
+ * a disposed runtime swaps its `contextEffect` for a defect: a call then
+ * fails instead of running on released resources. A layer that fails to
+ * build is a defect, so calls get an unexpected `INTERNAL_SERVER_ERROR`
+ * with the layer's error as its `cause`.
+ * @internal
+ */
+export const runtimeServices = (
+  runtime: ManagedRuntime.ManagedRuntime<never, unknown> | undefined,
+): Effect.Effect<Context.Context<any>> =>
+  runtime
+    ? Effect.suspend(() =>
+        runtime.cachedContext
+          ? Effect.succeed(runtime.cachedContext as Context.Context<any>)
+          : Effect.orDie(
+              runtime.contextEffect as Effect.Effect<
+                Context.Context<any>,
+                unknown
+              >,
+            ),
+      )
+    : noServices;
+
 /** Whether the error wraps something that was not a `TrpcError`. @internal */
 export const isUnexpectedError = (err: AnyTrpcError): boolean =>
   unexpectedErrors.has(err);
 
 /**
- * A thrown `TrpcError` that no declaration covers: `defined: false`, so
- * clients only ever see built-in codes and no `data` outside the union. A
- * custom code is unexpected, like any other thrown value, and so masked.
+ * A thrown `TrpcError` that no declaration covers: `defined: false`. A
+ * built-in code loses its `data`, which no schema checked. A custom code
+ * is unexpected, like any other thrown value, and so masked, unless the
+ * procedure declares no errors (see `fromThrown`).
  */
 const undeclared = (err: AnyTrpcError): AnyTrpcError => {
+  if (isKeptUntyped(err)) return keepUntyped(withDefined(err, false));
   if (!isBuiltinCode(err.code)) return unexpectedError(err);
-  return toBuiltinError(withDefined(err, false), 'INTERNAL_SERVER_ERROR');
+  return toUntypedError(withDefined(err, false));
 };
 
 /**
  * The one error a failed call surfaces. Failures in the error channel are
  * typed (`defined`) errors. Defects are thrown values: a thrown `TrpcError`
  * with a built-in code keeps it but is `defined: false` and loses its
- * `data` (unless it came from a declared error's constructor), anything
- * else is unexpected.
+ * `data`, a custom code is kept only from a procedure without `.errors()`,
+ * anything else is unexpected. A call's own failures were settled first:
+ * a thrown error with a declared code is a failure by then.
  * @since 0.1.0
  * @stability stable
  */
@@ -102,9 +146,7 @@ export function normalizeCause(cause: Cause.Cause<unknown>): AnyTrpcError {
   for (const reason of cause.reasons) {
     if (Cause.isDieReason(reason)) {
       if (!isTrpcError(reason.defect)) return unexpectedError(reason.defect);
-      return isDeclaredError(reason.defect)
-        ? withDefined(reason.defect, true)
-        : undeclared(reason.defect);
+      return undeclared(reason.defect);
     }
   }
   return new TrpcError.ClientClosedRequest({
@@ -121,22 +163,21 @@ const isAsyncIterable = (value: unknown): value is AsyncIterable<unknown> =>
   typeof value === 'object' && value !== null && Symbol.asyncIterator in value;
 
 /** Typed `TrpcError` failures stay failures; anything else is a defect (02 d.i). */
+const typedCause = (cause: Cause.Cause<unknown>): Cause.Cause<AnyTrpcError> =>
+  Cause.fromReasons(
+    cause.reasons.map((reason) =>
+      Cause.isFailReason(reason)
+        ? isTrpcError(reason.error)
+          ? Cause.makeFailReason(withDefined(reason.error, true))
+          : Cause.makeDieReason(reason.error)
+        : reason,
+    ),
+  ) as Cause.Cause<AnyTrpcError>;
+
 const refail = <A, R>(
   effect: Effect.Effect<A, unknown, R>,
 ): Effect.Effect<A, AnyTrpcError, R> =>
-  Effect.catchCause(effect, (cause) =>
-    Effect.failCause(
-      Cause.fromReasons(
-        cause.reasons.map((reason) =>
-          Cause.isFailReason(reason)
-            ? isTrpcError(reason.error)
-              ? Cause.makeFailReason(withDefined(reason.error, true))
-              : Cause.makeDieReason(reason.error)
-            : reason,
-        ),
-      ) as Cause.Cause<AnyTrpcError>,
-    ),
-  );
+  Effect.catchCause(effect, (cause) => Effect.failCause(typedCause(cause)));
 
 const fail = (err: AnyTrpcError) => Effect.fail(withDefined(err, true));
 
@@ -153,7 +194,7 @@ export interface CallOpts {
   readonly signal: AbortSignal;
   readonly lastEventId?: string | undefined;
   readonly response?: ResponseHandle | undefined;
-  /** An unbatched HTTP call: the procedure may return an `HttpServerResponse`. */
+  /** An unbatched HTTP or in-process call: the procedure may return an `HttpServerResponse`. */
   readonly allowResponse?: boolean | undefined;
   /** The span the call's span is a child of; the fiber's current span otherwise. */
   readonly parent?: Tracer.AnySpan | undefined;
@@ -173,7 +214,26 @@ export const createResponseHandle = (): ResponseHandle => ({
   status: undefined,
 });
 
-const MIDDLEWARE_CAUSE = Symbol('trpc.middlewareCause');
+/**
+ * A call's output as an in-process caller gets it: a returned response,
+ * which `allowResponse` let through, becomes the web `Response` HTTP would
+ * send, the handle's headers under its own. @internal
+ */
+export const inProcessOutput = (
+  value: unknown,
+  handle: ResponseHandle,
+): Effect.Effect<unknown> =>
+  HttpServerResponse.isHttpServerResponse(value)
+    ? Effect.map(Effect.context<never>(), (context) => {
+        const web = HttpServerResponse.toWeb(value, { context });
+        for (const [key, header] of handle.headers) {
+          if (key === 'set-cookie') web.headers.append(key, header);
+          else if (!web.headers.has(key)) web.headers.set(key, header);
+        }
+        return web;
+      })
+    : Effect.succeed(value);
+
 const RESOLVED = Symbol('trpc.resolved');
 
 interface Resolved {
@@ -188,7 +248,6 @@ const isOkResult = (value: unknown): value is { ok: true; data: unknown } =>
   (value as { ok?: unknown }).ok === true &&
   'data' in value;
 
-/** Validates declared errors' `data` (07 A). Invalid data is an unexpected error. */
 /** The output schema to run, unless it only types the result. */
 const validated = (def: ProcedureInternals): OutputSchema | undefined =>
   def.validateOutput === false ? undefined : def.output;
@@ -200,39 +259,85 @@ const eventSchema = (
   isStreamSchema(output) ? output['~trpc.stream'].item : output;
 
 /**
+ * A streamed output's items. Its done value is a generator's return
+ * value, which a `Stream` has no place for.
+ */
+type OutputChannel = Channel.Channel<
+  Arr.NonEmptyReadonlyArray<unknown>,
+  unknown,
+  unknown
+>;
+
+const OUTPUT = Symbol('trpc.output');
+
+/** A streamed output, as middleware and callers get it. */
+interface StreamedOutput extends AsyncIterable<unknown, unknown> {
+  readonly [OUTPUT]: OutputChannel;
+}
+
+const isStreamedOutput = (value: unknown): value is StreamedOutput =>
+  typeof value === 'object' && value !== null && OUTPUT in value;
+
+/**
+ * `channel` as an `AsyncIterable`: `Stream.toAsyncIterableWith`'s, which
+ * pulls an item per `next()` and closes the source on `return()`, ending
+ * as a generator does, with the done value and `return(value)`'s `value`
+ * where Effect's ends with `undefined`. The channel stays readable, so
+ * output validation extends it instead of iterating this.
+ */
+const streamedOutput = (
+  channel: OutputChannel,
+  services: Context.Context<never>,
+): StreamedOutput => ({
+  [OUTPUT]: channel,
+  [Symbol.asyncIterator]() {
+    let returned: unknown;
+    const iterator = Stream.toAsyncIterableWith(
+      Stream.fromChannel(
+        Channel.mapDone(channel, (done) => {
+          returned = done;
+        }),
+      ),
+      services,
+    )[Symbol.asyncIterator]() as Required<AsyncIterator<unknown, unknown>>;
+    return {
+      next: () =>
+        iterator.next().then((next) => {
+          if (!next.done) return next;
+          const value = returned;
+          returned = undefined;
+          return { done: true, value };
+        }),
+      return: (value?: unknown) =>
+        iterator.return().then(() => ({ done: true, value })),
+      throw: (error: unknown) => iterator.throw(error),
+    };
+  },
+});
+
+/**
  * Validates each item of a streamed output, and its return value when the
  * schema has one. Invalid values fail the stream at that point.
  */
-function validateItems(
-  source: AsyncIterable<unknown, unknown>,
+const validateItems = (
+  channel: OutputChannel,
   schema: StreamSchema,
-  services: Context.Context<never>,
-): AsyncIterable<unknown, unknown> {
-  const run = Effect.runPromiseWith(services);
+): OutputChannel => {
   const streamSchema = schema['~trpc.stream'];
-  return {
-    async *[Symbol.asyncIterator]() {
-      const iterator = source[Symbol.asyncIterator]();
-      let done = false;
-      try {
-        while (true) {
-          const next = await iterator.next();
-          if (next.done) {
-            done = true;
-            return streamSchema.return
-              ? await run(
-                  validate(streamSchema.return, next.value, outputError),
-                )
-              : next.value;
-          }
-          yield await run(validate(streamSchema.item, next.value, outputError));
-        }
-      } finally {
-        if (!done) await iterator.return?.();
-      }
-    },
-  };
-}
+  const items = Channel.mapEffect(
+    channel,
+    (chunk) =>
+      Effect.forEach(chunk, (item) =>
+        validate(streamSchema.item, item, outputError),
+      ) as Effect.Effect<Arr.NonEmptyReadonlyArray<unknown>, AnyTrpcError>,
+  );
+  const returns = streamSchema.return;
+  return returns
+    ? Channel.mapDoneEffect(items, (done) =>
+        validate(returns, done, outputError),
+      )
+    : items;
+};
 
 const checkDeclared = (
   def: ProcedureInternals,
@@ -267,6 +372,111 @@ const checkDeclared = (
   );
 };
 
+const declaresErrors = (def: ProcedureInternals): boolean =>
+  Object.keys(def.errors).length > 0;
+
+type Thrown = 'typed' | 'builtin' | 'kept' | 'masked';
+
+/**
+ * What a thrown `TrpcError` is, by what the procedure declares. One with a
+ * declared code is typed, with or without its constructor. A built-in code
+ * stays built-in. Any other code, a `TrpcError.Tagged` class's too, is sent
+ * as it is, untyped, from a procedure without `.errors()`; with them the
+ * list is exhaustive, so it is a crash. A throw has no type, so only a
+ * declaration makes one typed: clients' types list nothing else.
+ */
+const classifyThrown = (def: ProcedureInternals, err: AnyTrpcError): Thrown => {
+  if (Object.hasOwn(def.errors, err.code)) return 'typed';
+  if (isBuiltinCode(err.code)) return 'builtin';
+  return declaresErrors(def) ? 'masked' : 'kept';
+};
+
+const warned = new Set<string>();
+
+/** Logs `message` once per procedure and code, when `NODE_ENV` is `development`. */
+const warnOnce = (
+  path: string,
+  code: string,
+  message: string,
+): Effect.Effect<void> => {
+  const env = (
+    globalThis as { process?: { env?: Record<string, string | undefined> } }
+  ).process?.env?.['NODE_ENV'];
+  const key = `${path}\0${code}`;
+  if (env !== 'development' || warned.has(key)) return Effect.void;
+  warned.add(key);
+  return Effect.logWarning(message);
+};
+
+/**
+ * Settles a failed call's cause: typed failures have their declared `data`
+ * validated, and thrown `TrpcError`s become what {@link classifyThrown}
+ * says, with a development warning when one loses its type.
+ */
+const settle = (
+  def: ProcedureInternals,
+  path: string,
+  cause: Cause.Cause<unknown>,
+): Effect.Effect<never, AnyTrpcError> => {
+  for (const reason of cause.reasons) {
+    if (Cause.isFailReason(reason) && isTrpcError(reason.error)) {
+      return checkDeclared(def, reason.error);
+    }
+    if (!Cause.isDieReason(reason) || !isTrpcError(reason.defect)) continue;
+    const err = reason.defect;
+    const kind = classifyThrown(def, err);
+    if (kind === 'typed') return checkDeclared(def, withDefined(err, true));
+    if (kind === 'masked') {
+      return Effect.andThen(
+        warnOnce(
+          path,
+          err.code,
+          `"${path}" threw ${err.code}, which its .errors() don't declare, so clients get INTERNAL_SERVER_ERROR. Declare it, or use one of the declared errors.`,
+        ),
+        Effect.die(unexpectedError(err)),
+      );
+    }
+    if (kind === 'kept') keepUntyped(err);
+    const rethrow = Effect.die(undeclared(err));
+    if (def.warnThrown === false) return rethrow;
+    const lost =
+      kind === 'builtin' && err.data !== undefined
+        ? ' and without its data'
+        : '';
+    return Effect.andThen(
+      warnOnce(
+        path,
+        err.code,
+        `"${path}" threw ${err.code}, so clients get it untyped (defined: false)${lost}. Return it (yield* it in an Effect), or declare its code with .errors(), to make it one of the procedure's typed errors: v11's \`throw new TRPCError()\` is \`return error()\` now. Turn this warning off with initTrpc({ warnThrownErrors: false }).`,
+      ),
+      rethrow,
+    );
+  }
+  return Effect.failCause(cause as Cause.Cause<AnyTrpcError>);
+};
+
+/**
+ * A streamed output's failure, settled like the resolver's and failing
+ * with the error clients get, since nothing normalizes it after.
+ */
+const settleStreamed = (
+  def: ProcedureInternals,
+  path: string,
+  cause: Cause.Cause<unknown>,
+): Effect.Effect<never, AnyTrpcError> =>
+  Effect.catchCause(settle(def, path, typedCause(cause)), (settled) =>
+    Effect.fail(normalizeCause(settled)),
+  );
+
+const isReadableStream = (value: unknown): boolean =>
+  typeof ReadableStream === 'function' && value instanceof ReadableStream;
+
+/** What an iterable throws is a defect, as what a resolver throws is. */
+const iterableChannel = (
+  iterable: AsyncIterable<unknown, unknown>,
+): OutputChannel =>
+  Channel.orDie(Channel.fromAsyncIterableArray(iterable, (cause) => cause));
+
 /**
  * Runs a call: middleware, inputs, `.provide()` steps, the resolver and
  * output validation. Fails with typed `TrpcError`s; thrown values are
@@ -292,30 +502,69 @@ export function callProcedure(
     response,
   };
 
+  /** The cause behind each error a `next()` gave this call's middleware. */
+  let nextCauses: WeakMap<AnyTrpcError, Cause.Cause<AnyTrpcError>> | undefined;
+
+  /**
+   * A failed `next()`'s error as clients will get it, before `settle`
+   * validates declared `data`. Middleware that fails with it again (or
+   * returns it) fails with its cause, so it stays what it was.
+   */
+  const seenByMiddleware = (cause: Cause.Cause<unknown>): AnyTrpcError => {
+    const thrown = cause.reasons.some(Cause.isFailReason)
+      ? undefined
+      : cause.reasons.find(Cause.isDieReason)?.defect;
+    let err: AnyTrpcError | undefined;
+    if (isTrpcError(thrown)) {
+      const kind = classifyThrown(def, thrown);
+      if (kind === 'typed') err = withDefined(thrown, true);
+      else if (kind === 'kept') keepUntyped(thrown);
+    }
+    err ??= normalizeCause(cause);
+    (nextCauses ??= new WeakMap()).set(err, cause as Cause.Cause<AnyTrpcError>);
+    return err;
+  };
+
+  const causeOf = (err: unknown) =>
+    isTrpcError(err) ? nextCauses?.get(err) : undefined;
+
+  /** A middleware's failure: the cause of an error from `next()`, or typed. */
+  const middlewareCause = (
+    cause: Cause.Cause<unknown>,
+  ): Cause.Cause<AnyTrpcError> => {
+    const fromNext = causeOf(cause.reasons.find(Cause.isFailReason)?.error);
+    return fromNext ?? typedCause(cause);
+  };
+
+  const okResult = (value: unknown) =>
+    isResolved(value)
+      ? { ok: true, data: value[RESOLVED], [RESOLVED]: value }
+      : { ok: true, data: value };
+
   const toResult = (exit: Exit.Exit<unknown, AnyTrpcError>) =>
     Exit.isSuccess(exit)
-      ? isResolved(exit.value)
-        ? { ok: true, data: exit.value[RESOLVED], [RESOLVED]: exit.value }
-        : { ok: true, data: exit.value }
-      : {
-          ok: false,
-          error: normalizeCause(exit.cause),
-          [MIDDLEWARE_CAUSE]: exit.cause,
-        };
+      ? okResult(exit.value)
+      : { ok: false, error: seenByMiddleware(exit.cause) };
+
+  /** Effect `next()`: interruption stays interruption. */
+  const failNext = (cause: Cause.Cause<AnyTrpcError>) =>
+    Cause.hasFails(cause) || Cause.hasDies(cause)
+      ? Effect.fail(seenByMiddleware(cause))
+      : Effect.failCause(cause);
+
+  const failWith = (err: AnyTrpcError) => {
+    const cause = causeOf(err);
+    return cause ? Effect.failCause(cause) : fail(err);
+  };
 
   const fromResult = (
     ret: unknown,
   ): Effect.Effect<unknown, AnyTrpcError, any> => {
-    if (isTrpcError(ret)) return fail(ret);
+    if (isTrpcError(ret)) return failWith(ret);
     if (isResolved(ret)) return Effect.succeed(ret[RESOLVED]);
     if (isOkResult(ret)) return Effect.succeed(ret.data);
     if (typeof ret === 'object' && ret !== null && 'ok' in ret) {
-      const cause = (ret as { [MIDDLEWARE_CAUSE]?: Cause.Cause<never> })[
-        MIDDLEWARE_CAUSE
-      ];
-      return cause
-        ? Effect.failCause(cause)
-        : fail((ret as unknown as { error: AnyTrpcError }).error);
+      return failWith((ret as unknown as { error: AnyTrpcError }).error);
     }
     return Effect.die(
       new Error(
@@ -323,6 +572,14 @@ export function callProcedure(
       ),
     );
   };
+
+  // As in `effect/rpc`, Effect code gets a `Scope`; in a query or mutation
+  // it closes when the step that asked for it ends. A subscription's would
+  // have to outlive the call, so it gets none.
+  const scoped = <A, E>(
+    effect: Effect.Effect<A, E, any>,
+  ): Effect.Effect<A, E, any> =>
+    type === 'subscription' ? effect : Effect.scoped(effect);
 
   type NextOpts = { ctx?: object; input?: unknown };
   type Out = Resolved | Effect.Effect<unknown, AnyTrpcError, any>;
@@ -379,9 +636,11 @@ export function callProcedure(
           );
         const provide = (made: unknown) =>
           Effect.isEffect(made)
-            ? Effect.flatMap(
-                refail(made as Effect.Effect<unknown, unknown, any>),
-                withValue,
+            ? scoped(
+                Effect.flatMap(
+                  refail(made as Effect.Effect<unknown, unknown, any>),
+                  withValue,
+                ),
               )
             : withValue(made);
         let made: unknown;
@@ -392,7 +651,7 @@ export function callProcedure(
         }
         return isThenable(made)
           ? Effect.flatMap(
-              Effect.promise(async () => made),
+              Effect.promise(() => made),
               provide,
             )
           : provide(made);
@@ -412,29 +671,40 @@ export function callProcedure(
           );
         if (step.effect) {
           const next = (o?: NextOpts) =>
-            Effect.map(Effect.exit(rest(o)), toResult);
-          return Effect.flatMap(
-            Effect.suspend(() =>
-              refail(
-                step.fn({ ...base, ctx, input, next }) as Effect.Effect<
-                  unknown,
-                  unknown,
-                  any
-                >,
+            Effect.map(Effect.catchCause(rest(o), failNext), okResult);
+          return scoped(
+            Effect.flatMap(
+              Effect.catchCause(
+                Effect.suspend(
+                  () =>
+                    step.fn({ ...base, ctx, input, next }) as Effect.Effect<
+                      unknown,
+                      unknown,
+                      any
+                    >,
+                ),
+                (cause) => Effect.failCause(middlewareCause(cause)),
               ),
+              fromResult,
             ),
-            fromResult,
           );
         }
         const runNext = Effect.runPromiseExitWith(services);
-        const next = async (o?: NextOpts) =>
-          toResult(
-            await runNext(rest(o) as Effect.Effect<unknown, AnyTrpcError>, {
-              signal: opts.signal,
-            }),
-          );
         return Effect.flatMap(
-          attempt(() => step.fn({ ...base, ctx, input, next })),
+          attempt((signal) =>
+            step.fn({
+              ...base,
+              ctx,
+              input,
+              next: async (o?: NextOpts) =>
+                toResult(
+                  await runNext(
+                    rest(o) as Effect.Effect<unknown, AnyTrpcError>,
+                    { signal },
+                  ),
+                ),
+            }),
+          ),
           fromResult,
         );
       }
@@ -453,7 +723,7 @@ export function callProcedure(
     if (isTrpcError(ret)) return fail(ret);
     if (Effect.isEffect(ret)) {
       return Effect.flatMap(
-        refail(ret as Effect.Effect<unknown, unknown, any>),
+        refail(scoped(ret as Effect.Effect<unknown, unknown, any>)),
         (value) =>
           isTrpcError(value)
             ? fail(value)
@@ -490,7 +760,7 @@ export function callProcedure(
     }
     return isThenable(ret)
       ? Effect.flatMap(
-          Effect.promise(async () => ret),
+          Effect.promise(() => ret),
           (value) => lift(afterResolve(value, services)),
         )
       : afterResolve(ret, services);
@@ -502,15 +772,23 @@ export function callProcedure(
     services: Context.Context<never>,
   ): unknown => {
     if (type === 'subscription') {
-      return toEventStream(value, services, eventSchema(validated(def)));
-    }
-    if (Stream.isStream(value)) {
-      return Stream.toAsyncIterableWith(
-        value as Stream.Stream<unknown, unknown, never>,
-        services,
+      return Stream.catchCause(
+        toEventStream(value, services, eventSchema(validated(def))),
+        (cause) => Stream.fromEffect(settle(def, path, cause)),
       );
     }
-    return value;
+    const source = Stream.isStream(value)
+      ? Stream.toChannel(value as Stream.Stream<unknown, unknown, never>)
+      : isAsyncIterable(value) && !isReadableStream(value)
+        ? iterableChannel(value)
+        : undefined;
+    if (!source) return value;
+    return streamedOutput(
+      Channel.catchCause(source, (cause) =>
+        Channel.fromEffectDone(settleStreamed(def, path, cause)),
+      ),
+      services,
+    );
   };
 
   const complete = (
@@ -524,7 +802,7 @@ export function callProcedure(
       if (!opts.allowResponse) {
         return Effect.fail(
           new TrpcError.BadRequest({
-            message: `"${path}" returns a Response, which only an unbatched HTTP call can carry`,
+            message: `"${path}" returns a Response, which only an unbatched HTTP call or an in-process call can carry`,
           }),
         );
       }
@@ -554,7 +832,12 @@ export function callProcedure(
           ]),
         );
       }
-      return Effect.succeed(validateItems(value, output, services));
+      const channel = isStreamedOutput(value)
+        ? value[OUTPUT]
+        : iterableChannel(value);
+      return Effect.succeed(
+        streamedOutput(validateItems(channel, output), services),
+      );
     }
     return Effect.succeed(value);
   };
@@ -565,23 +848,7 @@ export function callProcedure(
     return Effect.isEffect(out)
       ? Effect.flatMap(out, (result) => complete(result, services))
       : complete(out, services);
-  }).pipe(
-    Effect.catchCause((cause) => {
-      for (const reason of cause.reasons) {
-        if (Cause.isFailReason(reason) && isTrpcError(reason.error)) {
-          return checkDeclared(def, reason.error);
-        }
-        if (
-          Cause.isDieReason(reason) &&
-          isTrpcError(reason.defect) &&
-          (isDeclaredError(reason.defect) || taggedSpec(reason.defect))
-        ) {
-          return checkDeclared(def, withDefined(reason.defect, true));
-        }
-      }
-      return Effect.failCause(cause as Cause.Cause<AnyTrpcError>);
-    }),
-  );
+  }).pipe(Effect.catchCause((cause) => settle(def, path, cause)));
   const name = `trpc.${path}`;
   const untraced = Effect.updateContext(call, (context) =>
     Context.add(context, ResponseKey, response),

@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://raf-query.katt.dev/sitemap.xml

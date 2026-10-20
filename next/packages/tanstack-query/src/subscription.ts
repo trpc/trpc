@@ -1,4 +1,5 @@
 import { hashKey } from '@tanstack/query-core';
+import { Cause, Effect, Exit, Fiber, Scope, Stream } from 'effect';
 import type { TrpcQueryKey } from './keys.ts';
 
 /**
@@ -70,14 +71,40 @@ interface Member<TEvent, TError> {
 
 const idle = { status: 'idle', data: undefined, error: null } as const;
 
+/**
+ * Runs one start of a shared subscription: its events, then its end or
+ * failure. `subscribe`'s signal belongs to the run's scope.
+ */
+const consume = /* @__PURE__ */ Effect.fnUntraced(function* <TEvent, TError>(
+  shared: SharedSubscription<TEvent, TError>,
+  options: AnyOptions<TEvent, TError>,
+) {
+  const signal = yield* Effect.abortSignal;
+  const exit = yield* Stream.suspend(() =>
+    Stream.fromAsyncIterable(
+      options.subscribe({ signal }),
+      (cause) => cause as TError,
+    ),
+  ).pipe(
+    Stream.runForEach((event) => Effect.sync(() => shared.event(event))),
+    Effect.exit,
+  );
+  if (Exit.isSuccess(exit)) shared.complete();
+  else if (!Cause.hasInterrupts(exit.cause)) {
+    shared.fail(Cause.squash(exit.cause) as TError);
+  }
+});
+
 /** @internal */
 class SharedSubscription<TEvent, TError> {
   result: SubscriptionResult<TEvent, TError> = idle;
   readonly members: Set<Member<TEvent, TError>> = new Set();
   readonly release: () => void;
-  #controller: AbortController | undefined;
+  readonly #scope: Scope.Scope;
+  #run!: Scope.Closeable;
 
-  constructor(release: () => void) {
+  constructor(scope: Scope.Scope, release: () => void) {
+    this.#scope = scope;
     this.release = release;
   }
 
@@ -109,38 +136,35 @@ class SharedSubscription<TEvent, TError> {
     for (const member of this.members) fn(member.options());
   }
 
+  event(event: TEvent): void {
+    this.#set({ status: 'active', data: event, error: null });
+    this.#each((o) => o.onData?.(event));
+  }
+
+  complete(): void {
+    this.#set({ status: 'idle', data: this.result.data, error: null });
+    this.#each((o) => o.onComplete?.());
+  }
+
+  fail(error: TError): void {
+    this.#set({ status: 'error', data: this.result.data, error });
+    this.#each((o) => o.onError?.(error));
+  }
+
   #start(options: AnyOptions<TEvent, TError>): void {
-    const controller = new AbortController();
-    this.#controller = controller;
+    // Parallel finalizers, so closing the run aborts `signal` while its fiber
+    // is still being interrupted: an async generator awaiting a source that
+    // listens to the signal only settles `return()` once that source ends.
+    const run = Scope.forkUnsafe(this.#scope, 'parallel');
+    this.#run = run;
     this.#set({ status: 'connecting', data: this.result.data, error: null });
-    const live = () =>
-      this.#controller === controller && !controller.signal.aborted;
-    void (async () => {
-      try {
-        for await (const event of options.subscribe({
-          signal: controller.signal,
-        })) {
-          if (!live()) return;
-          this.#set({ status: 'active', data: event, error: null });
-          this.#each((o) => o.onData?.(event));
-        }
-        if (!live()) return;
-        this.#controller = undefined;
-        this.#set({ status: 'idle', data: this.result.data, error: null });
-        this.#each((o) => o.onComplete?.());
-      } catch (cause) {
-        if (!live()) return;
-        this.#controller = undefined;
-        const error = cause as TError;
-        this.#set({ status: 'error', data: this.result.data, error });
-        this.#each((o) => o.onError?.(error));
-      }
-    })();
+    Effect.runFork(Scope.provide(consume(this, options), run)).pipe(
+      Fiber.runIn(run),
+    );
   }
 
   #stop(): void {
-    this.#controller?.abort();
-    this.#controller = undefined;
+    Effect.runFork(Scope.close(this.#run, Exit.void));
   }
 }
 
@@ -153,6 +177,7 @@ class SharedSubscription<TEvent, TError> {
  */
 export class SubscriptionCache {
   readonly #entries = new Map<string, SharedSubscription<any, any>>();
+  readonly #scope = Scope.makeUnsafe();
 
   /** @internal */
   join<TEvent, TError>(
@@ -163,9 +188,12 @@ export class SubscriptionCache {
       | SharedSubscription<TEvent, TError>
       | undefined;
     if (!entry) {
-      const created = new SharedSubscription<TEvent, TError>(() => {
-        if (this.#entries.get(hash) === created) this.#entries.delete(hash);
-      });
+      const created = new SharedSubscription<TEvent, TError>(
+        this.#scope,
+        () => {
+          if (this.#entries.get(hash) === created) this.#entries.delete(hash);
+        },
+      );
       this.#entries.set(hash, created);
       entry = created;
     }

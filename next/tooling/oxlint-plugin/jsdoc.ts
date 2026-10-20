@@ -1,6 +1,7 @@
 import { defineRule, type ESTree } from '@oxlint/plugins';
 
-import { packageName, publicNames } from './public-exports.ts';
+import { exportUse, packageUse } from './docs-use.ts';
+import { packageName, packageRoot, publicNames } from './public-exports.ts';
 
 const REQUIRED = ['@since', '@stability'] as const;
 
@@ -55,15 +56,29 @@ const jsdoc = defineRule({
         "`{{name}}` isn't {{stage}}: export it as {{next}} and keep `{{name}}` as a `@deprecated` alias.",
       unstablePackage:
         '`{{name}}` is in an `unstable-` package. There are none: publish the package under its final name, with its unstable exports named `unstable_*`.',
+      hiddenPackage:
+        '`{{pkg}}` is used only on hidden docs pages (experiments: {{experiments}}), so it is experimental: name it `{{next}}`, with every export `@stability experimental`.',
+      hidden:
+        '`{{name}}` is documented only on hidden docs pages (experiments: {{experiments}}), so it is experimental: `@stability experimental`, named `experimental_{{name}}`.',
     },
   },
   create(context) {
     const reachable = publicNames(context.filename);
     const pkg = packageName(context.filename) ?? '';
+    const root = packageRoot(context.filename);
     // The package name already says it: every export is experimental, unprefixed.
     const experimentalPackage = /^@[\w-]+\/experimental-/.test(pkg);
     // An unstable feature stays, so its package already has its final name.
     const unstablePackage = /^@[\w-]+\/unstable-/.test(pkg);
+    // Docs pages in an experiment are hidden until a reader turns it on, so
+    // what only they document isn't approved yet.
+    const docs = root === undefined ? undefined : packageUse(root, pkg);
+    const hiddenPackage =
+      !experimentalPackage &&
+      docs !== undefined &&
+      !docs.listed &&
+      docs.experiments.size > 0;
+    let reportedPackage = false;
     // Overloads share one JSDoc, on the first signature.
     const checked = new Set<string>();
     return {
@@ -118,6 +133,18 @@ const jsdoc = defineRule({
           });
           return;
         }
+        if (hiddenPackage && !reportedPackage) {
+          reportedPackage = true;
+          context.report({
+            node: declaration,
+            messageId: 'hiddenPackage',
+            data: {
+              pkg,
+              experiments: [...(docs?.experiments ?? [])].join(', '),
+              next: pkg.replace(/^(@[\w-]+\/)/, '$1experimental-'),
+            },
+          });
+        }
         if (experimentalPackage) {
           if (stability !== 'experimental') {
             context.report({
@@ -135,6 +162,25 @@ const jsdoc = defineRule({
           return;
         }
         if (!VALUES.has(declaration.type)) return;
+        const documented =
+          root === undefined ? undefined : exportUse(root, pkg, name);
+        if (
+          stability !== 'experimental' &&
+          !deprecated &&
+          documented !== undefined &&
+          !documented.listed &&
+          documented.experiments.size > 0
+        ) {
+          context.report({
+            node: declaration,
+            messageId: 'hidden',
+            data: {
+              name: unprefixed,
+              experiments: [...documented.experiments].join(', '),
+            },
+          });
+          return;
+        }
         const stage = STAGES.find((each) => each === stability);
         if (stage !== undefined && prefix !== stage && !deprecated) {
           context.report({

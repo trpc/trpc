@@ -1,4 +1,4 @@
-import { TRPCClientError, type TRPCLink } from '@trpc/client';
+import { retryLink, TRPCClientError, type TRPCLink } from '@trpc/client';
 import type { AnyTRPCRouter } from '@trpc/server';
 import { map, observable, share, tap } from '@trpc/server/observable';
 import { Stream } from 'effect';
@@ -7,6 +7,7 @@ import {
   httpLink,
   link,
   routerType,
+  TrpcError,
   type Operation,
 } from '@trpc12/trpc/client';
 import { fromV11Link } from '@trpc12/trpc/interop';
@@ -117,16 +118,79 @@ test('errors: v12 errors reach the v11 link, v11 errors keep their code', async 
     router: routerType<AppRouter>(),
     links: [fromV11Link(v11Link), httpLink({ url: server.url })],
   });
-  await expect(client.byId.query({ id: '2' })).rejects.toMatchObject({
-    code: 'NOT_FOUND',
-    message: 'No post 2',
-  });
-  expect(seen).toMatchObject([{ code: 'NOT_FOUND' }]);
+  const notFound = await client.byId
+    .query({ id: '2' })
+    .catch((e: unknown) => e);
+  expect(notFound).toBeInstanceOf(TrpcError);
+  expect(notFound).toMatchObject({ code: 'NOT_FOUND', message: 'No post 2' });
+  // Read as v11 links read a TRPCClientError; passed on, the v12 error itself.
+  expect(seen).toMatchObject([
+    {
+      name: 'TRPCClientError',
+      message: 'No post 2',
+      data: { code: 'NOT_FOUND', httpStatus: 404, path: 'byId' },
+      shape: { code: -32004, message: 'No post 2' },
+      cause: notFound,
+    },
+  ]);
   await expect(client.whoami.query()).rejects.toMatchObject({
     code: 'UNAUTHORIZED',
     message: 'No token',
     data: undefined,
     cause: { data: { code: 'UNAUTHORIZED', httpStatus: 401 } },
+  });
+});
+
+test("v11's retryLink, as its docs configure it, retries only what v11 retried", async () => {
+  await using server = await serve();
+  let attempts = 0;
+  const counting: TRPCLink<AnyTRPCRouter> = () => (opts) => {
+    attempts++;
+    return opts.next(opts.op);
+  };
+  const client = createTrpcClient({
+    router: routerType<AppRouter>(),
+    links: [
+      fromV11Link(
+        retryLink({
+          retry: (opts) => {
+            if (
+              opts.error.data &&
+              opts.error.data.code !== 'INTERNAL_SERVER_ERROR'
+            ) {
+              return false;
+            }
+            return opts.op.type === 'query' && opts.attempts <= 3;
+          },
+        }),
+      ),
+      fromV11Link(counting),
+      httpLink({ url: server.url }),
+    ],
+  });
+  await expect(client.byId.query({ id: '2' })).rejects.toMatchObject({
+    code: 'NOT_FOUND',
+  });
+  expect(attempts).toBe(1);
+});
+
+test('an error a v11 link rewraps with TRPCClientError.from is still the v12 error', async () => {
+  await using server = await serve();
+  const rewrap: TRPCLink<AnyTRPCRouter> = () => (opts) =>
+    observable((observer) =>
+      opts.next(opts.op).subscribe({
+        next: (value) => observer.next(value),
+        error: (err) => observer.error(TRPCClientError.from(err)),
+        complete: () => observer.complete(),
+      }),
+    );
+  const client = createTrpcClient({
+    router: routerType<AppRouter>(),
+    links: [fromV11Link(rewrap), httpLink({ url: server.url })],
+  });
+  await expect(client.byId.query({ id: '2' })).rejects.toMatchObject({
+    code: 'NOT_FOUND',
+    message: 'No post 2',
   });
 });
 

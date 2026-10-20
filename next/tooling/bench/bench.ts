@@ -1,5 +1,5 @@
 /**
- * `pnpm --filter @tooling/bench bench [runtime|typecheck|bundle|budget]`: tRPC v12
+ * `pnpm --filter @tooling/bench bench [runtime|typecheck|shapes|bundle|budget]`: tRPC v12
  * against tRPC v11 and oRPC v2, the way oRPC's comparison measures them
  * (github.com/middleapi/orpc-benchmarks). Prints Markdown tables.
  *
@@ -8,6 +8,9 @@
  *   oRPC's own), loaded with autocannon on a `GET` query.
  * - typecheck: a generated project of 3,000 procedures in 1,501 routers,
  *   each called through the typed client; `tsc --extendedDiagnostics`.
+ * - shapes: v12 alone, one generated router per procedure shape (plain,
+ *   `.output()`, `.errors()`, middleware, Effect, contract, `matchError()`);
+ *   see `shapes.ts`.
  * - bundle: a minimal client, Node server and fetch handler, bundled with
  *   rolldown (tree-shaken, minified) and gzipped.
  * - budget: the client bundles whose size CI reports (see `budgets`).
@@ -15,47 +18,24 @@
 import { gzipSync } from 'node:zlib';
 import { NodeRuntime, NodeServices } from '@effect/platform-node';
 import autocannon from 'autocannon';
-import {
-  Console,
-  Data,
-  Effect,
-  FileSystem,
-  Path,
-  Schedule,
-  Stream,
-} from 'effect';
+import { Console, Effect, Schedule } from 'effect';
 import { Command, Flag } from 'effect/cli';
 import { ChildProcess, ChildProcessSpawner } from 'effect/process';
 import { rolldown, type OutputChunk } from 'rolldown';
-
-const here = import.meta.dirname;
-const generated = `${here}/.generated`;
-
-class BenchFailed extends Data.TaggedError('BenchFailed')<{
-  readonly step: string;
-  readonly cause: unknown;
-}> {}
-
-const attempt = <A>(step: string, run: () => Promise<A>) =>
-  Effect.tryPromise({
-    try: run,
-    catch: (cause) => new BenchFailed({ step, cause }),
-  });
-
-const median = (xs: ReadonlyArray<number>): number =>
-  [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)]!;
-
-const table = (
-  head: ReadonlyArray<string>,
-  rows: ReadonlyArray<ReadonlyArray<string>>,
-) =>
-  [
-    `| ${head.join(' | ')} |`,
-    `| ${head.map((_, i) => (i === 0 ? '---' : '---:')).join(' | ')} |`,
-    ...rows.map((row) => `| ${row.join(' | ')} |`),
-  ].join('\n');
-
-const thousands = (n: number) => Math.round(n).toLocaleString('en-US');
+import {
+  attempt,
+  BenchFailed,
+  diagnostics,
+  dist,
+  generated,
+  here,
+  median,
+  requireDist,
+  table,
+  thousands,
+  writeFiles,
+} from './kit.ts';
+import { shapes } from './shapes.ts';
 
 // --- runtime --------------------------------------------------------------
 
@@ -281,56 +261,6 @@ const fixture = (fw: Framework, routers: number): Array<[string, string]> => {
   return files;
 };
 
-const writeFiles = (
-  dir: string,
-  files: ReadonlyArray<readonly [string, string]>,
-) =>
-  Effect.gen(function* () {
-    const fs = yield* FileSystem.FileSystem;
-    const path = yield* Path.Path;
-    yield* fs.remove(dir, { recursive: true, force: true });
-    for (const [file, contents] of files) {
-      const target = path.join(dir, file);
-      yield* fs.makeDirectory(path.dirname(target), { recursive: true });
-      yield* fs.writeFileString(target, contents);
-    }
-  });
-
-const tsc = `${here}/node_modules/.bin/tsc`;
-// v11 and oRPC are checked from their published `.d.ts` (with `skipLibCheck`), so v12 is too.
-const dist = `${here}/../../packages/trpc/dist`;
-
-const diagnostics = (dir: string) =>
-  Effect.scoped(
-    Effect.gen(function* () {
-      const spawner = yield* ChildProcessSpawner.ChildProcessSpawner;
-      const handle = yield* spawner.spawn(
-        ChildProcess.make(tsc, [
-          '-p',
-          dir,
-          '--extendedDiagnostics',
-          '--singleThreaded',
-        ]),
-      );
-      const [output, exitCode] = yield* Effect.all(
-        [Stream.mkString(Stream.decodeText(handle.stdout)), handle.exitCode],
-        { concurrency: 2 },
-      );
-      if (exitCode !== 0) {
-        return yield* new BenchFailed({
-          step: `tsc ${dir}`,
-          cause: output.slice(0, 4000),
-        });
-      }
-      const numbers: Record<string, number> = {};
-      for (const line of output.split('\n')) {
-        const m = /^([A-Za-z ]+):\s+([\d.]+)/.exec(line.trim());
-        if (m) numbers[m[1]!.trim()] = Number(m[2]);
-      }
-      return numbers;
-    }),
-  );
-
 const typecheck = Command.make(
   'typecheck',
   {
@@ -339,13 +269,7 @@ const typecheck = Command.make(
   },
   (opts) =>
     Effect.gen(function* () {
-      const fs = yield* FileSystem.FileSystem;
-      if (!(yield* fs.exists(`${dist}/server/index.d.ts`))) {
-        return yield* new BenchFailed({
-          step: 'typecheck',
-          cause: 'run `pnpm build` first',
-        });
-      }
+      yield* requireDist;
       const rows: string[][] = [];
       for (const fw of ['trpc12', 'trpc11', 'orpc'] as const) {
         const dir = `${generated}/typecheck-${fw}`;
@@ -526,7 +450,7 @@ const budget = Command.make('budget', {}, () =>
 );
 
 const bench = Command.make('bench').pipe(
-  Command.withSubcommands([runtime, typecheck, bundleSizes, budget]),
+  Command.withSubcommands([runtime, typecheck, shapes, bundleSizes, budget]),
 );
 
 Command.run(bench, { version: '0.0.0' }).pipe(

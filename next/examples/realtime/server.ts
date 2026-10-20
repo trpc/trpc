@@ -1,6 +1,6 @@
 /**
  * The chat server: rooms anyone can read, and an inbox per user that only
- * its owner can. Both are channels of one `Publisher`, and the backend
+ * its owner can. Both are channels of one `experimental_Publisher`, and the backend
  * (Redis or Postgres) is how separate servers share events.
  *
  * `BACKEND=redis|postgres PORT=3000 node server.ts` serves until Ctrl-C;
@@ -9,7 +9,7 @@
 import { createServer } from 'node:http';
 import { NodeHttpServer, NodeRedis } from '@effect/platform-node';
 import { PgClient } from '@effect/sql-pg';
-import { Effect, Layer, ManagedRuntime, Redacted } from 'effect';
+import { type Duration, Effect, Layer, ManagedRuntime, Redacted } from 'effect';
 import { HttpServer } from 'effect/http';
 import { serve } from '@trpc12/trpc/http';
 import { createSerializer } from '@trpc12/trpc/serializer';
@@ -17,7 +17,7 @@ import {
   createFetchHandler,
   error,
   initTrpc,
-  Publisher,
+  experimental_Publisher,
 } from '@trpc12/trpc/server';
 import { z } from 'zod';
 import { createEventsTable, pgPublisher, redisPublisher } from './publisher.ts';
@@ -37,7 +37,9 @@ export type ChatEvents = {
   [inbox: `inbox:${string}`]: Message;
 };
 
-export class Chat extends Publisher.Service<Chat, ChatEvents>()('Chat') {}
+export class Chat extends experimental_Publisher.Service<Chat, ChatEvents>()(
+  'Chat',
+) {}
 
 const users: Record<string, string> = {
   'alice-token': 'alice',
@@ -107,12 +109,12 @@ export type Backend = keyof typeof backends;
 
 /**
  * Starts a server; run as many as you like against the same backend.
- * `idleTimeoutMs` closes WebSockets that send nothing, `wsLink`'s pings
+ * `idleTimeout` closes WebSockets that send nothing, `wsLink`'s pings
  * included, for that long.
  */
 export async function listen(
   port = 0,
-  opts: { backend?: Backend; idleTimeoutMs?: number } = {},
+  opts: { backend?: Backend; idleTimeout?: Duration.Input } = {},
 ) {
   const handler = createFetchHandler({
     router: appRouter,
@@ -128,7 +130,7 @@ export async function listen(
           : o.request.headers['authorization']?.replace(/^Bearer /, '');
       return { user: token === undefined ? undefined : users[token] };
     },
-    websocket: { idleTimeoutMs: opts.idleTimeoutMs ?? 60_000 },
+    websocket: { idleTimeout: opts.idleTimeout ?? '60 seconds' },
   });
   const server = createServer();
   const runtime = ManagedRuntime.make(

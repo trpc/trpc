@@ -1,5 +1,5 @@
-import type { Effect } from 'effect';
-import type { AnyTrpcError } from '../../internal/error.ts';
+import { Cause, Effect, Exit, identity, type Context } from 'effect';
+import { TrpcError, type AnyTrpcError } from '../../internal/error.ts';
 import type {
   MaybePromise,
   ProcedureType,
@@ -65,7 +65,7 @@ export interface OkResult<T> {
 }
 
 /**
- * Ends the chain with `data` instead of calling `next()` (06 Q6.2). The
+ * Ends the chain with `data` instead of calling `next()`. The
  * resolver does not run, but output validation does. The builder checks
  * `data` against the procedure's output at the terminal.
  *
@@ -131,12 +131,24 @@ export type MiddlewareFunction<
   TInput,
   TMeta,
   $Ctx extends object,
-  $Err extends AnyTrpcError,
+  $Err extends MiddlewareErrors,
   $Ok = never,
   $Input = Unset,
 > = (
   opts: MiddlewareOpts<TCtx, TInput, TMeta>,
 ) => MaybePromise<MiddlewareResult<$Ctx, $Input> | $Err | OkResult<$Ok>>;
+
+/**
+ * The bound of a middleware's `$Err`. When every branch returns `next()` or
+ * `ok()`, TypeScript still infers the whole return type into `$Err`; with an
+ * `AnyTrpcError` bound that candidate fails and `$Err` widens to
+ * `AnyTrpcError`. Accepting it here and taking `Extract<$Err, AnyTrpcError>`
+ * keeps such a middleware from adding errors.
+ * @internal
+ */
+export type MiddlewareErrors =
+  | AnyTrpcError
+  | MaybePromise<MiddlewareResult<any, any> | OkResult<any>>;
 
 /**
  * What a standalone middleware needs from the procedure it is used on.
@@ -165,21 +177,51 @@ export type ReqInput<T extends MiddlewareRequirements> = 'input' extends keyof T
 // --- Effect middleware (06 (g) M-A) ------------------------------------------------
 
 /**
- * `next()` for Effect middleware. It requires the services the middleware
- * declares in `provides`, so a body that forgets to provide them is a type
- * error.
+ * What an Effect middleware's `next()` succeeds with. `data` is the rest of
+ * the chain's result; the phantoms carry ctx and input as in
+ * {@link MiddlewareResult}.
+ * @since 0.1.0
+ * @stability stable
+ */
+export interface NextResult<TCtx, TInput = Unset> {
+  readonly ok: true;
+  readonly data: unknown;
+  readonly '~ctx'?: TCtx;
+  readonly '~input'?: TInput;
+}
+
+/**
+ * What an Effect middleware's `next()` fails with: the error a later step
+ * failed with, as clients will get it (a thrown value is an
+ * `INTERNAL_SERVER_ERROR`). Its `_tag` is its code, so
+ * `Effect.catchTag('NOT_FOUND', …)` takes it. The step that failed already
+ * put it in the procedure's error union, so failing with it again adds
+ * nothing, and it keeps its cause.
+ * @since 0.1.0
+ * @stability stable
+ */
+export interface NextError extends TrpcError<string, unknown> {
+  /** Type only: marks an error from `next()`. */
+  readonly '~next': true;
+}
+
+/**
+ * `next()` for Effect middleware: fails with the rest of the chain's error,
+ * so `Effect.catchTag`, `Effect.retry`, `Effect.timeout` and `Effect.onExit`
+ * see it. It requires the services the middleware declares in `provides`,
+ * so a body that forgets to provide them is a type error.
  * @since 0.1.0
  * @stability stable
  */
 export interface EffectNextFn<TProvides> {
-  (): Effect.Effect<MiddlewareResult<{}>, never, TProvides>;
+  (): Effect.Effect<NextResult<{}>, NextError, TProvides>;
   <$Ctx extends object>(opts: {
     ctx: $Ctx;
-  }): Effect.Effect<MiddlewareResult<$Ctx>, never, TProvides>;
+  }): Effect.Effect<NextResult<$Ctx>, NextError, TProvides>;
   <$Input, $Ctx extends object = {}>(opts: {
     ctx?: $Ctx;
     input: $Input;
-  }): Effect.Effect<MiddlewareResult<$Ctx, $Input>, never, TProvides>;
+  }): Effect.Effect<NextResult<$Ctx, $Input>, NextError, TProvides>;
 }
 
 /**
@@ -197,9 +239,10 @@ export interface EffectMiddlewareOpts<
 }
 
 /**
- * A middleware whose body is an `Effect`. Its failures join the error union,
- * its requirements join the procedure's services, and the services it
- * `provides` are removed from what later steps require.
+ * A middleware whose body is an `Effect`. Its failures join the error union
+ * (those from `next()` are there already), its requirements join the
+ * procedure's services, and the services it `provides` are removed from
+ * what later steps require.
  * @since 0.1.0
  * @stability stable
  */
@@ -216,7 +259,7 @@ export interface EffectMiddleware<
 > {
   readonly '~effectMiddleware': (
     opts: EffectMiddlewareOpts<TCtx, TInput, TMeta, $Provides>,
-  ) => Effect.Effect<MiddlewareResult<$Ctx, $Input> | OkResult<$Ok>, $Err, $R>;
+  ) => Effect.Effect<NextResult<$Ctx, $Input> | OkResult<$Ok>, $Err, $R>;
   readonly '~types'?: { provides: $Provides; requires: $R };
 }
 
@@ -249,28 +292,46 @@ type ProvidesOf<T extends EffectMiddlewareDecl> = 'provides' extends keyof T
   ? T['provides']
   : never;
 
-/** @internal */
+type BodyNext<A> = A extends OkResult<any> ? never : A;
+type BodyCtx<A> = [BodyNext<A>] extends [never]
+  ? {}
+  : BodyNext<A> extends NextResult<infer C extends object, any>
+    ? C
+    : never;
+type BodyInput<A> = [BodyNext<A>] extends [never]
+  ? Unset
+  : BodyNext<A> extends NextResult<any, infer I>
+    ? I
+    : never;
+type BodyOk<A> = A extends OkResult<infer T> ? T : never;
+
+/**
+ * Infers the body's whole `Effect` and reads its parts from it, so a body
+ * like `user ? next() : Effect.fail(err)` gets both branches' errors:
+ * inferring `E` itself would pick one branch's, as `Effect.flatMap` does.
+ * @internal
+ */
 export type EffectMiddlewareFactory<TCtx, TInput, TMeta, $Provides> = <
-  $Ctx extends object = {},
-  $E = never,
-  $R = never,
-  $Ok = never,
-  $Input = Unset,
+  $Body extends Effect.Effect<
+    NextResult<object, unknown> | OkResult<unknown>,
+    unknown,
+    unknown
+  >,
 >(
   fn: (
     opts: EffectMiddlewareOpts<TCtx, TInput, TMeta, $Provides>,
-  ) => Effect.Effect<MiddlewareResult<$Ctx, $Input> | OkResult<$Ok>, $E, $R> &
-    EffectBodyCheck<$E, $R, $Provides>,
+  ) => $Body &
+    EffectBodyCheck<Effect.Error<$Body>, Effect.Services<$Body>, $Provides>,
 ) => EffectMiddleware<
   TCtx,
   TInput,
   TMeta,
-  $Ctx,
-  Extract<$E, AnyTrpcError>,
-  Exclude<$R, $Provides>,
+  BodyCtx<Effect.Success<$Body>>,
+  Exclude<Extract<Effect.Error<$Body>, AnyTrpcError>, NextError>,
+  Exclude<Effect.Services<$Body>, $Provides>,
   $Provides,
-  $Ok,
-  $Input
+  BodyOk<Effect.Success<$Body>>,
+  BodyInput<Effect.Success<$Body>>
 >;
 
 /** @internal */
@@ -282,7 +343,9 @@ export const makeEffectMiddleware = (fn: (opts: any) => unknown): any => ({
 export const isEffectMiddleware = (
   value: unknown,
 ): value is { '~effectMiddleware': (opts: any) => unknown } =>
-  typeof value === 'object' && value !== null && '~effectMiddleware' in value;
+  (typeof value === 'object' || typeof value === 'function') &&
+  value !== null &&
+  '~effectMiddleware' in value;
 
 // --- standalone middleware ---------------------------------------------------------
 
@@ -304,7 +367,7 @@ interface MiddlewareFactory {
    */
   <TReq extends MiddlewareRequirements = {}>(): <
     $Ctx extends object = {},
-    $Err extends AnyTrpcError = never,
+    $Err extends MiddlewareErrors = never,
     $Ok = never,
     $Input = Unset,
   >(
@@ -322,12 +385,12 @@ interface MiddlewareFactory {
     ReqInput<TReq>,
     ReqMeta<TReq>,
     $Ctx,
-    $Err,
+    Extract<$Err, AnyTrpcError>,
     $Ok,
     $Input
   >;
   /**
-   * A standalone Effect middleware (06 M-A). Declare the services it
+   * A standalone Effect middleware. Declare the services it
    * provides; procedures after it no longer require them.
    *
    * @example
@@ -356,17 +419,93 @@ interface MiddlewareFactory {
  * @since 0.1.0
  * @stability stable
  */
-export const middleware: MiddlewareFactory = Object.assign(
+export const middleware: MiddlewareFactory = /* @__PURE__ */ Object.assign(
   () => (fn: unknown) => fn,
   { effect: () => makeEffectMiddleware },
 ) as never;
 
 // --- lifecycle helpers (06 (f)) ----------------------------------------------------
 
+type Outcome =
+  | { readonly ok: true; readonly data: unknown }
+  | { readonly ok: false; readonly error: AnyTrpcError };
+
+type AnyEffectOpts = EffectMiddlewareOpts<unknown, unknown, unknown, never>;
 type AnyOpts = MiddlewareOpts<unknown, unknown, unknown>;
 
+/** Effect `next()`'s exit as Promise `next()` resolves: interrupted is `CLIENT_CLOSED_REQUEST`. */
+const outcomeOf = (exit: Exit.Exit<NextResult<{}>, NextError>): Outcome =>
+  Exit.isSuccess(exit)
+    ? exit.value
+    : {
+        ok: false,
+        error:
+          exit.cause.reasons.find(Cause.isFailReason)?.error ??
+          new TrpcError.ClientClosedRequest({
+            message: 'The request was aborted',
+          }),
+      };
+
+const isThenable = (value: unknown): value is PromiseLike<unknown> =>
+  typeof (value as PromiseLike<unknown> | null)?.then === 'function';
+
 /**
- * Runs `fn` before the rest of the chain.
+ * Runs a lifecycle callback with `opts` as Promise middleware gets them,
+ * `next()` resolving to an outcome. Only a returned promise makes it
+ * asynchronous, and only waiting for it can be interrupted: an
+ * interrupted call still runs the callback but doesn't wait for it, as
+ * with Promise middleware.
+ */
+const runCallback = (
+  opts: AnyEffectOpts,
+  fn: (opts: AnyOpts) => MaybePromise<void>,
+  restore: <A, E, R>(effect: Effect.Effect<A, E, R>) => Effect.Effect<A, E, R>,
+): Effect.Effect<void> =>
+  Effect.withFiber((fiber) => {
+    const run = Effect.runPromiseExitWith(
+      fiber.context as Context.Context<never>,
+    );
+    const next = async (o?: object) =>
+      outcomeOf(await run(opts.next(o as never)));
+    const ret = fn({ ...opts, next: next as NextFn });
+    return isThenable(ret) ? restore(Effect.promise(() => ret)) : Effect.void;
+  });
+
+/**
+ * Runs the rest of the chain, then `fn` with its outcome, even when the
+ * call is interrupted, and ends as the chain did unless `fn` fails.
+ */
+const after = (
+  opts: AnyEffectOpts,
+  fn: (outcome: Outcome, opts: AnyOpts) => MaybePromise<void> | undefined,
+): Effect.Effect<unknown, unknown> =>
+  Effect.uninterruptibleMask((restore) =>
+    Effect.flatMap(Effect.exit(restore(opts.next())), (exit) => {
+      const outcome = outcomeOf(exit);
+      return Effect.andThen(
+        runCallback(opts, (o) => fn(outcome, o), restore),
+        exit,
+      );
+    }),
+  );
+
+/**
+ * A lifecycle helper: Promise middleware by its type and when called,
+ * Effect middleware in a chain (`.use()` runs its `~effectMiddleware`),
+ * so it adds no fiber or promise to a call.
+ */
+const lifecycle = <TCtx, TInput, TMeta>(
+  promise: (opts: MiddlewareOpts<TCtx, TInput, TMeta>) => Promise<unknown>,
+  effect: (opts: AnyEffectOpts) => Effect.Effect<unknown, unknown>,
+): MiddlewareFunction<TCtx, TInput, TMeta, {}, never> =>
+  Object.assign(promise, { '~effectMiddleware': effect }) as never;
+
+/**
+ * Runs `fn` before the rest of the chain. `opts.meta` and `opts.input` are
+ * typed from the procedure; `opts.ctx` is `unknown` unless given as the
+ * first type argument (`onStart<{ user: User }>((opts) => …)`), and a key
+ * the procedure's ctx lacks becomes a requirement, as for any middleware.
+ * The same goes for {@link onSuccess}, {@link onError} and {@link onFinish}.
  *
  * @example
  * ```ts
@@ -375,13 +514,18 @@ type AnyOpts = MiddlewareOpts<unknown, unknown, unknown>;
  * @since 0.1.0
  * @stability stable
  */
-export function onStart(
-  fn: (opts: AnyOpts) => MaybePromise<void>,
-): MiddlewareFunction<unknown, unknown, unknown, {}, never> {
-  return async (opts) => {
-    await fn(opts);
-    return opts.next();
-  };
+export function onStart<TCtx = unknown, TInput = unknown, TMeta = unknown>(
+  fn: (opts: MiddlewareOpts<TCtx, TInput, TMeta>) => MaybePromise<void>,
+): MiddlewareFunction<TCtx, TInput, TMeta, {}, never> {
+  const callback = fn as (opts: AnyOpts) => MaybePromise<void>;
+  return lifecycle(
+    async (opts) => {
+      await fn(opts);
+      return opts.next();
+    },
+    (opts) =>
+      Effect.andThen(runCallback(opts, callback, identity), opts.next()),
+  );
 }
 
 /**
@@ -395,14 +539,24 @@ export function onStart(
  * @since 0.1.0
  * @stability stable
  */
-export function onSuccess(
-  fn: (data: unknown, opts: AnyOpts) => MaybePromise<void>,
-): MiddlewareFunction<unknown, unknown, unknown, {}, never> {
-  return async (opts) => {
-    const result = await opts.next();
-    if (result.ok) await fn(result.data, opts);
-    return result;
-  };
+export function onSuccess<TCtx = unknown, TInput = unknown, TMeta = unknown>(
+  fn: (
+    data: unknown,
+    opts: MiddlewareOpts<TCtx, TInput, TMeta>,
+  ) => MaybePromise<void>,
+): MiddlewareFunction<TCtx, TInput, TMeta, {}, never> {
+  const callback = fn as (data: unknown, opts: AnyOpts) => MaybePromise<void>;
+  return lifecycle(
+    async (opts) => {
+      const result = await opts.next();
+      if (result.ok) await fn(result.data, opts);
+      return result;
+    },
+    (opts) =>
+      after(opts, (outcome, o) =>
+        outcome.ok ? callback(outcome.data, o) : undefined,
+      ),
+  );
 }
 
 /**
@@ -415,14 +569,27 @@ export function onSuccess(
  * @since 0.1.0
  * @stability stable
  */
-export function onError(
-  fn: (error: AnyTrpcError, opts: AnyOpts) => MaybePromise<void>,
-): MiddlewareFunction<unknown, unknown, unknown, {}, never> {
-  return async (opts) => {
-    const result = await opts.next();
-    if (!result.ok) await fn(result.error, opts);
-    return result;
-  };
+export function onError<TCtx = unknown, TInput = unknown, TMeta = unknown>(
+  fn: (
+    error: AnyTrpcError,
+    opts: MiddlewareOpts<TCtx, TInput, TMeta>,
+  ) => MaybePromise<void>,
+): MiddlewareFunction<TCtx, TInput, TMeta, {}, never> {
+  const callback = fn as (
+    error: AnyTrpcError,
+    opts: AnyOpts,
+  ) => MaybePromise<void>;
+  return lifecycle(
+    async (opts) => {
+      const result = await opts.next();
+      if (!result.ok) await fn(result.error, opts);
+      return result;
+    },
+    (opts) =>
+      after(opts, (outcome, o) =>
+        outcome.ok ? undefined : callback(outcome.error, o),
+      ),
+  );
 }
 
 /**
@@ -435,17 +602,21 @@ export function onError(
  * @since 0.1.0
  * @stability stable
  */
-export function onFinish(
+export function onFinish<TCtx = unknown, TInput = unknown, TMeta = unknown>(
   fn: (
     result:
       | { readonly ok: true; readonly data: unknown }
       | { readonly ok: false; readonly error: AnyTrpcError },
-    opts: AnyOpts,
+    opts: MiddlewareOpts<TCtx, TInput, TMeta>,
   ) => MaybePromise<void>,
-): MiddlewareFunction<unknown, unknown, unknown, {}, never> {
-  return async (opts) => {
-    const result = await opts.next();
-    await fn(result, opts);
-    return result;
-  };
+): MiddlewareFunction<TCtx, TInput, TMeta, {}, never> {
+  const callback = fn as (result: Outcome, opts: AnyOpts) => MaybePromise<void>;
+  return lifecycle(
+    async (opts) => {
+      const result = await opts.next();
+      await fn(result, opts);
+      return result;
+    },
+    (opts) => after(opts, callback),
+  );
 }

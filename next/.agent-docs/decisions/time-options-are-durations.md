@@ -1,0 +1,23 @@
+# Time options take `Duration.Input`, without an `Ms` suffix (human)
+
+- Question: "Time options mix millisecond numbers (`pingMs`, `idleTimeoutMs`, `timeoutMarginMs`) and `Duration.Input` (`drainTimeout`). Recommended: use `Duration.Input` everywhere before 0.1; numbers keep working."
+- Human, 2026-10-19 (first-release review, question 9): "use duration input (that's an effect thing right?)"
+- (agent) Yes: `Duration.Input` is Effect's type (`effect`'s `Duration` module), what `Effect.sleep` and `Effect.timeout` take: a number of milliseconds, a string like `'30 seconds'`, a `Duration`, and a few rarer forms (a bigint of nanoseconds, `[seconds, nanos]`, `{ minutes: 5 }`).
+- (agent) Renamed, old to new; each now takes `Duration.Input` (`| false` where `false` already turned the timer off):
+  - `createFetchHandler`, `experimental_createOpenApiHandler`, `createV11Handler`: `sse.pingMs` to `sse.pingInterval`.
+  - `createFetchHandler`, `createV11Handler`: `websocket.idleTimeoutMs` to `websocket.idleTimeout`. `websocket.drainTimeout` and `drain({ timeout })` already took one.
+  - `experimental_serveSocket`: `idleTimeoutMs` to `idleTimeout`.
+  - `toLambdaHandler`, `toLambdaStreamingHandler`: `timeoutMarginMs` to `timeoutMargin`.
+  - `experimental_connectionToken`: `ttlSeconds` to `ttl` (a number is now milliseconds, not seconds; default `'1 hour'`).
+  - `retryLink`, `experimental_durableLink`: `delayMs(attempt, error)` to `delay(attempt, error)`, which returns a `Duration.Input`.
+  - `httpLink`, `wsLink`, `experimental_socketLink`: `reconnect.delayMs(attempt)` to `reconnect.delay(attempt)`, which returns a `Duration.Input`.
+  - `wsLink`, `experimental_socketLink`: `idleMs` to `idleTimeout`, and `keepAlive: { intervalMs, timeoutMs }` to `keepAlive: { interval, timeout }`.
+  - `cacheLink`, `standardLinks` (`@trpc12/experimental-react`): `staleTime` and `gcTime` keep TanStack Query's names and now take a `Duration.Input` too.
+- (agent) Names follow `drainTimeout` and Effect's own (`Schedule.spaced` intervals, `Effect.timeout`, `RcRef`'s `idleTimeToLive`): a noun for what the time is, no unit. `ping` alone would read as a boolean, so `pingInterval`.
+- (agent) No aliases, since nothing has shipped. An old key is an excess-property error; TypeScript's "Did you mean" names the new key for `delayMs`, `idleTimeoutMs`, `intervalMs` and `timeoutMarginMs`, not for `pingMs` or `ttlSeconds`. A `never`-typed old key would name it everywhere, but would also show up in autocomplete; not worth it.
+- (agent) Options are decoded once, where they're read: the handlers through `timerOption` (`internal/duration.ts`, `false` to `undefined`), the links when the link is made, with `Duration.fromInputUnsafe`. Input that doesn't decode (`'soon'`) throws then, not on the first timer. A `delay` callback's result goes straight to `Effect.sleep`, which decodes it.
+- (agent) Bundle cost, gzip, `pnpm bench budget` on the same `v12`: minimal JSON client 39,548 to 39,546 B, full client 43,701 to 43,704 B, a `wsLink` client 43,396 to 43,397 B, `cacheLink` with `httpLink` 39,617 B before and after. `Effect.sleep` already decodes `Duration.Input`, so every client bundled the decoder already; no local decoder was needed.
+- Why: one way to write a time across tRPC and Effect, with the unit in the value (`'30 seconds'`) instead of the name; plain numbers still mean milliseconds.
+- Lost: the unit in the key. A bare number is still milliseconds, which `ttlSeconds` users now have to multiply or write as a string.
+- Open: `loggerLink`'s `elapsedMs` and `experimental_RateLimited`'s `data.retryAfter` stay millisecond numbers: they're values tRPC reports, not options, and `retryAfter` goes over the wire.
+- Lives in: `packages/trpc/src/internal/duration.ts`, `src/server/handler/fetch.ts`, `src/openapi/handler.ts`, `src/interop/handler/handler.ts`, `src/socket/index.ts`, `src/server/sockets/socket-session.ts`, `src/aws-lambda/index.ts`, `src/cloudflare/token.ts`, `src/client/links/basic.ts`, `src/client/links/resume.ts`, `src/client/links/http/link.ts`, `src/client/links/socket.ts`, `packages/experimental-react/src/links.ts`; tests in `src/internal/duration.test.ts` and beside each option; `docs/adapters/overview.md`, `docs/client/links/ws.md`, `docs/client/links/retry.md`.

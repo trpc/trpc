@@ -6,7 +6,7 @@ order: 4
 v11: server/error-handling
 ---
 
-There is one error class, `TrpcError`. Return `error({ code })` from a resolver or a middleware, or fail with it in Effect code (`Effect.fail(error(…))`, `yield* error(…)`). The procedure's error union is inferred from those, with no declaration:
+There is one error class, `TrpcError`. Return `error({ code })` from a resolver or a middleware, or fail with it in Effect code (`Effect.fail(error(…))`, `yield* error(…)`). The procedure's error union is inferred from those, and from a returned `Stream`'s failures ([Streaming](./streaming.md#errors)), with no declaration:
 
 ```ts twoslash
 // ---cut-start---
@@ -41,6 +41,8 @@ const me = t.procedure.query(
 
 Declaring errors with `.errors()` is optional. It adds typed constructors and `data` schemas. It also types what inference can't see: errors thrown from helpers, since a `throw` has no type.
 
+Once a procedure declares errors, the list is exhaustive. Returning an error it doesn't list, or one whose `data` doesn't match, is a type error (a streamed output's `Stream.fail()` too), and a thrown custom code it doesn't list reaches the client as an `INTERNAL_SERVER_ERROR`. Errors from middleware aren't checked against the list.
+
 ```ts twoslash
 // ---cut-start---
 import { db, t } from './server.ts';
@@ -60,14 +62,38 @@ const byId = t.procedure
   );
 ```
 
+An error several procedures share can be a `TrpcError.Tagged` class, which carries its code, `status` and `data` schema. Returning an instance types it like `error()`, and listing the class in `.errors()` declares it:
+
+```ts twoslash
+// ---cut-start---
+import { db, t } from './server.ts';
+// ---cut-end---
+import { TrpcError } from '@trpc12/trpc/server';
+import { z } from 'zod';
+
+class PostNotFound extends TrpcError.Tagged('POST_NOT_FOUND', {
+  status: 404,
+  data: z.object({ id: z.string() }),
+}) {}
+
+const post = t.procedure
+  .errors({ POST_NOT_FOUND: PostNotFound })
+  .input(z.object({ id: z.string() }))
+  .query(
+    (opts) =>
+      db.post.find(opts.input.id) ?? new PostNotFound({ id: opts.input.id }),
+  );
+```
+
 ## On the client
 
-On the client, the errors in the union are `defined: true`, with their `data`, whether they were returned, failed or declared. Anything else arrives as a built-in error (`defined: false`), and it never has `data`:
+On the client, the errors in the union are `defined: true`, with their `data`, whether they were returned, failed or declared. A thrown error with a declared code is too: its `data` is validated like a returned one's. Anything else arrives with `defined: false`:
 
-- An undeclared thrown error with a built-in code (`throw new TrpcError({ code: 'CONFLICT', data })`) keeps its code and loses its `data`.
-- An undeclared thrown error with a custom code, or a crash, is an `INTERNAL_SERVER_ERROR`. Its message is masked unless `NODE_ENV` is `development` or `test`, or `exposeUnexpectedErrors: true`.
+- A thrown error with a built-in code (`throw new TrpcError({ code: 'CONFLICT', data })`) keeps its code and loses its `data`, which no schema checked.
+- A thrown error with a custom code keeps its code and `data`, untyped, when the procedure declares no errors. On the client it is an `UndeclaredError`, which `matchError()` hands to `unexpected`. With `.errors()` that don't list it, it is an `INTERNAL_SERVER_ERROR`.
+- A crash is an `INTERNAL_SERVER_ERROR`. Its message is masked unless `NODE_ENV` is `development` or `test`, or `exposeUnexpectedErrors: true`.
 
-So the client's union only has codes it can handle, and `onError` still sees the original error. Declare a thrown error (or return it) to give it a custom code or `data` on the client. There is no `errorFormatter`.
+`onError` still sees the original error. Return a thrown error, or declare it, to make it typed on the client. There is no `errorFormatter`.
 
 ```ts twoslash
 // ---cut-start---
@@ -81,16 +107,82 @@ if (err) {
     NOT_FOUND: (e) => console.log(e.data),
     //                              ^?
     BAD_REQUEST: (e) => console.log(e.data.issues),
-    builtin: (e) => console.log(e.code), // rejected, unavailable, failed, aborted
+    NETWORK_ERROR: () => console.log('offline'),
+    BAD_RESPONSE: (e) => console.log(e.message),
+    unexpected: (e) => console.log(e.code), // crashes, aborts, thrown errors
   });
 }
 ```
 
+### When a procedure adds an error
+
+`post.byId` returns `NOT_FOUND`, and the client's `matchError()` handles it. When the procedure also starts returning `FORBIDDEN`, that `matchError()` stops compiling until it has a `FORBIDDEN` handler:
+
+```ts twoslash
+// @errors: 2345
+// ---cut-start---
+import {
+  createTrpcClient,
+  httpLink,
+  matchError,
+  routerType,
+  safe,
+} from '@trpc12/trpc/client';
+import { error } from '@trpc12/trpc/server';
+import { z } from 'zod';
+import { db, t } from './server.ts';
+declare const url: string;
+// ---cut-end---
+const appRouter = {
+  post: {
+    byId: t.procedure.input(z.object({ id: z.string() })).query((opts) => {
+      const post = db.post.find(opts.input.id);
+      if (!post) {
+        return error({ code: 'NOT_FOUND', data: { id: opts.input.id } });
+      }
+      if (post.author !== opts.ctx.user?.name) {
+        return error({ code: 'FORBIDDEN' });
+      }
+      return post;
+    }),
+  },
+};
+
+// ---cut-start---
+const client = createTrpcClient({
+  router: routerType<typeof appRouter>(),
+  links: [httpLink({ url })],
+});
+// ---cut-end---
+const [, err] = await safe(client.post.byId.query({ id: '1' }));
+if (err) {
+  matchError(err, {
+    NOT_FOUND: (e) => `No post ${e.data.id}`,
+    BAD_REQUEST: (e) => e.data.issues[0]?.message ?? 'Invalid id',
+    NETWORK_ERROR: () => 'You are offline',
+    BAD_RESPONSE: () => 'Try again later',
+    unexpected: (e) => e.message,
+  });
+}
+```
+
+Removing an error makes its handler left over, which is a type error too. Adding a code to `.errors()` works the same. A thrown error changes no type, so the client compiles and the error reaches `unexpected`. [When the links change](../client/errors.md#when-the-links-change) is the same for a link's codes.
+
 See [Errors without try/catch](../client/errors.md) for `safe()`, `matchError()` and the built-in codes.
+
+## Thrown errors
+
+v11 code throws its errors (`throw new TRPCError({ code })`). In v12 that still works, but a thrown error is untyped on the client, so return it instead: `return error({ code })`, or `yield*` it in an Effect. When `NODE_ENV` is `development`, a procedure that throws a `TrpcError` it could return logs a warning, once per procedure and code. Errors with a declared code, from its constructor (`opts.errors.NOT_FOUND()`), a `TrpcError.Tagged` class or `new TrpcError()`, are typed, so they don't warn; a thrown `TrpcError.Tagged` class nothing declares is untyped like any other thrown code. A thrown code that `.errors()` doesn't list always warns in development, since it becomes an `INTERNAL_SERVER_ERROR`.
+
+Turn the warning off for every procedure of a root:
+
+```ts
+const t = initTrpc({ warnThrownErrors: false });
+```
 
 ## Codes and statuses
 
-Any string is a code. The built-in ones (`NOT_FOUND`, `UNAUTHORIZED`, …) have their HTTP status; a custom code is a 400 unless its declaration (`.errors()` or a `TrpcError.Tagged` class) has a `status`. The status is for HTTP: errors don't carry it, and neither do error bodies or socket frames.
+Any string but `unexpected` is a code. The built-in ones (`NOT_FOUND`, `UNAUTHORIZED`, …) have their HTTP status; a custom code is a 400 unless its declaration (`.errors()` or a `TrpcError.Tagged` class) has a `status`. The status is for HTTP: errors don't carry it, and neither do error bodies or socket frames.
 
 ```ts twoslash
 // ---cut-start---
@@ -102,6 +194,17 @@ t.procedure
   .mutation(() => error({ code: 'OUT_OF_STOCK' })); // 409
 
 t.procedure.mutation(() => error({ code: 'OUT_OF_STOCK' })); // 400
+```
+
+`unexpected` is the key [`matchError()`](../client/errors.md#handling-every-error) sends every error without a key of its own to, so a defined error with that code would land in the catch-all. Declaring it in `.errors()`, `error()` or a `TrpcError.Tagged` class is a type error that says so:
+
+```ts twoslash
+// @errors: 2345
+// ---cut-start---
+import { t } from './server.ts';
+import { error } from '@trpc12/trpc/server';
+// ---cut-end---
+t.procedure.query(() => error({ code: 'unexpected' }));
 ```
 
 ## In Effect code

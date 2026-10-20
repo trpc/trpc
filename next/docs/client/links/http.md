@@ -1,5 +1,5 @@
 ---
-title: httpLink
+title: '`httpLink`'
 description: Queries as GET, mutations as POST and subscriptions as SSE, with batching, streamed outputs and files.
 section: Client
 parent: client/links
@@ -30,7 +30,7 @@ const client = createTrpcClient({
 - `maxUrlLength` and `longQuery`: when a query goes with a body (below).
 - `binary`: streamed outputs as binary frames (below).
 - `subscriptions: false`: no SSE, so procedures lose `.subscribe()`, for a link that only carries queries and mutations.
-- `reconnect`: how a dropped subscription reconnects, `{ attempts: 5, delayMs }` by default.
+- `reconnect`: how a dropped subscription reconnects, `{ attempts: 5, delay }` by default. `delay(attempt)` returns the wait before each attempt.
 
 ## Batching
 
@@ -76,3 +76,13 @@ Inputs holding a `File` or `Blob` go alone as `multipart/form-data` ([Files](../
 ## Subscriptions
 
 A subscription is an SSE request. When the connection drops, the link reconnects up to `reconnect.attempts` times and sends the last [`tracked()`](../../subscriptions/overview.md#resuming) event id, so the stream resumes where it stopped. A call made with `{ reconnect: false }` ends with `NETWORK_ERROR` instead.
+
+## Errors
+
+`httpLink` declares the three [link codes](../errors.md#errors-from-the-links), so a call through it can fail with them, and its `matchError()` needs their handlers (`STREAM_INTERRUPTED` only for a call that streams):
+
+- `NETWORK_ERROR`: `fetch` rejected, or a subscription lost its connection and ran out of reconnects.
+- `BAD_RESPONSE`: the response isn't a tRPC one and its status names no code (an HTML page or an empty body sent with `200`), or it doesn't decode. A proxy's `401` or `502` page is an `UNAUTHORIZED` or `BAD_GATEWAY`.
+- `STREAM_INTERRUPTED`: a [streamed output](#streamed-outputs-and-files) or a subscription stopped before its end, after the call resolved. A response cut before its result is a `NETWORK_ERROR`, so a call whose output doesn't stream never gets it, and its `matchError()` has no key for it.
+
+A client over `localLink` has none of them ([Errors from the links](../errors.md#errors-from-the-links) shows both).
