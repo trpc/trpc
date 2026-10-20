@@ -61,11 +61,15 @@ Keys start with the procedure path, so two tRPC APIs with a `post.byId` would sh
 ```ts twoslash
 // ---cut-start---
 import { createTrpcQueryUtils } from '@trpc12/tanstack-query';
-import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import {
+  createTrpcClient,
+  httpStreamLink,
+  routerType,
+} from '@trpc12/trpc/client';
 import type { AppRouter } from './server.ts';
 const billingClient = createTrpcClient({
   router: routerType<AppRouter>(),
-  links: [httpLink({ url: '/billing/trpc' })],
+  links: [httpStreamLink({ url: '/billing/trpc' })],
 });
 declare const id: string;
 // ---cut-end---

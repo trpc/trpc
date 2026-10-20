@@ -6,7 +6,7 @@ order: 7.5
 experiment: byte-streams
 ---
 
-An input of `experimental_byteStream()` is the request body itself. The client passes a `ReadableStream<Uint8Array>`, `httpLink` sends it alone as an `application/octet-stream` body, and the resolver gets an `experimental_ByteStream`: an Effect `Stream<Uint8Array>` that reads the body as the resolver pulls it, so nothing is buffered first.
+An input of `experimental_byteStream()` is the request body itself. The client passes a `ReadableStream<Uint8Array>`, `httpLink` or `httpStreamLink` sends it alone as an `application/octet-stream` body, and the resolver gets an `experimental_ByteStream`: an Effect `Stream<Uint8Array>` that reads the body as the resolver pulls it, so nothing is buffered first.
 
 ```ts twoslash
 // ---cut-start---
@@ -58,7 +58,7 @@ Both failures are in the procedure's error union, so the client can match `PAYLO
 
 ## Streaming back
 
-The output can stream while the body is still arriving: a mutation with `.output(stream(Item))` can send progress for the chunks it has read.
+The output can stream while the body is still arriving: a mutation with `.output(stream(Item))` can send progress for the chunks it has read. Reading a streamed output takes `httpStreamLink`.
 
 ```ts twoslash
 // ---cut-start---
@@ -87,9 +87,9 @@ Node's `fetch` reads the response while it sends the body. Browsers send stream 
 
 ## Links and handlers
 
-- `httpLink` sends the call alone, outside any batch, as a `POST` (queries too). It isn't resumed when the connection drops, and `retryLink` doesn't retry it by default, since the stream was read.
+- `httpLink` and `httpStreamLink` send the call alone, outside any batch, as a `POST` (queries too). It isn't resumed when the connection drops, and `retryLink` doesn't retry it by default, since the stream was read.
 - `wsLink` and the other socket links fail the call with `BAD_REQUEST`. `localLink` and `createRouterClient` pass the stream through as it is.
-- The handler takes an `application/octet-stream` body only for a procedure whose input is `experimental_byteStream()`, and only with the `trpc-version` header that `httpLink` sends, so a page on another site can't post one (`UNSUPPORTED_MEDIA_TYPE` otherwise). Any other input in it fails validation with `BAD_REQUEST`.
+- The handler takes an `application/octet-stream` body only for a procedure whose input is `experimental_byteStream()`, and only with the `trpc-version` header that both HTTP links send, so a page on another site can't post one (`UNSUPPORTED_MEDIA_TYPE` otherwise). Any other input in it fails validation with `BAD_REQUEST`.
 - It streams on Node, Bun, Deno and fetch runtimes. AWS Lambda buffers event bodies, so the stream reads from memory, within Lambda's payload limit. Behind Express, a body `express.raw()` read is replayed; one that another parser read and dropped fails the call with `INTERNAL_SERVER_ERROR`.
 
 `experimental_byteStream()` is an Effect Schema that decodes the `ReadableStream` to a `Stream` and encodes one back, so in-process calls decode it as the handler does.

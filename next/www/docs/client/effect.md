@@ -11,13 +11,13 @@ order: 6
 // ---cut-start---
 import type { AppRouter } from './server.ts';
 // ---cut-end---
-import { httpLink, routerType } from '@trpc12/trpc/client';
-import { createEffectClient } from '@trpc12/trpc/effect';
+import { routerType } from '@trpc12/trpc/client';
+import { createEffectClient, httpStreamLink } from '@trpc12/trpc/effect';
 import { Effect } from 'effect';
 
 const client = createEffectClient({
   router: routerType<AppRouter>(),
-  links: [httpLink({ url: 'http://localhost:3000/trpc' })],
+  links: [httpStreamLink({ url: 'http://localhost:3000/trpc' })],
 });
 
 const program = Effect.gen(function* () {
@@ -26,7 +26,7 @@ const program = Effect.gen(function* () {
 });
 ```
 
-The links are the same as the Promise client's ([Links](./links.md)). For spans around calls, see [Tracing](./tracing.md).
+The links are the same as the Promise client's ([Links](./links.md)). `httpStreamLink` is the Effect HTTP link, so its batching, streams and subscriptions run on the fiber, and `@trpc12/trpc/effect` exports it too. Promise links such as `httpLink` work here as well, as one step the fiber waits on. For spans around calls, see [Tracing](./tracing.md).
 
 ## Errors
 
@@ -35,11 +35,11 @@ A call fails with the errors a Promise client call rejects with: the procedure's
 ```ts twoslash
 // ---cut-start---
 import type { AppRouter } from './server.ts';
-import { httpLink, routerType } from '@trpc12/trpc/client';
-import { createEffectClient } from '@trpc12/trpc/effect';
+import { routerType } from '@trpc12/trpc/client';
+import { createEffectClient, httpStreamLink } from '@trpc12/trpc/effect';
 const client = createEffectClient({
   router: routerType<AppRouter>(),
-  links: [httpLink({ url: 'http://localhost:3000/trpc' })],
+  links: [httpStreamLink({ url: 'http://localhost:3000/trpc' })],
 });
 // ---cut-end---
 import { Effect } from 'effect';
@@ -64,7 +64,7 @@ A subscription is a `Stream` of what the server emits. Ending the stream early, 
 
 ```ts twoslash
 // ---cut-start---
-import { httpLink, routerType } from '@trpc12/trpc/client';
+import { routerType } from '@trpc12/trpc/client';
 import { t } from './server.ts';
 const router = {
   ticks: t.procedure.subscription(async function* () {
@@ -72,12 +72,12 @@ const router = {
   }),
 };
 // ---cut-end---
-import { createEffectClient } from '@trpc12/trpc/effect';
+import { createEffectClient, httpStreamLink } from '@trpc12/trpc/effect';
 import { Effect, Stream } from 'effect';
 
 const client = createEffectClient({
   router: routerType<typeof router>(),
-  links: [httpLink({ url: 'http://localhost:3000/trpc' })],
+  links: [httpStreamLink({ url: 'http://localhost:3000/trpc' })],
 });
 
 const firstThree = client.ticks

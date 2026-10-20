@@ -25,7 +25,7 @@ const page = t.procedure.query(() => ({
 }));
 ```
 
-Over HTTP, `httpLink` reads such outputs as JSONL (or binary frames, [Files](./files.md)); `wsLink` and `localLink` carry them as they are. Every [serializer](./serializers.md) streams deferred values.
+Over HTTP, `httpStreamLink` reads such outputs as JSONL (or binary frames, [Files](./files.md)), and `httpLink` fails them with `BAD_RESPONSE`; `wsLink` and `localLink` carry them as they are. Every [serializer](./serializers.md) streams deferred values.
 
 ## Validating items
 
@@ -51,7 +51,11 @@ const chat = t.procedure
 
 ```ts twoslash
 // ---cut-start---
-import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import {
+  createTrpcClient,
+  httpStreamLink,
+  routerType,
+} from '@trpc12/trpc/client';
 import { stream } from '@trpc12/trpc/server';
 import { z } from 'zod';
 import { t } from './server.ts';
@@ -66,7 +70,7 @@ const chat = t.procedure
   });
 const client = createTrpcClient({
   router: routerType<{ chat: typeof chat }>(),
-  links: [httpLink({ url: 'http://localhost:3000/trpc' })],
+  links: [httpStreamLink({ url: 'http://localhost:3000/trpc' })],
 });
 // ---cut-end---
 const it = await client.chat.mutate(); // AsyncIterable<Token, Summary>
@@ -86,7 +90,7 @@ The call resolves before its stream fails, so the client's iterable carries the 
 // ---cut-start---
 import {
   createTrpcClient,
-  httpLink,
+  httpStreamLink,
   matchError,
   routerType,
   safe,
@@ -106,7 +110,7 @@ const router = {
 };
 const client = createTrpcClient({
   router: routerType<typeof router>(),
-  links: [httpLink({ url: 'http://localhost:3000/trpc' })],
+  links: [httpStreamLink({ url: 'http://localhost:3000/trpc' })],
 });
 // ---cut-end---
 async function showSeats() {
