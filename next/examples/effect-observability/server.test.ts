@@ -2,7 +2,7 @@ import { createServer } from 'node:http';
 import { NodeHttpServer } from '@effect/platform-node';
 import { expect, it } from '@effect/vitest';
 import { Context, Effect, Layer, Queue } from 'effect';
-import { httpLink, routerType } from '@trpc12/trpc/client';
+import { httpStreamLink, routerType } from '@trpc12/trpc/client';
 import { createEffectClient } from '@trpc12/trpc/effect';
 import { TestServer } from '@trpc12/trpc/internal/testing';
 import { type AppRouter, apiOptions, Db, Mailer } from './server.ts';
@@ -33,7 +33,7 @@ const client = (userId?: string) =>
     return createEffectClient({
       router: routerType<AppRouter>(),
       links: [
-        httpLink({
+        httpStreamLink({
           url: testServer.url,
           headers: userId ? { authorization: userId } : {},
         }),

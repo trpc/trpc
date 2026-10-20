@@ -13,7 +13,7 @@ import assert from 'node:assert/strict';
 import {
   createTrpcClient,
   experimental_durableLink,
-  httpLink,
+  httpStreamLink,
   routerType,
 } from '@trpc12/trpc/client';
 import type { AppRouter } from './server.ts';
@@ -23,7 +23,7 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 const connect = (url: string, fetch: typeof globalThis.fetch) =>
   createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [experimental_durableLink(), httpLink({ url, fetch })],
+    links: [experimental_durableLink(), httpStreamLink({ url, fetch })],
   });
 
 /** `res` with its JSON Lines body cut after `lines` lines, like a dropped connection. */

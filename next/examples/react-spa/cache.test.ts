@@ -10,7 +10,7 @@ import { createTrpcQueryUtils } from '@trpc12/tanstack-react-query';
 import {
   createTrpcClient,
   dedupeLink,
-  httpLink,
+  httpStreamLink,
   localLink,
   routerType,
 } from '@trpc12/trpc/client';
@@ -22,14 +22,14 @@ import { serializer } from './src/serializer.ts';
 import { tracker as trackerApi } from './server/api.ts';
 
 // The app's links, with `fetch` calling the API handler in process; the
-// test's helpers then have the same type as the app's, httpLink's errors
+// test's helpers then have the same type as the app's, httpStreamLink's errors
 // included.
 const trpc = createTrpcQueryUtils({
   client: createTrpcClient({
     router: routerType<typeof trackerRouter>(),
     links: [
       dedupeLink(),
-      httpLink({
+      httpStreamLink({
         url: 'http://localhost/trpc',
         batch: true,
         serializer,

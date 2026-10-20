@@ -9,7 +9,7 @@ import {
 import {
   createTrpcClient,
   dedupeLink,
-  httpLink,
+  httpStreamLink,
   routerType,
 } from '@trpc12/trpc/client';
 import { useState, type ReactNode } from 'react';
@@ -23,13 +23,18 @@ export const makeTrackerClient = () =>
   createTrpcClient({
     router: routerType<TrackerRouter>(),
     // Two components asking for the same query at once share one request.
-    links: [dedupeLink(), httpLink({ url: '/trpc', batch: true, serializer })],
+    links: [
+      dedupeLink(),
+      httpStreamLink({ url: '/trpc', batch: true, serializer }),
+    ],
   });
 
 const makeDirectoryClient = () =>
   createTrpcClient({
     router: routerType<DirectoryRouter>(),
-    links: [httpLink({ url: '/directory/trpc', batch: true, serializer })],
+    links: [
+      httpStreamLink({ url: '/directory/trpc', batch: true, serializer }),
+    ],
   });
 
 export const [TrackerProvider, useTracker] =
