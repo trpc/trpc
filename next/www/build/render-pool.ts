@@ -120,8 +120,10 @@ export function makeRenderPool(
     child.on('message', (reply: RenderReply) => {
       const task = renderer.task;
       renderer.task = undefined;
-      task?.done(reply);
+      // Before `done`, which can start the page's next render at once:
+      // that one queues, rather than finding this process idle.
       next(renderer);
+      task?.done(reply);
     });
     child.on('exit', (code, signal) => {
       renderers.delete(renderer);
@@ -146,6 +148,9 @@ export function makeRenderPool(
   // An idle process doesn't keep the build alive, so one that fails before
   // `close` still exits.
   const next = (renderer: Renderer) => {
+    if (renderer.task) {
+      return;
+    }
     const same = queue.findIndex((task) => task.apps === renderer.apps);
     const [task] = queue.splice(same === -1 ? 0 : same, 1);
     if (!task) {

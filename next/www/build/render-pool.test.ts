@@ -90,6 +90,42 @@ describe('makeRenderPool', () => {
     }).pipe(Effect.scoped, Effect.provide(NodeServices.layer)),
   );
 
+  it.effect(
+    'gives each page its own output when a page renders in parts, one after another',
+    () =>
+      Effect.gen(function* () {
+        const made = yield* dirs;
+        const renderers = yield* Effect.acquireRelease(
+          Effect.sync(() => makeRenderPool(1)),
+          (one) => Effect.promise(one.close),
+        );
+        const renderParts = (name: string) =>
+          Effect.forEach(['one', 'two', 'three'], (part) =>
+            Effect.map(
+              renderers.render(
+                `${name} ${part}`,
+                {
+                  basePath: '/docs',
+                  samplesDir: made.samplesDir,
+                  slug: name,
+                  sourceUrl: 'https://github.com/trpc/trpc/blob/v12/next',
+                },
+                undefined,
+              ),
+              (output) => output.rendered.html,
+            ),
+          );
+        const pages = yield* Effect.all([renderParts('a'), renderParts('b')], {
+          concurrency: 'unbounded',
+        });
+        expect(pages).toEqual([
+          ['<p>a one</p>', '<p>a two</p>', '<p>a three</p>'],
+          ['<p>b one</p>', '<p>b two</p>', '<p>b three</p>'],
+        ]);
+      }).pipe(Effect.scoped, Effect.provide(NodeServices.layer)),
+    30_000,
+  );
+
   it.effect("fails with the page's error", () =>
     Effect.gen(function* () {
       const made = yield* dirs;
