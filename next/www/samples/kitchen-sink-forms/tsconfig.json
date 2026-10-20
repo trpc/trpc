@@ -13,5 +13,5 @@
     "allowImportingTsExtensions": true,
     "types": []
   },
-  "include": ["src"]
+  "include": ["src", "docs"]
 }

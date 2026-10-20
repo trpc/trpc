@@ -1,3 +1,4 @@
+import { Badge } from '@shared/ui/components/badge';
 import { Skeleton } from '@shared/ui/components/skeleton';
 import type { QueryClient } from '@tanstack/react-query';
 import {
@@ -74,6 +75,15 @@ function ProfilePage(): ReactNode {
           </span>
         </div>
       </div>
+      {profile.topics.length > 0 ? (
+        <ul aria-label="Topics" className="flex flex-wrap gap-1.5">
+          {profile.topics.map((topic) => (
+            <li key={topic}>
+              <Badge variant="secondary">{topic}</Badge>
+            </li>
+          ))}
+        </ul>
+      ) : null}
       <p className="text-sm">{profile.bio}</p>
       <Suspense fallback={<Skeleton className="h-16 w-full" />}>
         <Changes />

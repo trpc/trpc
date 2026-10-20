@@ -1,15 +1,15 @@
-import { createFetchHandler, error, initTrpc } from '@trpc12/trpc/server';
-import type { z } from 'zod';
+import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
+import { z } from 'zod';
 
-import { profileSchema } from './schema.ts';
+import { type ProfileOutput, profileSchema } from './schema.ts';
 
-interface Profile extends z.output<typeof profileSchema> {
+interface Profile extends ProfileOutput {
   readonly updatedAt: string;
 }
 
 interface Change {
   readonly at: string;
-  readonly field: keyof z.output<typeof profileSchema>;
+  readonly field: keyof ProfileOutput;
   readonly from: string;
   readonly to: string;
 }
@@ -21,13 +21,20 @@ const db = {
     name: 'Ada Lovelace',
     username: 'ada',
     email: 'ada@example.com',
+    topics: ['math', 'engines'],
     bio: 'Wrote the first program.',
     updatedAt: new Date().toISOString(),
   } satisfies Profile as Profile,
   changes: [] as Array<Change>,
-  /** Usernames other people have. Only the server knows them. */
-  taken: new Set(['admin', 'katt', 'trpc']),
+  /** Usernames other people have. */
+  others: new Set(['admin', 'katt', 'trpc']),
 };
+
+const shown = (value: string | ReadonlyArray<string>) =>
+  typeof value === 'string' ? value : value.join(', ');
+
+const isTaken = (username: string) =>
+  username !== db.profile.username && db.others.has(username);
 
 const t = initTrpc();
 
@@ -36,32 +43,23 @@ export const appRouter = {
   profile: {
     get: t.procedure.query(() => db.profile),
     changes: t.procedure.query(() => db.changes.slice(0, 5)),
+    /** For the form's own check, before it sends the profile. */
+    isTaken: t.procedure
+      .input(z.object({ username: z.string() }))
+      .query((opts) => isTaken(opts.input.username)),
     update: t.procedure
-      // The same schema as the form's: a request that skips the browser's
-      // check gets a `BAD_REQUEST` with the schema's issues.
-      .input(profileSchema)
+      // The form's schema, with the database's lookup. A request that
+      // skipped the browser's check gets a `BAD_REQUEST` with its issues.
+      .input(profileSchema(isTaken))
       .mutation((opts) => {
+        // The schema's output: trimmed, lowercased, topics as an array.
         const next = opts.input;
-        if (
-          next.username !== db.profile.username &&
-          db.taken.has(next.username)
-        ) {
-          // Returned, not thrown: the client's error type includes it.
-          return error({
-            code: 'CONFLICT',
-            message: `@${next.username} is taken`,
-            data: { field: 'username' as const },
-          });
-        }
         const at = new Date().toISOString();
-        for (const field of ['name', 'username', 'email', 'bio'] as const) {
-          if (next[field] !== db.profile[field]) {
-            db.changes.unshift({
-              at,
-              field,
-              from: db.profile[field],
-              to: next[field],
-            });
+        for (const field of Object.keys(next) as Array<keyof ProfileOutput>) {
+          const from = shown(db.profile[field]);
+          const to = shown(next[field]);
+          if (from !== to) {
+            db.changes.unshift({ at, field, from, to });
           }
         }
         db.profile = { ...next, updatedAt: at };

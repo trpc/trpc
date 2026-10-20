@@ -16,7 +16,7 @@ const forms: DemoDefinition = {
     'trpc.ts',
     'router.tsx',
   ]),
-  hint: 'Save with a short username, or admin, or with the browser check off; then edit the code and watch the app restart.',
+  hint: 'Save admin as the username, with the browser check on and then off; then edit the code and watch the app restart.',
   id: 'forms',
   open: 'edit-profile.tsx',
   server: 'server.ts',

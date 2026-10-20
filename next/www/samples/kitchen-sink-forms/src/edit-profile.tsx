@@ -35,8 +35,13 @@ export const editProfileRoute = createRoute({
 
 const fields = [
   { name: 'name', label: 'Name' },
-  { name: 'username', label: 'Username', description: 'Try admin: taken.' },
+  {
+    name: 'username',
+    label: 'Username',
+    description: 'Try admin: someone has it.',
+  },
   { name: 'email', label: 'Email' },
+  { name: 'topics', label: 'Topics', description: 'Separated by commas.' },
 ] as const;
 
 function EditProfile(): ReactNode {
@@ -46,16 +51,33 @@ function EditProfile(): ReactNode {
   // Off sends the form as it is, to see the server's checks.
   const [checkInBrowser, setCheckInBrowser] = useState(true);
   // #region form
-  const resolver = standardSchemaResolver(profileSchema);
+  // The browser's lookup asks the server, through the query cache: a
+  // username it checked once isn't asked about again.
+  const [schema] = useState(() =>
+    profileSchema((username) =>
+      ctx.queryClient.query({
+        ...ctx.trpc.profile.isTaken.queryOptions({ input: { username } }),
+        staleTime: 30_000,
+      }),
+    ),
+  );
+  // `raw`: submitting hands over what the form holds, the schema's input,
+  // and the server transforms it. Without it, `values` would be the output
+  // (`topics` an array), which `mutate()` doesn't take.
+  const resolver = standardSchemaResolver(schema, undefined, { raw: true });
   const form = useForm<ProfileInput>({
     resolver: (values, context, options) =>
       checkInBrowser
         ? resolver(values, context, options)
         : { values, errors: {} },
+    // After a failed submit, fields check again on blur, not every key.
+    reValidateMode: 'onBlur',
     defaultValues: {
       name: profile.name,
       username: profile.username,
       email: profile.email,
+      // The output back into the input: what the field shows.
+      topics: profile.topics.join(', '),
       bio: profile.bio,
     },
   });
@@ -65,7 +87,8 @@ function EditProfile(): ReactNode {
     if (err) {
       // One handler per way the call can fail, inferred from the server.
       matchError(err, {
-        // The schema's issues, with paths typed from its input.
+        // The schema's issues, the server's username lookup's too, with
+        // paths typed from its input.
         BAD_REQUEST: (e) => {
           for (const issue of e.data.issues) {
             form.setError(issue.path[0] ?? 'root.server', {
@@ -73,8 +96,6 @@ function EditProfile(): ReactNode {
             });
           }
         },
-        // The resolver's returned `error()`, with its `data`.
-        CONFLICT: (e) => form.setError(e.data.field, { message: e.message }),
         NETWORK_ERROR: () =>
           form.setError('root.server', {
             message: "Couldn't reach the server. Try again.",

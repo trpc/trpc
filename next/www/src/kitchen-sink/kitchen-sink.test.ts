@@ -33,8 +33,12 @@ const ada = {
   bio: 'Wrote the first program.',
   email: 'ada@example.com',
   name: 'Ada Lovelace',
+  topics: 'math, engines',
   username: 'ada',
 } satisfies ProfileInput;
+
+/** `ada` as the server keeps it, after the schema's transforms. */
+const stored = { ...ada, topics: ['math', 'engines'] };
 
 describe('the forms demo', () => {
   it('is the one demo, with every file of its sample in the editor', () => {
@@ -77,16 +81,58 @@ describe('the forms demo', () => {
     }
   });
 
-  it('fails with CONFLICT for a taken username', async () => {
+  it('sends the form as typed, and the procedure gets it transformed', async () => {
+    const demo = await formsApp();
+    const saved = await demo.client.profile.update.mutate({
+      ...ada,
+      topics: 'TRPC, effect,, ',
+      username: ' Grace ',
+    });
+    expect(saved).toMatchObject({
+      topics: ['trpc', 'effect'],
+      username: 'grace',
+    });
+    expect(await demo.client.profile.changes.query()).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          field: 'topics',
+          from: 'math, engines',
+          to: 'trpc, effect',
+        }),
+      ]),
+    );
+  });
+
+  it("fails on a taken username with the refine's issue, on its field", async () => {
+    const demo = await formsApp();
+    expect(await demo.client.profile.isTaken.query({ username: 'admin' })).toBe(
+      true,
+    );
+    expect(await demo.client.profile.isTaken.query({ username: 'ada' })).toBe(
+      false,
+    );
+    const [, err] = await safe(
+      demo.client.profile.update.mutate({ ...ada, username: ' Admin ' }),
+    );
+    expect(err?.code).toBe('BAD_REQUEST');
+    if (err?.code === 'BAD_REQUEST' && err.defined) {
+      expect(
+        err.data.issues.map((issue) => [issue.path, issue.message]),
+      ).toEqual([[['username'], 'Someone has this username']]);
+    }
+  });
+
+  it("doesn't look up a username that isn't one", async () => {
     const demo = await formsApp();
     const [, err] = await safe(
-      demo.client.profile.update.mutate({ ...ada, username: 'admin' }),
+      demo.client.profile.update.mutate({ ...ada, username: 'a' }),
     );
-    expect(err).toMatchObject({
-      code: 'CONFLICT',
-      data: { field: 'username' },
-      message: '@admin is taken',
-    });
+    expect(err?.code).toBe('BAD_REQUEST');
+    if (err?.code === 'BAD_REQUEST' && err.defined) {
+      expect(err.data.issues.map((issue) => issue.message)).toEqual([
+        '3 to 20 letters, digits or _',
+      ]);
+    }
   });
 
   it('fails with NETWORK_ERROR when the network drops a request', async () => {
@@ -95,14 +141,14 @@ describe('the forms demo', () => {
     const [, err] = await safe(demo.client.profile.get.query());
     expect(err?.code).toBe('NETWORK_ERROR');
     expect(demo.network.requests[0]?.outcome).toBe('failed');
-    expect(await demo.client.profile.get.query()).toMatchObject(ada);
+    expect(await demo.client.profile.get.query()).toMatchObject(stored);
   });
 
   it("starts each run with the server's seed data", async () => {
     const first = await formsApp();
     await first.client.profile.update.mutate({ ...ada, name: 'Grace' });
     const second = await formsApp();
-    expect(await second.client.profile.get.query()).toMatchObject(ada);
+    expect(await second.client.profile.get.query()).toMatchObject(stored);
   });
 
   it("loads the edit page's profile in its loader", async () => {
