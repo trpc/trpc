@@ -389,6 +389,19 @@ describe('resolveLink', () => {
     });
   });
 
+  it('resolves from where contentPath puts the docs folder', () => {
+    expect(
+      resolveLink('server/files', '../../../examples/a/README.md', 'www/docs'),
+    ).toEqual({ kind: 'source', path: 'examples/a/README.md' });
+    expect(
+      resolveLink('client/links', '../server/router.md#lazy', 'www/docs'),
+    ).toEqual({ kind: 'doc', link: { hash: 'lazy', slug: 'server/router' } });
+    expect(resolveLink('a', '../README.md', 'www/docs')).toEqual({
+      kind: 'source',
+      path: 'www/README.md',
+    });
+  });
+
   it('leaves external links and anchors alone', () => {
     expect(resolveLink('a', 'https://example.com')).toEqual({ kind: 'other' });
     expect(resolveLink('a', 'mailto:a@b.c')).toEqual({ kind: 'other' });

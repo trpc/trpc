@@ -159,10 +159,15 @@ export type ResolvedLink =
  * Links are written as relative paths between the `.md` files
  * (`../client/links.md#batching`), so they work on GitHub too. A link to a
  * page points at `<basePath>/<slug>`, and a link out of the docs folder (an
- * example, a design note) points at the file on GitHub. A path from `/` is
- * a page of the site, as written.
+ * example, a design note) points at the file on GitHub, by its path from
+ * where `contentPath` (the folder's path there) puts the folder. A path from
+ * `/` is a page of the site, as written.
  */
-export function resolveLink(fromSlug: string, url: string): ResolvedLink {
+export function resolveLink(
+  fromSlug: string,
+  url: string,
+  contentPath = 'docs',
+): ResolvedLink {
   if (
     /^[a-z][a-z\d+.-]*:/i.test(url) ||
     url.startsWith('#') ||
@@ -170,26 +175,32 @@ export function resolveLink(fromSlug: string, url: string): ResolvedLink {
   ) {
     return { kind: 'other' };
   }
-  const base = new URL(`file:///docs/${fromSlug}.md`);
+  const folder = `/${contentPath}/`;
+  const base = new URL(`file://${folder}${fromSlug}.md`);
   const target = new URL(url, base);
   const hash = target.hash
     ? decodeURIComponent(target.hash.slice(1))
     : undefined;
   const pathname = decodeURIComponent(target.pathname);
-  const page = /^\/docs\/(.+)\.md$/.exec(pathname);
-  if (page?.[1]) {
-    return { kind: 'doc', link: { hash, slug: page[1] } };
+  const slug = pathname.startsWith(folder)
+    ? /^(.+)\.md$/.exec(pathname.slice(folder.length))?.[1]
+    : undefined;
+  if (slug !== undefined) {
+    return { kind: 'doc', link: { hash, slug } };
   }
   return { kind: 'source', path: `${pathname.slice(1)}${target.hash}` };
 }
 
+/** The options a page's links resolve with. */
+type LinkOptions = 'basePath' | 'contentPath' | 'slug' | 'sourceUrl';
+
 function remarkLinks(
-  options: Pick<RenderOptions, 'basePath' | 'slug' | 'sourceUrl'>,
+  options: Pick<RenderOptions, LinkOptions>,
   links: Array<DocLink>,
 ) {
   return () => (tree: MdastRoot) => {
     visit(tree, 'link', (node: Link) => {
-      const resolved = resolveLink(options.slug, node.url);
+      const resolved = resolveLink(options.slug, node.url, options.contentPath);
       if (resolved.kind === 'doc') {
         links.push(resolved.link);
         node.url = `${options.basePath}/${resolved.link.slug}${resolved.link.hash ? `#${resolved.link.hash}` : ''}`;
@@ -810,13 +821,15 @@ export interface RenderOptions {
   readonly slug: string;
   /** Where the files around the docs folder are browsable, for links to them. */
   readonly sourceUrl: string;
+  /** The docs folder's path under `sourceUrl` (`www/docs`), which links out of it resolve from: `docs` unless named. */
+  readonly contentPath?: string | undefined;
   /** Where compiled blocks are kept between renders and builds. */
   readonly twoslashCache?: TwoslashCache | undefined;
 }
 
 /** Markdown to hast, up to highlighting the code blocks. */
 function parsing(
-  options: Pick<RenderOptions, 'basePath' | 'slug' | 'sourceUrl'>,
+  options: Pick<RenderOptions, LinkOptions>,
   headings: Array<DocHeading>,
   anchors: Array<string>,
   links: Array<DocLink>,

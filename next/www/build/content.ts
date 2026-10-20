@@ -49,6 +49,8 @@ export interface ContentOptions extends PageDirs {
   readonly siteUrl: string;
   /** Where the files around `contentDir` are browsable, for links to them. */
   readonly sourceUrl: string;
+  /** `contentDir`'s path under `sourceUrl` (`www/docs`), which links out of it resolve from: `docs` unless named. */
+  readonly contentPath?: string | undefined;
   /** What the project is, one line, for `llms.txt`. */
   readonly summary: string;
   /**
@@ -417,6 +419,7 @@ export function docsContent(options: ContentOptions): Plugin {
       inlineApp: options.inlineApp,
       samplesDir,
       slug: source.slug,
+      contentPath: options.contentPath,
       sourceUrl: options.sourceUrl,
       twoslashCache,
     }).pipe(
@@ -462,6 +465,7 @@ export function docsContent(options: ContentOptions): Plugin {
       basePath,
       samplesDir,
       slug: 'index',
+      contentPath: options.contentPath,
       sourceUrl: options.sourceUrl,
       twoslashCache,
     }).pipe(
@@ -486,6 +490,7 @@ export function docsContent(options: ContentOptions): Plugin {
       inlineApp: options.inlineApp,
       samplesDir,
       slug: 'index',
+      contentPath: options.contentPath,
       sourceUrl: options.sourceUrl,
       twoslashCache,
     }).pipe(
@@ -596,7 +601,7 @@ export function docsContent(options: ContentOptions): Plugin {
           : '';
       })
       .replaceAll(/\]\(([^)\s]+)\)/g, (link, url: string) => {
-        const resolved = resolveLink(source.slug, url);
+        const resolved = resolveLink(source.slug, url, options.contentPath);
         if (resolved.kind === 'doc') {
           return `](${options.siteUrl}${basePath}/${resolved.link.slug}.md${resolved.link.hash ? `#${resolved.link.hash}` : ''})`;
         }
