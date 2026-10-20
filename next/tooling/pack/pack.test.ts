@@ -5,6 +5,7 @@ import { expect, test } from 'vite-plus/test';
 import {
   checkExports,
   importedPackages,
+  importEffectBySubpath,
   keepEntryPointImports,
   type PackageJson,
 } from './pack.ts';
@@ -100,6 +101,61 @@ test('keepEntryPointImports puts back the empty type imports the build drops', (
     built,
   );
 });
+
+test('importEffectBySubpath imports each Effect module from its own file', () => {
+  const declarations = [
+    '/**',
+    " * import { Effect } from 'effect';",
+    ' */',
+    'import { Duration, Effect as E, pipe } from "effect";',
+    'import type { Context, type Layer } from "effect";',
+    'import {',
+    '  Stream,',
+    '  type Scope,',
+    '} from "effect";',
+    'import { HttpServerRequest } from "effect/http";',
+    'export declare const d: Duration.Duration;',
+  ].join('\n');
+  expect(importEffectBySubpath(declarations)).toBe(
+    [
+      '/**',
+      " * import { Effect } from 'effect';",
+      ' */',
+      'import * as Duration from "effect/Duration";',
+      'import * as E from "effect/Effect";',
+      'import { pipe } from "effect/Function";',
+      'import type * as Context from "effect/Context";',
+      'import type * as Layer from "effect/Layer";',
+      'import * as Stream from "effect/Stream";',
+      'import type * as Scope from "effect/Scope";',
+      'import { HttpServerRequest } from "effect/http";',
+      'export declare const d: Duration.Duration;',
+    ].join('\n'),
+  );
+});
+
+test.each(packages.map((opts) => [opts.name, opts.dir] as const))(
+  '%s declarations import Effect by subpath, not its root',
+  async (_name, dir) => {
+    const rooted = await run(
+      Effect.gen(function* () {
+        const fs = yield* FileSystem.FileSystem;
+        const path = yield* Path.Path;
+        const dist = path.join(dir, 'dist');
+        const files = (yield* fs.readDirectory(dist, {
+          recursive: true,
+        })).filter((file) => file.endsWith('.d.ts'));
+        const sources = yield* Effect.forEach(files, (file) =>
+          fs.readFileString(path.join(dist, file)),
+        );
+        return files.filter((_, i) =>
+          /^(?:import|export)\b[^;]*\bfrom ["']effect["']/m.test(sources[i]!),
+        );
+      }),
+    );
+    expect(rooted).toEqual([]);
+  },
+);
 
 test.each(packages.map((opts) => [opts.name, opts.dir, opts.pkg] as const))(
   '%s imports only its dependencies and peers',

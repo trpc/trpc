@@ -105,6 +105,51 @@ export const keepEntryPointImports = (
     : `${missing.join('\n')}\n${declarations}`;
 };
 
+const effectRootImport = /^import (type )?\{([^}]*)\} from ["']effect["'];$/gm;
+
+/** The root `effect` exports that aren't a module namespace. */
+const effectFunctionExports = new Set([
+  'absurd',
+  'cast',
+  'flow',
+  'hole',
+  'identity',
+  'pipe',
+]);
+
+/**
+ * Rewrites built declarations' imports of the `effect` root to one import per
+ * module (`effect/Duration`). The root re-exports all of Effect's modules, so
+ * importing it makes every project that type-checks against tRPC parse each
+ * of their declarations; by subpath it parses only the modules tRPC's declarations use.
+ */
+export const importEffectBySubpath = (declarations: string): string =>
+  declarations.replace(effectRootImport, (_, typeOnly, list: string) => {
+    const imports: string[] = [];
+    const functions: string[] = [];
+    for (const raw of list.split(',')) {
+      const specifier = raw.trim();
+      if (specifier === '') continue;
+      const isType = typeOnly !== undefined || specifier.startsWith('type ');
+      const [name, alias = name] = specifier
+        .replace(/^type\s+/, '')
+        .split(/\s+as\s+/) as [string, string?];
+      if (effectFunctionExports.has(name)) {
+        functions.push(specifier);
+        continue;
+      }
+      imports.push(
+        `import ${isType ? 'type ' : ''}* as ${alias} from "effect/${name}";`,
+      );
+    }
+    if (functions.length > 0) {
+      imports.push(
+        `import ${typeOnly ?? ''}{ ${functions.join(', ')} } from "effect/Function";`,
+      );
+    }
+    return imports.join('\n');
+  });
+
 const pack = (extraArgs: ReadonlyArray<string>) =>
   Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem;
@@ -145,6 +190,16 @@ const pack = (extraArgs: ReadonlyArray<string>) =>
         declarations,
       );
       if (kept !== declarations) yield* fs.writeFileString(built, kept);
+    }
+    const declarationFiles = (yield* fs.readDirectory('dist', {
+      recursive: true,
+    })).filter((file) => file.endsWith('.d.ts'));
+    for (const file of declarationFiles) {
+      const declarations = yield* fs.readFileString(`dist/${file}`);
+      const rewritten = importEffectBySubpath(declarations);
+      if (rewritten !== declarations) {
+        yield* fs.writeFileString(`dist/${file}`, rewritten);
+      }
     }
   });
 
