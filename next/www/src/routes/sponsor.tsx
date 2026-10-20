@@ -411,7 +411,7 @@ function Placements() {
         ))}
         <a
           className="flex h-14 items-center justify-center rounded-lg border border-dashed text-sm font-medium text-muted-foreground transition-colors hover:border-brand hover:text-foreground"
-          href={sponsorTierUrl(silverTierId)}
+          href={sponsorUrl}
         >
           Your logo here
         </a>
