@@ -508,42 +508,6 @@ test('lifecycle helpers see an aborted call as CLIENT_CLOSED_REQUEST, and a thro
 
 test("lifecycle helpers are Promise middleware when called, and their callbacks' next() is", async () => {
   const outcomes: unknown[] = [];
-  const helpers = [
-    onStart(() => void outcomes.push('start')),
-    onSuccess((data) => void outcomes.push(`success ${String(data)}`)),
-    onError((err) => void outcomes.push(`error ${err.code}`)),
-    onFinish((result) => void outcomes.push(result)),
-  ];
-  const conflict = new TrpcError.Conflict();
-  for (const result of [
-    { ok: true as const, data: 1 },
-    { ok: false as const, error: conflict },
-  ]) {
-    for (const helper of helpers) {
-      expect(
-        await helper({
-          ctx: {},
-          input: undefined,
-          meta: {},
-          path: 'p',
-          type: 'query',
-          signal: new AbortController().signal,
-          response: { headers: new Headers(), status: undefined },
-          next: () => Promise.resolve(result),
-        }),
-      ).toBe(result);
-    }
-  }
-  expect(outcomes).toEqual([
-    'start',
-    'success 1',
-    { ok: true, data: 1 },
-    'start',
-    'error CONFLICT',
-    { ok: false, error: conflict },
-  ]);
-  outcomes.length = 0;
-
   const seen: unknown[] = [];
   const helpers = [
     onStart(() => void seen.push('start')),
