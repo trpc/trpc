@@ -18,8 +18,8 @@ links:
     label: error-tags
     url: ../decisions/error-tags.md
   - kind: decision
-    label: error-data-form
-    url: ../decisions/error-data-form.md
+    label: validation-link-decoded-types
+    url: ../decisions/validation-link-decoded-types.md
   - kind: code
     label: experimental_validationLink
     url: ../../packages/trpc/src/client/links/validation.ts
@@ -221,7 +221,7 @@ if (err?.code === 'POST_NOT_FOUND') {
 
 ## Details
 
-- Under A the types already follow the wire: `output: 'json'` declares `DecodedJsonForm`, whose `errorData` types errors' `data` as plain JSON ([error-data-form](../decisions/error-data-form.md)). B and C would drop `errorData`.
+- Under A the types already follow the wire: `output: 'json'` types only the results it decodes as the schemas' types, and errors' `data` as plain JSON ([validation-link-decoded-types](../decisions/validation-link-decoded-types.md)). B and C would type declared errors' `data` decoded as well.
 - Undeclared errors (`UndeclaredError`, a thrown custom code from a procedure without `.errors()`) have no schema, so no option can check their `data`.
 - `experimental_validationLink`'s own output mismatch is `BAD_RESPONSE`, with the issues on `cause.issues` ([closed-client-errors](../decisions/closed-client-errors.md)); B would use the same for an error's `data`.
 - `offline` in the examples is the object of link-code handlers (`NETWORK_ERROR`, `BAD_RESPONSE`) the client errors docs spread into each `matchError()`.
