@@ -107,6 +107,11 @@ Pages marked (experimental) belong to an experiment, unlisted on the site until 
 - [Better Auth](./integrations/better-auth.md) (experimental): Read the Better Auth session in a middleware and type `ctx.user` with its user.
 - [NestJS](./integrations/nestjs.md) (experimental): Serve a contract from Nest controllers with `@trpc12/experimental-nest`.
 
+## Kitchen sink (experimental)
+
+- [Kitchen sink](./kitchen-sink/overview.md): Small apps to edit and run on the page, each beside how it works.
+- [Forms with react-hook-form](./kitchen-sink/forms.md): One zod schema checks a react-hook-form form in the browser and the procedure's input on the server, and `matchError()` puts each server error on its field.
+
 ## Migrations
 
 - [Migrating from v11](./migrations/from-v11.md): Serve v11 clients from the new router with `createV11Handler`, run the codemod, then move the clients.

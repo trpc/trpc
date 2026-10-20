@@ -54,6 +54,11 @@ export const experiments = {
       'Procedure inputs that are the request body, a `ReadableStream<Uint8Array>` read as an Effect Stream.',
     label: 'Byte stream inputs',
   },
+  'kitchen-sink': {
+    description:
+      'Small apps to edit and run on the page, beside how they work: a react-hook-form form first.',
+    label: 'Kitchen sink',
+  },
 } as const satisfies Record<
   string,
   { readonly description: string; readonly label: string }

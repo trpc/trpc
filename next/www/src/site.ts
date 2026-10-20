@@ -103,5 +103,6 @@ export const sections = [
   'Contracts and OpenAPI',
   'Adapters',
   'Integrations',
+  'Kitchen sink',
   'Migrations',
 ] as const;
