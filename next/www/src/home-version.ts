@@ -95,11 +95,12 @@ const docsPaths = {
 export function homeVersionAt(
   pathname: string,
   search: HomeSearch,
+  shown: ReadonlyArray<HomeVersion> = homeVersions,
 ): HomeVersion | undefined {
   if (pathname === '/') {
     return homeVersionOf(search);
   }
-  return homeVersions.find(
+  return shown.find(
     (version) =>
       pathname === docsPaths[version] ||
       pathname.startsWith(`${docsPaths[version]}/`),
@@ -107,9 +108,12 @@ export function homeVersionAt(
 }
 
 /** Stores `version` for the next visit to `/`; the host's default clears it. */
-export function rememberHomeVersion(version: HomeVersion) {
+export function rememberHomeVersion(
+  version: HomeVersion,
+  shown: ReadonlyArray<HomeVersion> = homeVersions,
+) {
   try {
-    if (version === hostHomeVersion(location.hostname)) {
+    if (version === hostHomeVersion(location.hostname, shown)) {
       localStorage.removeItem(storageKey);
     } else {
       localStorage.setItem(storageKey, version);

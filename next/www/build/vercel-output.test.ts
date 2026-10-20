@@ -3,7 +3,7 @@ import { describe, expect, it } from '@effect/vitest';
 import { fileURLToPath } from 'node:url';
 import { Effect, FileSystem, Path } from 'effect';
 
-import { hiddenPaths, site } from '../src/site.ts';
+import { hiddenPaths, llmsTxtPath, site, v12 } from '../src/site.ts';
 import { onDemandFunction } from './on-demand.ts';
 import { siteTextFiles } from './site-files.ts';
 import {
@@ -30,6 +30,12 @@ const llmsTxt = [
   '',
 ].join('\n');
 
+const hiddenMeta = '<meta name="robots" content="noindex, nofollow">';
+/** The v12 docs pages: hidden at trpc.io (`v12.hidden`). */
+const v12Page = v12.hidden ? hiddenMeta : '';
+/** Where the build writes v12's llms.txt, which moves when it's hidden. */
+const v12LlmsFile = llmsTxtPath('v12').slice(1);
+
 /** A prerendered site in a temp dir, removed when the test ends. */
 const setup = Effect.fn('setup')(function* (
   llms: string,
@@ -51,18 +57,17 @@ const setup = Effect.fn('setup')(function* (
     'blog/index.html': '',
     'favicon.ico': '',
     'v12/docs/client/links.md': '',
-    'v12/docs/client/links/index.html': '',
+    'v12/docs/client/links/index.html': v12Page,
     'v12/docs/openapi/routes.md': '',
-    'v12/docs/openapi/routes/index.html': '',
+    'v12/docs/openapi/routes/index.html': v12Page,
     'index.html': '',
     'index.md': '',
-    'llms.txt': llms,
+    [v12LlmsFile]: llms,
     'logo.svg': '',
     'docs/server/routers/index.html': '<h2 id="nesting">Nesting</h2>',
-    'robots.txt': 'User-agent: *\nDisallow: /v12/decisions\n',
+    'robots.txt': siteTextFiles().get('/robots.txt')?.source ?? '',
     'sponsor/index.html': '',
-    'v12/decisions/index.html':
-      '<meta name="robots" content="noindex, nofollow">',
+    'v12/decisions/index.html': hiddenMeta,
   };
   for (const [file, contents] of Object.entries(files)) {
     const target = path.join(root, 'dist/client', file);
@@ -206,7 +211,7 @@ describe('writeVercelOutput', () => {
           path: 'v12/docs/openapi/routes',
         },
         'index.md': { contentType: 'text/markdown; charset=utf-8' },
-        'llms.txt': { contentType: 'text/plain; charset=utf-8' },
+        [v12LlmsFile]: { contentType: 'text/plain; charset=utf-8' },
         'robots.txt': { contentType: 'text/plain; charset=utf-8' },
         'sponsor/index.html': {
           contentType: 'text/html; charset=utf-8',

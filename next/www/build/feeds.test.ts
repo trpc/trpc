@@ -1,6 +1,7 @@
 import { describe, expect, it } from '@effect/vitest';
 
 import type { PostMeta } from '../src/content/types.ts';
+import { site } from '../src/site.ts';
 import { atomFeed, rssFeed } from './feeds.ts';
 
 const posts: ReadonlyArray<PostMeta> = [
@@ -26,7 +27,7 @@ describe('rssFeed', () => {
   it('lists every post at its trpc.io URL, escaped, with its date and authors', () => {
     const rss = rssFeed(posts);
     expect(rss).toContain(
-      '<atom:link href="https://v12.trpc.io/blog/rss.xml" rel="self" type="application/rss+xml"/>',
+      `<atom:link href="${site.url}/blog/rss.xml" rel="self" type="application/rss+xml"/>`,
     );
     expect(rss).toContain('<title>Announcing &quot;tRPC&quot; v11</title>');
     expect(rss).toContain(
@@ -52,7 +53,7 @@ describe('atomFeed', () => {
     expect(atom).toContain('<feed xmlns="http://www.w3.org/2005/Atom">');
     expect(atom).toContain('<updated>2025-03-21T00:00:00.000Z</updated>');
     expect(atom).toContain(
-      '<link href="https://v12.trpc.io/blog/atom.xml" rel="self"/>',
+      `<link href="${site.url}/blog/atom.xml" rel="self"/>`,
     );
     expect(atom).toContain('<id>https://trpc.io/blog/announcing-trpc-10</id>');
     expect(atom).toContain(
