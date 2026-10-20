@@ -1,6 +1,5 @@
 import type { TRPC_ERROR_CODE_KEY } from '../rpc/codes';
 import { isObject } from '../utils';
-import { markAutomaticallyWrappedError } from './wrappedErrors';
 
 class UnknownCauseError extends Error {
   [key: string]: unknown;
@@ -75,8 +74,6 @@ export function getTRPCErrorFromUnknown(cause: unknown): TRPCError {
     code: 'INTERNAL_SERVER_ERROR',
     cause,
   });
-
-  markAutomaticallyWrappedError(trpcError);
 
   // Inherit stack from error
   if (isErrorLike(cause) && cause.stack) {
