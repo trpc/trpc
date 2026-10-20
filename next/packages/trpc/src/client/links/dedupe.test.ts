@@ -2,6 +2,7 @@ import { Deferred, Effect, Stream } from 'effect';
 import {
   createTrpcClient,
   dedupeLink,
+  experimental_httpStreams,
   httpLink,
   link,
   routerType,
@@ -104,7 +105,12 @@ async function setup(opts?: Parameters<typeof dedupeLink>[0]) {
     router: routerType<AppRouter>(),
     links: [
       dedupeLink(opts),
-      httpLink({ url: server.url, serializer, subscriptions: sse() }),
+      httpLink({
+        url: server.url,
+        streams: experimental_httpStreams(),
+        serializer,
+        subscriptions: sse(),
+      }),
     ],
   });
   const sent = (path: string) =>

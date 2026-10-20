@@ -4,6 +4,7 @@ import {
   createTrpcClient,
   experimental_messagePortLink,
   batching,
+  experimental_httpStreams,
   httpLink,
   sse,
   matchError,
@@ -146,6 +147,7 @@ test('httpLink: a cut response never fails a plain call with STREAM_INTERRUPTED,
         router: routerType<AppRouter>(),
         links: [
           httpLink({
+            streams: experimental_httpStreams(),
             url: server.url,
             batch: batch ? batching() : undefined,
             fetch: cutAt(bytes),
@@ -179,6 +181,7 @@ test('httpLink: once a streamed call resolved, what it left open is STREAM_INTER
       router: routerType<AppRouter>(),
       links: [
         httpLink({
+          streams: experimental_httpStreams(),
           url: server.url,
           batch: batch ? batching() : undefined,
           fetch: firstLine,

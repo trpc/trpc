@@ -5,6 +5,7 @@ import { createTrpcQueryUtils } from '@trpc12/tanstack-query';
 import {
   createTrpcClient,
   dedupeLink,
+  experimental_httpStreams,
   httpLink,
   routerType,
   sse,
@@ -204,7 +205,12 @@ export async function createApp(opts: { posts?: number } = {}) {
     router: routerType<AppRouter>(),
     links: [
       dedupeLink(),
-      httpLink({ url: server.url, serializer, subscriptions: sse() }),
+      httpLink({
+        url: server.url,
+        serializer,
+        subscriptions: sse(),
+        streams: experimental_httpStreams(),
+      }),
     ],
   });
   const trpc = createTrpcQueryUtils({ client });

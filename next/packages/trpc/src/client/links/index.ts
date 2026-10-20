@@ -26,6 +26,8 @@ export { batching } from './http/batch.ts';
 export type { BatchingOptions, HttpBatching } from './http/batch.ts';
 export { sse } from './http/sse.ts';
 export type { HttpSse, SseOptions } from './http/sse.ts';
+export { experimental_httpStreams } from './http/streams.ts';
+export type { HttpStreams, HttpStreamsOptions } from './http/streams.ts';
 export { localLink } from './local.ts';
 export type { LocalLinkOptions } from './local.ts';
 export {

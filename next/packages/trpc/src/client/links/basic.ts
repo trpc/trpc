@@ -309,9 +309,9 @@ const lostResponse = (error: AnyTrpcError) =>
  * the `trpc-call-id` header outside any batch, and retries a lost response
  * with the same id, so a procedure using `experimental_durable()` returns the kept
  * result instead of running again. When a streamed output's connection
- * drops, `httpLink` asks for the frames after the ones it got
- * (`trpc-resume-from`) and the open deferred values settle from those. Put
- * it before `httpLink`.
+ * drops, `httpLink` (with `streams: experimental_httpStreams()`) asks for
+ * the frames after the ones it got (`trpc-resume-from`) and the open
+ * deferred values settle from those. Put it before `httpLink`.
  *
  * @example
  * ```ts

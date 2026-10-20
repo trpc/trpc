@@ -203,7 +203,7 @@ function sendBatch(
         }
         return yield* Effect.fail(err);
       }
-      yield* readStream(reply).pipe(
+      yield* readStream(reply, transport.frames).pipe(
         Stream.runForEach((line) =>
           onLine(line as BatchLine, reply.web.headers),
         ),
