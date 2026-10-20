@@ -299,10 +299,9 @@ export function experimental_openApiLink(opts: OpenApiLinkOptions): TrpcLink<{
     );
   });
 
-  return link(
-    ({ op }): OperationStream =>
-      op.type === 'subscription'
-        ? Stream.unwrap(subscription(op))
-        : Stream.fromEffect(single(op)),
+  return link(({ op }): OperationStream =>
+    op.type === 'subscription'
+      ? Stream.unwrap(subscription(op))
+      : Stream.fromEffect(single(op)),
   );
 }
