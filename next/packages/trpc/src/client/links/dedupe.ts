@@ -88,7 +88,7 @@ interface Shared {
   /** Told each response, for their `onResponse`. */
   readonly callers: Set<Caller>;
   readonly responses: ResponseMeta[];
-  /** The request's `signal`, aborted once every caller's signal has. */
+  /** The request's `signal`, aborted once every caller still in it has aborted. */
   readonly controller: AbortController;
   unaborted: number;
 }
@@ -118,6 +118,16 @@ function callOptions(context: object): Record<string, unknown> {
   return options;
 }
 
+/** Succeeds once `signal` aborts; interrupting it removes its listener. */
+const aborted = (signal: AbortSignal | undefined): Effect.Effect<void> =>
+  signal === undefined
+    ? Effect.never
+    : Effect.callback<void>((resume) => {
+        const onAbort = () => resume(Effect.void);
+        signal.addEventListener('abort', onAbort, { once: true });
+        return Effect.sync(() => signal.removeEventListener('abort', onAbort));
+      });
+
 const tell = (shared: Shared, caller: Caller, meta: ResponseMeta) => {
   try {
     caller.op.context.onResponse?.(meta);
@@ -134,7 +144,8 @@ const tell = (shared: Shared, caller: Caller, meta: ResponseMeta) => {
  * sent anything back yet joins it, and gets every value, the end and any
  * error. Once a value arrives, a new call sends its own. Each caller's
  * `onResponse` is called. The request stops once every caller has stopped
- * reading, and its `signal` aborts once every caller's has. Mutations pass
+ * reading, and its `signal` aborts once every caller still reading has
+ * aborted: one that has left no longer counts. Mutations pass
  * through.
  *
  * Every caller gets the same value: a stream in a query's output is one
@@ -222,13 +233,19 @@ export function dedupeLink(
         yield* Effect.addFinalizer(() =>
           Effect.sync(() => shared.callers.delete(caller)),
         );
+        // A caller that leaves stops counting, and its listener goes with it,
+        // so a long-lived signal doesn't keep the request. The client's own
+        // listener on the signal can end the caller before this one runs, so
+        // leaving checks the signal too.
         shared.unaborted++;
-        op.signal?.addEventListener(
-          'abort',
-          () => {
-            if (--shared.unaborted === 0) shared.controller.abort();
-          },
-          { once: true },
+        yield* aborted(op.signal).pipe(
+          Effect.onExit(() =>
+            Effect.sync(() => {
+              if (--shared.unaborted === 0 && op.signal?.aborted)
+                shared.controller.abort();
+            }),
+          ),
+          Effect.forkScoped({ startImmediately: true }),
         );
         for (const meta of shared.responses) tell(shared, caller, meta);
         return shared.stream;

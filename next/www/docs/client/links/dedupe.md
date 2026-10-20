@@ -41,7 +41,7 @@ The two calls in `Promise.all` make one request, and both get the same value. A 
 
 A joining call gets every value, the end and any error, and its `onResponse` is called. Once the first value has arrived, the call isn't joinable any more: a subscription made after its first event subscribes on its own, since it would miss the events before it.
 
-- A caller that stops or aborts leaves the others reading. The request stops once every caller has stopped, and its signal aborts once every caller's signal has.
+- A caller that stops or aborts leaves the others reading. The request stops once every caller has stopped, and its signal aborts once every caller still reading has aborted. A caller that has its result no longer counts, so aborting its signal afterwards doesn't stop a stream in the output; stop reading the stream instead.
 - Every caller gets the same value, so don't change it, and don't change an input while its call is in flight.
 - A stream in a query's output, an `AsyncIterable` or a `ReadableStream`, is one stream for every caller: readers would split its items. Callers that each read it should pass `dedupe: false`.
 - The `dedupe: false` call option sends that call on its own.
