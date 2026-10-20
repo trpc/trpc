@@ -53,6 +53,7 @@ const client = createTrpcClient({
 - `createContext` gets the request passed as `handler.messagePort(port, { request })`, or a placeholder `http://localhost/` request.
 - Bytes in [streamed outputs](../server/files.md) pass as they are, without base64. Files as inputs aren't sent; the call fails with a `BAD_REQUEST`.
 - Closing the port is up to you. Electron's `MessagePortMain` and iframe windows work too.
+- When the port closes or `handler.dispose()` runs, the handler removes the listeners it added, if the port has `off` or `removeEventListener`.
 
 The [`examples/experimental/worker-threads`](../../../examples/experimental/worker-threads/README.md) app serves a router from a Node worker thread: CPU work off the main thread, `connectionParams`, files, and a subscription left early.
 

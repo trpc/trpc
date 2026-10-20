@@ -91,7 +91,10 @@ export interface MessagePortLike {
   postMessage(message: unknown): void;
   /** Node style: the listener receives the message itself. Preferred when present. */
   on?(event: 'message' | 'close', listener: (value: any) => void): unknown;
-  /** Removes an `on` listener; without it, a disposed client link's listeners stay. */
+  /**
+   * Removes an `on` listener; without it, the listeners of a disposed
+   * client link or an ended `handler.messagePort()` session stay.
+   */
   off?(event: 'message' | 'close', listener: (value: any) => void): unknown;
   /** Web style: the listener receives a `MessageEvent`. */
   addEventListener?(type: string, listener: (event: any) => void): void;
@@ -213,28 +216,49 @@ export const serveSocketConnection = (
 };
 
 /**
- * A port's messages until its `close` event. It listens when called, not
- * when the stream runs: a fiber may start later than the port's next
- * message, and ports without a listener drop theirs. @internal
+ * A port's messages until its `close` event. Its listeners are in the
+ * scope: they're removed when it closes, if the port has `off` or
+ * `removeEventListener`. They attach when the effect runs, so run it
+ * before the port's next message: ports without a listener drop it.
+ * @internal
  */
-export const portMessages = (port: MessagePortLike): Stream.Stream<unknown> => {
-  const queue = Effect.runSync(Queue.unbounded<unknown, Cause.Done>());
-  const offer = (message: unknown) => {
-    Queue.offerUnsafe(queue, message);
-  };
-  const end = () => {
-    Queue.endUnsafe(queue);
-  };
-  if (port.on) {
-    port.on('message', offer);
-    port.on('close', end);
-  } else {
-    port.addEventListener?.('message', (e: { data: unknown }) => offer(e.data));
-    port.addEventListener?.('close', end);
-  }
-  port.start?.();
-  return Stream.fromQueue(queue);
-};
+export const portMessages = (
+  port: MessagePortLike,
+): Effect.Effect<Stream.Stream<unknown>, never, Scope.Scope> =>
+  Effect.flatMap(Queue.unbounded<unknown, Cause.Done>(), (queue) => {
+    const offer = (message: unknown) => {
+      Queue.offerUnsafe(queue, message);
+    };
+    const onEvent = (event: { data: unknown }) => offer(event.data);
+    const end = () => {
+      Queue.endUnsafe(queue);
+    };
+    return Effect.as(
+      Effect.acquireRelease(
+        Effect.sync(() => {
+          if (port.on) {
+            port.on('message', offer);
+            port.on('close', end);
+          } else {
+            port.addEventListener?.('message', onEvent);
+            port.addEventListener?.('close', end);
+          }
+          port.start?.();
+        }),
+        () =>
+          Effect.sync(() => {
+            if (port.on) {
+              port.off?.('message', offer);
+              port.off?.('close', end);
+            } else {
+              port.removeEventListener?.('message', onEvent);
+              port.removeEventListener?.('close', end);
+            }
+          }),
+      ),
+      Stream.fromQueue(queue),
+    );
+  });
 
 /** A subscription's event frame as the message for call `id`. @internal */
 export function frameMessage(id: number, frame: EventFrame): ServerMessage {
@@ -261,7 +285,9 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
  * Serves calls over a `MessagePort` until it closes. Each request
  * message is one call with its own `createContext`, like an HTTP request;
  * `connectionParams` from the client's `init` message reach `createContext`.
- * It listens to `port` when called, as `portMessages` does.
+ * Its first step adds the port's listeners, as `portMessages` does, so
+ * fork it synchronously (`runFork`) when the port arrives; they're removed
+ * when it ends.
  * @internal
  */
 export const serveMessagePort = (
@@ -271,9 +297,9 @@ export const serveMessagePort = (
     readonly request: HttpServerRequest.HttpServerRequest;
     readonly platform?: unknown;
   },
-): Effect.Effect<void> => {
-  const messages = portMessages(port);
-  return Effect.gen(function* () {
+): Effect.Effect<void> =>
+  Effect.gen(function* () {
+    const messages = yield* portMessages(port);
     const receiver = yield* connectionReceiver(
       core,
       {
@@ -286,7 +312,6 @@ export const serveMessagePort = (
       Effect.ensuring(receiver.close),
     );
   }).pipe(Effect.scoped);
-};
 
 /** What `connectionReceiver()` returns. @internal */
 export interface ConnectionReceiver {
