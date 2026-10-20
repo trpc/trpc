@@ -189,16 +189,17 @@ const lostError = () =>
 const closedError = (message: string) =>
   new TrpcError({ code: 'CLIENT_CLOSED_REQUEST', message });
 
+/**
+ * `scope` is the link's lifetime: it holds the shared connection, the
+ * fibers the link starts outside a call's own (drops, calls whose output
+ * streams on), and whatever the transport ties to it. `dispose()` closes it.
+ */
 function makeSocketLink(
   transport: SocketTransport,
   opts: SocketLinkOptions,
+  scope: Scope.Closeable = Scope.makeUnsafe(),
 ): SocketLink<any> {
   const serializer = opts.serializer ?? jsonSerializer;
-  /**
-   * The link's lifetime: it holds the shared connection and the fibers the
-   * link starts outside a call's own (drops, calls whose output streams on).
-   */
-  const scope = Scope.makeUnsafe();
   /** Every call's inbox, so `close()` can fail them wherever they are. */
   const live = new Set<Queue.Queue<Signal>>();
   let current: Connection | undefined;
@@ -930,8 +931,9 @@ export function experimental_messagePortLink(
   opts: MessagePortLinkOptions,
 ): SocketLink<any> {
   const { port } = opts;
-  // A port can't drop its listeners, so they're added once, on the first
-  // connection, and every connection subscribes to what they hear.
+  const scope = Scope.makeUnsafe();
+  // The listeners are added once, on the first connection, and every
+  // connection subscribes to what they hear; `dispose()` removes them.
   const listening = Effect.runSync(
     Effect.cached(
       Effect.gen(function* () {
@@ -939,19 +941,32 @@ export function experimental_messagePortLink(
         const closed = yield* Deferred.make<void>();
         const deliver = (message: unknown) =>
           PubSub.publishUnsafe(received, message);
+        const onMessage = (event: { data: unknown }) => deliver(event.data);
         const close = () => Deferred.doneUnsafe(closed, Effect.void);
-        if (port.on) {
-          port.on('message', deliver);
-          port.on('close', close);
-        } else {
-          port.addEventListener?.('message', (event: { data: unknown }) =>
-            deliver(event.data),
-          );
-          port.addEventListener?.('close', close);
-        }
-        port.start?.();
+        yield* Effect.acquireRelease(
+          Effect.sync(() => {
+            if (port.on) {
+              port.on('message', deliver);
+              port.on('close', close);
+            } else {
+              port.addEventListener?.('message', onMessage);
+              port.addEventListener?.('close', close);
+            }
+            port.start?.();
+          }),
+          () =>
+            Effect.sync(() => {
+              if (port.on) {
+                port.off?.('message', deliver);
+                port.off?.('close', close);
+              } else {
+                port.removeEventListener?.('message', onMessage);
+                port.removeEventListener?.('close', close);
+              }
+            }),
+        );
         return { received, closed };
-      }),
+      }).pipe(Scope.provide(scope)),
     ),
   );
   return makeSocketLink(
@@ -979,6 +994,7 @@ export function experimental_messagePortLink(
       }),
     },
     opts,
+    scope,
   );
 }
 

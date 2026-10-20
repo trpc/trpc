@@ -5,6 +5,7 @@ import {
   routerType,
   safe,
   wsLink,
+  type MessagePortLike,
 } from '@trpc12/trpc/client';
 import { initTrpc } from '@trpc12/trpc/server';
 import { ScriptedWebSocket } from '../../fixtures/scripted-websocket.ts';
@@ -140,4 +141,62 @@ test('await using a socket link disposes it at the end of the block', async () =
   }
   expect((await safe(client.hello.query())).error).toMatchObject(disposed);
   channel.port1.close();
+});
+
+test('a disposed message-port link leaves no listeners on its port', async () => {
+  const answer =
+    (port: { postMessage(message: unknown): void }) =>
+    (message: { id: number; type: string }) => {
+      if (message.type === 'request') {
+        port.postMessage({
+          id: message.id,
+          type: 'result',
+          body: { json: 'hi' },
+        });
+      }
+    };
+
+  const channel = new MessageChannel();
+  channel.port2.on('message', answer(channel.port2));
+  const node = experimental_messagePortLink({ port: channel.port1 });
+  const viaNode = createTrpcClient({
+    router: routerType<typeof router>(),
+    links: [node],
+  });
+  expect(await viaNode.hello.query()).toBe('hi');
+  expect(channel.port1.listenerCount('message')).toBe(1);
+  expect(channel.port1.listenerCount('close')).toBe(1);
+  await node.dispose();
+  expect(channel.port1.listenerCount('message')).toBe(0);
+  expect(channel.port1.listenerCount('close')).toBe(0);
+  channel.port1.close();
+  channel.port2.close();
+
+  const listeners = new Map<string, Set<(event: { data: unknown }) => void>>();
+  const reply = answer({
+    postMessage: (data) => {
+      for (const listener of listeners.get('message') ?? []) {
+        listener({ data });
+      }
+    },
+  });
+  const web: MessagePortLike = {
+    postMessage: (message) =>
+      queueMicrotask(() => reply(message as { id: number; type: string })),
+    addEventListener: (type, listener) => {
+      listeners.set(type, (listeners.get(type) ?? new Set()).add(listener));
+    },
+    removeEventListener: (type, listener) => {
+      listeners.get(type)?.delete(listener);
+    },
+  };
+  const viaWeb = experimental_messagePortLink({ port: web });
+  const client = createTrpcClient({
+    router: routerType<typeof router>(),
+    links: [viaWeb],
+  });
+  expect(await client.hello.query()).toBe('hi');
+  expect([...listeners.values()].map((set) => set.size)).toEqual([1, 1]);
+  await viaWeb.dispose();
+  expect([...listeners.values()].map((set) => set.size)).toEqual([0, 0]);
 });
