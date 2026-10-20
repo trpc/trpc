@@ -29,49 +29,53 @@ export const emitEvents: (
   serializer: AnySerializer,
   coerceError: (cause: unknown) => unknown,
   emit: (frame: EventFrame) => Effect.Effect<void>,
-) => Effect.Effect<void, AnyTrpcError> = Effect.fnUntraced(function* (
-  events: Stream.Stream<unknown, AnyTrpcError>,
-  serializer: AnySerializer,
-  coerceError: (cause: unknown) => unknown,
-  emit: (frame: EventFrame) => Effect.Effect<void>,
-) {
-  let deferredCount = 0;
-  const chunkFibers = yield* FiberSet.make<void>();
-  yield* Stream.runForEach(
-    events,
-    Effect.fnUntraced(function* (event) {
-      const serialized = yield* Effect.try({
-        try: () => serializer.serializeDeferred(event, { coerceError }),
-        catch: (cause) => (isTrpcError(cause) ? cause : unexpectedError(cause)),
-      });
-      const eventId = isTracked(event) ? event.id : undefined;
-      if (!serialized.chunks) {
-        return yield* emit({
+) => Effect.Effect<void, AnyTrpcError> = /* @__PURE__ */ Effect.fnUntraced(
+  function* (
+    events: Stream.Stream<unknown, AnyTrpcError>,
+    serializer: AnySerializer,
+    coerceError: (cause: unknown) => unknown,
+    emit: (frame: EventFrame) => Effect.Effect<void>,
+  ) {
+    let deferredCount = 0;
+    const chunkFibers = yield* FiberSet.make<void>();
+    yield* Stream.runForEach(
+      events,
+      Effect.fnUntraced(function* (event) {
+        const serialized = yield* Effect.try({
+          try: () => serializer.serializeDeferred(event, { coerceError }),
+          catch: (cause) =>
+            isTrpcError(cause) ? cause : unexpectedError(cause),
+        });
+        const eventId = isTracked(event) ? event.id : undefined;
+        if (!serialized.chunks) {
+          return yield* emit({
+            kind: 'event',
+            body: serialized.head,
+            eventId,
+            deferred: undefined,
+          });
+        }
+        const n = deferredCount++;
+        yield* emit({
           kind: 'event',
           body: serialized.head,
           eventId,
-          deferred: undefined,
+          deferred: n,
         });
-      }
-      const n = deferredCount++;
-      yield* emit({
-        kind: 'event',
-        body: serialized.head,
-        eventId,
-        deferred: n,
-      });
-      yield* FiberSet.run(
-        chunkFibers,
-        Stream.runForEach(serialized.chunks, (chunk) =>
-          emit({ kind: 'chunk', event: n, chunk }),
-        ).pipe(
-          Effect.ignore,
-          // Not `ensuring`: `emit` may wait on a slow reader, and a finalizer
-          // can't be interrupted, so a reader that left would hang it.
-          Effect.andThen(emit({ kind: 'chunkEnd', event: n })),
-        ),
-      );
-    }),
-  );
-  yield* FiberSet.awaitEmpty(chunkFibers);
-}, Effect.scoped);
+        yield* FiberSet.run(
+          chunkFibers,
+          Stream.runForEach(serialized.chunks, (chunk) =>
+            emit({ kind: 'chunk', event: n, chunk }),
+          ).pipe(
+            Effect.ignore,
+            // Not `ensuring`: `emit` may wait on a slow reader, and a finalizer
+            // can't be interrupted, so a reader that left would hang it.
+            Effect.andThen(emit({ kind: 'chunkEnd', event: n })),
+          ),
+        );
+      }),
+    );
+    yield* FiberSet.awaitEmpty(chunkFibers);
+  },
+  Effect.scoped,
+);
