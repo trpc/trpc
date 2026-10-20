@@ -14,7 +14,7 @@ import {
   TrpcError,
   type AnyTrpcError,
 } from '../internal/error.ts';
-import { sseEvents } from '../internal/protocol.ts';
+import { CONTENT_TYPE, sseEvents } from '../internal/protocol.ts';
 import type { JsonForm } from '../internal/types.ts';
 import {
   experimental_toBracketNotation,
@@ -83,6 +83,13 @@ const isPlainObject = (v: unknown): v is Record<string, unknown> =>
   v !== null &&
   Object.getPrototypeOf(v) === Object.prototype;
 
+/** An `experimental_byteStream()` input (or a detailed input's `body`): sent as the body itself. */
+const isByteStream = (value: unknown): value is ReadableStream<Uint8Array> =>
+  typeof ReadableStream !== 'undefined' && value instanceof ReadableStream;
+
+/** `fetch` needs it to send a stream body. */
+const halfDuplex = { duplex: 'half' } as RequestInit;
+
 const hasBlob = (value: unknown): boolean =>
   value instanceof Blob ||
   (Array.isArray(value) && value.some(hasBlob)) ||
@@ -92,7 +99,9 @@ const hasBlob = (value: unknown): boolean =>
  * Calls a router's REST mapping (18 (d)): the endpoints
  * `experimental_createOpenApiHandler` serves, at the methods and paths of a JSON
  * contract. Inputs become path params, bracket-notation query strings or
- * JSON bodies (`multipart/form-data` when they contain a `Blob`), and
+ * JSON bodies (`multipart/form-data` when they contain a `Blob`), a
+ * `ReadableStream` (an `experimental_byteStream()` input, or a detailed
+ * input's `body`) is sent as the `application/octet-stream` body itself, and
  * subscriptions read `text/event-stream`. Works with any server that
  * implements the same OpenAPI document.
  *
@@ -220,7 +229,10 @@ export function experimental_openApiLink(opts: OpenApiLinkOptions): TrpcLink<{
     }
     let payload: BodyInit | undefined;
     if (body !== undefined && !usesQuery(route.method)) {
-      if (hasBlob(body)) {
+      if (isByteStream(body)) {
+        headers.set('content-type', CONTENT_TYPE.octet);
+        payload = body;
+      } else if (hasBlob(body)) {
         const form = new FormData();
         for (const [k, v] of experimental_toBracketNotation(body))
           form.append(k, v);
@@ -236,6 +248,7 @@ export function experimental_openApiLink(opts: OpenApiLinkOptions): TrpcLink<{
         method: route.method,
         headers,
         ...(payload === undefined ? {} : { body: payload }),
+        ...(isByteStream(payload) ? halfDuplex : {}),
       },
     };
   }

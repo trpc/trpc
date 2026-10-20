@@ -1,8 +1,10 @@
 import { Effect, Option, Schema, Stream } from 'effect';
+import { createTrpcClient, routerType } from '@trpc12/trpc/client';
 import { experimental_toContract } from '@trpc12/trpc/contract';
 import {
   experimental_createOpenApiHandler,
   experimental_openapi,
+  experimental_openApiLink,
 } from '@trpc12/trpc/openapi';
 import {
   type AnyRouter,
@@ -183,4 +185,47 @@ test('a handler built from a contract streams the body too', async () => {
   });
   const res = await send(handler, 'POST', '/uploads', streamOf('contract'));
   expect(await res.json()).toBe('contract');
+});
+
+const clientFor = (
+  url: string,
+  fetch?: (url: string, init: RequestInit) => Promise<Response>,
+) =>
+  createTrpcClient({
+    router: routerType<typeof router>(),
+    links: [
+      experimental_openApiLink({
+        url,
+        contract: experimental_toContract(router),
+        ...(fetch ? { fetch } : {}),
+      }),
+    ],
+  });
+
+test('experimental_openApiLink sends a ReadableStream input as the application/octet-stream body', async () => {
+  await using handler = experimental_createOpenApiHandler({ router });
+  const sent: Request[] = [];
+  const client = clientFor('http://localhost', (url, init) => {
+    const request = new Request(url, init);
+    sent.push(request);
+    return handler.fetch(request);
+  });
+
+  expect(await client.upload.mutate(streamOf('hel', 'lo'))).toBe('hello');
+  expect(
+    await client.video.mutate({
+      params: { id: 'v 1' },
+      body: streamOf('frames'),
+    }),
+  ).toEqual({ id: 'v 1', body: 'frames' });
+  expect(
+    sent.map((request) => [
+      request.method,
+      new URL(request.url).pathname,
+      request.headers.get('content-type'),
+    ]),
+  ).toEqual([
+    ['POST', '/api/uploads', 'application/octet-stream'],
+    ['PUT', '/api/videos/v%201', 'application/octet-stream'],
+  ]);
 });

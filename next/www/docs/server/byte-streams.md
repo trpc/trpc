@@ -129,3 +129,10 @@ const uploadVideo = t.procedure
 ```
 
 `experimental_generateOpenApi` and `experimental_generateOpenApiFromTypes` document the stream as an `application/octet-stream` body, `{ type: 'string', format: 'binary' }` ([The OpenAPI document](../openapi/document.md)), so generated clients send the bytes as they are.
+
+[`experimental_openApiLink`](../openapi/client.md) sends a `ReadableStream` input, or a detailed input's `body`, as that body:
+
+```ts
+await client.uploadVideo.mutate({ params: { id: '1' }, body: file.stream() });
+// PUT /api/videos/1, content-type: application/octet-stream
+```
