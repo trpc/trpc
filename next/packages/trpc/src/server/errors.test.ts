@@ -6,6 +6,7 @@ import {
   isDefinedError,
   matchError,
   safe,
+  sse,
   TrpcError,
   routerType,
   ERROR_STATUS,
@@ -142,6 +143,7 @@ async function setup(opts: { expose?: boolean } = {}) {
     links: [
       httpLink({
         url: server.url,
+        subscriptions: sse(),
         fetch: async (input, init) => {
           const res = await fetch(input, init);
           statuses.push(res.status);

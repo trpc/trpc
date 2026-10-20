@@ -2,6 +2,7 @@ import { Schema, Stream } from 'effect';
 import {
   createTrpcClient,
   httpLink,
+  sse,
   TrpcError,
   type TrpcIterable,
   routerType,
@@ -68,7 +69,7 @@ async function setup() {
   const server = await createTestServer({ router });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: server.url })],
+    links: [httpLink({ url: server.url, subscriptions: sse() })],
   });
   return { client, [Symbol.asyncDispose]: () => server.close() };
 }

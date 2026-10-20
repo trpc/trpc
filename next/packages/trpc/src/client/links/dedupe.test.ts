@@ -6,6 +6,7 @@ import {
   link,
   routerType,
   type BuiltinCallOptions,
+  sse,
   type Operation,
 } from '@trpc12/trpc/client';
 import { createSerializer } from '@trpc12/trpc/serializer';
@@ -101,7 +102,10 @@ async function setup(opts?: Parameters<typeof dedupeLink>[0]) {
   const server = await createTestServer({ router, serializer });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [dedupeLink(opts), httpLink({ url: server.url, serializer })],
+    links: [
+      dedupeLink(opts),
+      httpLink({ url: server.url, serializer, subscriptions: sse() }),
+    ],
   });
   const sent = (path: string) =>
     server.requests.filter((r) => new URL(r.url).pathname.endsWith(`/${path}`))

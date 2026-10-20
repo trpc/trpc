@@ -1,8 +1,10 @@
 import {
+  batching,
   createTrpcClient,
   httpLink,
   routerType,
   safe,
+  sse,
   type HttpLinkOptions,
 } from '@trpc12/trpc/client';
 import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
@@ -40,11 +42,18 @@ function clientWith(
 ) {
   return createTrpcClient({
     router: routerType<typeof router>(),
-    links: [httpLink({ url: 'http://localhost/trpc', fetch, ...opts })],
+    links: [
+      httpLink({
+        url: 'http://localhost/trpc',
+        fetch,
+        ...opts,
+        subscriptions: opts.subscriptions ?? sse(),
+      }),
+    ],
   });
 }
 
-const sse = (text: string) =>
+const eventStream = (text: string) =>
   new Response(text, { headers: { 'content-type': 'text/event-stream' } });
 
 async function collect<T>(iterable: AsyncIterable<T>) {
@@ -177,7 +186,7 @@ test('calls with differing inits batch apart; ones JSON cannot key go alone', as
       );
       return real(input, init);
     },
-    { batch: {} },
+    { batch: batching() },
   );
   const results = await Promise.all([
     client.echo.query('a', { init: { cache: 'no-store', mode: 'cors' } }),
@@ -196,7 +205,7 @@ test('calls with differing inits batch apart; ones JSON cannot key go alone', as
 });
 
 test('an input the serializer cannot write fails alone, outside the batch', async () => {
-  const client = clientWith(real, { batch: true });
+  const client = clientWith(real, { batch: batching() });
   const loop: Record<string, unknown> = {};
   loop['self'] = loop;
   const [ok, [, err]] = await Promise.all([
@@ -209,7 +218,7 @@ test('an input the serializer cannot write fails alone, outside the batch', asyn
 
 test('aborting every call in a batch aborts its request', async () => {
   const before = aborted;
-  const client = clientWith(real, { batch: true });
+  const client = clientWith(real, { batch: batching() });
   const one = new AbortController();
   const two = new AbortController();
   const calls = Promise.all([
@@ -238,7 +247,7 @@ test('a batch response that ends early, or names calls it was not sent, fails th
           '',
         ].join('\n'),
       ),
-    { batch: true },
+    { batch: batching() },
   );
   const [first, [, second]] = await Promise.all([
     client.echo.query('a'),
@@ -251,14 +260,52 @@ test('a batch response that ends early, or names calls it was not sent, fails th
   });
 });
 
-test('subscriptions: turned off, malformed events, unknown events', async () => {
-  const off = clientWith(real, { subscriptions: false });
-  await expect(collect(off.ticks.subscribe())).rejects.toMatchObject({
+test("v12's earlier `batch: true` throws with the import to use; `false` leaves a feature out", async () => {
+  const url = 'http://localhost/trpc';
+  expect(() => httpLink({ url, batch: true as never })).toThrow(
+    "httpLink's `batch` option takes `batching()`, imported from '@trpc12/trpc/client'",
+  );
+  expect(() => httpLink({ url, subscriptions: {} as never })).toThrow(
+    "httpLink's `subscriptions` option takes `sse()`",
+  );
+  const calls: Array<string> = [];
+  const off = createTrpcClient({
+    router: routerType<typeof router>(),
+    links: [
+      httpLink({
+        url,
+        batch: false as never,
+        subscriptions: false as never,
+        fetch: async (input) => {
+          calls.push(input);
+          return Response.json({ json: 'unbatched' });
+        },
+      }),
+    ],
+  });
+  await Promise.all([off.echo.query('a'), off.echo.query('b')]);
+  expect(calls).toHaveLength(2);
+  const ticks = (off.ticks as any).subscribe() as AsyncIterable<number>;
+  await expect(collect(ticks)).rejects.toMatchObject({
     code: 'METHOD_NOT_SUPPORTED',
+  });
+});
+
+test('subscriptions: left out, malformed events, unknown events', async () => {
+  const off = createTrpcClient({
+    router: routerType<typeof router>(),
+    links: [httpLink({ url: 'http://localhost/trpc', fetch: real })],
+  });
+  // @ts-expect-error: without `sse()`, procedures have no `.subscribe()`.
+  const ticks = off.ticks.subscribe() as AsyncIterable<number>;
+  await expect(collect(ticks)).rejects.toMatchObject({
+    code: 'METHOD_NOT_SUPPORTED',
+    message:
+      'This httpLink carries no subscriptions: pass `subscriptions: sse()` to it',
   });
 
   const odd = clientWith(async () =>
-    sse(
+    eventStream(
       [
         'event: unknown\ndata: ignored\n\n',
         'event: unknown\ndata\nretry\n\n',
@@ -274,8 +321,8 @@ test('subscriptions: turned off, malformed events, unknown events', async () => 
     'event: chunk\ndata: {not json\n\n',
     'data: {not json\n\n',
   ]) {
-    const broken = clientWith(async () => sse(event), {
-      reconnect: { attempts: 0, delay: () => 1 },
+    const broken = clientWith(async () => eventStream(event), {
+      subscriptions: sse({ reconnect: { attempts: 0, delay: () => 1 } }),
     });
     await expect(collect(broken.ticks.subscribe())).rejects.toMatchObject({
       code: 'NETWORK_ERROR',
@@ -290,13 +337,17 @@ test('a subscription retries a failed connect, then reads the stream', async () 
       ++attempts < 3
         ? Promise.reject(new TypeError('refused'))
         : real(input, init),
-    { reconnect: { attempts: 5, delay: () => '1 millis' } },
+    {
+      subscriptions: sse({
+        reconnect: { attempts: 5, delay: () => '1 millis' },
+      }),
+    },
   );
   expect(await collect(flaky.ticks.subscribe())).toEqual([1, 2]);
   expect(attempts).toBe(3);
 
-  const empty = clientWith(async () => sse(''), {
-    reconnect: { attempts: 1, delay: () => 1 },
+  const empty = clientWith(async () => eventStream(''), {
+    subscriptions: sse({ reconnect: { attempts: 1, delay: () => 1 } }),
   });
   await expect(collect(empty.ticks.subscribe())).rejects.toMatchObject({
     code: 'NETWORK_ERROR',
@@ -311,13 +362,13 @@ test('a subscription retries a failed connect, then reads the stream', async () 
       ++tries < 2
         ? Promise.reject(new TypeError('refused'))
         : real(input, init),
-    { reconnect: { attempts: 1 } },
+    { subscriptions: sse({ reconnect: { attempts: 1 } }) },
   );
   expect(await collect(slow.ticks.subscribe())).toEqual([1, 2]);
   expect(Date.now() - started).toBeGreaterThanOrEqual(900);
 
   const down = clientWith(() => Promise.reject(new TypeError('refused')), {
-    reconnect: { attempts: 1, delay: () => 1 },
+    subscriptions: sse({ reconnect: { attempts: 1, delay: () => 1 } }),
   });
   await expect(collect(down.ticks.subscribe())).rejects.toMatchObject({
     code: 'NETWORK_ERROR',
@@ -333,7 +384,7 @@ test('a stream that ends inside a UTF-8 character, after an event, is lost', asy
   const cut = clientWith(
     async () =>
       new Response(bytes, { headers: { 'content-type': 'text/event-stream' } }),
-    { reconnect: { attempts: 0, delay: () => 1 } },
+    { subscriptions: sse({ reconnect: { attempts: 0, delay: () => 1 } }) },
   );
   const seen: unknown[] = [];
   await expect(
@@ -397,7 +448,7 @@ test('forged batch lines: a call answered twice keeps its first answer; unreadab
           body: { json: { error: { code: 'CONFLICT', message: 'second' } } },
         },
       ),
-    { batch: true },
+    { batch: batching() },
   );
   const [[, zero], [, one]] = await Promise.all([
     safe(twice.echo.query('a')),
@@ -420,7 +471,7 @@ test('forged batch lines with unreadable bodies fail their calls alone; broken s
         { i: 0, status: 200, body: null },
         { i: 1, status: 500, body: null },
       ),
-    { batch: true },
+    { batch: batching() },
   );
   const [[, result], [, error]] = await Promise.all([
     safe(unreadable.echo.query('a')),
@@ -447,7 +498,7 @@ test('forged batch lines with unreadable bodies fail their calls alone; broken s
     [() => Promise.reject(new TypeError('offline')), 'NETWORK_ERROR'],
   ];
   for (const [fetch, first] of cases) {
-    const broken = clientWith(fetch, { batch: true });
+    const broken = clientWith(fetch, { batch: batching() });
     const [a, [, b]] = await Promise.all([
       safe(broken.echo.query('a')),
       safe(broken.echo.query('b')),
@@ -464,7 +515,7 @@ test('a batch whose calls were all aborted before it was sent sends nothing', as
       requests++;
       return real(input, init);
     },
-    { batch: true },
+    { batch: batching() },
   );
   const controller = new AbortController();
   const call = safe(client.echo.query('a', { signal: controller.signal }));

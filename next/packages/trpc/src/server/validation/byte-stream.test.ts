@@ -5,6 +5,7 @@ import { NodeHttpServer } from '@effect/platform-node';
 import { Effect, Exit, Option, Schema, Scope, Stream } from 'effect';
 import { toLambdaHandler, type LambdaV2Result } from '@trpc12/trpc/aws-lambda';
 import {
+  batching,
   createTrpcClient,
   httpLink,
   localLink,
@@ -242,7 +243,7 @@ test('a byte stream call leaves the batch and goes alone', async () => {
   await using server = await createTestServer({ router, batch: true });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: server.url, batch: true })],
+    links: [httpLink({ url: server.url, batch: batching() })],
   });
   const results = await Promise.all([
     client.size.query(bytes('four')),

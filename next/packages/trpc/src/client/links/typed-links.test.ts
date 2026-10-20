@@ -1,6 +1,7 @@
 import { Effect, Schema, Stream } from 'effect';
 import { MessageChannel } from 'node:worker_threads';
 import {
+  batching,
   createTrpcClient,
   dedupeLink,
   experimental_messagePortLink,
@@ -10,6 +11,7 @@ import {
   routerType,
   safe,
   splitLink,
+  sse,
   switchLink,
   TrpcError,
   wsLink,
@@ -209,7 +211,7 @@ test('splitLink sees typed paths, and merges both branches', async () => {
           return op.path === 'post.byId';
         },
         true: [dedupeLink(), httpLink({ url: server.url })],
-        false: httpLink({ url: server.url, batch: true }),
+        false: httpLink({ url: server.url, batch: batching() }),
       }),
     ],
   });
@@ -280,7 +282,10 @@ test('switchLink picks a branch, and a typed call option forces one', async () =
       switchLink({
         name: 'transport',
         links: {
-          batched: [tag('batched'), httpLink({ url: server.url, batch: true })],
+          batched: [
+            tag('batched'),
+            httpLink({ url: server.url, batch: batching() }),
+          ],
           single: [tag('single'), dedupeLink(), httpLink({ url: server.url })],
         },
         pick: (op) => {
@@ -409,7 +414,13 @@ const liveRouter = {
 };
 
 test('methods a chain cannot carry are missing from the client', () => {
-  const http = httpLink({ url: 'http://localhost' });
+  const plain = createTrpcClient({
+    router: routerType<typeof liveRouter>(),
+    links: [httpLink({ url: 'http://localhost' })],
+  });
+  expectTypeOf(plain.feed).not.toHaveProperty('subscribe');
+
+  const http = httpLink({ url: 'http://localhost', subscriptions: sse() });
   const queriesOnly = link<{ unsupported: 'subscription' }>((opts) =>
     opts.next(opts.op),
   );

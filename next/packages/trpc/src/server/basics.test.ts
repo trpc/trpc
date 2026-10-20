@@ -4,6 +4,7 @@ import {
   httpLink,
   safe,
   routerType,
+  sse,
   type ErrorData,
 } from '@trpc12/trpc/client';
 import {
@@ -360,7 +361,7 @@ test('Standard Schema issues keep their paths, async validators are awaited, and
   });
   const client = createTrpcClient({
     router: routerType<typeof schemas>(),
-    links: [httpLink({ url: server.url })],
+    links: [httpLink({ url: server.url, subscriptions: sse() })],
   });
   const [, issues] = await safe(client.paths.query('x'));
   expect(issues).toMatchObject({

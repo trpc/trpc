@@ -2,6 +2,7 @@ import { Logger, Stream } from 'effect';
 import {
   createTrpcClient,
   httpLink,
+  sse,
   routerType,
   safe,
   TrpcError,
@@ -109,7 +110,7 @@ async function setup(env = 'development') {
   });
   const client = createTrpcClient({
     router: routerType<typeof router>(),
-    links: [httpLink({ url: server.url })],
+    links: [httpLink({ url: server.url, subscriptions: sse() })],
   });
   return {
     client,

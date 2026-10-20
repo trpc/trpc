@@ -3,7 +3,9 @@ import type { Effect } from 'effect';
 import {
   createTrpcClient,
   experimental_messagePortLink,
+  batching,
   httpLink,
+  sse,
   matchError,
   routerType,
   safe,
@@ -49,7 +51,7 @@ test('STREAM_INTERRUPTED is in the union only for calls that stream: subscriptio
   const ws = wsLink({ url: 'ws://localhost/trpc' });
   const port = new MessageChannel().port1;
   for (const links of [
-    [httpLink({ url: 'http://localhost/trpc' })],
+    [httpLink({ url: 'http://localhost/trpc', subscriptions: sse() })],
     [ws],
     [experimental_messagePortLink({ port })],
   ] as const) {
@@ -142,7 +144,13 @@ test('httpLink: a cut response never fails a plain call with STREAM_INTERRUPTED,
     for (const batch of [false, true]) {
       const client = createTrpcClient({
         router: routerType<AppRouter>(),
-        links: [httpLink({ url: server.url, batch, fetch: cutAt(bytes) })],
+        links: [
+          httpLink({
+            url: server.url,
+            batch: batch ? batching() : undefined,
+            fetch: cutAt(bytes),
+          }),
+        ],
       });
       const calls = {
         plain: () => client.plain.query(),
@@ -169,7 +177,13 @@ test('httpLink: once a streamed call resolved, what it left open is STREAM_INTER
   for (const batch of [false, true]) {
     const client = createTrpcClient({
       router: routerType<AppRouter>(),
-      links: [httpLink({ url: server.url, batch, fetch: firstLine })],
+      links: [
+        httpLink({
+          url: server.url,
+          batch: batch ? batching() : undefined,
+          fetch: firstLine,
+        }),
+      ],
     });
     const out = await client.deferred.query();
     await expect(out.later).rejects.toMatchObject({

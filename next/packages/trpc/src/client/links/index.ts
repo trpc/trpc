@@ -21,7 +21,11 @@ export type {
 export { dedupeLink } from './dedupe.ts';
 export type { DedupeContext, DedupeLinkOptions } from './dedupe.ts';
 export { httpLink } from './http/link.ts';
-export type { HttpLinkOptions } from './http/link.ts';
+export type { HttpLinkDecl, HttpLinkOptions } from './http/link.ts';
+export { batching } from './http/batch.ts';
+export type { BatchingOptions, HttpBatching } from './http/batch.ts';
+export { sse } from './http/sse.ts';
+export type { HttpSse, SseOptions } from './http/sse.ts';
 export { localLink } from './local.ts';
 export type { LocalLinkOptions } from './local.ts';
 export {

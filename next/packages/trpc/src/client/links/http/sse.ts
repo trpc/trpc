@@ -1,4 +1,4 @@
-import { Effect, Option, Queue, Stream } from 'effect';
+import { Effect, Option, Queue, Stream, type Duration } from 'effect';
 import {
   fromWireError,
   isTrpcError,
@@ -18,17 +18,66 @@ import {
   makeDeferredDecoder,
   type DeferredDecoder,
 } from '../events.ts';
-import type { HttpLinkOptions } from './link.ts';
-import { ok, type Transport } from './transport.ts';
+import { ok, type HttpFeature, type Transport } from './transport.ts';
+
+/**
+ * Options for {@link sse}.
+ * @since 0.1.0
+ * @stability stable
+ */
+export interface SseOptions {
+  /** Reconnects after a dropped connection. */
+  reconnect?: {
+    /** @default 5 */
+    attempts?: number;
+    /**
+     * Delay before each reconnect: milliseconds, a string like `'2 seconds'`
+     * or a `Duration`.
+     * @default attempt => Math.min(1000 * 2 ** (attempt - 1), 30_000)
+     */
+    delay?: (attempt: number) => Duration.Input;
+  };
+}
+
+/**
+ * What {@link sse} returns, for `httpLink`'s `subscriptions` option.
+ * @since 0.1.0
+ * @stability stable
+ */
+export interface HttpSse {
+  readonly _: unique symbol;
+}
+
+/**
+ * Subscriptions for `httpLink`, over server-sent events: one connection per
+ * subscription, reconnecting with `Last-Event-ID` after a dropped one. A
+ * call opts out of reconnecting with `{ reconnect: false }`. Without it an
+ * `httpLink` carries no subscriptions, and SSE's code isn't bundled.
+ *
+ * @example
+ * ```ts
+ * import { httpLink, sse } from '@trpc12/trpc/client';
+ *
+ * httpLink({ url: 'http://localhost:3000/trpc', subscriptions: sse() });
+ * ```
+ * @since 0.1.0
+ * @stability stable
+ */
+export function sse(opts: SseOptions = {}): HttpSse {
+  const feature: HttpFeature<(op: Operation) => OperationStream> = {
+    build: (transport) => makeSubscriptions(transport, opts),
+  };
+  return feature as unknown as HttpSse;
+}
 
 /**
  * Subscriptions over SSE: one connection at a time, reconnecting with
  * `Last-Event-ID` after a dropped one until `reconnect.attempts` in a row
  * fail.
  */
-export function makeSubscriptions(
+function makeSubscriptions(
   transport: Transport,
-  opts: HttpLinkOptions,
+  opts: SseOptions,
 ): (op: Operation) => OperationStream {
   const reconnectAttempts = opts.reconnect?.attempts ?? 5;
   const reconnectDelay =

@@ -1,10 +1,12 @@
 import { Duration, Effect, Layer, Schema } from 'effect';
 import { Persistence } from 'effect/persistence';
 import {
+  batching,
   createTrpcClient,
   experimental_durableLink,
   httpLink,
   safe,
+  sse,
 } from '@trpc12/trpc/client';
 import { experimental_durable } from '@trpc12/trpc/middleware';
 import { experimental_createOpenApiHandler } from '@trpc12/trpc/openapi';
@@ -213,7 +215,7 @@ test('experimental_durableLink retries a lost response with the same id', async 
       experimental_durableLink({ delay: () => Duration.zero }),
       httpLink({
         url: http.url,
-        batch: true,
+        batch: batching(),
         fetch: async (url, init) => {
           const headers = new Headers(init?.headers);
           sent.push({
@@ -681,6 +683,7 @@ test('experimental_durableLink waits before retrying by default; queries and sub
     links: [
       experimental_durableLink(),
       httpLink({
+        subscriptions: sse(),
         url: http.url,
         fetch: async (url, init) => {
           sent.push(new Headers(init?.headers).get('trpc-call-id'));
