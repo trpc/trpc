@@ -15,6 +15,7 @@
     "build",
     "smoke.ts",
     "decisions-layout.ts",
+    "not-found-check.ts",
     "vite.config.ts"
   ]
 }

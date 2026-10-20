@@ -146,6 +146,8 @@ jobs:
       - run: pnpm --filter @trpc12/www build
       # Every decisions page fits a phone, a tablet and a laptop.
       - run: pnpm --filter @trpc12/www decisions:layout
+      # A URL without a page gets 404.html, which hydrates without a mismatch.
+      - run: pnpm --filter @trpc12/www not-found:check
 
   effect-latest:
     # `@trpc12/trpc` has `effect@^4` as a peer; users get the latest 4.x, the lockfile pins one.

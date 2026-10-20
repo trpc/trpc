@@ -15,6 +15,7 @@
     "typecheck": "tsc",
     "decisions:check": "node build/decisions-check.ts",
     "decisions:layout": "node decisions-layout.ts",
+    "not-found:check": "node not-found-check.ts",
     "old-docs:copy": "node build/old-docs-copy.ts",
     "old-docs:check": "node build/old-docs-copy.ts --check",
     "sponsors:sync": "node build/sponsors-sync.ts",

@@ -66,19 +66,22 @@ export function traceRouter(next: AnyRouter) {
   }
 }
 
+export interface DehydratedRelease {
+  readonly sentryRelease: string;
+}
+
 /**
- * `getRouter()`'s `dehydrate` and `hydrate`, which bring the release to the
- * browser in the page: in a chunk, it would change that chunk on every
+ * For `getRouter()`'s `dehydrate` and `hydrate`, which bring the release to
+ * the browser in the page: in a chunk, it would change that chunk on every
  * deploy, and rename every chunk that imports it.
  */
-export const releaseInPage = {
-  dehydrate: () => ({
-    sentryRelease: import.meta.env.SSR ? __TRPC_SENTRY_RELEASE__ : '',
-  }),
-  hydrate: (dehydrated: { readonly sentryRelease: string }) => {
-    release = dehydrated.sentryRelease || undefined;
-  },
-};
+export const dehydrateRelease = (): DehydratedRelease => ({
+  sentryRelease: import.meta.env.SSR ? __TRPC_SENTRY_RELEASE__ : '',
+});
+
+export function hydrateRelease(dehydrated: DehydratedRelease) {
+  release = dehydrated.sentryRelease || undefined;
+}
 
 const onError = (event: ErrorEvent) => {
   sentry?.report({ error: event.error ?? event.message, source: 'onerror' });
