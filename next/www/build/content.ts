@@ -33,6 +33,12 @@ export interface ContentDirs {
 export interface PageDirs extends ContentDirs {
   /** Where the pages are served: `/docs` serves `client/links` at `/docs/client/links`. */
   readonly basePath: string;
+  /**
+   * Whether a page's last-modified date skips the commits that renamed it, so
+   * a moved page keeps its date. Not for copies: following their renames
+   * reaches the history they were copied from.
+   */
+  readonly datesSkipRenames?: boolean | undefined;
 }
 
 export interface ContentOptions extends PageDirs {
@@ -183,25 +189,18 @@ const parseSource = Effect.fn('parseSource')(function* (
 });
 
 /**
- * When `file` was last added or edited in git, if it's committed. A rename
- * doesn't count, even with edits, so a page keeps its date when it moves.
+ * When `file` last changed in git, if it's committed. With `skipRenames`, a
+ * rename doesn't count, even with edits.
  */
 const lastModified = Effect.fn('lastModified')(
-  function* (file: string) {
+  function* (file: string, skipRenames = false) {
     const path = yield* Path.Path;
     const spawner = yield* ChildProcessSpawner.ChildProcessSpawner;
+    const renames = skipRenames ? ['--follow', '--diff-filter=AM'] : [];
     const date = yield* spawner.string(
       ChildProcess.make(
         'git',
-        [
-          'log',
-          '-1',
-          '--follow',
-          '--diff-filter=AM',
-          '--format=%cI',
-          '--',
-          file,
-        ],
+        ['log', '-1', ...renames, '--format=%cI', '--', file],
         { cwd: path.dirname(file), stderr: 'ignore' },
       ),
     );
@@ -232,7 +231,7 @@ export const docPages = Effect.fn('docPages')(function* (dirs: PageDirs) {
   return yield* Effect.forEach(
     yield* readSources(dirs),
     (source) =>
-      Effect.map(lastModified(source.file), (date) => ({
+      Effect.map(lastModified(source.file, dirs.datesSkipRenames), (date) => ({
         description: source.frontmatter.description,
         experiment: source.frontmatter.experiment,
         lastModified: date,
@@ -453,7 +452,10 @@ export function docsContent(options: ContentOptions): Plugin {
         headings: result.headings,
         html: result.html,
         label: source.frontmatter.label,
-        lastModified: yield* lastModified(source.file),
+        lastModified: yield* lastModified(
+          source.file,
+          options.datesSkipRenames,
+        ),
         parent: source.frontmatter.parent,
         section: source.frontmatter.section,
         slug: source.slug,

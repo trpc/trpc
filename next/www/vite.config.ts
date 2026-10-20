@@ -47,7 +47,12 @@ const lockfile = new URL('../pnpm-lock.yaml', import.meta.url).pathname;
 const faviconFile = new URL('public/favicon.svg', import.meta.url).pathname;
 const [pages, copiedPages, posts, favicon] = await Effect.runPromise(
   Effect.all([
-    docPages({ basePath: v12.basePath, contentDir, samplesDir }),
+    docPages({
+      basePath: v12.basePath,
+      contentDir,
+      datesSkipRenames: true,
+      samplesDir,
+    }),
     Effect.forEach(copies, (copy) =>
       Effect.map(
         docPages({
@@ -97,6 +102,7 @@ export default defineConfig({
       basePath: v12.basePath,
       contentDir,
       contentPath: 'www/docs',
+      datesSkipRenames: true,
       manifestId: 'virtual:docs-manifest',
       samplesDir,
       sections,
