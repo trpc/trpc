@@ -10,7 +10,12 @@ import type { Doc, DocMeta, DocSection, Sample } from '../src/content/types.ts';
 import { experimentIds, experiments } from '../src/experiments.ts';
 import { stripCollapseMarkers } from './collapse.ts';
 import { ContentError, messageOf } from './content-error.ts';
-import { type DocLink, renderMarkdown, resolveLink } from './markdown.ts';
+import {
+  type DocLink,
+  releaseTwoslashers,
+  renderMarkdown,
+  resolveLink,
+} from './markdown.ts';
 import { expandSnippets } from './snippets.ts';
 import {
   makeTwoslashCache,
@@ -708,6 +713,7 @@ export function docsContent(options: ContentOptions): Plugin {
     configurePreviewServer: serveAgentFiles,
     configureServer: serveAgentFiles,
     async generateBundle() {
+      releaseTwoslashers();
       if (this.environment.name !== 'client') {
         return;
       }

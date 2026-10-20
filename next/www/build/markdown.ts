@@ -546,6 +546,43 @@ interface SeenProgram {
 /** A twoslasher per project root; each keeps a TypeScript environment per set of compiler options. */
 const twoslashers = new Map<string, Twoslasher>();
 
+/**
+ * How many TypeScript environments stay alive, across roots. Each is a
+ * program with its own parse of the app's and libraries' types, 100–250 MB,
+ * and a block's inline flags (`// @target: esnext`, `// @jsxImportSource:
+ * preact`) make another, so keeping them all ran a cold build out of heap.
+ */
+const liveEnvironments = 3;
+
+/** The live environments, least recently used first, each with what drops it from its twoslasher. */
+const usedEnvironments = new Map<Environment, () => void>();
+
+function useEnvironment(environment: Environment, drop: () => void) {
+  usedEnvironments.delete(environment);
+  usedEnvironments.set(environment, drop);
+  for (const [oldest, dropOldest] of usedEnvironments) {
+    if (usedEnvironments.size <= liveEnvironments) {
+      break;
+    }
+    usedEnvironments.delete(oldest);
+    dropOldest();
+    oldest.languageService.dispose();
+  }
+}
+
+/**
+ * Lets go of every twoslasher and its environments, once the pages are
+ * compiled: the prerender runs in the same process. A later block makes a
+ * new one.
+ */
+export function releaseTwoslashers() {
+  twoslashers.clear();
+  for (const environment of usedEnvironments.keys()) {
+    environment.languageService.dispose();
+  }
+  usedEnvironments.clear();
+}
+
 function twoslasherFor(root: string, tsLibDirectory: string) {
   const existing = twoslashers.get(root);
   if (existing) {
@@ -557,6 +594,13 @@ function twoslasherFor(root: string, tsLibDirectory: string) {
   // deleted instead: an emptied `a.ts` still resolves, so a later block's
   // `import './a'` would find it, with no text, before its own `a.tsx`.
   const environments = new (class extends Map<string, Environment> {
+    override get(key: string) {
+      const environment = super.get(key);
+      if (environment) {
+        useEnvironment(environment, () => this.delete(key));
+      }
+      return environment;
+    }
     override set(key: string, environment: Environment) {
       const createFile = environment.createFile.bind(environment);
       environment.createFile = (fileName, content) => {
@@ -570,7 +614,9 @@ function twoslasherFor(root: string, tsLibDirectory: string) {
         }
         environment.deleteFile(fileName);
       };
-      return super.set(key, environment);
+      super.set(key, environment);
+      useEnvironment(environment, () => this.delete(key));
+      return this;
     }
   })();
   const twoslasher = createTwoslasher({
