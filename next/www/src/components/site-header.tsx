@@ -10,9 +10,9 @@ import {
 } from '~/content/docs.ts';
 import { cn } from '@shared/ui/lib/utils';
 import {
+  allHomeVersions,
   type HomeVersion,
-  homeVersions,
-  showsHomeVersion,
+  useV12Shown,
 } from '~/home-version.ts';
 import { site, v12 } from '~/site.ts';
 
@@ -42,13 +42,18 @@ const linksOf = {
   ],
 } as const;
 
-function DocsLinks(props: { readonly version: HomeVersion }) {
+/** `disabled`: no `href`, as v12's on the home page until it's shown (`useV12Shown`). */
+function DocsLinks(props: {
+  readonly disabled?: boolean;
+  readonly version: HomeVersion;
+}) {
   const route = homeDocs[props.version].route;
   return linksOf[props.version].map((link) => (
     <Link
       activeOptions={{ exact: true }}
       activeProps={{ className: 'text-foreground' }}
       className={cn(navLink, 'wide' in link && 'hidden lg:inline-flex')}
+      disabled={props.disabled === true}
       inactiveProps={{ className: 'text-muted-foreground' }}
       key={link.label}
       params={{ _splat: link.slug }}
@@ -83,6 +88,7 @@ export function SiteHeader() {
     useLocation({ select: (location) => location.pathname }) === '/';
   const linked: HomeVersion = version.id === 'v12' ? 'v12' : 'v11';
   const homeSearch = useHomeSearch();
+  const v12Shown = useV12Shown();
   return (
     <header
       className="sticky top-0 z-40 border-b bg-background/85 backdrop-blur supports-[backdrop-filter]:bg-background/70"
@@ -100,7 +106,7 @@ export function SiteHeader() {
           {site.name}
         </Link>
         {onHome ? (
-          homeVersions.map((home) => (
+          allHomeVersions.map((home) => (
             <span data-home-panel={home} key={home}>
               <VersionSwitcher version={homeDocs[home]} />
             </span>
@@ -113,9 +119,12 @@ export function SiteHeader() {
           className="ml-3 hidden items-center gap-1 text-sm md:flex"
         >
           {onHome ? (
-            homeVersions.map((home) => (
+            allHomeVersions.map((home) => (
               <span data-home-panel={home} key={home}>
-                <DocsLinks version={home} />
+                <DocsLinks
+                  disabled={home === 'v12' && !v12Shown}
+                  version={home}
+                />
               </span>
             ))
           ) : (
@@ -134,16 +143,14 @@ export function SiteHeader() {
           <SearchButton />
           {/* The experiments are v12's, so v11 readers don't see the menu. */}
           {onHome ? (
-            showsHomeVersion('v12') ? (
-              <span data-home-panel="v12">
-                <ExperimentsMenu hidden={homeSearch.version !== 'v12'} />
-              </span>
-            ) : null
+            <span data-home-panel="v12">
+              <ExperimentsMenu hidden={homeSearch.version !== 'v12'} />
+            </span>
           ) : linked === 'v12' ? (
             <ExperimentsMenu />
           ) : null}
           {onHome ? (
-            homeVersions.map((home) => (
+            allHomeVersions.map((home) => (
               <span data-home-panel={home} key={home}>
                 <GitHubLink version={home} />
               </span>

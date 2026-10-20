@@ -34,6 +34,19 @@ html:has(#hero-code) {
   font-weight: 500;
 }
 
+/*
+ * v12's UI while v12 is hidden (`v12.hidden`): in the HTML, with its links
+ * disabled, for a session that has been to v12, which homeVersionScript
+ * marks with data-v12 on <html> before paint (`v12Attribute`).
+ */
+:root:not([data-v12]) [data-v12-ui] {
+  display: none !important;
+}
+
+:root:not([data-v12]) [data-v12-room] {
+  padding-top: 0;
+}
+
 /* The home page's "As used by" marquee (`UsedBy`). */
 @theme {
   --animate-used-by: used-by 60s linear infinite;

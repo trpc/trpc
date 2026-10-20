@@ -16,6 +16,7 @@ import {
   switchedSlug,
   useDocsVersion,
 } from '~/content/docs.ts';
+import { useV12Shown } from '~/home-version.ts';
 import { atTrpcIo, v11 } from '~/site.ts';
 
 /**
@@ -32,6 +33,7 @@ export function VersionSwitcher(props: {
   const pathname = useLocation({ select: (location) => location.pathname });
   const slug = slugAt(current, pathname);
   const trpcVersion = current.copied ?? v11;
+  const v12Shown = useV12Shown();
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
@@ -51,7 +53,7 @@ export function VersionSwitcher(props: {
         <ChevronDown />
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-auto min-w-52">
-        {offeredVersions(current).map((version) => (
+        {offeredVersions(current, v12Shown).map((version) => (
           <DropdownMenuItem
             key={version.id}
             render={

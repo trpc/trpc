@@ -14,6 +14,9 @@ import {
   homeVersionOf,
   homeVersionSearch,
   rememberHomeVersion,
+  revealV12,
+  shownHomeVersions,
+  useV12Shown,
 } from '~/home-version.ts';
 import { type CopiedVersion, v9, v10, v11, v12 } from '~/site.ts';
 
@@ -134,13 +137,15 @@ export const versions = [v12Docs, v11Docs, v10Docs, v9Docs] as const;
 
 /**
  * The versions a reader of `current` is offered: v12 only on its own pages
- * while it's hidden (`v12.hidden`), where nothing else links to it.
+ * while it's hidden (`v12.hidden`), unless the session has been to v12
+ * (`shown`, `useV12Shown`).
  */
 export function offeredVersions(
   current: DocsVersion,
+  shown: boolean,
 ): ReadonlyArray<DocsVersion> {
   return versions.filter(
-    (version) => !v12.hidden || version.id !== 'v12' || current.id === 'v12',
+    (version) => shown || version.id !== 'v12' || current.id === 'v12',
   );
 }
 
@@ -179,8 +184,10 @@ export function useHomeSearch(): HomeSearch {
     strict: false,
   });
   const version = useDocsVersion();
+  const v12Shown = useV12Shown();
   return homeVersionSearch(
     onHome ? shown : version.id === 'v12' ? 'v12' : 'v11',
+    shownHomeVersions(v12Shown),
   );
 }
 
@@ -191,12 +198,16 @@ export function useRememberHomeVersion() {
     select: (search) => search.version,
     strict: false,
   });
-  const version = homeVersionAt(pathname, { version: shown });
   useEffect(() => {
+    // A client navigation there shows v12's UI from then on, as landing there does.
+    if (pathname === '/v12' || pathname.startsWith('/v12/')) {
+      revealV12();
+    }
+    const version = homeVersionAt(pathname, { version: shown });
     if (version !== undefined) {
       rememberHomeVersion(version);
     }
-  }, [version]);
+  }, [pathname, shown]);
 }
 
 const listedVersions = new WeakMap<DocsVersion, Map<string, DocsVersion>>();

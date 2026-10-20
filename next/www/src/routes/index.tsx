@@ -35,12 +35,12 @@ import {
 import { UsedBy } from '~/components/used-by/used-by.tsx';
 import { findDoc, homeDocs } from '~/content/docs.ts';
 import {
+  allHomeVersions,
   defaultHomeVersion,
   type HomeVersion,
   homeVersionOf,
-  homeVersions,
-  showsHomeVersion,
   syncHomeVersionAttribute,
+  useV12Shown,
   validateHomeSearch,
 } from '~/home-version.ts';
 import { partners } from '~/sponsors.ts';
@@ -48,7 +48,7 @@ import { Badge } from '@shared/ui/components/badge';
 import { buttonVariants } from '@shared/ui/components/button';
 import { cn } from '@shared/ui/lib/utils';
 import { pageHead } from '~/seo.ts';
-import { site } from '~/site.ts';
+import { site, v12 } from '~/site.ts';
 import v11Define from '../../v11/home/step-1.md';
 import v11Serve from '../../v11/home/step-2.md';
 import v11Call from '../../v11/home/step-3.md';
@@ -360,15 +360,20 @@ const proseCode =
 
 /**
  * One version's part of the page; the CSS shows the version picked
- * (`[data-home-panel]`). None for a version the page doesn't show.
+ * (`[data-home-panel]`). v12's is in the HTML while it's hidden too, for a
+ * session that has been to v12 (`useV12Shown`), with its links disabled
+ * until then (`useLinksOff`).
  */
 function Panel(props: {
   readonly children: ReactNode;
   readonly version: HomeVersion;
 }) {
-  return showsHomeVersion(props.version) ? (
-    <div data-home-panel={props.version}>{props.children}</div>
-  ) : null;
+  return <div data-home-panel={props.version}>{props.children}</div>;
+}
+
+/** Whether `version`'s links have no `href` yet: v12's, until it's shown. */
+function useLinksOff(version: HomeVersion) {
+  return version === 'v12' && !useV12Shown();
 }
 
 function TypeScript() {
@@ -381,6 +386,7 @@ function TypeScript() {
 
 function HeroText(props: { readonly version: HomeVersion }) {
   const docs = homeDocs[props.version];
+  const linksOff = useLinksOff(props.version);
   const primary = cn(
     buttonVariants({ size: 'lg' }),
     'font-bold shadow-lg shadow-brand/25',
@@ -433,6 +439,7 @@ function HeroText(props: { readonly version: HomeVersion }) {
       <div className="flex flex-wrap gap-3">
         <Link
           className={primary}
+          disabled={linksOff}
           params={{ _splat: 'getting-started' }}
           to={docs.route}
         >
@@ -440,6 +447,7 @@ function HeroText(props: { readonly version: HomeVersion }) {
         </Link>
         <Link
           className={secondary}
+          disabled={linksOff}
           params={{ _splat: 'migrations/from-v11' }}
           to={docs.route}
         >
@@ -463,6 +471,7 @@ function HeroText(props: { readonly version: HomeVersion }) {
 
 function Steps(props: { readonly version: HomeVersion }) {
   const route = homeDocs[props.version].route;
+  const linksOff = useLinksOff(props.version);
   return (
     <ol className="grid gap-16">
       {stepsOf[props.version].map((step, index) => (
@@ -492,6 +501,7 @@ function Steps(props: { readonly version: HomeVersion }) {
             </div>
             <Link
               className={`${docLink} w-fit text-sm`}
+              disabled={linksOff}
               params={{ _splat: step.slug }}
               to={route}
             >
@@ -511,6 +521,7 @@ const featureCard =
 function Features(props: { readonly version: HomeVersion }) {
   const docs = homeDocs[props.version];
   const route = docs.route;
+  const linksOff = useLinksOff(props.version);
   // A card for an experiment's page waits, like the page, in the sidebar.
   const features = (props.version === 'v11' ? v11Features : v12Features).filter(
     (feature) =>
@@ -539,6 +550,7 @@ function Features(props: { readonly version: HomeVersion }) {
                   featureCard,
                   'transition-colors hover:border-primary/40 hover:bg-accent/50',
                 )}
+                disabled={linksOff}
                 params={{ _splat: feature.slug }}
                 to={route}
               >
@@ -588,7 +600,7 @@ function HomePage() {
                 {site.tagline[1]}
               </span>
             </h1>
-            {homeVersions.map((version) => (
+            {allHomeVersions.map((version) => (
               <Panel key={version} version={version}>
                 <HeroText version={version} />
               </Panel>
@@ -596,15 +608,15 @@ function HomePage() {
             <SupportedBy />
           </div>
           {/* pt-14 is the room the version pill docks in, above the code.
-              Every version ships in the HTML; CSS and homeVersionScript pick. */}
+              Every version ships in the HTML; CSS and homeVersionScript pick.
+              While v12 is hidden, neither shows until it's shown
+              (`[data-v12-ui]`, `[data-v12-room]`). */}
           <div
-            className={cn(
-              'relative grid min-w-0 grid-cols-1 gap-3',
-              homeVersions.length > 1 && 'pt-14',
-            )}
+            className="relative grid min-w-0 grid-cols-1 gap-3 pt-14"
+            data-v12-room={v12.hidden ? '' : undefined}
             id="hero-code"
           >
-            {homeVersions.length > 1 ? <HomeVersionBar /> : null}
+            <HomeVersionBar />
             <Panel version="v11">
               <DocBody
                 className="min-w-0 [&_.code-block]:my-0! [&_.code-block]:shadow-[0_-24px_300px_0_rgb(57_140_203/0.15)]"
@@ -668,9 +680,7 @@ function HomePage() {
         >
           <HashLink id="features">
             <span data-home-panel="v11">Features</span>
-            {showsHomeVersion('v12') ? (
-              <span data-home-panel="v12">What&apos;s in v12</span>
-            ) : null}
+            <span data-home-panel="v12">What&apos;s in v12</span>
           </HashLink>
         </h2>
         <Panel version="v11">

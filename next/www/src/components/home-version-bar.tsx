@@ -2,10 +2,13 @@ import { Link } from '@tanstack/react-router';
 import { useState } from 'react';
 
 import {
+  allHomeVersions,
   homeVersionLabels,
   homeVersionSearch,
-  homeVersions,
+  shownHomeVersions,
+  useV12Shown,
 } from '~/home-version.ts';
+import { v12 } from '~/site.ts';
 import { homeVersionBarLayout } from '~/home-version-bar-layout.ts';
 
 const largeQuery = '(min-width: 1024px)';
@@ -37,12 +40,18 @@ function sameStyle(a: BarStyle, b: BarStyle) {
  * Active styles come from `html[data-home-version]` CSS so a `?version=`
  * deep link never flashes the wrong pill before hydration.
  */
+/**
+ * While v12 is hidden, only for a session that has been to v12
+ * (`[data-v12-ui]`), its links without an `href` until then (`useV12Shown`).
+ */
 export function HomeVersionBar() {
   const [style, setStyle] = useState<BarStyle>(dockedStyle);
+  const shown = useV12Shown();
 
   return (
     <div
       className="pointer-events-none z-30 w-max -translate-x-1/2"
+      data-v12-ui={v12.hidden ? '' : undefined}
       ref={(shell) => {
         if (shell === null) {
           return;
@@ -108,15 +117,16 @@ export function HomeVersionBar() {
         className="pointer-events-auto flex items-center gap-0.5 rounded-full border bg-background/90 p-1 shadow-md backdrop-blur supports-[backdrop-filter]:bg-background/75"
         role="group"
       >
-        {homeVersions.map((version) => (
+        {allHomeVersions.map((version) => (
           <Link
             activeOptions={{ exact: true, includeSearch: true }}
             className="home-version-link rounded-full px-3.5 py-1.5 text-sm text-muted-foreground transition-colors outline-none hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/50"
             data-home-version-link={version}
+            disabled={!shown}
             key={version}
             replace
             resetScroll={false}
-            search={homeVersionSearch(version)}
+            search={homeVersionSearch(version, shownHomeVersions(shown))}
             to="/"
           >
             {homeVersionLabels[version]}

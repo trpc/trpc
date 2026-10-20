@@ -47,21 +47,23 @@ function storage(stored: Map<string, string> | 'blocked') {
 }
 
 /**
- * Runs `homeVersionScriptOf(both)` at `href` in a fresh context, as the browser's
- * head does: the version it shows and the URLs it replaces.
+ * Runs `homeVersionScriptOf(hidden)` at `href` in a fresh context, as the
+ * browser's head does: the version it shows, the URLs it replaces, whether
+ * it shows v12's UI (`data-v12`), and the session's storage after.
  */
-function land(
+function landing(
   href: string,
   localStorage: ReturnType<typeof storage>,
-  script = homeVersionScriptOf(both),
+  hidden: boolean,
+  sessionStorage: ReturnType<typeof storage> = storage(new Map()),
 ) {
   const replaced: Array<string> = [];
-  let shown: string | undefined;
-  runInNewContext(script, {
+  const attributes = new Map<string, string>();
+  runInNewContext(homeVersionScriptOf(hidden), {
     document: {
       documentElement: {
-        setAttribute: (_name: string, value: string) => {
-          shown = value;
+        setAttribute: (name: string, value: string) => {
+          attributes.set(name, value);
         },
       },
       querySelectorAll: () => [],
@@ -74,8 +76,19 @@ function land(
     },
     localStorage,
     location: new URL(href),
+    sessionStorage,
     URL,
   });
+  return {
+    replaced,
+    shown: attributes.get('data-home-version'),
+    v12: attributes.has('data-v12'),
+  };
+}
+
+/** `landing` with v12 shown, as on v12.trpc.io: the version and the URLs it replaces. */
+function land(href: string, localStorage: ReturnType<typeof storage>) {
+  const { replaced, shown } = landing(href, localStorage, false);
   return { replaced, shown };
 }
 
@@ -190,36 +203,113 @@ describe("the host's default", () => {
 
 describe('the home page while v12 is hidden', () => {
   const shown = ['v11'] as const;
-  const hidden = homeVersionScriptOf(shown);
+  const remembered = () => storage(new Map([['trpc-docs:version', 'v12']]));
 
-  it('drops ?version=v12, and never links it', () => {
+  it('validates and links ?version=v12 only where v12 is shown', () => {
     expect(validateHomeSearch({ version: 'v12' }, shown)).toEqual({});
     expect(homeVersionSearch('v12', shown)).toEqual({});
   });
 
-  it("doesn't remember v12 from its hidden docs", () => {
+  it("doesn't remember v12 from its docs where it isn't shown", () => {
     expect(
       homeVersionAt('/v12/docs/server/routers', {}, shown),
     ).toBeUndefined();
     expect(homeVersionAt('/docs/client/links', {}, shown)).toBe('v11');
   });
 
-  it('opens on v11 on every host, whatever is remembered or asked', () => {
+  it("opens on v11 with no v12 UI, on every host, until the session's been to v12", () => {
     expect(hostHomeVersion('v12.trpc.io', shown)).toBe('v11');
     expect(hostHomeVersion('localhost', shown)).toBe('v11');
-    expect(land('https://v12.trpc.io/', storage(new Map()), hidden)).toEqual({
-      replaced: [],
-      shown: 'v11',
-    });
+    for (const href of [
+      'https://trpc.io/',
+      'https://trpc-v12-git-a-trpc.vercel.app/',
+      'https://trpc.io/docs/client/links',
+      'https://trpc.io/blog?version=v11',
+    ]) {
+      expect(landing(href, remembered(), true)).toEqual({
+        replaced: [],
+        shown: 'v11',
+        v12: false,
+      });
+    }
+  });
+
+  it('shows v12 on landing on /v12/... or ?version=12, and for the rest of the session', () => {
+    const session = new Map<string, string>();
     expect(
-      land(
-        'https://trpc.io/',
-        storage(new Map([['trpc-docs:version', 'v12']])),
-        hidden,
+      landing(
+        'https://trpc.io/v12/docs/client/links',
+        storage(new Map()),
+        true,
+        storage(session),
       ),
-    ).toEqual({ replaced: [], shown: 'v11' });
+    ).toEqual({ replaced: [], shown: 'v11', v12: true });
+    expect([...session]).toEqual([['trpc-docs:v12', '1']]);
     expect(
-      land('https://trpc.io/?version=v12', storage(new Map()), hidden).shown,
-    ).toBe('v11');
+      landing('https://trpc.io/', storage(new Map()), true, storage(session)),
+    ).toEqual({ replaced: [], shown: 'v11', v12: true });
+    expect(
+      landing('https://trpc.io/', remembered(), true, storage(session)),
+    ).toEqual({
+      replaced: ['https://trpc.io/?version=v12'],
+      shown: 'v12',
+      v12: true,
+    });
+
+    const asked = new Map<string, string>();
+    expect(
+      landing(
+        'https://trpc.io/?version=12#steps',
+        storage(new Map()),
+        true,
+        storage(asked),
+      ),
+    ).toEqual({
+      replaced: ['https://trpc.io/?version=v12#steps'],
+      shown: 'v12',
+      v12: true,
+    });
+    expect([...asked]).toEqual([['trpc-docs:v12', '1']]);
+    expect(
+      landing(
+        'https://trpc.io/docs/client/links?version=12',
+        storage(new Map()),
+        true,
+      ).v12,
+    ).toBe(true);
+    expect(
+      landing('https://trpc.io/?version=v12', storage(new Map()), true).shown,
+    ).toBe('v12');
+    expect(landing('https://trpc.io/v12x', storage(new Map()), true).v12).toBe(
+      false,
+    );
+  });
+
+  it('shows v12 only where the URL asks when the session storage is blocked', () => {
+    expect(
+      landing(
+        'https://trpc.io/v12/docs',
+        storage(new Map()),
+        true,
+        storage('blocked'),
+      ).v12,
+    ).toBe(true);
+    expect(
+      landing('https://trpc.io/', storage(new Map()), true, storage('blocked'))
+        .v12,
+    ).toBe(false);
+  });
+
+  it("always shows v12's UI where it isn't hidden, and keeps nothing for the session", () => {
+    const session = new Map<string, string>();
+    expect(
+      landing(
+        'https://v12.trpc.io/docs/client/links',
+        storage(new Map()),
+        false,
+        storage(session),
+      ).v12,
+    ).toBe(true);
+    expect(session.size).toBe(0);
   });
 });

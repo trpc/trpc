@@ -7,20 +7,23 @@ import {
   v11Docs,
   v12Docs,
 } from '~/content/docs.ts';
+import { useV12Shown } from '~/home-version.ts';
 import { atTrpcIo, v12 } from '~/site.ts';
 
 const linkClass = 'font-medium text-link underline underline-offset-2';
 
 /**
  * Which version the page is of, as Docusaurus's version banner says it, with
- * a link to the page on its topic in the version to read instead. None on
- * v11's while v12 is hidden: they're the docs then, as on trpc.io.
+ * a link to the page on its topic in the version to read instead. On v11's
+ * while v12 is hidden, only for a session that has been to v12 (`[data-v12-ui]`,
+ * `useV12Shown`): they're the docs then, as on trpc.io.
  */
 export function VersionBanner(props: {
   readonly slug: string;
   readonly version: DocsVersion;
 }) {
   const copied = props.version.copied;
+  const v12Shown = useV12Shown();
   if (!copied) {
     const other = counterpart(props.version, props.slug, v11Docs);
     return (
@@ -41,13 +44,14 @@ export function VersionBanner(props: {
       </aside>
     );
   }
-  if (copied.status === 'stable' && v12.hidden) {
-    return null;
-  }
   const instead = copied.status === 'stable' ? v12Docs : v11Docs;
   const other = counterpart(props.version, props.slug, instead);
+  const toV12 = instead.id === 'v12' && v12.hidden;
   return (
-    <aside className="mb-6 flex gap-2.5 rounded-lg border bg-muted/50 px-3.5 py-2.5 text-sm text-pretty">
+    <aside
+      className="mb-6 flex gap-2.5 rounded-lg border bg-muted/50 px-3.5 py-2.5 text-sm text-pretty"
+      data-v12-ui={toV12 ? '' : undefined}
+    >
       <History className="mt-0.5 size-4 shrink-0 text-muted-foreground" />
       <p>
         This is the documentation for tRPC {props.version.id},{' '}
@@ -72,6 +76,7 @@ export function VersionBanner(props: {
         , see{' '}
         <Link
           className={linkClass}
+          disabled={toV12 && !v12Shown}
           params={{ _splat: other?.slug ?? instead.firstDoc }}
           to={instead.route}
         >

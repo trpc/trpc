@@ -19,9 +19,13 @@ import {
 } from '~/components/unpublished.tsx';
 import { useRememberHomeVersion } from '~/content/docs.ts';
 import { type FlagSearch, validateFlagSearch } from '~/flags.ts';
-import { homeVersionOf, homeVersionScript } from '~/home-version.ts';
+import {
+  homeVersionOf,
+  homeVersionScript,
+  v12Attribute,
+} from '~/home-version.ts';
 import { indexable } from '~/seo.ts';
-import { blog, site } from '~/site.ts';
+import { blog, site, v12 } from '~/site.ts';
 import appCss from '~/styles.css?url';
 
 export const Route = createRootRoute({
@@ -98,7 +102,14 @@ function RootDocument(props: { readonly children: ReactNode }) {
     strict: false,
   });
   return (
-    <html data-home-version={homeVersion} lang="en" suppressHydrationWarning>
+    <html
+      data-home-version={homeVersion}
+      // While v12 is hidden, homeVersionScript sets it for a session that
+      // has been to v12.
+      {...(v12.hidden ? {} : { [v12Attribute]: '' })}
+      lang="en"
+      suppressHydrationWarning
+    >
       <head>
         <HeadContent />
       </head>
