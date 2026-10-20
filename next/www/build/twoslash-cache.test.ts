@@ -64,8 +64,17 @@ const setup = Effect.fn('setup')(function* () {
   };
 });
 
-/** A lockfile where `samples/app` depends on `a`, and `tools` on `b`, at these versions. */
-function lockfileText(versions: { a: string; b: string; tools?: string }) {
+/**
+ * A lockfile where `samples/app` depends on `a`, and `tools` on `b` and on
+ * `c`, which depends on `d`, at these versions.
+ */
+function lockfileText(versions: {
+  a: string;
+  b: string;
+  c?: string;
+  tools?: string;
+}) {
+  const c = versions.c ?? '1.0.0';
   return [
     "lockfileVersion: '9.0'",
     'importers:',
@@ -75,14 +84,19 @@ function lockfileText(versions: { a: string; b: string; tools?: string }) {
     '  tools:',
     '    devDependencies:',
     `      b: { specifier: '${versions.b}', version: '${versions.b}' }`,
+    `      c: { specifier: '${c}', version: '${c}' }`,
     `      twoslash: { specifier: '${versions.tools ?? '1.0.0'}', version: '${versions.tools ?? '1.0.0'}' }`,
     'packages:',
     `  a@${versions.a}: { resolution: { integrity: sha512-a${versions.a} } }`,
     `  b@${versions.b}: { resolution: { integrity: sha512-b${versions.b} } }`,
+    `  c@${c}: { resolution: { integrity: sha512-c${c} } }`,
+    '  d@1.0.0: { resolution: { integrity: sha512-d } }',
     `  twoslash@${versions.tools ?? '1.0.0'}: { resolution: { integrity: sha512-t } }`,
     'snapshots:',
     `  a@${versions.a}: {}`,
     `  b@${versions.b}: {}`,
+    `  c@${c}: { dependencies: { d: 1.0.0 } }`,
+    '  d@1.0.0: {}',
     `  twoslash@${versions.tools ?? '1.0.0'}: {}`,
     '',
   ].join('\n');
@@ -242,6 +256,57 @@ describe('makeTwoslashCache', () => {
         const session = yield* makeTwoslashCache(dirs.options).open;
         expect(session.key(dirs.appBlock)).toBe(key);
         expect(session.get(key)).toBeUndefined();
+      }).pipe(Effect.provide(NodeServices.layer)),
+  );
+
+  it.effect(
+    'keeps a block that read a hoisted package outside its closure until the link moves',
+    () =>
+      Effect.gen(function* () {
+        const fs = yield* FileSystem.FileSystem;
+        const path = yield* Path.Path;
+        const dirs = yield* setupWorkspace();
+        const store = path.join(dirs.root, 'node_modules/.pnpm');
+        const hoisted = path.join(store, 'node_modules/c');
+        const install = (version: string) =>
+          Effect.gen(function* () {
+            const dir = path.join(store, `c@${version}/node_modules/c`);
+            yield* fs.makeDirectory(dir, { recursive: true });
+            yield* fs.remove(hoisted).pipe(Effect.ignore);
+            yield* fs.makeDirectory(path.dirname(hoisted), {
+              recursive: true,
+            });
+            yield* fs.symlink(dir, hoisted);
+          });
+        yield* install('1.0.0');
+        const first = yield* makeTwoslashCache(dirs.options).open;
+        const key = first.key(dirs.appBlock);
+        first.set(key, result, [
+          {
+            fileName: dirs.installedFile('c@1.0.0', 'c'),
+            text: 'export declare const c: 1;',
+          },
+          {
+            fileName: dirs.installedFile('d@1.0.0', 'd'),
+            text: 'export declare const d: 1;',
+          },
+        ]);
+        yield* first.flush;
+
+        yield* fs.writeFileString(
+          dirs.lockfile,
+          lockfileText({ a: '1.0.0', b: '2.0.0' }),
+        );
+        const elsewhere = yield* makeTwoslashCache(dirs.options).open;
+        expect(elsewhere.get(key)).toEqual(result);
+
+        yield* install('2.0.0');
+        yield* fs.writeFileString(
+          dirs.lockfile,
+          lockfileText({ a: '1.0.0', b: '2.0.0', c: '2.0.0' }),
+        );
+        const moved = yield* makeTwoslashCache(dirs.options).open;
+        expect(moved.get(key)).toBeUndefined();
       }).pipe(Effect.provide(NodeServices.layer)),
   );
 

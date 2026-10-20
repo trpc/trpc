@@ -65,6 +65,12 @@ export interface Lockfile {
     dir: string,
     dependencies?: ReadonlyArray<string>,
   ) => Closure | undefined;
+  /**
+   * The installed packages the package `id` (`name@version`) reaches, itself
+   * included, as `name@version`, whichever peers it was installed with.
+   * Empty when the lockfile doesn't install it.
+   */
+  readonly packagesFrom: (id: string) => ReadonlySet<string>;
 }
 
 function hash(text: string) {
@@ -198,6 +204,10 @@ export function readLockfile(file: string): Lockfile {
     };
   };
 
+  /** Each package's snapshots, one per set of peers. */
+  let snapshotsOf: Map<string, Array<string>> | undefined;
+  const reached = new Map<string, ReadonlySet<string>>();
+
   return {
     closure(dir, dependencies) {
       const id = JSON.stringify([dir, dependencies ?? null]);
@@ -207,6 +217,40 @@ export function readLockfile(file: string): Lockfile {
       return closures.get(id);
     },
     hash: hash(text),
+    packagesFrom(id) {
+      const known = reached.get(id);
+      if (known) {
+        return known;
+      }
+      if (!snapshotsOf) {
+        snapshotsOf = new Map();
+        for (const snapshot of Object.keys(lockfile.snapshots ?? {})) {
+          const name = withoutPeers(snapshot);
+          snapshotsOf.set(name, [...(snapshotsOf.get(name) ?? []), snapshot]);
+        }
+      }
+      const seen = new Set<string>();
+      const packages = new Set<string>();
+      const pending = [...(snapshotsOf.get(id) ?? [])];
+      for (let next = pending.pop(); next; next = pending.pop()) {
+        if (seen.has(next)) {
+          continue;
+        }
+        seen.add(next);
+        packages.add(withoutPeers(next));
+        const snapshot = lockfile.snapshots?.[next];
+        for (const group of [
+          snapshot?.dependencies,
+          snapshot?.optionalDependencies,
+        ]) {
+          for (const [name, version] of Object.entries(group ?? {})) {
+            pending.push(snapshotId(name, version));
+          }
+        }
+      }
+      reached.set(id, packages);
+      return packages;
+    },
   };
 }
 

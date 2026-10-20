@@ -113,6 +113,18 @@ describe('readLockfile', () => {
   );
 
   it.effect(
+    'reaches what an installed package depends on, whichever its peers',
+    () =>
+      Effect.gen(function* () {
+        const parsed = (yield* read(lockfile(workspace))).lockfile;
+        expect([...parsed.packagesFrom('react-dom@19.3.0')].toSorted()).toEqual(
+          ['react-dom@19.3.0', 'react@19.3.0', 'scheduler@0.27.0'],
+        );
+        expect(parsed.packagesFrom('missing@1.0.0').size).toBe(0);
+      }).pipe(Effect.provide(NodeServices.layer)),
+  );
+
+  it.effect(
     "includes how a linked package's types resolve from its package.json",
     () =>
       Effect.gen(function* () {

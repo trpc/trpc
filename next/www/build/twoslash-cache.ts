@@ -1,4 +1,6 @@
 import { createHash } from 'node:crypto';
+import { realpathSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 
 import type {
   TwoslashShikiFunction,
@@ -27,6 +29,9 @@ const maxAgeMs = 14 * 24 * 60 * 60 * 1000;
  */
 const installed = /[/\\]node_modules[/\\]\.pnpm[/\\]/;
 
+/** pnpm's store, the `node_modules/.pnpm` dir an installed file is in. */
+const storeDir = /^(.*[/\\]node_modules[/\\]\.pnpm)[/\\]/;
+
 /**
  * Errors whose block could compile differently after any install: an import
  * or types that didn't resolve might resolve from another package's
@@ -52,6 +57,10 @@ export interface TwoslashCacheOptions {
 const Entry = Schema.Struct({
   /** Each file the block's program read, outside `installed`, and its {@link fingerprint}. */
   deps: Schema.Array(Schema.Tuple([Schema.String, Schema.String])),
+  /** The links by name that installed packages outside the block's closure were found through, and the dir each pointed at. */
+  links: Schema.optional(
+    Schema.Array(Schema.Tuple([Schema.String, Schema.String])),
+  ),
   result: Schema.Struct({
     code: Schema.String,
     meta: Schema.optional(
@@ -174,6 +183,60 @@ export interface TwoslashCache {
   readonly stats: { hits: number; misses: number };
 }
 
+function realpathOrEmpty(file: string) {
+  try {
+    return realpathSync(file);
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * Where TypeScript finds an installed package by name when the package
+ * importing it doesn't depend on it (`happy-dom`'s `import 'buffer'`):
+ * pnpm's hoisted links, beside the store and at the workspace root, which
+ * point at whichever version the workspace installs.
+ */
+function linksTo(store: string, workspace: string, installedPackage: string) {
+  const name = installedPackage.slice(0, installedPackage.lastIndexOf('@'));
+  return [
+    join(store, 'node_modules', name),
+    join(workspace, 'node_modules', name),
+  ];
+}
+
+/**
+ * The {@link linksTo} that `outside`'s installed packages (by the store
+ * each is in) could have been found through, with where each points, if
+ * every package is one a link points at or one those reach. `undefined`
+ * if one was found some other way.
+ */
+function hoistedLinks(
+  lockfile: Lockfile,
+  closure: Closure,
+  outside: ReadonlyMap<string, string>,
+  workspace: string,
+) {
+  const links = new Map<string, string>();
+  const reached = new Set(closure.packages);
+  for (const [installedPackage, store] of outside) {
+    for (const link of linksTo(store, workspace, installedPackage)) {
+      const dir = realpathOrEmpty(link);
+      if (installedPackageOf(join(dir, 'package.json')) === installedPackage) {
+        links.set(link, dir);
+        for (const reachedPackage of lockfile.packagesFrom(installedPackage)) {
+          reached.add(reachedPackage);
+        }
+      }
+    }
+  }
+  return [...outside.keys()].every((installedPackage) =>
+    reached.has(installedPackage),
+  )
+    ? [...links]
+    : undefined;
+}
+
 /** A file's size and mtime, which say when to read it again. */
 const stampOf = Effect.fn('stampOf')(function* (file: string) {
   const fs = yield* FileSystem.FileSystem;
@@ -185,7 +248,11 @@ const stampOf = Effect.fn('stampOf')(function* (file: string) {
 });
 
 /** A lockfile that couldn't be read: every key misses until it can be. */
-const unreadLockfile: Lockfile = { closure: () => undefined, hash: '' };
+const unreadLockfile: Lockfile = {
+  closure: () => undefined,
+  hash: '',
+  packagesFrom: () => new Set(),
+};
 
 /**
  * Twoslash results on disk, so a build, CI run, deploy or dev server start
@@ -196,8 +263,11 @@ const unreadLockfile: Lockfile = { closure: () => undefined, hash: '' };
  * or the whole lockfile when the app isn't a workspace package. An entry
  * also lists every other file its program read (the workspace packages a
  * sample imports, say) with its {@link fingerprint}, and is a miss when one
- * changed. A block that read an installed package outside its closure, or
- * whose import didn't resolve, lists the lockfile too.
+ * changed. A block that read an installed package outside its closure
+ * through a hoisted link ({@link linksTo}) lists where the link pointed,
+ * and is a miss when it points elsewhere; the packages that package reaches
+ * come with it. A block that read one some other way, or whose import
+ * didn't resolve, lists the lockfile too.
  */
 export function makeTwoslashCache(
   options: TwoslashCacheOptions,
@@ -287,6 +357,22 @@ export function makeTwoslashCache(
         { concurrency: 64 },
       ),
     );
+    const fs = yield* FileSystem.FileSystem;
+    const currentLinks = new Map(
+      yield* Effect.forEach(
+        new Set(
+          [...store.values()].flatMap((entry) =>
+            (entry.links ?? []).map(([link]) => link),
+          ),
+        ),
+        (link) =>
+          Effect.map(
+            fs.realPath(link).pipe(Effect.orElseSucceed(() => '')),
+            (dir) => [link, dir] as const,
+          ),
+        { concurrency: 64 },
+      ),
+    );
     const used = new Set<string>();
     const written = new Map<string, Entry>();
 
@@ -323,7 +409,10 @@ export function makeTwoslashCache(
         const entry = store.get(key);
         if (
           !entry ||
-          entry.deps.some(([file, fileHash]) => current.get(file) !== fileHash)
+          entry.deps.some(
+            ([file, fileHash]) => current.get(file) !== fileHash,
+          ) ||
+          entry.links?.some(([link, dir]) => currentLinks.get(link) !== dir)
         ) {
           return undefined;
         }
@@ -348,7 +437,7 @@ export function makeTwoslashCache(
         stats.misses++;
         const closure = closures.get(key);
         const deps: Array<readonly [string, string]> = [];
-        let outsideClosure =
+        let listsLockfile =
           closure !== undefined &&
           result.nodes.some(
             (node) =>
@@ -356,25 +445,48 @@ export function makeTwoslashCache(
               typeof node.code === 'number' &&
               unresolvedCodes.has(node.code),
           );
+        /** Installed packages read from outside the closure, and the store each is in. */
+        const outside = new Map<string, string>();
         for (const file of files) {
           if (installed.test(file.fileName)) {
             const installedPackage = installedPackageOf(file.fileName);
-            outsideClosure ||=
-              closure !== undefined &&
-              (installedPackage === undefined ||
-                !closure.packages.has(installedPackage));
+            const store = storeDir.exec(file.fileName)?.[1];
+            if (closure === undefined) {
+              continue;
+            }
+            if (installedPackage === undefined || store === undefined) {
+              listsLockfile = true;
+            } else if (!closure.packages.has(installedPackage)) {
+              outside.set(installedPackage, store);
+            }
             continue;
           }
           const fileHash = fingerprint(file.fileName, file.text);
           deps.push([file.fileName, fileHash]);
           current.set(file.fileName, fileHash);
         }
-        if (outsideClosure) {
+        const links =
+          closure && !listsLockfile
+            ? hoistedLinks(
+                lockfile,
+                closure,
+                outside,
+                dirname(options.lockfile),
+              )
+            : undefined;
+        if (closure && links === undefined) {
+          listsLockfile = true;
+        }
+        if (listsLockfile) {
           deps.push([options.lockfile, lockfile.hash]);
           current.set(options.lockfile, lockfile.hash);
         }
+        for (const [link, dir] of links ?? []) {
+          currentLinks.set(link, dir);
+        }
         const entry: Entry = {
           deps,
+          ...(links?.length && { links }),
           result: {
             code: result.code,
             ...(result.meta && { meta: result.meta }),
