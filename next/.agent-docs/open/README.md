@@ -49,8 +49,13 @@ Two to four sentences: what exists today, who runs into it and what it costs the
 
 One or two sentences on what this option means.
 
-```ts
-// What a user writes under this option
+```ts twoslash
+// ---cut-start---
+import { client } from './client.ts';
+// ---cut-end---
+// What a user writes under this option, compiled against v12 as it is
+const post = await client.post.byId.query({ id: '1' });
+//    ^?
 ```
 
 - ✅ A pro
@@ -58,7 +63,14 @@ One or two sentences on what this option means.
 
 ### B) Another option
 
-…
+```ts twoslash
+// @errors: 2345
+// ---cut-start---
+import { createSafeClientB as createSafeClient } from '../open/safe-client-iteration.ts';
+import { client } from './client.ts';
+// ---cut-end---
+// What a user writes under this option, compiled against its stub
+```
 
 ## Recommendation
 
@@ -83,5 +95,11 @@ Optional, for deep reading: measurements, edge cases, history. The site shows it
   - `links`: what to read before answering, each with a `kind`: `spike`, `pr`, `preview`, `docs`, `decision`, `proposal`, `note`, `code` or `issue`. Spikes, PRs and previews come first; the site shows them as buttons. A relative `url` is a file in the repo, from this folder, and must exist.
 - **Sections**, in this order: `## Why it matters`, `## Options`, `## Recommendation`, `## Blocked until answered`, then an optional `## Details`.
 - **Options:** `### A) <title>`, `### B) <title>`, … in order, at least two. Each has a code block of what a user writes under it (config or a command when it isn't code), and at least one ✅ and one ❌ bullet. When "keep it as it is" is an option, make it A. For a before/after, put both in one block, with `// before` and `// after` comments. Don't add an "in your own words" option; the human can always answer that way.
+- **Code compiles**, so the page shows each name's type on hover and an option can't misstate the API:
+  - Write TypeScript as `ts twoslash` (`tsx twoslash` for JSX). A block is `src/block.twoslash.ts` in the `www/samples/decisions` app: it can import the app's `./server.ts` (a blog router whose procedures declare errors, stream and subscribe) and `./client.ts` (`client`, `safeClient`), or define its own. Hide that setup between `// ---cut-start---` and `// ---cut-end---`.
+  - What exists today compiles against v12 as it is. What an option proposes comes from a stub, `www/samples/decisions/open/<this file's name>.ts`: types and `declare`s only, one export per option and name (`createSafeClientB`), imported under the real name behind the cut (`import { createSafeClientB as createSafeClient } from '../open/<file>.ts'`). Don't augment a package's types (`declare module`) in a stub; export what the option adds instead. Delete the stub with the open file.
+  - Show what the choice changes: `// ^?` under a name pins its type (`const [posts, err]` then `//     ^?`), and `// @errors: 2345` at the top makes an expected error part of the example, with a `//` comment on the line before it saying why. Prefer an error that makes a point: a `matchError()` missing a handler fails to compile, so its error shows which codes a call can fail with.
+  - Plain `ts` only for what can't compile: a fragment of a file, or a package the app doesn't install (add it to the app's `package.json` when several questions need it).
+  - `pnpm --filter @trpc12/www decisions:check <file>` compiles one file's blocks (all of them without a file) and prints each error, in seconds once the cache is warm; the site's build fails on the same errors.
 - Keep it short. A file is read to make a decision, not to learn the topic: link the spike, note or proposal for the background, and put long material under `## Details`.
 - Write it like the rest of `.agent-docs/`: no human's name, plain words, every name in backticks, lists rather than tables.

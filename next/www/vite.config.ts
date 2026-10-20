@@ -12,7 +12,12 @@ import { blogFeeds } from './build/feeds.ts';
 import { siteIcons } from './build/icons.ts';
 import { bundledServer } from './build/on-demand.ts';
 import { OgCard, ogImages } from './build/og-image.ts';
-import type { TwoslashCacheOptions } from './build/twoslash-cache.ts';
+import {
+  cacheDir,
+  decisionsOptions,
+  samplesDir,
+  twoslashCache,
+} from './build/paths.ts';
 import { absoluteUrl, postDate, trpcPageUrl, trpcPostUrl } from './src/seo.ts';
 import {
   blog,
@@ -29,7 +34,6 @@ import v11Sections from './v11/sections.json' with { type: 'json' };
 
 // The v12 docs, served at `/v12/docs`.
 const contentDir = new URL('docs', import.meta.url).pathname;
-const samplesDir = new URL('samples', import.meta.url).pathname;
 // A copy of trpc.io's blog (`build/old-docs-copy.ts`), served at `/blog`.
 const blogDir = new URL('blog', import.meta.url).pathname;
 // Copies of the older versions' docs (`build/old-docs-copy.ts`), served at
@@ -41,17 +45,6 @@ const copies = copiedVersions.map((version) => ({
   version,
 }));
 const v11Dir = new URL('v11/docs', import.meta.url).pathname;
-// Kept between builds: Vercel restores `node_modules` under the project's
-// root, and CI caches the dir.
-const cacheDir = new URL('node_modules/.cache', import.meta.url).pathname;
-const twoslashCache: TwoslashCacheOptions = {
-  dir: `${cacheDir}/twoslash`,
-  lockfile: new URL('../pnpm-lock.yaml', import.meta.url).pathname,
-  tools: {
-    dir: new URL('.', import.meta.url).pathname,
-    packages: ['@shikijs/twoslash', 'twoslash', 'typescript6'],
-  },
-};
 const faviconFile = new URL('public/favicon.svg', import.meta.url).pathname;
 const [pages, copiedPages, posts, favicon] = await Effect.runPromise(
   Effect.all([
@@ -148,14 +141,7 @@ export default defineConfig({
       sourceUrl: `${site.github}/blob/main/www`,
     }),
     blogFeeds({ posts }),
-    decisionsContent({
-      basePath: decisions.basePath,
-      dir: new URL('../.agent-docs', import.meta.url).pathname,
-      dirInRepo: 'next/.agent-docs',
-      manifestId: 'virtual:decisions-manifest',
-      repoUrl: `${site.github}/blob/v12`,
-      samplesDir,
-    }),
+    decisionsContent(decisionsOptions),
     siteIcons({ svg: favicon }),
     ogImages({
       cacheDir: `${cacheDir}/og`,

@@ -13,6 +13,7 @@
     "start": "vp preview --port 3012",
     "smoke": "node smoke.ts",
     "typecheck": "tsc",
+    "decisions:check": "node build/decisions-check.ts",
     "old-docs:copy": "node build/old-docs-copy.ts",
     "old-docs:check": "node build/old-docs-copy.ts --check",
     "sponsors:sync": "node build/sponsors-sync.ts",

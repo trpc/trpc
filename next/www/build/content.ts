@@ -11,19 +11,10 @@ import { experimentIds, experiments } from '../src/experiments.ts';
 import { demoIds, demos, isDemoId } from '../src/kitchen-sink/demos.ts';
 import { stripCollapseMarkers } from './collapse.ts';
 import { ContentError, messageOf } from './content-error.ts';
-import {
-  type DocLink,
-  releaseTwoslashers,
-  renderMarkdown,
-  type RenderOptions,
-  resolveLink,
-} from './markdown.ts';
-import { makeRenderPool, type RenderPool } from './render-pool.ts';
+import { type DocLink, releaseTwoslashers, resolveLink } from './markdown.ts';
+import { closeRenderPool, makePageRenderer } from './page-renderer.ts';
 import { expandSnippets } from './snippets.ts';
-import {
-  makeTwoslashCache,
-  type TwoslashCacheOptions,
-} from './twoslash-cache.ts';
+import type { TwoslashCacheOptions } from './twoslash-cache.ts';
 
 export interface ContentDirs {
   /** Directory of the `.md` pages, as an absolute path. */
@@ -310,13 +301,6 @@ export const docPages = Effect.fn('docPages')(function* (dirs: PageDirs) {
   }));
 });
 
-/**
- * The build's render processes, shared by the docs plugins so they don't
- * start one set each. Started on a build's first page and ended once every
- * module is transformed.
- */
-let renderPool: RenderPool | undefined;
-
 /** Runs a build step from one of Vite's hooks. */
 function run<A, E>(effect: Effect.Effect<A, E, NodeServices.NodeServices>) {
   return Effect.runPromise(Effect.provide(effect, NodeServices.layer));
@@ -453,8 +437,7 @@ export function docsContent(options: ContentOptions): Plugin {
   const basePath = options.basePath;
   const manifestId = options.manifestId;
   const resolvedManifestId = `\0${manifestId}`;
-  const twoslashCache =
-    options.twoslashCache && makeTwoslashCache(options.twoslashCache);
+  const renderer = makePageRenderer(options.twoslashCache);
   const rendered = new Map<string, Promise<Rendered>>();
   /** The pages' commit dates, read again after an edit, as the pages are. */
   let commits: Promise<ReadonlyMap<string, string>> | undefined;
@@ -462,28 +445,7 @@ export function docsContent(options: ContentOptions): Plugin {
     commits ??= run(commitDates(options.contentDir, options.datesSkipRenames));
     return commits;
   };
-  /** Whether pages render in {@link renderPool}'s processes: in a build, not in dev, where a page renders on its own. */
-  let building = false;
-
-  const renderOn = (
-    markdown: string,
-    renderOptions: Omit<RenderOptions, 'twoslashCache'>,
-  ) => {
-    if (!building) {
-      return renderMarkdown(markdown, { ...renderOptions, twoslashCache });
-    }
-    renderPool ??= makeRenderPool();
-    return Effect.map(
-      renderPool.render(markdown, renderOptions, options.twoslashCache),
-      (output) => {
-        if (twoslashCache) {
-          twoslashCache.stats.hits += output.stats.hits;
-          twoslashCache.stats.misses += output.stats.misses;
-        }
-        return output.rendered;
-      },
-    );
-  };
+  const renderOn = renderer.render;
 
   /** The v11 page on the same topic as `source`. */
   const v11Page = Effect.fn('v11Page')(function* (source: Source) {
@@ -858,16 +820,11 @@ export function docsContent(options: ContentOptions): Plugin {
   }
 
   return {
-    configResolved(config) {
-      building = config.command === 'build';
-    },
+    configResolved: renderer.configResolved,
     configurePreviewServer: serveAgentFiles,
     configureServer: serveAgentFiles,
     // Before the chunks render, which is most of a build's memory.
-    async buildEnd() {
-      await renderPool?.close();
-      renderPool = undefined;
-    },
+    buildEnd: closeRenderPool,
     async generateBundle() {
       releaseTwoslashers();
       if (this.environment.name !== 'client') {
@@ -878,9 +835,9 @@ export function docsContent(options: ContentOptions): Plugin {
         : []) {
         this.emitFile({ fileName: urlPath.slice(1), source, type: 'asset' });
       }
-      if (twoslashCache) {
+      if (renderer.stats) {
         this.environment.logger.info(
-          `twoslash: ${twoslashCache.stats.hits} code blocks from the cache, ${twoslashCache.stats.misses} compiled`,
+          `twoslash: ${renderer.stats.hits} code blocks from the cache, ${renderer.stats.misses} compiled`,
         );
       }
     },

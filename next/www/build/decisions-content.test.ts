@@ -1,3 +1,5 @@
+import { readdirSync } from 'node:fs';
+
 import { describe, expect, it } from '@effect/vitest';
 
 import {
@@ -91,5 +93,22 @@ describe('splitProsCons', () => {
       pros: '- Short\n- Another',
       rest: 'An option.\n\n```ts\ncall();\n```',
     });
+  });
+});
+
+describe('samples/decisions/open', () => {
+  it("has only the stubs of open questions, deleted with the question's file", () => {
+    const questions = new Set(
+      readdirSync(new URL('../../.agent-docs/open', import.meta.url))
+        .filter((file) => file.endsWith('.md'))
+        .map((file) => file.slice(0, -'.md'.length)),
+    );
+    const orphans = readdirSync(
+      new URL('../samples/decisions/open', import.meta.url),
+    ).filter(
+      (file) =>
+        file !== 'tsconfig.json' && !questions.has(file.replace(/\.tsx?$/, '')),
+    );
+    expect(orphans).toEqual([]);
   });
 });

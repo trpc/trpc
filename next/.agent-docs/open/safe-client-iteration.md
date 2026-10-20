@@ -27,18 +27,28 @@ The human's answer on streamed-output errors was "yes for safe client of safe ca
 
 The safe client settles the call; iterating is the plain `TrpcIterable`, made safe with `safe()`.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { createSafeClient, matchError, safe } from '@trpc12/trpc/client';
+import { client } from './client.ts';
+declare function render(title: string): void;
+// ---cut-end---
 const safeClient = createSafeClient(client);
 
-const [seats, err] = await safeClient.seats.list.query({ show: 1 });
-if (err) return matchError(err, handlers);
-for await (const [seat, streamErr] of safe(seats)) {
-  if (streamErr) return matchError(streamErr, handlers);
-  render(seat);
+async function titles() {
+  const [posts, err] = await safeClient.post.list.query();
+  //     ^?
+  if (err) return err.message;
+  for await (const [post, streamErr] of safe(posts)) {
+    if (streamErr) return streamErr.message;
+    render(post.title);
+  }
 }
 
 // subscribe() isn't wrapped either
-for await (const [event, subErr] of safe(safeClient.onSeat.subscribe())) {
+for await (const [post, subErr] of safe(
+  safeClient.post.onCreated.subscribe(),
+)) {
 }
 ```
 
@@ -51,17 +61,34 @@ for await (const [event, subErr] of safe(safeClient.onSeat.subscribe())) {
 
 `createSafeClient` wraps a streamed output's iterable and `subscribe()` with `safe()`, so both yield `[item, error]`.
 
-```ts
+```ts twoslash
+// @errors: 2345
+// ---cut-start---
+import { matchError } from '@trpc12/trpc/client';
+import { createSafeClientB as createSafeClient } from '../open/safe-client-iteration.ts';
+import { client } from './client.ts';
+declare function render(title: string): void;
+// ---cut-end---
 const safeClient = createSafeClient(client);
 
-const [seats, err] = await safeClient.seats.list.query({ show: 1 });
-if (err) return matchError(err, handlers);
-for await (const [seat, streamErr] of seats) {
-  if (streamErr) return matchError(streamErr, handlers);
-  render(seat);
+async function titles() {
+  const [posts, err] = await safeClient.post.list.query();
+  //     ^?
+  if (err) return err.message;
+  for await (const [post, streamErr] of posts) {
+    if (streamErr) {
+      // Doesn't compile: the stream can fail with STREAM_INTERRUPTED too
+      return matchError(streamErr, {
+        NETWORK_ERROR: () => 'You are offline',
+        BAD_RESPONSE: () => 'Try again later',
+        unexpected: (e) => e.message,
+      });
+    }
+    render(post.title);
+  }
 }
 
-for await (const [event, subErr] of safeClient.onSeat.subscribe()) {
+for await (const [post, subErr] of safeClient.post.onCreated.subscribe()) {
 }
 ```
 
@@ -74,12 +101,19 @@ for await (const [event, subErr] of safeClient.onSeat.subscribe()) {
 
 Keep the iterable as it is and add `.safe()` on it, or a `safeSubscribe()`, so iteration opts in per call site.
 
-```ts
-const [seats, err] = await safeClient.seats.list.query({ show: 1 });
-for await (const [seat, streamErr] of seats.safe()) {
+```ts twoslash
+// ---cut-start---
+import { createSafeClientC as createSafeClient } from '../open/safe-client-iteration.ts';
+import { client } from './client.ts';
+const safeClient = createSafeClient(client);
+// ---cut-end---
+const [posts, err] = await safeClient.post.list.query();
+if (posts) {
+  for await (const [post, streamErr] of posts.safe()) {
+  }
 }
 
-for await (const [event, subErr] of safeClient.onSeat.safeSubscribe()) {
+for await (const [post, subErr] of safeClient.post.onCreated.safeSubscribe()) {
 }
 ```
 

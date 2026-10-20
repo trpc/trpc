@@ -17,7 +17,9 @@ import type {
   QuestionStatus,
 } from '../src/content/decision-types.ts';
 import { ContentError, messageOf } from './content-error.ts';
-import { renderMarkdown } from './markdown.ts';
+import { releaseTwoslashers } from './markdown.ts';
+import { closeRenderPool, makePageRenderer } from './page-renderer.ts';
+import type { TwoslashCacheOptions } from './twoslash-cache.ts';
 
 export interface DecisionsOptions {
   /** Where the pages are served: `/v12/decisions`. */
@@ -30,8 +32,12 @@ export interface DecisionsOptions {
   readonly manifestId: string;
   /** Where the repo's files are browsable: `https://github.com/trpc/trpc/blob/v12`. */
   readonly repoUrl: string;
-  /** The sample apps' dir, which `renderMarkdown` needs; nothing here compiles in it. */
+  /** The sample apps' dir. */
   readonly samplesDir: string;
+  /** The sample app the code blocks compile in: `decisions`, whose `open/` has each question's stubs. */
+  readonly inlineApp: string;
+  /** Keeps compiled code blocks on disk, so the next build reuses them. */
+  readonly twoslashCache?: TwoslashCacheOptions | undefined;
 }
 
 interface Manifest {
@@ -157,27 +163,32 @@ const excerptLength = 220;
 const run = <A, E>(effect: Effect.Effect<A, E, NodeServices.NodeServices>) =>
   Effect.runPromise(Effect.provide(effect, NodeServices.layer));
 
+const failWith = (file: string) =>
+  Effect.mapError(
+    (cause: unknown) =>
+      new ContentError({ cause, message: `${file}: ${messageOf(cause)}` }),
+  );
+
 /**
- * Renders `.agent-docs/open/*.md` and `.agent-docs/decisions/*.md` at build
- * time, as `blog-content.ts` does the posts: each file imports as a module
- * of pre-highlighted HTML, and the manifest module (`virtual:decisions-manifest`)
- * lists the open questions and the decisions. `tooling/decisions` parses
- * both, so a file the site can't render fails its tests too.
+ * The pages of `.agent-docs/open/*.md` and `.agent-docs/decisions/*.md`,
+ * and their list, with their code blocks compiled in the `inlineApp`
+ * sample app.
  */
-export function decisionsContent(options: DecisionsOptions): Plugin {
-  const resolvedManifestId = `\0${options.manifestId}`;
+export function decisionPages(options: DecisionsOptions) {
   const openDir = `${options.dir}/open/`;
   const decisionsDir = `${options.dir}/decisions/`;
+  const renderer = makePageRenderer(options.twoslashCache);
 
   const render = Effect.fn('renderDecisionMarkdown')(function* (
     file: string,
     markdown: string,
   ) {
-    const result = yield* renderMarkdown(
+    const result = yield* renderer.render(
       rewriteLinks(options, file, markdown),
       {
         basePath: options.basePath,
         contentPath: options.dirInRepo,
+        inlineApp: options.inlineApp,
         samplesDir: options.samplesDir,
         slug: file.slice(0, -'.md'.length),
         sourceUrl: options.repoUrl,
@@ -300,16 +311,77 @@ export function decisionsContent(options: DecisionsOptions): Plugin {
     return page;
   });
 
-  const failWith = (file: string) =>
-    Effect.mapError(
-      (cause: unknown) =>
-        new ContentError({ cause, message: `${file}: ${messageOf(cause)}` }),
-    );
+  /** The page of `file`, an open question or a decision, or `undefined` for any other file. */
+  const renderFile = (
+    file: string,
+    text: string,
+  ):
+    | Effect.Effect<
+        OpenQuestion | Decision,
+        ContentError,
+        FileSystem.FileSystem | Path.Path
+      >
+    | undefined => {
+    const name = file.slice(file.lastIndexOf('/') + 1);
+    if (file.startsWith(openDir) && name !== 'README.md') {
+      return renderOpen(name, text).pipe(failWith(file));
+    }
+    if (file.startsWith(decisionsDir)) {
+      return renderDecision(name, text).pipe(failWith(file));
+    }
+    return undefined;
+  };
 
+  return {
+    configResolved: renderer.configResolved,
+    decisionsDir,
+    manifest: () => manifest().pipe(failWith(options.dir)),
+    openDir,
+    renderFile,
+    stats: renderer.stats,
+  };
+}
+
+/**
+ * Renders `.agent-docs/open/*.md` and `.agent-docs/decisions/*.md` at build
+ * time, as `blog-content.ts` does the posts: each file imports as a module
+ * of pre-highlighted HTML, and the manifest module (`virtual:decisions-manifest`)
+ * lists the open questions and the decisions. `tooling/decisions` parses
+ * both, so a file the site can't render fails its tests too.
+ */
+export function decisionsContent(options: DecisionsOptions): Plugin {
+  const resolvedManifestId = `\0${options.manifestId}`;
+  const pages = decisionPages(options);
+  const appDir = `${options.samplesDir}/${options.inlineApp}/`;
+  /** Each file's page, shared by the client and SSR builds, so its blocks compile once. */
+  const rendered = new Map<string, Promise<OpenQuestion | Decision>>();
   let loaded: Promise<Manifest> | undefined;
 
   return {
+    buildEnd: closeRenderPool,
+    configResolved: pages.configResolved,
+    generateBundle() {
+      if (this.environment.name === 'client' && pages.stats) {
+        this.environment.logger.info(
+          `twoslash (decisions): ${pages.stats.hits} code blocks from the cache, ${pages.stats.misses} compiled`,
+        );
+      }
+    },
     hotUpdate(context) {
+      if (context.file.startsWith(appDir)) {
+        // The twoslashers keep the stubs they read; every page may import one.
+        releaseTwoslashers();
+        const graph = this.environment.moduleGraph;
+        const stale = [...graph.idToModuleMap].flatMap(([id, module]) =>
+          id.startsWith(pages.openDir) || id.startsWith(pages.decisionsDir)
+            ? [module]
+            : [],
+        );
+        for (const module of stale) {
+          graph.invalidateModule(module);
+        }
+        return stale.length > 0 ? [...context.modules, ...stale] : undefined;
+      }
       if (!context.file.startsWith(options.dir)) {
         return undefined;
       }
@@ -326,7 +398,7 @@ export function decisionsContent(options: DecisionsOptions): Plugin {
       if (id !== resolvedManifestId) {
         return undefined;
       }
-      loaded ??= run(manifest().pipe(failWith(options.dir)));
+      loaded ??= run(pages.manifest());
       const listed = await loaded;
       return [
         `export const openQuestions = ${JSON.stringify(listed.questions)};`,
@@ -343,14 +415,17 @@ export function decisionsContent(options: DecisionsOptions): Plugin {
       if (!file.endsWith('.md')) {
         return undefined;
       }
-      const name = file.slice(file.lastIndexOf('/') + 1);
-      let page: Promise<OpenQuestion | Decision>;
-      if (file.startsWith(openDir) && name !== 'README.md') {
-        page = run(renderOpen(name, code).pipe(failWith(file)));
-      } else if (file.startsWith(decisionsDir)) {
-        page = run(renderDecision(name, code).pipe(failWith(file)));
-      } else {
-        return undefined;
+      if (this.environment.mode === 'dev') {
+        rendered.delete(file);
+      }
+      let page = rendered.get(file);
+      if (!page) {
+        const render = pages.renderFile(file, code);
+        if (!render) {
+          return undefined;
+        }
+        page = run(render);
+        rendered.set(file, page);
       }
       return {
         code: `export default ${JSON.stringify(await page)};`,
