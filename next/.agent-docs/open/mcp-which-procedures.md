@@ -37,8 +37,33 @@ An agent calls whatever tools it's shown, without a human reviewing each call. I
 
 `mcp: true` or an object publishes a procedure. `include: 'all'` or a predicate widens that for routers built for agents. `mcp: false` always hides a procedure, and subscriptions are never tools.
 
-```ts
+```ts twoslash
+// @errors: 2322
+// ---cut-start---
+import { error, initTrpc } from '@trpc12/trpc/server';
+import { z } from 'zod';
+import {
+  experimental_createMcpHandlerA as experimental_createMcpHandler,
+  experimental_mcpA as experimental_mcp,
+} from '../open/mcp-which-procedures.ts';
+import type { Post, User } from './server.ts';
+interface Ctx {
+  user: User | null;
+}
+const ById = z.object({ id: z.string() });
+declare function getPost(opts: { input: { id: string } }): Post | undefined;
+declare function deletePost(opts: { input: { id: string } }): void;
+declare function reindex(): string;
+declare function readSecret(): string;
+// ---cut-end---
 const t = initTrpc<{ ctx: Ctx }>().concat(experimental_mcp());
+// ---cut-start---
+const authed = t.procedure.use((opts) =>
+  opts.ctx.user
+    ? opts.next({ ctx: { user: opts.ctx.user } })
+    : error({ code: 'UNAUTHORIZED' }),
+);
+// ---cut-end---
 
 const appRouter = {
   post: {
@@ -60,6 +85,9 @@ experimental_createMcpHandler({ router: appRouter });
 // tools/list → post_byId, post_delete
 experimental_createMcpHandler({ router: appRouter, include: 'all' });
 // tools/list → post_byId, post_delete, internal_reindex
+
+// Doesn't compile: without experimental_mcp(), `mcp` isn't a meta key
+initTrpc<{ ctx: Ctx }>().procedure.meta({ mcp: true });
 ```
 
 - ✅ Publishing an API to agents takes a line someone wrote, so adding a router doesn't leak internal procedures or undescribed mutations.
@@ -70,7 +98,22 @@ experimental_createMcpHandler({ router: appRouter, include: 'all' });
 
 Every query and mutation is a tool unless it opts out, like the OpenAPI handler's REST routes.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { initTrpc } from '@trpc12/trpc/server';
+import {
+  experimental_createMcpHandlerB as experimental_createMcpHandler,
+  experimental_mcpB as experimental_mcp,
+} from '../open/mcp-which-procedures.ts';
+const t = initTrpc().concat(experimental_mcp());
+const appRouter = {
+  post: {
+    byId: t.procedure.query(() => null),
+    delete: t.procedure.mutation(() => {}),
+  },
+  internal: { reindex: t.procedure.mutation(() => 'ok') },
+};
+// ---cut-end---
 experimental_createMcpHandler({ router: appRouter });
 // tools/list → post_byId, post_delete, internal_reindex
 
@@ -84,7 +127,18 @@ t.procedure.meta({ mcp: false }); // opt out
 
 The handler takes the tools by name, with no meta.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { initTrpc } from '@trpc12/trpc/server';
+import { experimental_createMcpHandlerC as experimental_createMcpHandler } from '../open/mcp-which-procedures.ts';
+const t = initTrpc();
+const appRouter = {
+  post: {
+    byId: t.procedure.query(() => null),
+    delete: t.procedure.mutation(() => {}),
+  },
+};
+// ---cut-end---
 experimental_createMcpHandler({
   router: appRouter,
   tools: { post_byId: appRouter.post.byId, post_delete: appRouter.post.delete },

@@ -31,7 +31,21 @@ MCP clients sign in with OAuth 2.1. They start when the server answers HTTP 401 
 
 `createContext` runs for each JSON-RPC request. Throwing `UNAUTHORIZED` from it answers 401 with `WWW-Authenticate` built from `resourceMetadataUrl`. `filter({ tool, ctx })` hides tools from `tools/list` and refuses them in `tools/call`, per caller. The app serves the metadata document itself.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { initTrpc, TrpcError } from '@trpc12/trpc/server';
+import { experimental_createMcpHandlerA as experimental_createMcpHandler } from '../open/mcp-oauth.ts';
+interface User {
+  name: string;
+  admin: boolean;
+}
+interface Ctx {
+  user: User | null;
+}
+const t = initTrpc<{ ctx: Ctx }>();
+const appRouter = { post: { delete: t.procedure.mutation(() => {}) } };
+declare function verify(token: string): User;
+// ---cut-end---
 experimental_createMcpHandler({
   router: appRouter,
   resourceMetadataUrl:
@@ -43,6 +57,7 @@ experimental_createMcpHandler({
     return { user: verify(token) };
   },
   filter: ({ tool, ctx }) =>
+    //              ^?
     tool.name !== 'post_delete' || ctx.user?.admin === true,
 });
 // no token → 401, WWW-Authenticate: Bearer resource_metadata="https://api.example.com/.well-known/oauth-protected-resource"
@@ -56,7 +71,20 @@ experimental_createMcpHandler({
 
 `experimental_protectedResourceMetadata()` is Effect HTTP middleware that serves the RFC 9728 document. It plugs into the handler's `middleware`, like `experimental_openApiReference`. This is a sketch.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { initTrpc } from '@trpc12/trpc/server';
+import {
+  experimental_createMcpHandlerB as experimental_createMcpHandler,
+  experimental_protectedResourceMetadataB as experimental_protectedResourceMetadata,
+} from '../open/mcp-oauth.ts';
+interface Ctx {
+  user: { name: string; admin: boolean } | null;
+}
+const t = initTrpc<{ ctx: Ctx }>();
+const appRouter = { post: { delete: t.procedure.mutation(() => {}) } };
+declare function createContext(opts: { request: Request }): Ctx;
+// ---cut-end---
 experimental_createMcpHandler({
   router: appRouter,
   middleware: [
@@ -76,7 +104,17 @@ experimental_createMcpHandler({
 
 No 401 mapping and no `filter`. A `createContext` that throws is a JSON-RPC error.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { initTrpc } from '@trpc12/trpc/server';
+import { experimental_createMcpHandlerC as experimental_createMcpHandler } from '../open/mcp-oauth.ts';
+interface Ctx {
+  user: { name: string; admin: boolean } | null;
+}
+const t = initTrpc<{ ctx: Ctx }>();
+const appRouter = { post: { delete: t.procedure.mutation(() => {}) } };
+declare function createContext(opts: { request: Request }): Ctx;
+// ---cut-end---
 experimental_createMcpHandler({ router: appRouter, createContext });
 // the app wraps `fetch` to answer 401 with WWW-Authenticate itself
 ```

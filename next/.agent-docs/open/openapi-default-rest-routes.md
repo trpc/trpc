@@ -37,7 +37,18 @@ Today a procedure without `route` meta is still a REST route: a query is `GET {p
 
 The whole router works over REST with no configuration; `route` only changes a procedure's method, path or status.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import {
+  experimental_createOpenApiHandler,
+  experimental_openapi,
+} from '@trpc12/trpc/openapi';
+import { initTrpc } from '@trpc12/trpc/server';
+import { z } from 'zod';
+import type { Context, Post } from './server.ts';
+declare function getPost(opts: { input: { id: string } }): Post | undefined;
+declare function createContext(): Context;
+// ---cut-end---
 const t = initTrpc<{ ctx: Context }>().concat(experimental_openapi());
 
 const appRouter = {
@@ -65,7 +76,16 @@ export const api = experimental_createOpenApiHandler({
 
 Only procedures with `route` meta are served and documented.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { experimental_openapi } from '@trpc12/trpc/openapi';
+import { initTrpc } from '@trpc12/trpc/server';
+import { z } from 'zod';
+import type { Context, Post } from './server.ts';
+const t = initTrpc<{ ctx: Context }>().concat(experimental_openapi());
+const ById = z.object({ id: z.string() });
+declare function getPost(opts: { input: { id: string } }): Post | undefined;
+// ---cut-end---
 const appRouter = {
   post: {
     byId: t.procedure.input(ById).query(getPost), // 404 over REST, not in the document
@@ -84,7 +104,23 @@ const appRouter = {
 
 Keep A, and give the handler the generator's `filter`, so one predicate hides a procedure from both.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import {
+  experimental_generateOpenApi,
+  experimental_openapi,
+} from '@trpc12/trpc/openapi';
+import { initTrpc } from '@trpc12/trpc/server';
+import { experimental_createOpenApiHandlerC as experimental_createOpenApiHandler } from '../open/openapi-default-rest-routes.ts';
+import type { Context } from './server.ts';
+const t = initTrpc<{ ctx: Context }>().concat(experimental_openapi());
+const appRouter = {
+  post: { byId: t.procedure.query(() => null) },
+  internal: { reindex: t.procedure.mutation(() => 'ok') },
+};
+const info = { title: 'Blog', version: '1.0.0' };
+declare function createContext(): Context;
+// ---cut-end---
 const filter = ({ path }: { path: string }) => !path.startsWith('internal.');
 
 export const api = experimental_createOpenApiHandler({

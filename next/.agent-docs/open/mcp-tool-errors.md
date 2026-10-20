@@ -34,12 +34,24 @@ MCP has two error channels. A tool result with `isError: true` reaches the model
 
 Failures from the procedure (validation, declared and thrown errors) are results the model reads. The same body is in `_meta['io.trpc/error']` for programs. Unexpected errors are masked as on RPC. Protocol failures (an unknown tool, bad JSON) are JSON-RPC errors.
 
-```ts
-byId: t.procedure
+```ts twoslash
+// ---cut-start---
+import { error, initTrpc } from '@trpc12/trpc/server';
+import { z } from 'zod';
+import { experimental_mcpA as experimental_mcp } from '../open/mcp-tool-errors.ts';
+import type { Post } from './server.ts';
+const t = initTrpc().concat(experimental_mcp());
+declare const posts: Map<string, Post>;
+// ---cut-end---
+const byId = t.procedure
   .meta({ mcp: true })
   .input(z.object({ id: z.string() }))
   .errors({ NOT_FOUND: { data: z.object({ id: z.string() }) } })
-  .query(({ input }) => posts.get(input.id) ?? error({ code: 'NOT_FOUND', data: { id: input.id } })),
+  .query(
+    ({ input }) =>
+      posts.get(input.id) ??
+      error({ code: 'NOT_FOUND', data: { id: input.id } }),
+  );
 
 // what the agent gets for tools/call post_byId { id: '9' }:
 // { isError: true,
@@ -57,7 +69,7 @@ byId: t.procedure
 
 Procedure failures use the protocol's error channel, like RPC errors.
 
-```ts
+```ts twoslash
 // what the agent's client gets for tools/call post_byId { id: '9' }:
 // { jsonrpc: '2.0', id: 3, error: { code: -32000, message: 'NOT_FOUND', data: { id: '9' } } }
 ```

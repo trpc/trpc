@@ -32,7 +32,13 @@ The spike publishes tools only: `initialize` answers `capabilities: { tools: { l
 
 ### A) Tools only in v1
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { initTrpc } from '@trpc12/trpc/server';
+import { experimental_mcpA as experimental_mcp } from '../open/mcp-beyond-tools.ts';
+import type { Context as Ctx, Post } from './server.ts';
+declare function listPosts(): Post[];
+// ---cut-end---
 const t = initTrpc<{ ctx: Ctx }>().concat(experimental_mcp());
 
 t.procedure.meta({ mcp: true }).query(listPosts); // a tool, nothing else
@@ -46,7 +52,14 @@ t.procedure.meta({ mcp: true }).query(listPosts); // a tool, nothing else
 
 Input-less queries are served by `resources/read`, with a `resource: { uri }` meta.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { initTrpc } from '@trpc12/trpc/server';
+import { experimental_mcpB as experimental_mcp } from '../open/mcp-beyond-tools.ts';
+import type { Post } from './server.ts';
+const t = initTrpc().concat(experimental_mcp());
+declare function listPosts(): Post[];
+// ---cut-end---
 t.procedure
   .meta({
     mcp: { resource: { uri: 'blog://posts', mimeType: 'application/json' } },
@@ -63,14 +76,40 @@ t.procedure
 
 `experimental_mcpLink({ url })` and `experimental_generateContractFromMcp()` mirror `experimental_openApiLink` and `experimental_generateContractFromOpenApi`, so a tRPC client calls any MCP server's tools with types.
 
-```ts
-const contract = await experimental_generateContractFromMcp({
+```ts twoslash
+// ---cut-start---
+// @filename: tools.ts
+import { experimental_contract } from '@trpc12/trpc/contract';
+import { z } from 'zod';
+const c = experimental_contract.create();
+export const tools = {
+  search_docs: c
+    .input(z.object({ query: z.string() }))
+    .output(z.array(z.object({ title: z.string(), url: z.string() })))
+    .mutation(),
+};
+// @filename: app.ts
+import { writeFile } from 'node:fs/promises';
+import { createTrpcClient } from '@trpc12/trpc/client';
+import {
+  experimental_generateContractFromMcpC as experimental_generateContractFromMcp,
+  experimental_mcpLinkC as experimental_mcpLink,
+} from '../open/mcp-beyond-tools.ts';
+// ---cut-end---
+import { tools } from './tools.ts';
+
+// at build time, as with experimental_generateContractFromOpenApi
+const source = await experimental_generateContractFromMcp({
   url: 'https://tools.example.com/mcp',
 });
-const client = createTrpcClient<typeof contract>({
+await writeFile('src/tools.ts', source);
+
+const client = createTrpcClient({
+  router: tools,
   links: [experimental_mcpLink({ url: 'https://tools.example.com/mcp' })],
 });
-await client.search_docs.mutate({ query: 'effect' }); // a typed tools/call
+const docs = await client.search_docs.mutate({ query: 'effect' }); // a typed tools/call
+//    ^?
 ```
 
 - ✅ A tRPC client calls any MCP server's tools with types.
@@ -80,7 +119,12 @@ await client.search_docs.mutate({ query: 'effect' }); // a typed tools/call
 
 Prompt templates ship next to the tools they use.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { initTrpc } from '@trpc12/trpc/server';
+import { experimental_mcpD as experimental_mcp } from '../open/mcp-beyond-tools.ts';
+const t = initTrpc().concat(experimental_mcp());
+// ---cut-end---
 t.procedure.meta({
   mcp: {
     prompt: {

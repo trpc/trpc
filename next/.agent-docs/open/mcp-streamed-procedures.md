@@ -34,7 +34,12 @@ An MCP tool call returns one result. The spike never publishes subscriptions, ev
 
 Subscriptions are left out of `tools/list`; streamed outputs aren't published either.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { initTrpc, tracked } from '@trpc12/trpc/server';
+import { experimental_mcpA as experimental_mcp } from '../open/mcp-streamed-procedures.ts';
+const t = initTrpc().concat(experimental_mcp());
+// ---cut-end---
 const appRouter = {
   post: {
     watch: t.procedure.meta({ mcp: true }).subscription(async function* () {
@@ -51,10 +56,19 @@ const appRouter = {
 
 The call iterates until the stream ends or `maxItems` is reached. It sends each item as `notifications/progress`, then all items as the result.
 
-```ts
-watch: t.procedure
+```ts twoslash
+// ---cut-start---
+import { initTrpc } from '@trpc12/trpc/server';
+import { experimental_mcpB as experimental_mcp } from '../open/mcp-streamed-procedures.ts';
+import type { Post } from './server.ts';
+declare function watchPosts(): AsyncIterable<Post>;
+const t = initTrpc().concat(experimental_mcp());
+// ---cut-end---
+const watch = t.procedure
   .meta({ mcp: { maxItems: 20 } })
-  .subscription(async function* () { … }),
+  .subscription(async function* () {
+    yield* watchPosts();
+  });
 // what the agent's client gets:
 // notifications/progress per item, then
 // { structuredContent: { result: [ …items ] } }
@@ -67,10 +81,19 @@ watch: t.procedure
 
 A subscription becomes a resource the agent reads and watches for changes.
 
-```ts
-watch: t.procedure
+```ts twoslash
+// ---cut-start---
+import { initTrpc } from '@trpc12/trpc/server';
+import { experimental_mcpC as experimental_mcp } from '../open/mcp-streamed-procedures.ts';
+import type { Post } from './server.ts';
+declare function watchPosts(): AsyncIterable<Post>;
+const t = initTrpc().concat(experimental_mcp());
+// ---cut-end---
+const watch = t.procedure
   .meta({ mcp: { resource: { uri: 'blog://posts' } } })
-  .subscription(async function* () { … }),
+  .subscription(async function* () {
+    yield* watchPosts();
+  });
 // resources/subscribe { uri: 'blog://posts' } → notifications/resources/updated
 ```
 
@@ -81,11 +104,20 @@ watch: t.procedure
 
 A long call becomes a task the agent polls (experimental in protocol `2025-11-25`). It's stored by `experimental_durable()`, the middleware that keeps a call's result so retries reuse it.
 
-```ts
-report: t.procedure
+```ts twoslash
+// ---cut-start---
+import { experimental_durable } from '@trpc12/trpc/middleware';
+import { initTrpc } from '@trpc12/trpc/server';
+import { experimental_mcpD as experimental_mcp } from '../open/mcp-streamed-procedures.ts';
+const t = initTrpc().concat(experimental_mcp());
+declare function buildReport(): AsyncIterable<string>;
+// ---cut-end---
+const report = t.procedure
   .use(experimental_durable({ ttl: '1 hour' }))
   .meta({ mcp: { task: true } })
-  .mutation(async function* () { … }),
+  .mutation(async function* () {
+    yield* buildReport();
+  });
 // tools/call → a task id; tasks/get → status, then the result
 ```
 

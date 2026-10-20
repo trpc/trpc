@@ -40,7 +40,15 @@ links:
 
 A REST handler, plus a generator for either the REST routes or the RPC endpoint.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { initTrpc } from '@trpc12/trpc/server';
+import { z } from 'zod';
+import type { Context, Post } from './server.ts';
+declare function getPost(opts: { input: { id: string } }): Post | undefined;
+declare function createContext(): Context;
+const info = { title: 'Blog', version: '1.0.0' };
+// ---cut-end---
 import {
   experimental_createOpenApiHandler,
   experimental_generateOpenApi,
@@ -48,6 +56,16 @@ import {
 } from '@trpc12/trpc/openapi';
 
 const t = initTrpc<{ ctx: Context }>().concat(experimental_openapi());
+// ---cut-start---
+const appRouter = {
+  post: {
+    byId: t.procedure
+      .meta({ route: { method: 'GET', path: '/posts/{id}' } })
+      .input(z.object({ id: z.string() }))
+      .query(getPost),
+  },
+};
+// ---cut-end---
 
 export const api = experimental_createOpenApiHandler({
   router: appRouter,
@@ -72,7 +90,14 @@ const rpcDoc = experimental_generateOpenApi(appRouter, { info, target: 'rpc' });
 
 Drop `target: 'rpc'`. The document always describes the REST routes.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { experimental_createOpenApiHandler } from '@trpc12/trpc/openapi';
+import { experimental_generateOpenApiB as experimental_generateOpenApi } from '../open/openapi-rpc-document.ts';
+import { appRouter, type Context } from './server.ts';
+declare function createContext(): Context;
+const info = { title: 'Blog', version: '1.0.0' };
+// ---cut-end---
 export const api = experimental_createOpenApiHandler({
   router: appRouter,
   createContext,
@@ -87,7 +112,12 @@ const doc = experimental_generateOpenApi(appRouter, { info }); // REST routes on
 
 No REST handler: the document describes the RPC endpoint as it is, like v11's OpenAPI support.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { experimental_generateOpenApiC as experimental_generateOpenApi } from '../open/openapi-rpc-document.ts';
+import { appRouter } from './server.ts';
+const info = { title: 'Blog', version: '1.0.0' };
+// ---cut-end---
 const doc = experimental_generateOpenApi(appRouter, { info }); // GET /trpc/post.byId?input=…
 // no experimental_createOpenApiHandler, no `route` meta
 ```

@@ -37,14 +37,20 @@ The spike found that `z.date()` was described as `{}`, and that a date input fai
 
 Outputs are described correctly. For date inputs, the user writes a schema that accepts strings.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { initTrpc } from '@trpc12/trpc/server';
+import { Schema } from 'effect';
+import { z } from 'zod';
+const t = initTrpc();
+// ---cut-end---
 // zod
-.input(z.object({ at: z.coerce.date() })) // described as date-time, accepts the string
-.input(z.object({ at: z.date() })) // described as {}, rejects the string
+t.procedure.input(z.object({ at: z.coerce.date() })); // described as date-time, accepts the string
+t.procedure.input(z.object({ at: z.date() })); // described as {}, rejects the string
 
 // Effect
-.input(Schema.Struct({ at: Schema.Date })) // described as { type: 'string' }, rejects the string
-.input(Schema.Struct({ at: Schema.DateFromString })) // accepts the string
+t.procedure.input(Schema.Struct({ at: Schema.Date })); // described as { type: 'string' }, rejects the string
+t.procedure.input(Schema.Struct({ at: Schema.DateFromString })); // accepts the string
 ```
 
 - ✅ Nothing to build. The zod side is documented in `www/docs/openapi/document.md`.
@@ -54,7 +60,12 @@ Outputs are described correctly. For date inputs, the user writes a schema that 
 
 For Effect Schema inputs, MCP arguments (and OpenAPI JSON bodies) are decoded with `Schema.toCodecJson(input)`, as `experimental_validationLink({ output: 'json' })` already does for responses. zod has no JSON codec, so zod inputs keep `z.coerce.date()`.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { initTrpc } from '@trpc12/trpc/server';
+import { Schema } from 'effect';
+import { experimental_mcpB as experimental_mcp } from '../open/mcp-non-json-values.ts';
+// ---cut-end---
 const t = initTrpc().concat(experimental_mcp());
 
 t.procedure
@@ -72,7 +83,14 @@ t.procedure
 
 `mcp.inputSchema` and `mcp.outputSchema` replace the generated schema, like OpenAPI's `route.spec`.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import type { JsonSchema } from '@trpc12/trpc/openapi';
+import { initTrpc } from '@trpc12/trpc/server';
+import { experimental_mcpC as experimental_mcp } from '../open/mcp-non-json-values.ts';
+const t = initTrpc().concat(experimental_mcp());
+declare function withDateTime(schema: JsonSchema, key: string): JsonSchema;
+// ---cut-end---
 t.procedure.meta({
   mcp: { inputSchema: (generated) => withDateTime(generated, 'at') },
 });

@@ -31,7 +31,16 @@ The tool name is what the model sees and calls. MCP allows `[A-Za-z0-9._-]{1,128
 
 The spike joins path segments with `_`. `mcp.name` renames one tool, and `separator` changes the join. Two procedures with the same tool name throw when the handler is created.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { initTrpc } from '@trpc12/trpc/server';
+import {
+  experimental_createMcpHandlerA as experimental_createMcpHandler,
+  experimental_mcpA as experimental_mcp,
+} from '../open/mcp-tool-names.ts';
+import { appRouter } from './server.ts';
+const t = initTrpc().concat(experimental_mcp());
+// ---cut-end---
 appRouter.post.byId; // tool "post_byId"
 t.procedure.meta({ mcp: { name: 'get_post' } }); // tool "get_post"
 experimental_createMcpHandler({ router: appRouter, separator: '.' }); // "post.byId"
@@ -48,7 +57,10 @@ experimental_createMcpHandler({ router: appRouter, separator: '.' }); // "post.b
 
 The tool's name is the procedure's path, as in RPC URLs, logs and spans.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { appRouter } from './server.ts';
+// ---cut-end---
 appRouter.post.byId; // tool "post.byId"
 ```
 
@@ -59,9 +71,16 @@ appRouter.post.byId; // tool "post.byId"
 
 Every published procedure names its tool.
 
-```ts
+```ts twoslash
+// @errors: 2322
+// ---cut-start---
+import { initTrpc } from '@trpc12/trpc/server';
+import { experimental_mcpC as experimental_mcp } from '../open/mcp-tool-names.ts';
+const t = initTrpc().concat(experimental_mcp());
+// ---cut-end---
 t.procedure.meta({ mcp: { name: 'get_post', description: 'Read one post' } });
-t.procedure.meta({ mcp: true }); // type error: `name` is required
+// Doesn't compile: `name` is required
+t.procedure.meta({ mcp: true });
 ```
 
 - ✅ Every name is chosen for the model, not derived from how the code is organized.

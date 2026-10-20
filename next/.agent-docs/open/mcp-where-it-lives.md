@@ -37,11 +37,21 @@ The human passed on a user's ask, "I've really wanted to publish routes via an M
 
 A subpath of `@trpc12/trpc` handles MCP's JSON-RPC over Streamable HTTP (`initialize`, `ping`, `tools/list`, `tools/call`). It's the spike rebuilt on `createHandlerCore`, the request core the OpenAPI handler uses. Exports are `experimental_` until approved.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { z } from 'zod';
 import {
-  experimental_createMcpHandler,
-  experimental_mcp,
-} from '@trpc12/trpc/mcp';
+  experimental_createMcpHandlerA as experimental_createMcpHandler,
+  experimental_mcpA as experimental_mcp,
+} from '../open/mcp-where-it-lives.ts';
+import type { Post, User } from './server.ts';
+interface Ctx {
+  user: User | null;
+}
+declare function getPost(id: string): Post;
+declare function userFrom(request: Request): User | null;
+// ---cut-end---
+// import { experimental_createMcpHandler, experimental_mcp } from '@trpc12/trpc/mcp';
 import { initTrpc } from '@trpc12/trpc/server';
 
 const t = initTrpc<{ ctx: Ctx }>().concat(experimental_mcp());
@@ -72,11 +82,17 @@ export const mcp = experimental_createMcpHandler({
 
 A separate package registers one SDK tool per procedure. The app picks the SDK's transport. This is a sketch; it isn't built.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { createMcpServerB as createMcpServer } from '../open/mcp-where-it-lives.ts';
+import { appRouter, type Context } from './server.ts';
+declare function createContext(opts: { request: Request }): Context;
+// ---cut-end---
 import { WebStandardStreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js';
-import { createMcpServer } from '@trpc12/experimental-mcp';
+// import { createMcpServer } from '@trpc12/experimental-mcp';
 
 const server = createMcpServer({ router: appRouter, createContext }); // an SDK `McpServer`
+//    ^?
 const transport = new WebStandardStreamableHTTPServerTransport({
   sessionIdGenerator: undefined,
 });
@@ -94,13 +110,25 @@ export default {
 
 `@trpc12/trpc/mcp` exports only `experimental_describeTools(router)`, which turns procedures into MCP tool descriptors. A docs page wires it into the SDK's low-level `Server`.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import type {
+  CallToolRequest,
+  CallToolResult,
+} from '@modelcontextprotocol/sdk/types.js';
+import { experimental_describeToolsC as experimental_describeTools } from '../open/mcp-where-it-lives.ts';
+import { appRouter } from './server.ts';
+declare function callProcedure(
+  router: object,
+  params: CallToolRequest['params'],
+): Promise<CallToolResult>;
+// ---cut-end---
 import { Server } from '@modelcontextprotocol/sdk/server/index.js';
 import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from '@modelcontextprotocol/sdk/types.js';
-import { experimental_describeTools } from '@trpc12/trpc/mcp';
+// import { experimental_describeTools } from '@trpc12/trpc/mcp';
 
 const server = new Server(
   { name: 'blog', version: '1.0.0' },
@@ -111,6 +139,7 @@ server.setRequestHandler(ListToolsRequestSchema, () => ({
 }));
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   // each app: find the procedure, unwrap `{ input }`, call it, map errors to `isError`, mask
+  return callProcedure(appRouter, request.params);
 });
 ```
 

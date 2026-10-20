@@ -34,7 +34,11 @@ The transport decides whether a tool can report progress while it runs, and whet
 
 One JSON-RPC message per POST, answered with `application/json`, and no sessions.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { experimental_createMcpHandlerA as experimental_createMcpHandler } from '../open/mcp-transport.ts';
+import { appRouter } from './server.ts';
+// ---cut-end---
 const mcp = experimental_createMcpHandler({ router: appRouter });
 // POST tools/call     → 200 application/json
 // POST notification   → 202
@@ -49,7 +53,11 @@ const mcp = experimental_createMcpHandler({ router: appRouter });
 
 A `tools/call` can answer with `text/event-stream` and send progress before the result. Still stateless.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { experimental_createMcpHandlerB as experimental_createMcpHandler } from '../open/mcp-transport.ts';
+import { appRouter } from './server.ts';
+// ---cut-end---
 experimental_createMcpHandler({ router: appRouter }); // same code
 // POST tools/call → content-type: text/event-stream
 // event: message  data: {"method":"notifications/progress","params":{…}}
@@ -63,7 +71,15 @@ experimental_createMcpHandler({ router: appRouter }); // same code
 
 `Mcp-Session-Id` sessions and a GET stream, for list-changed notifications and server-to-client requests.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import {
+  experimental_createMcpHandlerC as experimental_createMcpHandler,
+  type McpSessionStoreC,
+} from '../open/mcp-transport.ts';
+import { appRouter } from './server.ts';
+declare const store: McpSessionStoreC;
+// ---cut-end---
 experimental_createMcpHandler({ router: appRouter, sessions: store }); // sketch
 // initialize → Mcp-Session-Id: 4f…
 // GET /mcp    → text/event-stream of server-to-client messages
@@ -76,7 +92,14 @@ experimental_createMcpHandler({ router: appRouter, sessions: store }); // sketch
 
 The same handler, run as a local process that a desktop client starts.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import {
+  experimental_createMcpHandlerD as experimental_createMcpHandler,
+  experimental_serveStdioD as experimental_serveStdio,
+} from '../open/mcp-transport.ts';
+import { appRouter } from './server.ts';
+// ---cut-end---
 experimental_serveStdio(experimental_createMcpHandler({ router: appRouter })); // sketch
 ```
 
