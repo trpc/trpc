@@ -12,7 +12,7 @@ import {
 import { TestServer } from '@trpc12/trpc/internal/testing';
 import { createSerializer } from '@trpc12/trpc/serializer';
 import { initTrpc, tracked, type TrackedEnvelope } from '@trpc12/trpc/server';
-import { Context, Effect, Exit, Layer, Scope } from 'effect';
+import { Context, Effect, Exit, Layer, Scope, Stream } from 'effect';
 import { expect, expectTypeOf, test, vi } from 'vite-plus/test';
 import { z } from 'zod';
 import { liveCollectionOptions, type LiveEvent } from './index.ts';
@@ -396,6 +396,40 @@ test('cleanup aborts the signal of a subscription that awaits it, and leaves no 
   expect(signal?.aborted).toBe(true);
   await vi.waitFor(() => expect(ended).toBe(true));
   expect(posts.status).toBe('cleaned-up');
+});
+
+test('a subscription can be an Effect Stream, interrupted by cleanup, and its failure is the error', async () => {
+  let ended = 0;
+  const posts = createCollection(
+    liveCollectionOptions({
+      subscribe: () =>
+        Stream.fromIterable<PostChange>([
+          { type: 'snapshot', rows: [] },
+          {
+            type: 'upsert',
+            row: { id: '1', title: 'From a Stream', createdAt: new Date(0) },
+          },
+        ]).pipe(
+          Stream.concat(Stream.never),
+          Stream.ensuring(Effect.sync(() => ended++)),
+        ),
+      getKey: (post) => post.id,
+    }),
+  );
+  await posts.preload();
+  expect(posts.get('1')?.title).toBe('From a Stream');
+  await posts.cleanup();
+  expect(ended).toBe(1);
+
+  const failing = createCollection(
+    liveCollectionOptions<Post, string>({
+      subscribe: () => Stream.fail(new Error('gone')),
+      getKey: (post) => post.id,
+    }),
+  );
+  failing.preload().catch(() => undefined);
+  await vi.waitFor(() => expect(failing.status).toBe('error'));
+  await failing.cleanup();
 });
 
 test('cleanup closes the subscription', async () => {

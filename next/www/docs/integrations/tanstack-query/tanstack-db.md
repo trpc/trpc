@@ -221,7 +221,7 @@ const posts = createCollection(
 ```
 
 - Write `subscribe` before `getKey`: the row type comes from the subscription's events, and `getKey` reads it.
-- The subscription starts with the collection's sync and closes with its cleanup. A failed subscription puts the collection in its `error` status.
+- The subscription starts with the collection's sync and closes with its cleanup. A failed subscription puts the collection in its `error` status. `subscribe` may also return an Effect `Stream`, such as an Effect client's `subscribe()`; cleanup interrupts it.
 - `utils.awaitEventId(id)` resolves once the collection has applied the `tracked()` event with that id, or a newer snapshot. Awaited in a handler, it keeps the optimistic row on screen until the server's row replaces it; without it, the row disappears between the mutation's response and its event. It rejects after 10 seconds (pass a timeout as its second argument).
 - `listen()` is your change feed: an `EventEmitter` read with `on()` from `node:events` in one process (`on()` listens from the call, an async generator only from its first `next()`), or your database's change feed for several.
 
