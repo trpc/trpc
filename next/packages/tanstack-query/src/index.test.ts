@@ -35,6 +35,7 @@ import {
   type InputValidationErrorData,
   type TrpcError,
 } from '@trpc12/trpc/server';
+import { Effect, Stream } from 'effect';
 import { expect, expectTypeOf, test, vi } from 'vite-plus/test';
 import { appRouter, createApp, db, sleep, type Post } from './fixtures/app.ts';
 import type { z } from 'zod';
@@ -817,6 +818,40 @@ test('leaving a hand-written subscription aborts its signal while its generator 
   expect(signal?.aborted).toBe(true);
   await vi.waitFor(() => expect(finished).toBe(true));
   expect(observer.getCurrentResult().status).toBe('active');
+});
+
+test('a subscription can be an Effect Stream, interrupted when its last observer leaves', async () => {
+  await using app = await createApp();
+  let ended = 0;
+  const observer = new SubscriptionObserver({
+    ...app.trpc.clock.ticks.subscriptionOptions({ input: { from: 0 } }),
+    subscribe: () =>
+      Stream.make(1, 2).pipe(
+        Stream.concat(Stream.never),
+        Stream.ensuring(Effect.sync(() => ended++)),
+      ),
+  });
+  const unsubscribe = observer.subscribe(() => {});
+  // A synchronous stream's events arrive while the first observer joins.
+  expect(observer.getCurrentResult()).toMatchObject({
+    status: 'active',
+    data: 2,
+  });
+  unsubscribe();
+  expect(ended).toBe(1);
+
+  const failing = new SubscriptionObserver({
+    subscriptionKey: app.trpc.clock.ticks.subscriptionOptions({
+      input: { from: 1 },
+    }).subscriptionKey,
+    enabled: true,
+    subscribe: () => Stream.fail(new Error('gone')),
+  });
+  const stop = failing.subscribe(() => {});
+  const failed = failing.getCurrentResult();
+  expect(failed).toMatchObject({ status: 'error', error: { message: 'gone' } });
+  expectTypeOf(failed.error).toEqualTypeOf<Error | null>();
+  stop();
 });
 
 test('context reaches the links, typed from what they declare', async () => {

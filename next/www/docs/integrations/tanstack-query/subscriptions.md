@@ -61,7 +61,7 @@ function NewPosts(props: { channel: string }) {
 - Components with the same client and key share one subscription. A late one starts from the current state, each component's `onData` runs for every later event, `reset()` restarts it for all of them, and it closes when the last one unmounts. Pass `subscriptionCache: undefined` to give an observer its own.
 - Reconnects resume from the last `tracked()` id, as with any client ([Subscriptions](../../subscriptions/overview.md)).
 
-`SubscriptionObserver` from `@trpc12/tanstack-query` is what the primitives are built on, for a framework without a package.
+`SubscriptionObserver` from `@trpc12/tanstack-query` is what the primitives are built on, for a framework without a package. Its options' `subscribe` may also return an Effect `Stream`, such as an Effect client's `subscribe()`; the last observer leaving interrupts it.
 
 ## In the query cache
 

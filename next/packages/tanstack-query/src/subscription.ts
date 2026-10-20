@@ -30,8 +30,14 @@ export interface TrpcSubscriptionOptions<
   readonly subscriptionKey: TrpcQueryKey;
   /** `false` (or `input: skipToken`) keeps it idle. */
   readonly enabled: boolean;
-  /** Opens the subscription. Aborting `signal` closes it. */
-  readonly subscribe: (opts: { signal: AbortSignal }) => AsyncIterable<TEvent>;
+  /**
+   * Opens the subscription: an async iterable that aborting `signal`
+   * closes, or an Effect `Stream` (an Effect client's `subscribe()`), which
+   * is interrupted instead.
+   */
+  readonly subscribe: (opts: {
+    signal: AbortSignal;
+  }) => AsyncIterable<TEvent> | Stream.Stream<TEvent, TError>;
   /**
    * Observers with the same cache and key share one subscription.
    * `subscriptionOptions()` passes its client's cache; without one, each
@@ -80,12 +86,12 @@ const consume = /* @__PURE__ */ Effect.fnUntraced(function* <TEvent, TError>(
   options: AnyOptions<TEvent, TError>,
 ) {
   const signal = yield* Effect.abortSignal;
-  const exit = yield* Stream.suspend(() =>
-    Stream.fromAsyncIterable(
-      options.subscribe({ signal }),
-      (cause) => cause as TError,
-    ),
-  ).pipe(
+  const exit = yield* Stream.suspend(() => {
+    const source = options.subscribe({ signal });
+    return Stream.isStream(source)
+      ? source
+      : Stream.fromAsyncIterable(source, (cause) => cause as TError);
+  }).pipe(
     Stream.runForEach((event) => Effect.sync(() => shared.event(event))),
     Effect.exit,
   );
