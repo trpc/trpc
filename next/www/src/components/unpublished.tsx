@@ -6,6 +6,7 @@ import { toast, Toaster } from 'sonner';
 import { buttonVariants } from '@shared/ui/components/button';
 import { cn } from '@shared/ui/lib/utils';
 import { useDocsVersion, v11Docs } from '~/content/docs.ts';
+import { showsHomeVersion } from '~/home-version.ts';
 
 /** A package manager command that names a `@trpc12/` package. */
 const unpublishedCommand =
@@ -103,11 +104,11 @@ export function UnpublishedBanner() {
   const onHome =
     useLocation({ select: (location) => location.pathname }) === '/';
   if (onHome) {
-    return (
+    return showsHomeVersion('v12') ? (
       <div data-home-panel="v12">
         <Banner />
       </div>
-    );
+    ) : null;
   }
   return version.id === 'v12' ? <Banner /> : null;
 }

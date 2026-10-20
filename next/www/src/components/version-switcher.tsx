@@ -11,12 +11,12 @@ import { Check, ChevronDown, ExternalLink } from 'lucide-react';
 
 import {
   type DocsVersion,
+  offeredVersions,
   slugAt,
   switchedSlug,
   useDocsVersion,
-  versions,
 } from '~/content/docs.ts';
-import { v11 } from '~/site.ts';
+import { atTrpcIo, v11 } from '~/site.ts';
 
 /**
  * Picks the docs' version, as Docusaurus's version dropdown does: switching
@@ -51,7 +51,7 @@ export function VersionSwitcher(props: {
         <ChevronDown />
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-auto min-w-52">
-        {versions.map((version) => (
+        {offeredVersions(current).map((version) => (
           <DropdownMenuItem
             key={version.id}
             render={
@@ -70,19 +70,23 @@ export function VersionSwitcher(props: {
             ) : null}
           </DropdownMenuItem>
         ))}
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
-          render={
-            <a
-              href={`${trpcVersion.url}${trpcVersion.trpcPath}`}
-              rel="noopener"
-              target="_blank"
-            />
-          }
-        >
-          {trpcVersion.id} on trpc.io
-          <ExternalLink className="ml-auto" />
-        </DropdownMenuItem>
+        {atTrpcIo ? null : (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              render={
+                <a
+                  href={`${trpcVersion.url}${trpcVersion.trpcPath}`}
+                  rel="noopener"
+                  target="_blank"
+                />
+              }
+            >
+              {trpcVersion.id} on trpc.io
+              <ExternalLink className="ml-auto" />
+            </DropdownMenuItem>
+          </>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );

@@ -132,6 +132,18 @@ export const v9Docs = copiedDocs(
 /** Newest first, as the version switcher lists them. */
 export const versions = [v12Docs, v11Docs, v10Docs, v9Docs] as const;
 
+/**
+ * The versions a reader of `current` is offered: v12 only on its own pages
+ * while it's hidden (`v12.hidden`), where nothing else links to it.
+ */
+export function offeredVersions(
+  current: DocsVersion,
+): ReadonlyArray<DocsVersion> {
+  return versions.filter(
+    (version) => !v12.hidden || version.id !== 'v12' || current.id === 'v12',
+  );
+}
+
 /** The docs of each version the home page shows. */
 export const homeDocs = {
   v11: v11Docs,

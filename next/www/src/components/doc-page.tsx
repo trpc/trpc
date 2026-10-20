@@ -38,8 +38,14 @@ import type { Doc } from '~/content/types.ts';
 import { experiments } from '~/experiments.ts';
 import { PageDemo } from '~/kitchen-sink/embed.tsx';
 import { useEnableOnVisit } from '~/flags.ts';
-import { absoluteUrl, ogImageUrl, pageHead, trpcPageUrl } from '~/seo.ts';
-import { site } from '~/site.ts';
+import {
+  absoluteUrl,
+  copyPageUrl,
+  ogImageUrl,
+  pageHead,
+  trpcPageUrl,
+} from '~/seo.ts';
+import { atTrpcIo, site, v11, v12 } from '~/site.ts';
 import { partners } from '~/sponsors.ts';
 
 export function DocsLayout() {
@@ -63,9 +69,48 @@ export async function loadDocPage(version: DocsVersion, slug: string) {
   return { doc: await version.load(slug) };
 }
 
+/** A page's breadcrumbs, for search results, by the URL of each page in them. */
+function breadcrumbs(
+  version: DocsVersion,
+  meta: NonNullable<ReturnType<typeof findDoc>>,
+  urlOf: (slug: string) => string,
+) {
+  const parents = ancestors(version, meta.slug);
+  return {
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', item: site.url, name: site.name, position: 1 },
+      {
+        '@type': 'ListItem',
+        // A section has no page of its own; it opens with its first.
+        item: urlOf(
+          listedDocs(version).sections.find(
+            (section) => section.title === meta.section,
+          )?.docs[0]?.slug ?? meta.slug,
+        ),
+        name: meta.section,
+        position: 2,
+      },
+      ...parents.map((parent, index) => ({
+        '@type': 'ListItem',
+        item: urlOf(parent.slug),
+        name: stripInlineCode(parent.title),
+        position: 3 + index,
+      })),
+      {
+        '@type': 'ListItem',
+        item: urlOf(meta.slug),
+        name: stripInlineCode(meta.title),
+        position: 3 + parents.length,
+      },
+    ],
+  };
+}
+
 /**
  * A page's `head()`. The copies of the older versions point search engines
- * at trpc.io, where those docs live, and have no markdown for agents.
+ * at trpc.io, where those docs live, and have no markdown for agents. While
+ * v12 is hidden, its pages say `noindex, nofollow`, and v11's are the docs.
  */
 export function docHead(version: DocsVersion, slug: string) {
   const meta = findDoc(version, slug);
@@ -75,18 +120,24 @@ export function docHead(version: DocsVersion, slug: string) {
   const path = `${version.basePath}/${meta.slug}`;
   const title = stripInlineCode(meta.title);
   const description = stripInlineCode(meta.description) || site.description;
-  if (version.copied) {
+  const copied = version.copied;
+  if (copied) {
     return pageHead({
-      canonical: trpcPageUrl(version.copied, meta.slug),
+      canonical: copyPageUrl(copied, meta.slug),
       description,
       path,
-      title: `${title} (${version.id})`,
+      structuredData: [
+        breadcrumbs(version, meta, (page) => copyPageUrl(copied, page)),
+      ],
+      title:
+        v12.hidden && copied.id === v11.id ? title : `${title} (${version.id})`,
       type: 'article',
     });
   }
   return pageHead({
     article: { modified: meta.lastModified, section: meta.section },
     description,
+    hidden: v12.hidden,
     markdownPath: `${path}.md`,
     noindex: meta.experiment !== undefined,
     path,
@@ -102,38 +153,9 @@ export function docHead(version: DocsVersion, slug: string) {
         mainEntityOfPage: absoluteUrl(path),
         proficiencyLevel: 'Expert',
       },
-      {
-        '@type': 'BreadcrumbList',
-        itemListElement: [
-          {
-            '@type': 'ListItem',
-            item: site.url,
-            name: site.name,
-            position: 1,
-          },
-          {
-            '@type': 'ListItem',
-            // A section has no page of its own; it opens with its first.
-            item: absoluteUrl(
-              `${version.basePath}/${listedDocs(version).sections.find((section) => section.title === meta.section)?.docs[0]?.slug ?? meta.slug}`,
-            ),
-            name: meta.section,
-            position: 2,
-          },
-          ...ancestors(version, meta.slug).map((parent, index) => ({
-            '@type': 'ListItem',
-            item: absoluteUrl(`${version.basePath}/${parent.slug}`),
-            name: stripInlineCode(parent.title),
-            position: 3 + index,
-          })),
-          {
-            '@type': 'ListItem',
-            item: absoluteUrl(path),
-            name: title,
-            position: 3 + ancestors(version, meta.slug).length,
-          },
-        ],
-      },
+      breadcrumbs(version, meta, (page) =>
+        absoluteUrl(`${version.basePath}/${page}`),
+      ),
     ],
     title,
     type: 'article',
@@ -278,12 +300,14 @@ export function DocPage(props: {
             <PartnersStrip className={cn(!demo && 'xl:hidden')} />
           ) : null}
           {version.copied ? (
-            <a
-              className={footerLink}
-              href={trpcPageUrl(version.copied, doc.slug)}
-            >
-              <ExternalLink className="size-3.5" /> Read this page on trpc.io
-            </a>
+            atTrpcIo ? null : (
+              <a
+                className={footerLink}
+                href={trpcPageUrl(version.copied, doc.slug)}
+              >
+                <ExternalLink className="size-3.5" /> Read this page on trpc.io
+              </a>
+            )
           ) : (
             <a
               className={footerLink}

@@ -1,12 +1,23 @@
 import { v11, v12 } from './site.ts';
 
+const allHomeVersions = ['v11', 'v12'] as const;
+
+export type HomeVersion = (typeof allHomeVersions)[number];
+
 /**
  * Which tRPC the home page shows: v11, the stable release, unless
- * `?version=v12`, which `/` gets off trpc.io (`hostHomeVersion`).
+ * `?version=v12`, which `/` gets off trpc.io (`hostHomeVersion`). Only v11
+ * while v12 is hidden (`v12.hidden`): the page has no v12 panel then.
  */
-export const homeVersions = ['v11', 'v12'] as const;
+export const homeVersions: ReadonlyArray<HomeVersion> = v12.hidden
+  ? ['v11']
+  : allHomeVersions;
 
-export type HomeVersion = (typeof homeVersions)[number];
+/** Whether the home page has `version`'s panel. */
+export const showsHomeVersion = (
+  version: HomeVersion,
+  shown: ReadonlyArray<HomeVersion> = homeVersions,
+) => shown.includes(version);
 
 /** The version `/` without `?version=` names, and the prerendered HTML shows. */
 export const defaultHomeVersion: HomeVersion = 'v11';
@@ -14,16 +25,22 @@ export const defaultHomeVersion: HomeVersion = 'v11';
 /** Hosts where `/` opens on `defaultHomeVersion`; elsewhere it opens on v12. */
 const stableHosts = ['trpc.io', 'www.trpc.io'];
 
-const previewHomeVersion: HomeVersion = 'v12';
+/** The version `/` opens on off `stableHosts`: v12, if the page shows it. */
+const previewHomeVersion = (shown: ReadonlyArray<HomeVersion>): HomeVersion =>
+  showsHomeVersion('v12', shown) ? 'v12' : defaultHomeVersion;
 
 /**
  * The version `/` opens on at `hostname` when the reader names or remembers
- * none: v11 on trpc.io, v12 on `v12.trpc.io`, previews and localhost.
+ * none: v11 on trpc.io, v12 on `v12.trpc.io`, previews and localhost, unless
+ * v12 is hidden.
  */
-export function hostHomeVersion(hostname: string): HomeVersion {
+export function hostHomeVersion(
+  hostname: string,
+  shown: ReadonlyArray<HomeVersion> = homeVersions,
+): HomeVersion {
   return stableHosts.includes(hostname)
     ? defaultHomeVersion
-    : previewHomeVersion;
+    : previewHomeVersion(shown);
 }
 
 export const homeVersionLabels = {
@@ -36,10 +53,15 @@ export interface HomeSearch {
   readonly version?: 'v12' | undefined;
 }
 
-/** `/`'s `validateSearch`: keeps `?version=` only when it names v12. */
-export function validateHomeSearch(search: Record<string, unknown>) {
+/** `/`'s `validateSearch`: keeps `?version=` only when it names v12, and the page shows it. */
+export function validateHomeSearch(
+  search: Record<string, unknown>,
+  shown: ReadonlyArray<HomeVersion> = homeVersions,
+) {
   const validated: HomeSearch =
-    search['version'] === 'v12' ? { version: 'v12' } : {};
+    search['version'] === 'v12' && showsHomeVersion('v12', shown)
+      ? { version: 'v12' }
+      : {};
   return validated;
 }
 
@@ -47,9 +69,14 @@ export function homeVersionOf(search: HomeSearch): HomeVersion {
   return search.version ?? defaultHomeVersion;
 }
 
-/** The search showing `version`: none for v11, so `/` stays clean. */
-export function homeVersionSearch(version: HomeVersion): HomeSearch {
-  return version === 'v12' ? { version } : {};
+/** The search showing `version`: none for v11, so `/` stays clean, or a version it doesn't show. */
+export function homeVersionSearch(
+  version: HomeVersion,
+  shown: ReadonlyArray<HomeVersion> = homeVersions,
+): HomeSearch {
+  return version === 'v12' && showsHomeVersion(version, shown)
+    ? { version }
+    : {};
 }
 
 /** Where the version the reader last browsed is kept, for `/` to open on. */
@@ -158,7 +185,10 @@ function applyHomeVersion(version: HomeVersion) {
  * default, never flashes the prerendered v11 panels. Pairs with the
  * `[data-home-panel]` CSS.
  */
-export const homeVersionScript = `(${applyHomeVersion.toString()})((${landingHomeVersion.toString()})(${[storageKey, homeVersions, defaultHomeVersion, stableHosts, previewHomeVersion].map((arg) => JSON.stringify(arg)).join(',')}));`;
+export const homeVersionScriptOf = (shown: ReadonlyArray<HomeVersion>) =>
+  `(${applyHomeVersion.toString()})((${landingHomeVersion.toString()})(${[storageKey, shown, defaultHomeVersion, stableHosts, previewHomeVersion(shown)].map((arg) => JSON.stringify(arg)).join(',')}));`;
+
+export const homeVersionScript = homeVersionScriptOf(homeVersions);
 
 /** Keep `<html data-home-version>` in sync after client navigations. */
 export function syncHomeVersionAttribute(version: HomeVersion) {

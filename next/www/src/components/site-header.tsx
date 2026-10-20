@@ -9,7 +9,11 @@ import {
   v12Docs,
 } from '~/content/docs.ts';
 import { cn } from '@shared/ui/lib/utils';
-import { type HomeVersion, homeVersions } from '~/home-version.ts';
+import {
+  type HomeVersion,
+  homeVersions,
+  showsHomeVersion,
+} from '~/home-version.ts';
 import { site, v12 } from '~/site.ts';
 
 import { ExperimentsMenu } from './experiments-menu.tsx';
@@ -130,9 +134,11 @@ export function SiteHeader() {
           <SearchButton />
           {/* The experiments are v12's, so v11 readers don't see the menu. */}
           {onHome ? (
-            <span data-home-panel="v12">
-              <ExperimentsMenu hidden={homeSearch.version !== 'v12'} />
-            </span>
+            showsHomeVersion('v12') ? (
+              <span data-home-panel="v12">
+                <ExperimentsMenu hidden={homeSearch.version !== 'v12'} />
+              </span>
+            ) : null
           ) : linked === 'v12' ? (
             <ExperimentsMenu />
           ) : null}

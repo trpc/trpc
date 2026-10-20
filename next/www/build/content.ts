@@ -8,6 +8,7 @@ import { parse as parseYaml } from 'yaml';
 import { stripInlineCode } from '../src/content/inline-code.ts';
 import type { Doc, DocMeta, DocSection, Sample } from '../src/content/types.ts';
 import { experimentIds, experiments } from '../src/experiments.ts';
+import { llmsFullTxtPath } from '../src/site.ts';
 import { demoIds, demos, isDemoId } from '../src/kitchen-sink/demos.ts';
 import { stripCollapseMarkers } from './collapse.ts';
 import { ContentError, messageOf } from './content-error.ts';
@@ -34,12 +35,35 @@ export interface PageDirs extends ContentDirs {
   readonly datesSkipRenames?: boolean | undefined;
 }
 
+/** The files `docsContent` writes for agents. */
+export interface AgentFiles {
+  /**
+   * Where `llms.txt` (https://llmstxt.org) lists the pages: `/llms.txt`,
+   * `/llms-v10.txt`. Its `-full` twin, every page in one file, is beside
+   * it. At `/llms.txt`, the home page's markdown (`/index.md`) and the
+   * markdown 404 (`/404.md`) come with it.
+   */
+  readonly llmsTxt: string;
+  /**
+   * Whether each page is markdown too, at `<basePath>/<slug>.md`, which
+   * `llms.txt` links; or else it links the pages, as trpc.io's do.
+   */
+  readonly markdown: boolean;
+  /** Its heading: `tRPC v10`. `tRPC` if omitted. */
+  readonly name?: string;
+  /** The other versions' `llms.txt`, listed at the top: `v10` at `/llms-v10.txt`. */
+  readonly others?: ReadonlyArray<{
+    readonly name: string;
+    readonly path: string;
+  }>;
+}
+
 export interface ContentOptions extends PageDirs {
   /**
-   * Whether the build writes `llms.txt`, `llms-full.txt` and each page's
-   * markdown, and the dev server serves them.
+   * The files the build writes for agents, which the dev server serves;
+   * none if `undefined`.
    */
-  readonly agentFiles: boolean;
+  readonly agentFiles: AgentFiles | undefined;
   /** The module that lists the pages: `virtual:docs-manifest`. */
   readonly manifestId: string;
   /** Sidebar sections, in order. Every page's `section` must be one of them. */
@@ -426,7 +450,7 @@ export function experimentPageProblems(
  * of pre-highlighted HTML (its own chunk, so the browser loads only the pages
  * it visits), and the manifest module (`virtual:docs-manifest`) lists every
  * page for the nav, search and SEO. With `agentFiles`, the client build also
- * gets `llms.txt` and each page's markdown at `<basePath>/<slug>.md`.
+ * gets an `llms.txt`, and each page's markdown at `<basePath>/<slug>.md`.
  *
  * The build fails on a page without valid frontmatter, a code block that
  * doesn't compile, a link to a page or heading that doesn't exist, and a
@@ -648,7 +672,17 @@ export function docsContent(options: ContentOptions): Plugin {
     }));
   }
 
-  const intro = ['# tRPC', '', `> ${options.summary}`, ''];
+  const intro = [
+    `# ${options.agentFiles?.name ?? 'tRPC'}`,
+    '',
+    `> ${options.summary}`,
+    '',
+  ];
+
+  const agent = options.agentFiles;
+  /** A page's URL for agents: its markdown, if it has one. */
+  const pageUrl = (slug: string, hash = '') =>
+    `${options.siteUrl}${basePath}/${slug}${agent?.markdown === true ? '.md' : ''}${hash ? `#${hash}` : ''}`;
 
   /**
    * A page as agents read it: links point at the other pages' markdown,
@@ -677,7 +711,7 @@ export function docsContent(options: ContentOptions): Plugin {
       .replaceAll(/\]\(([^)\s]+)\)/g, (link, url: string) => {
         const resolved = resolveLink(source.slug, url, options.contentPath);
         if (resolved.kind === 'doc') {
-          return `](${options.siteUrl}${basePath}/${resolved.link.slug}.md${resolved.link.hash ? `#${resolved.link.hash}` : ''})`;
+          return `](${pageUrl(resolved.link.slug, resolved.link.hash)})`;
         }
         if (resolved.kind === 'source') {
           return `](${options.sourceUrl}/${resolved.path})`;
@@ -702,11 +736,24 @@ export function docsContent(options: ContentOptions): Plugin {
   }
 
   /** `llms.txt` (https://llmstxt.org): what the library is, and every page. */
-  function llmsTxt(sections: ReadonlyArray<DocSection>) {
+  function llmsTxt(files: AgentFiles, sections: ReadonlyArray<DocSection>) {
+    const others = files.others ?? [];
     const lines = [
       ...intro,
-      'Every page is also markdown: add `.md` to its URL, or request it with `Accept: text/markdown`.',
-      '',
+      ...(files.markdown
+        ? [
+            'Every page is also markdown: add `.md` to its URL, or request it with `Accept: text/markdown`.',
+            '',
+          ]
+        : []),
+      ...(others.length === 0
+        ? []
+        : [
+            ...others.map(
+              (other) => `- For ${other.name}: ${options.siteUrl}${other.path}`,
+            ),
+            '',
+          ]),
     ];
     for (const section of sections) {
       lines.push(`## ${section.title}`, '');
@@ -718,8 +765,9 @@ export function docsContent(options: ContentOptions): Plugin {
         return parent === undefined ? 0 : 1 + depth(parent);
       };
       for (const doc of section.docs) {
+        const about = `${doc.experiment === undefined ? '' : 'Experimental. '}${stripInlineCode(doc.description)}`;
         lines.push(
-          `${'  '.repeat(depth(doc.slug))}- [${stripInlineCode(doc.title)}](${options.siteUrl}${basePath}/${doc.slug}.md): ${doc.experiment === undefined ? '' : 'Experimental. '}${stripInlineCode(doc.description)}`,
+          `${'  '.repeat(depth(doc.slug))}- [${stripInlineCode(doc.title)}](${pageUrl(doc.slug)})${about === '' ? '' : `: ${about}`}`,
         );
       }
       lines.push('');
@@ -727,7 +775,7 @@ export function docsContent(options: ContentOptions): Plugin {
     lines.push(
       '## Optional',
       '',
-      `- [Full documentation](${options.siteUrl}/llms-full.txt): every page above in one file`,
+      `- [Full documentation](${options.siteUrl}${llmsFullTxtPath(files.llmsTxt)}): every page above in one file`,
       '',
     );
     return lines.join('\n');
@@ -735,11 +783,11 @@ export function docsContent(options: ContentOptions): Plugin {
 
   /**
    * Files for agents, by URL path: `llms.txt`, `llms-full.txt`, each page's
-   * markdown at `<basePath>/<slug>.md`, `/index.md` (the home page's markdown,
-   * the same as `llms.txt`) and `/404.md`. An experiment's page is in them
-   * like any other, marked experimental.
+   * markdown at `<basePath>/<slug>.md`, and at `/llms.txt`, `/index.md`
+   * (the home page's markdown, the same as `llms.txt`) and `/404.md`. An
+   * experiment's page is in them like any other, marked experimental.
    */
-  async function agentFiles() {
+  async function agentFiles(files: AgentFiles) {
     const sections = await manifest();
     const sources = new Map(
       (await run(readSources(options))).map((source) => [source.slug, source]),
@@ -753,15 +801,18 @@ export function docsContent(options: ContentOptions): Plugin {
         })
         .map(async (source) => ({ page: await render(source), source })),
     );
-    const files = new Map<string, string>();
-    files.set('/llms.txt', llmsTxt(sections));
-    files.set('/index.md', llmsTxt(sections));
-    files.set(
-      '/404.md',
-      `# Not found\n\nThere is no page at this URL. [llms.txt](${options.siteUrl}/llms.txt) lists every page.\n`,
-    );
-    files.set(
-      '/llms-full.txt',
+    const written = new Map<string, string>();
+    const list = llmsTxt(files, sections);
+    written.set(files.llmsTxt, list);
+    if (files.llmsTxt === '/llms.txt') {
+      written.set('/index.md', list);
+      written.set(
+        '/404.md',
+        `# Not found\n\nThere is no page at this URL. [llms.txt](${options.siteUrl}/llms.txt) lists every page.\n`,
+      );
+    }
+    written.set(
+      llmsFullTxtPath(files.llmsTxt),
       [
         ...intro,
         ...pages.map(
@@ -770,13 +821,15 @@ export function docsContent(options: ContentOptions): Plugin {
         ),
       ].join('\n'),
     );
-    for (const entry of pages) {
-      files.set(
-        `${basePath}/${entry.source.slug}.md`,
-        pageMarkdown(entry.source, entry.page),
-      );
+    if (files.markdown) {
+      for (const entry of pages) {
+        written.set(
+          `${basePath}/${entry.source.slug}.md`,
+          pageMarkdown(entry.source, entry.page),
+        );
+      }
     }
-    return files;
+    return written;
   }
 
   /**
@@ -785,10 +838,12 @@ export function docsContent(options: ContentOptions): Plugin {
    * markdown at the page's own URL for `Accept: text/markdown`.
    */
   function serveAgentFiles(server: { readonly middlewares: Connect.Server }) {
-    if (!options.agentFiles) {
+    if (agent === undefined) {
       return;
     }
-    const pagePath = new RegExp(`^(?:${basePath}/[\\w/-]+)?$`);
+    const pagePath = new RegExp(
+      agent.markdown ? `^(?:${basePath}/[\\w/-]+)?$` : '^$',
+    );
     server.middlewares.use((request, response, next) => {
       const pathname = new URL(request.url ?? '/', 'http://localhost').pathname;
       const wantsMarkdown = acceptsMarkdown.test(request.headers.accept ?? '');
@@ -800,7 +855,7 @@ export function docsContent(options: ContentOptions): Plugin {
         next();
         return;
       }
-      agentFiles().then((files) => {
+      agentFiles(agent).then((files) => {
         const file = files.get(filePath) ?? files.get('/404.md');
         if (file === undefined || (!wantsMarkdown && !files.has(filePath))) {
           next();
@@ -830,9 +885,9 @@ export function docsContent(options: ContentOptions): Plugin {
       if (this.environment.name !== 'client') {
         return;
       }
-      for (const [urlPath, source] of options.agentFiles
-        ? await agentFiles()
-        : []) {
+      for (const [urlPath, source] of agent === undefined
+        ? []
+        : await agentFiles(agent)) {
         this.emitFile({ fileName: urlPath.slice(1), source, type: 'asset' });
       }
       if (renderer.stats) {

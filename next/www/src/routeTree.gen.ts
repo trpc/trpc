@@ -12,6 +12,8 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as R404RouteImport } from './routes/404'
 import { Route as DocsRouteImport } from './routes/docs'
+import { Route as MediaRouteImport } from './routes/media'
+import { Route as SearchRouteImport } from './routes/search'
 import { Route as SponsorRouteImport } from './routes/sponsor'
 import { Route as BlogIndexRouteImport } from './routes/blog.index'
 import { Route as BlogSlugRouteImport } from './routes/blog.$slug'
@@ -43,6 +45,16 @@ const R404Route = R404RouteImport.update({
 const DocsRoute = DocsRouteImport.update({
   id: '/docs',
   path: '/docs',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MediaRoute = MediaRouteImport.update({
+  id: '/media',
+  path: '/media',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SearchRoute = SearchRouteImport.update({
+  id: '/search',
+  path: '/search',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SponsorRoute = SponsorRouteImport.update({
@@ -135,6 +147,8 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/404': typeof R404Route
   '/docs': typeof DocsRouteWithChildren
+  '/media': typeof MediaRoute
+  '/search': typeof SearchRoute
   '/sponsor': typeof SponsorRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/docs/$': typeof DocsSplatRoute
@@ -156,6 +170,8 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/404': typeof R404Route
+  '/media': typeof MediaRoute
+  '/search': typeof SearchRoute
   '/sponsor': typeof SponsorRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/docs/$': typeof DocsSplatRoute
@@ -176,6 +192,8 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/404': typeof R404Route
   '/docs': typeof DocsRouteWithChildren
+  '/media': typeof MediaRoute
+  '/search': typeof SearchRoute
   '/sponsor': typeof SponsorRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/docs/$': typeof DocsSplatRoute
@@ -200,6 +218,8 @@ export interface FileRouteTypes {
     | '/'
     | '/404'
     | '/docs'
+    | '/media'
+    | '/search'
     | '/sponsor'
     | '/blog/$slug'
     | '/docs/$'
@@ -221,6 +241,8 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/404'
+    | '/media'
+    | '/search'
     | '/sponsor'
     | '/blog/$slug'
     | '/docs/$'
@@ -240,6 +262,8 @@ export interface FileRouteTypes {
     | '/'
     | '/404'
     | '/docs'
+    | '/media'
+    | '/search'
     | '/sponsor'
     | '/blog/$slug'
     | '/docs/$'
@@ -263,6 +287,8 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   R404Route: typeof R404Route
   DocsRoute: typeof DocsRouteWithChildren
+  MediaRoute: typeof MediaRoute
+  SearchRoute: typeof SearchRoute
   SponsorRoute: typeof SponsorRoute
   BlogSlugRoute: typeof BlogSlugRoute
   V10DocsRoute: typeof V10DocsRouteWithChildren
@@ -295,6 +321,20 @@ declare module '@tanstack/react-router' {
       path: '/docs'
       fullPath: '/docs'
       preLoaderRoute: typeof DocsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/media': {
+      id: '/media'
+      path: '/media'
+      fullPath: '/media'
+      preLoaderRoute: typeof MediaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/search': {
+      id: '/search'
+      path: '/search'
+      fullPath: '/search'
+      preLoaderRoute: typeof SearchRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sponsor': {
@@ -474,6 +514,8 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   R404Route: R404Route,
   DocsRoute: DocsRouteWithChildren,
+  MediaRoute: MediaRoute,
+  SearchRoute: SearchRoute,
   SponsorRoute: SponsorRoute,
   BlogSlugRoute: BlogSlugRoute,
   V10DocsRoute: V10DocsRouteWithChildren,

@@ -11,14 +11,24 @@ export const site = {
     'End-to-end typesafe APIs made easy.',
   ],
   /**
-   * Where the site is served. Search engines index it only once this is
-   * `https://trpc.io` (`indexable` in `seo.ts`): the switch to flip at the
-   * cutover, with `public/robots.txt`'s `Sitemap:`.
+   * Where the site is served: the switch to flip at the cutover. Once it's
+   * `https://trpc.io`, search engines index it (`indexable` in `seo.ts`),
+   * the copies of trpc.io's docs and blog are the originals (`atTrpcIo`),
+   * and v12 is hidden (`v12.hidden`).
    */
   url: 'https://v12.trpc.io',
   /** The project's account on X, for `twitter:site`. */
   x: '@trpcio',
 } as const;
+
+/** Where trpc.io's docs and blog, which the site copies, are served. */
+const trpcIo = 'https://trpc.io';
+
+/**
+ * Whether the site is trpc.io: its copies of trpc.io's pages are then the
+ * pages themselves, which search engines are pointed at.
+ */
+export const atTrpcIo = new URL(site.url).origin === trpcIo;
 
 /**
  * The v12 docs, rendered from `www/docs`. v11 is the stable release, so it
@@ -28,6 +38,15 @@ export const v12 = {
   basePath: '/v12/docs',
   /** Where the header's GitHub links go while the reader browses v12. */
   github: 'https://github.com/trpc/trpc/tree/v12',
+  /**
+   * Whether v12's docs are served only to whoever has a link: nothing
+   * outside them links there (the home page, the header, the version
+   * switcher and banner), they're `noindex, nofollow`, and out of
+   * `robots.txt`'s crawl, the sitemap, `llms.txt` and the feeds
+   * (`hiddenPaths`, checked by `build/hidden-paths.ts`). On trpc.io until
+   * v12 is released: make it `false` then. v12.trpc.io offers v12.
+   */
+  hidden: atTrpcIo,
 } as const;
 
 /**
@@ -38,6 +57,23 @@ export const v12 = {
  * (`build/hidden-paths.ts` checks the build).
  */
 export const decisions = { basePath: '/v12/decisions' } as const;
+
+/** The paths served only to whoever has a link (`build/hidden-paths.ts`). */
+export const hiddenPaths: ReadonlyArray<string> = [
+  decisions.basePath,
+  ...(v12.hidden ? [v12.basePath] : []),
+];
+
+/**
+ * trpc.io's own site (the `www` Vercel project, built from `main`), for
+ * what the site has no copy of: v11's API reference, under `/docs/typedoc`
+ * (`onTrpcIo` in `build/old-routes.ts`). trpc.io until the cutover; then
+ * the host that project keeps. `undefined` there fails the build, rather
+ * than letting those URLs 404 or redirect to themselves.
+ */
+export const oldSite: { readonly url: string | undefined } = {
+  url: atTrpcIo ? undefined : trpcIo,
+};
 
 /**
  * A version of the docs trpc.io serves, copied as it was
@@ -67,7 +103,7 @@ export const v11 = {
   imagePath: '/v11/img',
   status: 'stable',
   trpcPath: '/docs',
-  url: 'https://trpc.io',
+  url: trpcIo,
 } as const satisfies CopiedVersion;
 
 /** The v10 docs, which trpc.io serves at `/docs/v10`. */
@@ -78,7 +114,7 @@ export const v10 = {
   imagePath: '/v10/img',
   status: 'unmaintained',
   trpcPath: '/docs/v10',
-  url: 'https://trpc.io',
+  url: trpcIo,
 } as const satisfies CopiedVersion;
 
 /** The v9 docs, which trpc.io serves at `/docs/v9`. */
@@ -89,11 +125,29 @@ export const v9 = {
   imagePath: '/v9/img',
   status: 'unmaintained',
   trpcPath: '/docs/v9',
-  url: 'https://trpc.io',
+  url: trpcIo,
 } as const satisfies CopiedVersion;
 
 /** Newest first, as the version switcher lists them. */
 export const copiedVersions = [v11, v10, v9] as const;
+
+/**
+ * Where `llms.txt` (https://llmstxt.org) lists a version's pages, with
+ * `llms-full.txt` beside it (`-full` before `.txt`). The site's own is
+ * v12's, or v11's while v12 is hidden, as on trpc.io; hidden, v12's is
+ * under its docs. The others are at `/llms-<id>.txt`, as trpc.io has v10's.
+ */
+export function llmsTxtPath(id: 'v12' | CopiedVersion['id']): string {
+  const root: typeof id = v12.hidden ? v11.id : 'v12';
+  if (id === root) {
+    return '/llms.txt';
+  }
+  return id === 'v12' ? `${v12.basePath}/llms.txt` : `/llms-${id}.txt`;
+}
+
+/** `/llms.txt`'s `llms-full.txt`. */
+export const llmsFullTxtPath = (llmsTxt: string) =>
+  llmsTxt.replace(/\.txt$/, '-full.txt');
 
 /** trpc.io's blog, copied as it was (`build/old-docs-copy.ts`). */
 export const blog = {
@@ -103,7 +157,7 @@ export const blog = {
   feeds: { atom: '/blog/atom.xml', rss: '/blog/rss.xml' },
   title: 'tRPC Blog',
   /** Where trpc.io serves it. */
-  url: 'https://trpc.io/blog',
+  url: `${trpcIo}/blog`,
 } as const;
 
 /** Sidebar sections, in order. */

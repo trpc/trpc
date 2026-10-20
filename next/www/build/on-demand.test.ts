@@ -14,6 +14,7 @@ import {
   pathParam,
   writeOnDemandFunction,
 } from './on-demand.ts';
+import { v12 } from '../src/site.ts';
 
 describe('flagsValue', () => {
   const value = new RegExp(
@@ -37,7 +38,10 @@ describe('flagsValue', () => {
 });
 
 describe('onDemandRoutes', () => {
-  const [flagged, home] = onDemandRoutes(['publisher']);
+  const all = onDemandRoutes(['publisher']);
+  const [flagged] = all;
+  const home = all.find((route) => route.src === '^/$');
+  const search = all.find((route) => route.src === '^/search$');
 
   it('sends pages with ?flags= to the function, with their path', () => {
     const src = new RegExp(flagged?.src ?? '');
@@ -53,11 +57,23 @@ describe('onDemandRoutes', () => {
     ]);
   });
 
-  it('sends the home page with ?version=v12 to the function', () => {
-    expect(home?.src).toBe('^/$');
-    expect(home?.has).toEqual([
-      { key: 'version', type: 'query', value: '^v12$' },
-    ]);
+  it.skipIf(v12.hidden)(
+    'sends the home page with ?version=v12 to the function',
+    () => {
+      expect(home?.dest).toBe(`/${onDemandFunction}?${pathParam}=/`);
+      expect(home?.has).toEqual([
+        { key: 'version', type: 'query', value: '^v12$' },
+      ]);
+    },
+  );
+
+  it.runIf(v12.hidden)("doesn't while v12 is hidden", () => {
+    expect(home).toBeUndefined();
+  });
+
+  it('sends a search to the function', () => {
+    expect(search?.dest).toBe(`/${onDemandFunction}?${pathParam}=/search`);
+    expect(search?.has).toEqual([{ key: 'q', type: 'query', value: '^.+$' }]);
   });
 
   it('sends a decisions page with a choice in its query to the function', () => {

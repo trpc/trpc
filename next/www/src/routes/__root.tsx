@@ -33,6 +33,12 @@ export const Route = createRootRoute({
       { href: '/apple-touch-icon.png', rel: 'apple-touch-icon' },
       { href: '/llms.txt', rel: 'alternate', type: 'text/plain' },
       {
+        href: '/opensearch.xml',
+        rel: 'search',
+        title: site.name,
+        type: 'application/opensearchdescription+xml',
+      },
+      {
         href: blog.feeds.rss,
         rel: 'alternate',
         title: `${blog.title} (RSS)`,

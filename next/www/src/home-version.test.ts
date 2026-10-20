@@ -6,6 +6,7 @@ import {
   homeVersionOf,
   hostHomeVersion,
   homeVersionScript,
+  homeVersionScriptOf,
   homeVersionSearch,
   rememberHomeVersion,
   validateHomeSearch,
@@ -45,10 +46,14 @@ function storage(stored: Map<string, string> | 'blocked') {
  * Runs `homeVersionScript` at `href` in a fresh context, as the browser's
  * head does: the version it shows and the URLs it replaces.
  */
-function land(href: string, localStorage: ReturnType<typeof storage>) {
+function land(
+  href: string,
+  localStorage: ReturnType<typeof storage>,
+  script = homeVersionScript,
+) {
   const replaced: Array<string> = [];
   let shown: string | undefined;
-  runInNewContext(homeVersionScript, {
+  runInNewContext(script, {
     document: {
       documentElement: {
         setAttribute: (_name: string, value: string) => {
@@ -176,5 +181,34 @@ describe("the host's default", () => {
       replaced: [],
       shown: 'v11',
     });
+  });
+});
+
+describe('the home page while v12 is hidden', () => {
+  const shown = ['v11'] as const;
+  const hidden = homeVersionScriptOf(shown);
+
+  it('drops ?version=v12, and never links it', () => {
+    expect(validateHomeSearch({ version: 'v12' }, shown)).toEqual({});
+    expect(homeVersionSearch('v12', shown)).toEqual({});
+  });
+
+  it('opens on v11 on every host, whatever is remembered or asked', () => {
+    expect(hostHomeVersion('v12.trpc.io', shown)).toBe('v11');
+    expect(hostHomeVersion('localhost', shown)).toBe('v11');
+    expect(land('https://v12.trpc.io/', storage(new Map()), hidden)).toEqual({
+      replaced: [],
+      shown: 'v11',
+    });
+    expect(
+      land(
+        'https://trpc.io/',
+        storage(new Map([['trpc-docs:version', 'v12']])),
+        hidden,
+      ),
+    ).toEqual({ replaced: [], shown: 'v11' });
+    expect(
+      land('https://trpc.io/?version=v12', storage(new Map()), hidden).shown,
+    ).toBe('v11');
   });
 });

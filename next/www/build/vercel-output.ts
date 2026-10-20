@@ -11,8 +11,20 @@ import { NodeRuntime, NodeServices } from '@effect/platform-node';
 import { Data, Effect, FileSystem, Path, Schema } from 'effect';
 
 import { indexable, indexedHost } from '../src/seo.ts';
-import { copiedVersions, decisions, site, v12 } from '../src/site.ts';
-import { hiddenPathProblems, hiddenRoute, isNoindex } from './hidden-paths.ts';
+import {
+  copiedVersions,
+  hiddenPaths,
+  llmsTxtPath,
+  oldSite,
+  site,
+  v12,
+} from '../src/site.ts';
+import {
+  hiddenPathProblems,
+  hiddenRoute,
+  hiddenRouteProblems,
+  isNoindex,
+} from './hidden-paths.ts';
 import {
   onDemandRoutes,
   pageCacheControl,
@@ -124,15 +136,17 @@ export const noindexPageRoutes = (
 
 /**
  * `old`: the redirects that keep trpc.io's URLs working (`old-routes.ts`).
- * `noindex`: the routes that say `X-Robots-Tag: noindex`.
+ * `noindex`: the routes that say `X-Robots-Tag: noindex`. `hidden`: the
+ * paths that say `noindex, nofollow` (`hiddenPaths`).
  */
 export const routes = (
   first: string,
   old: ReadonlyArray<VercelRoute> = [],
   noindex: ReadonlyArray<VercelRoute> = [noindexRoute(site.url, '')],
+  hidden: ReadonlyArray<string> = hiddenPaths,
 ): ReadonlyArray<VercelRoute> => [
   ...noindex,
-  hiddenRoute(decisions.basePath),
+  ...hidden.map(hiddenRoute),
   { headers: { Location: '/$1' }, src: '^/(.+)/$', status: 308 },
   // trpc.io answers a page's `index.html` too: `/docs/a/index.html`, `/index.html`.
   {
@@ -148,10 +162,11 @@ export const routes = (
   },
   // The v11 docs were at `/v11/docs` before they took `/docs`.
   { headers: { Location: '/docs$1' }, src: '^/v11/docs(/.*)?$', status: 308 },
+  // A copy's first page is trpc.io's, which never moves.
   ...copiedVersions.map((version) => ({
     headers: { Location: `${version.basePath}/${version.firstDoc}` },
     src: `^${version.basePath}$`,
-    status: 307,
+    status: 308,
   })),
   ...old,
   {
@@ -216,12 +231,13 @@ export const writeVercelOutput = Effect.fn('writeVercelOutput')(function* (
   const output = path.join(root, '.vercel/output');
   const staticDir = path.join(output, 'static');
 
+  const v12LlmsTxt = llmsTxtPath('v12');
   const first = firstDoc(
-    yield* fs.readFileString(path.join(client, 'llms.txt')),
+    yield* fs.readFileString(path.join(client, v12LlmsTxt)),
   );
   if (first === undefined) {
     return yield* new VercelOutputError({
-      message: 'llms.txt links to no docs page',
+      message: `${v12LlmsTxt} links to no docs page`,
     });
   }
 
@@ -252,10 +268,17 @@ export const writeVercelOutput = Effect.fn('writeVercelOutput')(function* (
   const served = servedPaths(files);
   const old = oldRedirects({ redirects: trpcRedirects, served });
   const vercelEnv = process.env['VERCEL_ENV'] ?? '';
-  // Until the site is indexed, every page says `noindex`.
+  // Until the site is indexed, every page says `noindex`; under the hidden
+  // paths, every response does.
   const noindexPages = indexable(site.url, vercelEnv)
     ? yield* Effect.filter(
-        files.filter((file) => file.endsWith('/index.html')),
+        files.filter(
+          (file) =>
+            file.endsWith('/index.html') &&
+            !hiddenPaths.some((basePath) =>
+              `/${file}`.startsWith(`${basePath}/`),
+            ),
+        ),
         (file) =>
           Effect.map(fs.readFileString(path.join(staticDir, file)), isNoindex),
         { concurrency: 'unbounded' },
@@ -263,7 +286,7 @@ export const writeVercelOutput = Effect.fn('writeVercelOutput')(function* (
     : [];
   const allRoutes = routes(
     first,
-    [...redirectRoutes(old.redirects), ...onTrpcIoRoutes(site.url)],
+    [...redirectRoutes(old.redirects), ...onTrpcIoRoutes(oldSite.url)],
     [
       noindexRoute(site.url, vercelEnv),
       ...noindexPageRoutes(
@@ -294,10 +317,18 @@ export const writeVercelOutput = Effect.fn('writeVercelOutput')(function* (
       { concurrency: 32 },
     ),
   );
-  const hidden = hiddenPathProblems(decisions.basePath, texts);
+  const hidden = [
+    ...hiddenPaths.flatMap((basePath) =>
+      hiddenPathProblems(basePath, texts, {
+        agentFiles: basePath === v12.basePath,
+        others: hiddenPaths.filter((other) => other !== basePath),
+      }),
+    ),
+    ...hiddenRouteProblems(allRoutes, hiddenPaths),
+  ];
   if (hidden.length > 0) {
     return yield* new VercelOutputError({
-      message: `${decisions.basePath} is meant to be hidden:\n${hidden.join('\n')}`,
+      message: `${hiddenPaths.join(' and ')} are meant to be hidden:\n${hidden.join('\n')}`,
     });
   }
   const problems = [
@@ -307,6 +338,7 @@ export const writeVercelOutput = Effect.fn('writeVercelOutput')(function* (
         `${redirect.source}: redirects to ${redirect.location}, a heading the page doesn't have`,
     ),
     ...routeProblems({
+      oldSiteUrl: oldSite.url,
       redirects: old.redirects,
       routes: allRoutes,
       served,

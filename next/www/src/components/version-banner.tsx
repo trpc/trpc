@@ -7,12 +7,14 @@ import {
   v11Docs,
   v12Docs,
 } from '~/content/docs.ts';
+import { atTrpcIo, v12 } from '~/site.ts';
 
 const linkClass = 'font-medium text-link underline underline-offset-2';
 
 /**
  * Which version the page is of, as Docusaurus's version banner says it, with
- * a link to the page on its topic in the version to read instead.
+ * a link to the page on its topic in the version to read instead. None on
+ * v11's while v12 is hidden: they're the docs then, as on trpc.io.
  */
 export function VersionBanner(props: {
   readonly slug: string;
@@ -39,6 +41,9 @@ export function VersionBanner(props: {
       </aside>
     );
   }
+  if (copied.status === 'stable' && v12.hidden) {
+    return null;
+  }
   const instead = copied.status === 'stable' ? v12Docs : v11Docs;
   const other = counterpart(props.version, props.slug, instead);
   return (
@@ -49,11 +54,18 @@ export function VersionBanner(props: {
         {copied.status === 'stable'
           ? 'the stable release'
           : 'which is no longer actively maintained'}
-        , as{' '}
-        <a className={linkClass} href={`${copied.url}${copied.trpcPath}`}>
-          trpc.io
-        </a>{' '}
-        has it. For{' '}
+        {atTrpcIo ? (
+          '. '
+        ) : (
+          <>
+            , as{' '}
+            <a className={linkClass} href={`${copied.url}${copied.trpcPath}`}>
+              trpc.io
+            </a>{' '}
+            has it.{' '}
+          </>
+        )}
+        For{' '}
         {copied.status === 'stable'
           ? 'the experimental v12'
           : 'the stable release'}

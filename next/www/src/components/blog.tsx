@@ -26,7 +26,7 @@ import {
   postDate,
   trpcPostUrl,
 } from '~/seo.ts';
-import { blog, site } from '~/site.ts';
+import { atTrpcIo, blog, site } from '~/site.ts';
 
 function initialsOf(name: string) {
   return name
@@ -263,9 +263,11 @@ export function BlogPost(props: { readonly post: Post }) {
         <DocBody html={post.html} />
         <footer className="mt-12 grid gap-6 border-t pt-6">
           <div className="flex flex-wrap gap-x-6 gap-y-2">
-            <a className={footerLink} href={trpcPostUrl(post.slug)}>
-              <ExternalLink className="size-3.5" /> Read this post on trpc.io
-            </a>
+            {atTrpcIo ? null : (
+              <a className={footerLink} href={trpcPostUrl(post.slug)}>
+                <ExternalLink className="size-3.5" /> Read this post on trpc.io
+              </a>
+            )}
             {post.discussion === undefined ? null : (
               <a
                 className={footerLink}

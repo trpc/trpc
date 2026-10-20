@@ -1,4 +1,4 @@
-import { blog, type CopiedVersion, site } from './site.ts';
+import { atTrpcIo, blog, type CopiedVersion, site } from './site.ts';
 
 type JsonValue =
   | boolean
@@ -28,6 +28,11 @@ export interface PageSeo {
   readonly article?: ArticleSeo;
   /** Where the page is maintained, if not here. */
   readonly canonical?: string;
+  /**
+   * Served only to whoever has the link (`hiddenPaths` in `site.ts`):
+   * `noindex, nofollow`, and no canonical link for search engines to follow.
+   */
+  readonly hidden?: boolean;
   readonly description: string;
   /** The page as markdown, for agents: `/v12/docs/<slug>.md`. */
   readonly markdownPath?: string;
@@ -63,6 +68,16 @@ export function absoluteUrl(path: string) {
 /** A copied page on trpc.io, which serves each version's first page at its `trpcPath`. */
 export function trpcPageUrl(version: CopiedVersion, slug: string) {
   return `${version.url}${version.trpcPath}${slug === version.firstDoc ? '' : `/${slug}`}`;
+}
+
+/**
+ * A copied page's canonical URL: trpc.io's, which is the page itself once
+ * the site is trpc.io (where the first page has its own path).
+ */
+export function copyPageUrl(version: CopiedVersion, slug: string) {
+  return atTrpcIo
+    ? absoluteUrl(`${version.basePath}/${slug}`)
+    : trpcPageUrl(version, slug);
 }
 
 /** A copied post on trpc.io's blog. */
@@ -122,10 +137,14 @@ export function pageHead(page: PageSeo) {
   const imageAlt = page.title ?? site.tagline.join(' ');
   return {
     links: [
-      { href: url, rel: 'canonical' },
-      // The site is in English only.
-      { href: url, hrefLang: 'en', rel: 'alternate' },
-      { href: url, hrefLang: 'x-default', rel: 'alternate' },
+      ...(page.hidden
+        ? []
+        : [
+            { href: url, rel: 'canonical' },
+            // The site is in English only.
+            { href: url, hrefLang: 'en', rel: 'alternate' },
+            { href: url, hrefLang: 'x-default', rel: 'alternate' },
+          ]),
       ...(page.markdownPath === undefined
         ? []
         : [
@@ -139,7 +158,11 @@ export function pageHead(page: PageSeo) {
     ],
     meta: [
       { title },
-      ...(page.noindex ? [{ content: 'noindex', name: 'robots' }] : []),
+      ...(page.hidden
+        ? [{ content: 'noindex, nofollow', name: 'robots' }]
+        : page.noindex
+          ? [{ content: 'noindex', name: 'robots' }]
+          : []),
       { content: page.description, name: 'description' },
       { content: title, property: 'og:title' },
       { content: page.description, property: 'og:description' },

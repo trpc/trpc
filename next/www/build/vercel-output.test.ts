@@ -3,8 +3,9 @@ import { describe, expect, it } from '@effect/vitest';
 import { fileURLToPath } from 'node:url';
 import { Effect, FileSystem, Path } from 'effect';
 
-import { site } from '../src/site.ts';
+import { hiddenPaths, site } from '../src/site.ts';
 import { onDemandFunction } from './on-demand.ts';
+import { siteTextFiles } from './site-files.ts';
 import {
   land,
   redirectsFile,
@@ -133,17 +134,32 @@ describe('noindexPageRoutes', () => {
 });
 
 describe('robots.txt', () => {
-  it.effect(
-    'points at the sitemap of site.url, which the cutover changes',
-    () =>
-      Effect.gen(function* () {
-        const fs = yield* FileSystem.FileSystem;
-        const robots = yield* fs.readFileString(
+  it('points at the sitemap of site.url, which the cutover changes, and disallows the hidden paths', () => {
+    const robots = siteTextFiles().get('/robots.txt')?.source ?? '';
+    expect(robots).toContain(`Sitemap: ${site.url}/sitemap.xml`);
+    for (const basePath of hiddenPaths) {
+      expect(robots).toContain(`Disallow: ${basePath}\n`);
+    }
+  });
+
+  it.effect('is out of public/, which would overwrite it', () =>
+    Effect.gen(function* () {
+      const fs = yield* FileSystem.FileSystem;
+      expect(
+        yield* fs.exists(
           fileURLToPath(new URL('../public/robots.txt', import.meta.url)),
-        );
-        expect(robots).toContain(`Sitemap: ${site.url}/sitemap.xml`);
-      }).pipe(Effect.provide(NodeServices.layer)),
+        ),
+      ).toBe(false);
+    }).pipe(Effect.provide(NodeServices.layer)),
   );
+});
+
+describe('opensearch.xml', () => {
+  it('searches the site at /search', () => {
+    const xml = siteTextFiles().get('/opensearch.xml')?.source ?? '';
+    expect(xml).toContain(`template="${site.url}/search?q={searchTerms}"`);
+    expect(xml).toContain(`template="${site.url}/opensearch.xml"`);
+  });
 });
 
 describe('firstDoc', () => {
@@ -219,7 +235,7 @@ describe('writeVercelOutput', () => {
         expect(config.routes).toContainEqual({
           headers: { Location: `${basePath}/introduction` },
           src,
-          status: 307,
+          status: 308,
         });
       }
       const moved = config.routes.find(

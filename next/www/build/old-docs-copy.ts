@@ -664,6 +664,13 @@ Don't edit these files: \`www/build/old-docs-copy.ts\` writes them. Change the s
 /** Where each file under `contentDirs` went, under `CopyDirs.to`. */
 const manifestFile = 'old-docs.json';
 
+/**
+ * trpc.io's own files in `static/`, which the site serves as they are at
+ * the same URLs (`/img/logo-text-black.svg`, `/logos/Netflix.svg`), for
+ * the sites and READMEs that link or embed them.
+ */
+export const staticDirs = ['img', 'logos'] as const;
+
 export interface CopyDirs {
   /** trpc.io's site: `v11/www` in the repo. */
   readonly from: string;
@@ -849,6 +856,19 @@ export const copyOldDocs = Effect.fn('copyOldDocs')(function* (dirs: CopyDirs) {
     fs.writeFileString(path.join(homeDir, step.name), step.markdown),
   );
   yield* fs.writeFileString(path.join(homeDir, 'README.md'), homeReadme);
+  const staticFiles = yield* Effect.forEach(staticDirs, (dir) =>
+    Effect.gen(function* () {
+      const from = path.join(dirs.from, 'static', dir);
+      const to = path.join(dirs.images, dir);
+      yield* fs.remove(to, { force: true, recursive: true });
+      yield* fs.makeDirectory(to, { recursive: true });
+      const files = yield* fs.readDirectory(from);
+      yield* Effect.forEach(files, (file) =>
+        fs.copyFile(path.join(from, file), path.join(to, file)),
+      );
+      return files.length;
+    }),
+  );
   yield* fs.writeFileString(
     path.join(dirs.to, manifestFile),
     `${JSON.stringify(accounted.manifest, null, 2)}\n`,
@@ -867,6 +887,7 @@ export const copyOldDocs = Effect.fn('copyOldDocs')(function* (dirs: CopyDirs) {
   report.push(
     `Copied ${posts.length} blog posts.`,
     `Copied the ${steps.length} steps of the home page's intro.`,
+    `Copied ${staticFiles.reduce((sum, count) => sum + count, 0)} of its static files, from ${staticDirs.map((dir) => `static/${dir}`).join(' and ')}.`,
     `Accounted for ${Object.keys(accounted.manifest).length} files in ${manifestFile}.`,
     `Copied ${redirects.length} of trpc.io's redirects to ${redirectsFile}.`,
   );
@@ -892,6 +913,7 @@ function outputsOf(dirs: CopyDirs, path: Path.Path) {
     ]),
     path.join(dirs.to, 'blog'),
     path.join(dirs.to, 'v11', 'home'),
+    ...staticDirs.map((dir) => path.join(dirs.images, dir)),
     path.join(dirs.to, manifestFile),
     path.join(dirs.to, redirectsFile),
   ];

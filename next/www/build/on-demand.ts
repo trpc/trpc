@@ -1,7 +1,8 @@
 /**
  * The pages rendered on request instead of in the build: a URL whose query
  * turns on experiments (`?flags=`, `src/flags.ts`), shows v12 on the home
- * page (`?version=v12`, `src/home-version.ts`) or holds a choice made on a
+ * page (`?version=v12`, `src/home-version.ts`, unless v12 is hidden),
+ * searches (`/search?q=`, `src/pages.ts`) or holds a choice made on a
  * decisions page (`src/content/decision-search.ts`). The build prerenders each
  * page once, without a query; every combination of flags is a different
  * page, so the host sends those requests to a function running the site's
@@ -13,7 +14,8 @@ import type { Plugin } from 'vite';
 
 import { decisionSearchKeys } from '../src/content/decision-search.ts';
 import { experimentIds } from '../src/experiments.ts';
-import { decisions } from '../src/site.ts';
+import { searchPage, searchParam } from '../src/pages.ts';
+import { decisions, v12 } from '../src/site.ts';
 import type { VercelRoute } from './old-routes.ts';
 
 /** The function's name, and the path routes rewrite to. */
@@ -54,10 +56,19 @@ export const onDemandRoutes = (
     has: [{ key: 'flags', type: 'query', value: flagsValue(ids) }],
     src: pagePath,
   },
+  ...(v12.hidden
+    ? []
+    : [
+        {
+          dest: `/${onDemandFunction}?${pathParam}=/`,
+          has: [{ key: 'version', type: 'query', value: '^v12$' }],
+          src: '^/$',
+        },
+      ]),
   {
-    dest: `/${onDemandFunction}?${pathParam}=/`,
-    has: [{ key: 'version', type: 'query', value: '^v12$' }],
-    src: '^/$',
+    dest: `/${onDemandFunction}?${pathParam}=${searchPage.path}`,
+    has: [{ key: searchParam, type: 'query', value: '^.+$' }],
+    src: `^${escapeRegExp(searchPage.path)}$`,
   },
   // Any value: the page drops one it doesn't know, as the browser does.
   ...decisionSearchKeys.map((key) => ({

@@ -229,7 +229,6 @@ describe('oldRedirects', () => {
       '/docs/server/adapters',
     );
     expect(bySource.get('/blog/archive')?.location).toBe('/blog');
-    expect(bySource.get('/img/favicon.ico')?.location).toBe('/favicon.ico');
     expect(bySource.get('/pricing')).toEqual({
       location: '/sponsor',
       source: '/pricing',
@@ -274,24 +273,32 @@ describe('redirectRoutes', () => {
 });
 
 describe('onTrpcIoRoutes', () => {
-  it('sends what only trpc.io has there, unless the site is trpc.io', () => {
-    const toTrpcIo = onTrpcIoRoutes('https://v12.trpc.io');
+  it("sends what only trpc.io's own site has there, wherever it is", () => {
+    const toTrpcIo = onTrpcIoRoutes('https://trpc.io');
     expect(land(toTrpcIo, served, '/docs/typedoc/server').hops).toEqual([
       'https://trpc.io/docs/typedoc/server',
     ]);
-    expect(land(toTrpcIo, served, '/media').hops).toEqual([
-      'https://trpc.io/media',
+    expect(land(toTrpcIo, served, '/docs/typedoc').hops).toEqual([
+      'https://trpc.io/docs/typedoc',
     ]);
+    expect(land(toTrpcIo, served, '/media').hops).toEqual([]);
     expect(land(toTrpcIo, served, '/pricing').hops).toEqual([]);
     expect(land(toTrpcIo, served, '/docs/typedocs').hops).toEqual([]);
-    expect(onTrpcIoRoutes('https://trpc.io')).toEqual([]);
+    expect(
+      land(
+        onTrpcIoRoutes('https://www-trpc.vercel.app/'),
+        served,
+        '/docs/typedoc/server',
+      ).hops,
+    ).toEqual(['https://www-trpc.vercel.app/docs/typedoc/server']);
+    expect(onTrpcIoRoutes(undefined)).toEqual([]);
   });
 });
 
 describe('respond and land', () => {
   const all = routes('getting-started', [
     ...redirectRoutes(oldRedirects({ redirects, served }).redirects),
-    ...onTrpcIoRoutes('https://v12.trpc.io'),
+    ...onTrpcIoRoutes('https://trpc.io'),
   ]);
 
   it("answers as Vercel's routes do", () => {
@@ -308,7 +315,7 @@ describe('respond and land', () => {
     expect(respond(all, served, '/docs')).toEqual({
       kind: 'redirect',
       location: '/docs/introduction',
-      status: 307,
+      status: 308,
     });
   });
 
@@ -329,15 +336,37 @@ describe('respond and land', () => {
     const result = oldRedirects({ redirects: redirects.slice(0, -1), served });
     expect(
       routeProblems({
+        oldSiteUrl: 'https://trpc.io',
         redirects: result.redirects,
         routes: routes('getting-started', [
           ...redirectRoutes(result.redirects),
-          ...onTrpcIoRoutes('https://v12.trpc.io'),
+          ...onTrpcIoRoutes('https://trpc.io'),
         ]),
         served,
         siteUrl: 'https://v12.trpc.io',
       }),
     ).toEqual([]);
+  });
+
+  it("needs trpc.io's own site somewhere else once the site is trpc.io", () => {
+    const result = oldRedirects({ redirects: redirects.slice(0, -1), served });
+    const at = (oldSiteUrl: string | undefined) =>
+      routeProblems({
+        oldSiteUrl,
+        redirects: result.redirects,
+        routes: routes('getting-started', [
+          ...redirectRoutes(result.redirects),
+          ...onTrpcIoRoutes(oldSiteUrl),
+        ]),
+        served,
+        siteUrl: 'https://trpc.io',
+      });
+    expect(at('https://www-trpc.vercel.app')).toEqual([]);
+    for (const oldSiteUrl of [undefined, 'https://trpc.io']) {
+      expect(at(oldSiteUrl)).toEqual([
+        "/docs/typedoc: trpc.io's own site has to be somewhere else than https://trpc.io, to send them there: set `oldSite.url` in www/src/site.ts",
+      ]);
+    }
   });
 
   it('finds a redirect that goes elsewhere, a hidden file and a missing trip to trpc.io', () => {
@@ -346,6 +375,7 @@ describe('respond and land', () => {
     ];
     expect(
       routeProblems({
+        oldSiteUrl: 'https://trpc.io',
         redirects: [
           { location: '/blog', source: '/blog/archive', status: 308 },
         ],
@@ -357,7 +387,7 @@ describe('respond and land', () => {
       expect.arrayContaining([
         '/blog/archive: redirects to nowhere, a 404, not once to /blog',
         '/logo.svg: a route hides the file',
-        "/media: doesn't redirect to trpc.io",
+        "/docs/typedoc/x: doesn't redirect to https://trpc.io",
       ]),
     );
   });

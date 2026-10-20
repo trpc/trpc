@@ -12,18 +12,22 @@ import { blogFeeds } from './build/feeds.ts';
 import { siteIcons } from './build/icons.ts';
 import { bundledServer } from './build/on-demand.ts';
 import { OgCard, ogImages } from './build/og-image.ts';
+import { siteFiles } from './build/site-files.ts';
 import {
   cacheDir,
   decisionsOptions,
   samplesDir,
   twoslashCache,
 } from './build/paths.ts';
-import { absoluteUrl, postDate, trpcPageUrl, trpcPostUrl } from './src/seo.ts';
+import { mediaPage, searchPage } from './src/pages.ts';
+import { absoluteUrl, copyPageUrl, postDate, trpcPostUrl } from './src/seo.ts';
 import {
+  atTrpcIo,
   blog,
   type CopiedVersion,
   copiedVersions,
   decisions,
+  llmsTxtPath,
   sections,
   site,
   v12,
@@ -72,6 +76,27 @@ const [pages, copiedPages, posts, favicon] = await Effect.runPromise(
     }),
   ]).pipe(Effect.provide(NodeServices.layer)),
 );
+/**
+ * Each version's `llms.txt` lists the others', as trpc.io's do; none lists
+ * v12's while it's hidden.
+ */
+const llmsVersions = [
+  ...(v12.hidden ? [] : [{ id: 'v12' as const, name: 'v12 (preview)' }]),
+  ...copiedVersions.map((version) => ({
+    id: version.id,
+    name: version.status === 'stable' ? `${version.id} (stable)` : version.id,
+  })),
+];
+const llmsOthers = (id: 'v12' | CopiedVersion['id']) =>
+  llmsVersions
+    .filter((version) => version.id !== id)
+    .map((version) => ({ name: version.name, path: llmsTxtPath(version.id) }));
+// The copies and posts are trpc.io's own pages once the site is trpc.io;
+// until then, their canonical links point there, out of this sitemap.
+const copySitemap = atTrpcIo
+  ? { changefreq: 'weekly' as const, priority: 0.5 }
+  : { exclude: true };
+
 const docCard = (
   page: (typeof pages)[number],
   version: 'v12' | CopiedVersion['id'],
@@ -99,8 +124,14 @@ export default defineConfig({
   // `ETIMEDOUT ::1`, then `ECONNREFUSED 127.0.0.1`; an IP has one address.
   preview: { host: '127.0.0.1' },
   plugins: [
+    siteFiles(),
     docsContent({
-      agentFiles: true,
+      agentFiles: {
+        llmsTxt: llmsTxtPath('v12'),
+        markdown: true,
+        ...(v12.hidden ? { name: 'tRPC v12' } : {}),
+        others: llmsOthers('v12'),
+      },
       basePath: v12.basePath,
       contentDir,
       contentPath: 'www/docs',
@@ -116,7 +147,12 @@ export default defineConfig({
     }),
     ...copies.map((copy) =>
       docsContent({
-        agentFiles: false,
+        agentFiles: {
+          llmsTxt: llmsTxtPath(copy.version.id),
+          markdown: false,
+          name: `tRPC ${copy.version.id}`,
+          others: llmsOthers(copy.version.id),
+        },
         basePath: copy.version.basePath,
         contentDir: copy.dir,
         // trpc.io compiled v11's blocks with Twoslash, and so does the site.
@@ -154,7 +190,7 @@ export default defineConfig({
             docCard(
               page,
               copy.version.id,
-              trpcPageUrl(
+              copyPageUrl(
                 copy.version,
                 page.path.slice(`${copy.version.basePath}/`.length),
               ),
@@ -174,6 +210,14 @@ export default defineConfig({
           pill: 'MIT licensed',
           url: absoluteUrl(sponsorPage.path),
         }),
+        ...[mediaPage, searchPage].map((page) =>
+          OgCard.Page({
+            ...page,
+            eyebrow: '',
+            pill: 'MIT licensed',
+            url: absoluteUrl(page.path),
+          }),
+        ),
         ...posts.map((post) =>
           OgCard.Post({
             description: post.description,
@@ -192,9 +236,10 @@ export default defineConfig({
         { path: '/', sitemap: { changefreq: 'weekly', priority: 1 } },
         ...pages.map((page) => ({
           path: page.path,
-          // An experiment's page is `noindex`.
+          // An experiment's page is `noindex`, and every page while v12 is
+          // hidden.
           sitemap:
-            page.experiment === undefined
+            page.experiment === undefined && !v12.hidden
               ? {
                   changefreq: 'weekly' as const,
                   lastmod: page.lastModified,
@@ -202,24 +247,21 @@ export default defineConfig({
                 }
               : { exclude: true },
         })),
-        // trpc.io is where the older versions' docs are found; each page's
-        // canonical link points there.
         ...copiedPages.flatMap((copy) =>
-          copy.pages.map((page) => ({
-            path: page.path,
-            sitemap: { exclude: true },
-          })),
+          copy.pages.map((page) => ({ path: page.path, sitemap: copySitemap })),
         ),
         { path: '/blog', sitemap: { changefreq: 'monthly', priority: 0.5 } },
         {
           path: sponsorPage.path,
           sitemap: { changefreq: 'monthly', priority: 0.5 },
         },
-        // Like the older versions' pages, each post's canonical link points
-        // at trpc.io.
+        ...[mediaPage, searchPage].map((page) => ({
+          path: page.path,
+          sitemap: { changefreq: 'yearly' as const, priority: 0.3 },
+        })),
         ...posts.map((post) => ({
           path: `/blog/${post.slug}`,
-          sitemap: { exclude: true },
+          sitemap: copySitemap,
         })),
         // Hidden: nothing links here, so the crawl starts here, and finds
         // each question and decision from it, out of the sitemap.

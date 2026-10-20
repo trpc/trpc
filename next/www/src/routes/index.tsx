@@ -39,6 +39,7 @@ import {
   type HomeVersion,
   homeVersionOf,
   homeVersions,
+  showsHomeVersion,
   syncHomeVersionAttribute,
   validateHomeSearch,
 } from '~/home-version.ts';
@@ -357,12 +358,17 @@ const docLink =
 const proseCode =
   '[&_code]:font-mono [&_code]:text-[0.9em] [&_code]:text-foreground';
 
-/** One version's part of the page; the CSS shows the version picked (`[data-home-panel]`). */
+/**
+ * One version's part of the page; the CSS shows the version picked
+ * (`[data-home-panel]`). None for a version the page doesn't show.
+ */
 function Panel(props: {
   readonly children: ReactNode;
   readonly version: HomeVersion;
 }) {
-  return <div data-home-panel={props.version}>{props.children}</div>;
+  return showsHomeVersion(props.version) ? (
+    <div data-home-panel={props.version}>{props.children}</div>
+  ) : null;
 }
 
 function TypeScript() {
@@ -592,10 +598,13 @@ function HomePage() {
           {/* pt-14 is the room the version pill docks in, above the code.
               Every version ships in the HTML; CSS and homeVersionScript pick. */}
           <div
-            className="relative grid min-w-0 grid-cols-1 gap-3 pt-14"
+            className={cn(
+              'relative grid min-w-0 grid-cols-1 gap-3',
+              homeVersions.length > 1 && 'pt-14',
+            )}
             id="hero-code"
           >
-            <HomeVersionBar />
+            {homeVersions.length > 1 ? <HomeVersionBar /> : null}
             <Panel version="v11">
               <DocBody
                 className="min-w-0 [&_.code-block]:my-0! [&_.code-block]:shadow-[0_-24px_300px_0_rgb(57_140_203/0.15)]"
@@ -659,7 +668,9 @@ function HomePage() {
         >
           <HashLink id="features">
             <span data-home-panel="v11">Features</span>
-            <span data-home-panel="v12">What&apos;s in v12</span>
+            {showsHomeVersion('v12') ? (
+              <span data-home-panel="v12">What&apos;s in v12</span>
+            ) : null}
           </HashLink>
         </h2>
         <Panel version="v11">

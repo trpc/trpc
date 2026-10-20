@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router';
 
-import { site } from '~/site.ts';
+import { atTrpcIo, site, v12 } from '~/site.ts';
 
 import { PoweredByVercel } from './powered-by-vercel.tsx';
 
@@ -9,8 +9,10 @@ export function SiteFooter() {
     <footer className="border-t">
       <div className="mx-auto grid max-w-7xl justify-items-start gap-2 px-4 py-8 text-sm text-muted-foreground sm:px-6 md:flex md:items-center md:justify-between md:gap-6">
         <p>
-          tRPC is MIT licensed. v12 is a preview: APIs can still change before
-          it ships.
+          tRPC is MIT licensed.
+          {v12.hidden
+            ? null
+            : ' v12 is a preview: APIs can still change before it ships.'}
         </p>
         <div className="grid justify-items-start gap-4 md:flex md:items-center md:gap-6">
           <nav aria-label="Footer" className="flex flex-wrap gap-x-4 gap-y-2">
@@ -20,9 +22,11 @@ export function SiteFooter() {
             <a className="hover:text-foreground" href={site.github}>
               GitHub
             </a>
-            <a className="hover:text-foreground" href="https://trpc.io">
-              v11 docs
-            </a>
+            {atTrpcIo ? null : (
+              <a className="hover:text-foreground" href="https://trpc.io">
+                v11 docs
+              </a>
+            )}
             <Link className="hover:text-foreground" to="/sponsor">
               Sponsor
             </Link>
