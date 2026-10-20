@@ -73,6 +73,34 @@ test('dispose() ends the requests in flight', async () => {
   expect(trpc.store.entries()).toHaveLength(0);
 });
 
+test('after dispose(), reads without data reject, and the store starts no requests', async () => {
+  using _db = freshDb();
+  const trpc = make([cacheLink({ gcTime: 60_000, staleTime: 0 })]);
+  const loading = trpc.post.byId.query({ id: '1' });
+  trpc.store.dispose();
+  const closed = {
+    code: 'CLIENT_CLOSED_REQUEST',
+    message: expect.stringContaining('dispose()'),
+  };
+  await expect(loading).rejects.toMatchObject(closed);
+  const late = trpc.post.byId.query({ id: '2' });
+  expect(late.status).toBe('rejected');
+  await expect(late).rejects.toMatchObject(closed);
+
+  const calls = [...db.calls];
+  trpc.post.byId.setData(
+    { id: '3' },
+    { id: '3', title: 'Kept', tags: [], at: new Date(0) },
+  );
+  const cached = trpc.post.byId.query({ id: '3' });
+  await expect(cached).resolves.toMatchObject({ title: 'Kept' });
+  const entry = trpc.store.entryOf(cached)!;
+  await trpc.store.refetch(entry);
+  await trpc.post.byId.invalidate();
+  expect(entry.snapshot.isFetching).toBe(false);
+  expect(db.calls).toEqual(calls);
+});
+
 test('without links, an entry lives only while something holds it', async () => {
   using _db = freshDb();
   const trpc = make([]);
