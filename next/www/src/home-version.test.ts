@@ -88,8 +88,8 @@ function landing(
 
 /** `landing` with v12 shown, as on v12.trpc.io: the version and the URLs it replaces. */
 function land(href: string, localStorage: ReturnType<typeof storage>) {
-  const { replaced, shown } = landing(href, localStorage, false);
-  return { replaced, shown };
+  const landed = landing(href, localStorage, false);
+  return { replaced: landed.replaced, shown: landed.shown };
 }
 
 describe('remembering the version', () => {
