@@ -16,7 +16,7 @@ export const site = {
    * the copies of trpc.io's docs and blog are the originals (`atTrpcIo`),
    * and v12 is hidden (`v12.hidden`).
    */
-  url: 'https://v12.trpc.io',
+  url: 'https://trpc.io',
   /** The project's account on X, for `twitter:site`. */
   x: '@trpcio',
 } as const;

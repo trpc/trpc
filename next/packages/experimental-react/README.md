@@ -24,5 +24,5 @@ const data = use(useQuery(post)); // in the component
 
 ## Docs
 
-- [React without TanStack Query](https://v12.trpc.io/v12/docs/integrations/experimental-react)
-- [React and Next.js](https://v12.trpc.io/v12/docs/integrations/react)
+- [React without TanStack Query](https://trpc.io/v12/docs/integrations/experimental-react)
+- [React and Next.js](https://trpc.io/v12/docs/integrations/react)

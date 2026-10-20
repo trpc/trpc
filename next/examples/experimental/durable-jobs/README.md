@@ -6,7 +6,7 @@ Two servers share one Redis, for durable calls and for locks:
 - **One invoice, two servers.** Two payments for one invoice reach different servers. `experimental_lock()` on `experimental_redisLocker()` runs them one at a time: the second waits (`ctx.lock.waited`) and finds the invoice paid.
 - **A stream cut mid-way.** A report streams its rows. The first server's response is cut after three frames, and the retry goes to the other server with `trpc-resume-from: 3`, which reads the rest from Redis. The report runs once.
 
-Kept results use Effect's `Persistence.layerBackingRedis`; both stores share one `NodeRedis.layer`. See [Durable calls](https://v12.trpc.io/v12/docs/middleware/durable) and [Locks](https://v12.trpc.io/v12/docs/middleware/lock). Everything here is `experimental_*` and might change or go away in any release; the Cloudflare example covers the Durable Object flavour.
+Kept results use Effect's `Persistence.layerBackingRedis`; both stores share one `NodeRedis.layer`. See [Durable calls](https://trpc.io/v12/docs/middleware/durable) and [Locks](https://trpc.io/v12/docs/middleware/lock). Everything here is `experimental_*` and might change or go away in any release; the Cloudflare example covers the Durable Object flavour.
 
 `server.ts` has the router and `listen()`. `client.ts` runs the three scenarios: `main(url, other)` sends the second payment and the resumed report to `other`. `start.ts` starts two servers in one process, so they also share the in-memory `db` that stands in for the app's database.
 

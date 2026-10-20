@@ -18,11 +18,11 @@ await queryClient.invalidateQueries(trpc.post.pathFilter());
 
 ## Docs
 
-- [TanStack Query](https://v12.trpc.io/v12/docs/integrations/tanstack-query)
-- [Query keys and filters](https://v12.trpc.io/v12/docs/integrations/tanstack-query/keys)
-- [Subscriptions](https://v12.trpc.io/v12/docs/integrations/tanstack-query/subscriptions)
-- [Streamed mutations](https://v12.trpc.io/v12/docs/integrations/tanstack-query/streamed-mutations)
-- [Hydration and offline mutations](https://v12.trpc.io/v12/docs/integrations/tanstack-query/hydration)
-- [TanStack DB](https://v12.trpc.io/v12/docs/integrations/tanstack-query/tanstack-db)
+- [TanStack Query](https://trpc.io/v12/docs/integrations/tanstack-query)
+- [Query keys and filters](https://trpc.io/v12/docs/integrations/tanstack-query/keys)
+- [Subscriptions](https://trpc.io/v12/docs/integrations/tanstack-query/subscriptions)
+- [Streamed mutations](https://trpc.io/v12/docs/integrations/tanstack-query/streamed-mutations)
+- [Hydration and offline mutations](https://trpc.io/v12/docs/integrations/tanstack-query/hydration)
+- [TanStack DB](https://trpc.io/v12/docs/integrations/tanstack-query/tanstack-db)
 
-Part of the tRPC v12 preview: until 12.0.0, releases follow semver on `0.x`, and each export's `@stability` says how it is planned to ship ([Stability](https://v12.trpc.io/v12/docs/packages#stability)).
+Part of the tRPC v12 preview: until 12.0.0, releases follow semver on `0.x`, and each export's `@stability` says how it is planned to ship ([Stability](https://trpc.io/v12/docs/packages#stability)).

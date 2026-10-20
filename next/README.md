@@ -4,7 +4,7 @@ All **implementation** for the rewrite lives here. The old v11 tree, in the repo
 
 Agents: start with [`AGENTS.md`](./AGENTS.md). Design docs live in [`.agent-docs/`](./.agent-docs/). Brief: [`.agent-docs/decisions/brief.md`](./.agent-docs/decisions/brief.md).
 
-User docs: [v12.trpc.io/v12/docs](https://v12.trpc.io/v12/docs), written in [`www/docs/`](./www/docs/).
+User docs: [trpc.io/v12/docs](https://trpc.io/v12/docs), written in [`www/docs/`](./www/docs/).
 
 ```text
 next/
@@ -30,7 +30,7 @@ next/
   tooling/docs-lint/    lints the code blocks in www/docs/ (oxlint skips Markdown)
   tooling/vercel-ignore/  Vercel's ignored build step for the docs site: skips a deployment when nothing it renders changed
   tooling/release/      checks the Changesets release plan (`.changeset/config.json`): dependents bump with their dependencies
-  www/                  `@trpc12/www`: the docs site, served at https://v12.trpc.io
+  www/                  `@trpc12/www`: the docs site, served at https://trpc.io
   www/docs/             the v12 docs: Markdown pages, a folder per sidebar section, with compiled twoslash examples
   www/samples/          the apps the docs' and home page's code blocks compile in
 ```
@@ -68,7 +68,7 @@ pnpm example
 
 Run them all before `pnpm land`: `pnpm fix`, `pnpm check`, `pnpm typecheck`, `pnpm coverage` and `pnpm test --project '!packages*'` (together, every test), `pnpm test:bun`, `pnpm example`, `pnpm build` (which builds the docs site too) and `pnpm bench budget`. When a change moves a client bundle's size, update the table in [`.agent-docs/notes/benchmarks.md`](./.agent-docs/notes/benchmarks.md#budgets).
 
-Each package's `README.md` (`packages/<name>/`) says what it exports, and [Packages and stability](https://v12.trpc.io/v12/docs/packages) lists every package and `@trpc12/trpc` entry point with its docs. `@trpc12/trpc` imports no `node:*`: Node comes from `NodeHttpServer.layer` in `@effect/platform-node` ([decision](./.agent-docs/decisions/platforms-through-effect-layers.md)).
+Each package's `README.md` (`packages/<name>/`) says what it exports, and [Packages and stability](https://trpc.io/v12/docs/packages) lists every package and `@trpc12/trpc` entry point with its docs. `@trpc12/trpc` imports no `node:*`: Node comes from `NodeHttpServer.layer` in `@effect/platform-node` ([decision](./.agent-docs/decisions/platforms-through-effect-layers.md)).
 
 **Pre-commit:** `.vite-hooks/pre-commit` runs `vp staged` (see `staged` in `vite.config.ts`): `vp check --fix` on staged files under `next/`, plus `vp test related` for staged `.ts` files. `.vite-hooks/post-merge` reruns `pnpm --filter @trpc12/www sponsors:readme` when a merge changed the root's `README.md`. The old docs copied from `v11/www/` are synced by hand ([`../.agents/skills/sync-old-docs/SKILL.md`](../.agents/skills/sync-old-docs/SKILL.md)). `pnpm install` enables the hooks via `vp config` unless `core.hooksPath` is already set to something else, as it is in Cursor's Cloud Agents. Skip once with `VP_GIT_HOOKS=0 git commit …`.
 

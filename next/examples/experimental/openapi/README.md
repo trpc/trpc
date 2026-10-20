@@ -1,6 +1,6 @@
 # OpenAPI example (experimental)
 
-One router served over RPC (`/trpc`) and REST (`/api`), with an OpenAPI document generated from its types and a Scalar UI at `/api/docs`. See [OpenAPI](https://v12.trpc.io/v12/docs/openapi/overview).
+One router served over RPC (`/trpc`) and REST (`/api`), with an OpenAPI document generated from its types and a Scalar UI at `/api/docs`. See [OpenAPI](https://trpc.io/v12/docs/openapi/overview).
 
 - `router.ts`: the router, with REST routes in `.meta({ route })`.
 - `server.ts`: generates the document and serves both handlers on one port.

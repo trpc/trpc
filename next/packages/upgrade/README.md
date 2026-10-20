@@ -9,7 +9,7 @@ npx @trpc12/upgrade src --write
 
 ## Docs
 
-- [The codemod](https://v12.trpc.io/v12/docs/migrations/from-v11/codemod)
-- [Migrating from v11](https://v12.trpc.io/v12/docs/migrations/from-v11)
+- [The codemod](https://trpc.io/v12/docs/migrations/from-v11/codemod)
+- [Migrating from v11](https://trpc.io/v12/docs/migrations/from-v11)
 
-Part of the tRPC v12 preview: until 12.0.0, releases follow semver on `0.x`, and each export's `@stability` says how it is planned to ship ([Stability](https://v12.trpc.io/v12/docs/packages#stability)).
+Part of the tRPC v12 preview: until 12.0.0, releases follow semver on `0.x`, and each export's `@stability` says how it is planned to ship ([Stability](https://trpc.io/v12/docs/packages#stability)).

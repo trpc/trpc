@@ -11,9 +11,9 @@ signup.submit [web]                 Effect.withSpan around the call
         mailer.welcome [api]        Effect.forkDetach: ends after the response
 ```
 
-- `server.ts`: the router, and `listen()`, which serves it with the `api` SDK. The tracer goes in the handler's `layer` next to the services ([Server tracing](https://v12.trpc.io/v12/docs/server/effect#tracing)). `user.me` runs an Effect middleware that provides `CurrentUser` and tags the call's span with `enduser.id`; `user.signup` sends its welcome mail with `Effect.forkDetach`, so the call answers first ([Work after the response](https://v12.trpc.io/v12/docs/server/effect#work-after-the-response)).
+- `server.ts`: the router, and `listen()`, which serves it with the `api` SDK. The tracer goes in the handler's `layer` next to the services ([Server tracing](https://trpc.io/v12/docs/server/effect#tracing)). `user.me` runs an Effect middleware that provides `CurrentUser` and tags the call's span with `enduser.id`; `user.signup` sends its welcome mail with `Effect.forkDetach`, so the call answers first ([Work after the response](https://trpc.io/v12/docs/server/effect#work-after-the-response)).
 - `telemetry.ts`: `NodeSdk.layer` with an in-memory exporter. In an app, pass an OTLP exporter (`@opentelemetry/exporter-trace-otlp-http`) instead.
-- `client.ts`: `main(url)` makes the three calls with `createEffectClient` under the `web` SDK ([Client tracing](https://v12.trpc.io/v12/docs/client/tracing)) and returns that SDK's spans.
+- `client.ts`: `main(url)` makes the three calls with `createEffectClient` under the `web` SDK ([Client tracing](https://trpc.io/v12/docs/client/tracing)) and returns that SDK's spans.
 - `start.ts`: runs `client.ts` against `server.ts`, then joins both services' spans, prints the three traces and checks their shape.
 - `server.test.ts`: the same checks as tests, on `@trpc12/trpc/internal/testing`'s `TestServer` with `@effect/vitest`'s `it.layer`. `TestServer` has no compatibility promise.
 

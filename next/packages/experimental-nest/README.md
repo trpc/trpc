@@ -28,7 +28,7 @@ class AppModule {}
 
 ## Docs
 
-- [NestJS](https://v12.trpc.io/v12/docs/integrations/nestjs)
-- [Contract-first](https://v12.trpc.io/v12/docs/server/contract-first)
+- [NestJS](https://trpc.io/v12/docs/integrations/nestjs)
+- [Contract-first](https://trpc.io/v12/docs/server/contract-first)
 
-Part of the tRPC v12 preview: until 12.0.0, releases follow semver on `0.x`, and each export's `@stability` says how it is planned to ship ([Stability](https://v12.trpc.io/v12/docs/packages#stability)).
+Part of the tRPC v12 preview: until 12.0.0, releases follow semver on `0.x`, and each export's `@stability` says how it is planned to ship ([Stability](https://trpc.io/v12/docs/packages#stability)).

@@ -26,5 +26,5 @@ const posts = createCollection(
 
 ## Docs
 
-- [TanStack DB](https://v12.trpc.io/v12/docs/integrations/tanstack-query/tanstack-db)
-- [Subscriptions](https://v12.trpc.io/v12/docs/subscriptions/overview)
+- [TanStack DB](https://trpc.io/v12/docs/integrations/tanstack-query/tanstack-db)
+- [Subscriptions](https://trpc.io/v12/docs/subscriptions/overview)

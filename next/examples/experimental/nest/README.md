@@ -1,6 +1,6 @@
 # NestJS example (experimental)
 
-A Nest app serving a tRPC contract from a controller with `@trpc12/experimental-nest`. See [NestJS](https://v12.trpc.io/v12/docs/integrations/nestjs).
+A Nest app serving a tRPC contract from a controller with `@trpc12/experimental-nest`. See [NestJS](https://trpc.io/v12/docs/integrations/nestjs).
 
 - `src/contract.ts` is the contract, with REST routes in `.meta({ route })`. It has no decorators, so the client imports it without Nest.
 - `src/posts.ts` has the `Posts` service, an `AdminGuard`, and `PostsController`. `@Implement(appContract.post)` adds a Nest route for each procedure under `post`, and the resolvers reach the injected service through `this`.

@@ -1,6 +1,6 @@
 # React `use()` and Suspense on TanStack Start (experimental)
 
-`@trpc12/experimental-react` without TanStack Query, in a TanStack Start app styled with `@shared/ui` and Tailwind. The route's loader starts `post.list`, the component reads its promise with `use(useQuery(promise))` under `Suspense`, and adding a post refetches the list through `invalidateOnMutationLink`. See [React without TanStack Query](https://v12.trpc.io/v12/docs/integrations/experimental-react); for the same page with Effect atoms, see [`react-atom`](../react-atom/README.md).
+`@trpc12/experimental-react` without TanStack Query, in a TanStack Start app styled with `@shared/ui` and Tailwind. The route's loader starts `post.list`, the component reads its promise with `use(useQuery(promise))` under `Suspense`, and adding a post refetches the list through `invalidateOnMutationLink`. See [React without TanStack Query](https://trpc.io/v12/docs/integrations/experimental-react); for the same page with Effect atoms, see [`react-atom`](../react-atom/README.md).
 
 It's a framework app, so it keeps TanStack Start's layout instead of the [examples layout](../../README.md):
 

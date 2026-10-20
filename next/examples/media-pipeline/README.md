@@ -1,6 +1,6 @@
 # media-pipeline
 
-Upload photos and get back reports whose fields resolve as they're ready. The example runs tRPC's streaming, file and serializer machinery end to end on Node. Every API it uses is stable except `experimental_byteStream()`, which `photos.uploadOriginal` uses (see [Byte stream inputs](https://v12.trpc.io/v12/docs/server/byte-streams)).
+Upload photos and get back reports whose fields resolve as they're ready. The example runs tRPC's streaming, file and serializer machinery end to end on Node. Every API it uses is stable except `experimental_byteStream()`, which `photos.uploadOriginal` uses (see [Byte stream inputs](https://trpc.io/v12/docs/server/byte-streams)).
 
 ```bash
 pnpm start                       # the server on a free port, then the client against it

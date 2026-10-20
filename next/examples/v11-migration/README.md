@@ -1,6 +1,6 @@
 # v11 migration example
 
-A v11 app (a `@trpc/server` 11 router, `@trpc/client` 11 links and `@trpc/tanstack-react-query`) moved to v12 in three stages, each run against a real server. It uses stable API only: `createV11Handler` and `fromV11Link` from `@trpc12/trpc/interop`, `createSyncSerializer`, `httpLink` with batching, and the `@trpc12/upgrade` codemod. The guide it follows: [Migrating from v11](https://v12.trpc.io/v12/docs/migrations/from-v11).
+A v11 app (a `@trpc/server` 11 router, `@trpc/client` 11 links and `@trpc/tanstack-react-query`) moved to v12 in three stages, each run against a real server. It uses stable API only: `createV11Handler` and `fromV11Link` from `@trpc12/trpc/interop`, `createSyncSerializer`, `httpLink` with batching, and the `@trpc12/upgrade` codemod. The guide it follows: [Migrating from v11](https://trpc.io/v12/docs/migrations/from-v11).
 
 ```
 server.ts            listen(): the v12 router on /rpc, and createV11Handler on /trpc for v11 clients
