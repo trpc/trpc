@@ -186,36 +186,84 @@ export type SuspenseQueriesOptions<
 /**
  * @internal
  */
-export type TRPCUseQueries<TRouter extends AnyRouter> = <
-  TQueryOptions extends UseQueryOptionsForUseQueries<any, any, any, any>[],
-  TCombinedResult = QueriesResults<TQueryOptions>,
->(
-  queriesCallback: (
-    t: UseQueriesProcedureRecord<
-      TRouter['_def']['_config']['$types'],
-      TRouter['_def']['record']
-    >,
-  ) => readonly [...QueriesOptions<TQueryOptions>],
-  options?: {
-    combine?: (results: QueriesResults<TQueryOptions>) => TCombinedResult;
-  },
-) => TCombinedResult;
+export type TRPCUseQueries<TRouter extends AnyRouter> = {
+  <
+    TQueryOptions extends UseQueryOptionsForUseQueries<any, any, any, any>[],
+    TCombinedResult = QueriesResults<TQueryOptions>,
+  >(
+    queriesCallback: (
+      t: UseQueriesProcedureRecord<
+        TRouter['_def']['_config']['$types'],
+        TRouter['_def']['record']
+      >,
+    ) => readonly [...QueriesOptions<TQueryOptions>],
+    options?: {
+      combine?: (results: QueriesResults<TQueryOptions>) => TCombinedResult;
+    },
+  ): TCombinedResult;
+  /**
+   * `TQueryOptions` cannot be inferred from the tuple spread above when the
+   * callback returns a union of tuples - e.g. conditionally returning `[]` -
+   * so those callbacks are matched by this overload instead, which infers the
+   * options array directly.
+   */
+  <
+    TQueries extends readonly UseQueryOptionsForUseQueries<
+      any,
+      any,
+      any,
+      any
+    >[],
+    TCombinedResult = QueriesResults<[...TQueries]>,
+  >(
+    queriesCallback: (
+      t: UseQueriesProcedureRecord<
+        TRouter['_def']['_config']['$types'],
+        TRouter['_def']['record']
+      >,
+    ) => TQueries,
+    options?: {
+      combine?: (results: QueriesResults<[...TQueries]>) => TCombinedResult;
+    },
+  ): TCombinedResult;
+};
 
 /**
  * @internal
  */
-export type TRPCUseSuspenseQueries<TRouter extends AnyRouter> = <
-  TQueryOptions extends UseQueryOptionsForUseSuspenseQueries<
-    any,
-    any,
-    any,
-    any
-  >[],
->(
-  queriesCallback: (
-    t: UseSuspenseQueriesProcedureRecord<
-      TRouter['_def']['_config']['$types'],
-      TRouter['_def']['record']
-    >,
-  ) => readonly [...SuspenseQueriesOptions<TQueryOptions>],
-) => SuspenseQueriesResults<TQueryOptions>;
+export type TRPCUseSuspenseQueries<TRouter extends AnyRouter> = {
+  <
+    TQueryOptions extends UseQueryOptionsForUseSuspenseQueries<
+      any,
+      any,
+      any,
+      any
+    >[],
+  >(
+    queriesCallback: (
+      t: UseSuspenseQueriesProcedureRecord<
+        TRouter['_def']['_config']['$types'],
+        TRouter['_def']['record']
+      >,
+    ) => readonly [...SuspenseQueriesOptions<TQueryOptions>],
+  ): SuspenseQueriesResults<TQueryOptions>;
+  /**
+   * Same as the `TRPCUseQueries` fallback: matches callbacks that return a
+   * union of tuples, which can't be inferred through the tuple spread above.
+   */
+  <
+    TQueries extends readonly UseQueryOptionsForUseSuspenseQueries<
+      any,
+      any,
+      any,
+      any
+    >[],
+  >(
+    queriesCallback: (
+      t: UseSuspenseQueriesProcedureRecord<
+        TRouter['_def']['_config']['$types'],
+        TRouter['_def']['record']
+      >,
+    ) => TQueries,
+  ): SuspenseQueriesResults<[...TQueries]>;
+};
