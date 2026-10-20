@@ -106,6 +106,7 @@ export class Room extends DurableObject<Env> {
 - `wsLink`'s keep-alive pings are answered by the runtime (`setWebSocketAutoResponse`) without waking the object. The handler's `websocket.idleTimeout` doesn't apply here: a timer would wake it.
 - A generator or `Stream` subscription keeps the object awake until it ends. Subscriptions to an `experimental_hibernatingPublisher` don't.
 - Already created the `WebSocketPair` yourself? `sockets.accept(server, request, platform)` instead of `upgrade()`. It skips `middleware`: check the origin before you create the pair.
+- `await sockets.dispose()` (or `await using`) ends what the adapter started. It interrupts its calls and running subscriptions, then closes the object's tRPC sockets with `1012` ("service restart"), so `wsLink` reconnects and resubscribes. After it, `upgrade()` answers `503`.
 
 ## Subscriptions that hibernate
 
