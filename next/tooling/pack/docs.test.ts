@@ -152,13 +152,14 @@ const experimentPages = await run(
 );
 
 /**
- * Experiments of recipes: stable APIs with another library, hidden until
- * reviewed. The kitchen sink's demos are apps on the stable APIs.
+ * Experiments without an API of their own: recipes (stable APIs with another
+ * library), hidden until reviewed; the kitchen sink's demos, apps on the
+ * stable APIs; and the benchmarks page, which documents none.
  */
-const recipes = new Set(['integrations', 'kitchen-sink']);
+const recipes = new Set(['benchmarks', 'integrations', 'kitchen-sink']);
 
 test.each([...experimentPages.keys()].sort().map((id) => [id] as const))(
-  'the %s experiment documents experimental_ exports or experimental- packages, unless it is recipes',
+  'the %s experiment documents experimental_ exports or experimental- packages, unless it has no API of its own',
   (id) => {
     const prefixed = experimentPages
       .get(id)!
