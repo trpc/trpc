@@ -1,4 +1,5 @@
 import { NodeServices } from '@effect/platform-node';
+import { site, v12 } from '@trpc12/www/site';
 import { Effect, FileSystem, Path } from 'effect';
 import { expect, test } from 'vite-plus/test';
 
@@ -7,8 +8,10 @@ const run = <A, E>(
 ) => Effect.runPromise(Effect.provide(effect, NodeServices.layer));
 
 const root = new URL('../..', import.meta.url).pathname;
-/** Where READMEs link the docs: on GitHub, which npm's README page can reach. */
-const docsUrl = 'https://github.com/trpc/trpc/blob/v12/next/docs/';
+/** The docs pages, which the site renders. */
+const docsDir = `${root}docs/`;
+/** Where READMEs link the docs: on the site, so they follow `site.url` to trpc.io. */
+const docsUrl = `${site.url}${v12.basePath}/`;
 
 const packages = await run(
   Effect.gen(function* () {
@@ -30,13 +33,19 @@ const packages = await run(
   }),
 );
 
-/** The docs pages a README links on GitHub. */
+/** The docs pages a README links on the site, as their files under `docsDir`. */
 const linkedPages = (readme: string | undefined) =>
-  [
-    ...(readme ?? '').matchAll(
-      /\]\(https:\/\/github\.com\/trpc\/trpc\/blob\/v12\/next\/docs\/([^)#]+)/g,
-    ),
-  ].map(([, page]) => page!);
+  [...(readme ?? '').matchAll(/\]\(([^)#\s]+)/g)]
+    .map(([, url]) => url!)
+    .filter((url) => url.startsWith(docsUrl))
+    .map((url) => `${url.slice(docsUrl.length)}.md`);
+
+test.each(packages.map((opts) => [opts.name, opts] as const))(
+  "%s's README links the docs on the site, not as files",
+  (_name, opts) => {
+    expect(opts.readme ?? '').not.toMatch(/\]\([^)]*\bdocs\/[^)]*\.md\b/);
+  },
+);
 
 /** Packages whose own docs page, the first their README links, is in an experiment; the packages page leaves them out too. */
 const experimental = await run(
@@ -45,7 +54,7 @@ const experimental = await run(
     const names = yield* Effect.filter(packages, (opts) => {
       const page = linkedPages(opts.readme)[0];
       if (page === undefined) return Effect.succeed(false);
-      return fs.readFileString(`${root}docs/${page}`).pipe(
+      return fs.readFileString(`${docsDir}${page}`).pipe(
         Effect.map((text) => /^experiment: /m.test(text.split('\n---\n')[0]!)),
         Effect.orElseSucceed(() => false),
       );
@@ -57,7 +66,7 @@ const experimental = await run(
 const packagesPage = await run(
   Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem;
-    return yield* fs.readFileString(`${root}docs/packages.md`);
+    return yield* fs.readFileString(`${docsDir}packages.md`);
   }),
 );
 
@@ -75,7 +84,7 @@ test.each(packages.map((opts) => [opts.name, opts] as const))(
       Effect.gen(function* () {
         const fs = yield* FileSystem.FileSystem;
         const exists = yield* Effect.forEach(pages, (page) =>
-          fs.exists(`${root}docs/${page}`),
+          fs.exists(`${docsDir}${page}`),
         );
         return pages.filter((_, i) => !exists[i]);
       }),
@@ -125,12 +134,11 @@ const experimentPages = await run(
   Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem;
     const path = yield* Path.Path;
-    const docs = path.join(root, 'docs');
-    const files = (yield* fs.readDirectory(docs, { recursive: true })).filter(
-      (file) => file.endsWith('.md'),
-    );
+    const files = (yield* fs.readDirectory(docsDir, {
+      recursive: true,
+    })).filter((file) => file.endsWith('.md'));
     const pages = yield* Effect.forEach(files, (file) =>
-      fs.readFileString(path.join(docs, file)),
+      fs.readFileString(path.join(docsDir, file)),
     );
     const byExperiment = new Map<string, string[]>();
     for (const text of pages) {

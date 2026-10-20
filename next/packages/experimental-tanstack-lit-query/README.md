@@ -28,7 +28,7 @@ class PostView extends LitElement {
 
 ## Docs
 
-- [Lit](https://github.com/trpc/trpc/blob/v12/next/docs/integrations/tanstack-query/lit.md)
-- [TanStack Query](https://github.com/trpc/trpc/blob/v12/next/docs/integrations/tanstack-query.md)
+- [Lit](https://v12.trpc.io/v12/docs/integrations/tanstack-query/lit)
+- [TanStack Query](https://v12.trpc.io/v12/docs/integrations/tanstack-query)
 
-Part of the tRPC v12 preview: until 12.0.0, releases follow semver on `0.x`, and each export's `@stability` says how it is planned to ship ([Stability](https://github.com/trpc/trpc/blob/v12/next/docs/packages.md#stability)).
+Part of the tRPC v12 preview: until 12.0.0, releases follow semver on `0.x`, and each export's `@stability` says how it is planned to ship ([Stability](https://v12.trpc.io/v12/docs/packages#stability)).

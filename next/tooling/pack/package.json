@@ -11,6 +11,7 @@
   },
   "devDependencies": {
     "@tooling/tsconfig": "workspace:*",
+    "@trpc12/www": "workspace:*",
     "@types/node": "^24.0.0",
     "rolldown": "1.2.13",
     "typescript": "^7.0.2",

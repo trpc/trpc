@@ -4,6 +4,9 @@
   "private": true,
   "description": "Documentation site for tRPC v12, rendered from next/docs",
   "type": "module",
+  "exports": {
+    "./site": "./src/site.ts"
+  },
   "scripts": {
     "build": "vp build && node build/vercel-output.ts",
     "dev": "vp dev --port 3012",

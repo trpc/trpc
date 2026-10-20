@@ -1960,6 +1960,9 @@ importers:
       '@tooling/tsconfig':
         specifier: workspace:*
         version: link:../tsconfig
+      '@trpc12/www':
+        specifier: workspace:*
+        version: link:../../www
       '@types/node':
         specifier: ^24.0.0
         version: 24.19.1

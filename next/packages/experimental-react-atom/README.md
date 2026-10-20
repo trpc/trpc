@@ -20,5 +20,5 @@ const post = useAtomSuspense(trpc.post.byId.query({ id })).value;
 
 ## Docs
 
-- [React atoms](https://github.com/trpc/trpc/blob/v12/next/docs/integrations/experimental-react-atom.md)
-- [React and Next.js](https://github.com/trpc/trpc/blob/v12/next/docs/integrations/react.md)
+- [React atoms](https://v12.trpc.io/v12/docs/integrations/experimental-react-atom)
+- [React and Next.js](https://v12.trpc.io/v12/docs/integrations/react)

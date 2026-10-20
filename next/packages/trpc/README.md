@@ -56,17 +56,17 @@ const greeting = await client.greet.query({ name: 'tRPC' }); // string
 | `@trpc12/trpc/interop`            | `createV11Handler`, `fromV11Link` for v11 code                   |
 | `@trpc12/trpc/extend`             | building blocks for integrations                                 |
 
-Each one's docs are listed in [Packages and stability](https://github.com/trpc/trpc/blob/v12/next/docs/packages.md#trpc12trpc-entry-points).
+Each one's docs are listed in [Packages and stability](https://v12.trpc.io/v12/docs/packages#trpc12trpc-entry-points).
 
 ## Docs
 
-- [Getting started](https://github.com/trpc/trpc/blob/v12/next/docs/getting-started.md)
-- [The server](https://github.com/trpc/trpc/blob/v12/next/docs/server/overview.md)
-- [The client](https://github.com/trpc/trpc/blob/v12/next/docs/client/overview.md)
-- [Links](https://github.com/trpc/trpc/blob/v12/next/docs/client/links.md)
-- [Subscriptions](https://github.com/trpc/trpc/blob/v12/next/docs/subscriptions/overview.md)
-- [Adapters](https://github.com/trpc/trpc/blob/v12/next/docs/adapters/overview.md)
-- [OpenAPI](https://github.com/trpc/trpc/blob/v12/next/docs/openapi/overview.md)
-- [Packages and stability](https://github.com/trpc/trpc/blob/v12/next/docs/packages.md)
+- [Getting started](https://v12.trpc.io/v12/docs/getting-started)
+- [The server](https://v12.trpc.io/v12/docs/server/overview)
+- [The client](https://v12.trpc.io/v12/docs/client/overview)
+- [Links](https://v12.trpc.io/v12/docs/client/links)
+- [Subscriptions](https://v12.trpc.io/v12/docs/subscriptions/overview)
+- [Adapters](https://v12.trpc.io/v12/docs/adapters/overview)
+- [OpenAPI](https://v12.trpc.io/v12/docs/openapi/overview)
+- [Packages and stability](https://v12.trpc.io/v12/docs/packages)
 
-Part of the tRPC v12 preview: until 12.0.0, releases follow semver on `0.x`, and each export's `@stability` says how it is planned to ship ([Stability](https://github.com/trpc/trpc/blob/v12/next/docs/packages.md#stability)).
+Part of the tRPC v12 preview: until 12.0.0, releases follow semver on `0.x`, and each export's `@stability` says how it is planned to ship ([Stability](https://v12.trpc.io/v12/docs/packages#stability)).
