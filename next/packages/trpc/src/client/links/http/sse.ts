@@ -12,7 +12,7 @@ import {
   sseEvents,
   type SseEvent,
 } from '../../../internal/protocol.ts';
-import type { Operation, OperationStream } from '../../link.ts';
+import type { AnyLink, Operation, OperationStream } from '../../link.ts';
 import {
   badResponse,
   makeDeferredDecoder,
@@ -48,6 +48,16 @@ export interface HttpSse {
   readonly _: unique symbol;
 }
 
+/** What {@link sse} builds for `httpLink`. */
+export interface Subscriptions {
+  readonly subscribe: (op: Operation) => OperationStream;
+  /**
+   * `httpLink` marks itself with this, so whatever a client's `subscribe()`
+   * needs from the link comes in with `sse()` rather than with `httpLink`.
+   */
+  readonly mark: <L extends AnyLink>(link: L) => L;
+}
+
 /**
  * Subscriptions for `httpLink`, over server-sent events: one connection per
  * subscription, reconnecting with `Last-Event-ID` after a dropped one. A
@@ -64,8 +74,11 @@ export interface HttpSse {
  * @stability stable
  */
 export function sse(opts: SseOptions = {}): HttpSse {
-  const feature: HttpFeature<(op: Operation) => OperationStream> = {
-    build: (transport) => makeSubscriptions(transport, opts),
+  const feature: HttpFeature<Subscriptions> = {
+    build: (transport) => ({
+      subscribe: makeSubscriptions(transport, opts),
+      mark: (link) => link,
+    }),
   };
   return feature as unknown as HttpSse;
 }

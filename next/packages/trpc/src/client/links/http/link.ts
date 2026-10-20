@@ -9,12 +9,11 @@ import {
   withSerializer,
   type BuiltinCallOptions,
   type Operation,
-  type OperationStream,
   type TrpcLink,
   type TrpcRequestInit,
 } from '../../link.ts';
 import type { HttpBatching } from './batch.ts';
-import type { HttpSse } from './sse.ts';
+import type { HttpSse, Subscriptions } from './sse.ts';
 import { makeTransport, type HttpFeature } from './transport.ts';
 
 /**
@@ -180,28 +179,29 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
       'batch',
       'batching',
     ) ?? transport.single;
-  const subscription = feature<(op: Operation) => OperationStream>(
+  const subscriptions = feature<Subscriptions>(
     opts.subscriptions,
     'subscriptions',
     'sse',
   );
 
-  return withSerializer(
-    (({ op }) => {
-      if (op.type === 'subscription') {
-        if (!subscription) {
-          return Stream.fail(
-            new TrpcError({
-              code: 'METHOD_NOT_SUPPORTED',
-              message:
-                'This httpLink carries no subscriptions: pass `subscriptions: sse()` to it',
-            }),
-          );
-        }
-        return subscription(op);
+  const link = (({ op }) => {
+    if (op.type === 'subscription') {
+      if (!subscriptions) {
+        return Stream.fail(
+          new TrpcError({
+            code: 'METHOD_NOT_SUPPORTED',
+            message:
+              'This httpLink carries no subscriptions: pass `subscriptions: sse()` to it',
+          }),
+        );
       }
-      return Stream.fromEffect(send(op));
-    }) as TrpcLink<any>,
+      return subscriptions.subscribe(op);
+    }
+    return Stream.fromEffect(send(op));
+  }) as TrpcLink<any>;
+  return withSerializer(
+    subscriptions ? subscriptions.mark(link) : link,
     serializer,
   );
 }
