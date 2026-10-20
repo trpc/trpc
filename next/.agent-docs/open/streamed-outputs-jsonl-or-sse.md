@@ -45,7 +45,26 @@ content-type: application/jsonl
 <chunk frame>
 ```
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import { z } from 'zod';
+import { t } from './server.ts';
+const router = {
+  seats: {
+    list: t.procedure
+      .input(z.object({ show: z.number() }))
+      .query(async function* () {
+        yield { seat: 'A1' };
+      }),
+  },
+};
+const client = createTrpcClient({
+  router: routerType<typeof router>(),
+  links: [httpLink({ url: '/trpc' })],
+});
+declare function render(seat: { seat: string }): void;
+// ---cut-end---
 const seats = await client.seats.list.query({ show: 1 }); // httpLink reads JSONL
 for await (const seat of seats) render(seat);
 ```
@@ -68,7 +87,26 @@ id: 1
 data: <chunk frame>
 ```
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import { z } from 'zod';
+import { t } from './server.ts';
+const router = {
+  seats: {
+    list: t.procedure
+      .input(z.object({ show: z.number() }))
+      .query(async function* () {
+        yield { seat: 'A1' };
+      }),
+  },
+};
+const client = createTrpcClient({
+  router: routerType<typeof router>(),
+  links: [httpLink({ url: '/trpc' })],
+});
+declare function render(seat: { seat: string }): void;
+// ---cut-end---
 const seats = await client.seats.list.query({ show: 1 }); // same client code
 for await (const seat of seats) render(seat);
 ```
@@ -81,7 +119,7 @@ for await (const seat of seats) render(seat);
 
 "Later" again.
 
-```ts
+```ts twoslash
 // no change
 ```
 

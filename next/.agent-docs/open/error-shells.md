@@ -37,7 +37,26 @@ links:
 
 Each component handles the whole union; app-wide failures go through `unexpected` or an untyped boundary.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { useMutation } from '@tanstack/react-query';
+import { createTrpcContext } from '@trpc12/tanstack-react-query';
+import { matchError } from '@trpc12/trpc/client';
+import { z } from 'zod';
+import { authed } from './server.ts';
+const router = {
+  doc: {
+    byId: authed
+      .input(z.object({ id: z.string() }))
+      .query((opts) => ({ id: opts.input.id, title: 'Hello' })),
+    rename: authed
+      .errors({ TITLE_TAKEN: { message: 'That title is taken' } })
+      .input(z.object({ id: z.string(), title: z.string() }))
+      .mutation((opts) => ({ id: opts.input.id, title: opts.input.title })),
+  },
+};
+const [, useTrpc] = createTrpcContext<typeof router>();
+// ---cut-end---
 const trpc = useTrpc();
 const rename = useMutation(trpc.doc.rename.mutationOptions());
 const message =
@@ -60,24 +79,67 @@ const message =
 
 A shell owns codes (and optionally every `defined: false` error). Its hooks throw owned errors to the nearest owning `Boundary`, which renders a fallback and re-throws what it doesn't own; `error` is typed without them. A hook checks at render that its whole chain is mounted.
 
-```ts
-const RootShell = createShell({ name: 'Root', claims: [], unexpected: true, fallback: Crashed });
-const OfflineShell = RootShell.extend({ name: 'Offline', claims: ['NETWORK_ERROR'], fallback: Offline });
-const AuthShell = OfflineShell.extend({ name: 'Auth', claims: ['UNAUTHORIZED'], fallback: SignIn });
+```tsx twoslash
+// ---cut-start---
+import { createTrpcContext } from '@trpc12/tanstack-react-query';
+import { matchError } from '@trpc12/trpc/client';
+import type { ReactNode } from 'react';
+import { createShellB as createShell } from '../open/error-shells.ts';
+import { z } from 'zod';
+import { authed } from './server.ts';
+const router = {
+  doc: {
+    byId: authed
+      .input(z.object({ id: z.string() }))
+      .query((opts) => ({ id: opts.input.id, title: 'Hello' })),
+    rename: authed
+      .errors({ TITLE_TAKEN: { message: 'That title is taken' } })
+      .input(z.object({ id: z.string(), title: z.string() }))
+      .mutation((opts) => ({ id: opts.input.id, title: opts.input.title })),
+  },
+};
+const [, useTrpc] = createTrpcContext<typeof router>();
+type Fallback = (props: { error: unknown; reset: () => void }) => ReactNode;
+declare const Crashed: Fallback, Offline: Fallback, SignIn: Fallback;
+// ---cut-end---
+const RootShell = createShell({
+  name: 'Root',
+  claims: [],
+  unexpected: true,
+  fallback: Crashed,
+});
+const OfflineShell = RootShell.extend({
+  name: 'Offline',
+  claims: ['NETWORK_ERROR'],
+  fallback: Offline,
+});
+const AuthShell = OfflineShell.extend({
+  name: 'Auth',
+  claims: ['UNAUTHORIZED'],
+  fallback: SignIn,
+});
 
 function RenameDoc() {
   const trpc = useTrpc();
   const rename = AuthShell.useMutation(trpc.doc.rename.mutationOptions());
-  // rename.error: TITLE_TAKEN | BAD_REQUEST; the shells own the rest
-  const message = rename.error && matchError(rename.error, {
-    TITLE_TAKEN: () => 'That title is taken',
-    BAD_REQUEST: () => 'Check the title', // no `unexpected` or link keys: Root owns them
-  });
+  rename.error; // TITLE_TAKEN | BAD_REQUEST; the shells own the rest
+  //     ^?
+  const message =
+    rename.error &&
+    matchError(rename.error, {
+      TITLE_TAKEN: () => 'That title is taken',
+      BAD_REQUEST: () => 'Check the title', // no `unexpected` or link keys: Root owns them
+    });
+  return <p>{message}</p>;
 }
 
-<RootShell.Boundary><OfflineShell.Boundary><AuthShell.Boundary>
-  <RenameDoc />
-</AuthShell.Boundary></OfflineShell.Boundary></RootShell.Boundary>
+<RootShell.Boundary>
+  <OfflineShell.Boundary>
+    <AuthShell.Boundary>
+      <RenameDoc />
+    </AuthShell.Boundary>
+  </OfflineShell.Boundary>
+</RootShell.Boundary>;
 ```
 
 - ✅ Built and tested in the spike, including the shared `QueryErrorResetBoundary` that retry needs
@@ -89,7 +151,33 @@ function RenameDoc() {
 
 As B, and a shell can instead react (a toast, a redirect, a sign-in modal) while its hooks swallow the errors it owns.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { createTrpcContext } from '@trpc12/tanstack-react-query';
+import { createShellC as createShell } from '../open/error-shells.ts';
+import { z } from 'zod';
+import { authed } from './server.ts';
+const router = {
+  doc: {
+    byId: authed
+      .input(z.object({ id: z.string() }))
+      .query((opts) => ({ id: opts.input.id, title: 'Hello' })),
+    rename: authed
+      .errors({ TITLE_TAKEN: { message: 'That title is taken' } })
+      .input(z.object({ id: z.string(), title: z.string() }))
+      .mutation((opts) => ({ id: opts.input.id, title: opts.input.title })),
+  },
+};
+const [, useTrpc] = createTrpcContext<typeof router>();
+declare function openSignInModal(opts: { onSignedIn: () => void }): void;
+const RootShell = createShell({
+  name: 'Root',
+  claims: [],
+  unexpected: true,
+  fallback: () => null,
+});
+const trpc = useTrpc();
+// ---cut-end---
 const SessionShell = RootShell.extend({
   name: 'Session',
   claims: ['UNAUTHORIZED'],
@@ -110,9 +198,32 @@ rename.error; // null for UNAUTHORIZED; the form stays mounted
 
 Ship the claim predicate, the `Remaining` type and the options transform that sets `throwOnError`; apps write their own boundaries. Names are illustrative.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { useQuery } from '@tanstack/react-query';
+import { createTrpcContext } from '@trpc12/tanstack-react-query';
+import { claimsD as claims } from '../open/error-shells.ts';
+import { z } from 'zod';
+import { authed } from './server.ts';
+const router = {
+  doc: {
+    byId: authed
+      .input(z.object({ id: z.string() }))
+      .query((opts) => ({ id: opts.input.id, title: 'Hello' })),
+    rename: authed
+      .errors({ TITLE_TAKEN: { message: 'That title is taken' } })
+      .input(z.object({ id: z.string(), title: z.string() }))
+      .mutation((opts) => ({ id: opts.input.id, title: opts.input.title })),
+  },
+};
+const [, useTrpc] = createTrpcContext<typeof router>();
+const trpc = useTrpc();
+declare const id: string;
+// ---cut-end---
 const auth = claims({ claims: ['UNAUTHORIZED'] });
-const doc = useQuery(auth.options(trpc.doc.byId.queryOptions({ id }))); // sets throwOnError
+const doc = useQuery(
+  auth.options(trpc.doc.byId.queryOptions({ input: { id } })),
+); // sets throwOnError
 doc.error; // without UNAUTHORIZED
 // your error boundary: if (!auth.owns(error)) throw error;
 ```

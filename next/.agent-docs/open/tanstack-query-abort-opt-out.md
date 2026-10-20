@@ -33,7 +33,31 @@ links:
 
 No option. A query that must finish uses its own `queryFn`.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { useQuery } from '@tanstack/react-query';
+import { createTrpcQueryUtils } from '@trpc12/tanstack-query';
+import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import { z } from 'zod';
+import { t } from './server.ts';
+const router = {
+  report: {
+    build: t.procedure
+      .input(z.object({ id: z.string() }))
+      .query(() => ({ url: '/reports/1.pdf' })),
+  },
+  search: t.procedure
+    .input(z.object({ q: z.string() }))
+    .query(() => [{ id: '1' }]),
+};
+const client = createTrpcClient({
+  router: routerType<typeof router>(),
+  links: [httpLink({ url: '/trpc' })],
+});
+const trpc = createTrpcQueryUtils({ client });
+declare const id: string;
+declare const q: string;
+// ---cut-end---
 useQuery(trpc.report.build.queryOptions({ input: { id } })); // aborted when unobserved
 
 // escape hatch: a queryFn that doesn't read the signal
@@ -51,7 +75,31 @@ useQuery({
 
 `queryOptions()` and `infiniteOptions()` take `abortWhenUnobserved` (default `true`); `false` skips reading `signal`, so TanStack lets the call finish and caches it.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { useQuery } from '@tanstack/react-query';
+import { createTrpcQueryUtilsB as createTrpcQueryUtils } from '../open/tanstack-query-abort-opt-out.ts';
+import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import { z } from 'zod';
+import { t } from './server.ts';
+const router = {
+  report: {
+    build: t.procedure
+      .input(z.object({ id: z.string() }))
+      .query(() => ({ url: '/reports/1.pdf' })),
+  },
+  search: t.procedure
+    .input(z.object({ q: z.string() }))
+    .query(() => [{ id: '1' }]),
+};
+const client = createTrpcClient({
+  router: routerType<typeof router>(),
+  links: [httpLink({ url: '/trpc' })],
+});
+const trpc = createTrpcQueryUtils({ client });
+declare const id: string;
+declare const q: string;
+// ---cut-end---
 useQuery(
   trpc.report.build.queryOptions({ input: { id }, abortWhenUnobserved: false }),
 );
@@ -66,7 +114,31 @@ useQuery(
 
 Queries finish unless they opt in, as v11's `trpc: { abortOnUnmount: true }` did.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { useQuery } from '@tanstack/react-query';
+import { createTrpcQueryUtilsC as createTrpcQueryUtils } from '../open/tanstack-query-abort-opt-out.ts';
+import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import { z } from 'zod';
+import { t } from './server.ts';
+const router = {
+  report: {
+    build: t.procedure
+      .input(z.object({ id: z.string() }))
+      .query(() => ({ url: '/reports/1.pdf' })),
+  },
+  search: t.procedure
+    .input(z.object({ q: z.string() }))
+    .query(() => [{ id: '1' }]),
+};
+const client = createTrpcClient({
+  router: routerType<typeof router>(),
+  links: [httpLink({ url: '/trpc' })],
+});
+const trpc = createTrpcQueryUtils({ client });
+declare const id: string;
+declare const q: string;
+// ---cut-end---
 useQuery(trpc.report.build.queryOptions({ input: { id } })); // finishes, cached
 useQuery(trpc.search.queryOptions({ input: { q }, abortWhenUnobserved: true })); // aborted when unobserved
 ```

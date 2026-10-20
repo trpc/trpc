@@ -40,13 +40,41 @@ links:
 
 A timeout is an abort like any other.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import {
+  createTrpcClient,
+  httpLink,
+  matchError,
+  routerType,
+  safe,
+} from '@trpc12/trpc/client';
+import { z } from 'zod';
+import { t } from './server.ts';
+const router = {
+  report: {
+    build: t.procedure
+      .input(z.object({ id: z.string() }))
+      .query(() => ({ url: '/reports/1.pdf' })),
+  },
+};
+const client = createTrpcClient({
+  router: routerType<typeof router>(),
+  links: [httpLink({ url: 'http://localhost:3000/trpc' })],
+});
+const offline = {
+  NETWORK_ERROR: () => 'You are offline',
+  BAD_RESPONSE: () => 'Try again later',
+};
+declare const id: string;
+// ---cut-end---
 const [, err] = await safe(
   client.report.build.query({ id }, { signal: AbortSignal.timeout(60_000) }),
 );
 if (err)
   matchError(err, {
     ...offline,
+    BAD_REQUEST: () => 'No such report',
     unexpected: (e) => (e.code === 'CLIENT_CLOSED_REQUEST' ? null : e.message), // a timeout lands here too
   });
 ```
@@ -58,19 +86,58 @@ if (err)
 
 No new option. When the call's `signal.reason` is a `TimeoutError` (what `AbortSignal.timeout()` aborts with), the links fail it with `TIMEOUT`; any other abort stays `CLIENT_CLOSED_REQUEST`.
 
-```ts
+```ts twoslash
+// @errors: 2322
+// ---cut-start---
+import {
+  createTrpcClient,
+  httpLink,
+  matchError,
+  routerType,
+  safe,
+} from '@trpc12/trpc/client';
+import { z } from 'zod';
+import { t } from './server.ts';
+const router = {
+  report: {
+    build: t.procedure
+      .input(z.object({ id: z.string() }))
+      .query(() => ({ url: '/reports/1.pdf' })),
+  },
+};
+const client = createTrpcClient({
+  router: routerType<typeof router>(),
+  links: [httpLink({ url: 'http://localhost:3000/trpc' })],
+});
+const offline = {
+  NETWORK_ERROR: () => 'You are offline',
+  BAD_RESPONSE: () => 'Try again later',
+};
+declare const id: string;
+declare const signal: AbortSignal;
+// ---cut-end---
 const [, err] = await safe(
   client.report.build.query({ id }, { signal: AbortSignal.timeout(60_000) }),
 );
 if (err)
   matchError(err, {
     ...offline,
+    BAD_REQUEST: () => 'No such report',
     unexpected: (e) =>
       e.code === 'TIMEOUT'
         ? 'That took too long'
         : e.code === 'CLIENT_CLOSED_REQUEST'
           ? null
           : e.message,
+  });
+
+// Doesn't compile: TIMEOUT stays a built-in code no link declares, so it has no key
+if (err)
+  matchError(err, {
+    ...offline,
+    BAD_REQUEST: () => 'No such report',
+    TIMEOUT: () => 'That took too long',
+    unexpected: (e) => e.message,
   });
 
 // a timeout plus the component's own cancel
@@ -89,7 +156,23 @@ client.report.build.query(
 
 `timeout` takes a `Duration.Input`, as every time option does, and runs as `Effect.timeoutOrElse` around the whole link chain, so it covers retries.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { httpLink, routerType, safe } from '@trpc12/trpc/client';
+import { z } from 'zod';
+import { createTrpcClientC as createTrpcClient } from '../open/client-timeout-error.ts';
+import { t } from './server.ts';
+const router = {
+  report: {
+    build: t.procedure
+      .input(z.object({ id: z.string() }))
+      .query(() => ({ url: '/reports/1.pdf' })),
+  },
+};
+type AppRouter = typeof router;
+declare const url: string;
+declare const id: string;
+// ---cut-end---
 const client = createTrpcClient({
   router: routerType<AppRouter>(),
   links: [httpLink({ url })],

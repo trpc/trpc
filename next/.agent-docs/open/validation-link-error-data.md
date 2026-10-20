@@ -40,12 +40,53 @@ links:
 
 Errors are typed from the contract and matched by code.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import {
+  createTrpcClient,
+  experimental_validationLink,
+  httpLink,
+  matchError,
+  safe,
+  TrpcError,
+} from '@trpc12/trpc/client';
+import { experimental_contract } from '@trpc12/trpc/contract';
+import { Schema } from 'effect';
+class PostNotFound extends TrpcError.Tagged('POST_NOT_FOUND', {
+  status: 404,
+  data: Schema.Struct({ id: Schema.String, deletedAt: Schema.Date }),
+}) {}
+const c = experimental_contract.create();
+const appContract = {
+  post: {
+    byId: c
+      .input(Schema.Struct({ id: Schema.String }))
+      .output(Schema.Struct({ id: Schema.String, title: Schema.String }))
+      .errors({ POST_NOT_FOUND: PostNotFound })
+      .query(),
+  },
+};
+const client = createTrpcClient({
+  router: appContract,
+  links: [
+    experimental_validationLink({ contract: appContract }),
+    httpLink({ url }),
+  ],
+});
+const offline = {
+  NETWORK_ERROR: () => 'You are offline',
+  BAD_RESPONSE: () => 'Try again later',
+};
+declare const url: string;
+declare const id: string;
+// ---cut-end---
 const [, err] = await safe(client.post.byId.query({ id }));
 if (err)
   matchError(err, {
     ...offline,
-    POST_NOT_FOUND: (e) => e.data.id, // typed from the contract, JSON form
+    BAD_REQUEST: () => 'Invalid id',
+    POST_NOT_FOUND: (e) => e.data.deletedAt, // typed from the contract, JSON form
+    //                            ^?
     unexpected: (e) => e.message,
   });
 err instanceof PostNotFound; // false
@@ -59,7 +100,39 @@ err instanceof PostNotFound; // false
 
 The link decodes each defined error's `data` with its spec from the contract and rebuilds the `TrpcError.Tagged` instance.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import {
+  createTrpcClient,
+  experimental_validationLink,
+  httpLink,
+  matchError,
+  safe,
+  TrpcError,
+} from '@trpc12/trpc/client';
+import { experimental_contract } from '@trpc12/trpc/contract';
+import { Schema } from 'effect';
+class PostNotFound extends TrpcError.Tagged('POST_NOT_FOUND', {
+  status: 404,
+  data: Schema.Struct({ id: Schema.String, deletedAt: Schema.Date }),
+}) {}
+const c = experimental_contract.create();
+const appContract = {
+  post: {
+    byId: c
+      .input(Schema.Struct({ id: Schema.String }))
+      .output(Schema.Struct({ id: Schema.String, title: Schema.String }))
+      .errors({ POST_NOT_FOUND: PostNotFound })
+      .query(),
+  },
+};
+const offline = {
+  NETWORK_ERROR: () => 'You are offline',
+  BAD_RESPONSE: () => 'Try again later',
+};
+declare const url: string;
+declare const id: string;
+// ---cut-end---
 const client = createTrpcClient({
   router: appContract,
   links: [
@@ -68,8 +141,11 @@ const client = createTrpcClient({
   ],
 });
 const [, err] = await safe(client.post.byId.query({ id }));
-err instanceof PostNotFound; // true
-err.data.deletedAt; // Date, decoded with PostNotFound's schema
+if (err?.code === 'POST_NOT_FOUND') {
+  err instanceof PostNotFound; // true
+  err.data.deletedAt; // Date, decoded with PostNotFound's schema
+  //       ^?
+}
 // `data` that fails its schema: BAD_RESPONSE, like an output mismatch
 ```
 
@@ -82,10 +158,51 @@ err.data.deletedAt; // Date, decoded with PostNotFound's schema
 
 Under `output: 'json'`, decode defined errors' `data` with their schemas; the error stays a plain `TrpcError`.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import {
+  createTrpcClient,
+  experimental_validationLink,
+  httpLink,
+  matchError,
+  safe,
+  TrpcError,
+} from '@trpc12/trpc/client';
+import { experimental_contract } from '@trpc12/trpc/contract';
+import { Schema } from 'effect';
+class PostNotFound extends TrpcError.Tagged('POST_NOT_FOUND', {
+  status: 404,
+  data: Schema.Struct({ id: Schema.String, deletedAt: Schema.Date }),
+}) {}
+const c = experimental_contract.create();
+const appContract = {
+  post: {
+    byId: c
+      .input(Schema.Struct({ id: Schema.String }))
+      .output(Schema.Struct({ id: Schema.String, title: Schema.String }))
+      .errors({ POST_NOT_FOUND: PostNotFound })
+      .query(),
+  },
+};
+const client = createTrpcClient({
+  router: appContract,
+  links: [
+    experimental_validationLink({ contract: appContract, output: 'json' }),
+    httpLink({ url }),
+  ],
+});
+const offline = {
+  NETWORK_ERROR: () => 'You are offline',
+  BAD_RESPONSE: () => 'Try again later',
+};
+declare const url: string;
+declare const id: string;
+// ---cut-end---
 const [, err] = await safe(client.post.byId.query({ id }));
-err.data.deletedAt; // Date
-err instanceof PostNotFound; // still false
+if (err?.code === 'POST_NOT_FOUND') {
+  err.data.deletedAt; // Date
+  err instanceof PostNotFound; // still false
+}
 ```
 
 - ✅ Fixes the JSON-form mismatch between outputs and errors with no class registry

@@ -30,7 +30,28 @@ links:
 
 A query's caller stops a stream in its result by no longer reading it, or sends the call on its own with `dedupe: false`. Subscriptions are unaffected: their callers count while they read.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import {
+  createTrpcClient,
+  dedupeLink,
+  httpLink,
+  routerType,
+} from '@trpc12/trpc/client';
+import { t } from './server.ts';
+const router = {
+  feed: t.procedure.query(() => ({
+    items: (async function* () {
+      for (let i = 0; i < 50; i++) yield { id: i };
+    })(),
+  })),
+};
+const client = createTrpcClient({
+  router: routerType<typeof router>(),
+  links: [dedupeLink(), httpLink({ url: 'http://localhost:3000/trpc' })],
+});
+declare const enough: boolean;
+// ---cut-end---
 const ac = new AbortController();
 const { items } = await client.feed.query(undefined, { signal: ac.signal });
 for await (const item of items) {
@@ -49,7 +70,27 @@ await client.feed.query(undefined, { signal: ac.signal, dedupe: false });
 
 The terminating links (`httpLink`, `wsLink`, `localLink`, the socket links) tell the chain when a response's body has been read to its end, deferred values included. `dedupeLink` keeps each query caller counted until then, so aborting stops the streams, and drops its listener at the body's end.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import {
+  createTrpcClient,
+  dedupeLink,
+  httpLink,
+  routerType,
+} from '@trpc12/trpc/client';
+import { t } from './server.ts';
+const router = {
+  feed: t.procedure.query(() => ({
+    items: (async function* () {
+      for (let i = 0; i < 50; i++) yield { id: i };
+    })(),
+  })),
+};
+const client = createTrpcClient({
+  router: routerType<typeof router>(),
+  links: [dedupeLink(), httpLink({ url: 'http://localhost:3000/trpc' })],
+});
+// ---cut-end---
 // app code is unchanged, and the abort now stops the stream with dedupeLink too
 const ac = new AbortController();
 const { items } = await client.feed.query(undefined, { signal: ac.signal });

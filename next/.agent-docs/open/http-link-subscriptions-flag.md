@@ -27,13 +27,26 @@ links:
 
 A `subscriptions` that may be on keeps `.subscribe()`.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import { t } from './server.ts';
+const router = {
+  onSeat: t.procedure.subscription(async function* () {
+    yield { seat: 'A1' };
+  }),
+};
+type AppRouter = typeof router;
+declare const url: string;
+declare const env: { SSE_ENABLED: boolean };
+// ---cut-end---
 const client = createTrpcClient({
   router: routerType<AppRouter>(),
   links: [httpLink({ url, subscriptions: env.SSE_ENABLED })], // boolean
 });
 
-for await (const event of client.onSeat.subscribe()) {} // compiles
+for await (const event of client.onSeat.subscribe()) {
+} // compiles
 // when SSE_ENABLED is false: METHOD_NOT_SUPPORTED at runtime
 ```
 
@@ -45,14 +58,40 @@ for await (const event of client.onSeat.subscribe()) {} // compiles
 
 A `subscriptions` that may be off removes `.subscribe()`.
 
-```ts
-links: [httpLink({ url, subscriptions: env.SSE_ENABLED })];
+```ts twoslash
+// @errors: 2339
+// ---cut-start---
+import { createTrpcClient, routerType } from '@trpc12/trpc/client';
+import { httpLinkB as httpLink } from '../open/http-link-subscriptions-flag.ts';
+import { t } from './server.ts';
+const router = {
+  onSeat: t.procedure.subscription(async function* () {
+    yield { seat: 'A1' };
+  }),
+};
+type AppRouter = typeof router;
+declare const url: string;
+declare const env: { SSE_ENABLED: boolean };
+// ---cut-end---
+const client = createTrpcClient({
+  router: routerType<AppRouter>(),
+  links: [httpLink({ url, subscriptions: env.SSE_ENABLED })],
+});
+// Doesn't compile: a `subscriptions` that may be off removes `.subscribe()`
 client.onSeat.subscribe(); // ❌ NoLinkCarries<"subscription">
 
 // an app with a runtime flag picks the link instead
-links: [
-  env.SSE_ENABLED ? httpLink({ url }) : httpLink({ url, subscriptions: false }),
-];
+const flagged = createTrpcClient({
+  router: routerType<AppRouter>(),
+  links: [
+    env.SSE_ENABLED
+      ? httpLink({ url })
+      : httpLink({ url, subscriptions: false }),
+  ],
+});
+// the union of the two chains has no `.subscribe()` either
+flagged.onSeat;
+//      ^?
 ```
 
 - ✅ One rule for both options: a value that may turn something off turns it off in the types

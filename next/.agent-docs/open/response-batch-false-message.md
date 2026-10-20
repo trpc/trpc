@@ -30,7 +30,17 @@ A batch can't carry a raw `Response` (or a root `Blob` without a streaming seria
 
 The second argument stays required, typed `opts & { batch: false }`; the docs and the signature say why.
 
-```ts
+```ts twoslash
+// @errors: 2554 2345
+// ---cut-start---
+import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import { t } from './server.ts';
+const router = {
+  report: t.procedure.query(() => new Response('a,b\n1,2')),
+};
+type AppRouter = typeof router;
+declare const url: string;
+// ---cut-end---
 const client = createTrpcClient({
   router: routerType<AppRouter>(),
   links: [httpLink({ url, batch: true })],
@@ -49,9 +59,25 @@ await client.report.query(undefined, { batch: false }); // ✅ sent alone
 
 Add a branded key to the required options (as `NoLinkCarries<"subscription">` does for `.subscribe()`), so an options object without `batch` fails with a sentence.
 
-```ts
+```ts twoslash
+// @errors: 2345 2554
+// ---cut-start---
+import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import { t } from './server.ts';
+const router = {
+  report: t.procedure.query(() => new Response('a,b\n1,2')),
+};
+type AppRouter = typeof router;
+declare const url: string;
+import type { BatchHintClientB as BatchHint } from '../open/response-batch-false-message.ts';
+const trpc = createTrpcClient({
+  router: routerType<AppRouter>(),
+  links: [httpLink({ url, batch: true })],
+});
+const client = trpc as BatchHint<typeof trpc>;
+// ---cut-end---
 await client.report.query(undefined, {});
-// ❌ Property '"report" may return a Response: pass { batch: false }' is missing …
+// ❌ Property 'report may return a Response: pass { batch: false }' is missing …
 await client.report.query(); // still: Expected 2 arguments, but got 0.
 ```
 
@@ -63,7 +89,21 @@ await client.report.query(); // still: Expected 2 arguments, but got 0.
 
 Drop the conditional, so calls compile without `{ batch: false }`; the server fails the batched call with `BAD_REQUEST`, `"report" returns a Response, which only an unbatched HTTP call or an in-process call can carry`.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { createTrpcClient, routerType } from '@trpc12/trpc/client';
+import { httpLinkC as httpLink } from '../open/response-batch-false-message.ts';
+import { t } from './server.ts';
+const router = {
+  report: t.procedure.query(() => new Response('a,b\n1,2')),
+};
+type AppRouter = typeof router;
+declare const url: string;
+const client = createTrpcClient({
+  router: routerType<AppRouter>(),
+  links: [httpLink({ url, batch: true })],
+});
+// ---cut-end---
 await client.report.query(); // compiles; rejects with BAD_REQUEST when batched
 await client.report.query(undefined, { batch: false }); // ✅
 ```

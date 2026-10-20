@@ -72,7 +72,10 @@ The minimal client (`createTrpcClient` + `httpLink`, JSON) is 39.8 kB gzipped an
 
 Land none of the cuts now; `httpLink` keeps its flags.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { httpLink } from '@trpc12/trpc/client';
+// ---cut-end---
 httpLink({
   url: '/trpc',
   batch: { maxItems: 20 }, // or batch: true; off by default
@@ -89,13 +92,20 @@ httpLink({
 
 `batching()`, `sse()` and `experimental_httpStreams()` are passed to `httpLink`; what isn't passed isn't bundled. Deferred-value framing leaves `Serializer`, and `subscribe()`'s iterator comes from the link that carries subscriptions. Still one link, still Effect and `effect/http`.
 
-```ts
-// before
-httpLink({ url: '/trpc', batch: true, binary: true }); // SSE on by default
+```ts twoslash
+// ---cut-start---
+import { link } from '@trpc12/trpc/client';
+import {
+  batchingB as batching,
+  experimental_httpStreamsB as experimental_httpStreams,
+  httpLinkB as httpLink,
+  sseB as sse,
+  withSubscriptionsB as withSubscriptions,
+} from '../open/client-bundle-cuts.ts';
+// ---cut-end---
+// before: httpLink({ url: '/trpc', batch: true, binary: true }); // SSE on by default
 
-// after
-import { batching, experimental_httpStreams, httpLink, sse } from '@trpc12/trpc/client';
-
+// after: batching, experimental_httpStreams, httpLink and sse from '@trpc12/trpc/client'
 httpLink({ url: '/trpc' }); // JSON only: no batching, no .subscribe(), no streamed outputs
 httpLink({
   url: '/trpc',
@@ -105,7 +115,9 @@ httpLink({
 });
 
 // a custom link that ends a subscription's chain
-const eventsLink = withSubscriptions(link((opts) => /* … */));
+const eventsLink = withSubscriptions(
+  link((opts) => /* … */ opts.next(opts.op)),
+);
 ```
 
 - ✅ Reverses no human decision: one `httpLink` stays, and the human's "opt out of batching etc" becomes opt-in imports
@@ -117,9 +129,15 @@ const eventsLink = withSubscriptions(link((opts) => /* … */));
 
 As B, and `httpLink` drops `effect/http`'s `HttpClient` for `fetch` in `Effect.tryPromise`, a `Scope` finalizer that aborts, and `Stream.fromReadableStream`. No public API changes beyond B's.
 
-```ts
-import { batching, httpLink, sse } from '@trpc12/trpc/client';
-
+```ts twoslash
+// ---cut-start---
+import {
+  batchingC as batching,
+  httpLinkC as httpLink,
+  sseC as sse,
+} from '../open/client-bundle-cuts.ts';
+declare function myFetch(url: string, init: RequestInit): Promise<Response>;
+// ---cut-end---
 // the same options as B; a custom fetch still gets a string URL and web Headers
 httpLink({
   url: '/trpc',
@@ -138,13 +156,22 @@ httpLink({
 
 `createTrpcClient` runs links as Promises; `httpLink` becomes a plain `fetch` link for queries and mutations, and the old link is renamed `httpStreamLink`. Effect links still mix in, and the first one brings the runtime.
 
-```ts
-// before
-httpLink({ url, batch: true });
+```ts twoslash
+// ---cut-start---
+import { createTrpcClient, retryLink, routerType } from '@trpc12/trpc/client';
+import {
+  httpLinkD as httpLink,
+  httpStreamLinkD as httpStreamLink,
+  promiseLinkD as promiseLink,
+} from '../open/client-bundle-cuts.ts';
+import type { AppRouter } from './server.ts';
+const router = routerType<AppRouter>();
+declare const url: string;
+declare function token(): string;
+// ---cut-end---
+// before: httpLink({ url, batch: true });
 
-// after
-import { httpLink, httpStreamLink, promiseLink } from '@trpc12/trpc/client';
-
+// after: httpLink, httpStreamLink and promiseLink from '@trpc12/trpc/client'
 httpLink({ url }); // fetch, queries and mutations, no Effect: 3.85 kB
 httpStreamLink({ url, batch: true }); // the old httpLink: batching, streams, SSE
 

@@ -33,7 +33,14 @@ The human asked: "We should probably be more specific with trpc errors too so we
 
 A failure tRPC makes is its code's class with a fixed message and, where there is one, a `cause`.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
+const t = initTrpc();
+const router = { health: t.procedure.query(() => 'ok') };
+declare const metrics: { count(name: string): void };
+declare const log: { warn(...args: unknown[]): void };
+// ---cut-end---
 createFetchHandler({
   router,
   onError: ({ error }) => {
@@ -56,7 +63,15 @@ createFetchHandler({
 
 A closed `Data.TaggedEnum` of about 60 failures (`BodyTooLarge { limit }`, `ProcedureNotFound { path }`, `InvalidJson`, `FetchFailed`, `SerializerMismatch { server, client, transport }`, …), each fixing its code and message, as Effect's `HttpServerError` and `AiError` carry a `reason`.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import { initTrpc } from '@trpc12/trpc/server';
+import { createFetchHandlerB as createFetchHandler } from '../open/trpc-error-reason.ts';
+const t = initTrpc();
+const router = { health: t.procedure.query(() => 'ok') };
+declare const metrics: { count(name: string): void };
+declare const log: { warn(...args: unknown[]): void };
+// ---cut-end---
 import { Predicate } from 'effect';
 
 createFetchHandler({
@@ -67,6 +82,7 @@ createFetchHandler({
     }
     if (Predicate.isTagged(error.reason, 'ProcedureNotFound')) {
       log.warn('stale client?', error.reason.path);
+      //                              ^?
     }
   },
 });
@@ -81,7 +97,32 @@ createFetchHandler({
 
 Only the few reasons a client can act on (a missing procedure, a body too large) go on the wire, as a `reason` field next to `code`.
 
-```ts
+```ts twoslash
+// ---cut-start---
+import {
+  createTrpcClient,
+  httpLink,
+  matchError,
+  routerType,
+  safe,
+} from '@trpc12/trpc/client';
+import type { CallErrorC as CallError } from '../open/trpc-error-reason.ts';
+import { t } from './server.ts';
+const router = {
+  doc: { archive: t.procedure.mutation(() => ({ archived: true })) },
+};
+const client = createTrpcClient({
+  router: routerType<typeof router>(),
+  links: [httpLink({ url: 'http://localhost:3000/trpc' })],
+});
+const offline = {
+  NETWORK_ERROR: () => 'You are offline',
+  BAD_RESPONSE: () => 'Try again later',
+};
+declare function promptReload(): string;
+const [, callErr] = await safe(client.doc.archive.mutate());
+const err = callErr as CallError<NonNullable<typeof callErr>>;
+// ---cut-end---
 matchError(err, {
   ...offline,
   unexpected: (e) =>

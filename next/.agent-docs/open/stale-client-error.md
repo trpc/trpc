@@ -37,14 +37,41 @@ When a new client reaches an old server (a deploy in progress, a cached bundle),
 
 A missing procedure stays a built-in `NOT_FOUND`.
 
-```ts
-matchError(err, {
-  ...offline,
-  unexpected: (e) =>
-    e.code === 'NOT_FOUND' && e.message.startsWith('No procedure at path')
-      ? promptReload()
-      : e.message,
+```ts twoslash
+// ---cut-start---
+import {
+  createTrpcClient,
+  httpLink,
+  matchError,
+  routerType,
+  safe,
+} from '@trpc12/trpc/client';
+import { t } from './server.ts';
+const router = {
+  doc: { archive: t.procedure.mutation(() => ({ archived: true })) },
+};
+const client = createTrpcClient({
+  router: routerType<typeof router>(),
+  links: [httpLink({ url: 'http://localhost:3000/trpc' })],
 });
+const offline = {
+  NETWORK_ERROR: () => 'You are offline',
+  BAD_RESPONSE: () => 'Try again later',
+};
+declare function promptReload(): string;
+const [, err] = await safe(client.doc.archive.mutate());
+if (err) {
+  // ---cut-end---
+  matchError(err, {
+    ...offline,
+    unexpected: (e) =>
+      e.code === 'NOT_FOUND' && e.message.startsWith('No procedure at path')
+        ? promptReload()
+        : e.message,
+  });
+  // ---cut-start---
+}
+// ---cut-end---
 ```
 
 - ✅ No new code, header or wire field
@@ -54,13 +81,42 @@ matchError(err, {
 
 The server sends `NOT_FOUND` with `data: { procedure: path }`, and the client turns it into a new client-side built-in code, `STALE_CLIENT` (status 0, like `BAD_RESPONSE`).
 
-```ts
-// wire: { error: { code: 'NOT_FOUND', message: 'No procedure at path "doc.archive"',
-//                  data: { procedure: 'doc.archive' } } }
-matchError(err, {
-  ...offline,
-  unexpected: (e) => (e.code === 'STALE_CLIENT' ? promptReload() : e.message),
+```ts twoslash
+// ---cut-start---
+import {
+  createTrpcClient,
+  httpLink,
+  matchError,
+  routerType,
+  safe,
+} from '@trpc12/trpc/client';
+import { t } from './server.ts';
+const router = {
+  doc: { archive: t.procedure.mutation(() => ({ archived: true })) },
+};
+const client = createTrpcClient({
+  router: routerType<typeof router>(),
+  links: [httpLink({ url: 'http://localhost:3000/trpc' })],
 });
+const offline = {
+  NETWORK_ERROR: () => 'You are offline',
+  BAD_RESPONSE: () => 'Try again later',
+};
+declare function promptReload(): string;
+import type { CallErrorB as CallError } from '../open/stale-client-error.ts';
+const [, callErr] = await safe(client.doc.archive.mutate());
+const err = callErr as CallError<NonNullable<typeof callErr>>;
+{
+  // ---cut-end---
+  // wire: { error: { code: 'NOT_FOUND', message: 'No procedure at path "doc.archive"',
+  //                  data: { procedure: 'doc.archive' } } }
+  matchError(err, {
+    ...offline,
+    unexpected: (e) => (e.code === 'STALE_CLIENT' ? promptReload() : e.message),
+  });
+  // ---cut-start---
+}
+// ---cut-end---
 ```
 
 - ✅ Small: no header and no hash; v11 clients and OpenAPI callers still see a plain `NOT_FOUND`
@@ -71,12 +127,41 @@ matchError(err, {
 
 The client sends a hash of the router's paths and types in a `trpc-router` header; a server whose hash differs answers unknown paths with `STALE_CLIENT`.
 
-```ts
-// every request: trpc-router: 9f2c…
-matchError(err, {
-  ...offline,
-  unexpected: (e) => (e.code === 'STALE_CLIENT' ? promptReload() : e.message),
+```ts twoslash
+// ---cut-start---
+import {
+  createTrpcClient,
+  httpLink,
+  matchError,
+  routerType,
+  safe,
+} from '@trpc12/trpc/client';
+import { t } from './server.ts';
+const router = {
+  doc: { archive: t.procedure.mutation(() => ({ archived: true })) },
+};
+const client = createTrpcClient({
+  router: routerType<typeof router>(),
+  links: [httpLink({ url: 'http://localhost:3000/trpc' })],
 });
+const offline = {
+  NETWORK_ERROR: () => 'You are offline',
+  BAD_RESPONSE: () => 'Try again later',
+};
+declare function promptReload(): string;
+import type { CallErrorC as CallError } from '../open/stale-client-error.ts';
+const [, callErr] = await safe(client.doc.archive.mutate());
+const err = callErr as CallError<NonNullable<typeof callErr>>;
+{
+  // ---cut-end---
+  // every request: trpc-router: 9f2c…
+  matchError(err, {
+    ...offline,
+    unexpected: (e) => (e.code === 'STALE_CLIENT' ? promptReload() : e.message),
+  });
+  // ---cut-start---
+}
+// ---cut-end---
 ```
 
 - ✅ Knows the cause for certain, and could later flag a changed type on a path that still exists
