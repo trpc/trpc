@@ -198,4 +198,46 @@ describe('runtime', () => {
       }
     `);
   });
+
+  test('a shared error instance gets its own shape on every call', async () => {
+    const shared = new TRPCError({
+      code: 'TOO_MANY_REQUESTS',
+      cause: new RateLimitError(1_000),
+    });
+    const router = t.router({
+      limited: rateLimited.query((): string => {
+        throw shared;
+      }),
+      plain: t.procedure.query((): string => {
+        throw shared;
+      }),
+    });
+
+    const serverErrors: unknown[] = [];
+    const client = createTRPCClient<typeof router>({
+      links: [
+        localLink({
+          router,
+          createContext: async () => ({}),
+          onError: (opts) => {
+            serverErrors.push(opts.error);
+          },
+        }),
+      ],
+    });
+
+    const limited = await waitError(client.limited.query(), TRPCClientError);
+    const plain = await waitError(client.plain.query(), TRPCClientError);
+
+    expect(limited.data).toMatchObject({ kind: 'RATE_LIMIT', path: 'limited' });
+    expect(plain.data).toMatchObject({
+      fromGlobalFormatter: true,
+      path: 'plain',
+    });
+    expect(plain.data).not.toHaveProperty('kind');
+    expect(serverErrors).toHaveLength(2);
+    for (const error of serverErrors) {
+      expect(error).toBe(shared);
+    }
+  });
 });
