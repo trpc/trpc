@@ -141,3 +141,29 @@ const trpc = makeTrpc(false);
 const state = dehydrate(serverTrpc); // send it with the HTML
 hydrate(trpc, state); // in the browser, before hydrateRoot
 ```
+
+A request's client ends with `using`, or with a `scope` when the request is an Effect. Ending it disposes its store: requests still in flight end, and a later `.query()` with no data rejects with `CLIENT_CLOSED_REQUEST`.
+
+```ts twoslash
+// ---cut-start---
+import { createReactClient } from '@trpc12/experimental-react';
+import { httpLink, routerType } from '@trpc12/trpc/client';
+import { Effect } from 'effect';
+import type { AppRouter } from './server.ts';
+const options = {
+  router: routerType<AppRouter>(),
+  links: [httpLink({ url: 'http://localhost:3000/trpc' })] as const,
+};
+// ---cut-end---
+export async function renderPage(id: string) {
+  using trpc = createReactClient(options);
+  return await trpc.post.byId.query({ id }); // render with it
+}
+
+export const renderPageEffect = (id: string) =>
+  Effect.gen(function* () {
+    // It ends when the request's scope closes.
+    const trpc = createReactClient({ ...options, scope: yield* Effect.scope });
+    return yield* Effect.promise(() => trpc.post.byId.query({ id }));
+  });
+```

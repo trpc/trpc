@@ -206,6 +206,8 @@ export interface StoreOptions {
   ) => Promise<unknown>;
   readonly isServer: boolean;
   readonly now?: (() => number) | undefined;
+  /** Disposes the store when it closes. */
+  readonly scope?: Scope.Scope | undefined;
 }
 
 type Store = QueryStore & { readonly '~entries': Map<string, Entry> };
@@ -226,12 +228,21 @@ export function createStore(opts: StoreOptions): QueryStore {
   }
   const onMount = merged.flatMap((f) => (f.onMount ? [f.onMount] : []));
   const entries = new Map<string, Entry>();
-  // Link listeners, GC timers and requests end with it, on `dispose()`.
-  const scope = Scope.makeUnsafe();
+  // Link listeners, GC timers and requests end with it, on `dispose()` or
+  // when the caller's scope closes.
+  const scope = opts.scope ? Scope.forkUnsafe(opts.scope) : Scope.makeUnsafe();
   const run = Effect.runSync(
     Scope.provide(FiberSet.makeRuntime<never, void, never>(), scope),
   );
   let disposed = false;
+  const end = () => {
+    if (disposed) return;
+    disposed = true;
+    const error = disposedError();
+    for (const entry of entries.values()) entry.deferred?.reject(error);
+    store.remove();
+  };
+  Effect.runSync(Scope.addFinalizer(scope, Effect.sync(end)));
 
   const isStale = (entry: QueryEntry) => {
     const e = entry as Entry;
@@ -453,11 +464,8 @@ export function createStore(opts: StoreOptions): QueryStore {
       release();
     },
     dispose() {
-      disposed = true;
-      const error = disposedError();
-      for (const entry of entries.values()) entry.deferred?.reject(error);
+      end();
       Effect.runFork(Scope.close(scope, Exit.void));
-      store.remove();
     },
   };
   for (const feature of merged) {

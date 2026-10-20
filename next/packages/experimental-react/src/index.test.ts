@@ -17,7 +17,7 @@ import {
   type AnyLink,
 } from '@trpc12/trpc/client';
 import { createSerializer } from '@trpc12/trpc/serializer';
-import { Duration, Effect, Stream } from 'effect';
+import { Duration, Effect, Exit, Scope, Stream } from 'effect';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import {
   db,
@@ -99,6 +99,30 @@ test('after dispose(), reads without data reject, and the store starts no reques
   await trpc.post.byId.invalidate();
   expect(entry.snapshot.isFetching).toBe(false);
   expect(db.calls).toEqual(calls);
+});
+
+test("a client made with a scope is disposed when the scope closes, and `using` disposes one", async () => {
+  using _db = freshDb();
+  const scope = Scope.makeUnsafe();
+  const scoped = createReactClient({
+    router: routerType<AppRouter>(),
+    links: [localLink({ router, serializer: createSerializer() })],
+    isServer: true,
+    scope,
+  });
+  const loading = scoped.post.byId.query({ id: '1' });
+  await Effect.runPromise(Scope.close(scope, Exit.void));
+  await expect(loading).rejects.toMatchObject({
+    code: 'CLIENT_CLOSED_REQUEST',
+  });
+  expect(scoped.store.entries()).toHaveLength(0);
+
+  let read: QueryPromise<Post | undefined>;
+  {
+    using trpc = make([], { isServer: true });
+    read = trpc.post.byId.query({ id: '2' });
+  }
+  await expect(read).rejects.toMatchObject({ code: 'CLIENT_CLOSED_REQUEST' });
 });
 
 test('without links, an entry lives only while something holds it', async () => {
