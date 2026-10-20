@@ -31,6 +31,7 @@ import {
   isAsyncIterable,
   isObject,
   isTrackedEnvelope,
+  makeResource,
   run,
   type MaybePromise,
 } from '../unstable-core-do-not-import';
@@ -280,11 +281,6 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         }
       }
       const abortController = new AbortController();
-      const releaseSubscription = () => {
-        if (clientSubscriptions.get(id) === abortController) {
-          clientSubscriptions.delete(id);
-        }
-      };
       const respondWithError = (cause: unknown) => {
         const error = getTRPCErrorFromUnknown(cause);
         opts.onError?.({ error, path, type, ctx, req, input });
@@ -301,10 +297,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           }),
         });
       };
-      // The id stays reserved until the subscription has fully cleaned up,
-      // so it is released right before the client is told it may reuse it.
-      const stopSubscription = () => {
-        releaseSubscription();
+      const respondStopped = () => {
         respond({ id, jsonrpc, result: { type: 'stopped' } });
       };
 
@@ -325,13 +318,21 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
       }
 
       run(async () => {
+        // The id stays reserved until this has settled, including the
+        // iterator's disposal, and is freed right before the client is told
+        // it may reuse it.
+        using _release = makeResource({}, () => {
+          if (clientSubscriptions.get(id) === abortController) {
+            clientSubscriptions.delete(id);
+          }
+        });
+
         const res = await ctxResult;
         if (!res.ok) {
           throw res.error;
         }
 
         if (abortController.signal.aborted) {
-          stopSubscription();
           return;
         }
 
@@ -380,14 +381,11 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
 
         if (abortController.signal.aborted) {
           // dispose the iterator without consuming it
-          {
-            await using _iterator = iteratorResource(iterable);
-          }
-          stopSubscription();
+          await using _iterator = iteratorResource(iterable);
           return;
         }
 
-        run(async () => {
+        const iteration = run(async () => {
           await using iterator = iteratorResource(iterable);
 
           const abortPromise = new Promise<'abort'>((resolve) => {
@@ -450,12 +448,10 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
             abortController.abort();
             throw cause;
           }
-        })
-          .catch((cause) => {
-            abortController.abort();
-            respondWithError(cause);
-          })
-          .finally(stopSubscription);
+        }).catch((cause) => {
+          abortController.abort();
+          respondWithError(cause);
+        });
 
         respond({
           id,
@@ -464,23 +460,31 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
             type: 'started',
           },
         });
-      }).catch((cause) => {
-        // procedure threw an error
-        const error = getTRPCErrorFromUnknown(cause);
-        // A procedure that gives up because its subscription was cancelled
-        // rejects with an `AbortError`, which is wrapped as an
-        // INTERNAL_SERVER_ERROR. Any other cause or code is still reported.
-        if (
-          abortController.signal.aborted &&
-          error.code === 'INTERNAL_SERVER_ERROR' &&
-          isAbortError(error.cause)
-        ) {
-          stopSubscription();
-          return;
-        }
-        releaseSubscription();
-        respondWithError(error);
-      });
+
+        await iteration;
+      }).then(
+        () => {
+          if (type === 'subscription') {
+            respondStopped();
+          }
+        },
+        (cause) => {
+          // procedure threw an error
+          const error = getTRPCErrorFromUnknown(cause);
+          // A procedure that gives up because its subscription was cancelled
+          // rejects with an `AbortError`, which is wrapped as an
+          // INTERNAL_SERVER_ERROR. Any other cause or code is still reported.
+          if (
+            abortController.signal.aborted &&
+            error.code === 'INTERNAL_SERVER_ERROR' &&
+            isAbortError(error.cause)
+          ) {
+            respondStopped();
+            return;
+          }
+          respondWithError(error);
+        },
+      );
     }
     client.on('message', (rawData, isBinary) => {
       // Handle PING/PONG as text regardless of encoder
