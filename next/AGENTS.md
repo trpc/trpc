@@ -35,7 +35,12 @@ pnpm test
 pnpm example
 ```
 
-`pnpm typecheck` and `pnpm check` are the other local gates (`pnpm fix` autofixes). Commands are listed in `README.md`; run every gate listed there before pushing, then watch the `next.yml` run with `gh run watch <id> --exit-status`. If `node -v` is not 24.x, run `nvm use` before install or test.
+`pnpm typecheck` and `pnpm check` are the other local gates (`pnpm fix` autofixes). Commands are listed in `README.md`; run every gate listed there before landing. If `node -v` is not 24.x, run `nvm use` before install or test.
+
+- `pnpm test <file or folder>` runs only those tests, and so does `pnpm test -- --watch false <file>`. Tests run through `vp test`; there is no `vitest` binary.
+- Import test APIs from `vite-plus/test`, or from `@effect/vitest` in a package that depends on it, never from `vitest` (lint fails on it). No package here depends on `vitest`: a checkout with a v11 install in `../node_modules` resolves it from there, and CI doesn't. The same goes for any package a `package.json` here doesn't list.
+- Cloud Agents' `core.hooksPath` is Cursor's, so `pnpm install` skips `.vite-hooks` and `pre-commit` doesn't run: run `pnpm fix` before committing.
+- `pnpm example` needs Redis and Postgres for `examples/realtime`, at CI's `REDIS_URL` and `DATABASE_URL` (in `../.github/workflows/next.yml`).
 
 `pnpm bench budget` measures only the tree-shaken standard client (`httpLink`, plus `retryLink` and danSON); opt-in links and utilities such as `dedupeLink` only have to shake out of it, so don't bend their design for bundle size ([`decisions/orpc-v2-parity.md`](./.agent-docs/decisions/orpc-v2-parity.md)).
 
@@ -43,12 +48,15 @@ pnpm example
 
 Many agents push to `v12` at once, about a hundred commits a day, so a change that waits drifts into conflicts.
 
-- Push straight to `v12` and don't open pull requests against it, cloud agents included, whose default is a branch and a draft PR. Commit in small semantic commits, as the [brief](./.agent-docs/decisions/brief.md) says, and land them with `git pull --rebase origin v12 && git push origin v12`: no feature branch, no force push, no merge commits. Only when a human explicitly asks for a pull request, open one, land it squashed onto the latest `v12` as soon as it's green, and close it.
+- Push straight to `v12` and don't open pull requests against it, cloud agents included, whose default is a branch and a draft PR. Commit in small semantic commits, as the [brief](./.agent-docs/decisions/brief.md) says, and land them with `pnpm land`: no feature branch, no force push, no merge commits. Only when a human explicitly asks for a pull request, open one, land it squashed onto the latest `v12` as soon as it's green, and close it.
 - Name every branch cut from `v12` `v12-<name>`, cloud agents' included (not `cursor/…`): `trpc-v12` builds previews only for `v12-*` ([`docs-website-on-vercel.md`](./.agent-docs/decisions/docs-website-on-vercel.md)).
-- Run `git pull --rebase origin v12` before the gates and again just before pushing; when the push is rejected, rebase and push again.
+- Rebase (`git pull --rebase origin v12`) before the gates, so they run on what you'll push.
+- `pnpm land` lands the current branch's commits, from `v12` or a worktree's branch: it rebases onto `origin/v12`, reinstalls when that brought in a manifest change, checks the files your commits change with `vp check`, pushes to `v12`, and rebases again when the push is rejected. On a conflict in `pnpm-lock.yaml` alone it takes `v12`'s and reinstalls; on any other it stops mid-rebase: resolve it, `git rebase --continue`, and rerun `pnpm land` ([`landing-on-v12.md`](./.agent-docs/decisions/landing-on-v12.md)).
+- Don't watch your own `next.yml` run: a newer push often replaces it before it starts. `pnpm ci:wait` waits for the first finished run that includes your commit (HEAD, or the one you name) and lists the failed jobs.
+- Don't `git stash` in a checkout with worktrees: they share one stash, and `git stash pop` can take a sibling's changes. Commit work in progress, or copy the files aside.
 - `AGENTS.md`, `README.md`, `.agent-docs/README.md` and `vite.config.ts` are shared by most changes. Edit as little of them as you can: put the detail in the decision file, skill, page or code it's about, and add one line to the shared file that links it. Say a fact in one place and link to it elsewhere; a fact restated in `AGENTS.md`, `README.md` and a decision is three edits for the next change and three chances to conflict.
 - Git conflicts by line, and a Markdown bullet or paragraph is one line: two changes to different sentences of one bullet conflict. Give a new topic its own bullet instead of adding sentences to another topic's, and split a bullet that has grown several topics.
-- On a `pnpm-lock.yaml` conflict, take `v12`'s (`git checkout origin/v12 -- pnpm-lock.yaml`), run `pnpm install`, and commit the result. Don't merge the lockfile by hand.
+- Resolving a `pnpm-lock.yaml` conflict by hand, take `v12`'s (`git checkout origin/v12 -- pnpm-lock.yaml`), run `pnpm install`, and commit the result. Don't merge the lockfile line by line.
 
 ## Docs
 
