@@ -228,7 +228,7 @@ export const client = createTRPCClient<AppRouter>({
 export const isTrpcError = (e: unknown) => e instanceof TRPCClientError;
 `).code,
     ).toMatchInlineSnapshot(`
-      "import { createTrpcClient, httpLink, splitLink, TrpcError, routerType } from '@trpc12/trpc/client';
+      "import { createTrpcClient, httpLink, splitLink, TrpcError, routerType, sse, batching } from '@trpc12/trpc/client';
       import superjson from 'superjson';
       import type { AppRouter } from './server';
       import { createSyncSerializer } from '@trpc12/trpc/serializer';
@@ -240,8 +240,8 @@ export const isTrpcError = (e: unknown) => e instanceof TRPCClientError;
         links: [
           splitLink({
             condition: (op) => op.type === 'subscription',
-            true: httpLink({ url: '/trpc', serializer: createSyncSerializer(transformer) }),
-            false: httpLink({ batch: true, url: '/trpc', serializer: createSyncSerializer(superjson), maxUrlLength: 2083 }),
+            true: httpLink({ subscriptions: sse(), url: '/trpc', serializer: createSyncSerializer(transformer) }),
+            false: httpLink({ batch: batching(), url: '/trpc', serializer: createSyncSerializer(superjson), maxUrlLength: 2083 }),
           }),
         ],
       });
@@ -316,8 +316,8 @@ const client = createTRPCProxyClient<AppRouter>(options);
 const link = httpBatchLink(options);
 `).code,
     ).toMatchInlineSnapshot(`
-      "import { httpLink } from '@trpc12/trpc/client';
-      const link = httpLink({ ...options, batch: true });
+      "import { httpLink, batching } from '@trpc12/trpc/client';
+      const link = httpLink({ ...options, batch: batching() });
       "
     `);
   });
@@ -545,15 +545,15 @@ const client = createWSClient({ url: 'ws://x' });
 const ws = wsLink({ client });
 `;
     expect(upgrade(source).code).toMatchInlineSnapshot(`
-      "import { httpLink, wsLink, createWSClient } from '@trpc12/trpc/client';
-      const empty = httpLink({ batch: true });
+      "import { httpLink, wsLink, createWSClient, batching, sse as trpcSse } from '@trpc12/trpc/client';
+      const empty = httpLink({ batch: batching() });
       const multiline = httpLink({
-        batch: true,
+        batch: batching(),
         url: '/trpc',
         maxUrlLength: 2000,
         [key]: 1,
       });
-      const sse = httpLink({ url: '/trpc', EventSource, eventSourceOptions: {} });
+      const sse = httpLink({ subscriptions: trpcSse(), url: '/trpc', EventSource, eventSourceOptions: {} });
       const client = createWSClient({ url: 'ws://x' });
       const ws = wsLink({ client });
       "
@@ -716,7 +716,7 @@ export const { TRPCProvider, 1: one, ...rest } = createTRPCContext<AppRouter>();
 `;
     expect(upgrade(source).code).toMatchInlineSnapshot(`
       "import { initTrpc } from '@trpc12/trpc/server';
-      import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+      import { createTrpcClient, httpLink, batching, routerType } from '@trpc12/trpc/client';
       import { createFetchHandler } from '@trpc12/trpc/server';
       import { createTrpcContext } from '@trpc12/tanstack-react-query';
       const t = initTrpc({ [key]: 1, custom: 2 });

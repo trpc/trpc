@@ -106,7 +106,8 @@ export function run() {
     const client = read('client/client.ts');
     ok(client.includes("from '@trpc12/trpc/client';"));
     ok(client.includes('router: routerType<AppRouter>(),'));
-    ok(client.includes('batch: true,'));
+    ok(client.includes('batch: batching(),'));
+    ok(client.includes('subscriptions: sse(),'));
     ok(
       !client.includes('httpBatchLink') &&
         !client.includes('httpSubscriptionLink'),
