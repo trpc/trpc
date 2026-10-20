@@ -196,21 +196,23 @@ const hidden = () =>
   typeof document !== 'undefined' && document.visibilityState === 'hidden';
 
 /** Resumes at once while the page is visible, else once it's visible again. */
-const visible: Effect.Effect<void> = Effect.callback<void>((resume) => {
-  if (!hidden()) {
-    resume(Effect.void);
-    return;
-  }
-  const onChange = () => {
-    if (hidden()) return;
-    document.removeEventListener('visibilitychange', onChange);
-    resume(Effect.void);
-  };
-  document.addEventListener('visibilitychange', onChange);
-  return Effect.sync(() =>
-    document.removeEventListener('visibilitychange', onChange),
-  );
-});
+const visible: Effect.Effect<void> = /* @__PURE__ */ Effect.callback<void>(
+  (resume) => {
+    if (!hidden()) {
+      resume(Effect.void);
+      return;
+    }
+    const onChange = () => {
+      if (hidden()) return;
+      document.removeEventListener('visibilitychange', onChange);
+      resume(Effect.void);
+    };
+    document.addEventListener('visibilitychange', onChange);
+    return Effect.sync(() =>
+      document.removeEventListener('visibilitychange', onChange),
+    );
+  },
+);
 
 const noop = () => {};
 
