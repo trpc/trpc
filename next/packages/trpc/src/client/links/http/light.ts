@@ -80,6 +80,10 @@ export interface HttpLinkOptions<
    * @default 'post'
    */
   longQuery?: 'post' | 'query';
+  /** `httpLink` sends each call alone: batching is `httpStreamLink`'s. */
+  batch?: never;
+  /** Binary frames carry streamed outputs, which need `httpStreamLink`. */
+  binary?: never;
 }
 
 /**

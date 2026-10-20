@@ -167,6 +167,13 @@ test('an output that streams fails, pointing at httpStreamLink', async () => {
   expect(await later.soon).toBe(2);
 });
 
+test("batch and binary are httpStreamLink's options, a type error here", () => {
+  // @ts-expect-error batching is httpStreamLink's
+  httpLink({ url: 'http://localhost/trpc', batch: true });
+  // @ts-expect-error binary frames are httpStreamLink's
+  httpLink({ url: 'http://localhost/trpc', binary: true });
+});
+
 test('no subscriptions: the type has no .subscribe(), a call fails', async () => {
   const client = clientWith();
   expectTypeOf(client.ticks).not.toHaveProperty('subscribe');
