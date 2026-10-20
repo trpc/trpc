@@ -12,8 +12,8 @@ export interface DocMeta {
   readonly description: string;
   /**
    * The experiment (`src/experiments.ts`) the page belongs to: out of the
-   * sidebar, search and pagination until it's on; still served at its URL
-   * and in the sitemap and `llms.txt`.
+   * sidebar, search and pagination until it's on, `noindex` and out of the
+   * sitemap; still served at its URL and in `llms.txt`.
    */
   readonly experiment?: ExperimentId | undefined;
   readonly headings: ReadonlyArray<DocHeading>;

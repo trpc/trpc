@@ -31,6 +31,8 @@ export interface PageSeo {
   readonly description: string;
   /** The page as markdown, for agents: `/v12/docs/<slug>.md`. */
   readonly markdownPath?: string;
+  /** Keeps search engines from indexing the page, even once the site is. */
+  readonly noindex?: boolean;
   /** Path from the site root, starting with `/`. */
   readonly path: string;
   /** Schema.org JSON-LD objects for the page. */
@@ -137,6 +139,7 @@ export function pageHead(page: PageSeo) {
     ],
     meta: [
       { title },
+      ...(page.noindex ? [{ content: 'noindex', name: 'robots' }] : []),
       { content: page.description, name: 'description' },
       { content: title, property: 'og:title' },
       { content: page.description, property: 'og:description' },

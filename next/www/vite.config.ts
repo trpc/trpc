@@ -185,11 +185,15 @@ export default defineConfig({
         { path: '/', sitemap: { changefreq: 'weekly', priority: 1 } },
         ...pages.map((page) => ({
           path: page.path,
-          sitemap: {
-            changefreq: 'weekly' as const,
-            lastmod: page.lastModified,
-            priority: 0.8,
-          },
+          // An experiment's page is `noindex`.
+          sitemap:
+            page.experiment === undefined
+              ? {
+                  changefreq: 'weekly' as const,
+                  lastmod: page.lastModified,
+                  priority: 0.8,
+                }
+              : { exclude: true },
         })),
         // trpc.io is where the older versions' docs are found; each page's
         // canonical link points there.

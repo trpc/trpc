@@ -82,8 +82,9 @@ const Frontmatter = Schema.Struct({
   description: Schema.String,
   /**
    * The experiment the page belongs to (`src/experiments.ts`). Built and
-   * served at its URL, in the sitemap and `llms.txt`, but out of the
-   * sidebar, search and pagination until the reader turns it on.
+   * served at its URL and in `llms.txt`, but `noindex`, out of the sitemap,
+   * and out of the sidebar, search and pagination until the reader turns it
+   * on.
    */
   experiment: Schema.optional(Schema.Literals(experimentIds)),
   label: Schema.optional(Schema.String),
