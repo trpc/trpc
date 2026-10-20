@@ -1,8 +1,18 @@
 /**
  * What the bench commands share: failures, Markdown tables, writing a
- * generated project and running `tsc` for its diagnostics.
+ * generated project, running `tsc` for its diagnostics, and the snapshot
+ * the docs' benchmarks page reads.
  */
-import { Data, Effect, FileSystem, Path, Stream } from 'effect';
+import os from 'node:os';
+import {
+  Console,
+  Data,
+  Effect,
+  FileSystem,
+  Path,
+  Schema,
+  Stream,
+} from 'effect';
 import { ChildProcess, ChildProcessSpawner } from 'effect/process';
 
 export const here = import.meta.dirname;
@@ -49,7 +59,7 @@ export const writeFiles = (
     }
   });
 
-const tsc = `${here}/node_modules/.bin/tsc`;
+export const tsc = `${here}/node_modules/.bin/tsc`;
 // v11 and oRPC are checked from their published `.d.ts` (with `skipLibCheck`), so v12 is too.
 export const dist = `${here}/../../packages/trpc/dist`;
 
@@ -126,3 +136,71 @@ export const fixtureTsconfig = (include: ReadonlyArray<string>) =>
     null,
     2,
   );
+
+// --- snapshot -------------------------------------------------------------
+
+/**
+ * The results the docs' benchmarks page charts, one section per command
+ * (`runtime`, `typecheck`, `bundle`), each written by its `--snapshot`.
+ * `www/build/benchmarks.ts` reads it and fails the build on another shape.
+ */
+export const snapshotFile = `${here}/../../www/benchmarks.json`;
+
+const Sections = Schema.fromJsonString(
+  Schema.Record(Schema.String, Schema.Unknown),
+);
+const Manifest = Schema.fromJsonString(
+  Schema.Struct({ version: Schema.String }),
+);
+
+/** The installed version of one of this package's dependencies. */
+export const versionOf = (pkg: string) =>
+  Effect.gen(function* () {
+    const fs = yield* FileSystem.FileSystem;
+    const raw = yield* fs.readFileString(
+      `${here}/node_modules/${pkg}/package.json`,
+    );
+    return (yield* Schema.decodeUnknownEffect(Manifest)(raw)).version;
+  });
+
+const run = (command: string, args: ReadonlyArray<string>) =>
+  Effect.gen(function* () {
+    const spawner = yield* ChildProcessSpawner.ChildProcessSpawner;
+    const output = yield* spawner.string(
+      ChildProcess.make(command, args, { cwd: here }),
+    );
+    return output.trim();
+  });
+
+/** The `tsc` the typecheck runs: `7.1.0-beta`. */
+export const tscVersion = Effect.map(run(tsc, ['--version']), (output) =>
+  output.replace(/^Version /, ''),
+);
+
+/** Where and on what a section was measured. */
+export const environment = Effect.gen(function* () {
+  const cpus = os.cpus();
+  return {
+    commit: yield* run('git', ['rev-parse', '--short=9', 'HEAD']),
+    date: new Date().toISOString().slice(0, 10),
+    machine: `${cpus.length}-core ${(cpus[0]?.model ?? 'CPU').replaceAll(/\((?:R|TM)\)/g, '').trim()}, ${Math.round(os.totalmem() / 2 ** 30)} GB`,
+    node: process.version,
+  };
+});
+
+/** Replaces `section` of {@link snapshotFile}, keeping the others. */
+export const writeSnapshot = (section: string, value: object) =>
+  Effect.gen(function* () {
+    const fs = yield* FileSystem.FileSystem;
+    const sections = (yield* fs.exists(snapshotFile))
+      ? yield* Effect.flatMap(
+          fs.readFileString(snapshotFile),
+          Schema.decodeUnknownEffect(Sections),
+        )
+      : {};
+    yield* fs.writeFileString(
+      snapshotFile,
+      `${JSON.stringify({ ...sections, [section]: value }, null, 2)}\n`,
+    );
+    yield* Console.error(`wrote ${section} to www/benchmarks.json`);
+  });

@@ -14,6 +14,9 @@
  * - bundle: a minimal client, Node server and fetch handler, bundled with
  *   rolldown (tree-shaken, minified) and gzipped.
  * - budget: the client bundles whose size CI reports (see `budgets`).
+ *
+ * `--snapshot` on runtime, typecheck and bundle also writes the results to
+ * `www/benchmarks.json`, which the docs' benchmarks page charts.
  */
 import { gzipSync } from 'node:zlib';
 import { NodeRuntime, NodeServices } from '@effect/platform-node';
@@ -27,15 +30,27 @@ import {
   BenchFailed,
   diagnostics,
   dist,
+  environment,
   generated,
   here,
   median,
   requireDist,
   table,
   thousands,
+  tscVersion,
+  versionOf,
   writeFiles,
+  writeSnapshot,
 } from './kit.ts';
 import { shapes } from './shapes.ts';
+
+const snapshot = Flag.Boolean('snapshot').pipe(Flag.withDefault(false));
+
+/** The published packages v12 is measured against, by `npm` name. */
+const versions = Effect.all({
+  '@trpc/server': versionOf('@trpc/server'),
+  '@orpc/server': versionOf('@orpc/server'),
+});
 
 // --- runtime --------------------------------------------------------------
 
@@ -67,11 +82,18 @@ const runtime = Command.make(
   {
     duration: Flag.Int('duration').pipe(Flag.withDefault(10)),
     connections: Flag.Int('connections').pipe(Flag.withDefault(10)),
+    snapshot,
   },
   (opts) =>
     Effect.gen(function* () {
       const spawner = yield* ChildProcessSpawner.ChildProcessSpawner;
       const rows: string[][] = [];
+      const results: Array<{
+        readonly name: string;
+        readonly requestsPerSecond: number;
+        readonly stdev: number;
+        readonly requests: number;
+      }> = [];
       for (const [i, server] of servers.entries()) {
         const port = 3100 + i;
         const url = `http://127.0.0.1:${port}${server.path}`;
@@ -110,12 +132,27 @@ const runtime = Command.make(
           thousands(result.requests.stddev),
           thousands(result.requests.total),
         ]);
+        results.push({
+          name: server.name,
+          requestsPerSecond: Math.round(result.requests.average),
+          stdev: Math.round(result.requests.stddev),
+          requests: result.requests.total,
+        });
         yield* Console.error(`done: ${server.name}`);
       }
       yield* Console.log(
         `${opts.duration}s, ${opts.connections} connections, Node ${process.version}\n\n` +
           table(['server', 'req/s (avg)', 'req/s (stdev)', 'requests'], rows),
       );
+      if (opts.snapshot) {
+        yield* writeSnapshot('runtime', {
+          ...(yield* environment),
+          versions: yield* versions,
+          duration: opts.duration,
+          connections: opts.connections,
+          results,
+        });
+      }
     }),
 );
 
@@ -266,11 +303,19 @@ const typecheck = Command.make(
   {
     routers: Flag.Int('routers').pipe(Flag.withDefault(500)),
     runs: Flag.Int('runs').pipe(Flag.withDefault(3)),
+    snapshot,
   },
   (opts) =>
     Effect.gen(function* () {
       yield* requireDist;
       const rows: string[][] = [];
+      const results: Array<{
+        readonly name: string;
+        readonly checkSeconds: number;
+        readonly totalSeconds: number;
+        readonly memoryMb: number;
+        readonly instantiations: number;
+      }> = [];
       for (const fw of ['trpc12', 'trpc11', 'orpc'] as const) {
         const dir = `${generated}/typecheck-${fw}`;
         yield* writeFiles(dir, fixture(fw, opts.routers));
@@ -286,12 +331,30 @@ const typecheck = Command.make(
           `${Math.round(m('Memory used') / 1024)} MB`,
           thousands(m('Instantiations')),
         ]);
+        results.push({
+          name: names[fw],
+          checkSeconds: m('Check time'),
+          totalSeconds: m('Total time'),
+          memoryMb: Math.round(m('Memory used') / 1024),
+          instantiations: m('Instantiations'),
+        });
         yield* Console.error(`done: ${fw}`);
       }
+      const typescript = yield* tscVersion;
       yield* Console.log(
-        `${opts.routers * 6} procedures in ${opts.routers * 3 + 1} routers, single-threaded tsc, median of ${opts.runs}\n\n` +
+        `${opts.routers * 6} procedures in ${opts.routers * 3 + 1} routers, single-threaded tsc ${typescript}, median of ${opts.runs}\n\n` +
           table(['', 'check', 'total', 'memory', 'instantiations'], rows),
       );
+      if (opts.snapshot) {
+        yield* writeSnapshot('typecheck', {
+          ...(yield* environment),
+          versions: { ...(yield* versions), typescript },
+          procedures: opts.routers * 6,
+          routers: opts.routers * 3 + 1,
+          runs: opts.runs,
+          results,
+        });
+      }
     }),
 );
 
@@ -377,28 +440,48 @@ const bundle = (input: string, platform: 'browser' | 'node') =>
 
 const kb = (n: number) => `${(n / 1000).toFixed(1)} kB`;
 
-const bundleSizes = Command.make('bundle', {}, () =>
+const bundleOf = (fw: Framework, kind: 'client' | 'node' | 'fetch') =>
   Effect.gen(function* () {
-    const rows: string[][] = [];
-    for (const kind of ['client', 'node', 'fetch'] as const) {
-      const row = [
-        { client: 'client', node: 'Node server', fetch: 'fetch handler' }[kind],
-      ];
-      for (const fw of ['trpc12', 'trpc11', 'orpc'] as const) {
-        const dir = `${generated}/bundle-${fw}`;
-        yield* writeFiles(dir, [[`${kind}.ts`, `${bundles[fw][kind]}\n`]]);
-        const size = yield* bundle(
-          `${dir}/${kind}.ts`,
-          kind === 'node' ? 'node' : 'browser',
-        );
-        row.push(`${kb(size.minified)} / ${kb(size.gzip)}`);
-      }
-      rows.push(row);
-    }
+    const dir = `${generated}/bundle-${fw}`;
+    yield* writeFiles(dir, [[`${kind}.ts`, `${bundles[fw][kind]}\n`]]);
+    return yield* bundle(
+      `${dir}/${kind}.ts`,
+      kind === 'node' ? 'node' : 'browser',
+    );
+  });
+
+const bundleSizes = Command.make('bundle', { snapshot }, (opts) =>
+  Effect.gen(function* () {
+    const results = yield* Effect.forEach(
+      ['trpc12', 'trpc11', 'orpc'] as const,
+      (fw) =>
+        Effect.all({
+          name: Effect.succeed(names[fw]),
+          client: bundleOf(fw, 'client'),
+          node: bundleOf(fw, 'node'),
+          fetch: bundleOf(fw, 'fetch'),
+        }),
+    );
+    const rows = (['client', 'node', 'fetch'] as const).map((kind) => [
+      { client: 'client', node: 'Node server', fetch: 'fetch handler' }[kind],
+      ...results.map(
+        (result) => `${kb(result[kind].minified)} / ${kb(result[kind].gzip)}`,
+      ),
+    ]);
     yield* Console.log(
       'minified / gzip -9, rolldown tree-shaken; native types on (danSON, superjson, oRPC built-in)\n\n' +
         table(['', 'tRPC v12', 'tRPC v11', 'oRPC v2'], rows),
     );
+    if (opts.snapshot) {
+      yield* writeSnapshot('bundle', {
+        ...(yield* environment),
+        versions: {
+          ...(yield* versions),
+          rolldown: yield* versionOf('rolldown'),
+        },
+        results,
+      });
+    }
   }),
 );
 

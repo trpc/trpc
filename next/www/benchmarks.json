@@ -1,0 +1,129 @@
+{
+  "bundle": {
+    "commit": "3f356f29c",
+    "date": "2026-10-20",
+    "machine": "4-core Intel Xeon Processor, 16 GB",
+    "node": "v26.12.0",
+    "versions": {
+      "@trpc/server": "11.19.0",
+      "@orpc/server": "2.0.0-beta.44",
+      "rolldown": "1.2.13"
+    },
+    "results": [
+      {
+        "name": "tRPC v12",
+        "client": {
+          "minified": 132328,
+          "gzip": 43903
+        },
+        "node": {
+          "minified": 364649,
+          "gzip": 117808
+        },
+        "fetch": {
+          "minified": 233280,
+          "gzip": 76314
+        }
+      },
+      {
+        "name": "tRPC v11",
+        "client": {
+          "minified": 36417,
+          "gzip": 11757
+        },
+        "node": {
+          "minified": 53076,
+          "gzip": 17283
+        },
+        "fetch": {
+          "minified": 50628,
+          "gzip": 16431
+        }
+      },
+      {
+        "name": "oRPC v2",
+        "client": {
+          "minified": 27092,
+          "gzip": 9616
+        },
+        "node": {
+          "minified": 41337,
+          "gzip": 13188
+        },
+        "fetch": {
+          "minified": 39505,
+          "gzip": 12595
+        }
+      }
+    ]
+  },
+  "typecheck": {
+    "commit": "3f356f29c",
+    "date": "2026-10-20",
+    "machine": "4-core Intel Xeon Processor, 16 GB",
+    "node": "v26.12.0",
+    "versions": {
+      "@trpc/server": "11.19.0",
+      "@orpc/server": "2.0.0-beta.44",
+      "typescript": "7.1.0-beta"
+    },
+    "procedures": 3000,
+    "routers": 1501,
+    "runs": 3,
+    "results": [
+      {
+        "name": "tRPC v12",
+        "checkSeconds": 0.993,
+        "totalSeconds": 1.263,
+        "memoryMb": 246,
+        "instantiations": 1490786
+      },
+      {
+        "name": "tRPC v11",
+        "checkSeconds": 0.97,
+        "totalSeconds": 1.142,
+        "memoryMb": 195,
+        "instantiations": 1005031
+      },
+      {
+        "name": "oRPC v2",
+        "checkSeconds": 0.681,
+        "totalSeconds": 0.814,
+        "memoryMb": 174,
+        "instantiations": 886785
+      }
+    ]
+  },
+  "runtime": {
+    "commit": "3f356f29c",
+    "date": "2026-10-20",
+    "machine": "4-core Intel Xeon Processor, 16 GB",
+    "node": "v26.12.0",
+    "versions": {
+      "@trpc/server": "11.19.0",
+      "@orpc/server": "2.0.0-beta.44"
+    },
+    "duration": 10,
+    "connections": 10,
+    "results": [
+      {
+        "name": "tRPC v12",
+        "requestsPerSecond": 48845,
+        "stdev": 3453,
+        "requests": 537286
+      },
+      {
+        "name": "tRPC v11",
+        "requestsPerSecond": 15533,
+        "stdev": 267,
+        "requests": 170870
+      },
+      {
+        "name": "oRPC v2",
+        "requestsPerSecond": 63594,
+        "stdev": 2342,
+        "requests": 699531
+      }
+    ]
+  }
+}
