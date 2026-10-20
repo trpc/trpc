@@ -22,7 +22,8 @@
     "bench": "pnpm --filter @tooling/bench run bench",
     "postinstall": "vendor-src check",
     "vendor:sync": "vendor-src sync",
-    "land": "node tooling/dev/src/bin/land.ts"
+    "land": "node tooling/dev/src/bin/land.ts",
+    "ci:wait": "node tooling/dev/src/bin/ci-wait.ts"
   },
   "dependencies": {
     "@sveltejs/vite-plugin-svelte": "7.3.1",
