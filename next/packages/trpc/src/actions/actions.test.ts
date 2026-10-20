@@ -197,6 +197,35 @@ test('a layer that fails to build is an unexpected error, masked and seen by onE
   expect(builds).toBe(1);
 });
 
+test('in-process calls without a signal get one that aborts when the call is interrupted', async () => {
+  const signals: AbortSignal[] = [];
+  const interrupted = t.procedure
+    .use((opts) => {
+      signals.push(opts.signal);
+      return opts.next();
+    })
+    .query(() => Effect.interrupt);
+  const ctx = { user: 'ada' };
+  await expect(call(interrupted, undefined, { ctx })).rejects.toMatchObject({
+    code: 'CLIENT_CLOSED_REQUEST',
+  });
+  await expect(
+    createRouterClient({ interrupted }, { ctx }).interrupted.query(),
+  ).rejects.toMatchObject({ code: 'CLIENT_CLOSED_REQUEST' });
+  expect(
+    (await experimental_createAction({ ctx })(interrupted)()).error,
+  ).toMatchObject({ code: 'CLIENT_CLOSED_REQUEST' });
+  await expect(
+    experimental_createCallable({ ctx, result: 'throw' })(interrupted)(),
+  ).rejects.toMatchObject({ code: 'CLIENT_CLOSED_REQUEST' });
+  expect(signals.map((signal) => signal.aborted)).toEqual([
+    true,
+    true,
+    true,
+    true,
+  ]);
+});
+
 test("result: 'throw' returns the data and throws TrpcError", async () => {
   const callable = experimental_createCallable({
     ctx: { user: 'ada' },

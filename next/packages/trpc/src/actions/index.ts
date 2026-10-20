@@ -20,6 +20,7 @@ import { Effect, Exit, ManagedRuntime, type Layer } from 'effect';
 import type { SafeResult } from '../client/client.ts';
 import type { ClientError } from '../client/types.ts';
 import { inputJsonSchema } from '../internal/describe.ts';
+import { interruptSignal } from '../internal/effects.ts';
 import {
   frameworkError,
   TrpcError,
@@ -271,17 +272,21 @@ function makeFactory<TMode extends ActionResultMode>(
         raw instanceof FormData ? fromFormData(procedure, raw) : raw;
       const ctx = typeof opts.ctx === 'function' ? await opts.ctx() : opts.ctx;
       const exit = await Effect.runPromiseExit(
-        Effect.flatMap(services, (context) =>
-          Effect.provideContext(
-            callProcedure({
-              procedure,
-              path: '',
-              ctx: ctx ?? {},
-              input,
-              signal: new AbortController().signal,
-            }),
-            context,
-          ),
+        Effect.flatMap(
+          Effect.zip(services, interruptSignal()),
+          ([context, interrupt]) =>
+            interrupt.abortOnInterrupt(
+              Effect.provideContext(
+                callProcedure({
+                  procedure,
+                  path: '',
+                  ctx: ctx ?? {},
+                  input,
+                  signal: interrupt.signal,
+                }),
+                context,
+              ),
+            ),
         ),
       );
       if (Exit.isSuccess(exit)) {

@@ -2,6 +2,7 @@ import { Effect, Exit, type Layer, type ManagedRuntime } from 'effect';
 import { createTrpcClient } from '../client/client.ts';
 import { localLink, type LocalLinkOptions } from '../client/links/index.ts';
 import { routerType, type TrpcClient } from '../client/types.ts';
+import { interruptSignal } from '../internal/effects.ts';
 import { frameworkError } from '../internal/error.ts';
 import type {
   DansonForm,
@@ -140,18 +141,24 @@ export async function call<TDef extends ProcedureDef>(
     runtime?: Runtime<never>;
   };
   const response = createResponseHandle();
-  const effect = Effect.flatMap(
-    callProcedure({
-      procedure,
-      path: o.path ?? '',
-      ctx: o.ctx ?? {},
-      input,
-      signal: o.signal ?? new AbortController().signal,
-      response,
-      allowResponse: true,
-    }),
-    (value) => inProcessOutput(value, response),
-  );
+  const run = (signal: AbortSignal) =>
+    Effect.flatMap(
+      callProcedure({
+        procedure,
+        path: o.path ?? '',
+        ctx: o.ctx ?? {},
+        input,
+        signal,
+        response,
+        allowResponse: true,
+      }),
+      (value) => inProcessOutput(value, response),
+    );
+  const effect = o.signal
+    ? run(o.signal)
+    : Effect.flatMap(interruptSignal(), (interrupt) =>
+        interrupt.abortOnInterrupt(run(interrupt.signal)),
+      );
   const provided = o.runtime
     ? Effect.flatMap(runtimeServices(o.runtime), (services) =>
         Effect.provideContext(effect, services),
