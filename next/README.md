@@ -51,7 +51,7 @@ pnpm example
 ```
 
 - `pnpm install`: installs deps; `prepare` installs the git hook dispatcher.
-- `pnpm typecheck`: `tsc` (TypeScript 7) in every workspace package.
+- `pnpm typecheck`: `tsc` (TypeScript 7) in every workspace package, through `vp run --cache`: a package whose `tsc` read nothing that changed since its last pass replays it (`node_modules/.vite/task-cache`; `vp cache clean` empties it, `vp run --last-details` says why each one ran). `examples/monorepo` and `examples/next-app` always run, as their `tsc` rewrites a `.tsbuildinfo` it reads.
 - `pnpm check`: `vp check` (format check, lint and type-aware lint/type check), then `pnpm lint:docs`.
 - `pnpm lint:docs`: lints the code blocks in `www/docs/` with the rules that hold for examples (`tooling/docs-lint/`), since oxlint skips Markdown.
 - `pnpm fix`: `vp check --fix`, formatting and autofixing.

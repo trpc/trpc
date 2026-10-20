@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "prepare": "vp config --no-agent --hooks-dir .vite-hooks",
-    "typecheck": "pnpm -r run typecheck",
+    "typecheck": "vp run -r --cache typecheck",
     "check": "vp check && pnpm lint:docs",
     "fix": "vp check --fix",
     "fmt": "vp fmt",

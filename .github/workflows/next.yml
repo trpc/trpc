@@ -62,7 +62,20 @@ jobs:
       - run: pnpm install --frozen-lockfile
         env:
           VP_GIT_HOOKS: '0'
+      # `pnpm typecheck` replays a package's `tsc` when nothing it read
+      # changed (`vp run --cache`). Vite Task fingerprints the inputs, so the
+      # key is per run and the newest run's cache is restored.
+      - uses: actions/cache/restore@v4
+        id: task-cache
+        with:
+          path: next/node_modules/.vite/task-cache
+          key: vite-task-check-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: vite-task-check-
       - run: pnpm typecheck
+      - uses: actions/cache/save@v4
+        with:
+          path: next/node_modules/.vite/task-cache
+          key: ${{ steps.task-cache.outputs.cache-primary-key }}
       - run: pnpm check
       # The packages' tests, failing under 98% coverage on any metric.
       - run: pnpm coverage
@@ -139,7 +152,19 @@ jobs:
           grep -E '^  effect@' pnpm-lock.yaml
         env:
           VP_GIT_HOOKS: '0'
+      # Its own cache: Vite Task keeps one entry per task, and these installs
+      # differ from the check job's.
+      - uses: actions/cache/restore@v4
+        id: task-cache
+        with:
+          path: next/node_modules/.vite/task-cache
+          key: vite-task-effect-latest-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: vite-task-effect-latest-
       - run: pnpm typecheck
+      - uses: actions/cache/save@v4
+        with:
+          path: next/node_modules/.vite/task-cache
+          key: ${{ steps.task-cache.outputs.cache-primary-key }}
       - run: pnpm test
 
   bun:
