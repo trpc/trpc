@@ -123,7 +123,6 @@ describe('makeRenderPool', () => {
           ['<p>b one</p>', '<p>b two</p>', '<p>b three</p>'],
         ]);
       }).pipe(Effect.scoped, Effect.provide(NodeServices.layer)),
-    30_000,
   );
 
   it.effect("fails with the page's error", () =>

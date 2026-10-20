@@ -6,10 +6,10 @@
  */
 import { resolve } from 'node:path';
 
-import { NodeServices } from '@effect/platform-node';
+import { NodeRuntime, NodeServices } from '@effect/platform-node';
 import { Effect, FileSystem, Path } from 'effect';
 
-import { messageOf } from './content-error.ts';
+import { ContentError, messageOf } from './content-error.ts';
 import { decisionPages } from './decisions-content.ts';
 import { decisionsOptions } from './paths.ts';
 
@@ -49,8 +49,10 @@ const check = Effect.gen(function* () {
     `${files.length - failed} of ${files.length} files compile${stats ? ` (${stats.hits} code blocks from the cache, ${stats.misses} compiled)` : ''}`,
   );
   if (failed > 0) {
-    process.exitCode = 1;
+    return yield* new ContentError({
+      message: `${failed} files don't compile`,
+    });
   }
 });
 
-Effect.runPromise(Effect.provide(check, NodeServices.layer));
+check.pipe(Effect.provide(NodeServices.layer), NodeRuntime.runMain);

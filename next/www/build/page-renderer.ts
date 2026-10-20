@@ -33,10 +33,13 @@ export function makePageRenderer(
   const twoslashCache = cacheOptions && makeTwoslashCache(cacheOptions);
   let building = false;
   return {
-    configResolved(config: ResolvedConfig) {
+    configResolved: (config: ResolvedConfig) => {
       building = config.command === 'build';
     },
-    render(markdown: string, options: Omit<RenderOptions, 'twoslashCache'>) {
+    render: (
+      markdown: string,
+      options: Omit<RenderOptions, 'twoslashCache'>,
+    ) => {
       if (!building) {
         return renderMarkdown(markdown, { ...options, twoslashCache });
       }
