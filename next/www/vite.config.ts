@@ -148,6 +148,7 @@ export default defineConfig({
     blogFeeds({ posts }),
     siteIcons({ svg: favicon }),
     ogImages({
+      cacheDir: `${cacheDir}/og`,
       cards: [
         OgCard.Home({ path: '/' }),
         ...pages.map((page) => docCard(page, 'v12', absoluteUrl(page.path))),

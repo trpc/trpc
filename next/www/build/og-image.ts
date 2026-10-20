@@ -4,9 +4,12 @@
  * cards (`v11/www/og-image`), with its pattern and per-page
  * title, description and URL, and without its network calls.
  */
+import { createHash } from 'node:crypto';
+import { availableParallelism } from 'node:os';
+
 import { NodeServices } from '@effect/platform-node';
-import { Resvg } from '@resvg/resvg-js';
-import { Data, Effect, FileSystem, Path } from 'effect';
+import { renderAsync, Resvg } from '@resvg/resvg-js';
+import { Data, Effect, FileSystem, Option, Path } from 'effect';
 import { type CSSProperties, createElement as h, type ReactNode } from 'react';
 import satori, { type Font } from 'satori';
 import type { Plugin } from 'vite';
@@ -337,11 +340,37 @@ const fontFiles = [
   ],
 ] as const;
 
-/** Loads the fonts and images once; the result renders a card as PNG. */
-export const makeOgRenderer = Effect.fn('makeOgRenderer')(function* () {
+const rasterOptions = { font: { loadSystemFonts: false } } as const;
+
+/** Cached cards no build has read for this long are deleted. */
+const maxAgeMs = 14 * 24 * 60 * 60 * 1000;
+
+/**
+ * Loads the fonts and images once; the result renders a card as PNG.
+ *
+ * Rasterizing is most of a card's time, so with a `cacheDir` a PNG is kept
+ * there under a hash of its SVG and resvg's version, and a card whose SVG
+ * didn't change is read back instead.
+ */
+export const makeOgRenderer = Effect.fn('makeOgRenderer')(function* (
+  cacheDir?: string,
+) {
   const fs = yield* FileSystem.FileSystem;
   const path = yield* Path.Path;
   const read = (url: URL) => Effect.flatMap(path.fromFileUrl(url), fs.readFile);
+  const resvgVersion = yield* Effect.map(
+    fs.readFileString(
+      path.join(
+        path.dirname(
+          yield* path.fromFileUrl(
+            new URL(import.meta.resolve('@resvg/resvg-js')),
+          ),
+        ),
+        'package.json',
+      ),
+    ),
+    (json) => String((JSON.parse(json) as { version?: unknown }).version),
+  );
   const fonts: Array<Font> = yield* Effect.forEach(fontFiles, (font) =>
     Effect.map(read(new URL(import.meta.resolve(font[2]))), (data) => ({
       data: Buffer.from(data),
@@ -373,12 +402,57 @@ export const makeOgRenderer = Effect.fn('makeOgRenderer')(function* () {
       catch: fail,
       try: () => satori(cardElement(assets, ogCard), { ...ogImageSize, fonts }),
     });
-    return yield* Effect.try({
+    // On libuv's threads, so a build's cards rasterize in parallel.
+    const rasterize = Effect.tryPromise({
       catch: fail,
-      try: () =>
-        new Resvg(svg, { font: { loadSystemFonts: false } }).render().asPng(),
+      try: async () => (await renderAsync(svg, rasterOptions)).asPng(),
     });
+    if (cacheDir === undefined) {
+      return yield* rasterize;
+    }
+    const file = path.join(
+      cacheDir,
+      `${createHash('sha256')
+        .update(JSON.stringify([resvgVersion, rasterOptions, svg]))
+        .digest('hex')}.png`,
+    );
+    const cached = yield* fs.readFile(file).pipe(Effect.option);
+    if (Option.isSome(cached)) {
+      const now = new Date();
+      yield* fs.utimes(file, now, now).pipe(Effect.ignore);
+      return cached.value;
+    }
+    const png = yield* rasterize;
+    yield* fs.makeDirectory(cacheDir, { recursive: true }).pipe(
+      Effect.andThen(fs.writeFile(file, png)),
+      Effect.catch((error) =>
+        Effect.logWarning(`Couldn't write the card cache: ${error.message}`),
+      ),
+    );
+    return png;
   });
+});
+
+/** Deletes cached cards no build has read for two weeks. */
+const pruneCache = Effect.fn('pruneCache')(function* (cacheDir: string) {
+  const fs = yield* FileSystem.FileSystem;
+  const path = yield* Path.Path;
+  const names = yield* fs
+    .readDirectory(cacheDir)
+    .pipe(Effect.orElseSucceed((): Array<string> => []));
+  yield* Effect.forEach(
+    names,
+    (name) =>
+      Effect.gen(function* () {
+        const file = path.join(cacheDir, name);
+        const info = yield* fs.stat(file);
+        const mtime = Option.getOrElse(info.mtime, () => new Date(0));
+        if (Date.now() - mtime.getTime() > maxAgeMs) {
+          yield* fs.remove(file);
+        }
+      }).pipe(Effect.ignore),
+    { concurrency: 64 },
+  );
 });
 
 /**
@@ -387,6 +461,8 @@ export const makeOgRenderer = Effect.fn('makeOgRenderer')(function* () {
  * asked for.
  */
 export function ogImages(options: {
+  /** Where rasterized cards are kept between builds. */
+  readonly cacheDir?: string | undefined;
   readonly cards: ReadonlyArray<OgCard>;
 }): Plugin {
   const byFile = new Map(
@@ -394,7 +470,9 @@ export function ogImages(options: {
   );
   let renderer: ReturnType<typeof loadRenderer> | undefined;
   const loadRenderer = () =>
-    Effect.runPromise(Effect.provide(makeOgRenderer(), NodeServices.layer));
+    Effect.runPromise(
+      Effect.provide(makeOgRenderer(options.cacheDir), NodeServices.layer),
+    );
   const render = async (ogCard: OgCard) => {
     renderer ??= loadRenderer();
     return Effect.runPromise((await renderer)(ogCard));
@@ -422,12 +500,24 @@ export function ogImages(options: {
         return;
       }
       const started = performance.now();
-      for (const [file, ogCard] of byFile) {
-        this.emitFile({
-          fileName: file.slice(1),
-          source: await render(ogCard),
-          type: 'asset',
-        });
+      const pngs = await Effect.runPromise(
+        Effect.forEach(
+          byFile,
+          ([file, ogCard]) =>
+            Effect.map(
+              Effect.promise(() => render(ogCard)),
+              (png) => [file, png] as const,
+            ),
+          { concurrency: availableParallelism() },
+        ),
+      );
+      for (const [file, png] of pngs) {
+        this.emitFile({ fileName: file.slice(1), source: png, type: 'asset' });
+      }
+      if (options.cacheDir !== undefined) {
+        await Effect.runPromise(
+          Effect.provide(pruneCache(options.cacheDir), NodeServices.layer),
+        );
       }
       this.environment.logger.info(
         `og: ${byFile.size} social cards in ${Math.round(performance.now() - started)}ms`,
