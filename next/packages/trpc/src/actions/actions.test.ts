@@ -245,7 +245,7 @@ test('in-process calls without a signal get one that aborts when the call is int
       return opts.next();
     })
     .query(() => Effect.interrupt);
-  const ctx = { user: 'ada' };
+  const ctx: Ctx = { user: 'ada' };
   await expect(call(interrupted, undefined, { ctx })).rejects.toMatchObject({
     code: 'CLIENT_CLOSED_REQUEST',
   });
