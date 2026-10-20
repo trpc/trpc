@@ -5,7 +5,6 @@ import {
   FileText,
   Heart,
   House,
-  Mail,
   PanelRight,
   Sparkles,
 } from 'lucide-react';
@@ -19,7 +18,6 @@ import { buttonVariants } from '@shared/ui/components/button';
 import { cn } from '@shared/ui/lib/utils';
 import { pageHead } from '~/seo.ts';
 import {
-  kattSponsorUrl,
   partners,
   sponsorPage,
   sponsors,
@@ -126,7 +124,6 @@ function SponsorPage() {
       <Tiers />
       <Placements />
       <Cloud />
-      <Faq />
     </main>
   );
 }
@@ -274,12 +271,8 @@ function Tiers() {
         ))}
       </ul>
       <p className="mt-8 text-sm text-muted-foreground">
-        Rather sponsor Alex, tRPC&apos;s creator?{' '}
-        <a className={textLink} href={kattSponsorUrl}>
-          His tiers
-        </a>{' '}
-        are the same and count the same. Want a one-time sponsorship, a custom
-        amount, or something bigger than Gold? That&apos;s on{' '}
+        Want a one-time sponsorship, a custom amount, or something bigger than
+        Gold? That&apos;s on{' '}
         <a className={textLink} href={sponsorUrl}>
           GitHub Sponsors
         </a>{' '}
@@ -431,7 +424,7 @@ function Cloud() {
   return (
     <section
       aria-labelledby="sponsors"
-      className="mx-auto max-w-7xl border-b px-4 py-16 sm:px-6"
+      className="mx-auto max-w-7xl px-4 py-16 sm:px-6"
     >
       <h2 className={cn(sectionTitle, 'mb-2 text-center')} id="sponsors">
         Join {sponsors.length} sponsors
@@ -441,93 +434,6 @@ function Cloud() {
         Thank you, all of you.
       </p>
       <SponsorCloud className="mx-auto max-w-3xl" />
-    </section>
-  );
-}
-
-const faq: ReadonlyArray<{
-  readonly answer: ReactNode;
-  readonly question: string;
-}> = [
-  {
-    answer: (
-      <>
-        Either. Both have the same tiers, and the site adds them up: sponsoring
-        both makes you one sponsor, in the tier of the total. Companies usually
-        pick{' '}
-        <a className={textLink} href={sponsorUrl}>
-          the trpc organization
-        </a>
-        , which pays the whole team.
-      </>
-    ),
-    question: 'Should we sponsor the trpc organization or Alex?',
-  },
-  {
-    answer: (
-      <>
-        The site syncs with GitHub Sponsors every day, so your avatar shows up
-        within a day of sponsoring. A partner&apos;s logo takes a little longer,
-        since we draw it to fit the site:{' '}
-        <a className={textLink} href="mailto:info@trpc.io?subject=Our%20logo">
-          send us an SVG
-        </a>{' '}
-        to speed it up.
-      </>
-    ),
-    question: 'When does our logo show up?',
-  },
-  {
-    answer: (
-      <>
-        Yes.{' '}
-        <a className={textLink} href="mailto:info@trpc.io?subject=Invoicing">
-          Email us
-        </a>{' '}
-        and we&apos;ll invoice you directly; you&apos;re listed in the tier your
-        yearly amount works out to each month.
-      </>
-    ),
-    question: 'Can we pay yearly, or by invoice?',
-  },
-  {
-    answer: (
-      <>
-        It&apos;s the Silver tier now, with the same priority on bugs and
-        feature requests and a Discord channel for your team, plus the partner
-        placements.
-      </>
-    ),
-    question: 'What happened to the Pro plan?',
-  },
-];
-
-function Faq() {
-  return (
-    <section
-      aria-labelledby="faq"
-      className="mx-auto max-w-3xl px-4 py-16 sm:px-6"
-    >
-      <h2 className={cn(sectionTitle, 'mb-6')} id="faq">
-        Questions
-      </h2>
-      <div className="divide-y rounded-xl border bg-card">
-        {faq.map((item) => (
-          <details className="group px-5" key={item.question}>
-            <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-4 font-medium [&::-webkit-details-marker]:hidden">
-              {item.question}
-              <ArrowRight className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-90" />
-            </summary>
-            <p className="pb-4 text-sm text-muted-foreground">{item.answer}</p>
-          </details>
-        ))}
-      </div>
-      <p className="mt-8 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-        <Mail className="size-4" /> Anything else?{' '}
-        <a className={textLink} href="mailto:info@trpc.io?subject=Sponsoring">
-          info@trpc.io
-        </a>
-      </p>
     </section>
   );
 }

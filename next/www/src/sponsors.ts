@@ -60,8 +60,6 @@ export const topSponsors = sponsors
 
 export const sponsorUrl = 'https://github.com/sponsors/trpc';
 
-export const kattSponsorUrl = 'https://github.com/sponsors/KATT';
-
 /** Sponsoring the trpc organization at the tier GitHub numbers `tierId`. */
 export const sponsorTierUrl = (tierId: number) =>
   `${sponsorUrl}/sponsorships?tier_id=${tierId}`;
