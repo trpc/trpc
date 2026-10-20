@@ -196,10 +196,11 @@ export function createReactClient(opts: {
         return at(client, path)(...args);
     }
   };
+  const dispose = () => store.dispose();
   const proxy = (path: readonly string[]): any =>
     new Proxy((...args: unknown[]) => method(path, args), {
       get(_target, key) {
-        if (path.length === 0 && key === Symbol.dispose) return store.dispose;
+        if (path.length === 0 && key === Symbol.dispose) return dispose;
         if (typeof key !== 'string' || key === 'then') return undefined;
         if (path.length === 0 && key === 'client') return client;
         if (path.length === 0 && key === 'store') return store;

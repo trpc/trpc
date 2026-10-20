@@ -169,9 +169,7 @@ export class TrpcHost implements OnApplicationShutdown {
   constructor(@Inject(TRPC_MODULE_OPTIONS) options: TrpcModuleOptions) {
     const { runtime, ...rest } = options;
     if (runtime && options.layer) {
-      throw new TypeError(
-        'TrpcModule: pass `layer` or `runtime`, not both',
-      );
+      throw new TypeError('TrpcModule: pass `layer` or `runtime`, not both');
     }
     const handler = experimental_createOpenApiHandler({
       ...rest,

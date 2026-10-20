@@ -101,7 +101,7 @@ test('after dispose(), reads without data reject, and the store starts no reques
   expect(db.calls).toEqual(calls);
 });
 
-test("a client made with a scope is disposed when the scope closes, and `using` disposes one", async () => {
+test('a client made with a scope is disposed when the scope closes, and `using` disposes one', async () => {
   using _db = freshDb();
   const scope = Scope.makeUnsafe();
   const scoped = createReactClient({
