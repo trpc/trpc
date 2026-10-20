@@ -84,7 +84,7 @@ const rpcDoc = experimental_generateOpenApi(appRouter, { info, target: 'rpc' });
 
 - ✅ Built and tested, and matches oRPC's handler plus generator.
 - ✅ An app that only serves RPC gets a document with no setup.
-- ❌ Two document shapes to keep correct. The RPC one is wrong today for query inputs (see Details), so A includes that fix.
+- ❌ Two document shapes to keep correct. A contract test calls each handler with requests built only from its document, so a drift fails CI (see Details).
 
 ### B) The REST handler and its document only
 
@@ -128,7 +128,7 @@ const doc = experimental_generateOpenApi(appRouter, { info }); // GET /trpc/post
 
 ## Recommendation
 
-**A.** It's built, it matches oRPC, and RPC-only apps get a document with zero configuration. The bug in Details is a reason to test the RPC target against the RPC handler, not to drop it.
+**A.** It's built, it matches oRPC, and RPC-only apps get a document with zero configuration. The bug in Details was a reason to test the RPC target against the RPC handler, not to drop it; it's fixed and tested now.
 
 ## Blocked until answered
 
@@ -136,4 +136,4 @@ const doc = experimental_generateOpenApi(appRouter, { info }); // GET /trpc/post
 
 ## Details
 
-- Found while writing this, on 2026-10-20: `target: 'rpc'` documents a query's input as one query parameter per property (`GET /trpc/post.byId?id=1`, as the test `target: 'rpc' documents the RPC endpoint` expects). The RPC endpoint reads a single `?input=` parameter with the JSON input ([`wire-protocol.md`](../decisions/wire-protocol.md)). Against `createFetchHandler`, `?id=1` answers `400 Input validation failed`, and `?input={"id":"1"}` answers `200`. A generated client following today's RPC document can't call queries.
+- Found while writing this, on 2026-10-20: `target: 'rpc'` documented a query's input as one query parameter per property (`GET /trpc/post.byId?id=1`), which the RPC endpoint answered with `400 Input validation failed`, and a mutation without an input as a `POST` without a body, which it answered with `415`. Fixed the same day: the document now has one `input` query parameter with the JSON input (`?input={"id":"1"}`), as `httpLink` sends it, and a `{}` body for a mutation without an input ([`openapi-rpc-document-input.md`](../decisions/openapi-rpc-document-input.md), which also says why no test caught it). `packages/trpc/src/openapi/document-contract.test.ts` builds every operation's request from the generated document, for both targets, and checks the handler's answer against the documented response.
