@@ -1,5 +1,3 @@
-import { Effect, Exit } from 'effect';
-import { toAsyncIterable } from '../internal/effects.ts';
 import {
   ERROR_STATUS,
   frameworkError,
@@ -12,13 +10,12 @@ import type { AnySerializer } from '../serializer/index.ts';
 import {
   chainSerializer,
   chainSwitchNames,
-  clientErrorFromCause,
-  firstValue,
-  runLinks,
-  type Operation,
+  runChain,
+  runRequest,
+  toClientError,
   type AtLeastOneLink,
-  type BuiltinCallOptions,
-} from './link.ts';
+} from './chain.ts';
+import type { Operation, BuiltinCallOptions } from './link.ts';
 import type {
   DuplicateSwitchCheck,
   LinksContext,
@@ -168,21 +165,18 @@ export function createUntypedClient(
   return {
     async request(o) {
       const op = makeOperation(o.type, o.path, o.input, o);
-      const exit = await Effect.runPromiseExit(
-        firstValue(runLinks(links, op)),
-        {
-          signal: op.signal,
-        },
-      );
-      if (Exit.isSuccess(exit)) return exit.value;
-      const error = clientErrorFromCause(exit.cause);
-      throw frameworkError(error) ?? error;
+      try {
+        return await runRequest(links, op);
+      } catch (cause) {
+        const error = toClientError(cause);
+        throw frameworkError(error) ?? error;
+      }
     },
     subscribe(o) {
       return {
         [Symbol.asyncIterator]() {
           const op = makeOperation('subscription', o.path, o.input, o);
-          return toAsyncIterable(runLinks(links, op), op.signal)[
+          return (runChain(links, 0, op) as AsyncIterable<unknown>)[
             Symbol.asyncIterator
           ]();
         },

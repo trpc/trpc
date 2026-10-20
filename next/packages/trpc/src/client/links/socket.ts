@@ -30,6 +30,7 @@ import type { FormOfOptions, MaybePromise } from '../../internal/types.ts';
 import { jsonSerializer, type AnySerializer } from '../../serializer/index.ts';
 import type { MessagePortLike } from '../../server/sockets/index.ts';
 import {
+  link,
   withSerializer,
   type BuiltinCallOptions,
   type Operation,
@@ -673,14 +674,19 @@ function makeSocketLink(
       }),
     );
 
-  const link: TrpcLink = ({ op }) =>
+  const socketLink: TrpcLink = link(({ op }) =>
     disposed
       ? Stream.fail(disposedError())
       : op.type === 'subscription'
         ? subscription(op)
-        : single(op);
+        : single(op),
+  );
   return withSerializer(
-    Object.assign(link, { close, dispose, [Symbol.asyncDispose]: dispose }),
+    Object.assign(socketLink, {
+      close,
+      dispose,
+      [Symbol.asyncDispose]: dispose,
+    }),
     serializer,
   );
 }

@@ -19,7 +19,8 @@ import type {
   ProcedureDefOf,
   Unlazy,
 } from '../server/procedures/index.ts';
-import type { AnyLink, DeclContext, TrpcLink } from './link.ts';
+import type { AnyLink, LinkDeclOf } from './chain.ts';
+import type { DeclContext } from './link.ts';
 
 /**
  * An error's `data` as it arrives under a serializer's form, like outputs:
@@ -536,7 +537,7 @@ type UnionToIntersection<U> = (
   : never;
 
 type DeclOf<TLink> =
-  TLink extends TrpcLink<infer D, any>
+  LinkDeclOf<TLink> extends infer D
     ? IsAny<D> extends true
       ? never
       : D
@@ -584,7 +585,7 @@ export type LinksTypes<TLinks extends ReadonlyArray<AnyLink>> = {
 
 /** An untyped link (`TrpcLink<any>`) could make any of them. */
 type LinkCodesOf<TLink> =
-  TLink extends TrpcLink<infer D, any>
+  LinkDeclOf<TLink> extends infer D
     ? IsAny<D> extends true
       ? LinkErrorCode
       : D extends { builtinErrors: infer C extends LinkErrorCode }

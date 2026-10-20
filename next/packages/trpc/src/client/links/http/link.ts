@@ -6,6 +6,7 @@ import {
   type AnySerializer,
 } from '../../../serializer/index.ts';
 import {
+  link,
   withSerializer,
   type BuiltinCallOptions,
   type Operation,
@@ -162,7 +163,7 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
   const subscription = makeSubscriptions(transport, opts);
 
   return withSerializer(
-    (({ op }) => {
+    link(({ op }) => {
       if (op.type === 'subscription') {
         if (opts.subscriptions === false) {
           return Stream.fail(
@@ -179,7 +180,7 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
           ? batched(op)
           : transport.single(op),
       );
-    }) as TrpcLink<any>,
+    }),
     serializer,
   );
 }

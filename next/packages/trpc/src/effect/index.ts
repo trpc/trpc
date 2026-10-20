@@ -17,8 +17,8 @@
  * ```
  * @module
  */
-import type { Effect } from 'effect';
-import { Stream } from 'effect';
+import { Data, Stream, type Effect } from 'effect';
+import { makeErrorsYieldable } from '../internal/error.ts';
 import {
   createRecursiveProxy,
   makeOperation,
@@ -203,6 +203,7 @@ export function createEffectClient<
     UnmetNeedCheck<TLinks>,
 ): EffectClient<RouterOf<TSource>, LinksContext<TLinks>, LinksTypes<TLinks>>;
 export function createEffectClient(opts: TrpcClientOptions): unknown {
+  makeErrorsYieldable(Data.Error);
   chainSwitchNames(opts.links);
   return createRecursiveProxy((path, args) => {
     const method = path.at(-1) as keyof typeof METHODS | undefined;

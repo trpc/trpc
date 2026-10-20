@@ -14,6 +14,7 @@ import {
   setSwitchNames,
   withSerializer,
 } from '../link.ts';
+import type { LinkDeclOf } from '../chain.ts';
 import type { RouterPaths } from '../types.ts';
 import { isByteStreamInput } from './events.ts';
 import { retrying, withResume, type Retries } from './resume.ts';
@@ -28,12 +29,10 @@ export const asArray = (links: Chain): ReadonlyArray<AnyLink> =>
 /** @internal */
 export type ChainDecl<T> =
   T extends ReadonlyArray<infer L>
-    ? L extends TrpcLink<infer D, any>
-      ? Declared<D>
+    ? L extends unknown
+      ? Declared<LinkDeclOf<L>>
       : never
-    : T extends TrpcLink<infer D, any>
-      ? Declared<D>
-      : never;
+    : Declared<LinkDeclOf<T>>;
 
 /** An untyped link declares nothing. */
 type Declared<D> = IsAny<D> extends true ? {} : D;
