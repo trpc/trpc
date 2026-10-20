@@ -46,6 +46,8 @@ interface RenderedMarkdown {
   readonly anchors: ReadonlyArray<string>;
   /** The `h2` and `h3` headings, for the table of contents. */
   readonly headings: ReadonlyArray<DocHeading>;
+  /** The ids of the page's `demo` fences, in order. */
+  readonly demos: ReadonlyArray<string>;
   readonly html: string;
   readonly links: ReadonlyArray<DocLink>;
   /** Each `twoslash` block's `// ^?` types, in order. */
@@ -275,6 +277,32 @@ function remarkPackageInstall() {
         type: 'paragraph',
       };
       parent.children[index] = tabs;
+    });
+  };
+}
+
+/**
+ * A `demo` fence holds a kitchen-sink demo's id (`src/kitchen-sink/demos.ts`)
+ * and becomes the place the page runs it, which `DocPage` fills in the
+ * browser. Its content shows until then.
+ */
+function remarkDemos(demos: Array<string>) {
+  return () => (tree: MdastRoot) => {
+    visit(tree, 'code', (node: Code, index, parent) => {
+      if (node.lang !== 'demo' || !parent || index === undefined) {
+        return;
+      }
+      const id = node.value.trim();
+      if (!/^[a-z][a-z\d-]*$/.test(id)) {
+        throw new Error(
+          `A demo fence holds a demo's id, not ${JSON.stringify(id)}`,
+        );
+      }
+      demos.push(id);
+      parent.children[index] = {
+        type: 'html',
+        value: `<div class="demo-slot not-prose" data-demo="${id}"><p>The demo runs here, in your browser.</p></div>`,
+      };
     });
   };
 }
@@ -792,6 +820,7 @@ function parsing(
   headings: Array<DocHeading>,
   anchors: Array<string>,
   links: Array<DocLink>,
+  demos: Array<string>,
 ) {
   return unified()
     .use(remarkParse)
@@ -799,6 +828,7 @@ function parsing(
     .use(remarkAlerts)
     .use(remarkHeadingIds)
     .use(remarkLinks(options, links))
+    .use(remarkDemos(demos))
     .use(remarkPackageInstall)
     .use(remarkCodeMeta)
     .use(remarkRehype, { allowDangerousHtml: true })
@@ -813,6 +843,7 @@ export const anchorsOf = Effect.fn('anchorsOf')(function* (markdown: string) {
     { basePath: '/docs', slug: 'index', sourceUrl: '' },
     [],
     anchors,
+    [],
     [],
   );
   yield* Effect.tryPromise({
@@ -831,6 +862,7 @@ export const renderMarkdown = Effect.fn('renderMarkdown')(function* (
   const headings: Array<DocHeading> = [];
   const anchors: Array<string> = [];
   const links: Array<DocLink> = [];
+  const demos: Array<string> = [];
   const typeQueries: Array<ReadonlyArray<string>> = [];
   let collapseId = 0;
   // Setting up Twoslash reads a sample app, which a page without blocks
@@ -843,7 +875,7 @@ export const renderMarkdown = Effect.fn('renderMarkdown')(function* (
         options.inlineApp ?? defaultInlineApp,
       )
     : undefined;
-  const processor = parsing(options, headings, anchors, links)
+  const processor = parsing(options, headings, anchors, links, demos)
     .use(rehypeShiki, {
       defaultColor: false,
       // Loading all of Shiki's languages took seconds per process, so
@@ -883,6 +915,7 @@ export const renderMarkdown = Effect.fn('renderMarkdown')(function* (
   }).pipe(Effect.ensuring(blocks?.flush ?? Effect.void));
   const rendered: RenderedMarkdown = {
     anchors,
+    demos,
     headings,
     html: toHtml(tree),
     links,

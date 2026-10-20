@@ -1,4 +1,5 @@
 import type { ExperimentId } from '../experiments.ts';
+import type { DemoId } from '../kitchen-sink/demos.ts';
 
 export interface DocHeading {
   readonly depth: 2 | 3;
@@ -33,6 +34,8 @@ export interface DocMeta {
 }
 
 export interface Doc extends DocMeta {
+  /** The kitchen-sink demo the page runs beside its text, from its `demo` fence. */
+  readonly demo?: DemoId | undefined;
   /** The page, highlighted and compiled at build time. */
   readonly html: string;
 }

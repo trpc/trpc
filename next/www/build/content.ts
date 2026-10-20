@@ -8,6 +8,7 @@ import { parse as parseYaml } from 'yaml';
 import { stripInlineCode } from '../src/content/inline-code.ts';
 import type { Doc, DocMeta, DocSection, Sample } from '../src/content/types.ts';
 import { experimentIds, experiments } from '../src/experiments.ts';
+import { demoIds, demos, isDemoId } from '../src/kitchen-sink/demos.ts';
 import { stripCollapseMarkers } from './collapse.ts';
 import { ContentError, messageOf } from './content-error.ts';
 import {
@@ -390,6 +391,26 @@ export function docsContent(options: ContentOptions): Plugin {
     return undefined;
   });
 
+  /** The page's demo: one at most, since it runs beside the whole page. */
+  const demoOf = Effect.fn('demoOf')(function* (
+    source: Source,
+    ids: ReadonlyArray<string>,
+  ) {
+    const unknown = ids.filter((id) => !isDemoId(id));
+    if (unknown.length > 0) {
+      return yield* new ContentError({
+        message: `${source.file}: ${unknown.join(', ')} isn't a demo; the demos are ${demoIds.join(', ')} (src/kitchen-sink/demos.ts)`,
+      });
+    }
+    if (ids.length > 1) {
+      return yield* new ContentError({
+        message: `${source.file}: a page runs one demo, and this one has ${String(ids.length)}`,
+      });
+    }
+    const [id] = ids;
+    return id !== undefined && isDemoId(id) ? id : undefined;
+  });
+
   const renderDoc = Effect.fn('renderDoc')(function* (source: Source) {
     const result = yield* renderMarkdown(source.markdown, {
       basePath,
@@ -407,9 +428,11 @@ export function docsContent(options: ContentOptions): Plugin {
           }),
       ),
     );
+    const demo = yield* demoOf(source, result.demos);
     const page: Rendered = {
       anchors: result.anchors,
       doc: {
+        demo,
         description: source.frontmatter.description,
         experiment: source.frontmatter.experiment,
         headings: result.headings,
@@ -564,6 +587,14 @@ export function docsContent(options: ContentOptions): Plugin {
           return `\`\`\`${lang}${`${before.trimEnd()}${after}`.trimEnd()}\n${removeTwoslashNotations(withTypes(code, queries))}\`\`\``;
         },
       )
+      .replaceAll(/^```demo\n[\s\S]*?^```$/gm, () => {
+        // `renderDoc` checked the fence: it's the page's one demo.
+        const demo =
+          page.doc.demo === undefined ? undefined : demos[page.doc.demo];
+        return demo
+          ? `The web page runs this demo, editable, beside the text: [${demo.title}](${options.sourceUrl}/www/samples/${demo.sample}/src).`
+          : '';
+      })
       .replaceAll(/\]\(([^)\s]+)\)/g, (link, url: string) => {
         const resolved = resolveLink(source.slug, url);
         if (resolved.kind === 'doc') {
