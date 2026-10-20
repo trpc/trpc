@@ -1,3 +1,5 @@
+'use client';
+
 import type { QueryClient } from '@tanstack/react-query';
 import type { TRPCClient } from '@trpc/client';
 import type { AnyTRPCRouter } from '@trpc/server';
