@@ -281,7 +281,7 @@ test('serve() serves a makeFetchHandler(), whose services come from the layers u
     await using server = await listen(live);
     const client = createTrpcClient({
       router: routerType<typeof greeter>(),
-      links: [httpLink({ url: server.url })],
+      links: [httpStreamLink({ url: server.url })],
     });
     expect(await client.greet.query()).toBe('hi');
     expect(events).toEqual([]);
