@@ -231,6 +231,24 @@ test('paths outside the endpoint are 404, one error for a whole batch', async ()
   await handler.dispose();
 });
 
+test('a path with malformed escapes is 400, one error for a whole batch', async () => {
+  const handler = make();
+  const single = await call(handler, '/trpc/%E0%A4%A');
+  expect(single.status).toBe(400);
+  expect(await single.json()).toMatchObject({
+    error: {
+      message: 'Malformed path: /trpc/%E0%A4%A',
+      data: { code: 'BAD_REQUEST' },
+    },
+  });
+  const batch = await call(handler, '/trpc/greet,%E0%A4%A?batch=1');
+  expect(batch.status).toBe(400);
+  expect(await batch.json()).toMatchObject({
+    error: { data: { code: 'BAD_REQUEST' } },
+  });
+  await handler.dispose();
+});
+
 test('a settled promise that rejects is the call’s error, defined or masked', async () => {
   const handler = make();
   const client = createTRPCUntypedClient<any>({

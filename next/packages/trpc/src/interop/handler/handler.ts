@@ -906,10 +906,9 @@ export function createV11Handler<
     }
     const url = new URL(request.url, 'http://localhost');
     const isBatch = url.searchParams.get('batch') === '1';
-    const rest = url.pathname.startsWith(`${endpoint}/`)
-      ? decodeURIComponent(url.pathname.slice(endpoint.length + 1))
+    const encoded = url.pathname.startsWith(`${endpoint}/`)
+      ? url.pathname.slice(endpoint.length + 1)
       : undefined;
-    const paths = isBatch ? (rest ?? '').split(',') : [rest ?? ''];
     // A request-level error is one object even for a batch, as v11 sends it.
     const failAll = (err: AnyTrpcError) => {
       report(err, request);
@@ -921,9 +920,18 @@ export function createV11Handler<
       );
     };
     return yield* Effect.gen(function* () {
-      if (rest === undefined) {
+      if (encoded === undefined) {
         return yield* fail('NOT_FOUND', `Not found: ${url.pathname}`);
       }
+      const rest = yield* Effect.try({
+        try: () => decodeURIComponent(encoded),
+        catch: (cause) =>
+          new TrpcError.BadRequest({
+            message: `Malformed path: ${url.pathname}`,
+            cause,
+          }),
+      });
+      const paths = isBatch ? rest.split(',') : [rest];
       const type = request.headers['content-type'];
       if (
         request.method !== 'GET' &&
