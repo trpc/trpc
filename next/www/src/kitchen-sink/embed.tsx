@@ -15,6 +15,7 @@ import type { DemoId } from './demos.ts';
 /** Each demo's definition, its files bundled as text: loaded with the frame. */
 const definitions: Record<DemoId, () => Promise<{ default: DemoDefinition }>> =
   {
+    files: () => import('./files.ts'),
     forms: () => import('./forms.ts'),
     optimistic: () => import('./optimistic.ts'),
   };

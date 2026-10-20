@@ -55,6 +55,7 @@
     "@fontsource/jetbrains-mono": "5.3.0",
     "@resvg/resvg-js": "2.6.2",
     "@samples/docs": "workspace:*",
+    "@samples/kitchen-sink-files": "workspace:*",
     "@samples/kitchen-sink-forms": "workspace:*",
     "@samples/kitchen-sink-optimistic": "workspace:*",
     "@shikijs/rehype": "4.5.0",

@@ -76,6 +76,113 @@ function pretty(text: string) {
   }
 }
 
+/** Whether a body of `type` is bytes to describe, not text to show. */
+function isBinary(type: string | null) {
+  return (
+    type !== null &&
+    type !== '' &&
+    !/^text\/|json|xml|javascript|x-www-form-urlencoded/i.test(type)
+  );
+}
+
+function sizeOf(bytes: number) {
+  return bytes < 1024
+    ? `${String(bytes)} B`
+    : `${(bytes / 1024).toFixed(1)} kB`;
+}
+
+/** Bytes as the requests panel shows them: what, how many, how they start. */
+function describeBytes(opts: {
+  readonly head: Uint8Array;
+  readonly name?: string | undefined;
+  readonly size: number;
+  readonly type: string;
+}) {
+  const hex = Array.from(opts.head, (byte) =>
+    byte.toString(16).padStart(2, '0'),
+  ).join(' ');
+  return [
+    `(${[opts.name, opts.type || 'no type', sizeOf(opts.size)].filter(Boolean).join(', ')})`,
+    `${hex}${opts.size > opts.head.length ? ' …' : ''}`,
+  ].join('\n');
+}
+
+/** How many bytes of a binary body the panel shows. */
+const headBytes = 16;
+
+async function describeBlob(blob: Blob) {
+  return describeBytes({
+    head: new Uint8Array(await blob.slice(0, headBytes).arrayBuffer()),
+    name: blob instanceof File ? blob.name : undefined,
+    size: blob.size,
+    type: blob.type,
+  });
+}
+
+/**
+ * A request's body for the panel: JSON pretty-printed, a multipart body
+ * (files in an input) a part each, and bytes described.
+ */
+async function requestBody(request: Request) {
+  const type = request.headers.get('content-type');
+  if (type?.startsWith('multipart/form-data')) {
+    const parts = await Promise.all(
+      Array.from(await request.formData(), async ([name, value]) =>
+        typeof value === 'string'
+          ? `--- ${name}\n${pretty(value)}`
+          : `--- ${name}\n${await describeBlob(value)}`,
+      ),
+    );
+    return parts.join('\n');
+  }
+  return isBinary(type)
+    ? describeBlob(await request.blob())
+    : pretty(await request.text());
+}
+
+/**
+ * A response's body for the panel as it arrives: text as it decodes,
+ * pretty-printed once whole, and bytes (a `File` output) described.
+ */
+function responseBody(headers: Headers) {
+  const type = headers.get('content-type');
+  if (!isBinary(type)) {
+    const decoder = new TextDecoder();
+    let text = '';
+    return {
+      add: (chunk: Uint8Array) =>
+        (text += decoder.decode(chunk, { stream: true })),
+      end: () => pretty((text += decoder.decode())),
+      get shown() {
+        return text;
+      },
+    };
+  }
+  // `content-disposition: attachment; filename="ada.png"`, for a file.
+  const name = /filename="?([^";]+)/.exec(
+    headers.get('content-disposition') ?? '',
+  )?.[1];
+  let head = new Uint8Array(0);
+  let size = 0;
+  const shown = () => describeBytes({ head, name, size, type: type ?? '' });
+  return {
+    add: (chunk: Uint8Array) => {
+      if (head.length < headBytes) {
+        head = new Uint8Array([
+          ...head,
+          ...chunk.subarray(0, headBytes - head.length),
+        ]);
+      }
+      size += chunk.length;
+      return shown();
+    },
+    end: shown,
+    get shown() {
+      return shown();
+    },
+  };
+}
+
 function wait(ms: number, signal: AbortSignal | null | undefined) {
   return new Promise<void>((resolve, reject) => {
     const abort = () => {
@@ -131,8 +238,7 @@ export function createNetwork(server: DemoServer): DemoNetwork {
       update(id, { endedAt: Date.now(), outcome: 'responded', response: '' });
       return response;
     }
-    const decoder = new TextDecoder();
-    let text = '';
+    const log = responseBody(response.headers);
     let ended = false;
     const end = (change: Partial<DemoRequest>) => {
       if (!ended) {
@@ -145,7 +251,7 @@ export function createNetwork(server: DemoServer): DemoNetwork {
     const drop = () => {
       end({
         outcome: 'failed',
-        response: `${text}\n(The connection dropped, simulated.)`,
+        response: `${log.shown}\n(The connection dropped, simulated.)`,
       });
       // What a fetch body fails with when the connection drops.
       controller?.error(new TypeError('network error'));
@@ -166,13 +272,11 @@ export function createNetwork(server: DemoServer): DemoNetwork {
             return;
           }
           if (chunk.done) {
-            text += decoder.decode();
-            end({ outcome: 'responded', response: pretty(text) });
+            end({ outcome: 'responded', response: log.end() });
             c.close();
             return;
           }
-          text += decoder.decode(chunk.value, { stream: true });
-          update(id, { response: text });
+          update(id, { response: log.add(chunk.value) });
           c.enqueue(chunk.value);
         } catch (cause) {
           end({ outcome: 'aborted' });
@@ -205,7 +309,7 @@ export function createNetwork(server: DemoServer): DemoNetwork {
     const body =
       request.method === 'GET' || request.method === 'HEAD'
         ? undefined
-        : pretty(await request.clone().text());
+        : await requestBody(request.clone());
     requests = [
       ...requests.slice(-49),
       {

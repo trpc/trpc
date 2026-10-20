@@ -2228,6 +2228,9 @@ importers:
       '@samples/docs':
         specifier: workspace:*
         version: link:samples/docs
+      '@samples/kitchen-sink-files':
+        specifier: workspace:*
+        version: link:samples/kitchen-sink-files
       '@samples/kitchen-sink-forms':
         specifier: workspace:*
         version: link:samples/kitchen-sink-forms
@@ -2585,6 +2588,43 @@ importers:
       '@types/node':
         specifier: 26.6.4
         version: 26.6.4
+      typescript:
+        specifier: 7.1.0-beta
+        version: 7.1.0-beta
+
+  www/samples/kitchen-sink-files:
+    dependencies:
+      '@shared/ui':
+        specifier: workspace:*
+        version: link:../../../shared/ui
+      '@tanstack/react-query':
+        specifier: 5.104.1
+        version: 5.104.1(react@19.3.0)
+      '@tanstack/react-router':
+        specifier: 1.170.42
+        version: 1.170.42(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+      '@trpc12/tanstack-react-query':
+        specifier: workspace:*
+        version: link:../../../packages/tanstack-react-query
+      '@trpc12/trpc':
+        specifier: workspace:*
+        version: link:../../../packages/trpc
+      effect:
+        specifier: 4.0.2
+        version: 4.0.2
+      lucide-react:
+        specifier: 1.55.0
+        version: 1.55.0(@types/react@19.3.0)(react@19.3.0)
+      react:
+        specifier: 19.3.0
+        version: 19.3.0
+      zod:
+        specifier: 4.6.5
+        version: 4.6.5
+    devDependencies:
+      '@types/react':
+        specifier: 19.3.0
+        version: 19.3.0
       typescript:
         specifier: 7.1.0-beta
         version: 7.1.0-beta

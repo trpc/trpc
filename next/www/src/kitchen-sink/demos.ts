@@ -5,6 +5,10 @@
  * page's `sample` fences. Pure, so the build reads it too.
  */
 export const demos = {
+  files: {
+    sample: 'kitchen-sink-files',
+    title: 'Upload an avatar',
+  },
   forms: {
     sample: 'kitchen-sink-forms',
     title: 'Edit a profile',

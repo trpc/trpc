@@ -17,6 +17,7 @@ export const packages: Packages = {
   '@tanstack/react-router': () => import('@tanstack/react-router'),
   '@trpc12/tanstack-react-query': () => import('@trpc12/tanstack-react-query'),
   '@trpc12/trpc/client': () => import('@trpc12/trpc/client'),
+  '@trpc12/trpc/serializer': () => import('@trpc12/trpc/serializer'),
   '@trpc12/trpc/server': () => import('@trpc12/trpc/server'),
   effect: () => import('effect'),
   'lucide-react': () => import('lucide-react'),

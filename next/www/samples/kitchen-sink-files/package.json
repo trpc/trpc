@@ -1,0 +1,24 @@
+{
+  "name": "@samples/kitchen-sink-files",
+  "private": true,
+  "description": "The kitchen sink's files demo: it runs live on the site, editable, and its docs page shows regions of these files",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc"
+  },
+  "dependencies": {
+    "@shared/ui": "workspace:*",
+    "@tanstack/react-query": "5.104.1",
+    "@tanstack/react-router": "1.170.42",
+    "@trpc12/tanstack-react-query": "workspace:*",
+    "@trpc12/trpc": "workspace:*",
+    "effect": "4.0.2",
+    "lucide-react": "1.55.0",
+    "react": "19.3.0",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@types/react": "19.3.0",
+    "typescript": "7.1.0-beta"
+  }
+}

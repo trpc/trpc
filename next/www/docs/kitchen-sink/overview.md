@@ -26,3 +26,4 @@ Each demo is an app in `www/samples/` that typechecks with the rest of the repo,
 
 - [Forms](./forms.md): a react-hook-form form whose fields are checked by the same zod schema in the browser and on the server, with the server's errors put on the fields they're about.
 - [Optimistic updates](./optimistic.md): a todo list that changes before the server answers, and rolls back through the typed query key when the call fails.
+- [Files](./files.md): an avatar `File` inside a typed input, sent as multipart and checked on the server, and a `File` output that comes back as the response body.
