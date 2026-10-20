@@ -14,8 +14,11 @@ links:
     label: parsing and renderMarkdown (www/build/markdown.ts)
     url: ../../www/build/markdown.ts
   - kind: code
-    label: Twoslash cache dir (www/vite.config.ts)
-    url: ../../www/vite.config.ts
+    label: Twoslash cache dir (www/build/paths.ts)
+    url: ../../www/build/paths.ts
+  - kind: code
+    label: dev renders in-process, builds in the pool (www/build/page-renderer.ts)
+    url: ../../www/build/page-renderer.ts
   - kind: code
     label: docs:dev in the README
     url: ../../README.md
