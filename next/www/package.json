@@ -58,6 +58,7 @@
     "@samples/kitchen-sink-files": "workspace:*",
     "@samples/kitchen-sink-forms": "workspace:*",
     "@samples/kitchen-sink-optimistic": "workspace:*",
+    "@samples/kitchen-sink-realtime": "workspace:*",
     "@shikijs/rehype": "4.5.0",
     "@shikijs/twoslash": "4.5.0",
     "@tailwindcss/typography": "0.5.20",

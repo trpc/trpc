@@ -17,6 +17,10 @@ export const demos = {
     sample: 'kitchen-sink-optimistic',
     title: 'Todos, saved optimistically',
   },
+  realtime: {
+    sample: 'kitchen-sink-realtime',
+    title: 'Chat with who’s online',
+  },
 } as const satisfies Record<
   string,
   { readonly sample: string; readonly title: string }

@@ -18,6 +18,7 @@ const definitions: Record<DemoId, () => Promise<{ default: DemoDefinition }>> =
     files: () => import('./files.ts'),
     forms: () => import('./forms.ts'),
     optimistic: () => import('./optimistic.ts'),
+    realtime: () => import('./realtime.ts'),
   };
 
 interface FrameProps {
