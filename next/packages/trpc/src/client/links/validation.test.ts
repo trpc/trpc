@@ -1,4 +1,4 @@
-import { Effect, Schema } from 'effect';
+import { Effect, Predicate, Schema } from 'effect';
 import {
   createSafeClient,
   createTrpcClient,
@@ -164,7 +164,8 @@ test("output: 'json' decodes experimental_openApiLink's plain JSON into the sche
   await openapi.dispose();
 });
 
-class PostGone extends TrpcError.Tagged('POST_GONE', {
+class PostGone extends TrpcError.Tagged('PostGone', {
+  code: 'POST_GONE',
   status: 410,
   data: Schema.Struct({ id: Schema.String, deletedAt: Schema.Date }),
 }) {}
@@ -202,6 +203,7 @@ test("output: 'json' decodes declared errors' data with their schemas, and types
   const [, err] = await safe(client.post.byId.query({ id: '1' }));
   if (!err) throw new Error('expected an error');
   expect(err).toMatchObject({ code: 'POST_GONE', defined: true });
+  expect(err).toSatisfy(Predicate.isTagged('PostGone'));
   expect(err).not.toBeInstanceOf(PostGone);
   const deletedAt = matchError(err, {
     NETWORK_ERROR: () => undefined,
@@ -269,9 +271,11 @@ test("a declared error whose data fails its schema arrives undeclared, as oRPC's
       post: {
         byId: p.procedure.input(z.object({ id: z.string() })).query((opts) =>
           opts.input.id === 'gone'
-            ? error({
+            ? new TrpcError({
                 code: 'POST_GONE',
+                tag: 'PostGone',
                 data: { id: 'gone', deletedAt: 'not a date' },
+                defined: true,
               })
             : error({ code: 'NOT_FOUND', data: { id: 404 } }),
         ),
@@ -293,6 +297,7 @@ test("a declared error whose data fails its schema arrives undeclared, as oRPC's
     defined: false,
     data: { id: 'gone', deletedAt: 'not a date' },
   });
+  expect(custom).toSatisfy(Predicate.isTagged('POST_GONE'));
   if (!custom) throw new Error('expected an error');
   expect(
     matchError(custom, {

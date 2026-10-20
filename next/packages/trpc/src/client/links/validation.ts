@@ -4,7 +4,6 @@ import {
   statusOf,
   toUntypedError,
   TrpcError,
-  withDefined,
   withStatusHint,
 } from '../../internal/error.ts';
 import type {
@@ -92,8 +91,8 @@ const receiving = (schema: AnySchema, json: boolean): AnySchema =>
 /**
  * `err` with its `data` decoded by its declared code's schema. A declared
  * error whose `data` doesn't decode becomes undeclared, as a server that
- * didn't declare it would send it: a custom code keeps its `data` untyped,
- * a built-in code loses it.
+ * didn't declare it would send it: tagged with its code's default, and a
+ * custom code keeps its `data` untyped while a built-in code loses it.
  */
 const declaredError = (
   errors: ErrorMap,
@@ -106,7 +105,20 @@ const declaredError = (
   if (!err.defined || !schema) return Effect.fail(err);
   return validate(receiving(schema, json), err.data, () => err).pipe(
     Effect.matchEffect({
-      onFailure: () => Effect.fail(toUntypedError(withDefined(err, false))),
+      onFailure: () =>
+        Effect.fail(
+          toUntypedError(
+            withStatusHint(
+              new TrpcError({
+                code: err.code,
+                message: err.message,
+                data: err.data,
+                cause: err.cause,
+              }),
+              statusOf(err),
+            ),
+          ),
+        ),
       onSuccess: (data) =>
         Effect.fail(
           data === err.data
@@ -114,6 +126,7 @@ const declaredError = (
             : withStatusHint(
                 new TrpcError({
                   code: err.code,
+                  tag: err._tag,
                   message: err.message,
                   data,
                   defined: true,
