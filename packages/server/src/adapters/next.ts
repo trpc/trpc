@@ -52,7 +52,7 @@ export function createNextApiHandler<TRouter extends AnyRouter>(
       });
 
       await nodeHTTPRequestHandler({
-        ...(opts as any),
+        ...opts,
         req,
         res,
         path,
