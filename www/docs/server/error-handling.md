@@ -69,7 +69,7 @@ const t = initTRPC.create({
 });
 ```
 
-Errors you throw yourself with a `TRPCError`, such as `NOT_FOUND` or `UNAUTHORIZED`, keep their message, so write messages that are safe to show to users.
+The formatter above keeps the message of every other code. A `TRPCError` you throw yourself with a code like `NOT_FOUND` or `UNAUTHORIZED` is shown as written, so write messages that are safe to show to users. One thrown with `INTERNAL_SERVER_ERROR` is replaced too.
 
 :::note
 
