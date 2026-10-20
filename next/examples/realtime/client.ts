@@ -4,7 +4,7 @@
  * server restart and after a server drops an idle socket.
  *
  * `node --experimental-eventsource client.ts [url]` calls one running
- * server (Node 24 has `EventSource` behind that flag).
+ * server (Node 24 and 26 keep `EventSource` behind that flag).
  */
 import assert from 'node:assert/strict';
 import {
