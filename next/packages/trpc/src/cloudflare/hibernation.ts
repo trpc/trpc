@@ -19,7 +19,7 @@ import {
   handlerContext,
   withMiddleware,
 } from '../server/handler/index.ts';
-import { resolveProcedureEffect } from '../server/procedures/index.ts';
+import { resolveProcedure } from '../server/procedures/index.ts';
 import {
   connectionReceiver,
   frameMessage,
@@ -392,7 +392,7 @@ export function experimental_createHibernatingWebSockets<TPlatform>(
       return toWireError(core.publicError(err));
     };
     const exit = yield* Effect.exit(
-      Effect.flatMap(resolveProcedureEffect(core.router, sub.p), (procedure) =>
+      Effect.flatMap(resolveProcedure(core.router, sub.p), (procedure) =>
         procedure
           ? emitEvents(
               procedureEvents(procedure, Stream.make(event)),

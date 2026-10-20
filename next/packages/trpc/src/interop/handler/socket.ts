@@ -8,7 +8,7 @@ import {
   createResponseHandle,
   normalizeCause,
 } from '../../server/execution/index.ts';
-import { resolveProcedureEffect } from '../../server/procedures/index.ts';
+import { resolveProcedure } from '../../server/procedures/index.ts';
 import {
   runSocket,
   socketFrames,
@@ -117,7 +117,7 @@ function v11Session(
     const callParams = connectionParams;
     return Effect.flatMap(interruptSignal(), (interrupt) =>
       Effect.gen(function* () {
-        const procedure = yield* resolveProcedureEffect(core.router, path);
+        const procedure = yield* resolveProcedure(core.router, path);
         // v11's sockets answer a missing path and a wrong type alike.
         if (!procedure || procedure['~trpc'].type !== method) {
           return yield* Effect.fail(

@@ -2,10 +2,7 @@ import { Effect, type Tracer } from 'effect';
 import type { HttpServerRequest, HttpServerResponse } from 'effect/http';
 import { statusOf, type AnyTrpcError } from '../../internal/error.ts';
 import type { BatchCall, BatchLine } from '../../internal/protocol.ts';
-import {
-  resolveProcedureEffect,
-  type AnyProcedure,
-} from '../procedures/index.ts';
+import { resolveProcedure, type AnyProcedure } from '../procedures/index.ts';
 import { strictestCacheControl } from './cache-control.ts';
 import { execute, makeContext, type CallResult } from './call.ts';
 import { protocolError, wire, type HttpHandler } from './http-handler.ts';
@@ -114,7 +111,7 @@ export const batched: (
       (call) => {
         const path = typeof call?.path === 'string' ? call.path : '';
         return Effect.map(
-          resolveProcedureEffect(handler.router, path),
+          resolveProcedure(handler.router, path),
           (procedure): Resolved => ({ path, input: call?.input, procedure }),
         );
       },

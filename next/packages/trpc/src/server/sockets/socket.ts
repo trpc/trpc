@@ -40,7 +40,7 @@ import {
   unexpectedError,
 } from '../execution/index.ts';
 import type { HandlerCore } from '../handler/index.ts';
-import { resolveProcedureEffect, type AnyRouter } from '../procedures/index.ts';
+import { resolveProcedure, type AnyRouter } from '../procedures/index.ts';
 import type { DrainConnection, SocketDrains } from './drain.ts';
 import { runSocket, socketFrames } from './socket-session.ts';
 import { interruptSignal } from '../../internal/effects.ts';
@@ -372,7 +372,7 @@ export const connectionReceiver: (
       let parked = false;
       return Effect.flatMap(interruptSignal(), (interrupt) =>
         Effect.gen(function* () {
-          const procedure = yield* resolveProcedureEffect(core.router, path);
+          const procedure = yield* resolveProcedure(core.router, path);
           const kind = procedure?.['~trpc'].type;
           type = kind;
           if (!procedure || !kind) {

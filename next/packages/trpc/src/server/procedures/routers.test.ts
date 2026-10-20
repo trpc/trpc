@@ -23,7 +23,7 @@ import {
   type inferRouterInputs,
 } from '@trpc12/trpc/server';
 import { createTestServer } from '../../fixtures/server.ts';
-import { loadRouterEffect, resolveProcedureEffect } from './router.ts';
+import { loadRouterEffect } from './router.ts';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
 
@@ -300,7 +300,7 @@ test('lazy() takes a module with a default export or the router itself', async (
   expect(getProcedure(loaded, 'direct.a')).toBe(users);
 });
 
-test('concurrent first calls share one load; then resolveProcedure is synchronous', async () => {
+test('concurrent first calls share one load; then resolveProcedure needs no wait', async () => {
   let loads = 0;
   const router: AnyRouter = {
     nested: {
@@ -311,21 +311,23 @@ test('concurrent first calls share one load; then resolveProcedure is synchronou
       }),
     },
   };
-  const first = resolveProcedure(router, 'nested.deep.inner.a');
-  expect(first).toBeInstanceOf(Promise);
   const [a, b, all] = await Promise.all([
-    first,
-    resolveProcedure(router, 'nested.deep.inner.a'),
+    Effect.runPromise(resolveProcedure(router, 'nested.deep.inner.a')),
+    Effect.runPromise(resolveProcedure(router, 'nested.deep.inner.a')),
     loadRouter(router),
   ]);
   expect([a, b]).toEqual([users, users]);
   expect(all).toBe(router);
   expect(loads).toBe(1);
-  expect(resolveProcedure(router, 'nested.deep.inner.a')).toBe(users);
-  expect(resolveProcedure(router, 'nested.deep.missing')).toBeUndefined();
+  expect(Effect.runSync(resolveProcedure(router, 'nested.deep.inner.a'))).toBe(
+    users,
+  );
+  expect(
+    Effect.runSync(resolveProcedure(router, 'nested.deep.missing')),
+  ).toBeUndefined();
 });
 
-test("a failed load stays failed and rejects with the loader's error", async () => {
+test("a failed load stays failed, a defect with the loader's error", async () => {
   let loads = 0;
   const failure = new Error('chunk failed to load');
   const router: AnyRouter = {
@@ -334,18 +336,17 @@ test("a failed load stays failed and rejects with the loader's error", async () 
       throw failure;
     }),
   };
-  await expect(resolveProcedure(router, 'broken.a')).rejects.toBe(failure);
+  await expect(
+    Effect.runPromise(resolveProcedure(router, 'broken.a')),
+  ).rejects.toBe(failure);
   await expect(loadRouter(router)).rejects.toBe(failure);
   expect(loads).toBe(1);
 });
 
-test('resolveProcedureEffect and loadRouterEffect load lazy subtrees as Effects', async () => {
+test('loadRouterEffect loads every lazy subtree as an Effect', async () => {
   const router: AnyRouter = { admin: lazy(async () => ({ users })) };
   expect(
-    await Effect.runPromise(resolveProcedureEffect(router, 'admin.users')),
-  ).toBe(users);
-  expect(
-    await Effect.runPromise(resolveProcedureEffect(router, 'admin.nope')),
+    await Effect.runPromise(resolveProcedure(router, 'admin.nope')),
   ).toBeUndefined();
   expect(await Effect.runPromise(loadRouterEffect(router))).toBe(router);
 });
@@ -361,9 +362,9 @@ test('a router key no client can call is an error when it is served', async () =
     'Router key "post.byId": "." separates path segments',
   );
   const router: AnyRouter = { admin: lazy(async () => withKey('then', q)) };
-  await expect(resolveProcedure(router, 'admin.then')).rejects.toThrow(
-    'Router key "then"',
-  );
+  await expect(
+    Effect.runPromise(resolveProcedure(router, 'admin.then')),
+  ).rejects.toThrow('Router key "then"');
   expect(() =>
     createFetchHandler({
       router: { call: q, apply: q, nested: { thenable: q } },

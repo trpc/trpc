@@ -338,21 +338,20 @@ function walk(node: unknown, segments: ReadonlyArray<string>): unknown {
 
 /**
  * Finds the procedure at a dotted path, loading lazy subtrees on the way.
- * Synchronous when nothing needs loading.
+ * It succeeds without waiting when nothing needs loading; a subtree that
+ * fails to load is a defect, the loader's error. For a plain lookup of
+ * what has loaded, use {@link getProcedure}.
+ *
+ * @example
+ * ```ts
+ * Effect.flatMap(resolveProcedure(router, path), (procedure) =>
+ *   procedure ? callProcedure({ procedure, path, ctx, input, signal }) : Effect.fail(notFound),
+ * );
+ * ```
  * @since 0.1.0
  * @stability stable
  */
-export function resolveProcedure(
-  router: AnyRouter,
-  path: string,
-): AnyProcedure | undefined | Promise<AnyProcedure | undefined> {
-  const found = walk(router, path.split('.'));
-  if (found instanceof Pending) return Effect.runPromise(resolveFrom(found));
-  return isProcedure(found) ? found : undefined;
-}
-
-/** {@link resolveProcedure} as an Effect. @internal */
-export const resolveProcedureEffect = (
+export const resolveProcedure = (
   router: AnyRouter,
   path: string,
 ): Effect.Effect<AnyProcedure | undefined> =>

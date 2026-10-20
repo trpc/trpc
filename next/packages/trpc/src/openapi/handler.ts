@@ -55,7 +55,7 @@ import {
 } from '../server/execution/index.ts';
 import {
   type AnyProcedure,
-  resolveProcedureEffect,
+  resolveProcedure,
   type AnyRouter,
   type inferRouterContext,
   type inferRouterServices,
@@ -331,7 +331,7 @@ export function experimental_createOpenApiHandler<
     if (opts.contract) {
       list = Object.entries(opts.contract.procedures).map(([path, p]) =>
         makeEntry(path, p.type, p.route, p.input, () =>
-          resolveProcedureEffect(opts.router, path),
+          resolveProcedure(opts.router, path),
         ),
       );
     } else {

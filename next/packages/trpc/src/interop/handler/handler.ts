@@ -63,7 +63,7 @@ import {
 } from '../../server/execution/index.ts';
 import {
   type AnyProcedure,
-  resolveProcedureEffect,
+  resolveProcedure,
   type AnyRouter,
   type inferRouterContext,
   type inferRouterServices,
@@ -949,7 +949,7 @@ export function createV11Handler<
       }
       const procedures = yield* Effect.forEach(
         paths,
-        (path) => resolveProcedureEffect(opts.router, path),
+        (path) => resolveProcedure(opts.router, path),
         { concurrency: 'unbounded' },
       );
       const calls: Call[] = paths.map((path, i) => ({

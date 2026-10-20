@@ -22,7 +22,7 @@ import {
 } from '../../server/execution/index.ts';
 import type { RuntimeOption } from '../../server/handler/index.ts';
 import {
-  resolveProcedureEffect,
+  resolveProcedure,
   type AnyRouter,
   type inferRouterContext,
   type inferRouterServices,
@@ -119,7 +119,7 @@ export function localLink<TRouter extends AnyRouter>(
     link(({ op }) =>
       Stream.unwrap(
         Effect.gen(function* () {
-          const procedure = yield* resolveProcedureEffect(opts.router, op.path);
+          const procedure = yield* resolveProcedure(opts.router, op.path);
           if (!procedure) {
             return yield* Effect.fail(
               new TrpcError({
