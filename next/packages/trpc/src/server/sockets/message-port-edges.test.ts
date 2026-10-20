@@ -6,7 +6,7 @@ import {
   safe,
 } from '@trpc12/trpc/client';
 import { createFetchHandler, error, initTrpc } from '@trpc12/trpc/server';
-import { expect, test } from 'vite-plus/test';
+import { expect, test, vi } from 'vite-plus/test';
 import { z } from 'zod';
 
 const t = initTrpc<{ ctx: { user: string } }>();
@@ -219,11 +219,11 @@ test('the client ignores stray messages and fails calls on connection errors', a
       .at(-1)!.id;
   try {
     const slow = safe(client.slow.query());
-    await sleep(5);
+    const slowId = await vi.waitFor(() => idOf('slow'), { interval: 1 });
     port.inject(5);
     port.inject(null);
     port.inject({ id: null, type: 'result', body: { json: 1 } });
-    port.inject({ id: idOf('slow'), type: 'weird' });
+    port.inject({ id: slowId, type: 'weird' });
     port.inject({
       id: null,
       type: 'error',
