@@ -89,6 +89,7 @@ updateTag(revalidationTag(trpc.post.pathKey())); // every post.* call
 revalidateTag(revalidationTag(trpc.post.pathKey()), 'max');
 ```
 
+- Next keys a `'use cache'` result by the function's arguments, not by the request, so one cached result serves every user. Cache calls whose result is the same for everyone, or make what the result depends on (the user's id, say) an argument of the cached function and pass it on in the input, rather than reading it from `ctx`.
 - `updateTag` only works in Server Actions. A write that goes through the tRPC route handler doesn't revalidate anything by itself, so cached pages keep the old data until something revalidates their tags.
 - An input whose tag would be longer than Next's 256 characters gets no tag of its own; it revalidates with its path.
 
