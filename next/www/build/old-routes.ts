@@ -161,6 +161,8 @@ export const retiredPages: Readonly<Record<string, string>> = {
   '/docs/v10/landing-intro/Step3': '/',
   '/img/favicon.ico': '/favicon.ico',
   '/img/logo.svg': '/logo.svg',
+  // Its "Pro" plan is the Silver partner tier now.
+  '/pricing': '/sponsor',
 };
 
 /**
@@ -174,7 +176,6 @@ export const onTrpcIo = {
     '/llms-v9.txt',
     '/media',
     '/opensearch.xml',
-    '/pricing',
     '/search',
   ],
   prefixes: ['/docs/typedoc', '/img', '/logos'],
