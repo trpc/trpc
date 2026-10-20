@@ -12,7 +12,7 @@
     "@effect/platform-node": "4.0.2",
     "@effect/sql-pg": "4.0.2",
     "@tooling/tsconfig": "workspace:*",
-    "@types/node": "^24.0.0",
+    "@types/node": "^26.0.0",
     "ai": "7.0.138",
     "better-auth": "1.7.7",
     "effect": "4.0.2",

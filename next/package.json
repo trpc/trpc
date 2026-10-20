@@ -34,6 +34,7 @@
   },
   "devDependencies": {
     "@changesets/cli": "3.0.3",
+    "@types/node": "^26.0.0",
     "@vitest/coverage-v8": "5.0.3"
   },
   "engines": {

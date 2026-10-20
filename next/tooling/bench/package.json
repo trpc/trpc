@@ -19,7 +19,7 @@
     "@trpc/client": "11.19.0",
     "@trpc/server": "11.19.0",
     "@types/autocannon": "7.12.7",
-    "@types/node": "^24.0.0",
+    "@types/node": "^26.0.0",
     "autocannon": "8.0.0",
     "rolldown": "1.2.13",
     "superjson": "2.2.6",

@@ -21,7 +21,7 @@
     "@trpc/server": "11.19.0",
     "@trpc12/experimental-tanstack-db": "workspace:*",
     "@trpc12/tanstack-query": "workspace:*",
-    "@types/node": "^24.0.0",
+    "@types/node": "^26.0.0",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.2.3",
     "danson": "0.13.1",

@@ -32,7 +32,7 @@
     "@tanstack/db": "0.15.0",
     "@tooling/tsconfig": "workspace:*",
     "@trpc12/trpc": "workspace:*",
-    "@types/node": "^24.0.0",
+    "@types/node": "^26.0.0",
     "effect": "4.0.2",
     "typescript": "^7.0.2",
     "vite-plus": "1.1.0",

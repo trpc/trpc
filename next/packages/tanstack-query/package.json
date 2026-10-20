@@ -34,7 +34,7 @@
     "@tanstack/query-db-collection": "1.4.5",
     "@tooling/tsconfig": "workspace:*",
     "@trpc12/trpc": "workspace:*",
-    "@types/node": "^24.0.0",
+    "@types/node": "^26.0.0",
     "effect": "4.0.2",
     "superjson": "2.2.6",
     "typescript": "^7.0.2",

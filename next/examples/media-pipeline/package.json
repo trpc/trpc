@@ -16,7 +16,7 @@
     "superjson": "2.2.6"
   },
   "devDependencies": {
-    "@types/node": "^24.0.0",
+    "@types/node": "^26.0.0",
     "typescript": "^7.0.2"
   }
 }

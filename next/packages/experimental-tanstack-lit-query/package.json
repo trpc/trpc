@@ -36,7 +36,7 @@
     "@tanstack/query-core": "5.104.1",
     "@tooling/tsconfig": "workspace:*",
     "@trpc12/trpc": "workspace:*",
-    "@types/node": "^24.0.0",
+    "@types/node": "^26.0.0",
     "effect": "4.0.2",
     "happy-dom": "20.14.6",
     "lit": "3.3.3",
