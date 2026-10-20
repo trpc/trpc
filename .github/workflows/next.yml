@@ -73,7 +73,7 @@ jobs:
           package_json_file: next/package.json
       - uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version-file: next/.nvmrc
           cache: pnpm
           cache-dependency-path: next/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
@@ -129,7 +129,7 @@ jobs:
           package_json_file: next/package.json
       - uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version-file: next/.nvmrc
           cache: pnpm
           cache-dependency-path: next/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
@@ -156,7 +156,7 @@ jobs:
           package_json_file: next/package.json
       - uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version-file: next/.nvmrc
           cache: pnpm
           cache-dependency-path: next/pnpm-lock.yaml
       - name: Widen effect pins to ^4 and update to the latest 4.x
@@ -184,6 +184,34 @@ jobs:
           key: ${{ steps.task-cache.outputs.cache-primary-key }}
       - run: pnpm test
 
+  node-lts:
+    # The repo develops on next/.nvmrc's Node; users still run the active LTS.
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    services:
+      redis:
+        image: redis:7
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd "redis-cli ping" --health-interval 2s
+          --health-timeout 2s --health-retries 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+        with:
+          package_json_file: next/package.json
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: next/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+        env:
+          VP_GIT_HOOKS: '0'
+      - run: pnpm test --project 'packages*'
+        env:
+          REDIS_URL: redis://127.0.0.1:6379
+
   bun:
     # The platform layer is injected; this serves through @effect/platform-bun.
     runs-on: ubuntu-latest
@@ -195,7 +223,7 @@ jobs:
           package_json_file: next/package.json
       - uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version-file: next/.nvmrc
           cache: pnpm
           cache-dependency-path: next/pnpm-lock.yaml
       - uses: oven-sh/setup-bun@v2
@@ -234,7 +262,7 @@ jobs:
       - if: steps.credentials.outputs.present == 'true'
         uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version-file: next/.nvmrc
           cache: pnpm
           cache-dependency-path: next/pnpm-lock.yaml
       - if: steps.credentials.outputs.present == 'true'
