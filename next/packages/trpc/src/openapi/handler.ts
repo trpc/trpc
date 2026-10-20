@@ -133,6 +133,12 @@ export interface BaseOpenApiHandlerOptions<TRouter extends AnyRouter> {
    * `route.prefix` (08 Q8.4).
    */
   contract?: ContractJson<TRouter>;
+  /**
+   * How long `dispose()` waits for the requests in flight before it
+   * interrupts them.
+   * @default '10 seconds'
+   */
+  drainTimeout?: Duration.Input;
 }
 
 /**
@@ -172,10 +178,15 @@ export interface OpenApiHandler<TPlatform = undefined> {
     ...platform: PlatformArgs<TPlatform>
   ) => Promise<Response>;
   /**
-   * Releases the `layer`'s resources; a `runtime` you passed is yours to
-   * dispose.
+   * Ends the requests `fetch` and `serve` are serving: event streams at
+   * once, the rest after up to `drainTimeout` (a 503 for one still
+   * running).
+   * Then releases the `layer`'s resources; a `runtime` you passed is yours
+   * to dispose.
    */
   dispose(): Promise<void>;
+  /** `dispose()`, for `await using`. */
+  [Symbol.asyncDispose](): Promise<void>;
 }
 
 /**
@@ -779,7 +790,11 @@ export function experimental_createOpenApiHandler<
   const served = (opts.middleware ?? []).reduceRight<
     Effect.Effect<HttpServerResponse.HttpServerResponse, any, any>
   >((inner, m) => m(inner), app);
-  const webHandler = HttpEffect.toWebHandler(served as never);
+  // `toWebHandler` runs the app uninterruptibly, as servers do; `dispose()`
+  // and an aborted request interrupt the call.
+  const webHandler = HttpEffect.toWebHandler(
+    base.request(Effect.interruptible(served)) as never,
+  );
 
   const handler: OpenApiHandler<unknown> = {
     fetch: (request, platform) =>
@@ -797,6 +812,7 @@ export function experimental_createOpenApiHandler<
         ) as Context.Context<never>,
       ),
     dispose: base.dispose,
+    [Symbol.asyncDispose]: base.dispose,
   };
   return handler as OpenApiHandler<TPlatform>;
 }

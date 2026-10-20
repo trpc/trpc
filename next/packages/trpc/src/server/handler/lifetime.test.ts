@@ -10,6 +10,7 @@ import { expect, test } from 'vite-plus/test';
 class Pool extends Context.Service<Pool, { readonly id: number }>()('Pool') {}
 
 const t = initTrpc();
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const router = {
   pool: t.procedure.query(() =>
@@ -17,6 +18,22 @@ const router = {
       return (yield* Pool).id;
     }),
   ),
+  quick: t.procedure.query(async () => {
+    await sleep(20);
+    return 'done';
+  }),
+  stuck: t.procedure.query(() => Effect.never),
+  rows: t.procedure.query(() => ({
+    rows: (async function* () {
+      yield 'a';
+      await sleep(20);
+      yield 'b';
+    })(),
+  })),
+  events: t.procedure.subscription(async function* () {
+    yield 1;
+    await new Promise(() => {});
+  }),
 } satisfies AnyRouter;
 
 const get = (
@@ -47,6 +64,7 @@ test("a handler reads a caller's runtime, built once with createRouterClient's, 
   await handler.dispose();
   expect(events).toEqual([]);
   expect(await caller.pool.query()).toBe(1);
+  // A request after dispose() runs untracked, on the runtime still running.
   expect(await (await get(handler, 'pool')).text()).toContain('1');
 
   await runtime.dispose();
@@ -65,4 +83,47 @@ test('layer and runtime are exclusive', () => {
   // @ts-expect-error -- `pool` needs Pool, so `layer` or `runtime` is required
   const neither = () => createFetchHandler({ router });
   expect([both, neither]).toHaveLength(2);
+});
+
+test('dispose() ends event streams at once, waits for requests and streamed bodies up to the drain timeout, then interrupts what is left (503)', async () => {
+  const events: string[] = [];
+  const handler = createFetchHandler({
+    router,
+    layer: pool(events),
+    websocket: { drainTimeout: '150 millis' },
+  });
+  const stream = await get(handler, 'events');
+  const reader = stream.body!.getReader();
+  await reader.read();
+  const quick = get(handler, 'quick');
+  const stuck = get(handler, 'stuck');
+  const rows = await get(handler, 'rows');
+  const rowsText = rows.text();
+
+  const started = Date.now();
+  const disposed = handler.dispose();
+  await expect(
+    (async () => {
+      while (!(await reader.read()).done);
+    })(),
+  ).rejects.toBeDefined();
+  expect(await (await quick).text()).toContain('done');
+  expect(await rowsText).toContain('b');
+  expect((await stuck).status).toBe(503);
+  await disposed;
+  expect(Date.now() - started).toBeGreaterThanOrEqual(140);
+  expect(events).toEqual(['released']);
+});
+
+test('await using disposes a handler; a second dispose() waits for the first', async () => {
+  const events: string[] = [];
+  {
+    await using handler = createFetchHandler({ router, layer: pool(events) });
+    expect(await (await get(handler, 'pool')).text()).toContain('1');
+    const first = handler.dispose();
+    await handler.dispose();
+    expect(events).toEqual(['released']);
+    await first;
+  }
+  expect(events).toEqual(['released']);
 });

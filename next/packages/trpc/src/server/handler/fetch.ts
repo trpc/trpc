@@ -230,7 +230,8 @@ export interface BaseHandlerOptions<TRouter extends AnyRouter> {
     idleTimeout?: Duration.Input | false;
     /**
      * How long `dispose()`, a `drain()` without `timeout` and the end of
-     * `serve()` give connections to move before closing them.
+     * `serve()` give connections to move before closing them. `dispose()`
+     * also waits this long for the requests `fetch` is serving.
      * @default '10 seconds'
      */
     drainTimeout?: Duration.Input;
@@ -368,11 +369,18 @@ export interface FetchHandler<TPlatform = undefined> {
     timeout?: Duration.Input;
   }): Promise<void>;
   /**
-   * Drains the connections (`drain()`, with `websocket.drainTimeout`), then
-   * releases the `layer`'s resources; a `runtime` you passed is yours to
-   * dispose. The handler takes no connections after.
+   * Ends what the handler started. Event streams (SSE subscriptions) end
+   * at once, and their clients reconnect. Then, within
+   * `websocket.drainTimeout`, it drains the connections (`drain()`) and
+   * waits for the requests `fetch` is serving, streamed bodies included.
+   * What's left is interrupted: a request still running gets a 503. Last,
+   * it releases the `layer`'s resources; a `runtime` you passed is yours
+   * to dispose. The handler takes no connections after. Calling it again
+   * waits for the first call.
    */
   dispose(): Promise<void>;
+  /** `dispose()`, for `await using`. */
+  [Symbol.asyncDispose](): Promise<void>;
 }
 
 /**
@@ -399,7 +407,8 @@ export function createFetchHandler<
   TPlatform = undefined,
 >(opts: FetchHandlerOptions<TRouter, TPlatform>): FetchHandler<TPlatform> {
   checkRouterKeys(opts.router);
-  const drains = makeSocketDrains(opts.websocket?.drainTimeout ?? '10 seconds');
+  const drainTimeout = opts.websocket?.drainTimeout ?? '10 seconds';
+  const drains = makeSocketDrains(drainTimeout);
   const base = createHandlerCore({
     ...(opts as typeof opts & {
       createContext?: (o: CreateContextOpts<any>) => MaybePromise<object>;
@@ -407,6 +416,7 @@ export function createFetchHandler<
       runtime?: ManagedRuntime.ManagedRuntime<never, unknown> | undefined;
     }),
     drains,
+    drainTimeout,
   });
   const handler = makeHttpHandler(opts, base);
   const sessions = makeSessions(handler, drains, opts.websocket);
@@ -419,6 +429,7 @@ export function createFetchHandler<
     serveWebSocket: sessions.serveWebSocket,
     upgradeWeb: sessions.upgradeWeb,
     refusing: drains.refusing,
+    request: base.request,
   });
 
   const fetchHandler: FetchHandler<unknown> = {
@@ -434,6 +445,7 @@ export function createFetchHandler<
     routes: http.routes,
     drain: (o) => Effect.runPromise(drains.drain({ timeout: o?.timeout })),
     dispose: base.dispose,
+    [Symbol.asyncDispose]: base.dispose,
   };
   setHandlerContext(
     fetchHandler,

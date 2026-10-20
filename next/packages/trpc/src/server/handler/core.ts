@@ -1,19 +1,24 @@
 import {
   Context,
+  Deferred,
+  Duration,
   Effect,
   Exit,
   FiberSet,
   ManagedRuntime,
+  Predicate,
   Scope,
+  Stream,
   type Layer,
   type Tracer,
 } from 'effect';
-import { HttpServerRequest } from 'effect/http';
+import { HttpBody, HttpServerRequest, HttpServerResponse } from 'effect/http';
 import {
   isTrpcError,
   TrpcError,
   type AnyTrpcError,
 } from '../../internal/error.ts';
+import { CONTENT_TYPE } from '../../internal/protocol.ts';
 import type { MaybePromise, ProcedureType } from '../../internal/types.ts';
 import {
   callProcedure,
@@ -36,6 +41,11 @@ export interface CoreOptions {
   onError?: (opts: OnErrorOpts) => void;
   /** The handler's socket connections, which `dispose()` drains first. */
   drains?: SocketDrains | undefined;
+  /**
+   * How long `dispose()` waits for requests in flight.
+   * @default '10 seconds'
+   */
+  drainTimeout?: Duration.Input | undefined;
 }
 
 /** @internal */
@@ -100,9 +110,23 @@ export interface HandlerCore {
     context?: Context.Context<never>,
   ) => void;
   /**
-   * Closes the handler's scope: drains the connections (`drains`),
-   * interrupts the sessions still running, then releases the layer.
+   * `app` as one of the handler's requests, its streamed body included:
+   * `close` waits for it, up to the drain timeout, then interrupts it. An
+   * event stream (SSE) never ends on its own, so `close` interrupts it
+   * first, and its client reconnects. Once the handler has closed,
+   * requests run untracked.
    */
+  readonly request: <E, R>(
+    app: Effect.Effect<HttpServerResponse.HttpServerResponse, E, R>,
+  ) => Effect.Effect<HttpServerResponse.HttpServerResponse, E, R>;
+  /**
+   * Ends what the handler started: interrupts its event streams, drains
+   * the connections (`drains`) while it waits for the requests in flight,
+   * then interrupts the sessions and requests still running and releases
+   * the layer (not a caller's `runtime`). Later calls wait for the first.
+   */
+  readonly close: Effect.Effect<void>;
+  /** `close`, as a Promise. */
   readonly dispose: () => Promise<void>;
 }
 
@@ -119,24 +143,69 @@ export function createHandlerCore(opts: CoreOptions): HandlerCore {
   const owned = opts.layer ? ManagedRuntime.make(opts.layer) : undefined;
   /** The services, built once by the runtime on first use. */
   const services = runtimeServices(owned ?? opts.runtime);
+  const drainTimeout = Duration.fromInputUnsafe(
+    opts.drainTimeout ?? '10 seconds',
+  );
 
-  // Finalizers run last-added first: the drain, the sessions, the layer.
+  // Finalizers run last-added first: the fibers, then the layer.
   const scope = Scope.makeUnsafe();
   if (owned) Effect.runSync(Scope.addFinalizer(scope, owned.disposeEffect));
-  const sessions = Effect.runSync(
-    Scope.provide(FiberSet.make<void, never>(), scope),
-  );
-  if (opts.drains) {
-    // A drained session writes its close frame on its next turn, so the
-    // sessions get one before they're interrupted.
-    Effect.runSync(
-      Scope.addFinalizer(
-        scope,
-        Effect.andThen(opts.drains.drain({ final: true }), Effect.yieldNow),
+  const fibers = <A, E>() =>
+    Effect.runSync(Scope.provide(FiberSet.make<A, E>(), scope));
+  const sessions = fibers<void, never>();
+  const requests = fibers<unknown, unknown>();
+  const eventStreams = fibers<unknown, unknown>();
+  let state: 'open' | 'closing' | 'closed' = 'open';
+  const closed = Deferred.makeUnsafe<void>();
+
+  /** Adds the running fiber to `set` until the handler has closed. */
+  const join = (set: FiberSet.FiberSet<unknown, unknown>) =>
+    Effect.withFiber((fiber) => {
+      if (state !== 'closed') FiberSet.addUnsafe(set, fiber);
+      return Effect.void;
+    });
+  const track = (response: HttpServerResponse.HttpServerResponse) => {
+    const { body } = response;
+    if (!Predicate.isTagged(body, 'Stream')) return response;
+    const set = body.contentType.startsWith(CONTENT_TYPE.sse)
+      ? eventStreams
+      : requests;
+    return HttpServerResponse.setBody(
+      response,
+      HttpBody.stream(
+        Stream.unwrap(Effect.as(join(set), body.stream)),
+        body.contentType,
+        body.contentLength,
       ),
     );
-  }
-  let disposing = false;
+  };
+
+  const close = Effect.suspend(() => {
+    if (state !== 'open') return Deferred.await(closed);
+    state = 'closing';
+    // A drained session writes its close frame on its next turn, so the
+    // sessions get one before they're interrupted.
+    return FiberSet.clear(eventStreams).pipe(
+      Effect.andThen(
+        Effect.all(
+          [
+            opts.drains?.drain({ final: true }) ?? Effect.void,
+            Effect.timeoutOption(FiberSet.awaitEmpty(requests), drainTimeout),
+          ],
+          { concurrency: 'unbounded', discard: true },
+        ),
+      ),
+      Effect.andThen(Effect.yieldNow),
+      Effect.andThen(
+        Effect.suspend(() => {
+          state = 'closed';
+          return Scope.close(scope, Exit.void);
+        }),
+      ),
+      Effect.ensuring(Deferred.done(closed, Exit.void)),
+      Effect.uninterruptible,
+    );
+  });
 
   /** The call with its services in place of the running fiber's. */
   const call = (o: RunOpts) =>
@@ -192,11 +261,10 @@ export function createHandlerCore(opts: CoreOptions): HandlerCore {
     },
     fork: (session, context = Context.empty()) => {
       const fiber = Effect.runForkWith(context)(session);
-      if (!disposing) FiberSet.addUnsafe(sessions, fiber);
+      if (state === 'open') FiberSet.addUnsafe(sessions, fiber);
     },
-    dispose: () => {
-      disposing = true;
-      return Effect.runPromise(Scope.close(scope, Exit.void));
-    },
+    request: (app) => Effect.andThen(join(requests), Effect.map(app, track)),
+    close,
+    dispose: () => Effect.runPromise(close),
   };
 }

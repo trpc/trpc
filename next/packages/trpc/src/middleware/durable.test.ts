@@ -479,8 +479,10 @@ test('a streamed output keeps going into the store after the client leaves', asy
   });
   const controller = new AbortController();
   const first = await post(handler, 'feed', undefined, 'g1', controller.signal);
-  await first.body!.getReader().read();
+  const reader = first.body!.getReader();
+  await reader.read();
   controller.abort();
+  await reader.cancel();
   await sleep(100);
 
   const client = createTrpcClient({

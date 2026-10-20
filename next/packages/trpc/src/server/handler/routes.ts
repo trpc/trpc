@@ -52,6 +52,8 @@ export function httpParts(opts: {
     | undefined;
   /** While it's true, upgrades get a 503: the handler is draining. */
   readonly refusing?: () => boolean;
+  /** Makes each `fetch` request one of the handler's (`HandlerCore.request`). */
+  readonly request: (app: App) => App;
 }): HttpParts {
   const wrap = (app: App) => withMiddleware(opts.middleware, app);
   const { endpoint } = opts;
@@ -86,8 +88,10 @@ export function httpParts(opts: {
   // `toWebHandler` runs the app uninterruptibly, as servers do; routes
   // are interruptible, so an aborted request interrupts its call.
   const fetch = HttpEffect.toWebHandler(
-    Effect.interruptible(
-      opts.upgradeWeb ? upgrading(opts.upgradeWeb) : wrap(opts.app),
+    opts.request(
+      Effect.interruptible(
+        opts.upgradeWeb ? upgrading(opts.upgradeWeb) : wrap(opts.app),
+      ),
     ),
   );
   return { routes: routes as HttpParts['routes'], fetch };
