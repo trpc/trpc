@@ -12,6 +12,7 @@ import type {
   OutputForm,
   ProcedureResponse,
   ProcedureType,
+  StreamedForm,
 } from '../internal/types.ts';
 import type {
   AnyProcedure,
@@ -387,7 +388,7 @@ type DecorateCarried<
         >
       ): D['output'] extends AsyncIterable<any>
         ? StreamedPromise<
-            ClientValue<D['output'], ResultForm<TForm, TLinks>>,
+            ClientValue<D['output'], StreamedForm<ResultForm<TForm, TLinks>>>,
             StreamedError<D, ResultForm<TForm, TLinks>, TLinks>
           >
         : TrpcPromise<
@@ -411,7 +412,7 @@ type DecorateCarried<
           >
         ): D['output'] extends AsyncIterable<any>
           ? StreamedPromise<
-              ClientValue<D['output'], ResultForm<TForm, TLinks>>,
+              ClientValue<D['output'], StreamedForm<ResultForm<TForm, TLinks>>>,
               StreamedError<D, ResultForm<TForm, TLinks>, TLinks>
             >
           : TrpcPromise<

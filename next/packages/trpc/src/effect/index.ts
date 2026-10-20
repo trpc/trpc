@@ -57,7 +57,7 @@ import type {
   SubscribeOptions,
   UnmetNeedCheck,
 } from '../client/types.ts';
-import type { ClientValue } from '../internal/types.ts';
+import type { ClientValue, StreamedForm } from '../internal/types.ts';
 import type {
   AnyProcedure,
   ProcedureDef,
@@ -107,7 +107,10 @@ type DecorateEffectCarried<
         >
       ): D['output'] extends AsyncIterable<any>
         ? StreamedEffect<
-            ClientValue<D['output'], ResultForm<undefined, TLinks>>,
+            ClientValue<
+              D['output'],
+              StreamedForm<ResultForm<undefined, TLinks>>
+            >,
             StreamedError<D, ResultForm<undefined, TLinks>, TLinks>
           >
         : Effect.Effect<
@@ -131,7 +134,10 @@ type DecorateEffectCarried<
           >
         ): D['output'] extends AsyncIterable<any>
           ? StreamedEffect<
-              ClientValue<D['output'], ResultForm<undefined, TLinks>>,
+              ClientValue<
+                D['output'],
+                StreamedForm<ResultForm<undefined, TLinks>>
+              >,
               StreamedError<D, ResultForm<undefined, TLinks>, TLinks>
             >
           : Effect.Effect<

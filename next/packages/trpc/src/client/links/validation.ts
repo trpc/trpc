@@ -29,7 +29,7 @@ export interface ValidationLinkOptions {
    * Validate results. `'json'` decodes plain JSON results (`httpLink`'s
    * default serializer, `experimental_openApiLink`) with the Effect Schema's JSON codec,
    * so `Date`s, `bigint`s and classes come back as their types. Errors'
-   * `data` stays plain JSON.
+   * `data` and streamed (`stream()`) outputs stay plain JSON.
    * @default true
    */
   output?: boolean | 'json';
@@ -95,7 +95,8 @@ const isEnvelope = (value: unknown): value is { id: string; data: unknown } =>
  * streamed (`stream()`) outputs are not checked. Paths the contract doesn't
  * have pass through. With `output: 'json'` the client types results as
  * the schemas' types again, not the JSON form plain-JSON links declare;
- * errors' `data` isn't decoded, so it keeps its JSON form.
+ * errors' `data` and streamed outputs aren't decoded, so they keep their
+ * JSON form.
  *
  * @example
  * ```ts

@@ -21,7 +21,13 @@ import {
 } from '@trpc12/trpc/openapi';
 import { createEffectClient } from '@trpc12/trpc/effect';
 import { createUntypedClient } from '@trpc12/trpc/extend';
-import { type AnyRouter, initTrpc, stream, tracked } from '@trpc12/trpc/server';
+import {
+  type AnyRouter,
+  type inferRouterOutputs,
+  initTrpc,
+  stream,
+  tracked,
+} from '@trpc12/trpc/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
 import { createTestServer } from '../../fixtures/server.ts';
@@ -235,6 +241,61 @@ test("output: 'json' types declared errors' data in its JSON form, as it arrives
   if (keptErr?.code !== 'POST_GONE') throw new Error('expected POST_GONE');
   expect(keptErr.data.deletedAt).toEqual(at);
   expectTypeOf(keptErr.data.deletedAt).toEqualTypeOf<Date>();
+});
+
+test("output: 'json' types a streamed output's items in their JSON form, as they arrive, and subscription events decoded", async () => {
+  const streams = {
+    post: {
+      list: c.output(stream(Post)).query(),
+      live: c.output(stream(Post)).subscription(),
+    },
+  } satisfies AnyContractRouter;
+  const streamsImpl = t.implement(streams);
+  const streamsRouter = streamsImpl.router({
+    post: {
+      list: streamsImpl.post.list.query(async function* () {
+        yield { id: '1', title: 'One', at };
+      }),
+      live: streamsImpl.post.live.subscription(async function* () {
+        yield { id: '1', title: 'One', at };
+      }),
+    },
+  });
+  await using http = await createTestServer({ router: streamsRouter });
+  const links = [
+    experimental_validationLink({ contract: streams, output: 'json' }),
+    httpLink({ url: http.url }),
+  ] as const;
+  const client = createTrpcClient({ router: streams, links: [...links] });
+
+  const items = [];
+  for await (const item of await client.post.list.query()) {
+    expectTypeOf(item.at).toEqualTypeOf<string>();
+    items.push(item);
+  }
+  expect(items).toEqual([{ id: '1', title: 'One', at: at.toISOString() }]);
+  const plain = createTrpcClient({
+    router: streams,
+    links: [httpLink({ url: http.url })],
+  });
+  expectTypeOf<
+    inferRouterOutputs<typeof client>['post']['list']
+  >().toEqualTypeOf<inferRouterOutputs<typeof plain>['post']['list']>();
+
+  const effectClient = createEffectClient({
+    router: streams,
+    links: [...links],
+  });
+  const iterable = await Effect.runPromise(effectClient.post.list.query());
+  for await (const item of iterable) {
+    expect(item.at).toBe(at.toISOString());
+    expectTypeOf(item.at).toEqualTypeOf<string>();
+  }
+
+  for await (const event of client.post.live.subscribe()) {
+    expect(event.at).toBeInstanceOf(Date);
+    expectTypeOf(event.at).toEqualTypeOf<Date>();
+  }
 });
 
 test('streamed outputs, unvalidated outputs, plain events, opt-outs and paths outside the contract', async () => {
