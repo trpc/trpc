@@ -123,6 +123,16 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
     const clientSubscriptions = new Map<number | string, AbortController>();
     const abortController = new AbortController();
 
+    function registerSubscription(
+      id: number | string,
+      subscription: AbortController,
+    ) {
+      clientSubscriptions.set(id, subscription);
+      return makeResource({}, () => {
+        clientSubscriptions.delete(id);
+      });
+    }
+
     if (opts.keepAlive?.enabled) {
       const { pingMs, pongWaitMs } = opts.keepAlive;
       handleKeepAlive(client, pingMs, pongWaitMs);
@@ -283,31 +293,26 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         respond({ id, jsonrpc, result: { type: 'stopped' } });
       };
 
-      if (type === 'subscription') {
-        if (clientSubscriptions.has(id)) {
-          // duplicate request ids for client
-          respondWithError(
-            new TRPCError({
-              message: `Duplicate id ${id}`,
-              code: 'BAD_REQUEST',
-            }),
-          );
-          return;
-        }
-        // Registered before any await so that a stop or a disconnect during
-        // context creation or the procedure call cancels the subscription.
-        clientSubscriptions.set(id, abortController);
+      if (type === 'subscription' && clientSubscriptions.has(id)) {
+        // duplicate request ids for client
+        respondWithError(
+          new TRPCError({
+            message: `Duplicate id ${id}`,
+            code: 'BAD_REQUEST',
+          }),
+        );
+        return;
       }
 
       run(async () => {
-        // The id stays reserved until this has settled, including the
-        // iterator's disposal, and is freed right before the client is told
-        // it may reuse it.
-        using _release = makeResource({}, () => {
-          if (clientSubscriptions.get(id) === abortController) {
-            clientSubscriptions.delete(id);
-          }
-        });
+        // Registered before any await so that a stop or a disconnect during
+        // context creation or the procedure call cancels the subscription.
+        // The id is freed once this has settled, after the iterator's
+        // disposal and right before the client is told it may reuse it.
+        using _subscription =
+          type === 'subscription'
+            ? registerSubscription(id, abortController)
+            : null;
 
         const res = await ctxResult;
         if (!res.ok) {
@@ -369,6 +374,14 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
 
         const iteration = run(async () => {
           await using iterator = iteratorResource(iterable);
+          let completed = false;
+          // Disposed before the iterator, so cleanup that waits for
+          // cancellation is woken when iteration ends other than by `done`.
+          using _abortUnlessCompleted = makeResource({}, () => {
+            if (!completed) {
+              abortController.abort();
+            }
+          });
 
           const abortPromise = new Promise<'abort'>((resolve) => {
             abortController.signal.onabort = () => resolve('abort');
@@ -383,52 +396,47 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
               >;
           let result: null | TRPCResultMessage<unknown>['result'];
 
-          try {
-            while (true) {
-              next = await Unpromise.race([
-                iterator.next().catch(getTRPCErrorFromUnknown),
-                abortPromise,
-              ]);
+          while (true) {
+            next = await Unpromise.race([
+              iterator.next().catch(getTRPCErrorFromUnknown),
+              abortPromise,
+            ]);
 
-              if (next === 'abort') {
-                break;
-              }
-              if (next instanceof Error) {
-                // Report the error only after the iterator's disposal settles.
-                throw next;
-              }
-              if (next.done) {
-                break;
-              }
-
-              result = {
-                type: 'data',
-                data: next.value,
-              };
-
-              if (isTrackedEnvelope(next.value)) {
-                const [id, data] = next.value;
-                result.id = id;
-                result.data = {
-                  id,
-                  data,
-                };
-              }
-
-              respond({
-                id,
-                jsonrpc,
-                result,
-              });
-
-              // free up references for garbage collection
-              next = null;
-              result = null;
+            if (next === 'abort') {
+              break;
             }
-          } catch (cause) {
-            // Wake cancellation-aware work before awaiting iterator disposal.
-            abortController.abort();
-            throw cause;
+            if (next instanceof Error) {
+              // Report the error only after the iterator's disposal settles.
+              throw next;
+            }
+            if (next.done) {
+              completed = true;
+              break;
+            }
+
+            result = {
+              type: 'data',
+              data: next.value,
+            };
+
+            if (isTrackedEnvelope(next.value)) {
+              const [id, data] = next.value;
+              result.id = id;
+              result.data = {
+                id,
+                data,
+              };
+            }
+
+            respond({
+              id,
+              jsonrpc,
+              result,
+            });
+
+            // free up references for garbage collection
+            next = null;
+            result = null;
           }
         }).catch((cause) => {
           abortController.abort();

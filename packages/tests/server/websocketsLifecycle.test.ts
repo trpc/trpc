@@ -275,6 +275,51 @@ test('a duplicate id cannot enter or cancel a pending procedure', async () => {
   }
 });
 
+test('a query reusing an active subscription id leaves it registered', async () => {
+  const pending = createDeferred<IteratorResult<number>>();
+  const next = vi.fn(() => pending.promise);
+  const t = initTRPC.create();
+  const router = t.router({
+    active: t.procedure.subscription(() => ({
+      [Symbol.asyncIterator]: () => ({
+        next,
+        return: async () => doneResult(),
+      }),
+    })),
+    marker: t.procedure.query(() => 'consumed'),
+  });
+  await using ctx = await connectionResource({ router });
+  try {
+    await ctx.send(subscribe('active'));
+    await vi.waitFor(() => expect(next).toHaveBeenCalledOnce());
+    await ctx.send({
+      id: 1,
+      method: 'query',
+      params: { path: 'marker', input: null },
+    });
+    await vi.waitFor(() =>
+      expect(ctx.messages).toContainEqual({
+        id: 1,
+        result: { type: 'data', data: 'consumed' },
+      }),
+    );
+    await ctx.send(subscribe('active'));
+    await vi.waitFor(() =>
+      expect(ctx.messages.some((message) => 'error' in message)).toBe(true),
+    );
+    expect(next).toHaveBeenCalledOnce();
+    await ctx.send({ id: 1, method: 'subscription.stop' });
+    await vi.waitFor(() =>
+      expect(ctx.messages.at(-1)).toEqual({
+        id: 1,
+        result: { type: 'stopped' },
+      }),
+    );
+  } finally {
+    pending.resolve(doneResult());
+  }
+});
+
 test.each<'resolve' | 'reject'>(['resolve', 'reject'])(
   'an id remains owned until asynchronous iterator cleanup %ss',
   async (outcome) => {
@@ -430,6 +475,24 @@ test.each<'resolve' | 'reject'>(['resolve', 'reject'])(
     }
   },
 );
+
+test('a subscription that completes does not abort its signal', async () => {
+  let signal: AbortSignal | undefined;
+  const t = initTRPC.create();
+  const router = t.router({
+    finite: t.procedure.subscription(async function* (opts) {
+      signal = opts.signal;
+      yield 1;
+    }),
+  });
+  await using ctx = await connectionResource({ router });
+  await ctx.send(subscribe('finite'));
+  await vi.waitFor(() =>
+    expect(ctx.messages.at(-1)).toEqual({ id: 1, result: { type: 'stopped' } }),
+  );
+  assert(signal, 'no signal received');
+  expect(signal.aborted).toBe(false);
+});
 
 const abortError = () => new DOMException('request aborted', 'AbortError');
 
