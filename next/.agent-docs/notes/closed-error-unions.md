@@ -58,7 +58,7 @@ if (err)
 
   result-rpc splits these into `HttpFailure`, `DecodeFailure` and `ProtocolViolation`.
 
-- **A stale client looks like a missing record.** Calling a procedure the server lacks gives `NOT_FOUND`, which only `defined` tells apart from a domain `NOT_FOUND`. `UNSUPPORTED_PROTOCOL` is about the wire protocol version, not the router's shape. Nothing says "this client was built against a newer router".
+- **A stale client looks like a missing record.** Calling a procedure the server lacks gives `NOT_FOUND`, which only `defined` tells apart from a domain `NOT_FOUND`. `UNSUPPORTED_PROTOCOL` is about the wire protocol version, not the router's shape. Nothing says "this client was built against a newer router". It stays that way for now ([stale-client-error](../decisions/stale-client-error.md)).
 - **No offline or timeout code on the client.** `NETWORK_ERROR` covers DNS failures, refused connections and `navigator.onLine === false` alike, and `TIMEOUT` only arrives as a 408 from a server.
 - **`matchError` infers its result from the handlers object**, not a separate `R`. With `R` it was inferred from the first handler, and a string-literal return from `unexpected` narrowed it.
 
@@ -67,4 +67,4 @@ if (err)
 - **Server side:** mask thrown, undeclared custom codes as `INTERNAL_SERVER_ERROR`, as non-`TrpcError` throws already are. They're as likely to leak internals (`LEGACY_BILLING_TIMEOUT`), and the client then needs no `closedLink`.
 - **Client side:** change `UnexpectedError` to the per-code `BoundaryError` union. Built-in links already make only built-in codes.
 - Ship `matchError` (or a `match` on `safe()` results) either way.
-- Splitting `PARSE_ERROR` and a stale-client code are separate questions (Q24.6). Neither blocks closing the union.
+- Splitting `PARSE_ERROR` (Q24.6) and a stale-client code (Q24.7) are separate questions. Neither blocks closing the union.

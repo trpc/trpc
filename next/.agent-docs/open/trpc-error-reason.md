@@ -13,6 +13,9 @@ links:
   - kind: decision
     label: error-tags
     url: ../decisions/error-tags.md
+  - kind: decision
+    label: stale-client-error
+    url: ../decisions/stale-client-error.md
   - kind: docs
     label: Server errors
     url: https://v12.trpc.io/v12/docs/server/errors
@@ -132,11 +135,11 @@ matchError(err, {
 
 - ✅ Reaches the client, where a stale deploy needs handling
 - ❌ A wire format change, and a second discriminator next to `_tag`, against `error-tags.md`
-- ❌ Overlaps the stale-client question ([`stale-client-error.md`](./stale-client-error.md))
+- ❌ Reopens stale clients, which the human kept a plain `NOT_FOUND` for now ([stale-client-error](../decisions/stale-client-error.md))
 
 ## Recommendation
 
-**A** for 0.1. The classes answer most of the ask, and B is additive (an optional field nobody has to read), so it can land later without breaking anyone, in Effect's shape, if users want to tell failures apart in `onError`. C belongs with the stale-client question.
+**A** for 0.1. The classes answer most of the ask, and B is additive (an optional field nobody has to read), so it can land later without breaking anyone, in Effect's shape, if users want to tell failures apart in `onError`. C would reopen the stale-client decision, which keeps a missing procedure a plain `NOT_FOUND` for now ([stale-client-error](../decisions/stale-client-error.md)).
 
 ## Blocked until answered
 

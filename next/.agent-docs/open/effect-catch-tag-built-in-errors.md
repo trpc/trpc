@@ -13,6 +13,9 @@ links:
   - kind: decision
     label: granular-errors
     url: ../decisions/granular-errors.md
+  - kind: decision
+    label: stale-client-error
+    url: ../decisions/stale-client-error.md
   - kind: code
     label: createEffectClient JSDoc
     url: ../../packages/trpc/src/effect/index.ts
@@ -120,7 +123,7 @@ call.pipe(Effect.catchTag('NETWORK_ERROR', () => Effect.succeed(null)));
 
 ## Recommendation
 
-**A.** It's Effect's own combinator with tRPC's one rule (`_tag` is the code), and the case it lumps together is rare and already documented. A stale deploy that needs its own handling is a separate question ([`stale-client-error.md`](./stale-client-error.md)), and so is a `reason` inside the code ([`trpc-error-reason.md`](./trpc-error-reason.md)).
+**A.** It's Effect's own combinator with tRPC's one rule (`_tag` is the code), and the case it lumps together is rare and already documented. A stale deploy stays a built-in `NOT_FOUND` with no code of its own, for now ([stale-client-error](../decisions/stale-client-error.md)), and a `reason` inside the code is a separate question ([`trpc-error-reason.md`](./trpc-error-reason.md)).
 
 ## Blocked until answered
 

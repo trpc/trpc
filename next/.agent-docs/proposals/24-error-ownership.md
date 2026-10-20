@@ -144,6 +144,8 @@ Suspense hooks don't fit either way: `useSuspenseQuery` throws every error while
 - **B: a distinct code for unknown paths.** The server answers a path it doesn't have with `NOT_FOUND` and `data: { procedure: path }`, and the client reads that as `STALE_CLIENT`.
 - **C: later.**
 
+Human, 2026-10-20: C, later. A procedure the server lacks stays a built-in `NOT_FOUND`; B is the cheaper path when it comes back ([stale-client-error](../decisions/stale-client-error.md)).
+
 ### Q24.8: errors decoded on the client
 
 - **A: `validationLink` checks defined errors' `data`** against the contract's error specs and rebuilds `TrpcError.Tagged` instances, so `instanceof PostNotFound` holds and rich `data` types come back.
@@ -155,7 +157,7 @@ Suspense hooks don't fit either way: `useSuspenseQuery` throws every error while
 - **Q24.3 A.** It's small, it works even without Q24.1, and it gives result-rpc's "a missing case fails to compile".
 - **Q24.4 A, Q24.5 A.** Boundary mode is built and tested. Keep side-effect mode (B) open until a real "session expired" form needs it.
 - **Q24.6 A.** `PARSE_ERROR` meaning four things is the one coarse code shells will trip on.
-- **Q24.7 C** and **Q24.8 B** for now. Both are independent of the rest and haven't been spiked.
+- **Q24.7 C** and **Q24.8 B** for now. Both are independent of the rest and haven't been spiked. The human chose Q24.7 C ([stale-client-error](../decisions/stale-client-error.md)).
 
 What we give up: thrown custom codes that reach the client untyped (Q24.1 A), and keeping the form mounted when a shell owns a mutation's error (Q24.4 A).
 

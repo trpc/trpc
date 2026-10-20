@@ -15,5 +15,5 @@
   - Thrown errors' `data` no longer reaches the client with a built-in code. Declare or return them to keep it.
   - v11 interop errors' `data` moves to `cause.data`.
   - `experimental_validationLink` mismatches lose `data.issues`.
-- Open: shells (Q24.4, Q24.5), a client `TIMEOUT` (Q24.6 B), stale clients (Q24.7) and checking error `data` on the client (Q24.8), in [error-ownership](./error-ownership.md).
+- Open: shells (Q24.4, Q24.5), a client `TIMEOUT` (Q24.6 B) and checking error `data` on the client (Q24.8), in [error-ownership](./error-ownership.md). Stale clients (Q24.7) stay a plain `NOT_FOUND` for now ([stale-client-error](./stale-client-error.md)).
 - Lives in: `packages/trpc/src/internal/error.ts` (`BAD_RESPONSE`, `isBuiltinCode`, `toUntypedError`), `src/server/execution/execute.ts` (`normalizeCause`), `src/client/types.ts` (`BuiltinError`, `ClientError`), `src/client/client.ts` (`matchError`, `safe`), `src/client/link.ts` (`runLinks`), `src/client/links/{events,http,socket,validation}.ts`, `src/openapi/{errors,link}.ts`, `src/interop/link.ts`; tested in `src/server/errors.test.ts`, `src/client/links/links.test.ts` and `http-edges.test.ts`; documented in `www/docs/client/errors.md` and `www/docs/server/errors.md`; spikes in `spikes/closed-errors/`.
