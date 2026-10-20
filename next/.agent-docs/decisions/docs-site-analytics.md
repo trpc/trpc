@@ -1,0 +1,23 @@
+# At trpc.io, the site has trpc.io's Google Analytics, loaded when the page is idle (human asked)
+
+- Human, 2026-10-20 (via the coordinator): set up the same analytics the old site had, without hurting performance, tracking client-side navigations as page views, production only.
+- (agent) trpc.io's Docusaurus site has `gtag: { trackingID: 'G-7KLX2VFLVR' }` (`@docusaurus/plugin-google-gtag` 3.10.2, production builds only). That gives:
+  - gtag.js for that GA4 property on every page, `async` in the `<head>`, with preconnects to `www.google-analytics.com` and `www.googletagmanager.com`;
+  - an inline `gtag('config', 'G-7KLX2VFLVR', {})`;
+  - no Tag Manager container, no `anonymize_ip` (GA4 doesn't log IPs anyway) and no consent mode or banner;
+  - a `page_view` for each route change after the first, hash changes included.
+- (agent) The site sends the same property the same page views:
+  - one for the page loaded;
+  - one for each URL the router renders after, hash included, never the same URL twice in a row;
+  - each with the URL (`page_location`, as the browser has it, query included) and title the page had. The title is read a tick after `onRendered`, once the new page has set it.
+  - `send_page_view: false` in the `config` lets each page view say its own URL. A page view queued before gtag.js loads then isn't counted under the URL the reader has moved on to.
+  - The same on every page, the hidden ones (`/v12/...`) included, as trpc.io counts every page.
+- (agent) Loading: only where `indexable` holds (a production build of the site at trpc.io) and only at that host, so not on previews, local builds, v12.trpc.io or the deployment's own `*.vercel.app` URLs.
+  - It isn't in the HTML: `startAnalytics(router)` in `getRouter()` (beside Sentry's `traceRouter`) queues the commands in `dataLayer`.
+  - gtag.js (470 KB, about 160 KB brotli, `max-age=900`) loads once the page is idle after `load`, as Sentry's SDK does (`whenIdle`). trpc.io loads it from the `<head>` instead.
+  - No preconnects, since nothing on the critical path needs those origins.
+  - The site's own code costs +427 B gzip on every page's JS, measured on a local build.
+  - The hidden-paths and noindex checks see no change: no link, no meta tag, nothing in the HTML.
+- Why: trpc.io's numbers go on through the cutover, comparable with before, and the 160 KB third-party script leaves the critical path.
+- Lost: page views of readers who leave before the page is idle, a few seconds at most. If the GA4 stream's enhanced measurement counts history changes, each navigation is counted twice, as it already is on trpc.io.
+- Lives in: `next/www/src/analytics.ts`, `next/www/src/when-idle.ts`, `next/www/src/router.tsx`.
