@@ -22,6 +22,8 @@ const doc = experimental_generateOpenApi(await loadRouter(appRouter), {
 
 The document has schemas for input, output and each declared error. Each error's `code` is a constant. The `default` response covers the rest: untyped errors (`defined: false`, the `TrpcUntypedError` schema) and typed errors with any other built-in code. So a generated client narrows `error.defined && error.code === 'NOT_FOUND'` to the declared `NOT_FOUND` and its `data`. A zod `z.date()` output is a `date-time` string, as `JSON.stringify` sends it, and so is a `z.coerce.date()` input; a plain `z.date()` input rejects strings, so it stays `{}`. `filter({ path, procedure })` drops operations. `target: 'rpc'` describes the RPC endpoint instead of the REST routes. `experimental_generateOpenApi` throws on a lazy subtree that hasn't loaded, so pass the result of `loadRouter()`.
 
+With `target: 'rpc'`, the document describes requests as `httpLink` sends them. A query or subscription is a `GET` with one `input` query parameter holding the input as JSON (`/trpc/post.byId?input={"id":"1"}`, URL-encoded; [Query URLs](../client/links/http.md#query-urls)). A mutation is a `POST` with an `application/json` body of `{ "json": input }`, or `{}` without an input. Responses are wrapped the same way, in `{ "json": … }`.
+
 ## Security and tags
 
 `components.securitySchemes` declares how clients authenticate, and `security` says which schemes every operation needs. Docs UIs show a login form for them, and generated clients attach the credentials ([Generating a client with Hey API](./hey-api.md)). A procedure's `route.spec` overrides it, with `security: []` for a public route. `tags` describes the tags routes use, in the order docs UIs list them.

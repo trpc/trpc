@@ -580,7 +580,16 @@ test("target: 'rpc' documents the RPC endpoint with zero configuration (O-C)", (
     target: 'rpc',
   });
   expect(doc.paths['/trpc/post.byId']!['get']).toMatchObject({
-    parameters: [{ name: 'id', in: 'query', required: true }],
+    parameters: [
+      {
+        name: 'input',
+        in: 'query',
+        required: true,
+        content: {
+          'application/json': { schema: { properties: { id: {} } } },
+        },
+      },
+    ],
     responses: {
       '200': {
         content: {

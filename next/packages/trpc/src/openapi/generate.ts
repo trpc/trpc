@@ -326,6 +326,16 @@ const rpcWrap = (schema: JsonSchema | undefined): Schema => ({
 });
 
 /**
+ * A no-input mutation's body: `{}`. The RPC handler refuses a `POST` without
+ * `content-type: application/json` (its CSRF guard), so it needs a JSON body.
+ */
+const EMPTY: Schema = {
+  type: 'object',
+  properties: {},
+  additionalProperties: false,
+};
+
+/**
  * What the TypeScript-based generator read from a procedure's types. The
  * runtime schemas win; these fill the gaps.
  * @internal
@@ -527,7 +537,27 @@ export function generateDocument(
       });
     };
 
-    if (detailedIn) {
+    if (target === 'rpc') {
+      // The RPC handler reads a GET's input only from `?input=`, JSON
+      // encoded, as `httpLink` sends it (wire-protocol.md).
+      if (usesQuery(route.method)) {
+        if (input) {
+          parameters.push({
+            name: 'input',
+            in: 'query',
+            required: true,
+            content: { 'application/json': { schema: input } },
+          });
+        }
+      } else {
+        requestBody = {
+          required: true,
+          content: {
+            'application/json': { schema: input ? rpcWrap(input) : EMPTY },
+          },
+        };
+      }
+    } else if (detailedIn) {
       for (const [name, schema] of objectProperties(
         propertySchema(input, 'params'),
       )) {
@@ -559,14 +589,7 @@ export function generateDocument(
           true,
         );
       }
-      if (target === 'rpc' && !usesQuery(route.method)) {
-        if (input) {
-          requestBody = {
-            required: true,
-            content: { 'application/json': { schema: rpcWrap(input) } },
-          };
-        }
-      } else if (usesQuery(route.method)) {
+      if (usesQuery(route.method)) {
         for (const [name, schema, required] of objectProperties(input)) {
           if (!route.params.includes(name))
             param(name, 'query', schema, required);
