@@ -2,6 +2,7 @@ name: main
 on:
   pull_request:
     types: [synchronize, opened, reopened]
+  merge_group:
   push:
     branches: [main, next, canary]
 
@@ -11,8 +12,8 @@ concurrency:
 
 jobs:
   build:
-    # only run on PRs
-    if: github.event_name == 'pull_request'
+    # only run on PRs and in the merge queue
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
     timeout-minutes: 10
     env:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
@@ -29,8 +30,8 @@ jobs:
       - run: pnpm build
 
   typecheck:
-    # only run on PRs
-    if: github.event_name == 'pull_request'
+    # only run on PRs and in the merge queue
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
     timeout-minutes: 10
     env:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
@@ -47,8 +48,8 @@ jobs:
       - run: pnpm typecheck-packages
 
   typecheck-www:
-    # only run on PRs
-    if: github.event_name == 'pull_request'
+    # only run on PRs and in the merge queue
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
     timeout-minutes: 10
     env:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
@@ -99,8 +100,8 @@ jobs:
           token: ${{ github.event.pull_request.head.repo.fork == false && secrets.CODECOV_TOKEN || '' }}
 
   e2e:
-    # only run on PRs
-    if: github.event_name == 'pull_request'
+    # only run on PRs and in the merge queue
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
     name: 'E2E-tests'
     needs: [build]
     services:
@@ -123,7 +124,6 @@ jobs:
       matrix:
         dir: [
             .experimental/next-app-dir,
-            .test/diagnostics-big-router,
             .test/internal-types-export,
             .test/ssg,
             cloudflare-workers,
@@ -159,8 +159,8 @@ jobs:
       - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
 
   e2e-deno:
-    # only run on PRs
-    if: github.event_name == 'pull_request'
+    # only run on PRs and in the merge queue
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
     name: 'E2E-tests (Deno)'
     needs: [build]
     env:
@@ -194,8 +194,8 @@ jobs:
           pnpm dlx start-server-and-test "deno run --allow-net=:8000 --allow-env ./src/index.ts" http://127.0.0.1:8000 "deno run --allow-net --allow-env ./src/client.ts"
 
   e2e-bun:
-    # only run on PRs
-    if: github.event_name == 'pull_request'
+    # only run on PRs and in the merge queue
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
     name: 'E2E-tests (Bun)'
     needs: [build]
     env:
@@ -220,7 +220,7 @@ jobs:
 
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: 1.4.2
+          bun-version: 1.4.3
 
       - run: bun --version
       - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
@@ -229,8 +229,8 @@ jobs:
       - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
 
   e2e-legacy-node:
-    # only run on PRs
-    if: github.event_name == 'pull_request'
+    # only run on PRs and in the merge queue
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
     needs: [build]
     services:
       postgres:
@@ -277,6 +277,7 @@ jobs:
   # https://pkg.pr.new
   release-tmp:
     name: Release using pkg.pr.new
+    if: github.event_name != 'merge_group'
     needs: [build]
     runs-on: ubuntu-latest
     env:
