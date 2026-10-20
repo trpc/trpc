@@ -2,6 +2,7 @@ import {
   codeOfStatus,
   toUntypedError,
   TrpcError,
+  wireTag,
   type AnyTrpcError,
 } from '../../internal/error.ts';
 
@@ -14,17 +15,23 @@ export interface OpenApiErrorBody {
   /** Whether the error is part of the procedure's typed union. */
   readonly defined: boolean;
   readonly code: string;
+  /** The `_tag`, when it isn't the code's class name and the client keeps it. */
+  readonly tag?: string;
   readonly message: string;
   readonly data?: unknown;
 }
 
 /** @internal */
-export const toOpenApiError = (err: AnyTrpcError): OpenApiErrorBody => ({
-  defined: err.defined,
-  code: err.code,
-  message: err.message,
-  ...(err.data === undefined ? {} : { data: err.data }),
-});
+export const toOpenApiError = (err: AnyTrpcError): OpenApiErrorBody => {
+  const tag = wireTag(err);
+  return {
+    defined: err.defined,
+    code: err.code,
+    ...(tag === undefined ? {} : { tag }),
+    message: err.message,
+    ...(err.data === undefined ? {} : { data: err.data }),
+  };
+};
 
 /** @internal */
 export function fromOpenApiError(body: unknown, status: number): TrpcError {
@@ -39,6 +46,7 @@ export function fromOpenApiError(body: unknown, status: number): TrpcError {
   return toUntypedError(
     new TrpcError({
       code,
+      tag: typeof b.tag === 'string' ? b.tag : undefined,
       message: typeof b.message === 'string' ? b.message : code,
       data: b.data,
       defined: b.defined === true,

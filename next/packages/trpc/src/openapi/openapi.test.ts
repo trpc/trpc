@@ -261,6 +261,7 @@ test('query strings use bracket notation, coerced from the JSON Schema', async (
   expect(await invalid.json()).toMatchObject({
     defined: true,
     code: 'BAD_REQUEST',
+    tag: 'InvalidInput',
     data: { issues: [{ path: ['limit'] }] },
   });
 
@@ -990,6 +991,7 @@ test('the default error leaves out documented codes, so generated clients narrow
         properties: {
           defined: { const: true },
           code: { enum: expect.any(Array) },
+          tag: { type: 'string' },
           message: { type: 'string' },
           data: {},
         },
@@ -1010,6 +1012,7 @@ test('the default error leaves out documented codes, so generated clients narrow
     properties: {
       defined: { const: false },
       code: { type: 'string' },
+      tag: { type: 'string' },
       message: { type: 'string' },
       data: {},
     },

@@ -5,7 +5,7 @@ import {
   outputJsonSchema,
   scopedRoute,
 } from '../internal/describe.ts';
-import { ERROR_STATUS } from '../internal/error.ts';
+import { defaultTag, ERROR_STATUS } from '../internal/error.ts';
 import { toJsonSchema, type JsonSchema } from '../internal/json-schema.ts';
 import type {
   AnyProcedure,
@@ -290,11 +290,18 @@ const isStructured = (schema: JsonSchema) =>
   typeof schema === 'object' &&
   (schema['type'] === 'object' || schema['properties'] !== undefined);
 
-const errorSchema = (code: string, data?: JsonSchema): Schema => ({
+const errorSchema = (
+  code: string,
+  data?: JsonSchema,
+  tag?: string,
+): Schema => ({
   type: 'object',
   properties: {
     defined: { const: true },
     code: { const: code },
+    ...(tag === undefined || tag === defaultTag(code)
+      ? {}
+      : { tag: { const: tag } }),
     message: { type: 'string' },
     ...(data ? { data } : {}),
   },
@@ -364,7 +371,7 @@ function errorResponses(
   const codes = new Set(Object.keys(def.errors));
   if (hasInput) {
     codes.add('BAD_REQUEST');
-    add(400, errorSchema('BAD_REQUEST', VALIDATION_DATA));
+    add(400, errorSchema('BAD_REQUEST', VALIDATION_DATA, 'InvalidInput'));
   }
   for (const e of inferred) {
     if (codes.has(e.code)) continue;
@@ -380,7 +387,10 @@ function errorResponses(
     const data = spec.data
       ? hoist(toJsonSchema(spec.data, 'output'), `${scope}.${code}`, components)
       : undefined;
-    add(status, errorSchema(code, data ?? (spec.data ? {} : undefined)));
+    add(
+      status,
+      errorSchema(code, data ?? (spec.data ? {} : undefined), spec.tag),
+    );
   }
   const responses: Record<string, Record<string, unknown>> = {};
   for (const [status, schemas] of [...byStatus].sort(([a], [b]) => a - b)) {
@@ -412,6 +422,7 @@ function errorResponses(
               properties: {
                 defined: { const: true },
                 code: { enum: others },
+                tag: { type: 'string' },
                 message: { type: 'string' },
                 data: {},
               },
@@ -479,6 +490,7 @@ export function generateDocument(
       properties: {
         defined: { const: false },
         code: { type: 'string' },
+        tag: { type: 'string' },
         message: { type: 'string' },
         data: {},
       },
