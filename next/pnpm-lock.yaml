@@ -2137,6 +2137,9 @@ importers:
 
   www:
     dependencies:
+      '@codemirror/autocomplete':
+        specifier: 6.20.3
+        version: 6.20.3
       '@codemirror/commands':
         specifier: 6.11.1
         version: 6.11.1
@@ -2146,6 +2149,9 @@ importers:
       '@codemirror/language':
         specifier: 6.13.1
         version: 6.13.1
+      '@codemirror/lint':
+        specifier: 6.9.7
+        version: 6.9.7
       '@codemirror/state':
         specifier: 6.7.6
         version: 6.7.6

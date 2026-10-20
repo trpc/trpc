@@ -11,18 +11,27 @@ import {
 import { cn } from '@shared/ui/lib/utils';
 import { type AnyRouter, createMemoryHistory } from '@tanstack/react-router';
 import { RotateCcw, Unplug, WifiOff } from 'lucide-react';
-import { Fragment, useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 
 import { buildDemo, type DemoApp } from './app.ts';
 import { DemoBrowser, DemoRequests } from './browser.tsx';
 import type { DemoDefinition } from './define.ts';
 import { demos } from './demos.ts';
-import { CodeEditor } from './editor.tsx';
+import { CodeEditor, type EditorTypes } from './editor.tsx';
 import { DemoModuleError, type DemoFile } from './modules.ts';
 import { createNetwork, type DemoNetwork, latencies } from './network.ts';
+import type { TypeDiagnostic } from './ts-service.ts';
+import {
+  startedTypeChecker,
+  type TypeChecker,
+  typeCheckerFor,
+} from './type-check.ts';
 
 /** How long typing pauses before the app rebuilds. */
 const rebuildAfterMs = 500;
+
+/** How long typing pauses before the types are checked again. */
+const recheckAfterMs = 250;
 
 /**
  * The reader's edits, by demo, for as long as the page is open: the frame
@@ -78,6 +87,86 @@ function useBuild(demo: DemoDefinition, files: ReadonlyArray<DemoFile>) {
     // A build starts for new files only; `session` only picks the delay.
   }, [demo, files]);
   return { building, error, session };
+}
+
+interface Checked {
+  readonly diagnostics: Readonly<Record<string, ReadonlyArray<TypeDiagnostic>>>;
+  readonly files: ReadonlyArray<DemoFile>;
+}
+
+/**
+ * Checks `files`' types whenever they change (after a pause in typing),
+ * once `checker` has started. The app runs whatever they say, as with
+ * Vite's dev server.
+ */
+function useTypeErrors(
+  checker: TypeChecker | undefined,
+  files: ReadonlyArray<DemoFile>,
+) {
+  const [checked, setChecked] = useState<Checked>();
+  const [failed, setFailed] = useState(false);
+  useEffect(() => {
+    if (!checker) {
+      return undefined;
+    }
+    let current = true;
+    const timer = setTimeout(
+      () => {
+        checker.check(files).then(
+          (diagnostics) => {
+            if (current) {
+              setChecked({ diagnostics, files });
+              setFailed(false);
+            }
+          },
+          () => {
+            if (current) {
+              setFailed(true);
+            }
+          },
+        );
+      },
+      checked ? recheckAfterMs : 0,
+    );
+    return () => {
+      current = false;
+      clearTimeout(timer);
+    };
+    // A check starts for new files only; `checked` only picks the delay.
+  }, [checker, files]);
+  const errors = checked
+    ? Object.values(checked.diagnostics).reduce(
+        (sum, each) => sum + each.length,
+        0,
+      )
+    : 0;
+  const status = !checker
+    ? undefined
+    : failed
+      ? 'Types unavailable'
+      : !checked
+        ? 'Loading TypeScript…'
+        : checked.files !== files
+          ? 'Checking types…'
+          : errors === 0
+            ? 'No type errors'
+            : `${String(errors)} type error${errors === 1 ? '' : 's'}`;
+  return { checked, errors, status };
+}
+
+/** `checker`'s answers for the file in the editor, with its code as typed. */
+function editorTypes(
+  checker: TypeChecker,
+  files: { readonly current: ReadonlyArray<DemoFile> },
+): EditorTypes {
+  const withCode = (name: string, code: string) =>
+    files.current.map((file) => (file.name === name ? { code, name } : file));
+  return {
+    completions: (name, code, position) =>
+      checker.completions(withCode(name, code), name, position),
+    quickInfo: (name, code, position) =>
+      checker.quickInfo(withCode(name, code), name, position),
+  };
 }
 
 /**
@@ -139,6 +228,24 @@ export function DemoFrame(props: {
   const build = useBuild(demo, files);
   const session = build.session;
   const error = build.error;
+  const sample = demos[demo.id].sample;
+  const [checker, setChecker] = useState(() => startedTypeChecker(sample));
+  const types = useTypeErrors(checker, files);
+  const latestFiles = useRef(files);
+  latestFiles.current = files;
+  const forEditor = useMemo(
+    () => (checker ? editorTypes(checker, latestFiles) : undefined),
+    [checker],
+  );
+  const checked = types.checked;
+  const fileDiagnostics = useMemo(
+    () =>
+      checked && {
+        code: checked.files.find((each) => each.name === file)?.code ?? '',
+        diagnostics: checked.diagnostics[file] ?? [],
+      },
+    [checked, file],
+  );
 
   useEffect(() => {
     if (session) {
@@ -267,46 +374,71 @@ export function DemoFrame(props: {
               className="flex shrink-0 gap-0.5 overflow-x-auto border-b bg-muted/40 px-1.5 pt-1.5"
               role="tablist"
             >
-              {files.map((each) => (
-                <button
-                  aria-selected={each.name === file}
-                  className={cn(
-                    'shrink-0 rounded-t-md border border-b-0 px-2.5 py-1 font-mono text-xs',
-                    each.name === file
-                      ? 'border-border bg-card text-foreground'
-                      : 'border-transparent text-muted-foreground hover:text-foreground',
-                    error instanceof DemoModuleError &&
-                      error.file === each.name &&
-                      'text-destructive',
-                  )}
-                  key={each.name}
-                  onClick={() => setFile(each.name)}
-                  role="tab"
-                  type="button"
-                >
-                  {each.name}
-                  {each.code ===
-                  demo.files.find((original) => original.name === each.name)
-                    ?.code
-                    ? ''
-                    : ' •'}
-                </button>
-              ))}
+              {files.map((each) => {
+                const typeErrors =
+                  types.checked?.diagnostics[each.name]?.length ?? 0;
+                return (
+                  <button
+                    aria-selected={each.name === file}
+                    className={cn(
+                      'shrink-0 rounded-t-md border border-b-0 px-2.5 py-1 font-mono text-xs',
+                      each.name === file
+                        ? 'border-border bg-card text-foreground'
+                        : 'border-transparent text-muted-foreground hover:text-foreground',
+                      ((error instanceof DemoModuleError &&
+                        error.file === each.name) ||
+                        typeErrors > 0) &&
+                        'text-destructive',
+                    )}
+                    data-type-errors={types.checked ? typeErrors : undefined}
+                    key={each.name}
+                    onClick={() => setFile(each.name)}
+                    role="tab"
+                    title={
+                      typeErrors > 0
+                        ? `${String(typeErrors)} type error${typeErrors === 1 ? '' : 's'}`
+                        : undefined
+                    }
+                    type="button"
+                  >
+                    {each.name}
+                    {each.code ===
+                    demo.files.find((original) => original.name === each.name)
+                      ?.code
+                      ? ''
+                      : ' •'}
+                    {typeErrors > 0 ? (
+                      <span className="ml-1 rounded-full bg-destructive/15 px-1.5 tabular-nums">
+                        {typeErrors}
+                      </span>
+                    ) : null}
+                  </button>
+                );
+              })}
               <span
                 className={cn(
-                  'ml-auto self-center px-2 text-xs text-muted-foreground',
-                  !build.building && 'invisible',
+                  'ml-auto shrink-0 self-center px-2 text-xs text-muted-foreground',
+                  !build.building && types.status === undefined && 'invisible',
+                  !build.building && types.errors > 0 && 'text-destructive',
                 )}
+                data-type-status
               >
-                Building…
+                {build.building ? 'Building…' : (types.status ?? 'Building…')}
               </span>
             </div>
             <div className="min-h-0 flex-1">
               <CodeEditor
+                diagnostics={fileDiagnostics}
                 errorLine={failed}
                 file={file}
                 files={files}
                 onChange={change}
+                onFocus={() => {
+                  if (!checker) {
+                    setChecker(typeCheckerFor(sample));
+                  }
+                }}
+                types={forEditor}
                 version={resets}
               />
             </div>

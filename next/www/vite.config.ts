@@ -10,6 +10,7 @@ import { docPages, docsContent } from './build/content.ts';
 import { decisionsContent } from './build/decisions-content.ts';
 import { blogFeeds } from './build/feeds.ts';
 import { siteIcons } from './build/icons.ts';
+import { kitchenSinkTypes } from './build/kitchen-sink-types.ts';
 import { bundledServer } from './build/on-demand.ts';
 import { OgCard, ogImages } from './build/og-image.ts';
 import {
@@ -317,4 +318,7 @@ export default defineConfig({
   resolve: {
     tsconfigPaths: true,
   },
+  // The kitchen sink's type worker loads TypeScript and its declarations
+  // as chunks of their own, which only an ES module worker can split.
+  worker: { format: 'es', plugins: () => [kitchenSinkTypes()] },
 });
