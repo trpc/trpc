@@ -323,10 +323,13 @@ test('a Promise chain without a last link, or with an unmarked Effect link, fail
       links: [(() => Stream.make(1)) as never],
     }).echo.query(1),
   );
-  expect(unmarked).toMatchObject({ code: 'CLIENT_ERROR' });
-  expect(String((unmarked as Error).cause ?? unmarked)).toContain(
-    'make Effect links with link()',
-  );
+  expect(unmarked).toMatchObject({
+    code: 'CLIENT_ERROR',
+    cause: expect.objectContaining({
+      message:
+        'A link returned an Effect Stream: make Effect links with link()',
+    }),
+  });
 });
 
 test("requests: init's next, byte stream and Blob bodies, bodiless responses", async () => {
