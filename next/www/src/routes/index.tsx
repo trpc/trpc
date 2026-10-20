@@ -32,6 +32,7 @@ import {
   SponsorButton,
   SupportedBy,
 } from '~/components/sponsors/supported-by.tsx';
+import { UsedBy } from '~/components/used-by/used-by.tsx';
 import { findDoc, homeDocs } from '~/content/docs.ts';
 import {
   defaultHomeVersion,
@@ -617,6 +618,8 @@ function HomePage() {
           </div>
         </div>
       </section>
+
+      <UsedBy />
 
       <section
         aria-labelledby="how-it-works"

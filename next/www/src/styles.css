@@ -34,6 +34,17 @@ html:has(#hero-code) {
   font-weight: 500;
 }
 
+/* The home page's "As used by" marquee (`UsedBy`). */
+@theme {
+  --animate-used-by: used-by 60s linear infinite;
+
+  @keyframes used-by {
+    to {
+      translate: -50% 0;
+    }
+  }
+}
+
 /* In-page links glide to their heading. The router scrolls `instant`ly
    (`scrollRestorationBehavior`), so a new page starts at the top. */
 @media (prefers-reduced-motion: no-preference) {
