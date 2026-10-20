@@ -44,6 +44,7 @@ import {
   type ContextOption,
   type CreateContextOpts,
   type LayerOption,
+  type RuntimeOption,
   type OnErrorOpts,
   type PlatformArgs,
 } from '../server/handler/index.ts';
@@ -144,7 +145,10 @@ export type OpenApiHandlerOptions<
   TPlatform = undefined,
 > = BaseOpenApiHandlerOptions<TRouter> &
   ContextOption<inferRouterContext<TRouter>, TPlatform> &
-  LayerOption<inferRouterServices<TRouter>>;
+  (
+    | LayerOption<inferRouterServices<TRouter>>
+    | RuntimeOption<inferRouterServices<TRouter>>
+  );
 
 /**
  * A web-standard handler for the REST mapping of a router.
@@ -167,7 +171,10 @@ export interface OpenApiHandler<TPlatform = undefined> {
     call: OpenApiCall,
     ...platform: PlatformArgs<TPlatform>
   ) => Promise<Response>;
-  /** Releases the `layer`'s resources. */
+  /**
+   * Releases the `layer`'s resources; a `runtime` you passed is yours to
+   * dispose.
+   */
   dispose(): Promise<void>;
 }
 

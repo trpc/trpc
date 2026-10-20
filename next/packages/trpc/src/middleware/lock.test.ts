@@ -13,7 +13,11 @@ import {
   experimental_memoryLocker,
   experimental_redisLocker,
 } from '@trpc12/trpc/middleware';
-import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
+import {
+  createFetchHandler,
+  initTrpc,
+  type inferRouterServices,
+} from '@trpc12/trpc/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
 import { createTestServer } from '../fixtures/server.ts';
@@ -204,8 +208,8 @@ test('an aborted waiter gives up its place in line', async () => {
 test('the handler must provide experimental_Locker', () => {
   const app = makeRouter({ work: 0 });
   expectTypeOf<
-    Parameters<typeof createFetchHandler<typeof app.router>>[0]['layer']
-  >().toEqualTypeOf<Layer.Layer<experimental_Locker, any, never>>();
+    inferRouterServices<typeof app.router>
+  >().toEqualTypeOf<experimental_Locker>();
   // @ts-expect-error -- experimental_Locker is required
   createFetchHandler({ router: app.router });
 });

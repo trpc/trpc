@@ -28,7 +28,10 @@ import type { SocketDrains, Transport } from '../sockets/index.ts';
 /** @internal */
 export interface CoreOptions {
   createContext?: (opts: CreateContextOpts<any>) => MaybePromise<object>;
-  layer?: Layer.Layer<any, any, never>;
+  /** Builds the services on first use; `dispose()` releases them. */
+  layer?: Layer.Layer<any, any, never> | undefined;
+  /** The caller's runtime: calls read its services, and it outlives the handler. */
+  runtime?: ManagedRuntime.ManagedRuntime<never, unknown> | undefined;
   exposeUnexpectedErrors?: boolean;
   onError?: (opts: OnErrorOpts) => void;
   /** The handler's socket connections, which `dispose()` drains first. */
@@ -113,13 +116,13 @@ const isDev = () => {
 /** @internal */
 export function createHandlerCore(opts: CoreOptions): HandlerCore {
   const expose = opts.exposeUnexpectedErrors ?? isDev();
-  const runtime = opts.layer ? ManagedRuntime.make(opts.layer) : undefined;
-  /** The layer's services, built once by the runtime on first use. */
-  const services = runtimeServices(runtime);
+  const owned = opts.layer ? ManagedRuntime.make(opts.layer) : undefined;
+  /** The services, built once by the runtime on first use. */
+  const services = runtimeServices(owned ?? opts.runtime);
 
   // Finalizers run last-added first: the drain, the sessions, the layer.
   const scope = Scope.makeUnsafe();
-  if (runtime) Effect.runSync(Scope.addFinalizer(scope, runtime.disposeEffect));
+  if (owned) Effect.runSync(Scope.addFinalizer(scope, owned.disposeEffect));
   const sessions = Effect.runSync(
     Scope.provide(FiberSet.make<void, never>(), scope),
   );

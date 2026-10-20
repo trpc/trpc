@@ -49,6 +49,7 @@ import {
   type ContextOption,
   type CreateContextOpts,
   type LayerOption,
+  type RuntimeOption,
   type OnErrorOpts,
   type PlatformArgs,
   type PlatformField,
@@ -185,7 +186,10 @@ export type V11HandlerOptions<
   TPlatform = undefined,
 > = BaseV11HandlerOptions<TRouter> &
   ContextOption<inferRouterContext<TRouter>, TPlatform> &
-  LayerOption<inferRouterServices<TRouter>>;
+  (
+    | LayerOption<inferRouterServices<TRouter>>
+    | RuntimeOption<inferRouterServices<TRouter>>
+  );
 
 /**
  * A handler that serves v11 clients.
@@ -207,7 +211,8 @@ export interface V11Handler<TPlatform = undefined> {
    * Closes the open WebSockets (1012, "service restart"), so `wsLink`
    * reconnects elsewhere and resends its subscriptions, ends their
    * sessions (a socket still connecting is closed once it opens), then
-   * releases the `layer`'s resources. The handler takes no WebSockets after.
+   * releases the `layer`'s resources (a `runtime` you passed is yours to
+   * dispose). The handler takes no WebSockets after.
    */
   dispose(): Promise<void>;
 }

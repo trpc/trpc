@@ -122,22 +122,26 @@ export type PlatformField<TPlatform> = undefined extends TPlatform
   : { platform: TPlatform };
 
 /**
- * `layer`, required when the router's procedures need Effect services.
+ * `layer`, required when the router's procedures need Effect services
+ * and no `runtime` is given. The handler builds it on first use and
+ * `dispose()` releases it.
  * @since 0.1.0
  * @stability stable
  */
-export type LayerOption<TServices> = [TServices] extends [never]
+export type LayerOption<TServices> = ([TServices] extends [never]
   ? { layer?: Layer.Layer<never, any, never> }
   : {
       /** Provides the Effect services the router's procedures need. */
       layer: Layer.Layer<TServices, any, never>;
-    };
+    }) & { runtime?: undefined };
 
 /**
  * `runtime`, required when the router's procedures need Effect services. The
  * caller owns it: calls read its services, and `runtime.dispose()` (or
- * `await using`) runs the layer's finalizers. `layer` is a type error that
- * names the fix.
+ * `await using`) runs the layer's finalizers. Handlers take it instead of
+ * `layer`, so a server and `createRouterClient` share one build, and their
+ * `dispose()` leaves it running. Where only `runtime` is taken
+ * (`createRouterClient`), `layer` is a type error that names the fix.
  * @since 0.1.0
  * @stability stable
  */
@@ -260,7 +264,10 @@ export type FetchHandlerOptions<
   TPlatform = undefined,
 > = BaseHandlerOptions<TRouter> &
   ContextOption<inferRouterContext<TRouter>, TPlatform> &
-  LayerOption<inferRouterServices<TRouter>> &
+  (
+    | LayerOption<inferRouterServices<TRouter>>
+    | RuntimeOption<inferRouterServices<TRouter>>
+  ) &
   SerializerOption;
 
 /**
@@ -362,7 +369,8 @@ export interface FetchHandler<TPlatform = undefined> {
   }): Promise<void>;
   /**
    * Drains the connections (`drain()`, with `websocket.drainTimeout`), then
-   * releases the `layer`'s resources. The handler takes no connections after.
+   * releases the `layer`'s resources; a `runtime` you passed is yours to
+   * dispose. The handler takes no connections after.
    */
   dispose(): Promise<void>;
 }
@@ -396,6 +404,7 @@ export function createFetchHandler<
     ...(opts as typeof opts & {
       createContext?: (o: CreateContextOpts<any>) => MaybePromise<object>;
       layer?: Layer.Layer<any, any, never>;
+      runtime?: ManagedRuntime.ManagedRuntime<never, unknown> | undefined;
     }),
     drains,
   });

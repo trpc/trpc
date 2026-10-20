@@ -11,7 +11,11 @@ import {
   experimental_RateLimited,
   experimental_rateLimit,
 } from '@trpc12/trpc/middleware';
-import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
+import {
+  createFetchHandler,
+  initTrpc,
+  type inferRouterServices,
+} from '@trpc12/trpc/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { createTestServer } from '../fixtures/server.ts';
 
@@ -109,8 +113,8 @@ test('the error is typed on the client, and retryLink can wait for retryAfter', 
 
 test('the handler must provide RateLimiter', () => {
   expectTypeOf<
-    Parameters<typeof createFetchHandler<typeof router>>[0]['layer']
-  >().toEqualTypeOf<Layer.Layer<RateLimiter.RateLimiter, any, never>>();
+    inferRouterServices<typeof router>
+  >().toEqualTypeOf<RateLimiter.RateLimiter>();
   // @ts-expect-error -- RateLimiter is required
   createFetchHandler({ router, createContext: () => ({ ip: '' }) });
   expect(experimental_RateLimited.code).toBe('TOO_MANY_REQUESTS');
