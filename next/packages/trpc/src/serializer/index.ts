@@ -16,14 +16,14 @@
  */
 import type { Effect, Stream } from 'effect';
 import type { DansonForm, OutputForm } from '../internal/types.ts';
+import type { DeserializeStreamOptions } from './deferred.ts';
+import type { Scanned } from './framed.ts';
 import {
   deserializers as stdDeserializers,
   inputDeserializers as stdInputDeserializers,
   serializers as stdSerializers,
-  deserializeStream,
-  serializeDeferred,
+  deserializeStream as dansonDeserializeStream,
   type Frame,
-  type SerializedDeferred,
   deserializeSync,
   instancesOnly,
   serializeSync,
@@ -52,6 +52,12 @@ export type {
   OutputForm,
   SyncForm,
 } from '../internal/types.ts';
+export {
+  deserializeStream,
+  serializeDeferred,
+  type DeserializeStreamOptions,
+  type SerializeDeferredOptions,
+} from './deferred.ts';
 export {
   createSyncSerializer,
   jsonSerializer,
@@ -134,6 +140,20 @@ export interface SerializeOpts {
  * use compatible serializers. `TForm` is which output types survive, for
  * client types.
  *
+ * Deferred values (`Promise`, `AsyncIterable`, `ReadableStream`) aren't the
+ * serializer's: {@link serializeDeferred} and {@link deserializeStream} frame
+ * them around `serialize` and `deserialize`, so a client that never streams
+ * doesn't bundle that code.
+ *
+ * @example
+ * ```ts
+ * const serializer: Serializer<JsonForm> = {
+ *   name: 'my-json',
+ *   kind: 'none',
+ *   serialize: (value) => ({ json: JSON.parse(JSON.stringify(value)) }),
+ *   deserialize: (value) => value.json as never,
+ * };
+ * ```
  * @since 0.1.0
  * @stability stable
  */
@@ -145,7 +165,8 @@ export interface Serializer<TForm extends OutputForm = DansonForm> {
   readonly name: string;
   /**
    * `streaming` handles deferred values and files at any depth; with `sync`
-   * and `none` the transport frames root streams and promises only.
+   * and `none` the transport frames deferred values in plain objects and
+   * arrays, and files only as a root output.
    */
   readonly kind: 'streaming' | 'sync' | 'none';
   /** Type-only: the output form. */
@@ -153,22 +174,24 @@ export interface Serializer<TForm extends OutputForm = DansonForm> {
   /** Serializes a value with no deferred parts. Throws on a `Promise` or stream. */
   serialize(value: unknown, opts?: SerializeOpts): SerializeReturn;
   deserialize<T = unknown>(value: SerializeReturn, opts?: DeserializeOpts): T;
-  /** Serializes a value that may hold deferred parts. */
-  serializeDeferred(
-    value: unknown,
-    opts?: { coerceError?: (cause: unknown) => unknown },
-  ): SerializedDeferred;
-  /** Rebuilds a value from its head frame and chunks. */
-  deserializeStream<T, E>(
-    frames: Stream.Stream<Frame, E>,
-    opts?: {
-      reviveError?: (value: unknown) => unknown;
-      /** What open deferred values reject with when the frames die. */
-      streamFailed?: (cause: unknown) => unknown;
-      /** What open deferred values reject with when the frames end early. */
-      streamInterrupted?: () => unknown;
-    },
-  ): Effect.Effect<T, E | DansonError>;
+  /**
+   * danSON frames deferred values itself, in one pass: its types, for the
+   * encoder, and its decoder. Without it, the transport frames them.
+   * @internal
+   */
+  readonly '~deferred'?: {
+    readonly serializers: SerializeRecord;
+    deserializeStream<T, E>(
+      frames: Stream.Stream<Frame, E>,
+      opts: DeserializeStreamOptions,
+    ): Effect.Effect<T, E | DansonError>;
+  };
+  /**
+   * `serialize` for a value already walked, so framing its deferred values
+   * walks it once.
+   * @internal
+   */
+  readonly '~encode'?: (scanned: Scanned) => SerializeReturn;
 }
 
 interface PartsContext {
@@ -263,10 +286,11 @@ export function createSerializer(opts: SerializerOptions = {}): Serializer {
         context: { parts: o?.parts } satisfies PartsContext,
       }),
     deserialize: (value, o) => deserializeSync(value, de(o)),
-    serializeDeferred: (value, o) =>
-      serializeDeferred(value, { serializers, coerceError: o?.coerceError }),
-    deserializeStream: (frames, o) =>
-      deserializeStream(frames, { ...output, ...o }),
+    '~deferred': {
+      serializers,
+      deserializeStream: (frames, o) =>
+        dansonDeserializeStream(frames, { ...output, ...o }),
+    },
   };
 }
 

@@ -1,17 +1,8 @@
-import { Deferred, Effect, Exit, Stream } from 'effect';
 import type { JsonForm, SyncForm } from '../internal/types.ts';
 import type { Serializer } from './index.ts';
 import {
-  deferredChunks,
   isAsyncIterable,
   isPromiseLike,
-  makeChunkQueues,
-  sourceOf,
-  streamErrorsOf,
-  toDansonError,
-  toDeserializeError,
-  type Chunk,
-  type PendingSource,
   type SerializeReturn,
   DansonError,
   type JsonValue,
@@ -37,11 +28,17 @@ export interface SyncTransformer {
 
 type Kind = 'Promise' | 'AsyncIterable' | 'ReadableStream';
 
-/** Where a deferred value sat: its path in the value, chunk index and kind. */
-type Slot = [path: Array<string | number>, index: number, kind: Kind];
+/**
+ * Where a deferred value sat: its path in the value, chunk index and kind.
+ * @internal
+ */
+export type Slot = [path: Array<string | number>, index: number, kind: Kind];
 
-/** A framed value: the transformer's JSON, plus the deferred values it held. */
-interface FramedPayload extends SerializeReturn {
+/**
+ * A framed value: the transformer's JSON, plus the deferred values it held.
+ * @internal
+ */
+export interface FramedPayload extends SerializeReturn {
   d?: Slot[];
 }
 
@@ -60,8 +57,11 @@ const isPlainObject = (v: unknown): v is Record<string, unknown> => {
   return proto === Object.prototype || proto === null;
 };
 
-/** What one walk over a value found. */
-interface Scanned {
+/**
+ * What one walk over a value found.
+ * @internal
+ */
+export interface Scanned {
   /** The value, with its deferred values replaced by `null`. */
   readonly value: unknown;
   readonly slots: Slot[];
@@ -80,10 +80,16 @@ interface Scanned {
  * Only the containers on a path to a deferred value are copied. Other
  * objects (a `Map`, a class instance) are the transformer's to handle. One
  * walk also finds `File`s and `Blob`s and whether the value is JSON as is.
+ * @internal
  */
-function scan(
+export function scan(
   value: unknown,
-  register?: (deferred: Parameters<typeof sourceOf>[0]) => number,
+  register?: (
+    deferred:
+      | ReadableStream<unknown>
+      | AsyncIterable<unknown>
+      | PromiseLike<unknown>,
+  ) => number,
 ): Scanned {
   const slots: Slot[] = [];
   const path: Array<string | number> = [];
@@ -149,23 +155,6 @@ function scan(
   return { value: out, slots, blob, json };
 }
 
-function setAt(
-  target: unknown,
-  path: ReadonlyArray<string | number>,
-  value: unknown,
-): unknown {
-  if (path.length === 0) return value;
-  let parent = target as Record<string | number, unknown>;
-  for (const key of path.slice(0, -1)) {
-    parent = parent?.[key] as Record<string | number, unknown>;
-  }
-  if (parent === null || typeof parent !== 'object') {
-    throw new DansonError('A deferred value has no place in the result');
-  }
-  parent[path[path.length - 1]!] = value;
-  return target;
-}
-
 /**
  * Whether a `File` or `Blob` sits in `value`, or in the containers a
  * transformer walks (plain objects, arrays, `Map`s and `Set`s): it would turn
@@ -218,81 +207,7 @@ function framedSerializer(
     kind,
     serialize,
     deserialize,
-    serializeDeferred: (value, opts) => {
-      const pending: PendingSource[] = [];
-      let next = 0;
-      const register = (v: Parameters<typeof sourceOf>[0]) => {
-        const idx = next++;
-        pending.push([idx, sourceOf(v)]);
-        return idx;
-      };
-      const payload = (v: unknown): FramedPayload => {
-        const scanned = scan(v, register);
-        const out = encode(scanned);
-        return scanned.slots.length > 0 ? { ...out, d: scanned.slots } : out;
-      };
-      const head = payload(value);
-      if (pending.length === 0) return { head, chunks: undefined };
-      const chunks = deferredChunks(
-        pending,
-        (v) => Effect.try({ try: () => payload(v), catch: toDansonError }),
-        opts?.coerceError,
-      );
-      return { head, chunks };
-    },
-    deserializeStream: <T, E>(
-      frames: Stream.Stream<SerializeReturn | Chunk, E>,
-      opts: Parameters<Serializer['deserializeStream']>[1] = {},
-    ): Effect.Effect<T, E | DansonError> => {
-      const errors = streamErrorsOf(opts);
-      return Effect.gen(function* () {
-        const head = yield* Deferred.make<T, E | DansonError>();
-        const chunks = yield* makeChunkQueues(errors.revive);
-        const revivePayload = (p: FramedPayload): unknown => {
-          let v: unknown = deserialize(p);
-          for (const [path, idx, kind] of p.d ?? []) {
-            v = setAt(v, path, chunks.builders[kind](idx));
-          }
-          return v;
-        };
-        const read = (frame: FramedPayload) =>
-          Effect.try({
-            try: () => revivePayload(frame),
-            catch: toDeserializeError,
-          });
-        let first = true;
-        yield* frames.pipe(
-          Stream.runForEach((frame) => {
-            if (first) {
-              first = false;
-              return Effect.flatMap(read(frame as FramedPayload), (value) =>
-                Deferred.succeed(head, value as T),
-              );
-            }
-            const [idx, status, json] = frame as Chunk;
-            return Effect.flatMap(read(json as FramedPayload), (value) =>
-              chunks.offer(idx, [status, value]),
-            );
-          }),
-          Effect.onExit((exit) =>
-            Effect.andThen(
-              // A no-op once the head is out; a head frame that failed to read leaves it open.
-              Deferred.done(
-                head,
-                Exit.isFailure(exit)
-                  ? Exit.failCause(exit.cause)
-                  : Exit.fail(errors.interrupted() as never),
-              ),
-              chunks.end(errors.ended(exit)),
-            ),
-          ),
-          // The frames are read for as long as the deferred values they
-          // feed, past the caller's fiber.
-          Effect.forkDetach,
-        );
-        return yield* Deferred.await(head);
-      });
-    },
+    '~encode': encode,
   };
 }
 

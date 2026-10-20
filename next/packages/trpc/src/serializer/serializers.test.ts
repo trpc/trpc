@@ -22,7 +22,9 @@ import {
 import {
   createSerializer,
   createSyncSerializer,
+  deserializeStream,
   jsonSerializer,
+  serializeDeferred,
   type JsonOf,
 } from '@trpc12/trpc/serializer';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
@@ -527,9 +529,10 @@ test("returning a deferred AsyncIterable ends a read that's still waiting for it
     [Symbol.asyncIterator]: () => ({ next: () => new Promise(() => {}) }),
   };
   for (const serializer of [createSerializer(), jsonSerializer]) {
-    const serialized = serializer.serializeDeferred({ items: silent });
+    const serialized = serializeDeferred(serializer, { items: silent });
     const value = await Effect.runPromise(
-      serializer.deserializeStream<{ items: AsyncIterable<unknown> }, never>(
+      deserializeStream<{ items: AsyncIterable<unknown> }, never>(
+        serializer,
         Stream.concat(Stream.make(serialized.head), Stream.never),
       ),
     );

@@ -33,6 +33,7 @@ import type {
   Frame,
   SerializeReturn,
 } from '../../../serializer/index.ts';
+import { deserializeStream } from '../../../serializer/deferred.ts';
 import { toClientError, type Operation } from '../../link.ts';
 import { badResponse, isByteStreamInput, serializeInput } from '../events.ts';
 import { resumeOf, retrying, type Retries } from '../resume.ts';
@@ -488,15 +489,17 @@ export function makeTransport(
       const resume = isByteStreamInput(op.input)
         ? undefined
         : resumeOf(op.context);
-      return serializer
-        .deserializeStream(resume ? resumable(op, resume, frames) : frames, {
+      return deserializeStream(
+        serializer,
+        resume ? resumable(op, resume, frames) : frames,
+        {
           reviveError,
           ...streamErrors,
-        })
-        .pipe(
-          Effect.mapError((error) => headless(toHttpError(error))),
-          Effect.catchDefect((defect) => Effect.fail(toHttpError(defect))),
-        );
+        },
+      ).pipe(
+        Effect.mapError((error) => headless(toHttpError(error))),
+        Effect.catchDefect((defect) => Effect.fail(toHttpError(defect))),
+      );
     }
     return reply.response.text.pipe(
       Effect.flatMap((text) =>
@@ -562,16 +565,14 @@ export function makeTransport(
         Queue.offerUnsafe(queue, line.body as Frame);
         return batch.settleWith(
           line.i,
-          serializer
-            .deserializeStream(Stream.fromQueue(queue), {
-              reviveError,
-              ...streamErrors,
-            })
-            .pipe(
-              Effect.catchCause((cause) =>
-                Effect.fail(toHttpError(Cause.squash(cause))),
-              ),
+          deserializeStream(serializer, Stream.fromQueue(queue), {
+            reviveError,
+            ...streamErrors,
+          }).pipe(
+            Effect.catchCause((cause) =>
+              Effect.fail(toHttpError(Cause.squash(cause))),
             ),
+          ),
         );
       };
       return yield* Effect.gen(function* () {

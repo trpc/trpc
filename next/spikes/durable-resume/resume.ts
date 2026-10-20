@@ -12,7 +12,11 @@
  */
 import { Duration, Effect, Stream } from 'effect';
 import { Persistence } from 'effect/persistence';
-import type { AnySerializer, Frame } from '@trpc12/trpc/serializer';
+import {
+  serializeDeferred,
+  type AnySerializer,
+  type Frame,
+} from '@trpc12/trpc/serializer';
 
 interface Meta {
   readonly count: number;
@@ -57,7 +61,7 @@ export const makeStreamLog = (opts: StreamLogOptions = {}) =>
         yield* store
           .set(`${key}:meta`, { count: 0, done: false }, ttl)
           .pipe(Effect.orDie);
-        const { head, chunks } = serializer.serializeDeferred(run());
+        const { head, chunks } = serializeDeferred(serializer, run());
         const frames = Stream.concat(
           Stream.make(head as Frame),
           chunks ? Stream.orDie(chunks) : Stream.empty,

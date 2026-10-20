@@ -632,7 +632,7 @@ export function fromWireError(body: unknown): TrpcError {
 
 /**
  * What a streamed value rejects with when its stream dies or ends early,
- * for `Serializer.deserializeStream`.
+ * for `deserializeStream`.
  * @internal
  */
 export const streamErrors = {

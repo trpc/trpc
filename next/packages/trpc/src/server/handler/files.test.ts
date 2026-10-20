@@ -11,7 +11,12 @@ import {
   routerType,
 } from '@trpc12/trpc/client';
 import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
-import { createSerializer, type Frame } from '@trpc12/trpc/serializer';
+import {
+  createSerializer,
+  deserializeStream,
+  serializeDeferred,
+  type Frame,
+} from '@trpc12/trpc/serializer';
 import { Effect, Stream } from 'effect';
 import { createTestServer } from '../../fixtures/server.ts';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
@@ -558,7 +563,7 @@ test('files yielded by an async iterable arrive in order', async () => {
 });
 
 test("a stream that ends before a file's bytes fails instead of hanging", async () => {
-  const serialized = danson.serializeDeferred({
+  const serialized = serializeDeferred(danson, {
     file: new File(['bytes'], 'a.txt'),
   });
   const frames: Frame[] = [serialized.head];
@@ -569,7 +574,8 @@ test("a stream that ends before a file's bytes fails instead of hanging", async 
   );
   const read = (list: Frame[]) =>
     Effect.runPromise(
-      danson.deserializeStream<{ file: File }, never>(
+      deserializeStream<{ file: File }, never>(
+        danson,
         Stream.fromIterable(list),
       ),
     );
