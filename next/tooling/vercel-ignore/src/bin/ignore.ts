@@ -17,8 +17,13 @@ decide(
     // sources, never a test.
     ignored: ['packages/**/*.test.ts', 'packages/**/*.test.tsx'],
     // The docs are in `www/docs`, so the project's own directory has them;
-    // the decisions pages render these.
-    inputs: ['.agent-docs/open', '.agent-docs/decisions'],
+    // the decisions pages render the first two, the benchmarks page the
+    // parity matrix's feature tables.
+    inputs: [
+      '.agent-docs/open',
+      '.agent-docs/decisions',
+      '.agent-docs/reference/orpc-parity.md',
+    ],
   },
   { production: 'v12', remote: 'https://github.com/trpc/trpc.git' },
 ).pipe(

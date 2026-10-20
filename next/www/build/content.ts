@@ -10,6 +10,8 @@ import type { Doc, DocMeta, DocSection, Sample } from '../src/content/types.ts';
 import { experimentIds, experiments } from '../src/experiments.ts';
 import { llmsFullTxtPath } from '../src/site.ts';
 import { demoIds, demos, isDemoId } from '../src/kitchen-sink/demos.ts';
+import { expandBenchmarks } from './benchmarks.ts';
+import { chartMarkdown, decodeChart } from './charts.ts';
 import { stripCollapseMarkers } from './collapse.ts';
 import { ContentError, messageOf } from './content-error.ts';
 import { type DocLink, releaseTwoslashers, resolveLink } from './markdown.ts';
@@ -195,12 +197,13 @@ const parseSource = Effect.fn('parseSource')(function* (
     file,
     samplesDir: dirs.samplesDir,
   });
+  const benchmarks = yield* expandBenchmarks(expanded.markdown, file);
   const source: Source = {
     file,
     frontmatter,
-    markdown: expanded.markdown,
+    markdown: benchmarks.markdown,
     slug: slugOf(path, dirs.contentDir, file),
-    snippets: expanded.files,
+    snippets: [...expanded.files, ...benchmarks.files],
   };
   return source;
 });
@@ -708,6 +711,10 @@ export function docsContent(options: ContentOptions): Plugin {
           ? `The web page runs this demo, editable, beside the text: [${demo.title}](${options.sourceUrl}/www/samples/${demo.sample}/src).`
           : '';
       })
+      .replaceAll(/^```chart\n([\s\S]*?)\n```$/gm, (_fence, json: string) =>
+        // `renderDoc` decoded the fence already.
+        chartMarkdown(decodeChart(json)),
+      )
       .replaceAll(/\]\(([^)\s]+)\)/g, (link, url: string) => {
         const resolved = resolveLink(source.slug, url, options.contentPath);
         if (resolved.kind === 'doc') {

@@ -655,6 +655,88 @@ figure.tweet .tweet-footer a:hover {
   }
 }
 
+/* A `chart` fence's bars (`build/charts.ts`) */
+.bench-chart {
+  margin-block: 1.5em;
+  display: grid;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+}
+
+.bench-chart-caption {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.75rem;
+}
+
+.bench-chart-title {
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.bench-chart-better,
+.bench-chart-note {
+  color: var(--muted-foreground);
+  font-size: 0.8125rem;
+}
+
+.bench-chart-row {
+  display: grid;
+  grid-template-columns: 5.5rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.bench-chart-label {
+  white-space: nowrap;
+  color: var(--muted-foreground);
+}
+
+.bench-chart-track {
+  height: 0.75rem;
+  border-radius: 9999px;
+  background: var(--muted);
+  overflow: hidden;
+}
+
+.bench-chart-bar {
+  display: block;
+  height: 100%;
+  min-width: 2px;
+  border-radius: inherit;
+  background: color-mix(in oklch, var(--muted-foreground) 55%, transparent);
+}
+
+.bench-chart-value {
+  min-width: 4.5rem;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.bench-chart-row[data-highlight] .bench-chart-label,
+.bench-chart-row[data-highlight] .bench-chart-value {
+  color: var(--foreground);
+  font-weight: 600;
+}
+
+.bench-chart-row[data-highlight] .bench-chart-bar {
+  background: var(--brand);
+}
+
+@media (max-width: 40rem) {
+  .bench-chart-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.25rem 0.75rem;
+  }
+
+  .bench-chart-track {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+}
+
 /* A kitchen-sink demo's place in its page (`remarkDemos`), until `PageDemo` runs it */
 .demo-slot {
   margin-block: 1.5em;

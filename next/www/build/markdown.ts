@@ -34,6 +34,7 @@ import { visit } from 'unist-util-visit';
 import type { DocHeading } from '../src/content/types.ts';
 import { collapseRegions } from './collapse.ts';
 import { ContentError, messageOf } from './content-error.ts';
+import { chartHtml, decodeChart } from './charts.ts';
 import { appOf, sampleApps } from './sample-apps.ts';
 import type { TwoslashCache } from './twoslash-cache.ts';
 
@@ -315,6 +316,24 @@ function remarkDemos(demos: Array<string>) {
       parent.children[index] = {
         type: 'html',
         value: `<div class="demo-slot not-prose" data-demo="${id}"><p>The demo runs here, in your browser.</p></div>`,
+      };
+    });
+  };
+}
+
+/**
+ * A `chart` fence holds a bar chart as JSON (`Chart` in `charts.ts`) and
+ * becomes its figure. `benchmark` fences expand into them.
+ */
+function remarkCharts() {
+  return (tree: MdastRoot) => {
+    visit(tree, 'code', (node: Code, index, parent) => {
+      if (node.lang !== 'chart' || !parent || index === undefined) {
+        return;
+      }
+      parent.children[index] = {
+        type: 'html',
+        value: chartHtml(decodeChart(node.value)),
       };
     });
   };
@@ -897,6 +916,7 @@ function parsing(
     .use(remarkHeadingIds)
     .use(remarkLinks(options, links))
     .use(remarkDemos(demos))
+    .use(remarkCharts)
     .use(remarkPackageInstall)
     .use(remarkCodeMeta)
     .use(remarkRehype, { allowDangerousHtml: true })
