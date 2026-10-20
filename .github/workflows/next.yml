@@ -149,6 +149,42 @@ jobs:
       # A URL without a page gets 404.html, which hydrates without a mismatch.
       - run: pnpm --filter @trpc12/www not-found:check
 
+  www-trpc-io:
+    # The docs site as trpc.io's build (`site.url` at https://trpc.io), where
+    # v12 is hidden: its UI shows only to a session that has been to v12.
+    # Beside `www`, so it adds a build's minutes but no wait.
+    runs-on: ubuntu-latest
+    # A cold twoslash cache compiles all ~590 blocks.
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+        with:
+          package_json_file: next/package.json
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: next/.nvmrc
+          cache: pnpm
+          cache-dependency-path: next/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+        env:
+          VP_GIT_HOOKS: '0'
+      # Only `www` saves it, under this run's key.
+      - uses: actions/cache/restore@v4
+        with:
+          path: next/www/node_modules/.cache
+          key: www-cache-${{ github.sha }}
+          restore-keys: www-cache-
+      # A no-op once the cutover has made it the URL.
+      - name: Build as trpc.io
+        run: |
+          sed -i "s|^  url: 'https://v12.trpc.io',|  url: 'https://trpc.io',|" www/src/site.ts
+          grep -q "^  url: 'https://trpc.io'," www/src/site.ts
+          pnpm --filter @trpc12/www build
+      # v12's UI is hidden, then shown for the session after ?version=12 or
+      # /v12, with no hydration error.
+      - run: pnpm --filter @trpc12/www v12-reveal:check
+
   effect-latest:
     # `@trpc12/trpc` has `effect@^4` as a peer; users get the latest 4.x, the lockfile pins one.
     runs-on: ubuntu-latest
