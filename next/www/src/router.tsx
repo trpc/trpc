@@ -1,5 +1,6 @@
 import { createRouter } from '@tanstack/react-router';
 
+import { startAnalytics } from './analytics.ts';
 import { NotFound } from './components/not-found.tsx';
 import {
   dehydrateRenderedPath,
@@ -39,6 +40,7 @@ export function getRouter() {
     scrollRestorationBehavior: 'instant',
   });
   traceRouter(router);
+  startAnalytics(router);
   return router;
 }
 

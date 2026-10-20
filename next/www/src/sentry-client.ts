@@ -7,6 +7,8 @@
 import { type AnyRouter, isNotFound, isRedirect } from '@tanstack/react-router';
 import type { HydrationOptions } from 'react-dom/client';
 
+import { whenIdle } from './when-idle.ts';
+
 export type ErrorSource =
   | 'caught'
   | 'onerror'
@@ -106,21 +108,6 @@ const sentry = enabled
       return sdk.startSentry(release, router);
     })
   : undefined;
-
-function whenIdle(run: () => void) {
-  const idle = () => {
-    if ('requestIdleCallback' in window) {
-      requestIdleCallback(run, { timeout: 10_000 });
-    } else {
-      setTimeout(run, 0);
-    }
-  };
-  if (document.readyState === 'complete') {
-    idle();
-  } else {
-    window.addEventListener('load', idle, { once: true });
-  }
-}
 
 if (sentry) {
   window.addEventListener('error', onError);
