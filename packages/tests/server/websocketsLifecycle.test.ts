@@ -315,6 +315,11 @@ test('a query reusing an active subscription id leaves it registered', async () 
         result: { type: 'stopped' },
       }),
     );
+    expect(
+      ctx.messages.map((message) =>
+        'result' in message ? message.result.type : 'error',
+      ),
+    ).toEqual(['started', 'data', 'error', 'stopped']);
   } finally {
     pending.resolve(doneResult());
   }

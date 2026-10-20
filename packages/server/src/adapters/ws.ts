@@ -50,6 +50,25 @@ import { jsonEncoder } from './wsEncoder';
  */
 const WEBSOCKET_OPEN = 1; /* ws.WebSocket.OPEN */
 
+function settle<TValue>(promise: Promise<TValue>): Promise<Result<TValue>> {
+  return promise.then(
+    (value): Result<TValue> => ({ ok: true, value }),
+    (error: unknown): Result<TValue> => ({ ok: false, error }),
+  );
+}
+
+/**
+ * A procedure that gives up because its subscription was cancelled rejects
+ * with an `AbortError`, which is wrapped as an INTERNAL_SERVER_ERROR.
+ */
+function isCancelledSetup(error: TRPCError, signal: AbortSignal) {
+  return (
+    signal.aborted &&
+    error.code === 'INTERNAL_SERVER_ERROR' &&
+    isAbortError(error.cause)
+  );
+}
+
 /**
  * What `createContext` gets in the WebSocket adapter: the upgrade request
  * as `req`, the socket as `res`, and `info`. It's called once per
@@ -234,7 +253,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         ? null
         : createCtxPromise(() => null);
 
-    function handleRequest(
+    async function handleRequest(
       msg: TRPCClientOutgoingMessage,
       batchIndex: number,
       ctxResult: Promise<ContextResult>,
@@ -307,9 +326,6 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           }),
         });
       };
-      const respondStopped = () => {
-        respond({ id, jsonrpc, result: { type: 'stopped' } });
-      };
 
       if (type === 'subscription' && clientSubscriptions.has(id)) {
         // duplicate request ids for client
@@ -322,7 +338,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         return;
       }
 
-      run(async () => {
+      const execute = async () => {
         // Registered before any await so that a stop or a disconnect during
         // context creation or the procedure call cancels the subscription.
         // The id is freed once this has settled, after the iterator's
@@ -390,7 +406,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           return;
         }
 
-        const iteration = run(async () => {
+        const iterate = async () => {
           await using iterator = iteratorResource(iterable);
           let completed = false;
           // Disposed before the iterator, so cleanup that waits for
@@ -456,11 +472,9 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
             next = null;
             result = null;
           }
-        }).catch((cause) => {
-          abortController.abort();
-          respondWithError(cause);
-        });
+        };
 
+        const iteration = settle(iterate());
         respond({
           id,
           jsonrpc,
@@ -469,30 +483,24 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           },
         });
 
-        await iteration;
-      }).then(
-        () => {
-          if (type === 'subscription') {
-            respondStopped();
-          }
-        },
-        (cause) => {
-          // procedure threw an error
-          const error = getTRPCErrorFromUnknown(cause);
-          // A procedure that gives up because its subscription was cancelled
-          // rejects with an `AbortError`, which is wrapped as an
-          // INTERNAL_SERVER_ERROR. Any other cause or code is still reported.
-          if (
-            abortController.signal.aborted &&
-            error.code === 'INTERNAL_SERVER_ERROR' &&
-            isAbortError(error.cause)
-          ) {
-            respondStopped();
-            return;
-          }
+        const iterated = await iteration;
+        if (!iterated.ok) {
+          abortController.abort();
+          respondWithError(iterated.error);
+        }
+      };
+
+      const outcome = await settle(execute());
+      if (!outcome.ok) {
+        const error = getTRPCErrorFromUnknown(outcome.error);
+        if (!isCancelledSetup(error, abortController.signal)) {
           respondWithError(error);
-        },
-      );
+          return;
+        }
+      }
+      if (type === 'subscription') {
+        respond({ id, jsonrpc, result: { type: 'stopped' } });
+      }
     }
     client.on('message', (rawData, isBinary) => {
       // Handle PING/PONG as text regardless of encoder
@@ -587,8 +595,9 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         }
       });
 
-      const ctxResult = ctxPromise;
-      parsedMsgs.map((msg, index) => handleRequest(msg, index, ctxResult));
+      for (const [index, msg] of parsedMsgs.entries()) {
+        void handleRequest(msg, index, ctxPromise);
+      }
     });
 
     // WebSocket errors should be handled, as otherwise unhandled exceptions will crash Node.js.
