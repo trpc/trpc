@@ -5,6 +5,7 @@ import {
   Deferred,
   Duration,
   Effect,
+  Exit,
   Fiber,
   Option,
   PubSub,
@@ -146,6 +147,12 @@ export interface SocketLink<TDecl extends LinkDecl = {}>
    * `CLIENT_CLOSED_REQUEST`; the next call opens a new connection.
    */
   close(): Promise<void>;
+  /**
+   * Ends the link for good: calls in flight and every later call fail with
+   * `CLIENT_CLOSED_REQUEST`, and the connection closes. `await using` calls
+   * it.
+   */
+  dispose(): Promise<void>;
 }
 
 interface KeepAlive {
@@ -179,6 +186,9 @@ type ReconnectOption = Pick<BuiltinCallOptions, 'reconnect'>;
 const lostError = () =>
   new TrpcError({ code: 'NETWORK_ERROR', message: 'The connection was lost' });
 
+const closedError = (message: string) =>
+  new TrpcError({ code: 'CLIENT_CLOSED_REQUEST', message });
+
 function makeSocketLink(
   transport: SocketTransport,
   opts: SocketLinkOptions,
@@ -194,6 +204,9 @@ function makeSocketLink(
   let current: Connection | undefined;
   /** Bumped by `close()`, which can't reach a connection still opening. */
   let closes = 0;
+  /** Set by `dispose()`: the scope is closed, and every call fails. */
+  let disposed = false;
+  const disposedError = () => closedError('The link was disposed');
 
   const revive = (message: Extract<ServerMessage, { type: 'error' }>) => {
     try {
@@ -392,8 +405,10 @@ function makeSocketLink(
     if (Option.isSome(signal) && Signal.$is('Fail')(signal.value)) {
       return yield* Effect.fail(signal.value.error);
     }
-    const conn = yield* Effect.option(RcRef.get(connection));
-    if (Option.isNone(conn)) return undefined;
+    // Disposing interrupts a connection still opening.
+    const conn = yield* Effect.exit(RcRef.get(connection));
+    if (disposed) return yield* Effect.fail(disposedError());
+    if (Exit.isFailure(conn)) return undefined;
     if (!conn.value.lost && !conn.value.retired) return conn.value;
     yield* drop(conn.value);
     return 'stale';
@@ -560,7 +575,12 @@ function makeSocketLink(
           },
         };
         const fiber = yield* run(call).pipe(
-          Effect.onError((cause) => Deferred.failCause(result, cause)),
+          // Disposing interrupts the fiber, as the link's scope closes.
+          Effect.onError((cause) =>
+            disposed
+              ? Deferred.fail(result, disposedError())
+              : Deferred.failCause(result, cause),
+          ),
           Effect.ensuring(decoder.close),
           Effect.forkIn(scope),
         );
@@ -624,17 +644,16 @@ function makeSocketLink(
       },
     ).pipe(Stream.mapEffect((value) => value));
 
+  const failLive = (error: AnyTrpcError) => {
+    const signal = Signal.Fail({ error });
+    for (const inbox of live) Queue.offerUnsafe(inbox, signal);
+  };
+
   const close = () =>
     Effect.runPromise(
       Effect.gen(function* () {
-        const signal = Signal.Fail({
-          error: new TrpcError({
-            code: 'CLIENT_CLOSED_REQUEST',
-            message: 'The link was closed',
-          }),
-        });
         closes++;
-        for (const inbox of live) Queue.offerUnsafe(inbox, signal);
+        failLive(closedError('The link was closed'));
         const conn = current;
         yield* RcRef.invalidate(connection);
         if (conn) {
@@ -644,10 +663,24 @@ function makeSocketLink(
       }),
     );
 
+  const dispose = () =>
+    Effect.runPromise(
+      Effect.suspend(() => {
+        if (disposed) return Effect.void;
+        disposed = true;
+        failLive(disposedError());
+        return Scope.close(scope, Exit.void);
+      }),
+    );
+
   const link: TrpcLink = ({ op }) =>
-    op.type === 'subscription' ? subscription(op) : single(op);
+    disposed
+      ? Stream.fail(disposedError())
+      : op.type === 'subscription'
+        ? subscription(op)
+        : single(op);
   return withSerializer(
-    Object.assign(link, { close, [Symbol.asyncDispose]: close }),
+    Object.assign(link, { close, dispose, [Symbol.asyncDispose]: dispose }),
     serializer,
   );
 }
