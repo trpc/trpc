@@ -14,6 +14,7 @@ v11: client/links/splitLink
 import type { AppRouter } from './server.ts';
 // ---cut-end---
 import {
+  batching,
   createTrpcClient,
   httpLink,
   routerType,
@@ -27,7 +28,7 @@ const client = createTrpcClient({
     splitLink({
       condition: (op) => op.type === 'subscription',
       true: wsLink({ url: 'ws://localhost:3000/trpc' }),
-      false: httpLink({ url: 'http://localhost:3000/trpc', batch: true }),
+      false: httpLink({ url: 'http://localhost:3000/trpc', batch: batching() }),
     }),
   ],
 });

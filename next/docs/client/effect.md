@@ -64,7 +64,7 @@ A subscription is a `Stream` of what the server emits. Ending the stream early, 
 
 ```ts twoslash
 // ---cut-start---
-import { httpLink, routerType } from '@trpc12/trpc/client';
+import { httpLink, routerType, sse } from '@trpc12/trpc/client';
 import { t } from './server.ts';
 const router = {
   ticks: t.procedure.subscription(async function* () {
@@ -77,7 +77,7 @@ import { Effect, Stream } from 'effect';
 
 const client = createEffectClient({
   router: routerType<typeof router>(),
-  links: [httpLink({ url: 'http://localhost:3000/trpc' })],
+  links: [httpLink({ url: 'http://localhost:3000/trpc', subscriptions: sse() })],
 });
 
 const firstThree = client.ticks
