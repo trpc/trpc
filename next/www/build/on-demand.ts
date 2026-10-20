@@ -132,7 +132,8 @@ export const writeOnDemandFunction = Effect.fn('writeOnDemandFunction')(
         {
           handler: 'index.mjs',
           launcherType: 'Nodejs',
-          runtime: 'nodejs24.x',
+          // The Node that built it: Vercel's, which `engines.node` picks.
+          runtime: `nodejs${process.versions.node.split('.')[0]}.x`,
           shouldAddHelpers: false,
           supportsResponseStreaming: true,
         },
