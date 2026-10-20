@@ -144,6 +144,8 @@ jobs:
           key: www-cache-${{ github.sha }}
           restore-keys: www-cache-
       - run: pnpm --filter @trpc12/www build
+      # Every decisions page fits a phone, a tablet and a laptop.
+      - run: pnpm --filter @trpc12/www decisions:layout
 
   effect-latest:
     # `@trpc12/trpc` has `effect@^4` as a peer; users get the latest 4.x, the lockfile pins one.
