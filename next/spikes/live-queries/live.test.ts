@@ -4,7 +4,7 @@ import { NodeHttpServer } from '@effect/platform-node';
 import { createCollection } from '@tanstack/db';
 import {
   createTrpcClient,
-  httpLink,
+  httpStreamLink,
   routerType,
   wsLink,
 } from '@trpc12/trpc/client';
@@ -154,7 +154,7 @@ function setup() {
   };
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: 'http://localhost/trpc', fetch })],
+    links: [httpStreamLink({ url: 'http://localhost/trpc', fetch })],
   });
   return {
     client,
@@ -460,7 +460,7 @@ test('live collections share one WebSocket and resume with changes after a drop'
   });
   const http = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: server.url })],
+    links: [httpStreamLink({ url: server.url })],
   });
   const all = createCollection(
     liveCollectionOptions({

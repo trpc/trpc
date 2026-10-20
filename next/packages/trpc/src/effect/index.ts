@@ -1,5 +1,8 @@
 /**
  * Effect-native client: calls return an `Effect`, subscriptions a `Stream`.
+ * Its links run on Effect: `link()` makes them, and `httpStreamLink` is the
+ * HTTP one. Promise links (`httpLink`, `promiseLink()`) work too, as one step
+ * the Effect runtime can't see into.
  * The server side of Effect (Effect resolvers, `.provide()`, Effect Schema
  * inputs, the handler's `layer`) lives in `@trpc12/trpc/server`.
  *
@@ -9,7 +12,7 @@
  *
  * const client = createEffectClient({
  *   router: routerType<AppRouter>(),
- *   links: [httpLink({ url })],
+ *   links: [httpStreamLink({ url })],
  * });
  * const program = Effect.gen(function* () {
  *   const post = yield* client.post.byId.query({ id: '1' });
@@ -17,8 +20,8 @@
  * ```
  * @module
  */
-import type { Effect } from 'effect';
-import { Stream } from 'effect';
+import { Data, Stream, type Effect } from 'effect';
+import { makeErrorsYieldable } from '../internal/error.ts';
 import {
   createRecursiveProxy,
   makeOperation,
@@ -66,6 +69,7 @@ import type {
 } from '../server/procedures/index.ts';
 
 export { link };
+export { httpStreamLink } from '../client/links/index.ts';
 
 /**
  * The Effect client methods for one procedure.
@@ -185,7 +189,7 @@ const METHODS = {
  * ```ts
  * const client = createEffectClient({
  *   router: routerType<AppRouter>(),
- *   links: [httpLink({ url })],
+ *   links: [httpStreamLink({ url })],
  * });
  * const post = yield* client.post.byId.query({ id: '1' }).pipe(
  *   Effect.catchTag('NOT_FOUND', () => Effect.succeed(null)),
@@ -203,6 +207,7 @@ export function createEffectClient<
     UnmetNeedCheck<TLinks>,
 ): EffectClient<RouterOf<TSource>, LinksContext<TLinks>, LinksTypes<TLinks>>;
 export function createEffectClient(opts: TrpcClientOptions): unknown {
+  makeErrorsYieldable(Data.Error);
   chainSwitchNames(opts.links);
   return createRecursiveProxy((path, args) => {
     const method = path.at(-1) as keyof typeof METHODS | undefined;

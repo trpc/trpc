@@ -8,7 +8,7 @@
 import { spawnSync } from 'node:child_process';
 import {
   createTrpcClient,
-  httpLink,
+  httpStreamLink,
   routerType,
   safe,
 } from '@trpc12/trpc/client';
@@ -29,7 +29,7 @@ const assert = (ok: boolean, message: string): void => {
 await using server = await listen();
 const tracker = createTrpcClient({
   router: routerType<AppRouter>(),
-  links: [httpLink({ url: server.url, batch: true, serializer })],
+  links: [httpStreamLink({ url: server.url, batch: true, serializer })],
 });
 const browser = await chromium.launch(
   process.env['CHROME_PATH']

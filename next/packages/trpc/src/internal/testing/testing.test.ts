@@ -2,7 +2,11 @@ import { createServer } from 'node:http';
 import { NodeHttpServer } from '@effect/platform-node';
 import { expect, it } from '@effect/vitest';
 import { Effect, Layer } from 'effect';
-import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import {
+  createTrpcClient,
+  httpStreamLink,
+  routerType,
+} from '@trpc12/trpc/client';
 import { TestServer } from '@trpc12/trpc/internal/testing';
 import { initTrpc } from '@trpc12/trpc/server';
 import { z } from 'zod';
@@ -25,7 +29,7 @@ const client = Effect.gen(function* () {
   const testServer = yield* TestServer;
   return createTrpcClient({
     router: routerType<typeof router>(),
-    links: [httpLink({ url: testServer.url })],
+    links: [httpStreamLink({ url: testServer.url })],
   });
 });
 

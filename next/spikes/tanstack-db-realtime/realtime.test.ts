@@ -20,7 +20,11 @@ import { createCollection } from '@tanstack/db';
 import { QueryClient } from '@tanstack/query-core';
 import { queryCollectionOptions } from '@tanstack/query-db-collection';
 import { liveCollectionOptions } from '@trpc12/experimental-tanstack-db';
-import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import {
+  createTrpcClient,
+  httpStreamLink,
+  routerType,
+} from '@trpc12/trpc/client';
 import { TestServer } from '@trpc12/trpc/internal/testing';
 import {
   experimental_Publisher,
@@ -134,7 +138,7 @@ async function serve() {
     ...app,
     client: createTrpcClient({
       router: routerType<AppRouter>(),
-      links: [httpLink({ url: server.url })],
+      links: [httpStreamLink({ url: server.url })],
     }),
     [Symbol.asyncDispose]: () =>
       Effect.runPromise(Scope.close(scope, Exit.void)),

@@ -16,7 +16,7 @@ import type { AppRouter } from './server.ts';
 import {
   createTrpcClient,
   dedupeLink,
-  httpLink,
+  httpStreamLink,
   routerType,
 } from '@trpc12/trpc/client';
 
@@ -24,7 +24,7 @@ const client = createTrpcClient({
   router: routerType<AppRouter>(),
   links: [
     dedupeLink(),
-    httpLink({ url: 'http://localhost:3000/trpc', batch: true }),
+    httpStreamLink({ url: 'http://localhost:3000/trpc', batch: true }),
   ],
 });
 
@@ -63,12 +63,12 @@ import type { AppRouter } from './server.ts';
 import {
   createTrpcClient,
   dedupeLink,
-  httpLink,
+  httpStreamLink,
   routerType,
 } from '@trpc12/trpc/client';
 const client = createTrpcClient({
   router: routerType<AppRouter>(),
-  links: [dedupeLink(), httpLink({ url: '/trpc', batch: true })],
+  links: [dedupeLink(), httpStreamLink({ url: '/trpc', batch: true })],
 });
 const signal = new AbortController().signal;
 const id = '1';
@@ -79,7 +79,7 @@ await client.post.byId.query(
 );
 ```
 
-`headers`, `init`, `batch: false` (send this call alone), `reconnect: false` and `onResponse` are read by `httpLink`, `reconnect: false` also by `wsLink`, and `dedupe` by `dedupeLink`. A call takes only the fields its links read: a client over `wsLink` alone has no `headers`, and one over `localLink` has only `signal`. Your own links add fields by declaring them ([Custom links](./custom-links.md)).
+`headers`, `init` and `onResponse` are read by `httpLink` and `httpStreamLink`, `batch: false` (send this call alone) and `reconnect: false` by `httpStreamLink`, `reconnect: false` also by `wsLink`, and `dedupe` by `dedupeLink`. A call takes only the fields its links read: a client over `wsLink` alone has no `headers`, and one over `localLink` has only `signal`. Your own links add fields by declaring them ([Custom links](./custom-links.md)).
 
 ## Errors
 

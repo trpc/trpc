@@ -1,7 +1,7 @@
 import { Context, Effect, Schema } from 'effect';
 import {
   createTrpcClient,
-  httpLink,
+  httpStreamLink,
   safe,
   type TrpcClient,
   routerType,
@@ -82,7 +82,7 @@ async function setup() {
   });
   const client = createTrpcClient({
     router: appContract,
-    links: [httpLink({ url: server.url, headers: { 'x-user': 'ada' } })],
+    links: [httpStreamLink({ url: server.url, headers: { 'x-user': 'ada' } })],
   });
   return { server, client, [Symbol.asyncDispose]: () => server.close() };
 }
@@ -122,7 +122,7 @@ test('contract errors and input validation apply to the implementation', async (
   });
   const client = createTrpcClient({
     router: routerType<AppContract>(),
-    links: [httpLink({ url: server.url })],
+    links: [httpStreamLink({ url: server.url })],
   });
   await expect(client.post.create.mutate({ title: 'x' })).rejects.toMatchObject(
     { code: 'UNAUTHORIZED', defined: true },
@@ -309,7 +309,7 @@ test('impl.use() and impl.provide() run for every procedure of the contract', as
   });
   const anon = createTrpcClient({
     router: adminContract,
-    links: [httpLink({ url: server.url })],
+    links: [httpStreamLink({ url: server.url })],
   });
   await expect(anon.stats.query()).rejects.toMatchObject({
     code: 'UNAUTHORIZED',
@@ -317,7 +317,7 @@ test('impl.use() and impl.provide() run for every procedure of the contract', as
   });
   const admin = createTrpcClient({
     router: adminContract,
-    links: [httpLink({ url: server.url, headers: { 'x-user': 'ada' } })],
+    links: [httpStreamLink({ url: server.url, headers: { 'x-user': 'ada' } })],
   });
   expect(await admin.users.ban.mutate('bob')).toBe('ada banned bob');
 
@@ -351,7 +351,7 @@ test('a contract procedure without an implementation answers NOT_IMPLEMENTED', a
   await using server = await createTestServer({ router: appContract });
   const client = createTrpcClient({
     router: appContract,
-    links: [httpLink({ url: server.url })],
+    links: [httpStreamLink({ url: server.url })],
   });
   await expect(client.health.query()).rejects.toMatchObject({
     code: 'NOT_IMPLEMENTED',
@@ -415,7 +415,7 @@ test('experimental_toContract() emits a JSON contract that types clients (Q9.4)'
   });
   const client = createTrpcClient({
     router: json,
-    links: [httpLink({ url: server.url })],
+    links: [httpStreamLink({ url: server.url })],
   });
   const post = await client.post.byId.query({ id: '1' });
   expectTypeOf(post).toEqualTypeOf<{ id: string; title: string }>();

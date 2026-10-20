@@ -2,7 +2,7 @@ import { Layer } from 'effect';
 import { RateLimiter } from 'effect/persistence';
 import {
   createTrpcClient,
-  httpLink,
+  httpStreamLink,
   retryLink,
   safe,
   routerType,
@@ -74,7 +74,7 @@ test('the error is typed on the client, and retryLink can wait for retryAfter', 
   });
   const client = createTrpcClient({
     router: routerType<typeof router>(),
-    links: [httpLink({ url: http.url })],
+    links: [httpStreamLink({ url: http.url })],
   });
   await client.ping.query();
   await client.ping.query();
@@ -102,7 +102,7 @@ test('the error is typed on the client, and retryLink can wait for retryAfter', 
           return 0;
         },
       }),
-      httpLink({ url: http.url }),
+      httpStreamLink({ url: http.url }),
     ],
   });
   await safe(retrying.ping.query());

@@ -17,7 +17,7 @@ The [`examples/experimental/react-atom`](../../../examples/experimental/react-at
 
 ```tsx twoslash
 // ---cut-start---
-import { httpLink, routerType } from '@trpc12/trpc/client';
+import { httpStreamLink, routerType } from '@trpc12/trpc/client';
 import { createSerializer } from '@trpc12/trpc/serializer';
 import { z } from 'zod';
 import { appRouter, db, t } from './server.ts';
@@ -37,7 +37,7 @@ import { createAtomClient } from '@trpc12/experimental-react-atom';
 
 export const trpc = createAtomClient({
   router: routerType<AppRouter>(),
-  links: [httpLink({ url: '/trpc', serializer: createSerializer() })],
+  links: [httpStreamLink({ url: '/trpc', serializer: createSerializer() })],
 });
 
 function Post(props: { id: string }) {

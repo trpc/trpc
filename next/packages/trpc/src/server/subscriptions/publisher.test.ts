@@ -1,5 +1,9 @@
 import { Effect, Fiber, Layer, Stream } from 'effect';
-import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import {
+  createTrpcClient,
+  httpStreamLink,
+  routerType,
+} from '@trpc12/trpc/client';
 import {
   initTrpc,
   experimental_Publisher,
@@ -107,7 +111,7 @@ test('a subscription resumes from the buffer after lastEventId', async () => {
   });
   const client = createTrpcClient({
     router: routerType<typeof router>(),
-    links: [httpLink({ url: server.url })],
+    links: [httpStreamLink({ url: server.url })],
   });
   for (const title of ['a', 'b', 'c']) await client.create.mutate({ title });
 

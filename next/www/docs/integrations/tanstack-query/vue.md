@@ -24,7 +24,11 @@ The [`examples/experimental/framework-matrix`](../../../../examples/experimental
 import { createApp, type Component } from 'vue';
 import { VueQueryPlugin } from '@tanstack/vue-query';
 import { createTrpcContext } from '@trpc12/experimental-tanstack-vue-query';
-import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import {
+  createTrpcClient,
+  httpStreamLink,
+  routerType,
+} from '@trpc12/trpc/client';
 import type { AppRouter } from './server.ts';
 declare const App: Component;
 // ---cut-end---
@@ -32,7 +36,7 @@ declare const App: Component;
 const makeClient = () =>
   createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: '/trpc' })],
+    links: [httpStreamLink({ url: '/trpc' })],
   });
 export const { TrpcPlugin, useTrpc, useTrpcClient } =
   createTrpcContext<typeof makeClient>();

@@ -58,13 +58,13 @@ const [post, err] = await safeClient.post.byId.query({ id: '1' });
 
 The first three codes, the `LinkErrorCode` type, are made only by links, so a call's error has those its client's links declare and no others. `STREAM_INTERRUPTED` is only in the error of a call that streams: a subscription, or a procedure whose output is an `AsyncIterable` or `Stream` ([streamed queries](../integrations/tanstack-query.md) report it as the query's error). Any other call has its result before anything can be cut: a response that ends before it is `NETWORK_ERROR` or `BAD_RESPONSE`, and a `Promise` deferred inside the output rejects with `STREAM_INTERRUPTED` on its own. With only `localLink`, which runs calls in-process, no call can fail with `NETWORK_ERROR`, and `switch (err.code)` can't have a `case 'NETWORK_ERROR'`. The other codes can reach any call.
 
-The same call has all three through `httpLink` and none through `localLink`:
+The same call has all three through `httpStreamLink`, two through `httpLink` and none through `localLink`:
 
 ```ts twoslash
 // ---cut-start---
 import {
   createTrpcClient,
-  httpLink,
+  httpStreamLink,
   localLink,
   routerType,
   safe,
@@ -76,7 +76,7 @@ import type { LinkErrorCode } from '@trpc12/trpc/client';
 
 const overHttp = createTrpcClient({
   router: routerType<AppRouter>(),
-  links: [httpLink({ url })],
+  links: [httpStreamLink({ url })],
 });
 const inProcess = createTrpcClient({
   router: routerType<AppRouter>(),
@@ -99,7 +99,8 @@ if (localErr) {
 
 | Link                                                                             | Link codes it declares                                |
 | -------------------------------------------------------------------------------- | ----------------------------------------------------- |
-| `httpLink`                                                                       | `NETWORK_ERROR`, `BAD_RESPONSE`, `STREAM_INTERRUPTED` |
+| `httpStreamLink`                                                                 | `NETWORK_ERROR`, `BAD_RESPONSE`, `STREAM_INTERRUPTED` |
+| `httpLink`                                                                       | `NETWORK_ERROR`, `BAD_RESPONSE`                       |
 | `wsLink`, `experimental_messagePortLink`, `experimental_socketLink`              | `NETWORK_ERROR`, `BAD_RESPONSE`, `STREAM_INTERRUPTED` |
 | `experimental_openApiLink`                                                       | `NETWORK_ERROR`, `BAD_RESPONSE`                       |
 | `experimental_validationLink`                                                    | `BAD_RESPONSE` (a result that fails its schema)       |
@@ -268,7 +269,7 @@ A [streamed output](../server/streaming.md#errors) and a [subscription](../subsc
 // ---cut-start---
 import {
   createTrpcClient,
-  httpLink,
+  httpStreamLink,
   matchError,
   routerType,
   safe,
@@ -288,7 +289,7 @@ const router = {
 };
 const client = createTrpcClient({
   router: routerType<typeof router>(),
-  links: [httpLink({ url: 'http://localhost:3000/trpc' })],
+  links: [httpStreamLink({ url: 'http://localhost:3000/trpc' })],
 });
 const offline = {
   NETWORK_ERROR: () => 'You are offline',

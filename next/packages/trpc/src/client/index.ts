@@ -30,6 +30,12 @@ export {
   type TypedClientOptions,
 } from './client.ts';
 export {
+  promiseLink,
+  type PromiseLink,
+  type PromiseLinkOpts,
+  type PromiseLinkResult,
+} from './chain.ts';
+export {
   link,
   type AnyLink,
   type AtLeastOneLink,
@@ -57,7 +63,11 @@ export {
   type RetryLinkOptions,
   type SplitLinkOptions,
   httpLink,
+  type HttpLinkDecl,
   type HttpLinkOptions,
+  httpStreamLink,
+  type HttpStreamLinkDecl,
+  type HttpStreamLinkOptions,
   switchLink,
   type ReservedSwitchName,
   type SwitchLinkDecl,

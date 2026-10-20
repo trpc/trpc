@@ -5,7 +5,7 @@ section: Client
 order: 7
 ---
 
-Tracing is opt-in: install an Effect tracer and every call runs in a span named `trpc.<path>` (kind `client`), with `rpc.method`, `trpc.type` and `trpc.error.code` on failure. `httpLink` sends the span as `traceparent` and `b3` headers (`wsLink` puts them in each request message's `trace` field), and the server's `trpc.<path>` span joins the same trace ([Server tracing](../server/effect.md#tracing)):
+Tracing is opt-in: install an Effect tracer and every call runs in a span named `trpc.<path>` (kind `client`), with `rpc.method`, `trpc.type` and `trpc.error.code` on failure. `httpLink` and `httpStreamLink` send the span as `traceparent` and `b3` headers (`wsLink` puts them in each request message's `trace` field), and the server's `trpc.<path>` span joins the same trace ([Server tracing](../server/effect.md#tracing)):
 
 ```ts
 import * as NodeSdk from '@effect/opentelemetry/NodeSdk';

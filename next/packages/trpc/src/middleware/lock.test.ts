@@ -12,7 +12,7 @@ import { Redis } from 'effect/persistence';
 import { TestClock } from 'effect/testing';
 import {
   createTrpcClient,
-  httpLink,
+  httpStreamLink,
   routerType,
   safe,
 } from '@trpc12/trpc/client';
@@ -97,7 +97,7 @@ async function serve(
   const http = await createTestServer({ router, layer });
   const client = createTrpcClient({
     router: routerType<typeof router>(),
-    links: [httpLink({ url: http.url })],
+    links: [httpStreamLink({ url: http.url })],
   });
   return { http, client };
 }

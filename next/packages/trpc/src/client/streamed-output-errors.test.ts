@@ -2,7 +2,7 @@ import { Effect, Stream } from 'effect';
 import {
   createSafeClient,
   createTrpcClient,
-  httpLink,
+  httpStreamLink,
   matchError,
   routerType,
   safe,
@@ -92,7 +92,7 @@ const steps = async <T, E>(
 test("a streamed output carries its stream's failures in the call's errors and its iterable's", async () => {
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: 'http://localhost/trpc' })],
+    links: [httpStreamLink({ url: 'http://localhost/trpc' })],
   });
   type Feed = Awaited<ReturnType<typeof client.feed.query>>;
   expectTypeOf<Feed>().toExtend<AsyncIterable<number>>();
@@ -163,7 +163,7 @@ test("a streamed output carries its stream's failures in the call's errors and i
 
   const effectClient = createEffectClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: 'http://localhost/trpc' })],
+    links: [httpStreamLink({ url: 'http://localhost/trpc' })],
   });
   type EffectFeed = Effect.Success<ReturnType<typeof effectClient.feed.query>>;
   expectTypeOf<DefinedCodeOf<ErrorOf<EffectFeed>>>().toEqualTypeOf<'GONE'>();
@@ -224,9 +224,9 @@ async function expectTypedFailures(links: AtLeastOneLink) {
   expect(ticked.err).toMatchObject({ code: 'GONE', defined: true });
 }
 
-test("httpLink: a streamed output's typed failures arrive typed, through safe()", async () => {
+test("httpStreamLink: a streamed output's typed failures arrive typed, through safe()", async () => {
   await using server = await createTestServer({ router });
-  await expectTypedFailures([httpLink({ url: server.url })]);
+  await expectTypedFailures([httpStreamLink({ url: server.url })]);
 });
 
 test("wsLink: a streamed output's typed failures arrive typed, through safe()", async () => {
@@ -270,7 +270,7 @@ test('an Effect client gets the typed failure from iterating a streamed output',
   await using server = await createTestServer({ router });
   const client = createEffectClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: server.url })],
+    links: [httpStreamLink({ url: server.url })],
   });
   const err = await Effect.runPromise(
     client.feed.query().pipe(

@@ -1,7 +1,7 @@
 import {
   createTrpcClient,
   dedupeLink,
-  httpLink,
+  httpStreamLink,
   link,
   loggerLink,
   retryLink,
@@ -55,9 +55,9 @@ export function createApiClient(opts: ApiClientOptions) {
           app: [
             dedupeLink(),
             retryLink(),
-            httpLink({ url, batch: true, headers, fetch: opts.fetch }),
+            httpStreamLink({ url, batch: true, headers, fetch: opts.fetch }),
           ],
-          admin: httpLink({ url, headers, fetch: opts.fetch }),
+          admin: httpStreamLink({ url, headers, fetch: opts.fetch }),
         },
         pick: (op) => (op.path.startsWith('admin.') ? 'admin' : 'app'),
       }),

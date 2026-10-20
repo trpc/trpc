@@ -1,9 +1,10 @@
 import { Effect, Stream, type Scope } from 'effect';
-import type {
-  BuiltinCallOptions,
-  Operation,
-  OperationStream,
-  TrpcLink,
+import {
+  link,
+  type BuiltinCallOptions,
+  type Operation,
+  type OperationStream,
+  type TrpcLink,
 } from '../client/link.ts';
 import type { ContractJson } from '../contract/index.ts';
 import {
@@ -298,8 +299,9 @@ export function experimental_openApiLink(opts: OpenApiLinkOptions): TrpcLink<{
     );
   });
 
-  return ({ op }): OperationStream =>
+  return link(({ op }): OperationStream =>
     op.type === 'subscription'
       ? Stream.unwrap(subscription(op))
-      : Stream.fromEffect(single(op));
+      : Stream.fromEffect(single(op)),
+  );
 }

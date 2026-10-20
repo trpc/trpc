@@ -11,7 +11,7 @@ import { request as httpsRequest } from 'node:https';
 import {
   createTrpcClient,
   experimental_durableLink,
-  httpLink,
+  httpStreamLink,
   safe,
   splitLink,
   wsLink,
@@ -32,7 +32,7 @@ export async function main(base: string) {
       splitLink({
         condition: (op) => op.type === 'subscription',
         true: ws,
-        false: httpLink({ url }),
+        false: httpStreamLink({ url }),
       }),
     ],
   });
@@ -43,7 +43,9 @@ export async function main(base: string) {
   const other = createTrpcClient({
     router: routerType<AppRouter>(),
     links: [
-      httpLink({ url: url.replace(`/rooms/${room}/`, `/rooms/${room}-2/`) }),
+      httpStreamLink({
+        url: url.replace(`/rooms/${room}/`, `/rooms/${room}-2/`),
+      }),
     ],
   });
   if (local) {
@@ -125,7 +127,7 @@ export async function main(base: string) {
     router: routerType<AppRouter>(),
     links: [
       experimental_durableLink({ delay: () => 50 }),
-      httpLink({
+      httpStreamLink({
         url,
         fetch: async (input, init) => {
           const request = new Request(input, init);

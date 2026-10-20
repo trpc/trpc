@@ -17,7 +17,11 @@ A [query collection](https://tanstack.com/db/latest/docs/collections/query-colle
 // ---cut-start---
 import type { QueryClient } from '@tanstack/react-query';
 import { createTrpcQueryUtils } from '@trpc12/tanstack-query';
-import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import {
+  createTrpcClient,
+  httpStreamLink,
+  routerType,
+} from '@trpc12/trpc/client';
 import { z } from 'zod';
 import { appRouter, db, t } from './server.ts';
 const router = {
@@ -33,7 +37,7 @@ const router = {
 };
 const client = createTrpcClient({
   router: routerType<typeof router>(),
-  links: [httpLink({ url: '/trpc' })],
+  links: [httpStreamLink({ url: '/trpc' })],
 });
 const trpc = createTrpcQueryUtils({ client });
 declare const queryClient: QueryClient;
@@ -114,11 +118,15 @@ createFetchHandler({ router, layer: PostEvents.memory({ buffer: 100 }) });
 // @filename: app.ts
 import type { QueryClient } from '@tanstack/react-query';
 import { createTrpcQueryUtils } from '@trpc12/tanstack-query';
-import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import {
+  createTrpcClient,
+  httpStreamLink,
+  routerType,
+} from '@trpc12/trpc/client';
 import type { router } from './router.ts';
 const client = createTrpcClient({
   router: routerType<typeof router>(),
-  links: [httpLink({ url: '/trpc' })],
+  links: [httpStreamLink({ url: '/trpc' })],
 });
 const trpc = createTrpcQueryUtils({ client });
 declare const queryClient: QueryClient;
@@ -193,11 +201,15 @@ export const router = {
 };
 // ---cut-start---
 // @filename: app.ts
-import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import {
+  createTrpcClient,
+  httpStreamLink,
+  routerType,
+} from '@trpc12/trpc/client';
 import type { router } from './router.ts';
 const client = createTrpcClient({
   router: routerType<typeof router>(),
-  links: [httpLink({ url: '/trpc' })],
+  links: [httpStreamLink({ url: '/trpc' })],
 });
 // ---cut-end---
 import { createCollection } from '@tanstack/db';

@@ -8,7 +8,7 @@ import assert from 'node:assert/strict';
 import { parseArgs } from 'node:util';
 import {
   createTrpcClient,
-  httpLink,
+  httpStreamLink,
   routerType,
   safe,
   wsLink,
@@ -40,7 +40,7 @@ export async function main(url: string, expected: Expected = {}) {
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
     links: [
-      httpLink({
+      httpStreamLink({
         url,
         batch: true,
         serializer,

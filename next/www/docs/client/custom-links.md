@@ -9,6 +9,25 @@ v11: client/links
 
 `link(({ op, next }) => stream)` writes a link: it gets the operation and the rest of the chain, and returns an Effect `Stream` (a query or mutation is a one-element stream). Links written for v11 run unchanged through [`fromV11Link`](../migrations/from-v11/links.md) from `@trpc12/trpc/interop`.
 
+## Promise links
+
+`promiseLink(({ op, next }) => result)` writes a link without Effect: `next(op)` returns a `Promise` for a query or mutation and an `AsyncIterable` for a subscription. Return it, or a replacement. A chain of Promise links, like one with only `httpLink`, bundles no Effect.
+
+```ts twoslash
+// ---cut-start---
+import { promiseLink } from '@trpc12/trpc/client';
+declare function getToken(): string;
+// ---cut-end---
+const authLink = promiseLink((opts) =>
+  opts.next({
+    ...opts.op,
+    context: { ...opts.op.context, headers: { authorization: getToken() } },
+  }),
+);
+```
+
+Return a subscription's `AsyncIterable` as it is, not from an `async` function, which would wrap it in a `Promise`. `promiseLink` takes the same declarations as `link` (below).
+
 ## Call options
 
 A link of your own declares what it reads, and the client types it as a call option:

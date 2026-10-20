@@ -23,7 +23,7 @@ import { createRoot, hydrateRoot } from 'react-dom/client';
 import { renderToString } from 'react-dom/server';
 import {
   createTrpcClient,
-  httpLink,
+  httpStreamLink,
   link,
   matchError,
   routerType,
@@ -179,7 +179,7 @@ test("each hook's error is what the call fails with, network and aborts included
   }
   const down = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: 'http://127.0.0.1:1/trpc', serializer })],
+    links: [httpStreamLink({ url: 'http://127.0.0.1:1/trpc', serializer })],
   });
   using view = mount(<Post id="1" />, down);
   await waitFor(() => expect(text(view.el, '.error')).toBe('offline'));
@@ -560,7 +560,7 @@ test("a context typed from a client factory takes its router, its links' context
     link<{ context: { priority?: 'high' }; errors: Offline }>((opts) =>
       opts.next(opts.op),
     ),
-    httpLink({ url: 'http://localhost', serializer }),
+    httpStreamLink({ url: 'http://localhost', serializer }),
   ] as const;
   const makeClient = () =>
     createTrpcClient({ router: routerType<AppRouter>(), links });

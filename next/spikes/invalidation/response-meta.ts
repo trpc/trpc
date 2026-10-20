@@ -1,7 +1,7 @@
 /**
  * Spike, second round (decision declared-invalidation-later): links that
  * need something from a link further down the chain say so, and the chain
- * is checked. Here the need is the HTTP response, which `httpLink` would
+ * is checked. Here the need is the HTTP response, which `httpStreamLink` would
  * always offer in the core change this prototypes: `responseHttpLink`
  * stands in for it, handing each call's response to the `onResponse`
  * callback in that call's `op.context`.
@@ -10,9 +10,9 @@
  */
 import { Deferred, Effect, Stream } from 'effect';
 import {
-  httpLink,
+  httpStreamLink,
   link,
-  type HttpLinkOptions,
+  type HttpStreamLinkOptions,
   type Operation,
   type OperationStream,
   type TrpcLink,
@@ -68,15 +68,18 @@ export const chain = <const TLinks extends ReadonlyArray<TrpcLink<any>>>(
 const ON_RESPONSE = '~onResponse';
 
 /**
- * `httpLink`, plus a report of each call's response to `onResponse`. The
- * callback rides in the call's `init`, which `httpLink` passes to `fetch` as
+ * `httpStreamLink`, plus a report of each call's response to `onResponse`. The
+ * callback rides in the call's `init`, which `httpStreamLink` passes to `fetch` as
  * it is; an `init` holding a function is batched apart.
  */
 export function responseHttpLink(
-  opts: HttpLinkOptions,
+  opts: HttpStreamLinkOptions,
 ): TrpcLink<{ context: ResponseContext }> & Capabilities<'response'> {
   const baseFetch = opts.fetch ?? globalThis.fetch;
-  const fetch: NonNullable<HttpLinkOptions['fetch']> = async (url, init) => {
+  const fetch: NonNullable<HttpStreamLinkOptions['fetch']> = async (
+    url,
+    init,
+  ) => {
     const res = await baseFetch(url, init);
     const report = (init as Record<string, unknown>)[
       ON_RESPONSE
@@ -84,7 +87,7 @@ export function responseHttpLink(
     report?.({ status: res.status, headers: res.headers });
     return res;
   };
-  const inner = httpLink({ ...opts, fetch });
+  const inner = httpStreamLink({ ...opts, fetch });
   return link<{ context: ResponseContext }>(({ op, next }) => {
     const onResponse = op.context.onResponse;
     if (!onResponse) return inner({ op, next });

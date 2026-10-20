@@ -1,16 +1,35 @@
-import { Cause, Effect, Option, Stream, Tracer } from 'effect';
+import { Cause, Data, Effect, Exit, Option, Stream, Tracer } from 'effect';
 import { HttpTraceContext } from 'effect/http';
 import {
-  isBuiltinCode,
-  isKeptUntyped,
-  isTrpcError,
-  toUntypedError,
+  makeErrorsYieldable,
   TrpcError,
   type AnyTrpcError,
 } from '../internal/error.ts';
+import { toAsyncIterable } from '../internal/effects.ts';
 import type { OutputForm, ProcedureType } from '../internal/types.ts';
-import type { AnySerializer } from '../serializer/index.ts';
+import {
+  EFFECT_RUNNER,
+  isPromiseLink,
+  toClientError,
+  type AnyLink,
+  type EffectRunner,
+  type PromiseLink,
+} from './chain.ts';
 import type { LinkErrorCode } from './types.ts';
+
+export {
+  chainSerializer,
+  chainSwitchNames,
+  promiseLink,
+  setSwitchNames,
+  toClientError,
+  withSerializer,
+  type AnyLink,
+  type AtLeastOneLink,
+  type PromiseLink,
+  type PromiseLinkOpts,
+  type PromiseLinkResult,
+} from './chain.ts';
 
 /**
  * Call option fields the built-in links read from `op.context` (17 F-B).
@@ -194,49 +213,12 @@ export interface TrpcLink<TDecl extends LinkDecl = {}, TRouter = any> {
   };
 }
 
-/**
- * Any link, whatever it declares.
- * @since 0.1.0
- * @stability stable
- */
-export type AnyLink = TrpcLink<any, any>;
-
-/**
- * A client's `links`: at least one, since the last one sends the request.
- * A spread before or after a link counts (`[...links, httpLink({ url })]`).
- * @since 0.1.0
- * @stability stable
- */
-export type AtLeastOneLink<TRouter = any> =
-  | readonly [TrpcLink<any, TRouter>, ...TrpcLink<any, TRouter>[]]
-  | readonly [...TrpcLink<any, TRouter>[], TrpcLink<any, TRouter>];
-
 /** The `context` a link's declaration adds. @internal */
 export type DeclContext<TDecl> = TDecl extends { context: infer C }
   ? C extends object
     ? C
     : {}
   : {};
-
-/**
- * Turns anything a link threw into a client error: a defined error, or a
- * built-in one with no `data`. An undeclared custom code is `CLIENT_ERROR`,
- * unless the server sent it (`keepUntyped`).
- * @internal
- */
-export function toClientError(cause: unknown): AnyTrpcError {
-  if (
-    isTrpcError(cause) &&
-    (cause.defined || isBuiltinCode(cause.code) || isKeptUntyped(cause))
-  ) {
-    return toUntypedError(cause);
-  }
-  return new TrpcError({
-    code: 'CLIENT_ERROR',
-    message: cause instanceof Error ? cause.message : String(cause),
-    cause,
-  });
-}
 
 /**
  * @since 0.1.0
@@ -302,53 +284,59 @@ export const firstValue = (
  */
 export const link = <TDecl extends LinkDecl = {}>(
   fn: (opts: EffectLinkOpts<DeclContext<TDecl>>) => OperationStream,
-): TrpcLink<TDecl> => fn as TrpcLink<TDecl>;
-
-const serializers = new WeakMap<AnyLink, AnySerializer>();
-
-/** Records the serializer a link sends with. @internal */
-export function withSerializer<L extends AnyLink>(
-  target: L,
-  serializer: AnySerializer | undefined,
-): L {
-  if (serializer) serializers.set(target, serializer);
-  return target;
-}
-
-/** The first serializer a chain records, looking into split branches. @internal */
-export function chainSerializer(
-  links: ReadonlyArray<AnyLink>,
-): AnySerializer | undefined {
-  for (const current of links) {
-    const found = serializers.get(current);
-    if (found) return found;
-  }
-  return undefined;
-}
-
-const switchNames = new WeakMap<AnyLink, ReadonlySet<string>>();
-
-/** Records the `switchLink` names a link contains. @internal */
-export function setSwitchNames(target: AnyLink, names: Iterable<string>): void {
-  switchNames.set(target, new Set(names));
-}
+): TrpcLink<TDecl> => {
+  makeErrorsYieldable(Data.Error);
+  return Object.assign(fn, {
+    [EFFECT_RUNNER]: runForPromiseClient,
+  }) as TrpcLink<TDecl>;
+};
 
 /**
- * The `switchLink` names in a chain. Throws when two links on the chain
- * use the same one, since one call option would force both. @internal
+ * Runs `links[i..]` on Effect for the Promise client: a query's or
+ * mutation's single value, or a subscription's events.
  */
-export function chainSwitchNames(links: ReadonlyArray<AnyLink>): Set<string> {
-  const names = new Set<string>();
-  for (const current of links) {
-    for (const name of switchNames.get(current) ?? []) {
-      if (names.has(name)) {
-        throw new TypeError(`Two switchLinks on one chain are named "${name}"`);
-      }
-      names.add(name);
-    }
+const runForPromiseClient: EffectRunner = (links, i, op) => {
+  const stream = runLinksFrom(links, i, op);
+  if (op.type === 'subscription') return toAsyncIterable(stream, op.signal);
+  return Effect.runPromiseExit(firstValue(stream), { signal: op.signal }).then(
+    (exit) => {
+      if (Exit.isSuccess(exit)) return exit.value;
+      throw clientErrorFromCause(exit.cause);
+    },
+  );
+};
+
+/** A Promise link on an Effect chain: its result as a stream. */
+const fromPromiseLink = (
+  current: PromiseLink,
+  op: Operation,
+  next: (op: Operation) => ReturnType<PromiseLink>,
+): OperationStream => {
+  if (op.type === 'subscription') {
+    return Stream.fromAsyncIterable(
+      {
+        [Symbol.asyncIterator]: () =>
+          (current({ op, next }) as AsyncIterable<unknown>)[
+            Symbol.asyncIterator
+          ](),
+      },
+      toClientError,
+    );
   }
-  return names;
-}
+  return Stream.fromEffect(
+    Effect.tryPromise({
+      try: (signal) =>
+        current({
+          op: {
+            ...op,
+            signal: op.signal ? AbortSignal.any([op.signal, signal]) : signal,
+          },
+          next,
+        }) as Promise<unknown>,
+      catch: toClientError,
+    }),
+  );
+};
 
 /**
  * Runs `op` through `links`; when a tracer is installed, in a `trpc.<path>`
@@ -402,6 +390,14 @@ export function runLinks(
   links: ReadonlyArray<AnyLink>,
   op: Operation,
 ): OperationStream {
+  return runLinksFrom(links, 0, op);
+}
+
+function runLinksFrom(
+  links: ReadonlyArray<AnyLink>,
+  start: number,
+  op: Operation,
+): OperationStream {
   const at =
     (i: number) =>
     (o: Operation): OperationStream => {
@@ -414,7 +410,16 @@ export function runLinks(
           }),
         );
       }
-      return Stream.suspend(() => current({ op: o, next: at(i + 1) }));
+      if (isPromiseLink(current)) {
+        return Stream.suspend(() =>
+          fromPromiseLink(current, o, (next) =>
+            runForPromiseClient(links, i + 1, next),
+          ),
+        );
+      }
+      return Stream.suspend(() =>
+        (current as TrpcLink)({ op: o, next: at(i + 1) }),
+      );
     };
-  return Stream.catch(at(0)(op), (err) => Stream.fail(toClientError(err)));
+  return Stream.catch(at(start)(op), (err) => Stream.fail(toClientError(err)));
 }

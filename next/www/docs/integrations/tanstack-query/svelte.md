@@ -22,14 +22,18 @@ The [`examples/experimental/framework-matrix`](../../../../examples/experimental
 ```ts twoslash
 // ---cut-start---
 import { createTrpcContext } from '@trpc12/experimental-tanstack-svelte-query';
-import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import {
+  createTrpcClient,
+  httpStreamLink,
+  routerType,
+} from '@trpc12/trpc/client';
 import type { AppRouter } from './server.ts';
 // ---cut-end---
 // trpc.ts
 export const makeClient = () =>
   createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: '/trpc' })],
+    links: [httpStreamLink({ url: '/trpc' })],
   });
 export const [useTrpc, setTrpcContext] = createTrpcContext<typeof makeClient>();
 ```

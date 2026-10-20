@@ -37,7 +37,7 @@ import { toClientError, type Operation } from '../../link.ts';
 import { badResponse, isByteStreamInput, serializeInput } from '../events.ts';
 import { resumeOf, retrying, type Retries } from '../resume.ts';
 import type { Batch } from './batch.ts';
-import type { HttpLinkOptions } from './link.ts';
+import type { HttpStreamLinkOptions } from './link.ts';
 
 const NO_BODY_STATUSES = new Set([204, 205, 304]);
 
@@ -151,9 +151,9 @@ export interface Transport {
   readonly batchKey: (op: Operation) => string;
 }
 
-/** The HTTP side of `httpLink`: requests, responses and their bodies. */
+/** The HTTP side of `httpStreamLink`: requests, responses and their bodies. */
 export function makeTransport(
-  opts: HttpLinkOptions,
+  opts: HttpStreamLinkOptions,
   serializer: AnySerializer,
 ): Transport {
   const baseUrl = String(opts.url).replace(/\/+$/, '');
@@ -263,7 +263,7 @@ export function makeTransport(
           await res.body?.cancel().catch(() => {});
           throw new TrpcError({
             code: 'UNSUPPORTED_PROTOCOL',
-            message: `The server uses the '${theirs}' serializer, but this httpLink uses '${serializer.name}'. Pass the same serializer to the handler and httpLink.`,
+            message: `The server uses the '${theirs}' serializer, but this httpStreamLink uses '${serializer.name}'. Pass the same serializer to the handler and httpStreamLink.`,
           });
         }
         web = res;

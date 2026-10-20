@@ -1,7 +1,7 @@
 import { Schema, SchemaGetter } from 'effect';
 import {
   createTrpcClient,
-  httpLink,
+  httpStreamLink,
   routerType,
   safe,
 } from '@trpc12/trpc/client';
@@ -110,7 +110,7 @@ async function setup() {
   });
   const client = createTrpcClient({
     router: routerType<typeof router>(),
-    links: [httpLink({ url: server.url })],
+    links: [httpStreamLink({ url: server.url })],
   });
   return { client, [Symbol.asyncDispose]: () => server.close() };
 }

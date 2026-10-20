@@ -1,7 +1,7 @@
 import { Schema } from 'effect';
 import {
   createTrpcClient,
-  httpLink,
+  httpStreamLink,
   safe,
   routerType,
   type ErrorData,
@@ -74,7 +74,7 @@ async function setup(user: User | null = { id: 'u1', name: 'Ada' }) {
   });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: server.url })],
+    links: [httpStreamLink({ url: server.url })],
   });
   return { server, client, [Symbol.asyncDispose]: () => server.close() };
 }
@@ -174,7 +174,7 @@ test('input issue paths are typed from each schema, and match what the schema re
   });
   const client = createTrpcClient({
     router: routerType<typeof issues>(),
-    links: [httpLink({ url: server.url })],
+    links: [httpStreamLink({ url: server.url })],
   });
 
   const [, nested] = await safe(
@@ -307,7 +307,7 @@ test('a Standard Schema types input from ~standard.types, or from validate witho
   });
   const client = createTrpcClient({
     router: routerType<typeof schemas>(),
-    links: [httpLink({ url: server.url })],
+    links: [httpStreamLink({ url: server.url })],
   });
   expectTypeOf<
     Parameters<typeof client.typed.query>[0]
@@ -360,7 +360,7 @@ test('Standard Schema issues keep their paths, async validators are awaited, and
   });
   const client = createTrpcClient({
     router: routerType<typeof schemas>(),
-    links: [httpLink({ url: server.url })],
+    links: [httpStreamLink({ url: server.url })],
   });
   const [, issues] = await safe(client.paths.query('x'));
   expect(issues).toMatchObject({
@@ -407,7 +407,7 @@ test('recursive and branded outputs keep their types', async () => {
   });
   const client = createTrpcClient({
     router: routerType<typeof typed>(),
-    links: [httpLink({ url: server.url })],
+    links: [httpStreamLink({ url: server.url })],
   });
   const json = await client.json.query();
   expect(json).toEqual({ a: [1, { b: null }] });

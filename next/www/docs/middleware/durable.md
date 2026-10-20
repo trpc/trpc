@@ -12,7 +12,7 @@ Results live in Effect's `BackingPersistence`: `Persistence.layerBackingMemory` 
 
 ```ts
 import { Persistence } from 'effect/persistence';
-import { experimental_durableLink, httpLink } from '@trpc12/trpc/client';
+import { experimental_durableLink, httpStreamLink } from '@trpc12/trpc/client';
 import { experimental_durable } from '@trpc12/trpc/middleware';
 
 const checkout = t.procedure
@@ -24,7 +24,7 @@ createFetchHandler({ router, layer: Persistence.layerBackingMemory });
 
 const client = createTrpcClient({
   router: routerType<AppRouter>(),
-  links: [experimental_durableLink(), httpLink({ url, batch: true })],
+  links: [experimental_durableLink(), httpStreamLink({ url, batch: true })],
 });
 // After a reload, pick up the same call:
 await client.checkout.mutate(cart, { callId: sessionStorage.checkoutId });

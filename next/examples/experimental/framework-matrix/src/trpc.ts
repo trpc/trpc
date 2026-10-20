@@ -1,4 +1,8 @@
-import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import {
+  createTrpcClient,
+  httpStreamLink,
+  routerType,
+} from '@trpc12/trpc/client';
 import { createSerializer } from '@trpc12/trpc/serializer';
 import type { AppRouter } from '../server.ts';
 
@@ -6,6 +10,6 @@ import type { AppRouter } from '../server.ts';
 export const makeClient = (url = '/trpc') =>
   createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url, serializer: createSerializer() })],
+    links: [httpStreamLink({ url, serializer: createSerializer() })],
   });
 export type Client = ReturnType<typeof makeClient>;

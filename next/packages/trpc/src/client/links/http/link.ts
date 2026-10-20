@@ -6,6 +6,7 @@ import {
   type AnySerializer,
 } from '../../../serializer/index.ts';
 import {
+  link,
   withSerializer,
   type BuiltinCallOptions,
   type Operation,
@@ -17,11 +18,11 @@ import { makeSubscriptions } from './sse.ts';
 import { makeTransport } from './transport.ts';
 
 /**
- * Options for {@link httpLink}.
+ * Options for {@link httpStreamLink}.
  * @since 0.1.0
  * @stability stable
  */
-export interface HttpLinkOptions<
+export interface HttpStreamLinkOptions<
   TSerializer extends AnySerializer = AnySerializer,
 > {
   /** The endpoint, e.g. `http://localhost:3000/trpc`. */
@@ -43,7 +44,7 @@ export interface HttpLinkOptions<
    *
    * @example
    * ```ts
-   * httpLink({ url, init: () => ({ credentials: 'include' }) });
+   * httpStreamLink({ url, init: () => ({ credentials: 'include' }) });
    * await client.post.list.query(input, { init: { next: { tags: ['posts'] } } });
    * ```
    */
@@ -105,7 +106,7 @@ export interface HttpLinkOptions<
 }
 
 /**
- * What `httpLink` declares: the call options it reads (`headers`, `init`,
+ * What `httpStreamLink` declares: the call options it reads (`headers`, `init`,
  * `batch`, `reconnect`, `onResponse`), its serializer's form, the responses it reports
  * to `onResponse`, the errors it makes (`NETWORK_ERROR` when `fetch`
  * fails or a connection drops, `BAD_RESPONSE` for a page that isn't tRPC's
@@ -115,7 +116,7 @@ export interface HttpLinkOptions<
  * @since 0.1.0
  * @stability stable
  */
-export type HttpLinkDecl<TOpts> = {
+export type HttpStreamLinkDecl<TOpts> = {
   context: BuiltinCallOptions;
   form: FormOfOptions<TOpts>;
   provides: 'response';
@@ -130,25 +131,27 @@ export type HttpLinkDecl<TOpts> = {
     : {});
 
 /**
- * Sends calls over HTTP (17: one link for every HTTP transport). Queries use
- * `GET` with an `?input=` param, mutations `POST`, subscriptions SSE.
- * Outputs with nested `Promise`s or `AsyncIterable`s stream as JSONL. A call
- * whose input holds a `File` or `Blob` is sent alone as `multipart/form-data`.
+ * Sends calls over HTTP with everything `httpLink` leaves out: batching,
+ * subscriptions (SSE), streamed outputs (nested `Promise`s and
+ * `AsyncIterable`s, as JSONL or binary frames) and resumes. It runs on
+ * Effect, so it brings the Effect runtime into the bundle. Queries use
+ * `GET` with an `?input=` param, mutations `POST`. A call whose input holds
+ * a `File` or `Blob` is sent alone as `multipart/form-data`.
  *
  * @example
  * ```ts
  * createTrpcClient({
  *   router: routerType<AppRouter>(),
- *   links: [httpLink({ url: 'http://localhost:3000/trpc', batch: true })],
+ *   links: [httpStreamLink({ url: 'http://localhost:3000/trpc', batch: true })],
  * });
  * ```
  * @since 0.1.0
  * @stability stable
  */
-export function httpLink<TOpts extends HttpLinkOptions>(
+export function httpStreamLink<TOpts extends HttpStreamLinkOptions>(
   opts: TOpts,
-): TrpcLink<HttpLinkDecl<TOpts>>;
-export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
+): TrpcLink<HttpStreamLinkDecl<TOpts>>;
+export function httpStreamLink(opts: HttpStreamLinkOptions): TrpcLink<any> {
   const serializer = opts.serializer ?? jsonSerializer;
   const transport = makeTransport(opts, serializer);
   const maxItems =
@@ -162,13 +165,13 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
   const subscription = makeSubscriptions(transport, opts);
 
   return withSerializer(
-    (({ op }) => {
+    link(({ op }) => {
       if (op.type === 'subscription') {
         if (opts.subscriptions === false) {
           return Stream.fail(
             new TrpcError({
               code: 'METHOD_NOT_SUPPORTED',
-              message: 'This httpLink has subscriptions turned off',
+              message: 'This httpStreamLink has subscriptions turned off',
             }),
           );
         }
@@ -179,7 +182,7 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
           ? batched(op)
           : transport.single(op),
       );
-    }) as TrpcLink<any>,
+    }),
     serializer,
   );
 }

@@ -23,13 +23,17 @@ A single-page app with one client can make the helpers once, in a module, and im
 // ---cut-start---
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createTrpcQueryUtils } from '@trpc12/tanstack-react-query';
-import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import {
+  createTrpcClient,
+  httpStreamLink,
+  routerType,
+} from '@trpc12/trpc/client';
 import type { AppRouter } from './server.ts';
 // ---cut-end---
 // trpc.ts
 export const client = createTrpcClient({
   router: routerType<AppRouter>(),
-  links: [httpLink({ url: '/trpc' })],
+  links: [httpStreamLink({ url: '/trpc' })],
 });
 export const trpc = createTrpcQueryUtils({ client });
 
@@ -64,14 +68,18 @@ import {
   useQuery,
 } from '@tanstack/react-query';
 import { createTrpcContext } from '@trpc12/tanstack-react-query';
-import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import {
+  createTrpcClient,
+  httpStreamLink,
+  routerType,
+} from '@trpc12/trpc/client';
 import { useState } from 'react';
 import type { AppRouter } from './server.ts';
 // ---cut-end---
 const makeClient = () =>
   createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: '/trpc' })],
+    links: [httpStreamLink({ url: '/trpc' })],
   });
 export const [TrpcProvider, useTrpc, useTrpcClient] =
   createTrpcContext<typeof makeClient>();
@@ -127,7 +135,11 @@ import {
   createTrpcQueryUtils,
   useSubscription,
 } from '@trpc12/tanstack-react-query';
-import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import {
+  createTrpcClient,
+  httpStreamLink,
+  routerType,
+} from '@trpc12/trpc/client';
 import { t, type Post } from './server.ts';
 declare function onPost(): AsyncIterable<Post>;
 declare function toast(message: string): void;
@@ -141,7 +153,7 @@ const router = {
 const trpc = createTrpcQueryUtils({
   client: createTrpcClient({
     router: routerType<typeof router>(),
-    links: [httpLink({ url: '/trpc' })],
+    links: [httpStreamLink({ url: '/trpc' })],
   }),
 });
 // ---cut-end---

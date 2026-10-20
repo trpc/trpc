@@ -4,7 +4,7 @@ import { NodeHttpServer } from '@effect/platform-node';
 import { Context, Effect, Exit, Layer, Schema, Scope } from 'effect';
 import {
   createTrpcClient,
-  httpLink,
+  httpStreamLink,
   routerType,
   safe,
 } from '@trpc12/trpc/client';
@@ -365,7 +365,7 @@ test('the same router serves RPC and REST at once', async () => {
   await using s = await serve();
   const rpc = createTrpcClient({
     router: routerType<typeof router>(),
-    links: [httpLink({ url: `${s.origin}/trpc` })],
+    links: [httpStreamLink({ url: `${s.origin}/trpc` })],
   });
   expect(await rpc.post.byId.query({ id: '1' })).toEqual({
     id: '1',

@@ -1,7 +1,11 @@
 import { Duration, Effect, Fiber, Predicate, Schedule, Stream } from 'effect';
 import { HttpRouter, HttpServerRequest } from 'effect/http';
 import { EventSource } from 'undici';
-import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import {
+  createTrpcClient,
+  httpStreamLink,
+  routerType,
+} from '@trpc12/trpc/client';
 import {
   createFetchHandler,
   error,
@@ -140,7 +144,7 @@ async function setup(user: string | null = 'ada') {
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
     links: [
-      httpLink({
+      httpStreamLink({
         url: server.url,
         reconnect: { delay: () => Duration.millis(10) },
       }),
@@ -442,7 +446,7 @@ test.each([
     expect(text).toContain(': ping\n\n');
     const client = createTrpcClient({
       router: routerType<typeof pinged>(),
-      links: [httpLink({ url: server.url })],
+      links: [httpStreamLink({ url: server.url })],
     });
     expect(await collect(client.slow.subscribe())).toEqual(['a', 'b']);
   },

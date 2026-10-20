@@ -1,7 +1,7 @@
 import { createMemoryHistory } from '@tanstack/react-router';
 import {
   createTrpcClient,
-  httpLink,
+  httpStreamLink,
   routerType,
   safe,
 } from '@trpc12/trpc/client';
@@ -24,7 +24,7 @@ async function formsApp() {
   network.latency = 0;
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: '/trpc', fetch: network.fetch })],
+    links: [httpStreamLink({ url: '/trpc', fetch: network.fetch })],
   });
   return { app, client, network };
 }

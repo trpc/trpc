@@ -6,7 +6,7 @@ import { Effect, Exit, Scope } from 'effect';
 import { HttpEffect } from 'effect/http';
 import {
   createTrpcClient,
-  httpLink,
+  httpStreamLink,
   experimental_messagePortLink,
   routerType,
 } from '@trpc12/trpc/client';
@@ -56,7 +56,7 @@ test('a body an Express parser already read is taken from req.body', async () =>
   try {
     const client = createTrpcClient({
       router: routerType<typeof router>(),
-      links: [httpLink({ url })],
+      links: [httpStreamLink({ url })],
     });
     expect(await client.save.mutate({ n: 2 })).toBe(4);
 
@@ -88,7 +88,7 @@ test('a (req, res) handler for Express, Fastify and node:http (www/docs/adapters
   try {
     const client = createTrpcClient({
       router: routerType<typeof router>(),
-      links: [httpLink({ url: `http://127.0.0.1:${address.port}/trpc` })],
+      links: [httpStreamLink({ url: `http://127.0.0.1:${address.port}/trpc` })],
     });
     expect(await client.hello.query({ name: 'node' })).toBe('hello node');
   } finally {

@@ -6,7 +6,11 @@ import {
   HttpServerRequest,
   HttpServerResponse,
 } from 'effect/http';
-import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import {
+  createTrpcClient,
+  httpStreamLink,
+  routerType,
+} from '@trpc12/trpc/client';
 import { toHttpEffect } from '@trpc12/trpc/http';
 import { jsonSerializer } from '@trpc12/trpc/serializer';
 import { createFetchHandler, error, initTrpc, lazy } from '@trpc12/trpc/server';
@@ -225,7 +229,7 @@ test('methods: PUT is refused, QUERY reads, lazy routers load on demand', async 
   const client = createTrpcClient({
     router: routerType<typeof router>(),
     links: [
-      httpLink({
+      httpStreamLink({
         url: 'http://localhost/trpc',
         fetch: (input, init) =>
           handler.fetch(new Request(input as string, init as RequestInit)),

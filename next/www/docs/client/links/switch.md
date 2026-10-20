@@ -12,7 +12,7 @@ order: 4
 // ---cut-start---
 import {
   createTrpcClient,
-  httpLink,
+  httpStreamLink,
   routerType,
   switchLink,
   wsLink,
@@ -32,7 +32,7 @@ const client = createTrpcClient({
     switchLink({
       name: 'transport',
       links: {
-        http: httpLink({ url, batch: true }),
+        http: httpStreamLink({ url, batch: true }),
         ws: wsLink({ url: wsUrl }),
       },
       pick: (op) => (op.type === 'subscription' ? 'ws' : 'http'),
