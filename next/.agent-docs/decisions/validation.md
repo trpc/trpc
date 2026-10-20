@@ -2,7 +2,12 @@
 
 - Human, 2026-10-09 (Q5.2): "I want to kill any support for that as I also want inputs to be able to have callback where we get the context etc so you can do context aware stuff in the validators." No `type<T>()` helper and no other unvalidated form: v11's plain `(input) => output` parsers are gone too.
 
-  ```ts
+  ```ts twoslash
+  // @errors: 2304 2769
+  // ---cut-start---
+  import { z } from 'zod';
+  import { t } from './server.ts';
+  // ---cut-end---
   t.procedure.input(type<{ id: string }>()); // ❌ no such helper
   t.procedure.input((raw: unknown) => raw as { id: string }); // ❌ not a parser any more
   t.procedure.input(z.object({ id: z.string() })); // ✅

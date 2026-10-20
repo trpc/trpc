@@ -4,12 +4,26 @@
 - [`links.md`](./links.md) and [`effect-integration.md`](./effect-integration.md) stand as built.
 - Effect failures that aren't `TrpcError`s stay a compile error, and a masked `INTERNAL_SERVER_ERROR` at runtime, unless the error class is marked public:
 
-  ```ts
+  ```ts twoslash
+  // ---cut-start---
+  import { TrpcError } from '@trpc12/trpc/server';
+  import { Effect, Schema } from 'effect';
+  import { z } from 'zod';
+  import { db, t } from './server.ts';
+  // ---cut-end---
   class PostNotFound extends TrpcError.Tagged('POST_NOT_FOUND', {
     data: Schema.Struct({ id: Schema.String }),
   }) {}
 
-  yield * new PostNotFound({ id }); // typed on the client, no mapping
+  const byId = t.procedure.input(z.object({ id: z.string() })).query((opts) =>
+    Effect.gen(function* () {
+      const post = db.post.find(opts.input.id);
+      if (!post) {
+        return yield* new PostNotFound({ id: opts.input.id }); // typed on the client, no mapping
+      }
+      return post;
+    }),
+  );
   ```
 
 - A public tagged error is a yieldable Effect error whose `_tag` is its code ([`error-tags.md`](./error-tags.md)). Its status defaults to 400 ([`custom-error-codes.md`](./custom-error-codes.md)), and it is inferred like any other returned error ([`inferred-errors.md`](./inferred-errors.md)).

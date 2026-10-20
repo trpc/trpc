@@ -2,7 +2,11 @@
 
 - Human, 2026-10-15 (Q4.1): "A, they're good to distinguish from, example for user impersonating". Keep `query`, `mutation` and `subscription`. Middleware can tell reads from writes, e.g. an admin impersonating a user may run queries but not mutations:
 
-  ```ts
+  ```ts twoslash
+  // ---cut-start---
+  import { error, initTrpc } from '@trpc12/trpc/server';
+  const t = initTrpc<{ ctx: { impersonating: boolean } }>();
+  // ---cut-end---
   const readOnlyWhenImpersonating = t.middleware(({ ctx, type, next }) =>
     ctx.impersonating && type !== 'query'
       ? error({ code: 'FORBIDDEN' })

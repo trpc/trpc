@@ -7,7 +7,14 @@
   - `serve(handler, opts)` is `HttpServer.serve(toHttpEffect(handler, opts))`, a `Layer` that needs an `HttpServer`.
   - The app provides the platform: `NodeHttpServer.layer(createServer, { port })` from `@effect/platform-node`, or `BunHttpServer.layer`. WebSocket limits such as `maxPayload` are that layer's options (`websocket: { maxPayload }` on Node).
 
-  ```ts
+  ```ts twoslash
+  // ---cut-start---
+  import { createServer } from 'node:http';
+  import { NodeHttpServer, NodeRuntime } from '@effect/platform-node';
+  import { serve } from '@trpc12/trpc/http';
+  import { Layer } from 'effect';
+  import { handler } from './server.ts';
+  // ---cut-end---
   serve(handler).pipe(
     Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 })),
     Layer.launch,

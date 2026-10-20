@@ -3,16 +3,40 @@
 - Human, 2026-10-15 (Q14.2): "Yes". `tracked(id, data)` events set the SSE `id:`, and the resolver gets `lastEventId` in its options, not in its input, so reconnects resume (SSE's `Last-Event-ID`, `wsLink`'s resend).
 - Human, 2026-10-15 (Q14.6): "Build something thay works great with effect and their integrations, it doesn't have to satisfy non effect people". The publisher is an Effect service provided as a layer: an in-memory layer on `PubSub` with an optional resume buffer, and other backends by swapping the layer. No Promise wrapper.
 
-  ```ts
+  ```ts twoslash
+  // ---cut-start---
+  import {
+    createFetchHandler,
+    experimental_Publisher,
+  } from '@trpc12/trpc/server';
+  import { Effect } from 'effect';
+  import { z } from 'zod';
+  import { db, t, type Post } from './server.ts';
+  // ---cut-end---
   class Posts extends experimental_Publisher.Service<
     Posts,
     { created: Post }
   >()('Posts') {}
-  yield * Posts.publish('created', post); // in a mutation's Effect
-  const onPost = t.procedure.subscription(({ lastEventId }) =>
-    Posts.subscribe('created', { lastEventId }),
-  );
-  createFetchHandler({ router, layer: Posts.memory({ buffer: 100 }) });
+
+  const router = {
+    create: t.procedure
+      .input(z.object({ title: z.string() }))
+      .mutation((opts) =>
+        Effect.gen(function* () {
+          const post = db.post.create(opts.input.title);
+          yield* Posts.publish('created', post);
+          return post;
+        }),
+      ),
+    onPost: t.procedure.subscription(({ lastEventId }) =>
+      Posts.subscribe('created', { lastEventId }),
+    ),
+  };
+  createFetchHandler({
+    router,
+    createContext: () => ({ user: null }),
+    layer: Posts.memory({ buffer: 100 }),
+  });
   ```
 
 - (agent) The key is declared like Effect's own `Context.Service<Self, Shape>()(key)`, so it is yieldable and `Layer.succeed(Posts, …)` swaps in another backend. `subscribe` yields `tracked()` envelopes with the publisher's ids; the memory layer keeps `buffer` events per channel and de-duplicates the replay against live events.
