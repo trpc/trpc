@@ -1,6 +1,6 @@
 ---
 name: decision-round
-description: Walk the human through open tRPC vNext decisions one at a time with a progress count, then act on the answers. "skip" defers an item to the agent's best call; "done" stops asking and implements everything answered so far. Use when the human asks for a decision round, to go through open decisions or questions, to review agent calls, or says "ask me" about decisions in next/.agent-docs.
+description: Walk the human through open tRPC vNext decisions one at a time with a progress count, each as a short summary linking its page under v12.trpc.io/v12/decisions, then act on the answers. "skip" defers an item to the agent's best call; "done" stops asking and implements everything answered so far. Use when the human asks for a decision round, to go through open decisions or questions, to review agent calls, or says "ask me" about decisions in next/.agent-docs.
 ---
 
 # Decision round
@@ -29,36 +29,27 @@ Before the first question, say in one line how many items there are and where th
 
 ## 2. Ask one at a time
 
-Send each item as its own short message, then stop and wait for the reply. Write it as markdown, not inside a code block, so the title renders as a heading on a phone:
+Send each item as its own short message, then stop and wait for the reply. Keep it a summary: the question, one line per option, the recommendation, and a link to the item's page for everything else. Don't paste pros and cons, code or background into the message; the page has them. Write it as markdown, not inside a code block, so the title renders as a heading on a phone:
 
 ```md
-### 🗳️ 3/12: Should the platform core be our own web core or effect/http?
+### 🗳️ 3/12: Should `createSafeClient` make iteration safe on its own?
 
-`Q12.1` · [platforms-through-effect-layers.md] · 2 answered · 0 skipped
+`Q24.4` · 2 answered · 0 skipped · [Details](https://v12.trpc.io/v12/decisions/open/safe-client-iteration)
 
-**Today:** `@trpc12/trpc` serves on Effect's `HttpServer` through layers (built, agent's call).
+- **A)** Keep `safe()` around each iteration
+- **B)** ⭐ The safe client iterates safely too
+- **C)** A separate `.safeSubscribe()`
 
-- **A)** ⭐ **Recommended:** keep effect/http as the core
-  - ✅ Effect-native, already built
-  - ❌ Effect's HTTP types show up in adapter code
-- **B)** Own web-standard core, with Effect layers only for platforms
-  - ✅ No Effect in the request path
-  - ❌ Two cores to keep in step
-- **C)** Something else, in your words
-
-Reply with a letter or your own words, `skip`, or `done`.
+**Recommended: B**, because one client then never throws. Reply with a letter or your own words, `skip`, or `done`.
 ```
 
+- **Details link:** an item with an open file links its page, `https://v12.trpc.io/v12/decisions/open/<file name without .md>`: its options' code, pros and cons, and its spike, PR and preview links. An item from a decision (an `Open:` bullet, an agent call, a tentative answer) links that decision's page, `https://v12.trpc.io/v12/decisions/<file name without .md>`. The pages are deployed from `v12`, so a file written in this round has no page yet: land it first (`pnpm land`, then wait for the deployment), or link the file on GitHub, `https://github.com/trpc/trpc/blob/v12/next/.agent-docs/<folder>/<file>`, until it does.
 - The title is the question itself, in plain words, readable without the rest of the message. Never title an item with an internal label ("Spike C", "option D"): name the thing ("a plain React `use()` hook package").
-- Spell out every name in the options the first time it appears in the item, even if an earlier item explained it.
-- Keep context to two to four lines: what exists today and what each option costs. Read the proposal and decision before writing, so the options match what is actually built.
-- Use bullet points, always. Give each option short pros and cons (✅ / ❌), and make the recommended pick easy to spot: put ⭐ **Recommended** on it. Emojis are welcome where they help scanning.
-- When the choice is about API shape, show each option as a short code excerpt, on a phone too.
-- On a phone, be concise: one short code excerpt, a few bullets. On a desktop, be more thorough: link the spike, note and decision files, and show more code.
-- Point out when an earlier answer in the round changes this item (for example a new default), and adjust the options and the recommendation to it.
-- Mark one option as recommended. Choose it Effect-native first, v11's way second (`decisions/effect-native-by-default.md`).
+- One line per option, under about ten words, naming the thing it does. Spell out every name the first time it appears in the item, even if an earlier item explained it.
+- The recommendation gets ⭐ on its option and a "Recommended" line with its reason in one clause. Choose it Effect-native first, v11's way second (`decisions/effect-native-by-default.md`). It should match the open file's `recommended:`; when an earlier answer in the round changes it, say so in that line.
+- Read the open file (or the proposal and decision) before writing, so the summary matches what the page says and what is built.
 - For an agent call under review, option A is "Keep" and the others are real alternatives.
-- If the reply is a question ("why?", "show the code"), answer it briefly, then ask the same item again without advancing the count.
+- If the reply is a question ("why?", "show the code"), answer it briefly, quoting the page's code when asked for it, then ask the same item again without advancing the count.
 - If a free-text answer is open to more than one reading, say your reading in one line before the next item, so the human can reply `back`.
 - Keep a running list of every answer, with the human's exact words. The final step needs it.
 
@@ -66,7 +57,7 @@ Reply with a letter or your own words, `skip`, or `done`.
 
 | Reply                 | Do                                                                                                                                                                                                      |
 | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| A letter or free text | Record the answer verbatim as the human's, then go to the next item. "Do recommended" is the recommended option, chosen by the human.                                                                   |
+| A letter or free text | Record the answer verbatim as the human's. Say in one line which decision it goes into, linking that record's page (`https://v12.trpc.io/v12/decisions/<topic>`, live once landed), then go to the next item. "Do recommended" is the recommended option, chosen by the human. |
 | A hesitant answer     | "I don't get this", "might change", "not sure": record it as the human's, but tentative (step 3), and say so in one line.                                                                               |
 | `skip`                | Defer to the agent: pick the best option (Effect-native first, v11 second), say the pick in one line ("Skipped: going with A"), then go to the next item. It is recorded as `(agent)`, not the human's. |
 | `done`                | Stop asking and go to step 3. Unasked items stay open.                                                                                                                                                  |
@@ -86,13 +77,13 @@ When the queue is empty, go to step 3 as if the human had said `done`.
 2. **Ripple:** update the proposals, the docs pages in `next/www/docs/`, `.agent-docs/reference/orpc-parity.md` and the notes that the answers change.
 3. **Implement** what the answers require: code in Effect style, tests and docs. A `(human)` answer that reverses built code means changing that code, not just the docs. An answer of "spike it" means a spike under `spikes/` and a note in `.agent-docs/notes/`, not shipped code. For work that can't be finished (it needs credentials, an upstream release, or another answer), leave an `Open:` bullet saying what is missing.
 4. **Gates:** run `pnpm fix`, `pnpm check`, `pnpm typecheck`, `pnpm test` and `pnpm example`. Fix anything that fails.
-5. **Ship** semantic commits, one per logical change (decisions with their implementation). Run `git pull --rebase origin v12`, then `git push origin v12`, then watch CI with `gh run list --repo trpc/trpc --branch v12`. No PRs, never `main`, never force-push, no merge commits. A branch, when a human asks for one, is named `v12-<name>`.
+5. **Ship** semantic commits, one per logical change (decisions with their implementation). Land them with `pnpm land` and watch CI with `pnpm ci:wait` (`next/AGENTS.md`). The records' pages are live once the docs deployment finishes; check one with `curl -sI https://v12.trpc.io/v12/decisions/<file name without .md>` before linking them in the report. No PRs, never `main`, never force-push, no merge commits. A branch, when a human asks for one, is named `v12-<name>`.
 
 ## 4. Report
 
 Keep it short and readable on a phone:
 
-- **Decided by you:** each item, with what it changed and the commit. Mark tentative ones.
-- **Skipped (agent's call):** each item and the pick, so they can be revisited later with `pnpm decisions "decision round"`.
+- **Decided by you:** each item, linking its decision record's page (`https://v12.trpc.io/v12/decisions/<file name without .md>`), with what it changed and the commit. Mark tentative ones.
+- **Skipped (agent's call):** each item and the pick, linking its record's page the same way, so they can be revisited later with `pnpm decisions "decision round"`.
 - **Still open:** what wasn't asked or couldn't be finished, and why.
 - **Gates and CI:** results.
