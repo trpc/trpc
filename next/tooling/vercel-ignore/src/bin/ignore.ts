@@ -11,8 +11,14 @@ import { Cause, Console, Effect, Exit } from 'effect';
 import { decide } from '../decide.ts';
 
 decide(
-  // The docs are in `www/docs`, so the project's own directory has them.
-  { dir: process.cwd(), inputs: [] },
+  {
+    dir: process.cwd(),
+    // The packages' tests: the site imports, compiles and links their
+    // sources, never a test.
+    ignored: ['packages/**/*.test.ts', 'packages/**/*.test.tsx'],
+    // The docs are in `www/docs`, so the project's own directory has them.
+    inputs: [],
+  },
   { production: 'v12', remote: 'https://github.com/trpc/trpc.git' },
 ).pipe(
   Effect.catchCause((cause) =>

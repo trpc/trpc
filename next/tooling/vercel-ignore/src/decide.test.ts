@@ -125,6 +125,71 @@ describe('decide', () => {
     }).pipe(Effect.scoped, Effect.provide(NodeServices.layer)),
   );
 
+  it.effect(
+    "fetches the last deployment's commit into a clone too shallow to have it",
+    () =>
+      Effect.gen(function* () {
+        const fs = yield* FileSystem.FileSystem;
+        const path = yield* Path.Path;
+        const origin = yield* setup;
+        // GitHub serves any commit by its hash; a local repo only when asked.
+        yield* git(
+          origin.root,
+          'config',
+          'uploadpack.allowAnySHA1InWant',
+          'true',
+        );
+        yield* touch(origin.root, 'next/apps/other/a.ts');
+        const clone = path.join(yield* fs.makeTempDirectoryScoped(), 'clone');
+        yield* git(
+          origin.root,
+          'clone',
+          '--quiet',
+          '--depth=1',
+          '--branch',
+          'feature',
+          `file://${origin.root}`,
+          clone,
+        );
+        const decision = yield* decide(
+          { dir: path.join(clone, 'next', 'apps/web'), inputs: ['docs'] },
+          { production: 'v12', remote: `file://${origin.root}` },
+        ).pipe(
+          run({
+            VERCEL_GIT_COMMIT_REF: 'feature',
+            VERCEL_GIT_PREVIOUS_SHA: origin.production,
+          }),
+        );
+        assert.isFalse(decision.build);
+      }).pipe(Effect.scoped, Effect.provide(NodeServices.layer)),
+  );
+
+  it.effect('skips when only an ignored file changed', () =>
+    Effect.gen(function* () {
+      const path = yield* Path.Path;
+      const commits = yield* setup;
+      yield* touch(commits.root, 'next/libs/b/a.test.ts');
+      const decideIgnoring = (ignored: ReadonlyArray<string>) =>
+        decide(
+          {
+            dir: path.join(commits.root, 'next', 'apps/web'),
+            ignored,
+            inputs: ['docs'],
+          },
+          { production: 'v12', remote: `file://${commits.root}` },
+        ).pipe(
+          run({
+            VERCEL_GIT_COMMIT_REF: 'feature',
+            VERCEL_GIT_PREVIOUS_SHA: commits.production,
+          }),
+        );
+      assert.isTrue((yield* decideIgnoring([])).build);
+      assert.isFalse((yield* decideIgnoring(['libs/**/*.test.ts'])).build);
+      yield* touch(commits.root, 'next/libs/b/a.ts');
+      assert.isTrue((yield* decideIgnoring(['libs/**/*.test.ts'])).build);
+    }).pipe(Effect.scoped, Effect.provide(NodeServices.layer)),
+  );
+
   it.effect("fails when the last deployment's commit is gone", () =>
     Effect.gen(function* () {
       const root = (yield* setup).root;

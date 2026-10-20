@@ -35,6 +35,11 @@ export interface Project {
    * to the workspace root.
    */
   readonly inputs: ReadonlyArray<string>;
+  /**
+   * Globs, relative to the workspace root, of files under the watched paths
+   * that the project doesn't build from, such as other packages' tests.
+   */
+  readonly ignored?: ReadonlyArray<string> | undefined;
 }
 
 class GitError extends Data.TaggedError('GitError')<{
@@ -81,6 +86,29 @@ const baseCommit = Effect.fn('baseCommit')(function* (
     Config.option,
   );
   if (Option.isSome(previous) && previous.value !== '') {
+    // Vercel's clone is shallow, so the last deployment's commit is missing
+    // when more commits than its depth landed since. `git diff` only needs
+    // that commit's tree.
+    const present = yield* git(
+      root,
+      'cat-file',
+      '-e',
+      `${previous.value}^{commit}`,
+    ).pipe(
+      Effect.as(true),
+      Effect.catchTag('GitError', () => Effect.succeed(false)),
+    );
+    if (!present) {
+      yield* git(
+        root,
+        'fetch',
+        '--quiet',
+        '--no-tags',
+        '--depth=1',
+        repo.remote,
+        previous.value,
+      );
+    }
     return previous;
   }
   const branch = yield* Config.String('VERCEL_GIT_COMMIT_REF').pipe(
@@ -122,6 +150,7 @@ export const decide = Effect.fn('decide')(function* (
     return { build: true, reason: 'No earlier deployment to compare with.' };
   }
 
+  const ignored = project.ignored ?? [];
   const changed = yield* git(
     root,
     'diff',
@@ -130,8 +159,11 @@ export const decide = Effect.fn('decide')(function* (
     'HEAD',
     '--',
     ...watched,
+    ...ignored.map((glob) => `:(exclude,glob)${glob}`),
   );
-  const since = `since ${base.value.slice(0, 12)} in ${watched.join(', ')}`;
+  const since = `since ${base.value.slice(0, 12)} in ${watched.join(', ')}${
+    ignored.length > 0 ? ` (not ${ignored.join(', ')})` : ''
+  }`;
   return changed === ''
     ? { build: false, reason: `Nothing changed ${since}.` }
     : { build: true, reason: `Changed ${since}:\n${changed}` };
