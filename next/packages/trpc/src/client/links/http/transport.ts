@@ -391,13 +391,7 @@ export function makeTransport(
       const headers: Record<string, string> = { accept, ...extra };
       if (isByteStreamInput(op.input)) {
         return yield* execute(
-          yield* prepare(
-            [op],
-            'POST',
-            url,
-            headers,
-            op.input,
-          ),
+          yield* prepare([op], 'POST', url, headers, op.input),
           op.signal,
         );
       }

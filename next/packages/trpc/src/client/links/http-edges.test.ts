@@ -476,7 +476,9 @@ test('a batch whose calls were all aborted before it was sent sends nothing', as
 
 test('calls go out where there is no ReadableStream (Hermes)', async () => {
   const inits: RequestInit[] = [];
-  const replies = [1, 2].map(() => new Response(JSON.stringify({ json: 'ok' })));
+  const replies = [1, 2].map(
+    () => new Response(JSON.stringify({ json: 'ok' })),
+  );
   const client = clientWith(async (_url, init) => {
     inits.push(init ?? {});
     return replies.shift()!;
