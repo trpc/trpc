@@ -7,6 +7,7 @@ import {
   dedupeLink,
   httpLink,
   routerType,
+  sse,
   type TrpcClient,
 } from '@trpc12/trpc/client';
 import { createSerializer, type DansonForm } from '@trpc12/trpc/serializer';
@@ -201,7 +202,10 @@ export async function createApp(opts: { posts?: number } = {}) {
   );
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [dedupeLink(), httpLink({ url: server.url, serializer })],
+    links: [
+      dedupeLink(),
+      httpLink({ url: server.url, serializer, subscriptions: sse() }),
+    ],
   });
   const trpc = createTrpcQueryUtils({ client });
   return {

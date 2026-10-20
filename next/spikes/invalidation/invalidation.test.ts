@@ -1,5 +1,10 @@
 import { QueryClient } from '@tanstack/query-core';
-import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+import {
+  batching,
+  createTrpcClient,
+  httpLink,
+  routerType,
+} from '@trpc12/trpc/client';
 import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
 import { expect, test } from 'vite-plus/test';
 import { z } from 'zod';
@@ -50,7 +55,11 @@ function setup() {
     router: routerType<typeof router>(),
     links: chain(
       invalidationLink({ queryClient }),
-      responseHttpLink({ url: 'http://localhost/trpc', fetch, batch: true }),
+      responseHttpLink({
+        url: 'http://localhost/trpc',
+        fetch,
+        batch: batching(),
+      }),
     ),
   });
   const keys = {

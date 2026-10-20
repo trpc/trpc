@@ -6,6 +6,7 @@ import { createCollection } from '@tanstack/db';
 import {
   createTrpcClient,
   httpLink,
+  sse,
   routerType,
   wsLink,
 } from '@trpc12/trpc/client';
@@ -146,7 +147,7 @@ async function serve() {
   const testServer = Context.get(context, TestServer);
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: testServer.url, serializer })],
+    links: [httpLink({ url: testServer.url, serializer, subscriptions: sse() })],
   });
   return {
     db,
