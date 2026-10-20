@@ -15,4 +15,4 @@
 
 - Why: the iterator is subscription code, and an app that subscribes imports a link that carries them. The registry follows the per-link metadata the client already reads (`withSerializer`, `setSwitchNames`).
 - Lost: about 0.1 kB on clients that keep the iterator (the registry, and the error's message). Custom subscription links must be wrapped.
-- Lives in: `packages/trpc/src/client/subscriptions.ts` (`withSubscriptions`), `src/client/link.ts` (`setSubscriptionIterator`, `chainSubscriptionIterator`), `src/client/client.ts` (`createUntypedClient`), `src/client/links/basic.ts` (`splitLink`), `src/client/links/switch.ts`, `docs/client/custom-links.md`.
+- Lives in: `packages/trpc/src/client/subscriptions.ts` (`withSubscriptions`), `src/client/link.ts` (`setSubscriptionIterator`, `chainSubscriptionIterator`), `src/client/client.ts` (`createUntypedClient`), `src/client/links/basic.ts` (`splitLink`), `src/client/links/switch.ts`, `www/docs/client/custom-links.md`.
