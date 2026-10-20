@@ -154,9 +154,15 @@ const experimentPages = await run(
 /**
  * Experiments without an API of their own: recipes (stable APIs with another
  * library), hidden until reviewed; the kitchen sink's demos, apps on the
- * stable APIs; and the benchmarks page, which documents none.
+ * stable APIs; the benchmarks page, which documents none; and the codemod
+ * playground, which runs the stable `@trpc12/upgrade`.
  */
-const recipes = new Set(['benchmarks', 'integrations', 'kitchen-sink']);
+const recipes = new Set([
+  'benchmarks',
+  'codemod-playground',
+  'integrations',
+  'kitchen-sink',
+]);
 
 test.each([...experimentPages.keys()].sort().map((id) => [id] as const))(
   'the %s experiment documents experimental_ exports or experimental- packages, unless it has no API of its own',

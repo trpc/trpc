@@ -59,6 +59,11 @@ export const experiments = {
       'Small apps to edit and run on the page, beside how they work: a react-hook-form form first.',
     label: 'Kitchen sink',
   },
+  'codemod-playground': {
+    description:
+      'The v11 to v12 codemod on the page: edit v11 code and watch `@trpc12/upgrade` rewrite it.',
+    label: 'Try the codemod',
+  },
   benchmarks: {
     description:
       'Throughput, type-checking and bundle size against tRPC v11 and oRPC v2, and the features each has.',
