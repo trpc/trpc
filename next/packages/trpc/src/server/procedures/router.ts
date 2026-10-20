@@ -351,11 +351,12 @@ function walk(node: unknown, segments: ReadonlyArray<string>): unknown {
  * @since 0.1.0
  * @stability stable
  */
-export const resolveProcedure = (
+export function resolveProcedure(
   router: AnyRouter,
   path: string,
-): Effect.Effect<AnyProcedure | undefined> =>
-  resolveFrom(walk(router, path.split('.')));
+): Effect.Effect<AnyProcedure | undefined> {
+  return resolveFrom(walk(router, path.split('.')));
+}
 
 const resolveFrom = (
   found: unknown,
