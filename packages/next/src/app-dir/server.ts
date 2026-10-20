@@ -10,6 +10,7 @@ import type {
   AnyRootTypes,
   AnyRouter,
   ErrorHandlerOptions,
+  FormattedErrorShapes,
   inferClientTypes,
   inferProcedureInput,
   MaybePromise,
@@ -126,6 +127,7 @@ export function experimental_createServerActionHandler<
       rawInput: FormData | inferProcedureInput<TProc>,
     ) {
       let ctx: TInstance['_config']['$types']['ctx'] | undefined = undefined;
+      const errorShapes: FormattedErrorShapes = new WeakMap();
       try {
         ctx = (await createContext?.()) ?? {};
         if (normalizeFormData && isFormData(rawInput)) {
@@ -153,6 +155,7 @@ export function experimental_createServerActionHandler<
               // is it possible to get the AbortSignal from the request?
               signal: undefined,
               batchIndex: 0,
+              errorShapes,
             });
 
         const transformedJSON = transformTRPCResponse(config, {
@@ -183,6 +186,7 @@ export function experimental_createServerActionHandler<
           input: rawInput,
           path: '',
           type: proc._def.type,
+          errorShapes,
         });
 
         return transformTRPCResponse(t._config, {

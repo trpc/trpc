@@ -1,11 +1,10 @@
 import type { Observable } from '../observable';
 import { isObservable, observable } from '../observable';
-import type { AnyProcedureErrorFormatter } from './error/formatter';
-import {
-  getDefaultErrorShape,
-  isFormattedErrorShape,
-  setFormattedErrorShape,
+import type {
+  AnyProcedureErrorFormatter,
+  FormattedErrorShapes,
 } from './error/formatter';
+import { getDefaultErrorShape } from './error/formatter';
 import { getTRPCErrorFromUnknown, TRPCError } from './error/TRPCError';
 import type { ParseFn } from './parser';
 import type { ProcedureType } from './procedure';
@@ -230,10 +229,17 @@ export function createErrorFormatterMiddleware(
   isDev: boolean,
 ) {
   const errorMiddleware: AnyMiddlewareFunction =
-    async function errorFormatterMiddleware(opts) {
+    async function errorFormatterMiddleware(
+      opts: Parameters<AnyMiddlewareFunction>[0] & {
+        errorShapes?: FormattedErrorShapes;
+      },
+    ) {
+      const errorShapes: FormattedErrorShapes =
+        opts.errorShapes ?? new WeakMap();
+
       const tryFormat = (error: TRPCError): TRPCError => {
         // a handler further down the chain already claimed this error
-        if (isFormattedErrorShape(error)) {
+        if (errorShapes.has(error)) {
           return error;
         }
 
@@ -251,7 +257,7 @@ export function createErrorFormatterMiddleware(
         });
 
         if (shape !== undefined) {
-          setFormattedErrorShape(error, shape);
+          errorShapes.set(error, shape);
         }
 
         return error;
@@ -260,7 +266,7 @@ export function createErrorFormatterMiddleware(
       const tryFormatThrown = (cause: unknown): unknown => {
         const formatted = tryFormat(getTRPCErrorFromUnknown(cause));
 
-        return isFormattedErrorShape(formatted) ? formatted : cause;
+        return errorShapes.has(formatted) ? formatted : cause;
       };
 
       async function* wrapIterable(iterable: AsyncIterable<unknown>) {

@@ -1,6 +1,7 @@
 import type { ProcedureType } from '../procedure';
 import type { AnyRootTypes, RootConfig } from '../rootConfig';
-import { getDefaultErrorShape, getFormattedErrorShape } from './formatter';
+import type { FormattedErrorShapes } from './formatter';
+import { getDefaultErrorShape } from './formatter';
 import type { TRPCError } from './TRPCError';
 
 /**
@@ -13,15 +14,20 @@ export function getErrorShape<TRoot extends AnyRootTypes>(opts: {
   path: string | undefined;
   input: unknown;
   ctx: TRoot['ctx'] | undefined;
+  /**
+   * The `errorShapes` passed to the procedure call that threw `error`
+   */
+  errorShapes?: FormattedErrorShapes;
 }): TRoot['errorShape'] {
-  const { path, error, config } = opts;
+  const { errorShapes, ...formatterOpts } = opts;
+  const { path, error, config } = formatterOpts;
 
   // a `.errors()` handler already created the final shape
-  const formatted = getFormattedErrorShape(error);
+  const formatted = errorShapes?.get(error);
   if (formatted !== undefined) {
     return formatted;
   }
 
   const shape = getDefaultErrorShape({ error, path, isDev: config.isDev });
-  return config.errorFormatter({ ...opts, shape });
+  return config.errorFormatter({ ...formatterOpts, shape });
 }
