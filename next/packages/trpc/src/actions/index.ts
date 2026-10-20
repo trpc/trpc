@@ -16,7 +16,7 @@
  * ```
  * @module
  */
-import { Effect, Exit, ManagedRuntime, type Layer } from 'effect';
+import { Effect, Exit } from 'effect';
 import type { SafeResult } from '../client/client.ts';
 import type { ClientError } from '../client/types.ts';
 import { inputJsonSchema } from '../internal/describe.ts';
@@ -38,6 +38,7 @@ import {
   normalizeCause,
   runtimeServices,
 } from '../server/execution/index.ts';
+import type { RuntimeOption } from '../server/handler/index.ts';
 import type {
   AnyProcedure,
   Procedure,
@@ -58,15 +59,26 @@ export type ActionResultMode = 'safe' | 'throw';
  * @since 0.1.0
  * @stability experimental
  */
-export interface CreateActionOptions<
+export type CreateActionOptions<
   TCtx extends object,
   TServices,
+  TMode extends ActionResultMode,
+> = CreateActionBaseOptions<TCtx, TMode> & RuntimeOption<TServices>;
+
+/**
+ * {@link CreateActionOptions} without `runtime`, which provides the
+ * services of procedures that need them. The caller owns the runtime: make
+ * it once with `ManagedRuntime.make(layer)`, share it between factories,
+ * and dispose it when done.
+ * @since 0.1.0
+ * @stability experimental
+ */
+export interface CreateActionBaseOptions<
+  TCtx extends object,
   TMode extends ActionResultMode,
 > {
   /** The ctx, or a function that makes it per call (reading cookies, say). */
   ctx?: TCtx | (() => MaybePromise<TCtx>);
-  /** Built once for the factory, for procedures that need services. */
-  layer?: Layer.Layer<TServices, any, never>;
   /** @default 'safe' */
   result?: TMode;
   /**
@@ -199,7 +211,7 @@ type Fits<TDef extends ProcedureDef, TCtx, TServices> = TDef['type'] extends
       : [TDef['services']] extends [TServices]
         ? []
         : [
-            error: 'The factory layer does not provide the services this procedure needs',
+            error: 'The factory runtime does not provide the services this procedure needs',
           ]
     : [error: "The factory ctx does not satisfy this procedure's ctx"]
   : [error: 'Subscriptions cannot be actions'];
@@ -252,14 +264,12 @@ const plainResult = (data: unknown, error: AnyTrpcError | undefined) =>
       };
 
 function makeFactory<TMode extends ActionResultMode>(
-  opts: CreateActionOptions<object, unknown, TMode>,
+  opts: CreateActionOptions<object, never, TMode> = {},
   toResult: (data: unknown, error: AnyTrpcError | undefined) => unknown,
 ) {
   const mode: ActionResultMode = opts.result ?? 'safe';
   const expose = opts.exposeUnexpectedErrors ?? isDev();
-  const services = runtimeServices(
-    opts.layer ? ManagedRuntime.make(opts.layer) : undefined,
-  );
+  const services = runtimeServices(opts.runtime);
   const publicError = (err: AnyTrpcError): AnyTrpcError =>
     isUnexpectedError(err) && !expose
       ? new TrpcError.InternalServerError({ message: 'Internal server error' })
@@ -305,7 +315,7 @@ function makeFactory<TMode extends ActionResultMode>(
 /**
  * Creates `action(procedure)`, which turns a query or mutation into an
  * async function for a React Server Action: it takes the input or a form's
- * `FormData`. The ctx, layer and result mode are set once here. With
+ * `FormData`. The ctx, runtime and result mode are set once here. With
  * `result: 'safe'` it resolves to `{ data }` or `{ error }`
  * ({@link ActionSafeResult}), plain objects React can send to the browser.
  *
@@ -325,7 +335,7 @@ export function experimental_createAction<
   TServices = never,
   TMode extends ActionResultMode = 'safe',
 >(
-  opts: CreateActionOptions<TCtx, TServices, TMode> = {},
+  opts?: CreateActionOptions<TCtx, TServices, TMode>,
 ): <TDef extends ProcedureDef>(
   procedure: Procedure<TDef>,
   ...fits: Fits<TDef, TCtx, TServices>
@@ -353,7 +363,7 @@ export function experimental_createCallable<
   TServices = never,
   TMode extends ActionResultMode = 'safe',
 >(
-  opts: CreateActionOptions<TCtx, TServices, TMode> = {},
+  opts?: CreateActionOptions<TCtx, TServices, TMode>,
 ): <TDef extends ProcedureDef>(
   procedure: Procedure<TDef>,
   ...fits: Fits<TDef, TCtx, TServices>

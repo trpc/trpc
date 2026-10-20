@@ -1,4 +1,4 @@
-import { Context, Effect, Layer } from 'effect';
+import { Context, Effect, Layer, ManagedRuntime } from 'effect';
 import {
   experimental_createAction,
   experimental_createCallable,
@@ -169,19 +169,22 @@ test('defined errors are typed; unexpected ones are masked unless exposed', asyn
   expect(seen).toContain('db password is hunter2');
 });
 
-test('a layer that fails to build is an unexpected error, masked and seen by onError', async () => {
+test('a runtime whose layer fails to build is an unexpected error, masked and seen by onError', async () => {
   const seen: unknown[] = [];
   let builds = 0;
-  const action = experimental_createAction({
-    ctx: { user: 'ada' },
-    exposeUnexpectedErrors: false,
-    layer: Layer.effect(
+  await using runtime = ManagedRuntime.make(
+    Layer.effect(
       Clock,
       Effect.suspend(() => {
         builds++;
         return Effect.fail(new Error('the clock is down'));
       }),
     ),
+  );
+  const action = experimental_createAction({
+    ctx: { user: 'ada' },
+    exposeUnexpectedErrors: false,
+    runtime,
     onError: (opts) => seen.push(opts.error.cause),
   });
   for (let i = 0; i < 2; i++) {
@@ -195,6 +198,43 @@ test('a layer that fails to build is an unexpected error, masked and seen by onE
     new Error('the clock is down'),
   ]);
   expect(builds).toBe(1);
+});
+
+test("factories share the caller's runtime, and disposing it releases its services", async () => {
+  let builds = 0;
+  let released = 0;
+  const runtime = ManagedRuntime.make(
+    Layer.effect(
+      Clock,
+      Effect.acquireRelease(
+        Effect.sync(() => {
+          builds++;
+          return { now: () => 7 };
+        }),
+        () => Effect.sync(() => void released++),
+      ),
+    ),
+  );
+  const action = experimental_createAction({ ctx: { user: 'ada' }, runtime });
+  const callable = experimental_createCallable({
+    ctx: { user: 'ada' },
+    runtime,
+    result: 'throw',
+  });
+  expect(await action(now)()).toEqual({ data: 7 });
+  expect(await callable(now)()).toBe(7);
+  expect([builds, released]).toEqual([1, 0]);
+  await runtime.dispose();
+  expect(released).toBe(1);
+  expect((await action(now)()).error).toMatchObject({
+    code: 'INTERNAL_SERVER_ERROR',
+  });
+
+  void (() =>
+    experimental_createAction({
+      // @ts-expect-error -- the factory takes a caller-owned runtime, not a layer
+      layer: Layer.succeed(Clock, { now: () => 1 }),
+    }));
 });
 
 test('in-process calls without a signal get one that aborts when the call is interrupted', async () => {
@@ -227,10 +267,13 @@ test('in-process calls without a signal get one that aborts when the call is int
 });
 
 test("result: 'throw' returns the data and throws TrpcError", async () => {
+  await using runtime = ManagedRuntime.make(
+    Layer.succeed(Clock, { now: () => 42 }),
+  );
   const callable = experimental_createCallable({
     ctx: { user: 'ada' },
     result: 'throw',
-    layer: Layer.succeed(Clock, { now: () => 42 }),
+    runtime,
   });
   const value = await callable(now)();
   expectTypeOf(value).toEqualTypeOf<number>();
