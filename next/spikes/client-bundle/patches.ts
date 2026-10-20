@@ -10,26 +10,6 @@ export const cuts: Record<
   string,
   { readonly what: string; readonly patches: readonly Patch[] }
 > = {
-  frames: {
-    what: 'binary frames (`binary: true`) out of the default link',
-    patches: [
-      [
-        'client/links/http/transport.ts',
-        '? decodeRecords(bytes)',
-        '? (bytes as never)',
-      ],
-    ],
-  },
-  streamed: {
-    what: 'streamed outputs (JSONL, resume) on single calls out of the default link',
-    patches: [
-      [
-        'client/links/http/transport.ts',
-        'if (streamed(reply)) {\n      const frames',
-        'if (false as boolean) {\n      const frames',
-      ],
-    ],
-  },
   json: {
     what: 'jsonSerializer without deferred values (serializeDeferred / deserializeStream)',
     patches: [

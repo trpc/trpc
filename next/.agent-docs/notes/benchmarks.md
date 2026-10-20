@@ -63,8 +63,8 @@ Bundle size, minified / gzip (`pnpm bench bundle`):
 
 | client                                      |    gzip | target |
 | ------------------------------------------- | ------: | -----: |
-| minimal JSON (`httpLink`)                   | 39.6 kB |  18 kB |
-| full (`retryLink`, `httpLink`, danSON, SSE) | 43.7 kB |  25 kB |
+| minimal JSON (`httpLink`)                   | 35.1 kB |  18 kB |
+| full (`retryLink`, `httpLink`, danSON, SSE) | 41.9 kB |  25 kB |
 
 The raises below are from when CI failed above a ceiling, today's size plus 0.1 kB; each records what grew the clients.
 
@@ -83,10 +83,11 @@ The raises below are from when CI failed above a ceiling, today's size plus 0.1 
 - **Grew, 2026-10-19 (no ceiling):** the typed client's proxy answers `request()` and `subscribe()` at its root through the untyped client, so an `any` router's `TrpcUntypedClient` type is true at runtime (first-release review, question 7, [`client.md`](../decisions/client.md)): +34 B on the minimal client and +32 B on the full one (39,548 → 39,582 B and 43,701 → 43,733 B).
 
 - **Cut so far:** the Promise client runs its links with `runLinks`. `runOperation`'s tracer check and client span never ran there (Promise clients run on Effect's native tracer), but they were bundled: `Tracer`, `Scope` spans and `encoding/Hex`, 1.7 kB gzipped on each client.
+- **Cut, 2026-10-20:** streamed single-call outputs (the JSONL reader, resume) and binary frames are behind `httpLink({ streams: experimental_httpStreams() })` ([`../decisions/http-streams-opt-in.md`](../decisions/http-streams-opt-in.md)). On top of the `batching()` and `sse()` imports: 36,626 to 35,086 B on the minimal client, 42,641 to 41,886 B on the full one.
 - **The floor of links on Effect**, same bundler and gzip:
   - `Effect.runPromise(Effect.tryPromise(fetch))`: 8.5 kB.
   - The same through a one-element `Stream` (`Stream.fromEffect`, `Stream.runHead`), which is what every link returns: 10.7 kB.
   - Plus a `Queue`: 11.7 kB. Plus the client span: 14.1 kB. `Stream.callback` and `Stream.toAsyncIterable`: 16.4 kB.
   - So the first 10 kB target left no room for tRPC code while links return `Stream`s. The human kept links on Effect and raised it to 18 kB ("B").
 - **What's over the floor** in the minimal client, by rendered size before minifying: `Channel` (31 kB vs 4 kB in the floor), `Queue` (24 kB, from `Stream.callback` and batching), `Stream` operators (20 kB vs 3 kB), `Duration` (14 kB, kept by Effect's internals: swapping `Effect.sleep` for a `setTimeout` didn't drop it), then tRPC's `httpLink` (15 kB), streaming deserializers (`serializer/danson/stream.ts` and `framed.ts`, 10 kB) and errors (5 kB).
-- **Not cuts:** `Queue` stays while `Stream.callback` does; binary frames and SSE sit behind runtime options of `httpLink`, so they'd need their own imports (an API change) to shake out.
+- **Not cuts:** `Queue` stays while `Stream.callback` does.

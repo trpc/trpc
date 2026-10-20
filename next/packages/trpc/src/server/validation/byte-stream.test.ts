@@ -7,6 +7,7 @@ import { toLambdaHandler, type LambdaV2Result } from '@trpc12/trpc/aws-lambda';
 import {
   batching,
   createTrpcClient,
+  experimental_httpStreams,
   httpLink,
   localLink,
   retryLink,
@@ -147,7 +148,7 @@ test('the resolver reads the body while it arrives, and can stream its output ba
   await using server = await createTestServer({ router });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: server.url })],
+    links: [httpLink({ url: server.url, streams: experimental_httpStreams() })],
   });
   let resolve!: () => void;
   const firstSeen = new Promise<void>((r) => (resolve = r));
@@ -259,7 +260,13 @@ test('danSON and other serializers leave the body as it is', async () => {
   await using server = await createTestServer({ router, serializer });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: server.url, serializer, binary: true })],
+    links: [
+      httpLink({
+        url: server.url,
+        serializer,
+        streams: experimental_httpStreams({ binary: true }),
+      }),
+    ],
   });
   expect(await client.echo.mutate(bytes('danSON'))).toBe('danSON');
 });

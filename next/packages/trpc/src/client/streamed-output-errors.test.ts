@@ -2,6 +2,7 @@ import { Effect, Stream } from 'effect';
 import {
   createSafeClient,
   createTrpcClient,
+  experimental_httpStreams,
   httpLink,
   sse,
   matchError,
@@ -228,7 +229,11 @@ async function expectTypedFailures(links: AtLeastOneLink) {
 test("httpLink: a streamed output's typed failures arrive typed, through safe()", async () => {
   await using server = await createTestServer({ router });
   await expectTypedFailures([
-    httpLink({ url: server.url, subscriptions: sse() }),
+    httpLink({
+      url: server.url,
+      streams: experimental_httpStreams(),
+      subscriptions: sse(),
+    }),
   ]);
 });
 
@@ -273,7 +278,7 @@ test('an Effect client gets the typed failure from iterating a streamed output',
   await using server = await createTestServer({ router });
   const client = createEffectClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: server.url })],
+    links: [httpLink({ streams: experimental_httpStreams(), url: server.url })],
   });
   const err = await Effect.runPromise(
     client.feed.query().pipe(

@@ -1,6 +1,7 @@
 import { Schema } from 'effect';
 import {
   createTrpcClient,
+  experimental_httpStreams,
   httpLink,
   safe,
   experimental_validationLink,
@@ -62,7 +63,11 @@ test('invalid inputs fail on the client with the server error shape, before any 
     router: appContract,
     links: [
       experimental_validationLink({ contract: appContract, output: 'json' }),
-      httpLink({ url: http.url, subscriptions: sse() }),
+      httpLink({
+        url: http.url,
+        streams: experimental_httpStreams(),
+        subscriptions: sse(),
+      }),
     ],
   });
   const [, err] = await safe(client.post.byId.query({ id: '' }));
@@ -98,7 +103,11 @@ test('results that drift from the contract fail with BAD_RESPONSE', async () => 
     router: appContract,
     links: [
       experimental_validationLink({ contract: appContract }),
-      httpLink({ url: http.url, subscriptions: sse() }),
+      httpLink({
+        url: http.url,
+        streams: experimental_httpStreams(),
+        subscriptions: sse(),
+      }),
     ],
   });
   const [, err] = await safe(client.post.byId.query({ id: '1' }));
@@ -199,7 +208,11 @@ test('streamed outputs, unvalidated outputs, plain events, opt-outs and paths ou
     createUntypedClient({
       links: [
         experimental_validationLink(opts),
-        httpLink({ url: http.url, subscriptions: sse() }),
+        httpLink({
+          url: http.url,
+          streams: experimental_httpStreams(),
+          subscriptions: sse(),
+        }),
       ],
     });
   const checked = client({ contract: contractOf });

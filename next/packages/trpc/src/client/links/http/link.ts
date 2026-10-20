@@ -14,6 +14,7 @@ import {
 } from '../../link.ts';
 import type { HttpBatching } from './batch.ts';
 import type { HttpSse, Subscriptions } from './sse.ts';
+import type { HttpStreams } from './streams.ts';
 import { makeTransport, type HttpFeature } from './transport.ts';
 
 /**
@@ -95,12 +96,20 @@ export interface HttpLinkOptions<
    */
   subscriptions?: HttpSse | undefined;
   /**
-   * Ask for streamed outputs as binary frames instead of JSONL, so `File`
-   * and `Blob` bytes in them arrive unencoded rather than as base64 (a
-   * third smaller). Servers that don't know frames answer with JSONL.
-   * @default false
+   * `experimental_httpStreams()` reads streamed outputs (and binary
+   * frames). Without it, a call whose output holds a promise, an async
+   * iterable or a `Stream` fails with `UNSUPPORTED_PROTOCOL` after it has
+   * run, and the decoders aren't bundled; batched calls read their
+   * deferred values either way.
+   *
+   * @example
+   * ```ts
+   * httpLink({ url, streams: experimental_httpStreams() });
+   * ```
    */
-  binary?: boolean;
+  streams?: HttpStreams | undefined;
+  /** Moved to `streams: experimental_httpStreams({ binary: true })`. */
+  binary?: never;
 }
 
 /**
@@ -131,9 +140,10 @@ export type HttpLinkDecl<TOpts> = {
 /**
  * Sends calls over HTTP (17: one link for every HTTP transport). Queries use
  * `GET` with an `?input=` param, mutations `POST`. Outputs with nested
- * `Promise`s or `AsyncIterable`s stream as JSONL. A call whose input holds a
- * `File` or `Blob` is sent alone as `multipart/form-data`. Batching
- * (`batching()`) and subscriptions over SSE (`sse()`) are imports of their
+ * `Promise`s or `AsyncIterable`s stream as JSONL, read with
+ * `streams: experimental_httpStreams()`. A call whose input holds a `File`
+ * or `Blob` is sent alone as `multipart/form-data`. Batching (`batching()`),
+ * subscriptions over SSE (`sse()`) and streamed outputs are imports of their
  * own, so a client bundles only the ones it passes.
  *
  * @example

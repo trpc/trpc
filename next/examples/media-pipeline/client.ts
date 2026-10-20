@@ -9,6 +9,7 @@ import { Effect, Stream } from 'effect';
 import {
   batching,
   createTrpcClient,
+  experimental_httpStreams,
   httpLink,
   matchError,
   routerType,
@@ -64,23 +65,42 @@ export async function main(url: string) {
         url,
         batch: batching(),
         serializer: danson,
+        streams: experimental_httpStreams(),
         fetch: recordingFetch,
       }),
     ],
   });
   const binary = createTrpcClient({
     router,
-    links: [httpLink({ url, serializer: danson, binary: true })],
+    links: [
+      httpLink({
+        url,
+        serializer: danson,
+        streams: experimental_httpStreams({ binary: true }),
+      }),
+    ],
   });
   const superjsonClient = createTrpcClient({
     router,
     links: [
-      httpLink({ url: syncUrl, serializer: sync, fetch: recordingFetch }),
+      httpLink({
+        url: syncUrl,
+        serializer: sync,
+        streams: experimental_httpStreams(),
+        fetch: recordingFetch,
+      }),
     ],
   });
   const effectClient = createEffectClient({
     router,
-    links: [httpLink({ url, serializer: danson, subscriptions: sse() })],
+    links: [
+      httpLink({
+        url,
+        serializer: danson,
+        subscriptions: sse(),
+        streams: experimental_httpStreams(),
+      }),
+    ],
   });
 
   // --- events: an Effect Stream, followed with the Effect client ------------------------

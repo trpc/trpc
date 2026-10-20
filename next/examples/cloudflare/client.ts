@@ -11,6 +11,7 @@ import { request as httpsRequest } from 'node:https';
 import {
   createTrpcClient,
   experimental_durableLink,
+  experimental_httpStreams,
   httpLink,
   safe,
   splitLink,
@@ -127,6 +128,7 @@ export async function main(base: string) {
       experimental_durableLink({ delay: () => 50 }),
       httpLink({
         url,
+        streams: experimental_httpStreams(),
         fetch: async (input, init) => {
           const request = new Request(input, init);
           resumedFrom.push(request.headers.get('trpc-resume-from'));
