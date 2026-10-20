@@ -73,27 +73,36 @@ import type { AnyProcedure, CreateContextOpts } from '@trpc12/trpc/server';
  * @since 0.1.0
  * @stability experimental
  */
-export interface TrpcModuleOptions extends Omit<
+export type TrpcModuleOptions = Omit<
   BaseOpenApiHandlerOptions<never>,
   'router' | 'prefix' | 'contract'
-> {
+> & {
   /** Runs once per request; `platform` is the Nest `ExecutionContext`. */
   createContext?: (
     opts: CreateContextOpts<ExecutionContext>,
   ) => object | Promise<object>;
-  /**
-   * Provides the Effect services the procedures need, built once and
-   * released when the app closes. Nest can't see which those are, so a
-   * missing one fails the call.
-   */
-  layer?: Layer.Layer<any, any, never>;
-  /**
-   * Provides the services instead of `layer`, from a runtime the caller
-   * owns and shares with the rest of the app. Closing the app leaves it
-   * running; `runtime.dispose()` releases it.
-   */
-  runtime?: ManagedRuntime.ManagedRuntime<any, any> | undefined;
-}
+} & (
+    | {
+        /**
+         * Provides the Effect services the procedures need, built once and
+         * released when the app closes. Nest can't see which those are, so
+         * a missing one fails the call.
+         */
+        layer?: Layer.Layer<any, any, never>;
+        /** Not with `layer`: pass one or the other. */
+        runtime?: undefined;
+      }
+    | {
+        /**
+         * Provides the services instead of `layer`, from a runtime the
+         * caller owns and shares with the rest of the app. Closing the app
+         * leaves it running; `runtime.dispose()` releases it.
+         */
+        runtime: ManagedRuntime.ManagedRuntime<any, any>;
+        /** Not with `runtime`: pass one or the other. */
+        layer?: undefined;
+      }
+  );
 
 /**
  * The options of {@link TrpcModule.forRootAsync}: a Nest factory provider.

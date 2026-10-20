@@ -331,8 +331,13 @@ test('a caller-owned runtime provides the services, and closing the app leaves i
 test('TrpcModule takes a layer or a runtime, not both', async () => {
   const layer = Layer.succeed(Counter, { next: Effect.succeed(1) });
   const runtime = ManagedRuntime.make(layer);
-  @Module({ imports: [TrpcModule.forRoot({ runtime, layer })] })
+  @Module({
+    // @ts-expect-error -- `layer` and `runtime` are exclusive
+    imports: [TrpcModule.forRoot({ runtime, layer })],
+  })
   class BothModule {}
+  // @ts-expect-error -- and so in a factory's options
+  TrpcModule.forRootAsync({ useFactory: () => ({ runtime, layer }) });
   await expect(
     NestFactory.create(BothModule, { logger: false, abortOnError: false }),
   ).rejects.toThrow('pass `layer` or `runtime`, not both');
