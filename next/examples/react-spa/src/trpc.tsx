@@ -7,10 +7,12 @@ import {
   hydrationOptions,
 } from '@trpc12/tanstack-react-query';
 import {
+  batching,
   createTrpcClient,
   dedupeLink,
   httpLink,
   routerType,
+  sse,
 } from '@trpc12/trpc/client';
 import { useState, type ReactNode } from 'react';
 import type { DirectoryRouter } from '../server/directory.ts';
@@ -23,13 +25,23 @@ export const makeTrackerClient = () =>
   createTrpcClient({
     router: routerType<TrackerRouter>(),
     // Two components asking for the same query at once share one request.
-    links: [dedupeLink(), httpLink({ url: '/trpc', batch: true, serializer })],
+    links: [
+      dedupeLink(),
+      httpLink({
+        url: '/trpc',
+        batch: batching(),
+        subscriptions: sse(),
+        serializer,
+      }),
+    ],
   });
 
 const makeDirectoryClient = () =>
   createTrpcClient({
     router: routerType<DirectoryRouter>(),
-    links: [httpLink({ url: '/directory/trpc', batch: true, serializer })],
+    links: [
+      httpLink({ url: '/directory/trpc', batch: batching(), serializer }),
+    ],
   });
 
 export const [TrackerProvider, useTracker] =

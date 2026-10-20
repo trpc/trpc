@@ -7,10 +7,12 @@
 import assert from 'node:assert/strict';
 import { parseArgs } from 'node:util';
 import {
+  batching,
   createTrpcClient,
   httpLink,
   routerType,
   safe,
+  sse,
   wsLink,
 } from '@trpc12/trpc/client';
 import type { AppRouter } from './server.ts';
@@ -42,7 +44,8 @@ export async function main(url: string, expected: Expected = {}) {
     links: [
       httpLink({
         url,
-        batch: true,
+        batch: batching(),
+        subscriptions: sse(),
         serializer,
         fetch: (input, init) => {
           requests++;
