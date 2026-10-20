@@ -544,6 +544,45 @@ test("lifecycle helpers are Promise middleware when called, and their callbacks'
   ]);
   outcomes.length = 0;
 
+  const seen: unknown[] = [];
+  const helpers = [
+    onStart(() => void seen.push('start')),
+    onSuccess((data) => void seen.push(['success', data])),
+    onError((e) => void seen.push(['error', e.code])),
+    onFinish((result) => void seen.push(['finish', result.ok])),
+  ];
+  const results = [
+    { ok: true as const, data: 1 },
+    {
+      ok: false as const,
+      error: new TrpcError({ code: 'CONFLICT', message: 'taken' }),
+    },
+  ];
+  for (const result of results) {
+    for (const helper of helpers) {
+      expect(
+        await helper({
+          ctx: {},
+          input: undefined,
+          meta: {},
+          path: 'p',
+          type: 'query',
+          signal: new AbortController().signal,
+          response: { headers: new Headers(), status: undefined },
+          next: () => Promise.resolve(result),
+        }),
+      ).toBe(result);
+    }
+  }
+  expect(seen).toEqual([
+    'start',
+    ['success', 1],
+    ['finish', true],
+    'start',
+    ['error', 'CONFLICT'],
+    ['finish', false],
+  ]);
+
   const peeking = t.procedure
     .use(
       onStart(async (o) => {
@@ -839,6 +878,12 @@ test('calls that go wrong in unusual ways fail with one clear error', async () =
       opts.errors.CONFLICT({ data: 'same string' }),
     ),
     badMiddleware: u.procedure.use((() => 'nope') as never).query(() => 1),
+    rejectingMiddleware: u.procedure
+      .use(async () => {
+        await Promise.resolve();
+        throw new Error('rejected');
+      })
+      .query(() => 1),
     handBuiltFailure: u.procedure
       .use((() => ({
         ok: false,
@@ -887,6 +932,10 @@ test('calls that go wrong in unusual ways fail with one clear error', async () =
   expect(await failure('badMiddleware')).toEqual({
     code: 'INTERNAL_SERVER_ERROR',
     message: 'Middleware on "" must return next(), ok() or a TrpcError',
+  });
+  expect(await failure('rejectingMiddleware')).toEqual({
+    code: 'INTERNAL_SERVER_ERROR',
+    message: 'rejected',
   });
   expect(await failure('handBuiltFailure')).toEqual({
     code: 'FORBIDDEN',

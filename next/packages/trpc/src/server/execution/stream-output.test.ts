@@ -212,6 +212,29 @@ test('a streamed output reads its source one item per next(), and leaving closes
   }
 });
 
+test('throw() on a streamed output closes its source and rejects with the error', async () => {
+  let closed = false;
+  async function* tokens() {
+    try {
+      yield { text: 'a' };
+      yield { text: 'b' };
+    } finally {
+      closed = true;
+    }
+  }
+  const validated = t.procedure.output(stream(Token)).query(tokens);
+  const unvalidated = t.procedure.query(tokens);
+  for (const procedure of [validated, unvalidated]) {
+    closed = false;
+    const iterator = (await call(procedure, undefined))[Symbol.asyncIterator]();
+    await iterator.next();
+    const thrown = new Error('stop');
+    await expect(iterator.throw?.(thrown)).rejects.toBe(thrown);
+    expect(closed).toBe(true);
+    expect(await iterator.next()).toEqual({ done: true, value: undefined });
+  }
+});
+
 test('an invalid item closes the source before the stream fails', async () => {
   let closed = false;
   const broken = t.procedure.output(stream(Post)).query(async function* () {
@@ -233,6 +256,21 @@ test('an invalid item closes the source before the stream fails', async () => {
   expect(items).toEqual([{ id: '1', title: 'ok' }]);
   expect(err).toBeInstanceOf(TrpcError);
   expect(closed).toBe(true);
+});
+
+test('stream() validates the items of a ReadableStream', async () => {
+  const fromWeb = t.procedure.output(stream(Post)).query(
+    () =>
+      new ReadableStream({
+        start(controller) {
+          controller.enqueue({ id: '1', title: ' Web ' });
+          controller.close();
+        },
+      }),
+  );
+  const items: unknown[] = [];
+  for await (const item of await call(fromWeb, undefined)) items.push(item);
+  expect(items).toEqual([{ id: '1', title: 'Web' }]);
 });
 
 test('contracts take stream() outputs', async () => {
