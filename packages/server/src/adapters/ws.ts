@@ -314,32 +314,15 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           return;
         }
 
-        let result: unknown;
-        try {
-          result = await callTRPCProcedure({
-            router,
-            path,
-            getRawInput: async () => input,
-            ctx,
-            type,
-            signal: abortController.signal,
-            batchIndex,
-          });
-        } catch (cause) {
-          const error = getTRPCErrorFromUnknown(cause);
-          // An `AbortError` caused by the stop is wrapped as an
-          // INTERNAL_SERVER_ERROR; errors with any other cause or code are
-          // still reported.
-          if (
-            abortController.signal.aborted &&
-            error.code === 'INTERNAL_SERVER_ERROR' &&
-            isAbortError(error.cause)
-          ) {
-            stopSubscription();
-            return;
-          }
-          throw error;
-        }
+        const result = await callTRPCProcedure({
+          router,
+          path,
+          getRawInput: async () => input,
+          ctx,
+          type,
+          signal: abortController.signal,
+          batchIndex,
+        });
 
         const isIterableResult =
           isAsyncIterable(result) || isObservable(result);
@@ -462,8 +445,20 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
         });
       }).catch((cause) => {
         // procedure threw an error
+        const error = getTRPCErrorFromUnknown(cause);
+        // A procedure that gives up because its subscription was cancelled
+        // rejects with an `AbortError`, which is wrapped as an
+        // INTERNAL_SERVER_ERROR. Any other cause or code is still reported.
+        if (
+          abortController.signal.aborted &&
+          error.code === 'INTERNAL_SERVER_ERROR' &&
+          isAbortError(error.cause)
+        ) {
+          stopSubscription();
+          return;
+        }
         releaseSubscription();
-        respondWithError(cause);
+        respondWithError(error);
       });
     }
     client.on('message', (rawData, isBinary) => {
