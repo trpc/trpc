@@ -88,7 +88,7 @@ jobs:
     # The docs site: compiles every twoslash block in www/docs/ and the v11 docs'
     # copies, and fails on broken links between pages.
     runs-on: ubuntu-latest
-    # A cold twoslash cache (any lockfile change) compiles all ~530 blocks.
+    # A cold twoslash cache compiles all ~590 blocks.
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
@@ -103,12 +103,14 @@ jobs:
       - run: pnpm install --frozen-lockfile
         env:
           VP_GIT_HOOKS: '0'
-      # Compiled blocks, keyed by the lockfile inside; a stale entry recompiles.
+      # Compiled blocks and social cards. Each entry is keyed by what it was
+      # made from (the part of the lockfile a block's app installs from,
+      # say), so any earlier run's cache is safe to start from.
       - uses: actions/cache@v4
         with:
-          path: next/www/node_modules/.cache/twoslash
-          key: twoslash-${{ hashFiles('next/pnpm-lock.yaml') }}-${{ github.sha }}
-          restore-keys: twoslash-${{ hashFiles('next/pnpm-lock.yaml') }}-
+          path: next/www/node_modules/.cache
+          key: www-cache-${{ github.sha }}
+          restore-keys: www-cache-
       - run: pnpm --filter @trpc12/www build
 
   effect-latest:

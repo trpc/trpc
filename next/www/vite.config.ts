@@ -11,6 +11,7 @@ import { blogFeeds } from './build/feeds.ts';
 import { siteIcons } from './build/icons.ts';
 import { bundledServer } from './build/on-demand.ts';
 import { OgCard, ogImages } from './build/og-image.ts';
+import type { TwoslashCacheOptions } from './build/twoslash-cache.ts';
 import { absoluteUrl, postDate, trpcPageUrl, trpcPostUrl } from './src/seo.ts';
 import {
   blog,
@@ -38,12 +39,17 @@ const copies = copiedVersions.map((version) => ({
   version,
 }));
 const v11Dir = new URL('v11/docs', import.meta.url).pathname;
-// CI caches this dir, keyed like the dependencies.
-const twoslashCacheDir = new URL(
-  'node_modules/.cache/twoslash',
-  import.meta.url,
-).pathname;
-const lockfile = new URL('../pnpm-lock.yaml', import.meta.url).pathname;
+// Kept between builds: Vercel restores `node_modules` under the project's
+// root, and CI caches the dir.
+const cacheDir = new URL('node_modules/.cache', import.meta.url).pathname;
+const twoslashCache: TwoslashCacheOptions = {
+  dir: `${cacheDir}/twoslash`,
+  lockfile: new URL('../pnpm-lock.yaml', import.meta.url).pathname,
+  tools: {
+    dir: new URL('.', import.meta.url).pathname,
+    packages: ['@shikijs/twoslash', 'twoslash', 'typescript6'],
+  },
+};
 const faviconFile = new URL('public/favicon.svg', import.meta.url).pathname;
 const [pages, copiedPages, posts, favicon] = await Effect.runPromise(
   Effect.all([
@@ -109,7 +115,7 @@ export default defineConfig({
       siteUrl: site.url,
       sourceUrl: site.sourceUrl,
       summary: site.description,
-      twoslashCache: { dir: twoslashCacheDir, inputs: [lockfile] },
+      twoslashCache,
       v11Dir,
     }),
     ...copies.map((copy) =>
@@ -130,10 +136,7 @@ export default defineConfig({
             : undefined,
         sourceUrl: `${site.github}/blob/main/www`,
         summary: site.description,
-        twoslashCache:
-          copy.version.id === 'v11'
-            ? { dir: twoslashCacheDir, inputs: [lockfile] }
-            : undefined,
+        twoslashCache: copy.version.id === 'v11' ? twoslashCache : undefined,
       }),
     ),
     blogContent({

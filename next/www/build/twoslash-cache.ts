@@ -5,28 +5,52 @@ import type {
   TwoslashShikiReturn,
 } from '@shikijs/twoslash/core';
 import { Effect, FileSystem, Option, Path, Schema } from 'effect';
+import ts from 'typescript6';
+
+import {
+  type Closure,
+  installedPackageOf,
+  type Lockfile,
+  readLockfile,
+} from './lockfile.ts';
 
 /** Bump when an entry's shape or what goes into a key changes. */
-const version = 1;
+const version = 2;
 
 /** Entries no build has read for this long are deleted. */
 const maxAgeMs = 14 * 24 * 60 * 60 * 1000;
 
 /**
  * Packages pnpm installs from the registry. Their files only change with
- * the lockfile, which is one of the cache's `inputs`, so they aren't hashed.
+ * the lockfile, whose part the block's app installs from is in the key, so
+ * they aren't hashed.
  */
 const installed = /[/\\]node_modules[/\\]\.pnpm[/\\]/;
+
+/**
+ * Errors whose block could compile differently after any install: an import
+ * or types that didn't resolve might resolve from another package's
+ * dependencies, outside the app's part of the lockfile.
+ */
+const unresolvedCodes = new Set([2307, 2688, 2792, 7016]);
+
+const sourceFile = /\.[cm]?tsx?$/;
+const declarationFile = /\.d\.[cm]?ts$/;
 
 export interface TwoslashCacheOptions {
   /** Where entries live, one JSON file per block. */
   readonly dir: string;
-  /** Files whose contents go into every key, like the lockfile. */
-  readonly inputs: ReadonlyArray<string>;
+  /** `pnpm-lock.yaml`. A block's key has the part its app installs from. */
+  readonly lockfile: string;
+  /** The packages that compile blocks, as dependencies of the workspace package at `dir`; they're in every key. */
+  readonly tools: {
+    readonly dir: string;
+    readonly packages: ReadonlyArray<string>;
+  };
 }
 
 const Entry = Schema.Struct({
-  /** Each file the block's program read, outside `installed`, and its hash. */
+  /** Each file the block's program read, outside `installed`, and its {@link fingerprint}. */
   deps: Schema.Array(Schema.Tuple([Schema.String, Schema.String])),
   result: Schema.Struct({
     code: Schema.String,
@@ -45,6 +69,56 @@ const encodeEntry = Schema.encodeEffect(EntryJson);
 
 function hash(text: string) {
   return createHash('sha256').update(text).digest('hex');
+}
+
+/**
+ * What a block can see of a file it read. For a TypeScript source that
+ * declares its exports' types (`isolatedDeclarations`, as the workspace
+ * packages do), that's its declarations and what it imports, so an edit
+ * inside a function body keeps the blocks that import it. Anything else is
+ * its text.
+ */
+export function fingerprint(fileName: string, text: string) {
+  const known = fingerprints.get(fileName);
+  if (known?.text === text) {
+    return known.hash;
+  }
+  const fileHash = computeFingerprint(fileName, text);
+  fingerprints.set(fileName, { hash: fileHash, text });
+  return fileHash;
+}
+
+/** The last {@link fingerprint} of each file: most blocks read the same package files. */
+const fingerprints = new Map<
+  string,
+  { readonly hash: string; readonly text: string }
+>();
+
+function computeFingerprint(fileName: string, text: string) {
+  if (sourceFile.test(fileName) && !declarationFile.test(fileName)) {
+    const declarations = ts.transpileDeclaration(text, {
+      compilerOptions: {},
+      fileName,
+      reportDiagnostics: true,
+    });
+    if (!declarations.diagnostics?.length) {
+      const imports = ts.preProcessFile(text, true, true);
+      return hash(
+        JSON.stringify([
+          declarations.outputText,
+          ...[
+            imports.importedFiles,
+            imports.referencedFiles,
+            imports.typeReferenceDirectives,
+            imports.libReferenceDirectives,
+          ].map((references) =>
+            references.map((reference) => reference.fileName).toSorted(),
+          ),
+        ]),
+      );
+    }
+  }
+  return hash(text);
 }
 
 function revive(entry: Entry): TwoslashShikiReturn {
@@ -100,19 +174,72 @@ export interface TwoslashCache {
   readonly stats: { hits: number; misses: number };
 }
 
+/** A file's size and mtime, which say when to read it again. */
+const stampOf = Effect.fn('stampOf')(function* (file: string) {
+  const fs = yield* FileSystem.FileSystem;
+  const info = yield* fs.stat(file);
+  return `${info.size}:${Option.match(info.mtime, {
+    onNone: () => '',
+    onSome: (mtime) => mtime.getTime(),
+  })}`;
+});
+
+/** A lockfile that couldn't be read: every key misses until it can be. */
+const unreadLockfile: Lockfile = { closure: () => undefined, hash: '' };
+
 /**
  * Twoslash results on disk, so a build, CI run, deploy or dev server start
  * compiles only the blocks whose inputs changed.
  *
- * A key covers the block, its compiler options and app files, and `inputs`.
- * An entry also lists every other file its program read (the workspace
- * packages a sample imports, say) with a hash, and is a miss when one
- * changed.
+ * A key covers the block, its compiler options and app files, the `tools`,
+ * and the part of the lockfile the block's app installs from (its closure),
+ * or the whole lockfile when the app isn't a workspace package. An entry
+ * also lists every other file its program read (the workspace packages a
+ * sample imports, say) with its {@link fingerprint}, and is a miss when one
+ * changed. A block that read an installed package outside its closure, or
+ * whose import didn't resolve, lists the lockfile too.
  */
 export function makeTwoslashCache(
   options: TwoslashCacheOptions,
 ): TwoslashCache {
   const stats = { hits: 0, misses: 0 };
+
+  /** {@link fingerprint}s of files on disk, recomputed when a file's stamp changes. */
+  const fileHashes = new Map<
+    string,
+    { readonly hash: string; readonly stamp: string }
+  >();
+
+  const hashFile = Effect.fn('hashFile')(
+    function* (file: string) {
+      const fs = yield* FileSystem.FileSystem;
+      const stamp = yield* stampOf(file);
+      const known = fileHashes.get(file);
+      if (known?.stamp === stamp) {
+        return known.hash;
+      }
+      const fileHash = fingerprint(file, yield* fs.readFileString(file));
+      fileHashes.set(file, { hash: fileHash, stamp });
+      return fileHash;
+    },
+    Effect.orElseSucceed(() => ''),
+  );
+
+  /** The lockfile as last read, read again when its stamp changes. */
+  let lockfileRead:
+    | { readonly lockfile: Lockfile; readonly stamp: string }
+    | undefined;
+
+  const readLockfileOnce = Effect.gen(function* () {
+    const stamp = yield* stampOf(options.lockfile);
+    if (lockfileRead?.stamp !== stamp) {
+      lockfileRead = {
+        lockfile: yield* Effect.try(() => readLockfile(options.lockfile)),
+        stamp,
+      };
+    }
+    return lockfileRead.lockfile;
+  }).pipe(Effect.orElseSucceed(() => unreadLockfile));
 
   const loadEntries = Effect.gen(function* () {
     const fs = yield* FileSystem.FileSystem;
@@ -140,36 +267,14 @@ export function makeTwoslashCache(
   });
   const entries = Effect.runSync(Effect.cached(loadEntries));
 
-  /** Hashes of files on disk, recomputed when a file's size or mtime changes. */
-  const fileHashes = new Map<
-    string,
-    { readonly hash: string; readonly stamp: string }
-  >();
-
-  const hashFile = Effect.fn('hashFile')(
-    function* (file: string) {
-      const fs = yield* FileSystem.FileSystem;
-      const info = yield* fs.stat(file);
-      const stamp = `${info.size}:${Option.match(info.mtime, {
-        onNone: () => '',
-        onSome: (mtime) => mtime.getTime(),
-      })}`;
-      const known = fileHashes.get(file);
-      if (known?.stamp === stamp) {
-        return known.hash;
-      }
-      const fileHash = hash(yield* fs.readFileString(file));
-      fileHashes.set(file, { hash: fileHash, stamp });
-      return fileHash;
-    },
-    Effect.orElseSucceed(() => ''),
-  );
-
   const open = Effect.gen(function* () {
     const store = yield* entries;
-    const inputs = yield* Effect.forEach(options.inputs, hashFile, {
-      concurrency: 'unbounded',
-    });
+    const lockfile = yield* readLockfileOnce;
+    const tools =
+      lockfile.closure(options.tools.dir, options.tools.packages)?.hash ??
+      lockfile.hash;
+    /** The closure each key was made with, for `set` to check the files against. */
+    const closures = new Map<string, Closure | undefined>();
     const current = new Map(
       yield* Effect.forEach(
         new Set(
@@ -226,16 +331,47 @@ export function makeTwoslashCache(
         used.add(key);
         return revive(entry);
       },
-      key: (block) => hash(JSON.stringify([version, inputs, block])),
+      key(block) {
+        const closure = lockfile.closure(block.root);
+        const key = hash(
+          JSON.stringify([
+            version,
+            tools,
+            closure?.hash ?? lockfile.hash,
+            block,
+          ]),
+        );
+        closures.set(key, closure);
+        return key;
+      },
       set(key, result, files) {
         stats.misses++;
+        const closure = closures.get(key);
         const deps: Array<readonly [string, string]> = [];
+        let outsideClosure =
+          closure !== undefined &&
+          result.nodes.some(
+            (node) =>
+              node.type === 'error' &&
+              typeof node.code === 'number' &&
+              unresolvedCodes.has(node.code),
+          );
         for (const file of files) {
-          if (!installed.test(file.fileName)) {
-            const fileHash = hash(file.text);
-            deps.push([file.fileName, fileHash]);
-            current.set(file.fileName, fileHash);
+          if (installed.test(file.fileName)) {
+            const installedPackage = installedPackageOf(file.fileName);
+            outsideClosure ||=
+              closure !== undefined &&
+              (installedPackage === undefined ||
+                !closure.packages.has(installedPackage));
+            continue;
           }
+          const fileHash = fingerprint(file.fileName, file.text);
+          deps.push([file.fileName, fileHash]);
+          current.set(file.fileName, fileHash);
+        }
+        if (outsideClosure) {
+          deps.push([options.lockfile, lockfile.hash]);
+          current.set(options.lockfile, lockfile.hash);
         }
         const entry: Entry = {
           deps,

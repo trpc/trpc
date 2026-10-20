@@ -4,7 +4,12 @@ import { describe, expect, it } from '@effect/vitest';
 import { Effect, FileSystem, Path } from 'effect';
 
 import { renderMarkdown } from './markdown.ts';
-import { makeTwoslashCache, type TwoslashBlock } from './twoslash-cache.ts';
+import {
+  fingerprint,
+  makeTwoslashCache,
+  type TwoslashBlock,
+  type TwoslashCacheOptions,
+} from './twoslash-cache.ts';
 
 const result: TwoslashShikiReturn = {
   code: 'const a = 1;',
@@ -47,10 +52,70 @@ const setup = Effect.fn('setup')(function* () {
   return {
     installed: path.join(root, 'node_modules/.pnpm/a@1/index.d.ts'),
     lockfile,
-    options: { dir: path.join(root, 'cache'), inputs: [lockfile] },
+    options: {
+      dir: path.join(root, 'cache'),
+      lockfile,
+      tools: { dir: root, packages: [] },
+    },
+    root,
     samplesDir,
     source,
   };
+});
+
+/** A lockfile where `samples/app` depends on `a`, and `tools` on `b`, at these versions. */
+function lockfileText(versions: { a: string; b: string; tools?: string }) {
+  return [
+    "lockfileVersion: '9.0'",
+    'importers:',
+    '  samples/app:',
+    '    dependencies:',
+    `      a: { specifier: '${versions.a}', version: '${versions.a}' }`,
+    '  tools:',
+    '    devDependencies:',
+    `      b: { specifier: '${versions.b}', version: '${versions.b}' }`,
+    `      twoslash: { specifier: '${versions.tools ?? '1.0.0'}', version: '${versions.tools ?? '1.0.0'}' }`,
+    'packages:',
+    `  a@${versions.a}: { resolution: { integrity: sha512-a${versions.a} } }`,
+    `  b@${versions.b}: { resolution: { integrity: sha512-b${versions.b} } }`,
+    `  twoslash@${versions.tools ?? '1.0.0'}: { resolution: { integrity: sha512-t } }`,
+    'snapshots:',
+    `  a@${versions.a}: {}`,
+    `  b@${versions.b}: {}`,
+    `  twoslash@${versions.tools ?? '1.0.0'}: {}`,
+    '',
+  ].join('\n');
+}
+
+/** {@link setup}, with {@link lockfileText}'s lockfile and a block of `samples/app`. */
+const setupWorkspace = Effect.fn('setupWorkspace')(function* () {
+  const fs = yield* FileSystem.FileSystem;
+  const path = yield* Path.Path;
+  const dirs = yield* setup();
+  yield* fs.writeFileString(
+    dirs.lockfile,
+    lockfileText({ a: '1.0.0', b: '1.0.0' }),
+  );
+  const options: TwoslashCacheOptions = {
+    ...dirs.options,
+    tools: { dir: path.join(dirs.root, 'tools'), packages: ['twoslash'] },
+  };
+  const appBlock: TwoslashBlock = {
+    code: 'const a = 1;',
+    lang: 'ts',
+    options: {},
+    root: path.join(dirs.root, 'samples/app'),
+  };
+  const installedFile = (store: string, name: string) =>
+    path.join(
+      dirs.root,
+      'node_modules/.pnpm',
+      store,
+      'node_modules',
+      name,
+      'index.d.ts',
+    );
+  return { ...dirs, appBlock, installedFile, options };
 });
 
 describe('makeTwoslashCache', () => {
@@ -112,6 +177,170 @@ describe('makeTwoslashCache', () => {
         expect(upgraded.key(block('const a = 1;'))).not.toBe(key);
       }).pipe(Effect.provide(NodeServices.layer)),
   );
+
+  it.effect(
+    "keeps a workspace package's blocks when the lockfile changes elsewhere",
+    () =>
+      Effect.gen(function* () {
+        const fs = yield* FileSystem.FileSystem;
+        const dirs = yield* setupWorkspace();
+        const first = yield* makeTwoslashCache(dirs.options).open;
+        const key = first.key(dirs.appBlock);
+        first.set(key, result, [
+          {
+            fileName: dirs.installedFile('a@1.0.0', 'a'),
+            text: 'export declare const a: 1;',
+          },
+        ]);
+        yield* first.flush;
+
+        yield* fs.writeFileString(
+          dirs.lockfile,
+          lockfileText({ a: '1.0.0', b: '2.0.0' }),
+        );
+        const elsewhere = yield* makeTwoslashCache(dirs.options).open;
+        expect(elsewhere.key(dirs.appBlock)).toBe(key);
+        expect(elsewhere.get(key)).toEqual(result);
+
+        yield* fs.writeFileString(
+          dirs.lockfile,
+          lockfileText({ a: '2.0.0', b: '2.0.0' }),
+        );
+        const upgraded = yield* makeTwoslashCache(dirs.options).open;
+        expect(upgraded.key(dirs.appBlock)).not.toBe(key);
+
+        yield* fs.writeFileString(
+          dirs.lockfile,
+          lockfileText({ a: '1.0.0', b: '2.0.0', tools: '1.1.0' }),
+        );
+        const newTools = yield* makeTwoslashCache(dirs.options).open;
+        expect(newTools.key(dirs.appBlock)).not.toBe(key);
+      }).pipe(Effect.provide(NodeServices.layer)),
+  );
+
+  it.effect(
+    'lists the lockfile for a block that read a package outside its closure',
+    () =>
+      Effect.gen(function* () {
+        const fs = yield* FileSystem.FileSystem;
+        const dirs = yield* setupWorkspace();
+        const first = yield* makeTwoslashCache(dirs.options).open;
+        const key = first.key(dirs.appBlock);
+        first.set(key, result, [
+          {
+            fileName: dirs.installedFile('b@1.0.0', 'b'),
+            text: 'export declare const b: 1;',
+          },
+        ]);
+        yield* first.flush;
+
+        yield* fs.writeFileString(
+          dirs.lockfile,
+          lockfileText({ a: '1.0.0', b: '2.0.0' }),
+        );
+        const session = yield* makeTwoslashCache(dirs.options).open;
+        expect(session.key(dirs.appBlock)).toBe(key);
+        expect(session.get(key)).toBeUndefined();
+      }).pipe(Effect.provide(NodeServices.layer)),
+  );
+
+  it.effect('lists the lockfile for a block with an unresolved import', () =>
+    Effect.gen(function* () {
+      const fs = yield* FileSystem.FileSystem;
+      const dirs = yield* setupWorkspace();
+      const first = yield* makeTwoslashCache(dirs.options).open;
+      const key = first.key(dirs.appBlock);
+      const unresolved: TwoslashShikiReturn = {
+        ...result,
+        nodes: [
+          {
+            character: 0,
+            code: 2307,
+            filename: 'index.ts',
+            id: 'err-2307',
+            length: 1,
+            level: 'error',
+            line: 0,
+            start: 0,
+            text: "Cannot find module 'b'",
+            type: 'error',
+          },
+        ],
+      };
+      first.set(key, unresolved, []);
+      yield* first.flush;
+
+      yield* fs.writeFileString(
+        dirs.lockfile,
+        lockfileText({ a: '1.0.0', b: '2.0.0' }),
+      );
+      const session = yield* makeTwoslashCache(dirs.options).open;
+      expect(session.get(key)).toBeUndefined();
+    }).pipe(Effect.provide(NodeServices.layer)),
+  );
+
+  it.effect(
+    "hits after an edit to a source's function bodies, not its declarations",
+    () =>
+      Effect.gen(function* () {
+        const fs = yield* FileSystem.FileSystem;
+        const dirs = yield* setup();
+        const text = 'export function f(): number {\n  return 1;\n}\n';
+        yield* fs.writeFileString(dirs.source, text);
+        const first = yield* makeTwoslashCache(dirs.options).open;
+        const key = first.key(block('const a = 1;'));
+        first.set(key, result, [{ fileName: dirs.source, text }]);
+        yield* first.flush;
+
+        yield* fs.writeFileString(
+          dirs.source,
+          'export function f(): number {\n  return 2 - 1;\n}\n',
+        );
+        const body = yield* makeTwoslashCache(dirs.options).open;
+        expect(body.get(key)).toEqual(result);
+
+        yield* fs.writeFileString(
+          dirs.source,
+          "import './globals.ts';\nexport function f(): number {\n  return 2 - 1;\n}\n",
+        );
+        const imports = yield* makeTwoslashCache(dirs.options).open;
+        expect(imports.get(key)).toBeUndefined();
+
+        yield* fs.writeFileString(
+          dirs.source,
+          'export function f(): string {\n  return "1";\n}\n',
+        );
+        const signature = yield* makeTwoslashCache(dirs.options).open;
+        expect(signature.get(key)).toBeUndefined();
+
+        yield* fs.writeFileString(
+          dirs.source,
+          '/** Returns one. */\nexport function f(): number {\n  return 1;\n}\n',
+        );
+        const docs = yield* makeTwoslashCache(dirs.options).open;
+        expect(docs.get(key)).toBeUndefined();
+      }).pipe(Effect.provide(NodeServices.layer)),
+  );
+
+  it('fingerprints a source without declared types by its text', () => {
+    expect(
+      fingerprint(
+        '/a.ts',
+        'export function f(x: number) {\n  return x * 2;\n}',
+      ),
+    ).not.toBe(
+      fingerprint(
+        '/a.ts',
+        'export function f(x: number) {\n  return x * 3;\n}',
+      ),
+    );
+    expect(fingerprint('/a.ts', 'export const a: number = 1;')).toBe(
+      fingerprint('/a.ts', 'export const a: number = 2;'),
+    );
+    expect(fingerprint('/a.d.ts', 'export declare const a: 1;')).not.toBe(
+      fingerprint('/a.d.ts', 'export declare const a: 1; '),
+    );
+  });
 
   it.effect('deletes entries no build has read in two weeks', () =>
     Effect.gen(function* () {

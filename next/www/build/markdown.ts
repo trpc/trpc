@@ -748,10 +748,17 @@ const twoslashTransformer = Effect.fn('twoslashTransformer')(function* (
     if (key !== undefined && program) {
       // The files under the root outside `node_modules` are the app's,
       // which the key covers, or a block's, which twoslash writes and
-      // then empties. TypeScript's own libs come with the lockfile.
+      // then empties; a block can write one in `node_modules` too.
+      // TypeScript's own libs come with the key's tools.
+      const blockFiles = new Set(
+        Array.from(code.matchAll(blockFilename), (match) =>
+          path.join(root, match[1] ?? ''),
+        ),
+      );
       const appFile = (fileName: string) =>
-        fileName.startsWith(`${root}/`) &&
-        !fileName.slice(root.length).includes('/node_modules/');
+        blockFiles.has(fileName) ||
+        (fileName.startsWith(`${root}/`) &&
+          !fileName.slice(root.length).includes('/node_modules/'));
       session?.set(
         key,
         compiled.result,
