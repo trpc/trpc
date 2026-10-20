@@ -182,16 +182,28 @@ const parseSource = Effect.fn('parseSource')(function* (
   return source;
 });
 
-/** When `file` last changed in git, if it's committed. */
+/**
+ * When `file` was last added or edited in git, if it's committed. A rename
+ * doesn't count, even with edits, so a page keeps its date when it moves.
+ */
 const lastModified = Effect.fn('lastModified')(
   function* (file: string) {
     const path = yield* Path.Path;
     const spawner = yield* ChildProcessSpawner.ChildProcessSpawner;
     const date = yield* spawner.string(
-      ChildProcess.make('git', ['log', '-1', '--format=%cI', '--', file], {
-        cwd: path.dirname(file),
-        stderr: 'ignore',
-      }),
+      ChildProcess.make(
+        'git',
+        [
+          'log',
+          '-1',
+          '--follow',
+          '--diff-filter=AM',
+          '--format=%cI',
+          '--',
+          file,
+        ],
+        { cwd: path.dirname(file), stderr: 'ignore' },
+      ),
     );
     return date.trim() || undefined;
   },
