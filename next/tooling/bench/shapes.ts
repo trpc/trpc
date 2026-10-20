@@ -80,7 +80,7 @@ const mergeTens = (files: ReadonlyArray<string>) => {
 /** A chain like an app's: every built-in kind of link, and a custom one. */
 const appLinks: Shape['links'] = {
   imports: `import { Schema, Stream } from 'effect';
-import { dedupeLink, link, loggerLink, retryLink, splitLink, TrpcError, wsLink } from '@trpc12/trpc/client';
+import { batching, dedupeLink, link, loggerLink, retryLink, splitLink, TrpcError, wsLink } from '@trpc12/trpc/client';
 
 class RateLimited extends TrpcError.Tagged('RATE_LIMITED', {
   status: 429,
@@ -98,7 +98,7 @@ const tenantLink = link<{ context: { tenant?: string }; errors: RateLimited }>((
     splitLink({
       condition: (op) => op.type === 'subscription',
       true: wsLink({ url: 'ws://localhost:3000/trpc' }),
-      false: httpLink({ url: 'http://localhost:3000/trpc', batch: true }),
+      false: httpLink({ url: 'http://localhost:3000/trpc', batch: batching() }),
     }),
   ]`,
 };

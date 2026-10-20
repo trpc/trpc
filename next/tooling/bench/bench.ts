@@ -302,9 +302,9 @@ const bundles: Record<
   Record<'client' | 'node' | 'fetch', string>
 > = {
   trpc12: {
-    client: `import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
+    client: `import { createTrpcClient, httpLink, routerType, sse } from '@trpc12/trpc/client';
 import { createSerializer } from '@trpc12/trpc/serializer';
-export const client = createTrpcClient({ router: routerType<any>(), links: [httpLink({ url: '/trpc', serializer: createSerializer() })] });`,
+export const client = createTrpcClient({ router: routerType<any>(), links: [httpLink({ url: '/trpc', serializer: createSerializer(), subscriptions: sse() })] });`,
     node: `import { createServer } from 'node:http';
 import { NodeHttpServer } from '@effect/platform-node';
 import { Layer } from 'effect';
@@ -420,9 +420,9 @@ export const client = createTrpcClient({ router: routerType<any>(), links: [http
   {
     name: 'full client (retry, SSE, danSON)',
     target: 25_000,
-    code: `import { createTrpcClient, httpLink, retryLink, routerType } from '@trpc12/trpc/client';
+    code: `import { createTrpcClient, httpLink, retryLink, routerType, sse } from '@trpc12/trpc/client';
 import { createSerializer } from '@trpc12/trpc/serializer';
-export const client = createTrpcClient({ router: routerType<any>(), links: [retryLink(), httpLink({ url: '/trpc', serializer: createSerializer() })] });`,
+export const client = createTrpcClient({ router: routerType<any>(), links: [retryLink(), httpLink({ url: '/trpc', serializer: createSerializer(), subscriptions: sse() })] });`,
   },
 ] as const;
 
