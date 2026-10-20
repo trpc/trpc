@@ -73,6 +73,12 @@ export interface ProcedureDef {
   errors: AnyTrpcError;
   /** Effect services the handler's `layer` must provide. */
   services: unknown;
+  /**
+   * `true` when an output schema validates the result (a contract's always
+   * does), else `never`: what `experimental_validationLink` checks, and
+   * with `output: 'json'` decodes.
+   */
+  outputValidated?: true;
 }
 
 /** @internal */

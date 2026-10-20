@@ -71,6 +71,11 @@ export interface BuilderDef {
   inputOut: unknown;
   outputIn: unknown;
   outputOut: unknown;
+  /**
+   * `true` once `.output()` validates the result; `never` before, and
+   * with `validate: false`, so unions of procedures still reduce.
+   */
+  outputValidated: true;
   errors: AnyTrpcError;
   /** Errors declared with `.errors()`, by code. */
   declared: object;
@@ -739,6 +744,7 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
       {
         outputIn: OutputIn<$S>;
         outputOut: OutputOut<$S>;
+        outputValidated: true;
         requires:
           | TDef['requires']
           | Exclude<OutputServices<$S>, TDef['provided']>;
@@ -934,6 +940,7 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
         outputOut: $Plugin['outputOut'] extends Unset
           ? TDef['outputOut']
           : $Plugin['outputOut'];
+        outputValidated: TDef['outputValidated'] | $Plugin['outputValidated'];
         errors: TDef['errors'] | $Plugin['errors'];
         declared: Overwrite<TDef['declared'], $Plugin['declared']>;
         shorts: TDef['shorts'] | $Plugin['shorts'];
@@ -974,6 +981,7 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
     services:
       | Exclude<TDef['requires'], Scope.Scope>
       | Exclude<SplitReturn<$Ret>['services'], TDef['provided'] | Scope.Scope>;
+    outputValidated: TDef['outputValidated'];
   }>;
 
   /**
@@ -998,6 +1006,7 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
     services:
       | Exclude<TDef['requires'], Scope.Scope>
       | Exclude<SplitReturn<$Ret>['services'], TDef['provided'] | Scope.Scope>;
+    outputValidated: TDef['outputValidated'];
   }>;
 
   /**
@@ -1030,6 +1039,7 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
     services:
       | TDef['requires']
       | Exclude<SplitStream<$Ret>['services'], TDef['provided']>;
+    outputValidated: TDef['outputValidated'];
   }>;
 }
 
@@ -1048,6 +1058,7 @@ export type InputDef<TDef extends BuilderDef, $S extends AnySchema> = {
   inputOut: Merge<TDef['inputOut'], OutOf<$S>>;
   outputIn: TDef['outputIn'];
   outputOut: TDef['outputOut'];
+  outputValidated: TDef['outputValidated'];
   errors: TDef['errors'] | SchemaValidationError<$S>;
   declared: TDef['declared'];
   shorts: TDef['shorts'];

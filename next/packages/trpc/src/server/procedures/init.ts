@@ -94,6 +94,7 @@ export interface RootDef<TCtx extends object, TMeta extends object> {
   inputOut: Unset;
   outputIn: Unset;
   outputOut: Unset;
+  outputValidated: never;
   errors: never;
   declared: {};
   shorts: never;
@@ -264,6 +265,7 @@ export type ExtendedDef<
     outputOut: TExt['outputOut'] extends Unset
       ? TDef['outputOut']
       : TExt['outputOut'];
+    outputValidated: TDef['outputValidated'] | TExt['outputValidated'];
     errors: TDef['errors'] | TExt['errors'];
     declared: Overwrite<TDef['declared'], TExt['declared']>;
     shorts: TDef['shorts'] | TExt['shorts'];
