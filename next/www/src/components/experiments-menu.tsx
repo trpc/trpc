@@ -123,7 +123,7 @@ export function ExperimentsMenu(props: { readonly hidden?: boolean }) {
         }
         className={cn(
           buttonVariants({ size: 'sm', variant: 'ghost' }),
-          'text-muted-foreground hover:text-foreground',
+          'relative text-muted-foreground hover:text-foreground',
           on.length > 0 && 'text-foreground',
         )}
         // The server doesn't know the URL's hash, so it joins the href after
@@ -142,8 +142,10 @@ export function ExperimentsMenu(props: { readonly hidden?: boolean }) {
       >
         <FlaskConical className={cn(on.length > 0 && 'text-brand')} />
         <span className="hidden lg:inline">Experiments</span>
+        {/* Below `lg` the count sits on the icon's corner: inline, it doesn't
+            fit a 360px phone's header. */}
         {on.length > 0 ? (
-          <span className="flex h-4 min-w-4 items-center justify-center rounded-full bg-brand px-1 text-[10px] font-bold text-white tabular-nums">
+          <span className="absolute top-0 right-0 flex h-4 min-w-4 items-center justify-center rounded-full bg-brand px-1 text-[10px] font-bold text-white tabular-nums lg:static">
             {on.length}
           </span>
         ) : null}
