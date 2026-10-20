@@ -684,13 +684,22 @@ function QuestionLinks(props: { readonly question: OpenQuestion }) {
   );
 }
 
+// A code block's longest line (a `^?` type can be thousands of pixels) would
+// set the page's width through the grids around it; it scrolls instead.
+const codeScrolls = '[&_.code-block]:[contain:inline-size]';
+
 export function OpenQuestionPage(props: { readonly question: OpenQuestion }) {
   const question = props.question;
   const recommended = question.options.find(
     (option) => option.id === question.recommended,
   );
   return (
-    <main className="mx-auto grid max-w-5xl gap-8 px-4 py-8 sm:px-6 sm:py-10">
+    <main
+      className={cn(
+        'mx-auto grid max-w-5xl gap-8 px-4 py-8 sm:px-6 sm:py-10',
+        codeScrolls,
+      )}
+    >
       <header className="grid gap-4">
         <BackLink />
         <div className="flex flex-wrap items-center gap-1.5">
@@ -764,7 +773,12 @@ export function OpenQuestionPage(props: { readonly question: OpenQuestion }) {
 export function DecisionPage(props: { readonly decision: Decision }) {
   const decision = props.decision;
   return (
-    <main className="mx-auto grid max-w-3xl gap-6 px-4 py-8 sm:px-6 sm:py-10">
+    <main
+      className={cn(
+        'mx-auto grid max-w-3xl gap-6 px-4 py-8 sm:px-6 sm:py-10',
+        codeScrolls,
+      )}
+    >
       <header className="grid gap-4 border-b pb-6">
         <BackLink />
         <div className="flex flex-wrap items-center gap-1.5">
