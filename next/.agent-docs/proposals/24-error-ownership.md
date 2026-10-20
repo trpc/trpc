@@ -29,7 +29,7 @@ Two spikes back this: [closed-error-unions](../notes/closed-error-unions.md) and
 - **Boundary codes are coarse.**
   - `PARSE_ERROR` covers a foreign response with an unmapped status, an undecodable body, `validationLink`'s output mismatch, and the server failing to parse a request.
   - A client calling a procedure the server lacks (a stale deploy) gets `NOT_FOUND` with `defined: false`.
-  - There is no client-side timeout or offline code.
+  - There is no client-side timeout or offline code. (A call whose `signal` times out now fails with `TIMEOUT`: [client-timeout-error](../decisions/client-timeout-error.md).)
 - **Error data isn't checked on the client.** `validationLink` validates outputs only. `fromWireError` rebuilds every error as a plain `TrpcError`, so `instanceof PostNotFound` is false on the client.
 
 ## Goals
@@ -137,6 +137,8 @@ Suspense hooks don't fit either way: `useSuspenseQuery` throws every error while
 - **A: split `PARSE_ERROR`.** A foreign or undecodable response becomes `BAD_RESPONSE` (status 0, client-side). `PARSE_ERROR` keeps "the request couldn't be parsed", and `validationLink`'s output mismatch becomes `BAD_RESPONSE` too.
 - **B: also add `TIMEOUT` on the client**, for a call option `timeout` that aborts with it, which is distinct from `CLIENT_CLOSED_REQUEST`.
 - **C: leave the codes as they are.**
+
+A shipped as `BAD_RESPONSE` ([closed-client-errors](../decisions/closed-client-errors.md)). B was answered without the `timeout` option: a `signal` that aborts with a `TimeoutError` fails the call with `TIMEOUT` ([client-timeout-error](../decisions/client-timeout-error.md)).
 
 ### Q24.7: stale clients
 

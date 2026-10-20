@@ -15,5 +15,6 @@
   - shells need no TanStack changes.
 - Lost: thrown custom codes reaching the client untyped. With boundary mode, an owned mutation error unmounts the form.
 - Shipped: Q24.1 A, Q24.2 A, Q24.3 A and part of Q24.6 A, when the human asked for a foolproof client error API ([closed-client-errors](./closed-client-errors.md)). `matchError`'s catch-all is `unexpected` since [exhaustive-match-error](./exhaustive-match-error.md) (`builtin` before). Q24.1's masking now applies only to procedures with `.errors()` ([thrown-errors-and-exhaustive-declarations](./thrown-errors-and-exhaustive-declarations.md)).
+- Shipped: Q24.6 B, as a timed-out `signal` rather than a `timeout` option ([client-timeout-error](./client-timeout-error.md)).
 - Open: shells (Q24.4, Q24.5) and error data on the client (Q24.8) await the human's answers to proposal 24.
 - Lives in: `proposals/24-error-ownership.md`, `spikes/closed-errors/`, `spikes/error-shells/`.
