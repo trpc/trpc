@@ -10,7 +10,7 @@ A user asked for routes "published via an MCP endpoint" so agents can call them.
 
 **Recommendation:** ship `@trpc12/trpc/mcp`: an `mcp()` root extension for per-procedure meta, `describeTools(router)`, and `createMcpHandler({ router, createContext, filter })`, speaking MCP itself so Effect stays the only dependency. Tools only in v1; procedures opt in with `mcp` meta.
 
-The [mcp-tools](../notes/mcp-tools.md) spike backs this: the official MCP SDK client and the MCP Inspector both list and call the spike's tools.
+The [mcp-tools](https://github.com/trpc/trpc/blob/2f791c3d4140f07a6ff55fd21e318a8391887726/next/.agent-docs/notes/mcp-tools.md) spike backs this: the official MCP SDK client and the MCP Inspector both list and call the spike's tools.
 
 ## Today
 

@@ -6,8 +6,14 @@ recommended: A
 questions: [Q25.1]
 links:
   - kind: spike
-    label: spikes/mcp
-    url: ../../spikes/mcp/
+    label: spikes/mcp (deleted, at 2f791c3d4)
+    url: https://github.com/trpc/trpc/tree/2f791c3d4140f07a6ff55fd21e318a8391887726/next/spikes/mcp
+  - kind: docs
+    label: MCP (experimental docs page)
+    url: https://v12.trpc.io/v12/docs/integrations/mcp
+  - kind: code
+    label: '@trpc12/trpc/mcp (experimental)'
+    url: ../../packages/trpc/src/mcp/
   - kind: proposal
     label: Proposal 25, MCP
     url: ../proposals/25-mcp.md
@@ -16,7 +22,7 @@ links:
     url: ../decisions/mcp-tools.md
   - kind: note
     label: mcp-tools spike note
-    url: ../notes/mcp-tools.md
+    url: https://github.com/trpc/trpc/blob/2f791c3d4140f07a6ff55fd21e318a8391887726/next/.agent-docs/notes/mcp-tools.md
   - kind: decision
     label: integration-packages
     url: ../decisions/integration-packages.md
@@ -29,7 +35,7 @@ links:
 
 ## Why it matters
 
-The human passed on a user's ask, "I've really wanted to publish routes via an MCP endpoint", then said "Spike and do proposals". A router already has what an MCP server needs: JSON Schemas from `experimental_toContract()`, descriptions, middleware and typed errors. Only the protocol is missing. Nothing is in `packages/` yet. The spike speaks MCP itself, and both the official SDK client and the MCP Inspector list and call its tools. This answer decides who tracks MCP's spec (four protocol versions in a year) and whether `effect` stays the only peer dependency. The transport and auth questions only apply if MCP is built in (A or B).
+The human passed on a user's ask, "I've really wanted to publish routes via an MCP endpoint", then said "Spike and do proposals". A router already has what an MCP server needs: JSON Schemas from `experimental_toContract()`, descriptions, middleware and typed errors. Only the protocol is missing. The spike spoke MCP itself, and both the official SDK client and the MCP Inspector listed and called its tools; A now ships as an experiment (see below). This answer decides who tracks MCP's spec (four protocol versions in a year) and whether `effect` stays the only peer dependency. The transport and auth questions only apply if MCP is built in (A or B).
 
 ## Options
 
@@ -154,9 +160,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
 - Building anything in `packages/` for MCP, and its docs page.
 - The transport and auth questions, which assume A or B.
+- (agent, experimental) Built as A in `@trpc12/trpc/mcp`, so MCP could ship as an experiment: every export is `experimental_*` and the docs page is in the `mcp` docs experiment. The question stays open; another answer changes or replaces the build.
 
 ## Details
 
-- The spike's exports are unprefixed (`mcp()`, `createMcpHandler()`, `describeTools()`). Shipped, they'd be `experimental_*` under [`stability-jsdoc-tags.md`](../decisions/stability-jsdoc-tags.md), like everything in `@trpc12/trpc/openapi`.
-- The spike calls tools through `call()`, which builds the `layer` per call and has no spans or `onError`. A shipped handler would run on `createHandlerCore`, as [the note](../notes/mcp-tools.md) says.
+- The spike's exports were unprefixed (`mcp()`, `createMcpHandler()`, `describeTools()`). Shipped, they're `experimental_mcp()`, `experimental_createMcpHandler()` and `experimental_describeTools()` under [`stability-jsdoc-tags.md`](../decisions/stability-jsdoc-tags.md), like everything in `@trpc12/trpc/openapi`.
+- The spike called tools through `call()`, which builds the `layer` per call and has no spans or `onError`. The experimental handler runs on `createHandlerCore`, as [the note](https://github.com/trpc/trpc/blob/2f791c3d4140f07a6ff55fd21e318a8391887726/next/.agent-docs/notes/mcp-tools.md) says.
 - Under C, `experimental_describeTools()` is the same function A uses, so starting with C and growing into A breaks nothing.

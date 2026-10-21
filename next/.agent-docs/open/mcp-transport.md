@@ -6,14 +6,20 @@ recommended: A
 questions: [Q25.4]
 links:
   - kind: spike
-    label: spikes/mcp
-    url: ../../spikes/mcp/
+    label: spikes/mcp (deleted, at 2f791c3d4)
+    url: https://github.com/trpc/trpc/tree/2f791c3d4140f07a6ff55fd21e318a8391887726/next/spikes/mcp
+  - kind: docs
+    label: MCP (experimental docs page)
+    url: https://v12.trpc.io/v12/docs/integrations/mcp
+  - kind: code
+    label: '@trpc12/trpc/mcp (experimental)'
+    url: ../../packages/trpc/src/mcp/
   - kind: proposal
     label: Proposal 25, MCP
     url: ../proposals/25-mcp.md
   - kind: code
-    label: The spike's server
-    url: ../../spikes/mcp/serve.ts
+    label: The handler
+    url: ../../packages/trpc/src/mcp/handler.ts
   - kind: decision
     label: fetch-sse
     url: ../decisions/fetch-sse.md
@@ -113,3 +119,4 @@ experimental_serveStdio(experimental_createMcpHandler({ router: appRouter })); /
 ## Blocked until answered
 
 - Nothing is blocked if MCP isn't built in. If it is, the handler's response modes and how it's documented depend on this.
+- (agent, experimental) Built as A (JSON over POST, 202, 405, 403, no sessions) in `@trpc12/trpc/mcp`, so MCP could ship as an experiment: every export is `experimental_*` and the docs page is in the `mcp` docs experiment. The question stays open; another answer changes or replaces the build.

@@ -6,8 +6,14 @@ recommended: A
 questions: [Q25.9]
 links:
   - kind: spike
-    label: spikes/mcp
-    url: ../../spikes/mcp/
+    label: spikes/mcp (deleted, at 2f791c3d4)
+    url: https://github.com/trpc/trpc/tree/2f791c3d4140f07a6ff55fd21e318a8391887726/next/spikes/mcp
+  - kind: docs
+    label: MCP (experimental docs page)
+    url: https://v12.trpc.io/v12/docs/integrations/mcp
+  - kind: code
+    label: '@trpc12/trpc/mcp (experimental)'
+    url: ../../packages/trpc/src/mcp/
   - kind: proposal
     label: Proposal 25, MCP
     url: ../proposals/25-mcp.md
@@ -145,4 +151,4 @@ t.procedure.meta({
 
 ## Blocked until answered
 
-- Nothing. A matches the spike.
+- Nothing. A matches the spike and the experimental `@trpc12/trpc/mcp`.

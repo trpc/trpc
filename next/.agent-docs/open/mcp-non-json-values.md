@@ -6,14 +6,20 @@ recommended: B
 questions: [Q25.8]
 links:
   - kind: spike
-    label: spikes/mcp
-    url: ../../spikes/mcp/
+    label: spikes/mcp (deleted, at 2f791c3d4)
+    url: https://github.com/trpc/trpc/tree/2f791c3d4140f07a6ff55fd21e318a8391887726/next/spikes/mcp
+  - kind: docs
+    label: MCP (experimental docs page)
+    url: https://v12.trpc.io/v12/docs/integrations/mcp
+  - kind: code
+    label: '@trpc12/trpc/mcp (experimental)'
+    url: ../../packages/trpc/src/mcp/
   - kind: proposal
     label: Proposal 25, MCP
     url: ../proposals/25-mcp.md
   - kind: note
     label: mcp-tools spike note (findings)
-    url: ../notes/mcp-tools.md
+    url: https://github.com/trpc/trpc/blob/2f791c3d4140f07a6ff55fd21e318a8391887726/next/.agent-docs/notes/mcp-tools.md
   - kind: decision
     label: openapi-generated-clients (zod dates as date-time)
     url: ../decisions/openapi-generated-clients.md
@@ -105,7 +111,7 @@ t.procedure.meta({
 
 ## Blocked until answered
 
-- Nothing in MCP itself. The input path of the OpenAPI handler would change with B.
+- Nothing in MCP itself. The input path of the OpenAPI handler would change with B. The experimental `@trpc12/trpc/mcp` ships A: `z.coerce.date()` is the documented answer.
 
 ## Details
 

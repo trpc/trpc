@@ -6,8 +6,14 @@ recommended: A
 questions: [Q25.2]
 links:
   - kind: spike
-    label: spikes/mcp
-    url: ../../spikes/mcp/
+    label: spikes/mcp (deleted, at 2f791c3d4)
+    url: https://github.com/trpc/trpc/tree/2f791c3d4140f07a6ff55fd21e318a8391887726/next/spikes/mcp
+  - kind: docs
+    label: MCP (experimental docs page)
+    url: https://v12.trpc.io/v12/docs/integrations/mcp
+  - kind: code
+    label: '@trpc12/trpc/mcp (experimental)'
+    url: ../../packages/trpc/src/mcp/
   - kind: proposal
     label: Proposal 25, MCP
     url: ../proposals/25-mcp.md
@@ -15,8 +21,8 @@ links:
     label: mcp-tools
     url: ../decisions/mcp-tools.md
   - kind: code
-    label: The spike's router
-    url: ../../spikes/mcp/app.ts
+    label: The tests' router
+    url: ../../packages/trpc/src/mcp/fixtures/blog.ts
   - kind: decision
     label: root-extensions
     url: ../decisions/root-extensions.md
@@ -155,6 +161,7 @@ experimental_createMcpHandler({
 ## Blocked until answered
 
 - The `mcp` meta's shape and the handler's `include` option, if MCP is built.
+- (agent, experimental) Built as A in `@trpc12/trpc/mcp`, so MCP could ship as an experiment: every export is `experimental_*` and the docs page is in the `mcp` docs experiment. The question stays open; another answer changes or replaces the build.
 
 ## Details
 

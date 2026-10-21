@@ -6,14 +6,20 @@ recommended: A
 questions: [Q25.5]
 links:
   - kind: spike
-    label: spikes/mcp
-    url: ../../spikes/mcp/
+    label: spikes/mcp (deleted, at 2f791c3d4)
+    url: https://github.com/trpc/trpc/tree/2f791c3d4140f07a6ff55fd21e318a8391887726/next/spikes/mcp
+  - kind: docs
+    label: MCP (experimental docs page)
+    url: https://v12.trpc.io/v12/docs/integrations/mcp
+  - kind: code
+    label: '@trpc12/trpc/mcp (experimental)'
+    url: ../../packages/trpc/src/mcp/
   - kind: proposal
     label: Proposal 25, MCP
     url: ../proposals/25-mcp.md
   - kind: note
     label: mcp-tools spike note
-    url: ../notes/mcp-tools.md
+    url: https://github.com/trpc/trpc/blob/2f791c3d4140f07a6ff55fd21e318a8391887726/next/.agent-docs/notes/mcp-tools.md
   - kind: decision
     label: durable-calls
     url: ../decisions/durable-calls.md
@@ -130,4 +136,4 @@ const report = t.procedure
 
 ## Blocked until answered
 
-- Nothing. A matches the spike; the docs page would say subscriptions aren't tools.
+- Nothing. A matches the spike and the experimental `@trpc12/trpc/mcp`, whose docs page says subscriptions and streamed outputs aren't tools; a query that streams without an output schema answers with an `isError` result.

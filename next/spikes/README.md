@@ -2,7 +2,7 @@
 
 Throwaway experiments that feed proposals in `../.agent-docs/proposals/`. Nothing here is public API, and nothing here should be imported by `packages/`. Each spike's method and numbers are written up in `../.agent-docs/notes/`.
 
-A spike whose feature shipped in `packages/` is deleted with its note; the package's own code and tests replace it. The ones deleted so far are at [`d5c34c430`](https://github.com/trpc/trpc/tree/d5c34c43000547776ca234ac47edafd48370e6fd/next/spikes). `closed-errors/` and `error-shells/`, which shipped as the closed client error union and error boundaries, are at [`2efaa0818`](https://github.com/trpc/trpc/tree/2efaa08186fbad70e754f3f45762ca30c858a530/next/spikes).
+A spike whose feature shipped in `packages/` is deleted with its note; the package's own code and tests replace it. The ones deleted so far are at [`d5c34c430`](https://github.com/trpc/trpc/tree/d5c34c43000547776ca234ac47edafd48370e6fd/next/spikes). `closed-errors/` and `error-shells/`, which shipped as the closed client error union and error boundaries, are at [`2efaa0818`](https://github.com/trpc/trpc/tree/2efaa08186fbad70e754f3f45762ca30c858a530/next/spikes). `mcp/`, which shipped as `@trpc12/trpc/mcp`, is at [`2f791c3d4`](https://github.com/trpc/trpc/tree/2f791c3d4140f07a6ff55fd21e318a8391887726/next/spikes/mcp).
 
 Generated fixtures and build output (`generated/`, `dist/`) are gitignored; the source and scripts that produce them are committed.
 
@@ -13,7 +13,6 @@ Scripts are Effect programs on `kit.ts`: `writeFixture` writes a generated fixtu
 | `invalidation/`         | `pnpm test` (root)                                              | [invalidation-plugin](../.agent-docs/notes/invalidation-plugin.md)             |
 | `sse-deferred/`         | `pnpm test` (root), `node sse-deferred/measure.ts [items]`      | [sse-nested-deferred](../.agent-docs/notes/sse-nested-deferred.md)             |
 | `durable-resume/`       | `pnpm test` (root)                                              | [durable-mid-stream-resume](../.agent-docs/notes/durable-mid-stream-resume.md) |
-| `mcp/`                  | `pnpm test` (root), `node mcp/serve.ts [--port 3333]`           | [mcp-tools](../.agent-docs/notes/mcp-tools.md)                                 |
 | `tanstack-db-realtime/` | `pnpm test` (root)                                              | [tanstack-db-realtime](../.agent-docs/notes/tanstack-db-realtime.md)           |
 | `live-queries/`         | `pnpm test` (root)                                              | [live-queries](../.agent-docs/notes/live-queries.md)                           |
 | `big-routers/`          | `node big-routers/bench.ts [domains] [perDomain] [used] [runs]` | [large-routers-typeperf](../.agent-docs/notes/large-routers-typeperf.md)       |

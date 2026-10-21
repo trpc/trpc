@@ -6,17 +6,23 @@ recommended: A
 questions: [Q25.3]
 links:
   - kind: spike
-    label: spikes/mcp
-    url: ../../spikes/mcp/
+    label: spikes/mcp (deleted, at 2f791c3d4)
+    url: https://github.com/trpc/trpc/tree/2f791c3d4140f07a6ff55fd21e318a8391887726/next/spikes/mcp
+  - kind: docs
+    label: MCP (experimental docs page)
+    url: https://v12.trpc.io/v12/docs/integrations/mcp
+  - kind: code
+    label: '@trpc12/trpc/mcp (experimental)'
+    url: ../../packages/trpc/src/mcp/
   - kind: proposal
     label: Proposal 25, MCP
     url: ../proposals/25-mcp.md
   - kind: note
     label: mcp-tools spike note
-    url: ../notes/mcp-tools.md
+    url: https://github.com/trpc/trpc/blob/2f791c3d4140f07a6ff55fd21e318a8391887726/next/.agent-docs/notes/mcp-tools.md
   - kind: code
-    label: The spike's tests (naming and clashes)
-    url: ../../spikes/mcp/mcp.test.ts
+    label: The package's tests (naming and clashes)
+    url: ../../packages/trpc/src/mcp/tools.test.ts
 ---
 
 # How should MCP tools be named: the path joined with `_`, the dotted path, or a name you always write?
@@ -93,3 +99,4 @@ t.procedure.meta({ mcp: true });
 ## Blocked until answered
 
 - The tool names in `tools/list`, if MCP is built. Changing them later breaks agents' saved configurations.
+- (agent, experimental) Built as A (`post_byId`, `mcp.name`, `separator`, the clash check) in `@trpc12/trpc/mcp`, so MCP could ship as an experiment: every export is `experimental_*` and the docs page is in the `mcp` docs experiment. The question stays open; another answer changes or replaces the build.

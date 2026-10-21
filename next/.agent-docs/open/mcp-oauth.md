@@ -6,14 +6,20 @@ recommended: A
 questions: [Q25.7]
 links:
   - kind: spike
-    label: spikes/mcp
-    url: ../../spikes/mcp/
+    label: spikes/mcp (deleted, at 2f791c3d4)
+    url: https://github.com/trpc/trpc/tree/2f791c3d4140f07a6ff55fd21e318a8391887726/next/spikes/mcp
+  - kind: docs
+    label: MCP (experimental docs page)
+    url: https://v12.trpc.io/v12/docs/integrations/mcp
+  - kind: code
+    label: '@trpc12/trpc/mcp (experimental)'
+    url: ../../packages/trpc/src/mcp/
   - kind: proposal
     label: Proposal 25, MCP
     url: ../proposals/25-mcp.md
   - kind: code
-    label: The spike's tests (401 and filter)
-    url: ../../spikes/mcp/mcp.test.ts
+    label: The package's tests (401 and filter)
+    url: ../../packages/trpc/src/mcp/handler.test.ts
   - kind: code
     label: The OpenAPI handler's `middleware` option
     url: ../../packages/trpc/src/openapi/handler.ts
@@ -128,7 +134,7 @@ experimental_createMcpHandler({ router: appRouter, createContext });
 
 ## Blocked until answered
 
-- Nothing beyond building MCP itself. A matches the spike.
+- Nothing beyond building MCP itself. A matches the spike and the experimental `@trpc12/trpc/mcp`.
 
 ## Details
 

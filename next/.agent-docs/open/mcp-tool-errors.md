@@ -6,14 +6,20 @@ recommended: A
 questions: [Q25.6]
 links:
   - kind: spike
-    label: spikes/mcp
-    url: ../../spikes/mcp/
+    label: spikes/mcp (deleted, at 2f791c3d4)
+    url: https://github.com/trpc/trpc/tree/2f791c3d4140f07a6ff55fd21e318a8391887726/next/spikes/mcp
+  - kind: docs
+    label: MCP (experimental docs page)
+    url: https://v12.trpc.io/v12/docs/integrations/mcp
+  - kind: code
+    label: '@trpc12/trpc/mcp (experimental)'
+    url: ../../packages/trpc/src/mcp/
   - kind: proposal
     label: Proposal 25, MCP
     url: ../proposals/25-mcp.md
   - kind: code
-    label: The spike's tests (errors)
-    url: ../../spikes/mcp/mcp.test.ts
+    label: The package's tests (errors)
+    url: ../../packages/trpc/src/mcp/mcp.test.ts
   - kind: decision
     label: closed-client-errors
     url: ../decisions/closed-client-errors.md
@@ -83,4 +89,4 @@ Procedure failures use the protocol's error channel, like RPC errors.
 
 ## Blocked until answered
 
-- Nothing. A matches the spike.
+- Nothing. A matches the spike and the experimental `@trpc12/trpc/mcp`, whose error body is the OpenAPI handler's (`{ defined, code, message, data? }`).
