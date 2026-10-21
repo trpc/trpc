@@ -11,7 +11,7 @@ import {
   TestServer,
   type TestServerShape,
 } from '@trpc12/trpc/internal/testing';
-import { createSerializer } from '@trpc12/trpc/transformer';
+import { experimental_createTransformer } from '@trpc12/trpc/transformer';
 import {
   experimental_byteStream,
   initTrpc,
@@ -20,7 +20,7 @@ import {
 import { z } from 'zod';
 
 /** Dates, Maps and Files round-trip, so both ends use danSON. */
-const transformer = createSerializer();
+const transformer = experimental_createTransformer();
 const t = initTrpc();
 const aborted: string[] = [];
 

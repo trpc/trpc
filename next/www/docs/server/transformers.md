@@ -8,11 +8,13 @@ v11: server/data-transformers
 
 The transformer turns inputs and outputs into JSON on the wire. The default is plain JSON. To keep more types, pass the same transformer to the handler and to every link:
 
-| Transformer                        | Keeps                                                        |
-| ---------------------------------- | ------------------------------------------------------------ |
-| `jsonTransformer`, the default     | plain JSON                                                   |
-| `createSerializer()`, danSON       | `Date`, `Map`, `Set`, `bigint`, `undefined`, `URL`, files, … |
-| `createSyncTransformer(superjson)` | what the transformer knows (superjson, devalue, your own)    |
+| Transformer                                | Keeps                                                        |
+| ------------------------------------------ | ------------------------------------------------------------ |
+| `jsonTransformer`, the default             | plain JSON                                                   |
+| `experimental_createTransformer()`, danSON | `Date`, `Map`, `Set`, `bigint`, `undefined`, `URL`, files, … |
+| `createSyncTransformer(superjson)`         | what the library knows (superjson, devalue, your own)        |
+
+danSON is experimental: it [might change or go away in any release](../packages.md#experimental).
 
 Every transformer streams deferred values: a procedure can return promises, generators and `ReadableStream`s at any depth, and each value goes through the transformer as it settles.
 
@@ -29,9 +31,9 @@ const router = { health: t.procedure.query(() => 'ok') };
 type AppRouter = typeof router;
 declare const url: string;
 // ---cut-end---
-import { createSerializer } from '@trpc12/trpc/transformer';
+import { experimental_createTransformer } from '@trpc12/trpc/transformer';
 
-export const transformer = createSerializer();
+export const transformer = experimental_createTransformer();
 
 createFetchHandler({ router, transformer });
 const client = createTrpcClient({
@@ -64,7 +66,7 @@ The first link in the chain that has a transformer types the results. A type the
 import { t } from './server.ts';
 // ---cut-end---
 import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
-import { createSerializer } from '@trpc12/trpc/transformer';
+import { experimental_createTransformer } from '@trpc12/trpc/transformer';
 
 const router = {
   getPost: t.procedure.query(() => ({
@@ -83,7 +85,9 @@ const plain = await json.getPost.query();
 
 const danson = createTrpcClient({
   router: routerType<typeof router>(),
-  links: [httpLink({ url: '/trpc', transformer: createSerializer() })],
+  links: [
+    httpLink({ url: '/trpc', transformer: experimental_createTransformer() }),
+  ],
 });
 const rich = await danson.getPost.query();
 //    ^?
@@ -109,7 +113,10 @@ Query inputs go in the URL as `?input=<JSON>`, with object keys sorted (array or
 
 ```ts twoslash
 // ---cut-start---
-import { createSerializer, type CustomType } from '@trpc12/trpc/transformer';
+import {
+  experimental_createTransformer,
+  type CustomType,
+} from '@trpc12/trpc/transformer';
 declare class Decimal {
   constructor(value: string);
 }
@@ -119,7 +126,9 @@ const decimal: CustomType<Decimal, string> = {
   serialize: (v) => v.toString(),
   deserialize: (s) => new Decimal(s),
 };
-export const transformer = createSerializer({ types: { Decimal: decimal } });
+export const transformer = experimental_createTransformer({
+  types: { Decimal: decimal },
+});
 ```
 
 The [`examples/media-pipeline`](../../../examples/media-pipeline/README.md) app keeps a `Money` class this way, and with superjson's `registerCustom` on a second endpoint, in query URLs and outputs.
@@ -131,10 +140,10 @@ The [`examples/media-pipeline`](../../../examples/media-pipeline/README.md) app 
 ```ts twoslash
 // ---cut-start---
 import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
-import { createSerializer } from '@trpc12/trpc/transformer';
+import { experimental_createTransformer } from '@trpc12/trpc/transformer';
 import { createTrpcContext } from '@trpc12/tanstack-react-query';
 import type { AppRouter } from './server.ts';
-const transformer = createSerializer();
+const transformer = experimental_createTransformer();
 declare const url: string;
 // ---cut-end---
 const makeClient = () =>

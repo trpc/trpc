@@ -5,7 +5,7 @@ import { Effect, Layer, Redacted, Stream } from 'effect';
 import type { SqlError } from 'effect/sql/SqlError';
 import { Redis } from 'effect/persistence';
 import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
-import { createSerializer } from '@trpc12/trpc/transformer';
+import { experimental_createTransformer } from '@trpc12/trpc/transformer';
 import {
   initTrpc,
   experimental_Publisher,
@@ -19,7 +19,7 @@ import { z } from 'zod';
 
 // --- recipe: shared ---------------------------------------------------------
 
-const danson = createSerializer();
+const danson = experimental_createTransformer();
 const encode = (data: unknown) => JSON.stringify(danson.serialize(data));
 const decode = (text: string) => danson.deserialize(JSON.parse(text));
 

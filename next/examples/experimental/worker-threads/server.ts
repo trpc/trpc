@@ -3,7 +3,7 @@
  * `parentPort`. `start.ts` starts it with `new Worker()`.
  */
 import { parentPort } from 'node:worker_threads';
-import { createSerializer } from '@trpc12/trpc/transformer';
+import { experimental_createTransformer } from '@trpc12/trpc/transformer';
 import { createFetchHandler } from '@trpc12/trpc/server';
 import { appRouter } from './router.ts';
 
@@ -15,7 +15,7 @@ if (!parentPort) {
 
 createFetchHandler({
   router: appRouter,
-  transformer: createSerializer(),
+  transformer: experimental_createTransformer(),
   createContext: (opts) => {
     const token = opts.info.connectionParams?.['token'];
     return {

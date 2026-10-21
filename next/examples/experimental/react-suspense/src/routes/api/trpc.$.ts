@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { createSerializer } from '@trpc12/trpc/transformer';
+import { experimental_createTransformer } from '@trpc12/trpc/transformer';
 import { createFetchHandler } from '@trpc12/trpc/server';
 import { appRouter } from '../../server/router.ts';
 
@@ -7,7 +7,7 @@ import { appRouter } from '../../server/router.ts';
 const handler = createFetchHandler({
   router: appRouter,
   endpoint: '/api/trpc',
-  transformer: createSerializer(),
+  transformer: experimental_createTransformer(),
 });
 
 export const Route = createFileRoute('/api/trpc/$')({

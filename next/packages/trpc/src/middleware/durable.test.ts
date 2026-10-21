@@ -8,7 +8,7 @@ import {
 } from '@trpc12/trpc/client';
 import { experimental_durable } from '@trpc12/trpc/middleware';
 import { experimental_createOpenApiHandler } from '@trpc12/trpc/openapi';
-import { createSerializer } from '@trpc12/trpc/transformer';
+import { experimental_createTransformer } from '@trpc12/trpc/transformer';
 import {
   type AnyRouter,
   call,
@@ -632,7 +632,7 @@ test('inputs with files are kept without a fingerprint; an error that cannot be 
       throw new TrpcError({ code: 'ODD', data: { fn: () => 1 } });
     }),
   } satisfies AnyRouter;
-  const danson = createSerializer();
+  const danson = experimental_createTransformer();
   await using server = await createTestServer({
     router,
     transformer: danson,

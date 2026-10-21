@@ -1,6 +1,6 @@
 import { Effect, Exit, Fiber, FiberSet, identity, Scope } from 'effect';
 import { TrpcError, type AnyLink } from '@trpc12/trpc/client';
-import { createSerializer } from '@trpc12/trpc/transformer';
+import { experimental_createTransformer } from '@trpc12/trpc/transformer';
 import { sortKeys } from './share.ts';
 import {
   fulfilled,
@@ -11,7 +11,7 @@ import {
 } from './thenable.ts';
 
 /** Keys use danSON, so inputs with `Date`s and `Map`s key apart. */
-const keyTransformer = /* @__PURE__ */ createSerializer();
+const keyTransformer = /* @__PURE__ */ experimental_createTransformer();
 
 /**
  * The cache key of a query: its path and its input, with plain objects'

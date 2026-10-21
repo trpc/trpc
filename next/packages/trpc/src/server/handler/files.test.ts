@@ -11,14 +11,17 @@ import {
   routerType,
 } from '@trpc12/trpc/client';
 import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
-import { createSerializer, type Frame } from '@trpc12/trpc/transformer';
+import {
+  experimental_createTransformer,
+  type Frame,
+} from '@trpc12/trpc/transformer';
 import { Effect, Stream } from 'effect';
 import { createTestServer } from '../../fixtures/server.ts';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
 
 /** Files at any depth are danSON's; plain JSON only sends a root file. */
-const danson = createSerializer();
+const danson = experimental_createTransformer();
 
 const t = initTrpc();
 

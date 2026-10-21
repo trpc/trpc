@@ -200,7 +200,7 @@ function framedTransformer(
   const encode = (scanned: Scanned): SerializeReturn => {
     if (scanned.blob) {
       throw new DansonError(
-        'A File or Blob needs a streaming transformer such as createSerializer(); a root file output can be a raw response instead',
+        'A File or Blob needs a streaming transformer such as experimental_createTransformer(); a root file output can be a raw response instead',
       );
     }
     if (kind === 'none' && scanned.json) {
@@ -315,7 +315,7 @@ export interface SyncTransformerOptions {
  * the types it rebuilds, so client types show the rest in JSON form.
  *
  * The transport streams promises and async iterables in plain objects and
- * arrays, at any depth. `File`/`Blob` values need `createSerializer()`. GET
+ * arrays, at any depth. `File`/`Blob` values need `experimental_createTransformer()`. GET
  * inputs are sent as `?input=<serialized JSON>`. Inputs are deserialized by
  * the transformer as they are; it decides what is safe to accept.
  *

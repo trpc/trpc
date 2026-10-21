@@ -12,7 +12,9 @@ import { createAtomClient } from '@trpc12/experimental-react-atom';
 
 export const trpc = createAtomClient({
   router: routerType<AppRouter>(),
-  links: [httpLink({ url: '/trpc', transformer: createSerializer() })],
+  links: [
+    httpLink({ url: '/trpc', transformer: experimental_createTransformer() }),
+  ],
 });
 
 const post = useAtomSuspense(trpc.post.byId.query({ id })).value;

@@ -12,7 +12,7 @@ import {
   routerType,
   type MessagePortLike,
 } from '@trpc12/trpc/client';
-import { createSerializer } from '@trpc12/trpc/transformer';
+import { experimental_createTransformer } from '@trpc12/trpc/transformer';
 import type { AppRouter } from './server.ts';
 
 export async function main(port: MessagePortLike) {
@@ -21,7 +21,7 @@ export async function main(port: MessagePortLike) {
     links: [
       experimental_messagePortLink({
         port,
-        transformer: createSerializer(),
+        transformer: experimental_createTransformer(),
         connectionParams: { token: 'main-thread' },
       }),
     ],

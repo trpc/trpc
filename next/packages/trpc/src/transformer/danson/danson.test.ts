@@ -5,7 +5,10 @@ import {
   safe,
 } from '@trpc12/trpc/client';
 import { createFetchHandler, error, initTrpc } from '@trpc12/trpc/server';
-import { createSerializer, DansonError } from '@trpc12/trpc/transformer';
+import {
+  experimental_createTransformer,
+  DansonError,
+} from '@trpc12/trpc/transformer';
 import { expect, test } from 'vite-plus/test';
 import { z } from 'zod';
 
@@ -27,7 +30,7 @@ class Unwritable {}
 /** A type the client can't read. */
 class Unreadable {}
 
-const danson = createSerializer({
+const danson = experimental_createTransformer({
   types: {
     Money: {
       is: (v): v is Money => v instanceof Money,
@@ -234,7 +237,7 @@ test('inputs past maxDepth, with forbidden keys, or not JSON values are refused'
 });
 
 test('`string` is a reserved type name', () => {
-  const reserved = createSerializer({
+  const reserved = experimental_createTransformer({
     types: {
       string: {
         is: (v): v is string => typeof v === 'string',
@@ -585,6 +588,6 @@ const pollutePrototype = (key: string): Disposable => {
 
 test('only own keys go on the wire, even with a polluted Object.prototype', () => {
   using _polluted = pollutePrototype('injected');
-  const transformer = createSerializer();
+  const transformer = experimental_createTransformer();
   expect(transformer.serialize({ a: 1 }).json).toEqual({ a: 1 });
 });

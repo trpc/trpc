@@ -5,7 +5,7 @@ import {
   routerType,
   safe,
 } from '@trpc12/trpc/client';
-import { createSerializer } from '@trpc12/trpc/transformer';
+import { experimental_createTransformer } from '@trpc12/trpc/transformer';
 import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
@@ -103,7 +103,7 @@ test('file bytes cross a port as bytes, not base64', async () => {
   };
   const channel = new MessageChannel();
   const { port2 } = channel;
-  const transformer = createSerializer();
+  const transformer = experimental_createTransformer();
   createFetchHandler({ router, transformer }).messagePort(channel.port1);
   const sent: unknown[] = [];
   port2.on('message', (message: unknown) => sent.push(message));
@@ -135,7 +135,7 @@ test('a port peer that posts values JSON cannot hold is refused', async () => {
     router: {
       echo: t.procedure.input(z.unknown()).mutation((opts) => opts.input),
     },
-    transformer: createSerializer(),
+    transformer: experimental_createTransformer(),
   }).messagePort(channel.port1);
   const replies: unknown[] = [];
   const replied = new Promise<void>((resolve) =>

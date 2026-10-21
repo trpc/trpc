@@ -7,7 +7,7 @@
 import { PgClient } from '@effect/sql-pg';
 import { Effect, Stream } from 'effect';
 import { Redis } from 'effect/persistence';
-import { createSerializer } from '@trpc12/trpc/transformer';
+import { experimental_createTransformer } from '@trpc12/trpc/transformer';
 import {
   tracked,
   type PublisherEvents,
@@ -16,7 +16,7 @@ import {
 
 // --- recipe: shared ---------------------------------------------------------
 
-const danson = createSerializer();
+const danson = experimental_createTransformer();
 const encode = (data: unknown) => JSON.stringify(danson.serialize(data));
 const decode = (text: string) => danson.deserialize(JSON.parse(text));
 

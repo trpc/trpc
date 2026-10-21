@@ -24,7 +24,7 @@ import {
   routerType,
 } from '@trpc12/trpc/client';
 import {
-  createSerializer,
+  experimental_createTransformer,
   createSyncTransformer,
   type DansonForm,
 } from '@trpc12/trpc/transformer';
@@ -929,8 +929,8 @@ test("hydration follows the client's transformer (19)", async () => {
   );
   expect(post?.createdAt).toBeInstanceOf(Date);
   expect(
-    hydrationOptions({ client, transformer: createSerializer() }).dehydrate
-      .serializeData!(new Date(0)),
+    hydrationOptions({ client, transformer: experimental_createTransformer() })
+      .dehydrate.serializeData!(new Date(0)),
   ).toEqual({ json: { _: '$', type: 'Date', value: new Date(0).toJSON() } });
 });
 

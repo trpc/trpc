@@ -8,7 +8,7 @@ import {
   experimental_validationLink,
   TrpcError,
 } from '@trpc12/trpc/client';
-import { createSerializer } from '@trpc12/trpc/transformer';
+import { experimental_createTransformer } from '@trpc12/trpc/transformer';
 import {
   type AnyContractRouter,
   experimental_contract,
@@ -249,13 +249,16 @@ test("output: 'json' decodes declared errors' data with their schemas, and types
 
   await using danson = await createTestServer({
     router: goneRouter,
-    transformer: createSerializer(),
+    transformer: experimental_createTransformer(),
   });
   const kept = createTrpcClient({
     router: gone,
     links: [
       experimental_validationLink({ contract: gone }),
-      httpLink({ url: danson.url, transformer: createSerializer() }),
+      httpLink({
+        url: danson.url,
+        transformer: experimental_createTransformer(),
+      }),
     ],
   });
   const [, keptErr] = await safe(kept.post.byId.query({ id: '1' }));

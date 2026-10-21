@@ -12,7 +12,7 @@ import { PgClient } from '@effect/sql-pg';
 import { type Duration, Effect, Layer, ManagedRuntime, Redacted } from 'effect';
 import { HttpServer } from 'effect/http';
 import { serve } from '@trpc12/trpc/http';
-import { createSerializer } from '@trpc12/trpc/transformer';
+import { experimental_createTransformer } from '@trpc12/trpc/transformer';
 import {
   createFetchHandler,
   error,
@@ -23,7 +23,7 @@ import { z } from 'zod';
 import { createEventsTable, pgPublisher, redisPublisher } from './publisher.ts';
 
 /** Messages carry a `Date`, so both ends use danSON instead of plain JSON. */
-export const transformer = createSerializer();
+export const transformer = experimental_createTransformer();
 
 export interface Message {
   from: string;

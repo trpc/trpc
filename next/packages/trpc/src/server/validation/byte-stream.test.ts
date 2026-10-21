@@ -15,7 +15,7 @@ import {
   wsLink,
 } from '@trpc12/trpc/client';
 import { toHttpEffect } from '@trpc12/trpc/http';
-import { createSerializer } from '@trpc12/trpc/transformer';
+import { experimental_createTransformer } from '@trpc12/trpc/transformer';
 import {
   createFetchHandler,
   createRouterClient,
@@ -254,7 +254,7 @@ test('a byte stream call leaves the batch and goes alone', async () => {
 });
 
 test('danSON and other transformers leave the body as it is', async () => {
-  const transformer = createSerializer();
+  const transformer = experimental_createTransformer();
   await using server = await createTestServer({ router, transformer });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),

@@ -11,14 +11,14 @@ No backend packages ship; these recipes are yours to copy and adapt ([`examples/
 
 ```ts twoslash
 import { Effect, Layer, Stream } from 'effect';
-import { createSerializer } from '@trpc12/trpc/transformer';
+import { experimental_createTransformer } from '@trpc12/trpc/transformer';
 import {
   tracked,
   type PublisherEvents,
   type PublisherShape,
 } from '@trpc12/trpc/server';
 
-const danson = createSerializer();
+const danson = experimental_createTransformer();
 const encode = (data: unknown) => JSON.stringify(danson.serialize(data));
 const decode = (text: string) => danson.deserialize(JSON.parse(text));
 
@@ -50,14 +50,14 @@ Effect's `Redis` service (`effect/persistence`) with `NodeRedis.layer` from `@ef
 ```ts twoslash
 // ---cut-start---
 import { Effect, Layer, Stream } from 'effect';
-import { createSerializer } from '@trpc12/trpc/transformer';
+import { experimental_createTransformer } from '@trpc12/trpc/transformer';
 import {
   tracked,
   type PublisherEvents,
   type PublisherShape,
 } from '@trpc12/trpc/server';
 
-const danson = createSerializer();
+const danson = experimental_createTransformer();
 const encode = (data: unknown) => JSON.stringify(danson.serialize(data));
 const decode = (text: string) => danson.deserialize(JSON.parse(text));
 
@@ -174,14 +174,14 @@ const layer = Layer.effect(Posts)(
 ```ts twoslash
 // ---cut-start---
 import { Effect, Layer, Stream } from 'effect';
-import { createSerializer } from '@trpc12/trpc/transformer';
+import { experimental_createTransformer } from '@trpc12/trpc/transformer';
 import {
   tracked,
   type PublisherEvents,
   type PublisherShape,
 } from '@trpc12/trpc/server';
 
-const danson = createSerializer();
+const danson = experimental_createTransformer();
 const encode = (data: unknown) => JSON.stringify(danson.serialize(data));
 const decode = (text: string) => danson.deserialize(JSON.parse(text));
 

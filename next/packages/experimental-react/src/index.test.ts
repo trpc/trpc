@@ -16,7 +16,7 @@ import {
   safe,
   type AnyLink,
 } from '@trpc12/trpc/client';
-import { createSerializer } from '@trpc12/trpc/transformer';
+import { experimental_createTransformer } from '@trpc12/trpc/transformer';
 import { Duration, Effect, Exit, Scope, Stream } from 'effect';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { waitFor } from '../../trpc/src/fixtures/dom.ts';
@@ -35,7 +35,10 @@ const make = <const L extends ReadonlyArray<AnyLink>>(
 ) =>
   createReactClient({
     router: routerType<AppRouter>(),
-    links: [...links, localLink({ router, transformer: createSerializer() })],
+    links: [
+      ...links,
+      localLink({ router, transformer: experimental_createTransformer() }),
+    ],
     isServer: opts.isServer ?? false,
   });
 
@@ -107,7 +110,9 @@ test('a client made with a scope is disposed when the scope closes, and `using` 
   const scope = Scope.makeUnsafe();
   const scoped = createReactClient({
     router: routerType<AppRouter>(),
-    links: [localLink({ router, transformer: createSerializer() })],
+    links: [
+      localLink({ router, transformer: experimental_createTransformer() }),
+    ],
     isServer: true,
     scope,
   });

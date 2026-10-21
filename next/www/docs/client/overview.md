@@ -92,7 +92,7 @@ A call rejects with one of the procedure's errors (`defined: true`, with its `da
 ```ts twoslash
 // ---cut-start---
 import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
-import { createSerializer } from '@trpc12/trpc/transformer';
+import { experimental_createTransformer } from '@trpc12/trpc/transformer';
 import type { AppRouter } from './server.ts';
 // ---cut-end---
 import type {
@@ -102,7 +102,9 @@ import type {
 
 const client = createTrpcClient({
   router: routerType<AppRouter>(),
-  links: [httpLink({ url: '/trpc', transformer: createSerializer() })],
+  links: [
+    httpLink({ url: '/trpc', transformer: experimental_createTransformer() }),
+  ],
 });
 
 type NewPost = inferRouterInputs<typeof client>['post']['create'];

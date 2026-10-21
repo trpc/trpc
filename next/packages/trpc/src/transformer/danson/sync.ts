@@ -28,9 +28,9 @@ export interface PlaceholderTransformer<T = unknown> {
   value: T;
 }
 /**
- * Custom serializers by type name.
+ * danSON's serializers by type name.
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
 export type SerializeRecord = Record<
   string,
@@ -43,9 +43,9 @@ export interface DeserializeRecursive {
   set: (target: any, value: any) => void;
 }
 /**
- * Custom deserializers by type name.
+ * danSON's deserializers by type name.
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
 export type DeserializeRecord = Record<
   string,

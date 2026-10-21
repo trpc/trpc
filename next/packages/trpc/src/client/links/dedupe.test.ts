@@ -8,7 +8,7 @@ import {
   type BuiltinCallOptions,
   type Operation,
 } from '@trpc12/trpc/client';
-import { createSerializer } from '@trpc12/trpc/transformer';
+import { experimental_createTransformer } from '@trpc12/trpc/transformer';
 import { error, initTrpc, tracked } from '@trpc12/trpc/server';
 import { createTestServer } from '../../fixtures/server.ts';
 import { expect, test, vi } from 'vite-plus/test';
@@ -24,7 +24,7 @@ class Money {
     this.cents = cents;
   }
 }
-const transformer = createSerializer({
+const transformer = experimental_createTransformer({
   types: {
     Money: {
       is: (v): v is Money => v instanceof Money,

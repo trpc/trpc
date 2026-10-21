@@ -9,7 +9,10 @@ import {
   routerType,
   type TrpcClient,
 } from '@trpc12/trpc/client';
-import { createSerializer, type DansonForm } from '@trpc12/trpc/transformer';
+import {
+  experimental_createTransformer,
+  type DansonForm,
+} from '@trpc12/trpc/transformer';
 import { error, initTrpc } from '@trpc12/trpc/server';
 import { TestServer } from '@trpc12/trpc/internal/testing';
 import { z } from 'zod';
@@ -21,7 +24,7 @@ export interface Post {
 }
 
 /** Posts carry `Date`s through hydration, so both ends use danSON. */
-export const transformer = createSerializer();
+export const transformer = experimental_createTransformer();
 
 /** What the app's links declare: danSON's form. Contexts take it as their links' types. */
 export type Links = { form: DansonForm };

@@ -4,7 +4,7 @@
  * `registerCustom`.
  */
 import {
-  createSerializer,
+  experimental_createTransformer,
   createSyncTransformer,
 } from '@trpc12/trpc/transformer';
 import type { CustomType } from '@trpc12/trpc/transformer';
@@ -48,7 +48,9 @@ const money: CustomType<Money, MoneyJson> = {
 };
 
 /** danSON: native types, files and deferred values at any depth, plus `Money`. */
-export const danson = createSerializer({ types: { Money: money } });
+export const danson = experimental_createTransformer({
+  types: { Money: money },
+});
 
 const superjson = new SuperJSON();
 superjson.registerCustom<Money, string>(

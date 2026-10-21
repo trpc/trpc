@@ -9,7 +9,7 @@ import {
 } from '@trpc12/trpc/client';
 import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
 import {
-  createSerializer,
+  experimental_createTransformer,
   jsonTransformer,
   type CustomType,
 } from '@trpc12/trpc/transformer';
@@ -36,7 +36,7 @@ const money: CustomType<Money, [string, string]> = {
 };
 
 /** danSON, for the tests of what it keeps that plain JSON doesn't. */
-const danson = createSerializer();
+const danson = experimental_createTransformer();
 
 const t = initTrpc();
 
@@ -113,7 +113,9 @@ test('with danSON, built-in types round-trip through inputs and outputs', async 
 });
 
 test('custom types work when both ends share a transformer', async () => {
-  const transformer = createSerializer({ types: { Money: money } });
+  const transformer = experimental_createTransformer({
+    types: { Money: money },
+  });
   await using server = await createTestServer({ router, transformer });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),

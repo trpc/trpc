@@ -1,6 +1,6 @@
 /**
  * Wire transformers. The default is `jsonTransformer`, plain JSON.
- * `createSerializer()` is a port of [danSON](https://github.com/KATT/danson),
+ * `experimental_createTransformer()` is a port of [danSON](https://github.com/KATT/danson),
  * and `createSyncTransformer` wraps superjson, devalue or your own.
  *
  * With danSON, plain JSON stays plain JSON. Non-JSON values (`Date`, `Map`, `Set`,
@@ -61,7 +61,7 @@ export {
 export type { FormOfTransformer } from '../internal/types.ts';
 
 /**
- * A custom type the transformer understands.
+ * A custom type danSON understands, for `experimental_createTransformer`.
  *
  * @example
  * ```ts
@@ -70,10 +70,10 @@ export type { FormOfTransformer } from '../internal/types.ts';
  *   serialize: (v) => v.toString(),
  *   deserialize: (s) => new Decimal(s),
  * };
- * createSerializer({ types: { Decimal: decimal } });
+ * experimental_createTransformer({ types: { Decimal: decimal } });
  * ```
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
 export interface CustomType<T, TSerialized = unknown> {
   /** Whether `value` is of this type. */
@@ -90,8 +90,9 @@ export interface CustomType<T, TSerialized = unknown> {
 }
 
 /**
+ * The options of `experimental_createTransformer`, danSON.
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
 export interface TransformerOptions {
   /** Custom types, keyed by the name used on the wire. */
@@ -213,18 +214,21 @@ const partSerializers: SerializeRecord = {
 /**
  * Creates a danSON-based transformer, optionally with extra types. It keeps
  * native types (`Date`, `Map`, `File`, …) and streams deferred values in one
- * pass. Pass it to both the handler and the link.
+ * pass. Pass it to both the handler and the link. Experimental: danSON might
+ * change or go away in any release.
  *
  * @example
  * ```ts
- * const transformer = createSerializer({ types: { Decimal: decimal } });
+ * const transformer = experimental_createTransformer({ types: { Decimal: decimal } });
  * createFetchHandler({ router, transformer });
  * httpLink({ url, transformer });
  * ```
  * @since 0.1.0
- * @stability stable
+ * @stability experimental
  */
-export function createSerializer(opts: TransformerOptions = {}): Transformer {
+export function experimental_createTransformer(
+  opts: TransformerOptions = {},
+): Transformer {
   const customSerializers: SerializeRecord = {};
   const customDeserializers: DeserializeRecord = {};
   const customInputDeserializers: DeserializeRecord = {};

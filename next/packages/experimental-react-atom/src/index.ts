@@ -11,7 +11,7 @@
  *
  * export const trpc = createAtomClient({
  *   router: routerType<AppRouter>(),
- *   links: [httpLink({ url: '/trpc', transformer: createSerializer() })],
+ *   links: [httpLink({ url: '/trpc', transformer: experimental_createTransformer() })],
  * });
  *
  * const post = useAtomSuspense(trpc.post.byId.query({ id })).value;
@@ -41,14 +41,14 @@ import {
 } from '@trpc12/trpc/client';
 import { createEffectClient, type EffectClient } from '@trpc12/trpc/effect';
 import {
-  createSerializer,
+  experimental_createTransformer,
   jsonTransformer,
   type AnyTransformer,
   type SerializeReturn,
 } from '@trpc12/trpc/transformer';
 
 /** Keys use danSON, so inputs with `Date`s and `Map`s key apart. */
-const keyTransformer = /* @__PURE__ */ createSerializer();
+const keyTransformer = /* @__PURE__ */ experimental_createTransformer();
 
 /**
  * Reactivity keys: a list, or lists by namespace, as `Reactivity` takes them.
@@ -168,7 +168,7 @@ export type AtomClientOptions<
  *
  * @example
  * ```ts
- * const schema = AsyncResult.Schema({ success: transformerSchema(createSerializer()) });
+ * const schema = AsyncResult.Schema({ success: transformerSchema(experimental_createTransformer()) });
  * ```
  * @since 0.1.0
  * @stability experimental

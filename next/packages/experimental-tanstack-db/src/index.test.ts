@@ -10,7 +10,7 @@ import {
   wsLink,
 } from '@trpc12/trpc/client';
 import { TestServer } from '@trpc12/trpc/internal/testing';
-import { createSerializer } from '@trpc12/trpc/transformer';
+import { experimental_createTransformer } from '@trpc12/trpc/transformer';
 import { initTrpc, tracked, type TrackedEnvelope } from '@trpc12/trpc/server';
 import { Context, Effect, Exit, Layer, Scope, Stream } from 'effect';
 import { expect, expectTypeOf, test, vi } from 'vite-plus/test';
@@ -25,7 +25,7 @@ interface Post {
 
 type PostChange = LiveEvent<Post, string>;
 
-const transformer = createSerializer();
+const transformer = experimental_createTransformer();
 const t = initTrpc();
 
 function createDb() {

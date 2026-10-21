@@ -20,7 +20,7 @@ import {
   type inferRouterOutputs,
 } from '@trpc12/trpc/server';
 import {
-  createSerializer,
+  experimental_createTransformer,
   createSyncTransformer,
   jsonTransformer,
   type JsonOf,
@@ -30,7 +30,7 @@ import { z } from 'zod';
 import { createTestServer } from '../fixtures/server.ts';
 
 const at = new Date('2026-10-15T00:00:00.000Z');
-const danson = createSerializer();
+const danson = experimental_createTransformer();
 const t = initTrpc();
 
 /** The router doesn't name a transformer: the handler and the links do. */
@@ -530,7 +530,10 @@ test("returning a deferred AsyncIterable ends a read that's still waiting for it
   const silent: AsyncIterable<never> = {
     [Symbol.asyncIterator]: () => ({ next: () => new Promise(() => {}) }),
   };
-  for (const transformer of [createSerializer(), jsonTransformer]) {
+  for (const transformer of [
+    experimental_createTransformer(),
+    jsonTransformer,
+  ]) {
     const serialized = transformer.serializeDeferred({ items: silent });
     const value = await Effect.runPromise(
       transformer.deserializeStream<{ items: AsyncIterable<unknown> }, never>(

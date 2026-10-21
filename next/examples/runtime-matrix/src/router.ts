@@ -5,7 +5,7 @@
  */
 import { Context, Effect, Layer } from 'effect';
 import { cors } from '@trpc12/trpc/http';
-import { createSerializer } from '@trpc12/trpc/transformer';
+import { experimental_createTransformer } from '@trpc12/trpc/transformer';
 import { error, initTrpc, tracked } from '@trpc12/trpc/server';
 import { z } from 'zod';
 
@@ -109,7 +109,7 @@ export const appRouter = {
 };
 export type AppRouter = typeof appRouter;
 
-export const transformer = createSerializer();
+export const transformer = experimental_createTransformer();
 export const allowedOrigin = 'https://app.example.com';
 
 /** What every entry point passes `createFetchHandler`, besides its context and layer. */

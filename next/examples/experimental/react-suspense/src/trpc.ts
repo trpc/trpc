@@ -1,10 +1,10 @@
 import { createIsomorphicFn } from '@tanstack/react-start';
 import { createReactClient, standardLinks } from '@trpc12/experimental-react';
 import { httpLink, localLink, routerType } from '@trpc12/trpc/client';
-import { createSerializer } from '@trpc12/trpc/transformer';
+import { experimental_createTransformer } from '@trpc12/trpc/transformer';
 import { type AppRouter, appRouter } from './server/router.ts';
 
-const transformer = createSerializer();
+const transformer = experimental_createTransformer();
 
 // A server render calls the router in process; the browser calls /api/trpc.
 const sendLink = createIsomorphicFn()

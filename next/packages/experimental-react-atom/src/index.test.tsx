@@ -6,7 +6,7 @@ import {
 import { createAtomClient } from '@trpc12/experimental-react-atom';
 import { localLink, routerType } from '@trpc12/trpc/client';
 import {
-  createSerializer,
+  experimental_createTransformer,
   jsonTransformer,
   type AnyTransformer,
 } from '@trpc12/trpc/transformer';
@@ -27,7 +27,7 @@ import {
   type AppRouter,
 } from '../../trpc/src/fixtures/posts.ts';
 
-const transformer = createSerializer();
+const transformer = experimental_createTransformer();
 
 const setup = () => ({
   trpc: createAtomClient({

@@ -1,6 +1,6 @@
 import { Effect, Stream } from 'effect';
 import {
-  createSerializer,
+  experimental_createTransformer,
   DansonError,
   jsonTransformer,
   type Frame,
@@ -31,7 +31,7 @@ const send = (
 };
 const intact = <T>(frames: T) => frames;
 
-for (const transformer of [createSerializer(), jsonTransformer]) {
+for (const transformer of [experimental_createTransformer(), jsonTransformer]) {
   test(`${transformer.name}: deferred values travel over a custom transport`, async () => {
     const out = await send(
       transformer,
