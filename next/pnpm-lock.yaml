@@ -1541,6 +1541,9 @@ importers:
       '@effect/vitest':
         specifier: 4.0.2
         version: 4.0.2(effect@4.0.2)(vitest@5.0.3)
+      '@modelcontextprotocol/sdk':
+        specifier: 1.32.1
+        version: 1.32.1(supports-color@10.2.2)(zod@4.6.5)
       '@tooling/tsconfig':
         specifier: workspace:*
         version: link:../../tooling/tsconfig

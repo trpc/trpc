@@ -9,6 +9,7 @@ const entries = {
   serializer: () => import('@trpc12/trpc/serializer'),
   openapi: () => import('@trpc12/trpc/openapi'),
   'openapi/typescript': () => import('@trpc12/trpc/openapi/typescript'),
+  mcp: () => import('@trpc12/trpc/mcp'),
   interop: () => import('@trpc12/trpc/interop'),
   effect: () => import('@trpc12/trpc/effect'),
   http: () => import('@trpc12/trpc/http'),

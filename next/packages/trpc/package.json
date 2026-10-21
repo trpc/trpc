@@ -41,6 +41,10 @@
       "types": "./src/openapi/typescript.ts",
       "default": "./src/openapi/typescript.ts"
     },
+    "./mcp": {
+      "types": "./src/mcp/index.ts",
+      "default": "./src/mcp/index.ts"
+    },
     "./interop": {
       "types": "./src/interop/index.ts",
       "default": "./src/interop/index.ts"
@@ -112,6 +116,10 @@
         "types": "./dist/openapi/typescript.d.ts",
         "default": "./dist/openapi/typescript.js"
       },
+      "./mcp": {
+        "types": "./dist/mcp/index.d.ts",
+        "default": "./dist/mcp/index.js"
+      },
       "./interop": {
         "types": "./dist/interop/index.d.ts",
         "default": "./dist/interop/index.js"
@@ -160,6 +168,7 @@
     "@effect/platform-bun": "4.0.2",
     "@effect/platform-node": "4.0.2",
     "@effect/vitest": "4.0.2",
+    "@modelcontextprotocol/sdk": "1.32.1",
     "@tooling/tsconfig": "workspace:*",
     "@trpc/client": "11.19.0",
     "@trpc/server": "11.19.0",

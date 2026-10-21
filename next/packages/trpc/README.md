@@ -52,6 +52,7 @@ const greeting = await client.greet.query({ name: 'tRPC' }); // string
 | `@trpc12/trpc/socket`             | `experimental_serveSocket` over TCP, TLS or Unix sockets         |
 | `@trpc12/trpc/openapi`            | REST routes, OpenAPI documents, `experimental_openApiLink`       |
 | `@trpc12/trpc/openapi/typescript` | an OpenAPI document from the router's types                      |
+| `@trpc12/trpc/mcp`                | procedures as MCP tools, `experimental_createMcpHandler`         |
 | `@trpc12/trpc/actions`            | procedures as React Server Actions                               |
 | `@trpc12/trpc/interop`            | `createV11Handler`, `fromV11Link` for v11 code                   |
 | `@trpc12/trpc/extend`             | building blocks for integrations                                 |
