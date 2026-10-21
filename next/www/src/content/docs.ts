@@ -172,6 +172,22 @@ export function useDocsVersion() {
 }
 
 /**
+ * The version the search dialog looks in: the page's, and on the home page
+ * the one it shows, so `/?version=v12` finds v12's pages, experiments'
+ * included.
+ */
+export function useSearchedDocs(): DocsVersion {
+  const pathname = useLocation({ select: (location) => location.pathname });
+  const version = useSearch({
+    select: (search) => search.version,
+    strict: false,
+  });
+  return pathname === '/'
+    ? homeDocs[homeVersionOf({ version })]
+    : versionAt(pathname);
+}
+
+/**
  * The search for a link to the home page: `?version=v12` from v12's docs,
  * so the home page shows the version the reader came from. On the home
  * page, the version it shows; elsewhere, v11.

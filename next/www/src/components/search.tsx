@@ -10,7 +10,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { FileText, FlaskConical, Hash, Search } from 'lucide-react';
 import { useState } from 'react';
 
-import { useDocsVersion } from '~/content/docs.ts';
+import { useSearchedDocs } from '~/content/docs.ts';
 import { type SearchEntry, searchDocs } from '~/content/search.ts';
 
 import { TextWithCode } from '~/components/text-with-code.tsx';
@@ -76,7 +76,7 @@ export function SearchButton() {
 function SearchPanel(props: { readonly onClose: () => void }) {
   const navigate = useNavigate();
   // Experiments' pages too: opening one turns its experiment on.
-  const version = useDocsVersion();
+  const version = useSearchedDocs();
   const [query, setQuery] = useState('');
   const [active, setActive] = useState(0);
   const results = searchDocs(version.allDocs, query);

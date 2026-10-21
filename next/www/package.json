@@ -17,6 +17,7 @@
     "decisions:layout": "node decisions-layout.ts",
     "not-found:check": "node not-found-check.ts",
     "codemod-playground:check": "node codemod-playground-check.ts",
+    "search:check": "node search-check.ts",
     "v12-reveal:check": "node v12-reveal-check.ts",
     "old-docs:copy": "node build/old-docs-copy.ts",
     "old-docs:check": "node build/old-docs-copy.ts --check",

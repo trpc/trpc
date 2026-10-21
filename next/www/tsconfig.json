@@ -17,6 +17,7 @@
     "decisions-layout.ts",
     "not-found-check.ts",
     "codemod-playground-check.ts",
+    "search-check.ts",
     "v12-reveal-check.ts",
     "vite.config.ts"
   ]

@@ -151,6 +151,9 @@ jobs:
       # The codemod runs on its page without cross-origin isolation, and the
       # playground fits a phone.
       - run: pnpm --filter @trpc12/www codemod-playground:check
+      # Search finds every experiment's pages with every experiment off, from
+      # v12's home page too, and opening one turns its experiment on.
+      - run: pnpm --filter @trpc12/www search:check
 
   www-trpc-io:
     # The docs site as trpc.io's build (`site.url` at https://trpc.io), where
