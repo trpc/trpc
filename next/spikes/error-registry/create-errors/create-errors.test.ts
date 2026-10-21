@@ -30,7 +30,8 @@ type AppError =
 test('types: every call fails with the whole registry, ahead of time', async () => {
   const [, err] = await safe(client.post.byId.query({ id: '1' }));
   expectTypeOf(err).toEqualTypeOf<AppError | undefined>();
-  if (err?._tag === 'TitleTaken') expectTypeOf(err.data).toEqualTypeOf<{ title: string }>();
+  if (err?._tag === 'TitleTaken')
+    expectTypeOf(err.data).toEqualTypeOf<{ title: string }>();
 });
 
 test('types: matchError() wants every app tag and the link failures', async () => {

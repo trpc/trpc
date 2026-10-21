@@ -44,5 +44,4 @@ export function mergeErrors<const Rs extends ReadonlyArray<Registry>>(
 export const scope = <const E extends Registry, R extends AnyRouter>(
   _errors: E,
   router: R,
-): R & Scoped<ErrorsOf<E>> =>
-  router as R & Scoped<ErrorsOf<E>>;
+): R & Scoped<ErrorsOf<E>> => router as R & Scoped<ErrorsOf<E>>;

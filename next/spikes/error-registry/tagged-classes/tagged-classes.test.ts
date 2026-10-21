@@ -43,7 +43,8 @@ type AppError =
 test('types: the client fails with the classes themselves', async () => {
   const [, err] = await safe(client.post.byId.query({ id: '1' }));
   expectTypeOf(err).toEqualTypeOf<AppError | undefined>();
-  if (err instanceof TitleTaken) expectTypeOf(err.title).toEqualTypeOf<string>();
+  if (err instanceof TitleTaken)
+    expectTypeOf(err.title).toEqualTypeOf<string>();
 });
 
 test('types: matchError() and catchTag work on the classes as they are', async () => {

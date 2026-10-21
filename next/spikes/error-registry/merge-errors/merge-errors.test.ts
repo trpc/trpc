@@ -7,9 +7,9 @@ import { registrySuite } from '../shared/suite.ts';
 import {
   appRouter,
   authErrors,
-  billingErrors,
+  type billingErrors,
   errors,
-  postErrors,
+  type postErrors,
   type AppRouter,
 } from './app.ts';
 import {
@@ -37,11 +37,17 @@ const { client } = clients([serve(appRouter).link]);
 test('types: a subtree fails with its module’s errors and its parents’', async () => {
   const [, post] = await safe(client.post.byId.query({ id: '1' }));
   expectTypeOf(post).toEqualTypeOf<
-    ErrorsOf<typeof postErrors> | ErrorsOf<typeof authErrors> | TrpcFailure | undefined
+    | ErrorsOf<typeof postErrors>
+    | ErrorsOf<typeof authErrors>
+    | TrpcFailure
+    | undefined
   >();
   const [, charge] = await safe(client.billing.charge.mutate({ cents: 1 }));
   expectTypeOf(charge).toEqualTypeOf<
-    ErrorsOf<typeof billingErrors> | ErrorsOf<typeof authErrors> | TrpcFailure | undefined
+    | ErrorsOf<typeof billingErrors>
+    | ErrorsOf<typeof authErrors>
+    | TrpcFailure
+    | undefined
   >();
 });
 

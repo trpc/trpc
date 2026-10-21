@@ -28,14 +28,16 @@ const { client } = clients([serve(appRouter).link]);
 test('types: every module’s errors, read from one interface', async () => {
   const [, err] = await safe(client.post.byId.query({ id: '1' }));
   expectTypeOf(err).toEqualTypeOf<RegisteredError | undefined>();
-  expectTypeOf<RegisteredError['_tag']>().toExtend<
-    'Unauthorized' | 'RateLimited' | 'PostNotFound' | 'TitleTaken' | string
-  >();
+  type AppTag = 'Unauthorized' | 'RateLimited' | 'PostNotFound' | 'TitleTaken';
+  expectTypeOf<
+    Extract<RegisteredError['_tag'], AppTag>
+  >().toEqualTypeOf<AppTag>();
 });
 
 test('types: code anywhere names a tag with no type parameter', () => {
   // An error boundary's claims, say, checked against the registry.
-  const claims = <T extends RegisteredError['_tag']>(tags: ReadonlyArray<T>) => tags;
+  const claims = <T extends RegisteredError['_tag']>(tags: ReadonlyArray<T>) =>
+    tags;
   claims(['Unauthorized', 'NetworkError']);
   // @ts-expect-error no error has the tag
   claims(['Unauthorised']);

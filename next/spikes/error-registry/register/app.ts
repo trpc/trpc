@@ -1,4 +1,4 @@
-/** The example backend, written with option E: modules register their errors. */
+/** The example backend, where modules register their errors. */
 import { Effect } from 'effect';
 import { initTrpc } from '@trpc12/trpc/server';
 import { z } from 'zod';
@@ -57,7 +57,8 @@ export const appRouter = {
     byIdEffect: t.procedure.input(z.object({ id: z.string() })).query((opts) =>
       Effect.gen(function* () {
         const post = posts.get(opts.input.id);
-        if (!post) return yield* new postErrors.PostNotFound({ id: opts.input.id });
+        if (!post)
+          return yield* new postErrors.PostNotFound({ id: opts.input.id });
         return post;
       }),
     ),

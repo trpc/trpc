@@ -5,7 +5,7 @@
  * status and schema, but only what a resolver or middleware returns or
  * yields is in the union: a `throw` has no type.
  */
-import type { inferRouterErrors } from '@trpc12/trpc/server';
+import type { BuiltinErrorCode, inferRouterErrors } from '@trpc12/trpc/server';
 import {
   createRegistryClient,
   createRegistryEffectClient,
@@ -17,8 +17,15 @@ import type { TrpcFailure } from '../shared/framework.ts';
 
 export { defineError } from '../shared/define.ts';
 
-/** Every error any procedure of `R` returns, and tRPC's failures. */
-export type RouterError<R> = inferRouterErrors<R> | TrpcFailure;
+/**
+ * Every error any procedure of `R` returns, and tRPC's failures. v12's own
+ * errors in the router's union go: each procedure's `BAD_REQUEST` types its
+ * issues from its input, so 1,500 procedures put 1,500 of them in the union,
+ * and the client rebuilds them all as `InvalidInput` anyway.
+ */
+export type RouterError<R> =
+  | Exclude<inferRouterErrors<R>, { readonly code: BuiltinErrorCode }>
+  | TrpcFailure;
 
 export const createClient = <R>(opts: RegistryClientOptions) =>
   createRegistryClient<RegistryClient<R, RouterError<R>>>(opts);

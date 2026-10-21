@@ -18,7 +18,8 @@ export const trpcFailures = fromSpecs({
   },
   ProcedureNotFound: {
     status: 404,
-    description: 'No procedure at this path: the client is newer than the server.',
+    description:
+      'No procedure at this path: the client is newer than the server.',
   },
   ProcedureTypeMismatch: {
     status: 405,
@@ -136,12 +137,18 @@ export const decodeWith =
     const failure = byTag[cause._tag] ?? byCode[cause.code];
     if (failure === 'InvalidInput') {
       return new trpcFailures.InvalidInput(
-        { issues: (cause.data as { issues?: unknown[] } | undefined)?.issues ?? [] },
+        {
+          issues:
+            (cause.data as { issues?: unknown[] } | undefined)?.issues ?? [],
+        },
         { message: cause.message, cause },
       );
     }
     if (failure) {
-      return new trpcFailures[failure]({ message: cause.message, cause } as never);
+      return new trpcFailures[failure]({
+        message: cause.message,
+        cause,
+      } as never);
     }
     const status = statusOfCode[cause.code];
     if (status !== undefined) {

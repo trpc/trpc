@@ -1,8 +1,13 @@
-/** The example backend, written with option D: a registry per module. */
+/** The example backend, with a registry per module, merged. */
 import { Effect } from 'effect';
 import { initTrpc } from '@trpc12/trpc/server';
 import { z } from 'zod';
-import { createErrors, mergeErrors, scope, withErrors } from './merge-errors.ts';
+import {
+  createErrors,
+  mergeErrors,
+  scope,
+  withErrors,
+} from './merge-errors.ts';
 
 // auth/errors.ts
 export const authErrors = createErrors({
@@ -56,7 +61,8 @@ const postRouter = scope(postErrors, {
   byIdEffect: t.procedure.input(z.object({ id: z.string() })).query((opts) =>
     Effect.gen(function* () {
       const post = posts.get(opts.input.id);
-      if (!post) return yield* new postErrors.PostNotFound({ id: opts.input.id });
+      if (!post)
+        return yield* new postErrors.PostNotFound({ id: opts.input.id });
       return post;
     }),
   ),

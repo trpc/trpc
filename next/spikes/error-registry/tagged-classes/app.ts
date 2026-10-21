@@ -1,4 +1,4 @@
-/** The example backend, written with option B. */
+/** The example backend, with `Schema.TaggedError` classes as the registry. */
 import { Effect, Schema } from 'effect';
 import { initTrpc } from '@trpc12/trpc/server';
 import { z } from 'zod';
@@ -60,16 +60,14 @@ export const appRouter = withErrors(errors, {
         }),
       ),
     ),
-    create: authed
-      .input(z.object({ title: z.string() }))
-      .mutation((opts) => {
-        if ([...posts.values()].some((p) => p.title === opts.input.title)) {
-          throw new TitleTaken({ title: opts.input.title });
-        }
-        const post = { id: String(posts.size + 1), title: opts.input.title };
-        posts.set(post.id, post);
-        return post;
-      }),
+    create: authed.input(z.object({ title: z.string() })).mutation((opts) => {
+      if ([...posts.values()].some((p) => p.title === opts.input.title)) {
+        throw new TitleTaken({ title: opts.input.title });
+      }
+      const post = { id: String(posts.size + 1), title: opts.input.title };
+      posts.set(post.id, post);
+      return post;
+    }),
   },
 });
 

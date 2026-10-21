@@ -1,4 +1,4 @@
-/** The example backend, written with option F: errors are returned, not listed. */
+/** The example backend, where errors are returned, not listed. */
 import { Effect } from 'effect';
 import { initTrpc } from '@trpc12/trpc/server';
 import { z } from 'zod';
@@ -32,14 +32,19 @@ const posts = new Map([['1', { id: '1', title: 'Hello' }]]);
 
 // Returned, so the procedures behind it fail with it.
 const authed = t.procedure.use((opts) =>
-  opts.ctx.user ? opts.next({ ctx: { user: opts.ctx.user } }) : new Unauthorized(),
+  opts.ctx.user
+    ? opts.next({ ctx: { user: opts.ctx.user } })
+    : new Unauthorized(),
 );
 
 export const appRouter = {
   post: {
     byId: t.procedure
       .input(z.object({ id: z.string() }))
-      .query((opts) => posts.get(opts.input.id) ?? new PostNotFound({ id: opts.input.id })),
+      .query(
+        (opts) =>
+          posts.get(opts.input.id) ?? new PostNotFound({ id: opts.input.id }),
+      ),
     byIdEffect: t.procedure.input(z.object({ id: z.string() })).query((opts) =>
       Effect.gen(function* () {
         const post = posts.get(opts.input.id);

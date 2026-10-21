@@ -40,7 +40,8 @@ const classesOf = (b: object) =>
 const make = (classes: Record<string, AnyErrorClass>): ErrorsBuilder<any> => ({
   ...classes,
   add: (tag: string, spec: ErrorSpec) => {
-    if (tag in classes) throw new TypeError(`'${tag}' is already in the registry`);
+    if (tag in classes)
+      throw new TypeError(`'${tag}' is already in the registry`);
     return make({ ...classes, [tag]: defineError(tag, spec) });
   },
   extend: (other: object) => make({ ...classes, ...classesOf(other) }),

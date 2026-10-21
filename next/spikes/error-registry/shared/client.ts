@@ -99,7 +99,10 @@ export function createRegistryClient<TClient>(
   });
   const decode = decodeWith(opts.registry, opts.rebuild);
   return proxy((path, args) =>
-    at(inner, path)(...args).catch((cause: unknown) => {
+    at(
+      inner,
+      path,
+    )(...args).catch((cause: unknown) => {
       throw decode(cause);
     }),
   ) as TClient;

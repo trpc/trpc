@@ -15,7 +15,9 @@ import { trpcFailures } from './framework.ts';
 export interface SuiteApp {
   readonly router: AnyRouter;
   /** The app's error classes by tag, for `instanceof`. */
-  readonly classes: Readonly<Record<string, abstract new (...args: any) => unknown>>;
+  readonly classes: Readonly<
+    Record<string, abstract new (...args: any) => unknown>
+  >;
   /** A Promise client and an Effect client over `links`. */
   readonly clients: (links: ReadonlyArray<AnyLink>) => {
     readonly client: any;
@@ -25,8 +27,9 @@ export interface SuiteApp {
   readonly missingId: (err: any) => string;
 }
 
-const failingLink = (fetch: (url: string, init: RequestInit) => Promise<Response>) =>
-  httpLink({ url: 'http://localhost/trpc', fetch });
+const failingLink = (
+  fetch: (url: string, init: RequestInit) => Promise<Response>,
+) => httpLink({ url: 'http://localhost/trpc', fetch });
 
 export function registrySuite(name: string, app: SuiteApp) {
   const setup = () => {
@@ -39,7 +42,7 @@ export function registrySuite(name: string, app: SuiteApp) {
     const [, err] = await safe(s.client.post.byId.query({ id: 'nope' }));
     expect(err).toBeInstanceOf(app.classes['PostNotFound']!);
     expect(app.missingId(err)).toBe('nope');
-    // `defined` is v12's: false when thrown (A–E), true when returned (F).
+    // `defined` is v12's: false when thrown, true when returned (the inferred option).
     expect(s.requests[0]).toEqual({
       status: 404,
       body: {
@@ -73,7 +76,9 @@ export function registrySuite(name: string, app: SuiteApp) {
     const s = setup();
     const [, invalid] = await safe(s.client.post.byId.query({ id: 1 }));
     expect(invalid).toBeInstanceOf(trpcFailures.InvalidInput);
-    expect((invalid as { data: { issues: unknown[] } }).data.issues).not.toEqual([]);
+    expect(
+      (invalid as { data: { issues: unknown[] } }).data.issues,
+    ).not.toEqual([]);
     const [, missing] = await safe(s.client.post.missing.query());
     expect(missing).toBeInstanceOf(trpcFailures.ProcedureNotFound);
 
@@ -88,18 +93,25 @@ export function registrySuite(name: string, app: SuiteApp) {
     ]);
     const [, proxy] = await safe(proxied.client.post.byId.query({ id: '1' }));
     expect(proxy).toBeInstanceOf(trpcFailures.UnexpectedStatus);
-    expect((proxy as { data: { status: number } }).data).toEqual({ status: 502 });
+    expect((proxy as { data: { status: number } }).data).toEqual({
+      status: 502,
+    });
 
     const hanging = app.clients([
       failingLink(
         (_, init) =>
           new Promise((_resolve, reject) =>
-            init.signal?.addEventListener('abort', () => reject(init.signal?.reason)),
+            init.signal?.addEventListener('abort', () =>
+              reject(init.signal?.reason),
+            ),
           ),
       ),
     ]);
     const [, timeout] = await safe(
-      hanging.client.post.byId.query({ id: '1' }, { signal: AbortSignal.timeout(5) }),
+      hanging.client.post.byId.query(
+        { id: '1' },
+        { signal: AbortSignal.timeout(5) },
+      ),
     );
     expect(timeout).toBeInstanceOf(trpcFailures.Timeout);
   });
@@ -107,9 +119,12 @@ export function registrySuite(name: string, app: SuiteApp) {
   test(`${name}: matchError() picks the handler by tag`, async () => {
     const s = setup();
     const [, err] = await safe(s.client.post.byId.query({ id: 'nope' }));
-    const handled = matchError(err as { _tag: 'PostNotFound' }, {
-      PostNotFound: () => 'missing',
-    } as never);
+    const handled = matchError(
+      err as { _tag: 'PostNotFound' },
+      {
+        PostNotFound: () => 'missing',
+      } as never,
+    );
     expect(handled).toBe('missing');
   });
 

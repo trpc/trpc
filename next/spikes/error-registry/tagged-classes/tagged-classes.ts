@@ -81,15 +81,22 @@ export function taggedErrors<const C extends ReadonlyArray<AnyTaggedClass>>(
     const tag = String(e._tag);
     const cls = byTag.get(tag);
     if (!cls || !(e instanceof cls)) return undefined;
-    const { _tag, ...fields } = Schema.encodeSync(cls as unknown as Schema.Codec<any, any>)(e);
+    const { _tag, ...fields } = Schema.encodeSync(
+      cls as unknown as Schema.Codec<any, any>,
+    )(e);
     const message = (e as { message?: string }).message || tag;
     return new (wire.get(tag)!)(fields, { message, cause: e });
   };
   return {
     classes,
-    bridge: (async (opts: { next: () => Promise<{ ok: boolean; error?: AnyTrpcError }> }) => {
+    bridge: (async (opts: {
+      next: () => Promise<{ ok: boolean; error?: AnyTrpcError }>;
+    }) => {
       const result = await opts.next();
-      const sent = !result.ok && isTrpcError(result.error) ? toTrpc(result.error.cause) : undefined;
+      const sent =
+        !result.ok && isTrpcError(result.error)
+          ? toTrpc(result.error.cause)
+          : undefined;
       if (sent) throw sent;
       return result;
     }) as never,
@@ -98,10 +105,12 @@ export function taggedErrors<const C extends ReadonlyArray<AnyTaggedClass>>(
     rebuild: (cause) => {
       const cls = byTag.get(cause.code);
       if (!cls) return undefined;
-      return Schema.decodeUnknownSync(cls as unknown as Schema.Codec<any, any>)({
-        ...(cause.data as object),
-        _tag: cause.code,
-      });
+      return Schema.decodeUnknownSync(cls as unknown as Schema.Codec<any, any>)(
+        {
+          ...(cause.data as object),
+          _tag: cause.code,
+        },
+      );
     },
   };
 }

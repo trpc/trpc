@@ -56,13 +56,19 @@ export function errorsToOpenApi(
     readonly description?: string | undefined;
   }>,
 ): OpenApiErrors {
-  const sent = errors.filter((e) => e.status >= 400 && e.status < 600 && e.status !== 499);
+  const sent = errors.filter(
+    (e) => e.status >= 400 && e.status < 600 && e.status !== 499,
+  );
   const schemas = Object.fromEntries(sent.map((e) => [e.tag, errorSchema(e)]));
-  const statuses = [...new Set(sent.map((e) => e.status))].sort();
+  const statuses = [...new Set(sent.map((e) => e.status))].sort(
+    (a, b) => a - b,
+  );
   const responses = Object.fromEntries(
     statuses.map((status) => {
       const members = sent.filter((e) => e.status === status);
-      const refs = members.map((e) => ({ $ref: `#/components/schemas/${e.tag}` }));
+      const refs = members.map((e) => ({
+        $ref: `#/components/schemas/${e.tag}`,
+      }));
       return [
         String(status),
         {
