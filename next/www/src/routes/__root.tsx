@@ -32,6 +32,9 @@ export const Route = createRootRoute({
   head: () => ({
     links: [
       { href: appCss, rel: 'stylesheet' },
+      // The first paint waits for the header: its buttons are pinned right,
+      // so each one a slow device parses after a paint moves those before it.
+      { blocking: 'render', href: '#content', rel: 'expect' },
       { href: '/favicon.ico', rel: 'icon', sizes: '16x16 32x32 48x48' },
       { href: '/favicon.svg', rel: 'icon', type: 'image/svg+xml' },
       { href: '/apple-touch-icon.png', rel: 'apple-touch-icon' },

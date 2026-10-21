@@ -29,8 +29,10 @@ export function SupportedBy() {
       {showPartners ? (
         <div className="flex flex-wrap items-center gap-x-7 gap-y-3">
           {partners.map((partner) => (
+            // As tall as the "more" link, which a slow device can paint the
+            // logos without: their line doesn't move when it's parsed.
             <a
-              className="text-foreground/60 grayscale transition-[color,filter] duration-300 hover:text-foreground hover:grayscale-0"
+              className="flex h-9 items-center text-foreground/60 grayscale transition-[color,filter] duration-300 hover:text-foreground hover:grayscale-0"
               href={partner.link}
               key={partner.login}
               rel="sponsored noopener"
