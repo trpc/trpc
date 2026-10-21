@@ -6,6 +6,10 @@
  * tRPC's own failures.
  */
 import type { Effect, Schema } from 'effect';
+import type {
+  MutationOptionsOut,
+  QueryOptionsOut,
+} from '@trpc12/tanstack-query';
 import type { AnyLink } from '@trpc12/trpc/client';
 import type {
   AnyProcedure,
@@ -16,6 +20,7 @@ import type {
   StandardSchemaV1,
   TaggedErrorClass,
 } from '@trpc12/trpc/server';
+import type { ReactNode } from 'react';
 
 /** What a registry declares for one error, once for the whole backend. */
 export interface ErrorSpec {
@@ -55,11 +60,10 @@ export type Registry<M extends Record<string, ErrorSpec>> = {
   readonly [K in keyof M & string]: ErrorClass<K, M[K]>;
 };
 
-export type ErrorsOf<R> = {
-  [K in keyof R]: R[K] extends abstract new (...args: any) => infer I
-    ? I
-    : never;
-}[keyof R];
+type InstanceOf<C> = C extends abstract new (...args: any) => infer I
+  ? I
+  : never;
+export type ErrorsOf<R> = InstanceOf<R[keyof R]>;
 
 /** tRPC's own failures, a registry like the app's. */
 export type TrpcFailure =
@@ -262,3 +266,106 @@ export declare function createClientG<R>(
   | Exclude<inferRouterErrors<R>, { readonly code: BuiltinErrorCode }>
   | TrpcFailure
 >;
+
+/**
+ * E's error boundaries: `createErrorBoundary` as
+ * `packages/tanstack-react-query/src/error-boundary.ts` builds it, with
+ * claims by tag, checked against a registry, and the fallback's `error`
+ * typed with what it claims (`spikes/error-registry/boundaries/`).
+ */
+type TagOf<R> = (keyof R & string) | TrpcFailure['_tag'];
+type Owned<TTags extends string, TUnexpected extends boolean> =
+  | TTags
+  | (TUnexpected extends true ? UnexpectedTag : never);
+type Remaining<E, TTags extends string, TUnexpected extends boolean> = Exclude<
+  E,
+  { readonly _tag: Owned<TTags, TUnexpected> }
+>;
+
+declare const owned: unique symbol;
+interface RegistryBoundary<TTags extends string, TUnexpected extends boolean> {
+  (props: { readonly children?: ReactNode }): ReactNode;
+  readonly [owned]: {
+    readonly tags: TTags;
+    readonly unexpected: TUnexpected;
+  };
+}
+interface RegistryBoundaryOptions<
+  TTags extends string,
+  TUnexpected extends boolean,
+> {
+  query<TQueryFnData, TError, TData>(
+    options: QueryOptionsOut<TQueryFnData, TError, TData>,
+  ): QueryOptionsOut<
+    TQueryFnData,
+    Remaining<TError, TTags, TUnexpected>,
+    TData
+  >;
+  mutation<TInput, TOutput, TError, TOnMutateResult>(
+    options: MutationOptionsOut<TInput, TOutput, TError, TOnMutateResult>,
+  ): MutationOptionsOut<
+    TInput,
+    TOutput,
+    Remaining<TError, TTags, TUnexpected>,
+    TOnMutateResult
+  >;
+  owns(error: unknown): boolean;
+}
+
+export declare function createErrorBoundaryE<
+  const R extends object,
+  const TTags extends TagOf<R>,
+  TUnexpected extends boolean = false,
+  TParentTags extends string = never,
+  TParentUnexpected extends boolean = false,
+>(spec: {
+  readonly name: string;
+  /** The registry claims are checked against: the merged one, or a module's. */
+  readonly errors: R;
+  readonly parent?: RegistryBoundary<TParentTags, TParentUnexpected>;
+  readonly claims: ReadonlyArray<TTags>;
+  /** Owns tRPC's failures that nothing names: `Internal`, `Timeout`, … */
+  readonly unexpected?: TUnexpected;
+  readonly fallback: (props: {
+    readonly error: Extract<
+      ErrorsOf<R> | TrpcFailure,
+      { readonly _tag: Owned<TTags, TUnexpected> }
+    >;
+    readonly reset: () => void;
+  }) => ReactNode;
+}): readonly [
+  Boundary: RegistryBoundary<
+    TTags | TParentTags,
+    TUnexpected extends true ? true : TParentUnexpected
+  >,
+  useBoundary: () => RegistryBoundaryOptions<
+    TTags | TParentTags,
+    TUnexpected extends true ? true : TParentUnexpected
+  >,
+];
+
+type ProcedureOptions<D extends ProcedureDef, E> = D['type'] extends 'mutation'
+  ? {
+      mutationOptions(): MutationOptionsOut<
+        D['input'],
+        D['output'],
+        E,
+        unknown
+      >;
+    }
+  : {
+      queryOptions(opts: {
+        readonly input: D['input'];
+      }): QueryOptionsOut<D['output'], E, D['output']>;
+    };
+type RegistryQueryUtils<R, E> = {
+  [K in keyof R & string]: R[K] extends AnyProcedure
+    ? ProcedureOptions<Def<R[K]>, E>
+    : RegistryQueryUtils<R[K], ScopeOf<R[K], E>>;
+};
+
+/** E: `createTrpcContext`, its options typed with each call's scope. */
+export declare function createTrpcContextE<R>(): readonly [
+  Provider: (props: { readonly children?: ReactNode }) => ReactNode,
+  useTrpc: () => RegistryQueryUtils<R, ErrorsOfRouter<R>>,
+];

@@ -262,6 +262,7 @@ err?._tag;
 - ✅ B's single declaration, with each module owning its errors, and a call's union closer to what it can do: `post.*` has no `CardDeclined`
 - ✅ The cheapest with the client: 1,189,054 instantiations (785 per procedure, −30% on today's `matchError()`), since each call matches its scope's errors
 - ✅ A single registry is the one-module case, so B is this without `mergeErrors()` and `scope()`
+- ✅ Error boundaries claim tags the registry checks, and a fallback's `error` is what it claims ([Error boundaries](https://v12.trpc.io/v12/decisions/open/error-registry?details=true#error-boundaries), under Details)
 - ❌ A scope is still a module's errors, not a procedure's: `post.list` handles `PostNotFound`
 - ❌ Two calls to learn on top of `createErrors()`, and a procedure that throws another module's error outside its scope sends it, untyped on the client (`unexpected`)
 
@@ -385,3 +386,310 @@ err?._tag;
   - `inferRouterErrors` over a big router carries one `BAD_REQUEST` per procedure input, which G must drop; today's per-procedure unions don't hit it because each call reads only its own.
   - A whole-backend union makes every call's `matchError()` as long as the registry, so the docs would lead with one app-wide handlers object and per-call overrides; that's what the bench measures.
 - **Prior art:** oRPC's error map (`.errors({ NOT_FOUND: { status, data } })` per procedure, a shared map spread in) is A's shape with B's metadata; Effect `HttpApi` (`addError(Class, { status })`) and Effect RPC (`error:` per RPC) are per-endpoint and class-based like C; result-rpc shares one map between middleware and the shell, as E's modules do.
+
+### Error boundaries
+
+How E's union works with `createErrorBoundary` (built in `packages/tanstack-react-query/src/error-boundary.ts`, unexported): the same factory and the same `useAuthBoundary()` with `{ query, infiniteQuery, mutation, owns }`, with `claims` taking the registry's tags instead of codes. Built in [`spikes/error-registry/boundaries/`](../../spikes/error-registry/boundaries/) on the internal boundary as it is, since a registry error's `code` is its tag there; `unexpected: true` claims tRPC's unexpected tags (`Internal`, `Timeout`, `UnknownError`, …) by name. Each example has today's version, with codes, after it.
+
+The registry's version takes the registry the claims are checked against (`errors`, the merged one or a module's), so a fallback's `error` is what it claims:
+
+```tsx twoslash
+// ---cut-start---
+import { z } from 'zod';
+import {
+  createErrorBoundaryE as createErrorBoundary,
+  createErrorsE as createErrors,
+  mergeErrorsE as mergeErrors,
+} from '../open/error-registry.ts';
+const rootErrors = createErrors({
+  Unauthorized: { status: 401 },
+  Forbidden: { status: 403 },
+});
+const postErrors = createErrors({
+  PostNotFound: { status: 404, data: z.object({ id: z.string() }) },
+});
+const billingErrors = createErrors({ CardDeclined: { status: 402 } });
+// ---cut-end---
+const errors = mergeErrors(rootErrors, postErrors, billingErrors);
+
+const [RootBoundary] = createErrorBoundary({
+  name: 'Root',
+  errors,
+  claims: [],
+  unexpected: true,
+  fallback: (props) => props.error._tag,
+  //                               ^?
+});
+const [OfflineBoundary] = createErrorBoundary({
+  name: 'Offline',
+  errors,
+  parent: RootBoundary,
+  claims: ['NetworkError'],
+  fallback: () => 'You are offline',
+});
+const [AuthBoundary, useAuthBoundary] = createErrorBoundary({
+  name: 'Auth',
+  errors,
+  parent: OfflineBoundary,
+  claims: ['Unauthorized', 'Forbidden'],
+  fallback: (props) => `Sign in: ${props.error.message}`,
+  //                                     ^?
+});
+```
+
+```tsx twoslash
+// ---cut-start---
+import { createErrorBoundary } from '../../../../packages/tanstack-react-query/src/error-boundary.ts';
+// ---cut-end---
+// Today: codes, unchecked, and the fallback's error is unknown
+const [RootBoundary] = createErrorBoundary({
+  name: 'Root',
+  claims: [],
+  unexpected: true,
+  fallback: (props) => String(props.error),
+});
+const [OfflineBoundary] = createErrorBoundary({
+  name: 'Offline',
+  parent: RootBoundary,
+  claims: ['NETWORK_ERROR'],
+  fallback: () => 'You are offline',
+});
+const [AuthBoundary, useAuthBoundary] = createErrorBoundary({
+  name: 'Auth',
+  parent: OfflineBoundary,
+  claims: ['UNAUTHORIZED', 'FORBIDDEN'],
+  fallback: (props) => String(props.error),
+  //                                ^?
+});
+```
+
+A query in the posts module's `scope()`. Its union is the root registry's errors, the module's and tRPC's; under `<AuthBoundary>`, which sits in `Offline` and `Root`, the owned tags go, so `matchError()` below it takes `PostNotFound`, `TitleTaken` and `BadResponse` and no `unexpected`:
+
+```tsx twoslash
+// ---cut-start---
+import { useQuery } from '@tanstack/react-query';
+import { z } from 'zod';
+import {
+  createErrorBoundaryE as createErrorBoundary,
+  createErrorsE as createErrors,
+  createTrpcContextE as createTrpcContext,
+  mergeErrorsE as mergeErrors,
+  scopeE as scope,
+  withErrorsE as withErrors,
+} from '../open/error-registry.ts';
+import { t } from './server.ts';
+const rootErrors = createErrors({
+  Unauthorized: { status: 401 },
+  Forbidden: { status: 403 },
+});
+const postErrors = createErrors({
+  PostNotFound: { status: 404, data: z.object({ id: z.string() }) },
+  TitleTaken: { status: 409, data: z.object({ title: z.string() }) },
+});
+const errors = mergeErrors(rootErrors, postErrors);
+const appRouter = withErrors(rootErrors, {
+  posts: scope(postErrors, {
+    byId: t.procedure
+      .input(z.object({ id: z.string() }))
+      .query((opts) => ({ id: opts.input.id, title: 'Hello' })),
+  }),
+});
+const [, useTrpc] = createTrpcContext<typeof appRouter>();
+const [RootBoundary] = createErrorBoundary({
+  name: 'Root',
+  errors,
+  claims: [],
+  unexpected: true,
+  fallback: () => null,
+});
+const [OfflineBoundary] = createErrorBoundary({
+  name: 'Offline',
+  errors,
+  parent: RootBoundary,
+  claims: ['NetworkError'],
+  fallback: () => null,
+});
+const [, useAuthBoundary] = createErrorBoundary({
+  name: 'Auth',
+  errors,
+  parent: OfflineBoundary,
+  claims: ['Unauthorized', 'Forbidden'],
+  fallback: () => null,
+});
+// ---cut-end---
+function PostTitle(props: { id: string }) {
+  const trpc = useTrpc();
+  const options = trpc.posts.byId.queryOptions({ input: { id: props.id } });
+
+  const plain = useQuery(options);
+  plain.error?._tag;
+  //           ^?
+
+  const post = useQuery(useAuthBoundary().query(options));
+  post.error;
+  //   ^?
+  post.error?._tag;
+  //          ^?
+}
+```
+
+```tsx twoslash
+// ---cut-start---
+import { useQuery } from '@tanstack/react-query';
+import { createTrpcContext } from '@trpc12/tanstack-react-query';
+import { z } from 'zod';
+import { createErrorBoundary } from '../../../../packages/tanstack-react-query/src/error-boundary.ts';
+import { authed } from './server.ts';
+const router = {
+  post: {
+    byId: authed
+      .errors({ NOT_FOUND: { data: z.object({ id: z.string() }) } })
+      .input(z.object({ id: z.string() }))
+      .query((opts) => ({ id: opts.input.id, title: 'Hello' })),
+  },
+};
+const [, useTrpc] = createTrpcContext<typeof router>();
+const [RootBoundary] = createErrorBoundary({
+  name: 'Root',
+  claims: [],
+  unexpected: true,
+  fallback: () => null,
+});
+const [OfflineBoundary] = createErrorBoundary({
+  name: 'Offline',
+  parent: RootBoundary,
+  claims: ['NETWORK_ERROR'],
+  fallback: () => null,
+});
+const [, useAuthBoundary] = createErrorBoundary({
+  name: 'Auth',
+  parent: OfflineBoundary,
+  claims: ['UNAUTHORIZED', 'FORBIDDEN'],
+  fallback: () => null,
+});
+// ---cut-end---
+// Today: the procedure's own codes, and every built-in one
+function PostTitle(props: { id: string }) {
+  const trpc = useTrpc();
+  const options = trpc.post.byId.queryOptions({ input: { id: props.id } });
+
+  const plain = useQuery(options);
+  plain.error?.code;
+  //           ^?
+
+  const post = useQuery(useAuthBoundary().query(options));
+  post.error?.code;
+  //          ^?
+}
+```
+
+A mutation under a boundary that claims a tag its union can't have: billing's `CardDeclined` over a posts mutation. It's a no-op, not a type error, since a boundary doesn't know the calls under it; a tag no registry has is one, with TypeScript's "did you mean". Today the same claim isn't a no-op: every call's union has every built-in code, so claiming `PAYMENT_REQUIRED` takes the built-in one out, and a misspelt code compiles and owns nothing:
+
+```tsx twoslash
+// @errors: 2820
+// ---cut-start---
+import { useMutation } from '@tanstack/react-query';
+import { z } from 'zod';
+import {
+  createErrorBoundaryE as createErrorBoundary,
+  createErrorsE as createErrors,
+  createTrpcContextE as createTrpcContext,
+  mergeErrorsE as mergeErrors,
+  scopeE as scope,
+  withErrorsE as withErrors,
+} from '../open/error-registry.ts';
+import { t } from './server.ts';
+const rootErrors = createErrors({ Unauthorized: { status: 401 } });
+const postErrors = createErrors({
+  TitleTaken: { status: 409, data: z.object({ title: z.string() }) },
+});
+const billingErrors = createErrors({ CardDeclined: { status: 402 } });
+const errors = mergeErrors(rootErrors, postErrors, billingErrors);
+const appRouter = withErrors(rootErrors, {
+  posts: scope(postErrors, {
+    rename: t.procedure
+      .input(z.object({ id: z.string(), title: z.string() }))
+      .mutation((opts) => opts.input),
+  }),
+  billing: scope(billingErrors, {
+    charge: t.procedure.mutation(() => ({ ok: true })),
+  }),
+});
+const [, useTrpc] = createTrpcContext<typeof appRouter>();
+// ---cut-end---
+const [, useBillingBoundary] = createErrorBoundary({
+  name: 'Billing',
+  errors,
+  claims: ['CardDeclined'],
+  fallback: (props) => props.error._tag,
+});
+
+function Rename() {
+  const trpc = useTrpc();
+  const rename = useMutation(
+    useBillingBoundary().mutation(trpc.posts.rename.mutationOptions()),
+  );
+  rename.error?._tag; // as without the boundary
+  //            ^?
+}
+
+createErrorBoundary({
+  name: 'Typo',
+  errors,
+  // Not a tag of the registry
+  claims: ['Unauthorised'],
+  fallback: () => null,
+});
+```
+
+```tsx twoslash
+// ---cut-start---
+import { useMutation } from '@tanstack/react-query';
+import { createTrpcContext } from '@trpc12/tanstack-react-query';
+import { z } from 'zod';
+import { createErrorBoundary } from '../../../../packages/tanstack-react-query/src/error-boundary.ts';
+import { authed } from './server.ts';
+const router = {
+  post: {
+    rename: authed
+      .errors({ CONFLICT: { message: 'That title is taken' } })
+      .input(z.object({ id: z.string(), title: z.string() }))
+      .mutation((opts) => opts.input),
+  },
+};
+const [, useTrpc] = createTrpcContext<typeof router>();
+// ---cut-end---
+// Today: every built-in code is in every call's union, so the claim
+// takes the built-in PAYMENT_REQUIRED out; a misspelt code compiles
+const [, useBillingBoundary] = createErrorBoundary({
+  name: 'Billing',
+  claims: ['PAYMENT_REQUIRED'],
+  fallback: () => 'Card declined',
+});
+
+function Rename() {
+  const trpc = useTrpc();
+  const rename = useMutation(
+    useBillingBoundary().mutation(trpc.post.rename.mutationOptions()),
+  );
+  rename.error?.code;
+  //            ^?
+}
+
+createErrorBoundary({
+  name: 'Typo',
+  claims: ['UNAUTHORISED'],
+  fallback: () => null,
+});
+```
+
+Rough edges, each covered by `boundaries.test.ts`:
+
+- **An error thrown outside its scope gets past every boundary.** A posts procedure throwing billing's `CardDeclined` reaches the client rebuilt as `CardDeclined`, but no type under the boundaries has it: `Root` doesn't own it (it isn't one of tRPC's unexpected tags), and the component gets it while `error` says `PostNotFound | TitleTaken | BadResponse`, so a `matchError()` there finds no handler and throws. Today the same throw is `defined: false` and `Root` takes it. The fix is on the server: `scope()` sends a thrown tag outside its scope as `Internal`, as `.errors()` does for undeclared codes today.
+- **Claims are checked against the registry, not the calls below.** Claiming `CardDeclined` over posts components is a silent no-op: the boundary is made before anything under it is known. A module's boundary can pass its module's registry (`errors: postErrors`) to narrow what it may claim.
+- **Every boundary takes `errors`.** It's what checks the claims and types the fallback; a boundary from `createTrpcContext()`'s tuple could carry it instead.
+- **`BadResponse` stays in every component's union** unless a boundary claims it. Today `Root`'s `unexpected: true` owns `BAD_RESPONSE`, which is `defined: false` (so today's `post.error` is `BAD_REQUEST | NOT_FOUND`); in the registry it's a required `matchError()` key, as `NetworkError` is. It could join the unexpected tags.
+- **Hovers depend on how `ErrorsOf` is written.** Mapped and indexed (`{ [K in keyof R]: … }[keyof R]`, the spikes') prints `ErrorsOf<Registry<{ … }>>`; a distributive conditional over `R[keyof R]` (the stub's) prints each `RegistryError<"PostNotFound", { id: string }>`.
+- **A child can re-claim a tag its parent owns**, silently, as with codes today; the child takes it first.
+- **`unexpected: true` is a list of tags**, so a fallback reads `error._tag` from eleven of tRPC's failures and nothing else; a render crash still goes past it, as [error-boundary-render-errors](./error-boundary-render-errors.md) A says.
+- **Not measured:** the boundary's `Exclude` by tag is one pass over a call's union, as today's by code.

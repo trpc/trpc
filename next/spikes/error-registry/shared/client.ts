@@ -50,7 +50,11 @@ declare const errorsKey: unique symbol;
  */
 export type Scoped<E> = { readonly [errorsKey]: (errors: E) => void };
 
-type ScopeOf<R, E> = R extends Scoped<infer S> ? S | E : E;
+/** A subtree's errors: its own scope's, on top of its parent's `E`. */
+export type ScopeOf<R, E> = R extends Scoped<infer S> ? S | E : E;
+
+/** The errors a root router's calls fail with. */
+export type ErrorsOfRouter<R> = R extends Scoped<infer E> ? E : never;
 
 /** The Promise client: every call fails with `E`. */
 export type RegistryClient<R, E> = {
