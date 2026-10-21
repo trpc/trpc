@@ -17,8 +17,10 @@ import {
  * is v12's `TrpcError`, whose `code` is the tag; under the proposal `code`
  * goes and `_tag` is the error's only name.
  */
-export interface RegistryError<TTag extends string, TData = undefined>
-  extends Error {
+export interface RegistryError<
+  TTag extends string,
+  TData = undefined,
+> extends Error {
   readonly _tag: TTag;
   readonly data: TData;
 }
@@ -138,8 +140,7 @@ const fail = (
   cause: unknown,
   message: string,
   data?: unknown,
-) =>
-  new TrpcError({ code: tag, tag, message, data, cause, defined: false });
+) => new TrpcError({ code: tag, tag, message, data, cause, defined: false });
 
 /**
  * What a v12 client rejected with, as a call's union names it. An error a

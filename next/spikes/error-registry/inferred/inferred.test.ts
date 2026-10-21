@@ -4,12 +4,7 @@ import { createClient, safe } from '../shared/client.ts';
 import type { RegistryError, TrpcFailure } from '../shared/failures.ts';
 import { serve } from '../shared/serve.ts';
 import { registrySuite } from '../shared/suite.ts';
-import {
-  appRouter,
-  PostNotFound,
-  TitleTaken,
-  type AppRouter,
-} from './app.ts';
+import { appRouter, PostNotFound, TitleTaken, type AppRouter } from './app.ts';
 import { defineError } from './inferred.ts';
 
 registrySuite('inferred, no registry', { router: appRouter });

@@ -33,9 +33,9 @@ export type AnyTaggedClass = Schema.Top & {
 } & (abstract new (...args: any) => { readonly _tag: string });
 
 type Fields<C extends AnyTaggedClass> = {
-  readonly [K in keyof C['Encoded'] as K extends '_tag'
-    ? never
-    : K]: C['Encoded'][K];
+  readonly [
+    K in keyof C['Encoded'] as K extends '_tag' ? never : K
+  ]: C['Encoded'][K];
 };
 
 /** Class `C`'s errors as v12 sends them: the tag, and the fields as `data`. */
@@ -60,8 +60,7 @@ export interface TaggedRegistry<C extends AnyTaggedClass> {
     effect: Effect.Effect<A, E, R>,
   ) => Effect.Effect<
     A,
-    | SentOf<C, Extract<E, InstanceType<C>>>
-    | Exclude<E, InstanceType<C>>,
+    SentOf<C, Extract<E, InstanceType<C>>> | Exclude<E, InstanceType<C>>,
     R
   >;
 }

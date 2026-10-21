@@ -42,7 +42,8 @@ export const appRouter = {
       .input(byId)
       .query(
         (opts) =>
-          posts.get(opts.input.id) ?? errors.PostNotFound({ id: opts.input.id }),
+          posts.get(opts.input.id) ??
+          errors.PostNotFound({ id: opts.input.id }),
       ),
     byIdEffect: t.procedure.input(byId).query((opts) =>
       Effect.gen(function* () {
@@ -69,7 +70,8 @@ export const appRouter = {
       .input(byId)
       .query(
         (opts) =>
-          posts.get(opts.input.id) ?? errors.PostNotFound({ id: opts.input.id }),
+          posts.get(opts.input.id) ??
+          errors.PostNotFound({ id: opts.input.id }),
       ),
   },
 };

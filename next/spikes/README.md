@@ -8,12 +8,12 @@ Generated fixtures and build output (`generated/`, `dist/`) are gitignored; the 
 
 Scripts are Effect programs on `kit.ts`: `writeFixture` writes a generated fixture, `tscDiagnostics` and `medianDiagnostics` run `tsc --extendedDiagnostics`, `tscBuild` times a `tsc -b --force`, `variantBench` is the shared per-variant typecheck bench, and `runScript` runs an `effect/cli` command (each script takes `--help`).
 
-| Directory               | Run (from here)                                                 | Note                                                                           |
-| ----------------------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------ |
-| `invalidation/`         | `pnpm test` (root)                                              | [invalidation-plugin](../.agent-docs/notes/invalidation-plugin.md)             |
-| `sse-deferred/`         | `pnpm test` (root), `node sse-deferred/measure.ts [items]`      | [sse-nested-deferred](../.agent-docs/notes/sse-nested-deferred.md)             |
-| `durable-resume/`       | `pnpm test` (root)                                              | [durable-mid-stream-resume](../.agent-docs/notes/durable-mid-stream-resume.md) |
-| `tanstack-db-realtime/` | `pnpm test` (root)                                              | [tanstack-db-realtime](../.agent-docs/notes/tanstack-db-realtime.md)           |
-| `live-queries/`         | `pnpm test` (root)                                              | [live-queries](../.agent-docs/notes/live-queries.md)                           |
-| `big-routers/`          | `node big-routers/bench.ts [domains] [perDomain] [used] [runs]` | [large-routers-typeperf](../.agent-docs/notes/large-routers-typeperf.md)       |
-| `error-registry/`       | `pnpm test` (root), `node error-registry/bench.ts --help`       | [error-registry](../.agent-docs/open/error-registry.md) (open)                 |
+| Directory               | Run (from here)                                                                            | Note                                                                           |
+| ----------------------- | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------ |
+| `invalidation/`         | `pnpm test` (root)                                                                         | [invalidation-plugin](../.agent-docs/notes/invalidation-plugin.md)             |
+| `sse-deferred/`         | `pnpm test` (root), `node sse-deferred/measure.ts [items]`                                 | [sse-nested-deferred](../.agent-docs/notes/sse-nested-deferred.md)             |
+| `durable-resume/`       | `pnpm test` (root)                                                                         | [durable-mid-stream-resume](../.agent-docs/notes/durable-mid-stream-resume.md) |
+| `tanstack-db-realtime/` | `pnpm test` (root)                                                                         | [tanstack-db-realtime](../.agent-docs/notes/tanstack-db-realtime.md)           |
+| `live-queries/`         | `pnpm test` (root)                                                                         | [live-queries](../.agent-docs/notes/live-queries.md)                           |
+| `big-routers/`          | `node big-routers/bench.ts [domains] [perDomain] [used] [runs]`                            | [large-routers-typeperf](../.agent-docs/notes/large-routers-typeperf.md)       |
+| `error-registry/`       | `pnpm test` (root), `node error-registry/bench.ts --help`, `node error-registry/bundle.ts` | [error-registry](../.agent-docs/open/error-registry.md) (open)                 |

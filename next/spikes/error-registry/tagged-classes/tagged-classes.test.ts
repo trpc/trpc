@@ -27,7 +27,9 @@ test('types: v12 rejects the classes themselves, returned or failed', () => {
 test('types: mapped per resolver, a call fails with its own errors', async () => {
   const [, byId] = await safe(client.post.byId.query({ id: '1' }));
   expectTypeOf(byId).toEqualTypeOf<
-    RegistryError<'PostNotFound', { readonly id: string }> | TrpcFailure | undefined
+    | RegistryError<'PostNotFound', { readonly id: string }>
+    | TrpcFailure
+    | undefined
   >();
   const [, create] = await safe(client.post.create.mutate({ title: 'x' }));
   expectTypeOf(create?._tag).toEqualTypeOf<

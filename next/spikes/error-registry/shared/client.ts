@@ -62,9 +62,7 @@ export type RegistryEffectClient<R> = {
 };
 
 /** The errors of the call at `R`'s procedure `P`, for tests and helpers. */
-export type ErrorsOfCall<P extends AnyProcedure> = CallError<
-  Def<P>['errors']
->;
+export type ErrorsOfCall<P extends AnyProcedure> = CallError<Def<P>['errors']>;
 
 const proxy = (
   call: (path: ReadonlyArray<string>, args: ReadonlyArray<unknown>) => unknown,

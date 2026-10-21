@@ -11,7 +11,12 @@ import { httpLink, isTrpcError, type AnyLink } from '@trpc12/trpc/client';
 import { createV11Handler } from '@trpc12/trpc/interop';
 import type { AnyRouter } from '@trpc12/trpc/server';
 import { expect, test } from 'vite-plus/test';
-import { createClient, createEffectClient, matchError, safe } from './client.ts';
+import {
+  createClient,
+  createEffectClient,
+  matchError,
+  safe,
+} from './client.ts';
 import { serve } from './serve.ts';
 
 /**
