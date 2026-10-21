@@ -44,9 +44,11 @@ declare const errorsKey: unique symbol;
 /**
  * A router node typed with the errors its subtree's calls fail with, on
  * top of its parent's. A symbol key, type-only, so the router still fits
- * v12's `AnyRouter`.
+ * v12's `AnyRouter`. The value is a function because v12's router walks
+ * (`inferRouterServices`, ctx, errors) descend into every key; a function
+ * has none, so the phantom adds nothing to them.
  */
-export type Scoped<E> = { readonly [errorsKey]?: E };
+export type Scoped<E> = { readonly [errorsKey]: (errors: E) => void };
 
 type ScopeOf<R, E> = R extends Scoped<infer S> ? S | E : E;
 

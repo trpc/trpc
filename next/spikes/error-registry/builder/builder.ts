@@ -51,7 +51,8 @@ export const errors = (): ErrorsBuilder<{}> => make({});
 export const withErrors = <M, R extends AnyRouter>(
   _errors: ErrorsBuilder<M>,
   router: R,
-): R & Scoped<ErrorsOf<M> | TrpcFailure> => router;
+): R & Scoped<ErrorsOf<M> | TrpcFailure> =>
+  router as R & Scoped<ErrorsOf<M> | TrpcFailure>;
 
 type ErrorsOfRouter<R> = R extends Scoped<infer E> ? E : never;
 

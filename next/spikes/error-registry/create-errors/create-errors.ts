@@ -28,7 +28,8 @@ export const createErrors: <const M extends Record<string, ErrorSpec>>(
 export const withErrors = <const E extends Registry, R extends AnyRouter>(
   _errors: E,
   router: R,
-): R & Scoped<ErrorsOf<E> | TrpcFailure> => router;
+): R & Scoped<ErrorsOf<E> | TrpcFailure> =>
+  router as R & Scoped<ErrorsOf<E> | TrpcFailure>;
 
 type ErrorsOfRouter<R> = R extends Scoped<infer E> ? E : never;
 

@@ -112,7 +112,8 @@ export const withErrors = <
 >(
   _errors: TaggedRegistry<C>,
   router: R,
-): R & Scoped<ErrorsOfClasses<C> | TrpcFailure> => router;
+): R & Scoped<ErrorsOfClasses<C> | TrpcFailure> =>
+  router as R & Scoped<ErrorsOfClasses<C> | TrpcFailure>;
 
 type ErrorsOfRouter<R> = R extends Scoped<infer E> ? E : never;
 
