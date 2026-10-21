@@ -21,7 +21,7 @@ import {
 } from '@trpc12/trpc/server';
 import {
   createSerializer,
-  createSyncSerializer,
+  createSyncTransformer,
   jsonTransformer,
   type JsonOf,
 } from '@trpc12/trpc/transformer';
@@ -332,7 +332,7 @@ test('error data follows the serializer like outputs', async () => {
   expect(nativeEffectErr).toMatchObject({ data: { at } });
 });
 
-const superjsonSerializer = createSyncSerializer<
+const superjsonSerializer = createSyncTransformer<
   Date | Map<any, any> | Set<any> | bigint | undefined
 >(superjson);
 
@@ -447,7 +447,7 @@ test('inferRouterOutputs is what a client receives: plain JSON for a router type
 });
 
 test('devalue as a sync transformer', async () => {
-  const devalueSerializer = createSyncSerializer<
+  const devalueSerializer = createSyncTransformer<
     Date | Map<any, any> | Set<any>
   >({
     serialize: devalue.stringify,

@@ -1,7 +1,7 @@
 /**
  * Wire serializers. The default is `jsonTransformer`, plain JSON.
  * `createSerializer()` is a port of [danSON](https://github.com/KATT/danson),
- * and `createSyncSerializer` wraps superjson-style transformers.
+ * and `createSyncTransformer` wraps superjson-style transformers.
  *
  * With danSON, plain JSON stays plain JSON. Non-JSON values (`Date`, `Map`, `Set`,
  * `BigInt`, `undefined`, typed arrays, …) become inline
@@ -53,9 +53,9 @@ export type {
   SyncForm,
 } from '../internal/types.ts';
 export {
-  createSyncSerializer,
+  createSyncTransformer,
   jsonTransformer,
-  type SyncSerializerOptions,
+  type SyncTransformerOptions,
   type SyncTransformer,
 } from './framed.ts';
 export type { FormOfSerializer } from '../internal/types.ts';

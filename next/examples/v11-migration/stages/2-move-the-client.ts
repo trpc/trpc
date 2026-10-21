@@ -12,7 +12,7 @@ export async function run(url: string) {
   const log: CallLog[] = [];
   const client = makeClient({ url, token: 'ada', log });
 
-  // One batch, and createSyncSerializer(superjson) keeps the Dates.
+  // One batch, and createSyncTransformer(superjson) keeps the Dates.
   const [list, first] = await Promise.all([
     client.post.list.query(),
     client.post.byId.query({ id: '1' }),

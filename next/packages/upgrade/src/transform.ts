@@ -172,7 +172,7 @@ const NAME_NOTES: Readonly<Record<string, string>> = {
 
 const ROOT_OPTION_NOTES: Readonly<Record<string, string>> = {
   transformer:
-    'transformer: drop it here; pass the same createSyncSerializer(transformer) to the handler and every link',
+    'transformer: drop it here; pass the same createSyncTransformer(transformer) to the handler and every link',
   errorFormatter:
     'errorFormatter: declare errors with .errors() or TrpcError.Tagged; createV11Handler({ errorFormatter }) keeps old clients working',
   isDev: 'isDev: use the handler option exposeUnexpectedErrors',
@@ -489,20 +489,20 @@ export function upgradeSource(
     for (const prop of object['properties'] as Node[]) {
       const name = keyName(prop);
       if (name === 'transformer') {
-        ensure('@trpc12/trpc/transformer', 'createSyncSerializer');
+        ensure('@trpc12/trpc/transformer', 'createSyncTransformer');
         if (prop['shorthand']) {
           take(
             prop.start,
             prop.end,
-            'serializer: createSyncSerializer(transformer)',
+            'serializer: createSyncTransformer(transformer)',
           );
         } else {
           s.overwrite(prop['key'].start, prop['key'].end, 'serializer');
-          s.appendLeft(prop['value'].start, 'createSyncSerializer(');
+          s.appendLeft(prop['value'].start, 'createSyncTransformer(');
           s.appendRight(prop['value'].end, ')');
           note(
             prop.start,
-            'createSyncSerializer<…>(transformer): list the types it rebuilds, https://v12.trpc.io/v12/docs/server/serializers',
+            'createSyncTransformer<…>(transformer): list the types it rebuilds, https://v12.trpc.io/v12/docs/server/serializers',
           );
         }
       } else if (name === 'maxURLLength') {

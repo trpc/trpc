@@ -12,7 +12,7 @@ pnpm client                      # …and the client against http://localhost:30
 
 | File        | What's in it                                                                                                                                                                     |
 | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `server.ts` | `listen(port)`: one store behind two handlers on one `HttpRouter`, `/trpc` (danSON, batching) and `/sync` (`createSyncSerializer(superjson)`).                                   |
+| `server.ts` | `listen(port)`: one store behind two handlers on one `HttpRouter`, `/trpc` (danSON, batching) and `/sync` (`createSyncTransformer(superjson)`).                                  |
 | `client.ts` | `main(url)`: four clients (danSON batched, danSON binary frames, superjson, Effect) driving every feature below.                                                                 |
 | `start.ts`  | Starts the server, runs the client, and stops the server.                                                                                                                        |
 | `router.ts` | The procedures, written in Effect (Effect Schema inputs, services from the layer), plus one async generator, the v11 way.                                                        |
@@ -35,4 +35,4 @@ pnpm client                      # …and the client against http://localhost:30
 
 - The photos are PNG headers only (signature and `IHDR`), which is all the pipeline reads. Each step sleeps `STEP_LATENCY` (40ms) to stand in for real work, and the client's timing checks use the same constant.
 - A client that stops reading ends an Effect `Stream` early, and `Stream.onExit` sees a success exit for that, as it does for `Stream.take`. The upload's status compares what was stored with the total to tell the two apart.
-- Building this example found that `createSyncSerializer` and the default JSON serializer sent a `File` nested in an input as `{}` (the server then failed input validation), where the docs say they fail before sending. That is fixed in `@trpc12/trpc`'s `transformer/framed.ts`.
+- Building this example found that `createSyncTransformer` and the default JSON serializer sent a `File` nested in an input as `{}` (the server then failed input validation), where the docs say they fail before sending. That is fixed in `@trpc12/trpc`'s `transformer/framed.ts`.

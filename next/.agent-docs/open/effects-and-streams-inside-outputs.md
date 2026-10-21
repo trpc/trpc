@@ -123,4 +123,4 @@ const feed = t.procedure.query(() => ({
 
 - Measured on `v12` with a fetch handler and `httpLink`: `{ items: Stream.make(1, 2, 3) }` arrives as `{ items: { channel: {} } }`, and `{ later: Effect.succeed(42) }` as `{ later: { _id: 'Exit', _tag: 'Success', value: 42 } }`. A nested async generator streams `[1, 2]`.
 - The v11 interop handler (`interop/handler/jsonl.ts`) and `middleware/durable.ts` detect nested `Effect`s and `Stream`s as deferred.
-- With B, danSON and the framed serializers (`jsonTransformer`, `createSyncSerializer`) find nested values in the same single pass as today ([`nested-deferred-values-kept.md`](../decisions/nested-deferred-values-kept.md)). The work is turning each one into its deferred form in the call's fiber.
+- With B, danSON and the framed serializers (`jsonTransformer`, `createSyncTransformer`) find nested values in the same single pass as today ([`nested-deferred-values-kept.md`](../decisions/nested-deferred-values-kept.md)). The work is turning each one into its deferred form in the call's fiber.

@@ -5,7 +5,7 @@
  */
 import {
   createSerializer,
-  createSyncSerializer,
+  createSyncTransformer,
 } from '@trpc12/trpc/transformer';
 import type { CustomType } from '@trpc12/trpc/transformer';
 import SuperJSON from 'superjson';
@@ -64,6 +64,6 @@ superjson.registerCustom<Money, string>(
  * superjson, the way a v11 app's `transformer` worked. It rebuilds the types
  * listed here; files only travel as a whole, unbatched output.
  */
-export const sync = createSyncSerializer<
+export const sync = createSyncTransformer<
   Date | Money | ReadonlySet<unknown> | ReadonlyMap<unknown, unknown>
 >(superjson);

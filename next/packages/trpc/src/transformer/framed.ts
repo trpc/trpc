@@ -297,11 +297,11 @@ function framedSerializer(
 }
 
 /**
- * Options for {@link createSyncSerializer}.
+ * Options for {@link createSyncTransformer}.
  * @since 0.1.0
  * @stability stable
  */
-export interface SyncSerializerOptions {
+export interface SyncTransformerOptions {
   /**
    * Names the format in the `trpc-serializer` header, so a link with another
    * serializer fails clearly.
@@ -322,16 +322,16 @@ export interface SyncSerializerOptions {
  * @example
  * ```ts
  * import superjson from 'superjson';
- * export const serializer = createSyncSerializer<Date | Map<any, any> | Set<any> | bigint | undefined>(superjson, { name: 'superjson' });
+ * export const serializer = createSyncTransformer<Date | Map<any, any> | Set<any> | bigint | undefined>(superjson, { name: 'superjson' });
  * createFetchHandler({ router, serializer });
  * httpLink({ url, serializer }); // client types keep Date, Map, Set, bigint
  * ```
  * @since 0.1.0
  * @stability stable
  */
-export function createSyncSerializer<TKeeps = never>(
+export function createSyncTransformer<TKeeps = never>(
   transformer: SyncTransformer,
-  opts: SyncSerializerOptions = {},
+  opts: SyncTransformerOptions = {},
 ): Serializer<SyncForm<TKeeps>> {
   return framedSerializer(opts.name ?? 'sync', 'sync', transformer);
 }

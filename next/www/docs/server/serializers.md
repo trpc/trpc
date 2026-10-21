@@ -8,11 +8,11 @@ v11: server/data-transformers
 
 The serializer turns inputs and outputs into JSON on the wire. The default is plain JSON. To keep more types, pass the same serializer to the handler and to every link:
 
-| Serializer                        | Keeps                                                        |
-| --------------------------------- | ------------------------------------------------------------ |
-| `jsonTransformer`, the default    | plain JSON                                                   |
-| `createSerializer()`, danSON      | `Date`, `Map`, `Set`, `bigint`, `undefined`, `URL`, files, … |
-| `createSyncSerializer(superjson)` | what the transformer knows (superjson, devalue, your own)    |
+| Serializer                         | Keeps                                                        |
+| ---------------------------------- | ------------------------------------------------------------ |
+| `jsonTransformer`, the default     | plain JSON                                                   |
+| `createSerializer()`, danSON       | `Date`, `Map`, `Set`, `bigint`, `undefined`, `URL`, files, … |
+| `createSyncTransformer(superjson)` | what the transformer knows (superjson, devalue, your own)    |
 
 Every serializer streams deferred values: a procedure can return promises, generators and `ReadableStream`s at any depth, and each value goes through the serializer as it settles.
 
@@ -44,13 +44,13 @@ const client = createTrpcClient({
 
 ```ts twoslash
 // ---cut-start---
-import { createSyncSerializer } from '@trpc12/trpc/transformer';
+import { createSyncTransformer } from '@trpc12/trpc/transformer';
 import superjson from 'superjson';
 // ---cut-end---
-export const serializer = createSyncSerializer<
+export const serializer = createSyncTransformer<
   Date | Map<any, any> | Set<any> | bigint | undefined
 >(superjson);
-// devalue: createSyncSerializer({ serialize: devalue.stringify, deserialize: devalue.parse })
+// devalue: createSyncTransformer({ serialize: devalue.stringify, deserialize: devalue.parse })
 ```
 
 If the two ends disagree, calls fail with `UNSUPPORTED_PROTOCOL`, with a message naming both serializers. Over HTTP the handler names its serializer in the `trpc-serializer` response header and `httpLink` checks it, after the server ran the call. `wsLink` names its own in the connection's `init` message: the server answers with its own and runs none of that connection's calls on a mismatch.

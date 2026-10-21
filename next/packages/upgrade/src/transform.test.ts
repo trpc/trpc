@@ -80,7 +80,7 @@ const t = initTRPC.create({
 `),
     ).toMatchInlineSnapshot(`
       [
-        "4:3 transformer: drop it here; pass the same createSyncSerializer(transformer) to the handler and every link",
+        "4:3 transformer: drop it here; pass the same createSyncTransformer(transformer) to the handler and every link",
         "5:3 errorFormatter: declare errors with .errors() or TrpcError.Tagged; createV11Handler({ errorFormatter }) keeps old clients working",
         "6:3 isDev: use the handler option exposeUnexpectedErrors",
       ]
@@ -232,7 +232,7 @@ export const isTrpcError = (e: unknown) => e instanceof TRPCClientError;
       "import { createTrpcClient, httpLink, splitLink, TrpcError, routerType } from '@trpc12/trpc/client';
       import superjson from 'superjson';
       import type { AppRouter } from './server';
-      import { createSyncSerializer } from '@trpc12/trpc/transformer';
+      import { createSyncTransformer } from '@trpc12/trpc/transformer';
 
       const transformer = superjson;
 
@@ -241,8 +241,8 @@ export const isTrpcError = (e: unknown) => e instanceof TRPCClientError;
         links: [
           splitLink({
             condition: (op) => op.type === 'subscription',
-            true: httpLink({ url: '/trpc', serializer: createSyncSerializer(transformer) }),
-            false: httpLink({ batch: true, url: '/trpc', serializer: createSyncSerializer(superjson), maxUrlLength: 2083 }),
+            true: httpLink({ url: '/trpc', serializer: createSyncTransformer(transformer) }),
+            false: httpLink({ batch: true, url: '/trpc', serializer: createSyncTransformer(superjson), maxUrlLength: 2083 }),
           }),
         ],
       });

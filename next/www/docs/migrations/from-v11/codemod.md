@@ -31,7 +31,7 @@ The rest it leaves as is and prints as `file:line:column` steps, with the v12 wa
 
 ```
 would upgrade src/server/trpc.ts
-src/server/trpc.ts:4:3 transformer: drop it here; pass the same createSyncSerializer(transformer) to the handler and every link
+src/server/trpc.ts:4:3 transformer: drop it here; pass the same createSyncTransformer(transformer) to the handler and every link
 src/server/index.ts:1:1 observable(): subscriptions return an async generator or an Effect Stream; a v11 link keeps it under fromV11Link
 1 file(s) to upgrade, 2 step(s) by hand
 ```

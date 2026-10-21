@@ -30,12 +30,12 @@ const files = [
 const steps = [
   'app/client/app.tsx:20:47 TrpcProvider takes client only; the queryClient goes to QueryClientProvider',
   'app/client/app.tsx:31:49 queryOptions(input, opts) is queryOptions({ input, ...opts }) in v12',
-  'app/client/client.ts:27:11 createSyncSerializer<…>(transformer): list the types it rebuilds, https://v12.trpc.io/v12/docs/server/serializers',
+  'app/client/client.ts:27:11 createSyncTransformer<…>(transformer): list the types it rebuilds, https://v12.trpc.io/v12/docs/server/serializers',
   'app/client/client.ts:28:11 EventSource: httpLink streams SSE over fetch; use headers or init',
-  'app/client/client.ts:32:11 createSyncSerializer<…>(transformer): list the types it rebuilds, https://v12.trpc.io/v12/docs/server/serializers',
+  'app/client/client.ts:32:11 createSyncTransformer<…>(transformer): list the types it rebuilds, https://v12.trpc.io/v12/docs/server/serializers',
   'app/client/client.ts:42:20 createWSClient: pass its options to wsLink({ url })',
   'app/client/client.ts:47:22 wsLink({ url, connectionParams }) replaces createWSClient + wsLink({ client })',
-  'app/client/client.ts:47:40 createSyncSerializer<…>(transformer): list the types it rebuilds, https://v12.trpc.io/v12/docs/server/serializers',
+  'app/client/client.ts:47:40 createSyncTransformer<…>(transformer): list the types it rebuilds, https://v12.trpc.io/v12/docs/server/serializers',
   'app/client/links.ts:1:15 TRPCLink: stays on @trpc/client; keep the link with fromV11Link(link) from @trpc12/trpc/interop, or rewrite it with link() as an Effect Stream function',
   'app/client/links.ts:2:1 observable(): subscriptions return an async generator or an Effect Stream; a v11 link keeps it under fromV11Link',
   'app/client/queries.ts:9:16 createTrpcQueryUtils({ client }): the queryClient goes to QueryClientProvider',
@@ -43,7 +43,7 @@ const steps = [
   'app/server/index.ts:7:12 createFetchHandler: make the handler once, outside the request function; createContext gets { request, info }; old clients: createV11Handler on this endpoint, createFetchHandler on another (https://v12.trpc.io/v12/docs/migrations/from-v11/serve-v11-clients)',
   'app/server/router.ts:27:27 lastEventId: v12 passes it to the resolver as opts.lastEventId; v12 clients send subscribe(input, { lastEventId })',
   'app/server/router.ts:28:37 lastEventId: v12 passes it to the resolver as opts.lastEventId; v12 clients send subscribe(input, { lastEventId })',
-  'app/server/trpc.ts:7:3 transformer: drop it here; pass the same createSyncSerializer(transformer) to the handler and every link',
+  'app/server/trpc.ts:7:3 transformer: drop it here; pass the same createSyncTransformer(transformer) to the handler and every link',
   'app/server/trpc.ts:8:3 errorFormatter: declare errors with .errors() or TrpcError.Tagged; createV11Handler({ errorFormatter }) keeps old clients working',
   'app/server/trpc.ts:22:23 t.router: a router is a plain object in v12; router(routes) is routes, and t.router({ meta }, routes) takes router meta first',
 ];
@@ -111,7 +111,7 @@ export function run() {
       !client.includes('httpBatchLink') &&
         !client.includes('httpSubscriptionLink'),
     );
-    ok(client.includes('serializer: createSyncSerializer(superjson)'));
+    ok(client.includes('serializer: createSyncTransformer(superjson)'));
     ok(read('client/links.ts') === before.get('client/links.ts'));
 
     const app = read('client/app.tsx');

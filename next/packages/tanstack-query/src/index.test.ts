@@ -25,7 +25,7 @@ import {
 } from '@trpc12/trpc/client';
 import {
   createSerializer,
-  createSyncSerializer,
+  createSyncTransformer,
   type DansonForm,
 } from '@trpc12/trpc/transformer';
 import {
@@ -900,7 +900,7 @@ test('prefetch on the server, hydrate rich types in the browser', async () => {
 
 test("hydration follows the client's serializer (19)", async () => {
   await using _app = await createApp();
-  const serializer = createSyncSerializer<Date>(superjson);
+  const serializer = createSyncTransformer<Date>(superjson);
   const client = createTrpcClient({
     router: routerType<typeof appRouter>(),
     links: [
