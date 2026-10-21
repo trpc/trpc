@@ -13,6 +13,10 @@ import type {
 } from '../../internal/types.ts';
 import { jsonSerializer, type AnySerializer } from '../../serializer/index.ts';
 import {
+  deserializeStream,
+  serializeDeferred,
+} from '../../serializer/deferred.ts';
+import {
   callProcedure,
   createResponseHandle,
   inProcessOutput,
@@ -173,12 +177,13 @@ export function localLink<TRouter extends AnyRouter>(
           ) {
             return Stream.make(data);
           }
-          const serialized = serializer.serializeDeferred(data, {
+          const serialized = serializeDeferred(serializer, data, {
             coerceError: (cause) =>
               toWireError(isTrpcError(cause) ? cause : unexpectedError(cause)),
           });
           return Stream.fromEffect(
-            serializer.deserializeStream(
+            deserializeStream(
+              serializer,
               serialized.chunks
                 ? Stream.concat(Stream.make(serialized.head), serialized.chunks)
                 : Stream.make(serialized.head),

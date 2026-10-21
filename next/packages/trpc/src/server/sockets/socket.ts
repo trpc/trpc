@@ -32,6 +32,7 @@ import {
 } from '../../internal/protocol.ts';
 import type { ProcedureType } from '../../internal/types.ts';
 import type { AnySerializer } from '../../serializer/index.ts';
+import { serializeDeferred } from '../../serializer/deferred.ts';
 import {
   emitEvents,
   type EventFrame,
@@ -457,7 +458,7 @@ export const connectionReceiver: (
             if (!parked) yield* conn.send({ id, type: 'done' });
             return;
           }
-          const serialized = core.serializer.serializeDeferred(exit.value, {
+          const serialized = serializeDeferred(core.serializer, exit.value, {
             coerceError: coerceError(path, kind),
           });
           if (!serialized.chunks) {

@@ -4,6 +4,7 @@ import { statusOf, type AnyTrpcError } from '../../internal/error.ts';
 import { blobHeaders } from '../../internal/protocol.ts';
 import type { ProcedureType } from '../../internal/types.ts';
 import type { Chunk, Frame } from '../../serializer/danson/index.ts';
+import { serializeDeferred } from '../../serializer/deferred.ts';
 import {
   createResponseHandle,
   CurrentFrameSink,
@@ -104,7 +105,7 @@ export const execute = (
       return { status, body: undefined, blob: value, headers };
     }
     try {
-      const serialized = handler.serializer.serializeDeferred(value, {
+      const serialized = serializeDeferred(handler.serializer, value, {
         coerceError: coerceError(handler, request, path, type),
       });
       const { chunks } = serialized;

@@ -2,6 +2,7 @@ import { Effect, FiberSet, Stream } from 'effect';
 import { isTrpcError, type AnyTrpcError } from '../../internal/error.ts';
 import type { AnySerializer } from '../../serializer/index.ts';
 import type { Chunk } from '../../serializer/danson/index.ts';
+import { serializeDeferred } from '../../serializer/deferred.ts';
 import { unexpectedError } from './execute.ts';
 import { isTracked } from '../subscriptions/index.ts';
 
@@ -42,7 +43,7 @@ export const emitEvents: (
       events,
       Effect.fnUntraced(function* (event) {
         const serialized = yield* Effect.try({
-          try: () => serializer.serializeDeferred(event, { coerceError }),
+          try: () => serializeDeferred(serializer, event, { coerceError }),
           catch: (cause) =>
             isTrpcError(cause) ? cause : unexpectedError(cause),
         });
