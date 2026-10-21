@@ -984,6 +984,7 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
       | Exclude<TDef['requires'], Scope.Scope>
       | Exclude<SplitReturn<$Ret>['services'], TDef['provided'] | Scope.Scope>;
     outputValidated: TDef['outputValidated'];
+    declared: TDef['declared'];
   }>;
 
   /**
@@ -1009,6 +1010,7 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
       | Exclude<TDef['requires'], Scope.Scope>
       | Exclude<SplitReturn<$Ret>['services'], TDef['provided'] | Scope.Scope>;
     outputValidated: TDef['outputValidated'];
+    declared: TDef['declared'];
   }>;
 
   /**
@@ -1042,6 +1044,7 @@ export interface ProcedureBuilder<TDef extends BuilderDef> {
       | TDef['requires']
       | Exclude<SplitStream<$Ret>['services'], TDef['provided']>;
     outputValidated: TDef['outputValidated'];
+    declared: TDef['declared'];
   }>;
 }
 

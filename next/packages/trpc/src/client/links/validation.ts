@@ -157,7 +157,7 @@ const isEnvelope = (value: unknown): value is { id: string; data: unknown } =>
  * validation does, rather than failing the call. Inputs from functions
  * (context-aware) and streamed (`stream()`) outputs are not checked. Paths
  * the contract doesn't have pass through. With `output: 'json'` the client
- * types what it decodes (results and declared errors' `data` of
+ * types what it decodes (results and `.errors()`-declared errors' `data` of
  * `contract`'s procedures with an output schema that validates) as the
  * schemas' types again, not the JSON form plain-JSON links declare;
  * everything else, streamed outputs included, keeps its JSON form.

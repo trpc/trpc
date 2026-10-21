@@ -108,6 +108,7 @@ export type ImplementedProcedure<
   errors: ContractDefOf<TContract>['errors'];
   services: TDef['requires'] | Exclude<TServices, TDef['provided']>;
   outputValidated: ContractDefOf<TContract>['outputValidated'];
+  declared: ContractDefOf<TContract>['declared'];
 }>;
 
 // The same split as the builder's terminals: see `Returns`.

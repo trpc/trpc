@@ -546,6 +546,53 @@ export type DecodedForm<
   : F;
 
 /**
+ * Procedure `P`'s def on a chain whose links decode with contract node
+ * `C`, links' form `F`: where its results are decoded ({@link DecodedForm}),
+ * errors whose code `C` doesn't declare with `.errors()` keep their `data`
+ * in `F`, since the link has no schema to decode it with. A form that
+ * keeps every type needs nothing.
+ * @internal
+ */
+export type DecodedDef<P, C, F extends OutputForm> = F['streaming'] extends true
+  ? ProcedureDefOf<P>
+  : C extends {
+        readonly '~trpc': {
+          readonly '~types'?: {
+            readonly outputValidated: infer V;
+            readonly declared?: infer M;
+          };
+        };
+      }
+    ? true extends V
+      ? ProcedureDefOf<P>['output'] extends AsyncIterable<any>
+        ? ProcedureDefOf<P>
+        : UndecodedErrors<ProcedureDefOf<P>, keyof M, F>
+      : ProcedureDefOf<P>
+    : ProcedureDefOf<P>;
+
+/** `D` with the `data` of errors whose code isn't one of `TCodes` in form `F`. */
+interface UndecodedErrors<
+  D extends ProcedureDef,
+  TCodes,
+  F extends OutputForm,
+> {
+  type: D['type'];
+  ctx: D['ctx'];
+  meta: D['meta'];
+  input: D['input'];
+  output: D['output'];
+  errors: EncodedErrors<D['errors'], TCodes, F>;
+  services: D['services'];
+}
+
+type EncodedErrors<E, TCodes, F extends OutputForm> =
+  E extends TrpcError<infer C, infer D, infer T>
+    ? C extends TCodes
+      ? E
+      : TrpcError<C, ErrorData<D, F>, T>
+    : E;
+
+/**
  * The child of contract node `C` at key `K`, walked beside the router;
  * `{}` (no procedures) where the contract has none.
  * @internal
@@ -568,7 +615,7 @@ type DecodingRouter<
 > = {
   [K in keyof TRouter]: TRouter[K] extends AnyProcedure
     ? DecorateDef<
-        ProcedureDefOf<TRouter[K]>,
+        DecodedDef<TRouter[K], ContractAt<C, K>, F>,
         TContext,
         DecodedForm<TRouter[K], ContractAt<C, K>, F, TDecoded>,
         TLinks

@@ -88,7 +88,7 @@ if (err?.code === 'POST_NOT_FOUND') {
 }
 ```
 
-An error whose `data` doesn't match its schema doesn't fail the call: it arrives undeclared (`defined: false`), as if the server hadn't declared it. A custom code keeps its `data` untyped, an [`UndeclaredError`](./errors.md) that `matchError()` hands to `unexpected`; a built-in code like `NOT_FOUND` loses it. Errors the procedure doesn't declare with a schema pass through as they arrive.
+An error whose `data` doesn't match its schema doesn't fail the call: it arrives undeclared (`defined: false`), as if the server hadn't declared it. A custom code keeps its `data` untyped, an [`UndeclaredError`](./errors.md) that `matchError()` hands to `unexpected`; a built-in code like `NOT_FOUND` loses it. Errors the procedure doesn't declare with a schema pass through as they arrive, and keep their JSON types: a `Date` in a returned `error({ code, data })` that `.errors()` doesn't list is a `string`.
 
 See [Contract-first](../server/contract-first.md) for writing the contract, and [Calling REST from the client](../openapi/client.md) for `experimental_openApiLink`.
 

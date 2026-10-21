@@ -82,6 +82,12 @@ export interface ProcedureDef {
    * with `output: 'json'` decodes.
    */
   outputValidated?: true;
+  /**
+   * Type only: the errors `.errors()` declares, by code. Their schemas are
+   * what `experimental_validationLink` decodes errors' `data` with, so
+   * only these codes' `data` is typed decoded behind it.
+   */
+  declared?: object;
 }
 
 /** @internal */

@@ -167,6 +167,7 @@ export interface ContractProcedureDef<
   errors: TDef['errors'];
   services: never;
   outputValidated: TDef['outputOut'] extends Unset ? never : true;
+  declared: TDef['declared'];
   contract: TDef;
 }
 

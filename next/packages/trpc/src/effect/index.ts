@@ -48,6 +48,7 @@ import type {
   Carries,
   ChainTypes,
   ContractAt,
+  DecodedDef,
   DecodedForm,
   DecodedFormOf,
   Decodes,
@@ -201,7 +202,7 @@ type DecodingEffectRouter<
 > = {
   [K in keyof TRouter]: TRouter[K] extends AnyProcedure
     ? DecorateEffectDef<
-        ProcedureDefOf<TRouter[K]>,
+        DecodedDef<TRouter[K], ContractAt<C, K>, F>,
         TContext,
         TLinks,
         DecodedForm<TRouter[K], ContractAt<C, K>, F, TDecoded>

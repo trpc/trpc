@@ -264,6 +264,45 @@ test("output: 'json' decodes declared errors' data with their schemas, and types
   expectTypeOf(keptErr.data.deletedAt).toEqualTypeOf<Date>();
 });
 
+test("output: 'json' types the data of errors it has no schema for in its JSON form, as it arrives", async () => {
+  const p = initTrpc();
+  const appRouter = {
+    returned: p.procedure
+      .output(Post)
+      .query(() => error({ code: 'EXPIRED', data: { at } })),
+    declared: p.procedure
+      .output(Post)
+      .errors({ POST_GONE: PostGone })
+      .query(() => new PostGone({ id: '1', deletedAt: at })),
+  } satisfies AnyRouter;
+  await using http = await createTestServer({ router: appRouter });
+  const links = [
+    experimental_validationLink({ contract: appRouter, output: 'json' }),
+    httpLink({ url: http.url }),
+  ] as const;
+  const client = createTrpcClient({ router: appRouter, links: [...links] });
+
+  const [, returned] = await safe(client.returned.query());
+  if (returned?.code !== 'EXPIRED') throw new Error('expected EXPIRED');
+  expect(returned.data.at).toBe(at.toISOString());
+  expectTypeOf(returned.data.at).toEqualTypeOf<string>();
+  const [, declared] = await safe(client.declared.query());
+  if (declared?.code !== 'POST_GONE') throw new Error('expected POST_GONE');
+  expect(declared.data.deletedAt).toEqual(at);
+  expectTypeOf(declared.data.deletedAt).toEqualTypeOf<Date>();
+
+  const effectClient = createEffectClient({
+    router: appRouter,
+    links: [...links],
+  });
+  const failed = await Effect.runPromise(
+    Effect.flip(effectClient.returned.query()),
+  );
+  if (failed.code !== 'EXPIRED') throw failed;
+  expect(failed.data.at).toBe(at.toISOString());
+  expectTypeOf(failed.data.at).toEqualTypeOf<string>();
+});
+
 test("a declared error whose data fails its schema arrives undeclared, as oRPC's response validation does, not as BAD_RESPONSE", async () => {
   const p = initTrpc();
   await using http = await createTestServer({
