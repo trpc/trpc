@@ -168,12 +168,12 @@ export type AtomClientOptions<
  *
  * @example
  * ```ts
- * const schema = AsyncResult.Schema({ success: serializerSchema(createSerializer()) });
+ * const schema = AsyncResult.Schema({ success: transformerSchema(createSerializer()) });
  * ```
  * @since 0.1.0
  * @stability experimental
  */
-export function serializerSchema(
+export function transformerSchema(
   serializer: AnyTransformer,
 ): Schema.Codec<unknown, Schema.Json> {
   return Schema.Json.pipe(
@@ -285,7 +285,7 @@ export function createAtomClient(opts: {
     getClientTransformer(createTrpcClient(opts)) ??
     jsonTransformer;
   const resultSchema = AsyncResult.Schema({
-    success: serializerSchema(serializer),
+    success: transformerSchema(serializer),
   });
   const runtime = Atom.runtime(Layer.empty);
 
