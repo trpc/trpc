@@ -526,12 +526,12 @@ export const connectionReceiver: (
               : undefined;
             if (message.binary === true) conn.acceptBinary?.();
             refused =
-              typeof message.serializer === 'string' &&
-              message.serializer !== core.transformer.name;
+              typeof message.transformer === 'string' &&
+              message.transformer !== core.transformer.name;
             if (!refused) opts.onInit?.(connectionParams);
             return conn.send({
               type: 'init',
-              serializer: core.transformer.name,
+              transformer: core.transformer.name,
             });
           }
           case 'ping':

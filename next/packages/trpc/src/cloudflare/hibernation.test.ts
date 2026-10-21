@@ -807,7 +807,7 @@ test('connection tokens fail with UNAUTHORIZED when missing, tampered with or ex
   });
   await vi.waitFor(() =>
     expect(rejected.sent).toEqual([
-      { type: 'init', serializer: 'json' },
+      { type: 'init', transformer: 'json' },
       expect.objectContaining({ id: 1, type: 'error' }),
     ]),
   );

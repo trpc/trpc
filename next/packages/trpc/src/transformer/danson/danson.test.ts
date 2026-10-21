@@ -348,7 +348,7 @@ test('a streamed head the client cannot read fails the call instead of hanging',
           new Response('{"json":{"_":"$","type":"Nope"}}\n[0,0,{"json":1}]\n', {
             headers: {
               'content-type': 'application/jsonl',
-              'trpc-serializer': danson.name,
+              'trpc-transformer': danson.name,
               'trpc-version': '12',
             },
           }),
@@ -483,7 +483,7 @@ test('forged streams: bad or missing file bytes, bare refs, unreadable frames an
               {
                 headers: {
                   'content-type': 'application/jsonl',
-                  'trpc-serializer': danson.name,
+                  'trpc-transformer': danson.name,
                   'trpc-version': '12',
                 },
               },
@@ -548,7 +548,7 @@ test('forged streams: bad or missing file bytes, bare refs, unreadable frames an
             {
               headers: {
                 'content-type': 'application/jsonl',
-                'trpc-serializer': danson.name,
+                'trpc-transformer': danson.name,
                 'trpc-version': '12',
               },
             },

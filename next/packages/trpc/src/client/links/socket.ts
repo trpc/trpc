@@ -227,11 +227,11 @@ function makeSocketLink(
       conn.received++;
       if (message.type === 'pong') return Effect.void;
       if (message.type === 'init') {
-        if (message.serializer === transformer.name) return Effect.void;
+        if (message.transformer === transformer.name) return Effect.void;
         const error = new TrpcError({
           code: 'UNSUPPORTED_PROTOCOL',
           tag: 'TransformerMismatch',
-          message: `The server uses the '${message.serializer}' transformer, but this ${transport.name} uses '${transformer.name}'. Pass the same transformer to the handler and ${transport.name}.`,
+          message: `The server uses the '${message.transformer}' transformer, but this ${transport.name} uses '${transformer.name}'. Pass the same transformer to the handler and ${transport.name}.`,
         });
         conn.refused = error;
         for (const { inbox } of conn.calls.values())
@@ -373,7 +373,7 @@ function makeSocketLink(
       version: PROTOCOL_VERSION,
       ...(params ? { connectionParams: params } : {}),
       ...(transport.binary ? { binary: true } : {}),
-      serializer: transformer.name,
+      transformer: transformer.name,
     });
     if (transport.keepAlive) {
       yield* Effect.forkScoped(keepAlive(conn, transport.keepAlive));

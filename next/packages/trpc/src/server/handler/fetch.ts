@@ -163,7 +163,7 @@ export type RuntimeOption<TServices> = ([TServices] extends [never]
 export interface TransformerOption {
   /**
    * The wire format. Links must use the same one; a link with another fails
-   * with an error naming both (`trpc-serializer` header). Client types
+   * with an error naming both (`trpc-transformer` header). Client types
    * follow the link's transformer.
    * @default jsonTransformer
    */

@@ -37,7 +37,7 @@ export const respond = (
     headers: {
       ...fromSet.headers,
       [HEADER.version]: PROTOCOL_VERSION,
-      [HEADER.serializer]: handler.transformer.name,
+      [HEADER.transformer]: handler.transformer.name,
       ...extra,
     },
     cookies: fromSet.cookies,

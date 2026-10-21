@@ -303,7 +303,7 @@ function framedTransformer(
  */
 export interface SyncTransformerOptions {
   /**
-   * Names the format in the `trpc-serializer` header, so a link with another
+   * Names the format in the `trpc-transformer` header, so a link with another
    * transformer fails clearly.
    * @default 'sync'
    */

@@ -120,7 +120,7 @@ export const HEADER = {
    */
   resumeFrom: 'trpc-resume-from',
   /** On a response: the name of the transformer the handler uses. */
-  serializer: 'trpc-serializer',
+  transformer: 'trpc-transformer',
 } as const;
 
 /**
@@ -180,7 +180,7 @@ export type ClientMessage =
       /** The client reads binary messages: file bytes may come as frame records. */
       binary?: true | undefined;
       /** The client's transformer's `name`; on another one, the server runs no calls. */
-      serializer?: string | undefined;
+      transformer?: string | undefined;
     }
   | {
       id: number;
@@ -214,7 +214,7 @@ export type ServerMessage =
   | { id: number; type: 'done' }
   | { id: number | null; type: 'error'; body: unknown }
   /** The answer to the client's `init`: the server's transformer's `name`, in plain JSON. */
-  | { type: 'init'; serializer: string }
+  | { type: 'init'; transformer: string }
   | { type: 'pong' }
   /**
    * The server is going away (a drain): send new calls on a new connection,

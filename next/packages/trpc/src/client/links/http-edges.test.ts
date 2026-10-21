@@ -349,7 +349,7 @@ test('a streamed result whose deferred slot has no place, or whose chunk is unre
     new Response(lines.join('\n') + '\n', {
       headers: {
         'content-type': 'application/jsonl',
-        'trpc-serializer': 'json',
+        'trpc-transformer': 'json',
         'trpc-version': '12',
       },
     });

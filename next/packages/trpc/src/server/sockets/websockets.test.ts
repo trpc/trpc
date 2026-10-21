@@ -757,7 +757,7 @@ test('dispose() ends the sessions handler.websocket started, even when the peer 
   handler.websocket(socket, { request: new Request('http://localhost/trpc') });
   socket.receive({ type: 'init', version: '12' });
   await vi.waitFor(() =>
-    expect(socket.sent).toContainEqual({ type: 'init', serializer: 'json' }),
+    expect(socket.sent).toContainEqual({ type: 'init', transformer: 'json' }),
   );
   expect(socket.listeners).toBeGreaterThan(0);
 

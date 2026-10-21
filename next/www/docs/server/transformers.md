@@ -55,7 +55,7 @@ export const transformer = createSyncTransformer<
 // devalue: createSyncTransformer({ serialize: devalue.stringify, deserialize: devalue.parse })
 ```
 
-If the two ends disagree, calls fail with `UNSUPPORTED_PROTOCOL`, with a message naming both transformers. Over HTTP the handler names its transformer in the `trpc-serializer` response header and `httpLink` checks it, after the server ran the call. `wsLink` names its own in the connection's `init` message: the server answers with its own and runs none of that connection's calls on a mismatch.
+If the two ends disagree, calls fail with `UNSUPPORTED_PROTOCOL`, with a message naming both transformers. Over HTTP the handler names its transformer in the `trpc-transformer` response header and `httpLink` checks it, after the server ran the call. `wsLink` names its own in the connection's `init` message: the server answers with its own and runs none of that connection's calls on a mismatch.
 
 ## Client types follow the link
 

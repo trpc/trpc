@@ -176,7 +176,7 @@ test('by default, outputs arrive as JSON and the server says which transformer i
   const res = await fetch(
     `${server.url}/greet?input=${encodeURIComponent('{"name":"x"}')}`,
   );
-  expect(res.headers.get('trpc-serializer')).toBe('json');
+  expect(res.headers.get('trpc-transformer')).toBe('json');
 });
 
 test("a link whose transformer isn't the server's fails with UNSUPPORTED_PROTOCOL", async () => {

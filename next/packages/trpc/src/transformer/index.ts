@@ -140,7 +140,7 @@ export interface SerializeOpts {
  */
 export interface Transformer<TForm extends OutputForm = DansonForm> {
   /**
-   * Names the wire format. The handler sends it in a `trpc-serializer`
+   * Names the wire format. The handler sends it in a `trpc-transformer`
    * header, and a link with another one fails with an error naming both.
    */
   readonly name: string;

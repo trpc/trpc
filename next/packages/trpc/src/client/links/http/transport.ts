@@ -251,7 +251,7 @@ export function makeTransport(
             ? { signal: AbortSignal.any([init.signal, signal]) }
             : {}),
         });
-        const theirs = res.headers.get(HEADER.serializer);
+        const theirs = res.headers.get(HEADER.transformer);
         if (theirs !== null && theirs !== transformer.name) {
           await res.body?.cancel().catch(() => {});
           throw new TrpcError({

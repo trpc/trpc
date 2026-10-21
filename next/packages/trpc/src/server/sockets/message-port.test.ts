@@ -145,7 +145,7 @@ test('a port peer that posts values JSON cannot hold is refused', async () => {
     }),
   );
   try {
-    port2.postMessage({ type: 'init', version: '12', serializer: 'danson' });
+    port2.postMessage({ type: 'init', version: '12', transformer: 'danson' });
     // Structured clone keeps the Date; danSON only reads JSON.
     port2.postMessage({
       id: 1,
