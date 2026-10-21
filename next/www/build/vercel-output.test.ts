@@ -62,6 +62,8 @@ const setup = Effect.fn('setup')(function* (
     'v12/docs/client/links/index.html': v12Page,
     'v12/docs/openapi/routes.md': '',
     'v12/docs/openapi/routes/index.html': v12Page,
+    'v12/docs/server/transformers.md': '',
+    'v12/docs/server/transformers/index.html': v12Page,
     'index.html': '',
     'index.md': '',
     [v12LlmsFile]: llms,
@@ -211,6 +213,13 @@ describe('writeVercelOutput', () => {
         'v12/docs/openapi/routes/index.html': {
           contentType: 'text/html; charset=utf-8',
           path: 'v12/docs/openapi/routes',
+        },
+        'v12/docs/server/transformers.md': {
+          contentType: 'text/markdown; charset=utf-8',
+        },
+        'v12/docs/server/transformers/index.html': {
+          contentType: 'text/html; charset=utf-8',
+          path: 'v12/docs/server/transformers',
         },
         'index.md': { contentType: 'text/markdown; charset=utf-8' },
         [v12LlmsFile]: { contentType: 'text/plain; charset=utf-8' },

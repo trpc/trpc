@@ -68,6 +68,8 @@ const served = servedPaths([
   'v11/img/links-diagram.svg',
   'v12/docs/getting-started.md',
   'v12/docs/getting-started/index.html',
+  'v12/docs/server/transformers.md',
+  'v12/docs/server/transformers/index.html',
 ]);
 
 describe('servedPaths', () => {
@@ -234,6 +236,17 @@ describe('oldRedirects', () => {
       source: '/pricing',
       status: 308,
     });
+  });
+
+  it("sends a moved v12 page's URL and its markdown's to where it is now", () => {
+    expect(bySource.get('/v12/docs/server/serializers')).toEqual({
+      location: '/v12/docs/server/transformers',
+      source: '/v12/docs/server/serializers',
+      status: 308,
+    });
+    expect(bySource.get('/v12/docs/server/serializers.md')?.location).toBe(
+      '/v12/docs/server/transformers.md',
+    );
   });
 
   it('names each URL that lands nowhere', () => {

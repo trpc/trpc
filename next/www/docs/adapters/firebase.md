@@ -45,6 +45,6 @@ export const createPost = onCall(async (request) => {
 });
 ```
 
-The input is validated by the procedure as usual. Firebase's wire format is plain JSON, so outputs lose `Date`s, `Map`s and the other types the tRPC [serializer](../server/serializers.md) keeps; return strings or numbers for those.
+The input is validated by the procedure as usual. Firebase's wire format is plain JSON, so outputs lose `Date`s, `Map`s and the other types the tRPC [serializer](../server/transformers.md) keeps; return strings or numbers for those.
 
 Firebase hosting can also serve `handler.fetch` through an HTTPS function (`onRequest`) behind Express ([Express](./node.md#express-fastify-and-nodehttp)), which keeps the whole protocol.

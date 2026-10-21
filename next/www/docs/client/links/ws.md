@@ -34,7 +34,7 @@ await ws.dispose();
 - `keepAlive`: pings (below).
 - `idleTimeout`: close the connection after this long without calls; the next call opens a new one. By default it stays open until `close()`.
 - `binary`: file bytes in outputs as binary messages instead of base64 text. Servers that don't know binary messages keep sending text.
-- `serializer`: must match the handler's, and client types follow it ([Serializers](../../server/serializers.md)).
+- `serializer`: must match the handler's, and client types follow it ([Transformers](../../server/transformers.md)).
 - `WebSocket`: a `WebSocket` implementation, `globalThis.WebSocket` by default.
 
 `close()` closes the connection: calls in flight fail with `CLIENT_CLOSED_REQUEST`, and the next call opens a new connection. `dispose()` ends the link for good: calls in flight and every later call fail with `CLIENT_CLOSED_REQUEST`, and the connection closes. The link is also `AsyncDisposable`, so `await using ws = wsLink(…)` disposes it at the end of the scope.

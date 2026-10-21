@@ -40,7 +40,7 @@ const [post, err] = await safeClient.post.byId.query({ id: '1' });
 
 `error` is a `TrpcError`, and its type lists every way the call can fail, in three groups:
 
-- **Defined errors** (`defined: true`): the procedure's own. They're the errors it returns, fails with (a returned `Stream`'s failures too) or declares on the server ([Errors](../server/errors.md)), its input's `BAD_REQUEST` with `data.issues`, and errors links declare ([Custom links](./custom-links.md#errors-and-unsupported-types)). Each code has its `data` type, in the form it arrives in, as outputs do: a `Date` is a `string` over plain JSON, and a `Date` with danSON ([Serializers](../server/serializers.md)).
+- **Defined errors** (`defined: true`): the procedure's own. They're the errors it returns, fails with (a returned `Stream`'s failures too) or declares on the server ([Errors](../server/errors.md)), its input's `BAD_REQUEST` with `data.issues`, and errors links declare ([Custom links](./custom-links.md#errors-and-unsupported-types)). Each code has its `data` type, in the form it arrives in, as outputs do: a `Date` is a `string` over plain JSON, and a `Date` with danSON ([Transformers](../server/transformers.md)).
 - **Built-in errors** (`defined: false`, the `BuiltinError` type): one member per built-in code, each its code's class (`TrpcError.NotFound`, tagged `NotFound`), plus [the failures a client acts on](#the-failures-a-client-acts-on), which have their own tags. They never have `data`.
 - **Undeclared errors** (`defined: false`, the `UndeclaredError` type): a custom code thrown by a procedure that declares no errors, with its `data`, both untyped. No literal matches its code type, so `switch` cases skip it.
 

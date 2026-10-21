@@ -9,7 +9,7 @@ order: 11
 
 ## Hydration
 
-`hydrationOptions({ client })` returns `{ dehydrate, hydrate }` options that serialize data with the client's [serializer](../../server/serializers.md), so the types it keeps (with danSON: `Date`, `Map`, `Set`, `bigint`, custom types) survive the trip, and that dehydrate pending queries. Their data is serialized once it settles. Without `client` it uses plain JSON; `serializer` overrides both.
+`hydrationOptions({ client })` returns `{ dehydrate, hydrate }` options that serialize data with the client's [serializer](../../server/transformers.md), so the types it keeps (with danSON: `Date`, `Map`, `Set`, `bigint`, custom types) survive the trip, and that dehydrate pending queries. Their data is serialized once it settles. Without `client` it uses plain JSON; `serializer` overrides both.
 
 ```ts twoslash
 // ---cut-start---

@@ -502,7 +502,7 @@ export function upgradeSource(
           s.appendRight(prop['value'].end, ')');
           note(
             prop.start,
-            'createSyncTransformer<…>(transformer): list the types it rebuilds, https://v12.trpc.io/v12/docs/server/serializers',
+            'createSyncTransformer<…>(transformer): list the types it rebuilds, https://v12.trpc.io/v12/docs/server/transformers',
           );
         }
       } else if (name === 'maxURLLength') {

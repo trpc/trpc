@@ -26,7 +26,7 @@ docs/src/server.ts
 - [Streaming](./streaming.md): async generators, Effect streams and nested promises.
 - [Files](./files.md): `File` and `Blob` values in inputs and outputs.
 - [Responses](./responses.md): headers, status, or a `Response` of your own.
-- [Serializers](./serializers.md): plain JSON by default, or types like `Date` and `Map` that survive the wire.
+- [Transformers](./transformers.md): plain JSON by default, or types like `Date` and `Map` that survive the wire.
 
 ## Growing an app
 

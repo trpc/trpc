@@ -123,7 +123,7 @@ type Post = inferRouterOutputs<AppRouter>['post']['byId'];
 //   ^?
 ```
 
-`inferProcedureOutput<AppRouter['post']['byId']>` is the output as the procedure returns it, which in-process callers (`createRouterClient`) receive too ([Serializers](../server/serializers.md#client-types-follow-the-link)).
+`inferProcedureOutput<AppRouter['post']['byId']>` is the output as the procedure returns it, which in-process callers (`createRouterClient`) receive too ([Transformers](../server/transformers.md#client-types-follow-the-link)).
 
 ## Other clients
 

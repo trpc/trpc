@@ -164,6 +164,14 @@ export const retiredPages: Readonly<Record<string, string>> = {
 };
 
 /**
+ * v12 pages that moved, and where they are now. The old URL and its
+ * markdown's (`.md`) redirect to the new ones.
+ */
+export const movedPages: Readonly<Record<string, string>> = {
+  '/v12/docs/server/serializers': '/v12/docs/server/transformers',
+};
+
+/**
  * What trpc.io serves that this site has no copy of at all: v11's API
  * reference, which trpc.io's own build generates. It redirects to trpc.io's
  * own site (`oldSite.url` in `src/site.ts`), which has to be somewhere
@@ -294,7 +302,14 @@ export function oldRedirects(opts: {
       status: followed.permanent ? 308 : 307,
     });
   }
-  for (const [source, location] of Object.entries(retiredPages)) {
+  const moved = Object.entries(movedPages).flatMap(([source, location]) => [
+    [source, location] as const,
+    [`${source}.md`, `${location}.md`] as const,
+  ]);
+  for (const [source, location] of [
+    ...Object.entries(retiredPages),
+    ...moved,
+  ]) {
     if (sources.includes(source) || opts.served.has(source)) {
       continue;
     }
