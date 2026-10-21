@@ -12,7 +12,7 @@ import type {
   LayerOption,
   OnErrorOpts,
   RuntimeOption,
-  SerializerOption,
+  TransformerOption,
   inferRouterContext,
   inferRouterServices,
 } from '@trpc12/trpc/server';
@@ -26,7 +26,7 @@ export type FetchHandlerOptionsB<
 > = Omit<BaseHandlerOptions<TRouter>, 'onError'> & {
   onError?: (opts: OnErrorOpts) => void | Effect.Effect<void, never, R>;
 } & ContextOption<inferRouterContext<TRouter>, TPlatform> &
-  SerializerOption &
+  TransformerOption &
   (
     | LayerOption<inferRouterServices<TRouter> | NoInfer<R>>
     | RuntimeOption<inferRouterServices<TRouter> | NoInfer<R>>

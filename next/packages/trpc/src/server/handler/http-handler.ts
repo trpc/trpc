@@ -14,7 +14,7 @@ import { timerOption } from '../../internal/duration.ts';
 import type { ProcedureType } from '../../internal/types.ts';
 import {
   jsonTransformer,
-  type AnySerializer,
+  type AnyTransformer,
 } from '../../transformer/index.ts';
 import { unexpectedError } from '../execution/index.ts';
 import type { AnyRouter } from '../procedures/index.ts';
@@ -27,7 +27,7 @@ import type { HandlerCore } from './core.ts';
 export interface HttpHandler {
   readonly router: AnyRouter;
   readonly core: HandlerCore;
-  readonly serializer: AnySerializer;
+  readonly serializer: AnyTransformer;
   /** `/trpc`, or `/` for every path. */
   readonly endpoint: string;
   /** What procedure paths follow. */
@@ -42,7 +42,7 @@ export interface HttpHandler {
 export const makeHttpHandler = (
   opts: {
     readonly router: AnyRouter;
-    readonly serializer?: AnySerializer | undefined;
+    readonly serializer?: AnyTransformer | undefined;
     readonly endpoint?: string | undefined;
     readonly maxBodySize?: number | undefined;
     readonly sse?:

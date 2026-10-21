@@ -65,7 +65,7 @@ export const cuts: Record<
     patches: [
       [
         'transformer/framed.ts',
-        `export const jsonTransformer: Serializer<JsonForm> = framedSerializer(
+        `export const jsonTransformer: Transformer<JsonForm> = framedSerializer(
   'json',
   'none',
   {
@@ -76,7 +76,7 @@ export const cuts: Record<
     deserialize: (value) => value,
   },
 );`,
-        `export const jsonTransformer: Serializer<JsonForm> = {
+        `export const jsonTransformer: Transformer<JsonForm> = {
   name: 'json',
   kind: 'none',
   serialize: (value) => {

@@ -12,7 +12,7 @@ import type {
   FetchHandler,
   LayerOption,
   RuntimeOption,
-  SerializerOption,
+  TransformerOption,
   inferRouterContext,
   inferRouterServices,
 } from '@trpc12/trpc/server';
@@ -24,7 +24,7 @@ export type FetchHandlerOptionsB<
   TPlatform,
   R,
 > = BaseHandlerOptions<TRouter> &
-  SerializerOption & {
+  TransformerOption & {
     createContext?: (
       opts: CreateContextOpts<TPlatform>,
     ) =>

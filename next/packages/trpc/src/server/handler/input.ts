@@ -13,7 +13,7 @@ import {
   isMultipartContentType,
   isOctetContentType,
 } from '../../internal/protocol.ts';
-import type { AnySerializer } from '../../transformer/index.ts';
+import type { AnyTransformer } from '../../transformer/index.ts';
 import type { AnyProcedure } from '../procedures/index.ts';
 import { isByteStreamSchema } from '../validation/index.ts';
 import {
@@ -61,7 +61,7 @@ const decodeNow = <A>(
  * multipart body carried. @internal
  */
 export const deserialize = (
-  serializer: AnySerializer,
+  serializer: AnyTransformer,
   value: unknown,
   parts?: ReadonlyArray<Blob>,
 ): Exit.Exit<unknown, Failure<'InvalidBody'>> =>

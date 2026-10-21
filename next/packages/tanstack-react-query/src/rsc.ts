@@ -38,12 +38,12 @@ import {
 } from '@trpc12/tanstack-query';
 import { cache as reactCache, createElement, type ReactNode } from 'react';
 import type { TrpcClient } from '@trpc12/trpc/client';
-import type { AnySerializer, DansonForm } from '@trpc12/trpc/transformer';
+import type { AnyTransformer, DansonForm } from '@trpc12/trpc/transformer';
 import {
   createRouterClient,
   type AnyRouter,
   type RouterClientOptions,
-  type SerializerOption,
+  type TransformerOption,
 } from '@trpc12/trpc/server';
 
 // The package root also exports these, but it imports React's client hooks,
@@ -75,7 +75,7 @@ export type TrpcRscOptions<TRouter extends AnyRouter> = {
   /** Must match the browser's `keyPrefix`, so prefetched queries hydrate. */
   keyPrefix?: string | undefined;
 } & RouterClientOptions<TRouter> &
-  SerializerOption;
+  TransformerOption;
 
 /**
  * What {@link createTrpcRsc} returns.
@@ -127,7 +127,7 @@ export function createTrpcRsc<TRouter extends AnyRouter>(
 ): TrpcRsc<TRouter> {
   const cache = opts.cache ?? reactCache;
   const { dehydrate: dehydrateOptions } = hydrationOptions({
-    serializer: (opts as { serializer?: AnySerializer }).serializer,
+    serializer: (opts as { serializer?: AnyTransformer }).serializer,
   });
   const getQueryClient = cache(
     opts.makeQueryClient ??

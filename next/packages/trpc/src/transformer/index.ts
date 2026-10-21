@@ -58,7 +58,7 @@ export {
   type SyncTransformerOptions,
   type SyncTransformer,
 } from './framed.ts';
-export type { FormOfSerializer } from '../internal/types.ts';
+export type { FormOfTransformer } from '../internal/types.ts';
 
 /**
  * A custom type the serializer understands.
@@ -93,7 +93,7 @@ export interface CustomType<T, TSerialized = unknown> {
  * @since 0.1.0
  * @stability stable
  */
-export interface SerializerOptions {
+export interface TransformerOptions {
   /** Custom types, keyed by the name used on the wire. */
   types?: Record<string, CustomType<any, any>>;
   /**
@@ -137,7 +137,7 @@ export interface SerializeOpts {
  * @since 0.1.0
  * @stability stable
  */
-export interface Serializer<TForm extends OutputForm = DansonForm> {
+export interface Transformer<TForm extends OutputForm = DansonForm> {
   /**
    * Names the wire format. The handler sends it in a `trpc-serializer`
    * header, and a link with another one fails with an error naming both.
@@ -224,7 +224,7 @@ const partSerializers: SerializeRecord = {
  * @since 0.1.0
  * @stability stable
  */
-export function createSerializer(opts: SerializerOptions = {}): Serializer {
+export function createSerializer(opts: TransformerOptions = {}): Transformer {
   const customSerializers: SerializeRecord = {};
   const customDeserializers: DeserializeRecord = {};
   const customInputDeserializers: DeserializeRecord = {};
@@ -304,4 +304,4 @@ function partDeserializers(parts: ReadonlyArray<Blob>): DeserializeRecord {
  * @since 0.1.0
  * @stability stable
  */
-export type AnySerializer = Serializer<OutputForm>;
+export type AnyTransformer = Transformer<OutputForm>;

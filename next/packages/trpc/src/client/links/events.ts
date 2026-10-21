@@ -8,7 +8,7 @@ import type {
   Frame,
   SerializeOpts,
   SerializeReturn,
-  AnySerializer,
+  AnyTransformer,
 } from '../../transformer/index.ts';
 
 /** A byte stream input, which is the request body rather than serialized. @internal */
@@ -23,7 +23,7 @@ export const isByteStreamInput = (
  * @internal
  */
 export function serializeInput(
-  serializer: AnySerializer,
+  serializer: AnyTransformer,
   input: unknown,
   opts?: SerializeOpts,
 ): SerializeReturn {
@@ -76,7 +76,7 @@ export interface DeferredDecoder {
 
 /** @internal */
 export function makeDeferredDecoder(
-  serializer: AnySerializer,
+  serializer: AnyTransformer,
 ): DeferredDecoder {
   const queues = new Map<number, FrameQueue>();
   return {

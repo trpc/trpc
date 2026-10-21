@@ -1,6 +1,6 @@
 import { Deferred, Effect, Exit, Stream } from 'effect';
 import type { JsonForm, SyncForm } from '../internal/types.ts';
-import type { Serializer } from './index.ts';
+import type { Transformer } from './index.ts';
 import {
   deferredChunks,
   isAsyncIterable,
@@ -196,7 +196,7 @@ function framedSerializer(
   name: string,
   kind: 'sync' | 'none',
   transformer: SyncTransformer,
-): Serializer<any> {
+): Transformer<any> {
   const encode = (scanned: Scanned): SerializeReturn => {
     if (scanned.blob) {
       throw new DansonError(
@@ -242,7 +242,7 @@ function framedSerializer(
     },
     deserializeStream: <T, E>(
       frames: Stream.Stream<SerializeReturn | Chunk, E>,
-      opts: Parameters<Serializer['deserializeStream']>[1] = {},
+      opts: Parameters<Transformer['deserializeStream']>[1] = {},
     ): Effect.Effect<T, E | DansonError> => {
       const errors = streamErrorsOf(opts);
       return Effect.gen(function* () {
@@ -332,7 +332,7 @@ export interface SyncTransformerOptions {
 export function createSyncTransformer<TKeeps = never>(
   transformer: SyncTransformer,
   opts: SyncTransformerOptions = {},
-): Serializer<SyncForm<TKeeps>> {
+): Transformer<SyncForm<TKeeps>> {
   return framedSerializer(opts.name ?? 'sync', 'sync', transformer);
 }
 
@@ -349,7 +349,7 @@ export function createSyncTransformer<TKeeps = never>(
  * @since 0.1.0
  * @stability stable
  */
-export const jsonTransformer: Serializer<JsonForm> =
+export const jsonTransformer: Transformer<JsonForm> =
   /* @__PURE__ */ framedSerializer('json', 'none', {
     serialize: (value) => {
       const text = JSON.stringify(value);

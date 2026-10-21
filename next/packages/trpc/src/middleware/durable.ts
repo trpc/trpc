@@ -26,7 +26,7 @@ import {
 import { HEADER } from '../internal/protocol.ts';
 import type { Unset } from '../internal/types.ts';
 import { danson } from '../transformer/danson.ts';
-import type { Serializer } from '../transformer/index.ts';
+import type { Transformer } from '../transformer/index.ts';
 import type {
   Chunk,
   Frame,
@@ -74,7 +74,7 @@ export interface DurableOptions<TCtx, TInput, TMeta> {
   /** How often a resumed stream checks for new frames. @default '25 millis' */
   readonly streamPollInterval?: Duration.Input;
   /** Turns results into the JSON the store keeps. @default the default serializer */
-  readonly serializer?: Pick<Serializer, 'serialize' | 'deserialize'>;
+  readonly serializer?: Pick<Transformer, 'serialize' | 'deserialize'>;
 }
 
 type Entry =
@@ -117,7 +117,7 @@ const running = new WeakMap<object, Map<string, Deferred.Deferred<Ran>>>();
 
 /** A SHA-256 of the serialized input; `''` for inputs with files. */
 const fingerprint = /* @__PURE__ */ Effect.fnUntraced(function* (
-  serializer: Pick<Serializer, 'serialize'>,
+  serializer: Pick<Transformer, 'serialize'>,
   input: unknown,
 ) {
   let json: string;
@@ -445,7 +445,7 @@ const isNonEmpty = <A>(items: A[]): items is [A, ...A[]] => items.length > 0;
 
 /** What to keep for `result`: nothing for unexpected errors and streams. */
 const stored = (
-  serializer: Pick<Serializer, 'serialize'>,
+  serializer: Pick<Transformer, 'serialize'>,
   result: Result,
   input: string,
 ): Entry | undefined => {

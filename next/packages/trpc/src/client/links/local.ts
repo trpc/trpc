@@ -8,12 +8,12 @@ import {
 } from '../../internal/error.ts';
 import type {
   DansonForm,
-  FormOfSerializer,
+  FormOfTransformer,
   MaybePromise,
 } from '../../internal/types.ts';
 import {
   jsonTransformer,
-  type AnySerializer,
+  type AnyTransformer,
 } from '../../transformer/index.ts';
 import {
   callProcedure,
@@ -45,7 +45,7 @@ export type LocalLinkOptions<TRouter extends AnyRouter> = {
    * `false` passes values by reference, with native types.
    * @default jsonTransformer
    */
-  serializer?: AnySerializer | false;
+  serializer?: AnyTransformer | false;
 } & LocalContextOption<inferRouterContext<TRouter>> &
   RuntimeOption<inferRouterServices<TRouter>>;
 
@@ -93,11 +93,13 @@ const withSignal = <A, E>(
  */
 export function localLink<
   TRouter extends AnyRouter,
-  TSerializer extends AnySerializer | false | undefined = undefined,
+  TTransformer extends AnyTransformer | false | undefined = undefined,
 >(
-  opts: LocalLinkOptions<TRouter> & { serializer?: TSerializer },
+  opts: LocalLinkOptions<TRouter> & { serializer?: TTransformer },
 ): TrpcLink<{
-  form: TSerializer extends false ? DansonForm : FormOfSerializer<TSerializer>;
+  form: TTransformer extends false
+    ? DansonForm
+    : FormOfTransformer<TTransformer>;
 }>;
 export function localLink<TRouter extends AnyRouter>(
   opts: LocalLinkOptions<TRouter>,

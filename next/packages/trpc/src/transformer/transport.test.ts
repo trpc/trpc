@@ -4,16 +4,16 @@ import {
   DansonError,
   jsonTransformer,
   type Frame,
-  type Serializer,
+  type Transformer,
 } from '@trpc12/trpc/transformer';
 import { expect, test } from 'vite-plus/test';
 
 /**
- * A transport of your own, with the public `Serializer` API: frames go
+ * A transport of your own, with the public `Transformer` API: frames go
  * through JSON text, as over a socket, and come back as values.
  */
 const send = (
-  serializer: Serializer<any>,
+  serializer: Transformer<any>,
   value: unknown,
   wire: (
     frames: Stream.Stream<Frame, unknown>,

@@ -6,7 +6,7 @@ import { Effect, Queue, Stream } from 'effect';
 import {
   createSerializer,
   jsonTransformer,
-  type AnySerializer,
+  type AnyTransformer,
 } from '@trpc12/trpc/transformer';
 import { expect, test } from 'vite-plus/test';
 import {
@@ -80,7 +80,7 @@ async function settle(value: unknown): Promise<unknown> {
 }
 
 const lines = (
-  serializer: AnySerializer = jsonTransformer,
+  serializer: AnyTransformer = jsonTransformer,
   value: unknown = post(),
 ) => Stream.map(framesOf(serializer, value), (frame) => JSON.stringify(frame));
 

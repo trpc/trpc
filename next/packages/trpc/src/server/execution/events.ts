@@ -1,6 +1,6 @@
 import { Effect, FiberSet, Stream } from 'effect';
 import { isTrpcError, type AnyTrpcError } from '../../internal/error.ts';
-import type { AnySerializer } from '../../transformer/index.ts';
+import type { AnyTransformer } from '../../transformer/index.ts';
 import type { Chunk } from '../../transformer/danson/index.ts';
 import { unexpectedError } from './execute.ts';
 import { isTracked } from '../subscriptions/index.ts';
@@ -26,13 +26,13 @@ export type EventFrame =
  */
 export const emitEvents: (
   events: Stream.Stream<unknown, AnyTrpcError>,
-  serializer: AnySerializer,
+  serializer: AnyTransformer,
   coerceError: (cause: unknown) => unknown,
   emit: (frame: EventFrame) => Effect.Effect<void>,
 ) => Effect.Effect<void, AnyTrpcError> = /* @__PURE__ */ Effect.fnUntraced(
   function* (
     events: Stream.Stream<unknown, AnyTrpcError>,
-    serializer: AnySerializer,
+    serializer: AnyTransformer,
     coerceError: (cause: unknown) => unknown,
     emit: (frame: EventFrame) => Effect.Effect<void>,
   ) {

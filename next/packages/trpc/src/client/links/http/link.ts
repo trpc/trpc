@@ -3,7 +3,7 @@ import { TrpcError } from '../../../internal/error.ts';
 import type { FormOfOptions, MaybePromise } from '../../../internal/types.ts';
 import {
   jsonTransformer,
-  type AnySerializer,
+  type AnyTransformer,
 } from '../../../transformer/index.ts';
 import {
   withSerializer,
@@ -22,7 +22,7 @@ import { makeTransport } from './transport.ts';
  * @stability stable
  */
 export interface HttpLinkOptions<
-  TSerializer extends AnySerializer = AnySerializer,
+  TTransformer extends AnyTransformer = AnyTransformer,
 > {
   /** The endpoint, e.g. `http://localhost:3000/trpc`. */
   url: string | URL;
@@ -31,7 +31,7 @@ export interface HttpLinkOptions<
    * fails with `UNSUPPORTED_PROTOCOL`. Client types follow it.
    * @default jsonTransformer
    */
-  serializer?: TSerializer | undefined;
+  serializer?: TTransformer | undefined;
   /** Extra headers, merged with each call's `context.headers`. */
   headers?:
     | HeadersInit

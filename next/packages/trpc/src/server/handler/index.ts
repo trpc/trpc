@@ -27,7 +27,7 @@ export type {
   PlatformArgs,
   PlatformField,
   RuntimeOption,
-  SerializerOption,
+  TransformerOption,
 } from './fetch.ts';
 export { handlerContext, setHandlerContext } from './handler-context.ts';
 export { CurrentPlatform } from './platform.ts';

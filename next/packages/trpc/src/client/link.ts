@@ -10,7 +10,7 @@ import {
   type AnyTrpcError,
 } from '../internal/error.ts';
 import type { OutputForm, ProcedureType } from '../internal/types.ts';
-import type { AnySerializer } from '../transformer/index.ts';
+import type { AnyTransformer } from '../transformer/index.ts';
 import type { LinkErrorCode } from './types.ts';
 
 /**
@@ -328,12 +328,12 @@ export const link = <TDecl extends LinkDecl = {}>(
   fn: (opts: EffectLinkOpts<DeclContext<TDecl>>) => OperationStream,
 ): TrpcLink<TDecl> => fn as TrpcLink<TDecl>;
 
-const serializers = new WeakMap<AnyLink, AnySerializer>();
+const serializers = new WeakMap<AnyLink, AnyTransformer>();
 
 /** Records the serializer a link sends with. @internal */
 export function withSerializer<L extends AnyLink>(
   target: L,
-  serializer: AnySerializer | undefined,
+  serializer: AnyTransformer | undefined,
 ): L {
   if (serializer) serializers.set(target, serializer);
   return target;
@@ -342,7 +342,7 @@ export function withSerializer<L extends AnyLink>(
 /** The first serializer a chain records, looking into split branches. @internal */
 export function chainSerializer(
   links: ReadonlyArray<AnyLink>,
-): AnySerializer | undefined {
+): AnyTransformer | undefined {
   for (const current of links) {
     const found = serializers.get(current);
     if (found) return found;

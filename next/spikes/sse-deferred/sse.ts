@@ -13,11 +13,11 @@
  * live.
  */
 import { Effect, Option, PubSub, Semaphore, Stream } from 'effect';
-import type { AnySerializer, Frame } from '@trpc12/trpc/transformer';
+import type { AnyTransformer, Frame } from '@trpc12/trpc/transformer';
 
 /** A value's frames: the head, then each chunk as its deferred parts settle. */
 export const framesOf = (
-  serializer: AnySerializer,
+  serializer: AnyTransformer,
   value: unknown,
 ): Stream.Stream<Frame> => {
   const { head, chunks } = serializer.serializeDeferred(value);
@@ -85,7 +85,7 @@ export const parseSse = <E>(
 
 /** Rebuilds the value from SSE events of its frames. */
 export const fromSse = <T, E>(
-  serializer: AnySerializer,
+  serializer: AnyTransformer,
   events: Stream.Stream<SseEvent, E>,
 ): Effect.Effect<T, unknown> =>
   serializer.deserializeStream<T, E>(
@@ -102,7 +102,7 @@ export interface Replay {
  * Serializes a value once and keeps its frames, so connections (and
  * reconnects) read the same deferred values. Runs until the scope closes.
  */
-export const createReplay = (serializer: AnySerializer, value: unknown) =>
+export const createReplay = (serializer: AnyTransformer, value: unknown) =>
   Effect.gen(function* () {
     let kept: ReadonlyArray<string> = [];
     let done = false;

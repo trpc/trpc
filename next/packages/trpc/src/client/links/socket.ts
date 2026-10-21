@@ -29,7 +29,7 @@ import { decodeLines, encodeLine } from '../../internal/lines.ts';
 import type { FormOfOptions, MaybePromise } from '../../internal/types.ts';
 import {
   jsonTransformer,
-  type AnySerializer,
+  type AnyTransformer,
 } from '../../transformer/index.ts';
 import type { MessagePortLike } from '../../server/sockets/index.ts';
 import {
@@ -127,7 +127,7 @@ export interface SocketLinkOptions {
    * `UNSUPPORTED_PROTOCOL`. Client types follow it.
    * @default jsonTransformer
    */
-  serializer?: AnySerializer;
+  serializer?: AnyTransformer;
   /**
    * Sent once per connection, before any call; `createContext` receives
    * them as `info.connectionParams`. Browsers cannot set WebSocket headers,

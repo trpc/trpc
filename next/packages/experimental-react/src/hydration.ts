@@ -1,7 +1,7 @@
 import { getClientSerializer } from '@trpc12/trpc/client';
 import {
   jsonTransformer,
-  type AnySerializer,
+  type AnyTransformer,
   type SerializeReturn,
 } from '@trpc12/trpc/transformer';
 import type { QueryStore } from './store.ts';
@@ -30,7 +30,7 @@ export interface HydrationOptions {
    * How inputs and data are encoded. Must match on both ends.
    * @default the client's serializer, else jsonTransformer
    */
-  serializer?: AnySerializer | undefined;
+  serializer?: AnyTransformer | undefined;
 }
 
 interface HasStore {

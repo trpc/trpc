@@ -3,7 +3,7 @@ import { Persistence } from 'effect/persistence';
 import {
   createSerializer,
   jsonTransformer,
-  type AnySerializer,
+  type AnyTransformer,
   type Frame,
 } from '@trpc12/trpc/transformer';
 import { expect, test } from 'vite-plus/test';
@@ -72,7 +72,7 @@ const twoInstances = <A>(
 for (const [name, serializer] of [
   ['plain JSON', jsonTransformer],
   ['danSON', createSerializer()],
-] as [string, AnySerializer][]) {
+] as [string, AnyTransformer][]) {
   test(`${name}: a call cut after 2 frames resumes on another instance`, async () => {
     let runs = 0;
     const value = await twoInstances((a, b) =>

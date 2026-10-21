@@ -285,14 +285,14 @@ export type ClientValue<
  * @since 0.1.0
  * @stability stable
  */
-export type FormOfSerializer<S> = S extends { readonly '~form'?: infer F }
+export type FormOfTransformer<S> = S extends { readonly '~form'?: infer F }
   ? NonNullable<F> extends infer G extends OutputForm
     ? G
     : JsonForm
   : JsonForm;
 
 /** The form of a link options bag's `serializer`; plain JSON's without one. @internal */
-export type FormOfOptions<TOpts> = FormOfSerializer<
+export type FormOfOptions<TOpts> = FormOfTransformer<
   TOpts extends { serializer?: infer S } ? NonNullable<S> : undefined
 >;
 

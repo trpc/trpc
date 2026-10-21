@@ -140,7 +140,7 @@ export {
   type ContextOption,
   type CreateContextOpts,
   type LayerOption,
-  type SerializerOption,
+  type TransformerOption,
   type FetchHandler,
   type FetchHandlerOptions,
   type MakeFetchHandlerOptions,

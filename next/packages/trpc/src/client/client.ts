@@ -8,7 +8,7 @@ import {
   type AnyTrpcError,
 } from '../internal/error.ts';
 import type { IsAny, ProcedureType } from '../internal/types.ts';
-import type { AnySerializer } from '../transformer/index.ts';
+import type { AnyTransformer } from '../transformer/index.ts';
 import {
   chainSerializer,
   chainSwitchNames,
@@ -259,7 +259,7 @@ export function createTrpcClient(opts: TrpcClientOptions): unknown {
   return client;
 }
 
-const clientSerializers = new WeakMap<object, AnySerializer>();
+const clientSerializers = new WeakMap<object, AnyTransformer>();
 
 /**
  * The serializer a client's links send with (the first link that has one),
@@ -272,7 +272,9 @@ const clientSerializers = new WeakMap<object, AnySerializer>();
  * @since 0.1.0
  * @stability stable
  */
-export function getClientSerializer(client: object): AnySerializer | undefined {
+export function getClientSerializer(
+  client: object,
+): AnyTransformer | undefined {
   return clientSerializers.get(client);
 }
 

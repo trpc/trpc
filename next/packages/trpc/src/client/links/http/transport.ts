@@ -31,7 +31,7 @@ import {
   type BatchLine,
 } from '../../../internal/protocol.ts';
 import type {
-  AnySerializer,
+  AnyTransformer,
   Frame,
   SerializeReturn,
 } from '../../../transformer/index.ts';
@@ -124,7 +124,7 @@ export const abortOnInterrupt = <A, E>(
 
 /** What {@link makeTransport} gives the link. */
 export interface Transport {
-  readonly serializer: AnySerializer;
+  readonly serializer: AnyTransformer;
   readonly call: (
     op: Operation,
     accept: string,
@@ -147,7 +147,7 @@ export interface Transport {
 /** The HTTP side of `httpLink`: requests, responses and their bodies. */
 export function makeTransport(
   opts: HttpLinkOptions,
-  serializer: AnySerializer,
+  serializer: AnyTransformer,
 ): Transport {
   const baseUrl = String(opts.url).replace(/\/+$/, '');
   const maxUrlLength = opts.maxUrlLength ?? 2048;

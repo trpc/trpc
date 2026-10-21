@@ -1,4 +1,4 @@
-import { createSerializer, type Serializer } from './index.ts';
+import { createSerializer, type Transformer } from './index.ts';
 
 /** danSON with no custom types, for keys and stores that need rich types. */
-export const danson: Serializer = /* @__PURE__ */ createSerializer();
+export const danson: Transformer = /* @__PURE__ */ createSerializer();

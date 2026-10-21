@@ -43,7 +43,7 @@ import { createEffectClient, type EffectClient } from '@trpc12/trpc/effect';
 import {
   createSerializer,
   jsonTransformer,
-  type AnySerializer,
+  type AnyTransformer,
   type SerializeReturn,
 } from '@trpc12/trpc/transformer';
 
@@ -157,7 +157,7 @@ export type AtomClientOptions<
    * one that hydrates them.
    * @default the links' serializer, else jsonTransformer
    */
-  readonly serializer?: AnySerializer | undefined;
+  readonly serializer?: AnyTransformer | undefined;
 };
 
 /**
@@ -174,7 +174,7 @@ export type AtomClientOptions<
  * @stability experimental
  */
 export function serializerSchema(
-  serializer: AnySerializer,
+  serializer: AnyTransformer,
 ): Schema.Codec<unknown, Schema.Json> {
   return Schema.Json.pipe(
     Schema.decodeTo(
@@ -277,7 +277,7 @@ export function createAtomClient<
 export function createAtomClient(opts: {
   router: unknown;
   links: AtLeastOneLink;
-  serializer?: AnySerializer | undefined;
+  serializer?: AnyTransformer | undefined;
 }): unknown {
   const client = createEffectClient(opts);
   const serializer =

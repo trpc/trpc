@@ -31,7 +31,7 @@ import {
   type ServerMessage,
 } from '../../internal/protocol.ts';
 import type { ProcedureType } from '../../internal/types.ts';
-import type { AnySerializer } from '../../transformer/index.ts';
+import type { AnyTransformer } from '../../transformer/index.ts';
 import {
   emitEvents,
   type EventFrame,
@@ -116,7 +116,7 @@ export interface SocketCoreShape extends Pick<
   'run' | 'makeContext' | 'publicError' | 'report'
 > {
   readonly router: AnyRouter;
-  readonly serializer: AnySerializer;
+  readonly serializer: AnyTransformer;
   deserializeInput(value: unknown): Effect.Effect<unknown, AnyTrpcError>;
   /** The handler's open connections, which `drain()` and `dispose()` close. */
   readonly drains?: SocketDrains | undefined;

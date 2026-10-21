@@ -8,7 +8,7 @@ import { localLink, routerType } from '@trpc12/trpc/client';
 import {
   createSerializer,
   jsonTransformer,
-  type AnySerializer,
+  type AnyTransformer,
 } from '@trpc12/trpc/transformer';
 import { Effect, Option } from 'effect';
 import {
@@ -265,7 +265,7 @@ test('the client exposes its runtime and Effect client; other calls are errors',
 
 test('without a serializer on its links, query atoms dehydrate as JSON unless one is given', async () => {
   using _db = freshDb();
-  const encoded = async (opts: { serializer?: AnySerializer }) => {
+  const encoded = async (opts: { serializer?: AnyTransformer }) => {
     const trpc = createAtomClient({
       router: routerType<AppRouter>(),
       links: [localLink({ router, serializer: false })],

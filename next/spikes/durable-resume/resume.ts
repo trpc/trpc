@@ -12,7 +12,7 @@
  */
 import { Duration, Effect, Stream } from 'effect';
 import { Persistence } from 'effect/persistence';
-import type { AnySerializer, Frame } from '@trpc12/trpc/transformer';
+import type { AnyTransformer, Frame } from '@trpc12/trpc/transformer';
 
 interface Meta {
   readonly count: number;
@@ -33,7 +33,7 @@ export interface StreamLog {
    */
   readonly start: (
     key: string,
-    serializer: AnySerializer,
+    serializer: AnyTransformer,
     run: () => unknown,
   ) => Effect.Effect<boolean>;
   /** The frames from index `from` on, until the last. */

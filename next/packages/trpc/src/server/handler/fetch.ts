@@ -17,7 +17,7 @@ import type {
   ProcedureType,
   TypeError,
 } from '../../internal/types.ts';
-import type { AnySerializer } from '../../transformer/index.ts';
+import type { AnyTransformer } from '../../transformer/index.ts';
 import {
   checkRouterKeys,
   type AnyRouter,
@@ -160,14 +160,14 @@ export type RuntimeOption<TServices> = ([TServices] extends [never]
  * @since 0.1.0
  * @stability stable
  */
-export interface SerializerOption {
+export interface TransformerOption {
   /**
    * The wire format. Links must use the same one; a link with another fails
    * with an error naming both (`trpc-serializer` header). Client types
    * follow the link's serializer.
    * @default jsonTransformer
    */
-  serializer?: AnySerializer | undefined;
+  serializer?: AnyTransformer | undefined;
 }
 
 /**
@@ -270,7 +270,7 @@ export type FetchHandlerOptions<
     | LayerOption<inferRouterServices<TRouter>>
     | RuntimeOption<inferRouterServices<TRouter>>
   ) &
-  SerializerOption;
+  TransformerOption;
 
 /**
  * The options of {@link makeFetchHandler}: those of
@@ -284,7 +284,7 @@ export type MakeFetchHandlerOptions<
   TPlatform = undefined,
 > = BaseHandlerOptions<TRouter> &
   ContextOption<inferRouterContext<TRouter>, TPlatform> &
-  SerializerOption;
+  TransformerOption;
 
 /**
  * A web-standard request handler.
