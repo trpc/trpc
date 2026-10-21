@@ -1,17 +1,14 @@
 /**
  * The APIs `.agent-docs/open/error-boundary-owned-errors.md` compares, as
- * types. The three options share the built API
+ * types. The three options share the built API, the hook returning options transforms
  * (`packages/tanstack-react-query/src/error-boundary.ts`); they differ in
  * what an owned error does at runtime: A throws it, B holds a mutation
  * and throws a query's, C holds both.
  */
 import type {
-  QueryKey,
-  UseMutationOptions,
-  UseMutationResult,
-  UseQueryOptions,
-  UseQueryResult,
-} from '@tanstack/react-query';
+  MutationOptionsOut,
+  QueryOptionsOut,
+} from '@trpc12/tanstack-react-query';
 import type { ReactNode } from 'react';
 
 type Remaining<E, TCodes extends string, TUnexpected extends boolean> = Exclude<
@@ -33,20 +30,19 @@ interface ErrorBoundaryComponent<
 }
 
 interface Hooks<TCodes extends string, TUnexpected extends boolean> {
-  useQuery<
+  query<TQueryFnData, TError, TData>(
+    options: QueryOptionsOut<TQueryFnData, TError, TData>,
+  ): QueryOptionsOut<
     TQueryFnData,
-    TError,
-    TData = TQueryFnData,
-    TQueryKey extends QueryKey = QueryKey,
-  >(
-    options: UseQueryOptions<TQueryFnData, TError, TData, TQueryKey>,
-  ): UseQueryResult<TData, Remaining<TError, TCodes, TUnexpected>>;
-  useMutation<TData, TError, TVariables, TOnMutateResult>(
-    options: UseMutationOptions<TData, TError, TVariables, TOnMutateResult>,
-  ): UseMutationResult<
-    TData,
     Remaining<TError, TCodes, TUnexpected>,
-    TVariables,
+    TData
+  >;
+  mutation<TInput, TOutput, TError, TOnMutateResult>(
+    options: MutationOptionsOut<TInput, TOutput, TError, TOnMutateResult>,
+  ): MutationOptionsOut<
+    TInput,
+    TOutput,
+    Remaining<TError, TCodes, TUnexpected>,
     TOnMutateResult
   >;
   owns(error: unknown): boolean;

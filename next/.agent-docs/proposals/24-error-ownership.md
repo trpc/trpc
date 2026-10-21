@@ -111,7 +111,9 @@ const [AuthBoundary, useAuthBoundary] = createErrorBoundary({
   fallback: SignIn,
 });
 
-const rename = useAuthBoundary().useMutation(trpc.doc.rename.mutationOptions());
+const rename = useMutation(
+  useAuthBoundary().mutation(trpc.doc.rename.mutationOptions()),
+);
 rename.error; // TITLE_TAKEN | BAD_REQUEST: Auth owns UNAUTHORIZED, Root owns every undefined error
 ```
 

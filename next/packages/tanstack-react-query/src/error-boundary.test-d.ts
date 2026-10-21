@@ -1,4 +1,11 @@
 import {
+  useInfiniteQuery,
+  useMutation,
+  useQueries,
+  useQuery,
+  useSuspenseQuery,
+} from '@tanstack/react-query';
+import {
   matchError,
   type BuiltinErrorCode,
   type UndeclaredCode,
@@ -31,14 +38,16 @@ describe('the rename mutation', () => {
   });
 
   test('under Auth, only what no boundary owns', () => {
-    const rename = () => useAuthBoundary().useMutation(renameOptions());
+    const rename = () =>
+      useMutation(useAuthBoundary().mutation(renameOptions()));
     expectTypeOf<CodeOf<ErrorOf<ReturnType<typeof rename>>>>().toEqualTypeOf<
       'TITLE_TAKEN' | 'BAD_REQUEST'
     >();
   });
 
   test('under Offline, UNAUTHORIZED is back', () => {
-    const rename = () => useOfflineBoundary().useMutation(renameOptions());
+    const rename = () =>
+      useMutation(useOfflineBoundary().mutation(renameOptions()));
     expectTypeOf<CodeOf<ErrorOf<ReturnType<typeof rename>>>>().toEqualTypeOf<
       'UNAUTHORIZED' | 'TITLE_TAKEN' | 'BAD_REQUEST'
     >();
@@ -46,7 +55,7 @@ describe('the rename mutation', () => {
 });
 
 describe('the byId query', () => {
-  const doc = () => useAuthBoundary().useQuery(byIdOptions());
+  const doc = () => useQuery(useAuthBoundary().query(byIdOptions()));
   type DocError = ErrorOf<ReturnType<typeof doc>>;
 
   test('under Auth, error is only the defined codes no boundary owns', () => {
@@ -79,10 +88,80 @@ describe('the byId query', () => {
   });
 
   test("under Root alone, UNAUTHORIZED is the component's again, and the link codes are gone", () => {
-    const rooted = () => useRootBoundary().useQuery(byIdOptions());
+    const rooted = () => useQuery(useRootBoundary().query(byIdOptions()));
     expectTypeOf<CodeOf<ErrorOf<ReturnType<typeof rooted>>>>().toEqualTypeOf<
       'UNAUTHORIZED' | 'NOT_FOUND' | 'BAD_REQUEST'
     >();
+  });
+});
+
+describe("TanStack's other hooks take the same options", () => {
+  type Left = 'NOT_FOUND' | 'BAD_REQUEST';
+
+  test('useQuery keeps the initialData overload, so data is defined', () => {
+    const doc = () =>
+      useQuery(
+        useAuthBoundary().query(
+          app.trpc.doc.byId.queryOptions({
+            input: { id: '1' },
+            initialData: { id: '1', title: 'Hello' },
+          }),
+        ),
+      );
+    expectTypeOf<ReturnType<typeof doc>['data']>().toEqualTypeOf<{
+      id: string;
+      title: string;
+    }>();
+    expectTypeOf<
+      CodeOf<ErrorOf<ReturnType<typeof doc>>>
+    >().toEqualTypeOf<Left>();
+  });
+
+  test('spread options with their own fields still fit', () => {
+    const title = () =>
+      useQuery(
+        useAuthBoundary().query({
+          ...byIdOptions(),
+          select: (doc) => doc.title,
+        }),
+      );
+    expectTypeOf<ReturnType<typeof title>['data']>().toEqualTypeOf<
+      string | undefined
+    >();
+    expectTypeOf<
+      CodeOf<ErrorOf<ReturnType<typeof title>>>
+    >().toEqualTypeOf<Left>();
+  });
+
+  test('useSuspenseQuery', () => {
+    const doc = () => useSuspenseQuery(useAuthBoundary().query(byIdOptions()));
+    expectTypeOf<
+      CodeOf<ErrorOf<ReturnType<typeof doc>>>
+    >().toEqualTypeOf<Left>();
+  });
+
+  test('useQueries', () => {
+    const docs = () =>
+      useQueries({ queries: [useAuthBoundary().query(byIdOptions())] });
+    expectTypeOf<
+      CodeOf<ErrorOf<ReturnType<typeof docs>[0]>>
+    >().toEqualTypeOf<Left>();
+  });
+
+  test('useInfiniteQuery, through infiniteQuery()', () => {
+    const titles = () =>
+      useInfiniteQuery(
+        useAuthBoundary().infiniteQuery(
+          app.trpc.doc.titles.infiniteOptions({
+            input: (cursor: number) => ({ cursor }),
+            initialPageParam: 0,
+            getNextPageParam: (page) => page.next,
+          }),
+        ),
+      );
+    expectTypeOf<
+      CodeOf<ErrorOf<ReturnType<typeof titles>>>
+    >().toEqualTypeOf<'BAD_REQUEST'>();
   });
 });
 

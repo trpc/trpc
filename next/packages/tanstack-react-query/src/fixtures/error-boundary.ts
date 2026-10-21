@@ -28,6 +28,18 @@ export const router = {
     byId: requireViewer
       .input(Schema.Struct({ id: Schema.String }))
       .query((opts) => docs.get(opts.input.id) ?? error({ code: 'NOT_FOUND' })),
+    /** One title a page, from `cursor`. */
+    titles: requireViewer
+      .input(Schema.Struct({ cursor: Schema.Number }))
+      .query((opts) => {
+        const all = [...docs.values()];
+        const page: { title: string | undefined; next: number | null } = {
+          title: all[opts.input.cursor]?.title,
+          next:
+            opts.input.cursor + 1 < all.length ? opts.input.cursor + 1 : null,
+        };
+        return page;
+      }),
     rename: requireViewer
       .input(Schema.Struct({ id: Schema.String, title: Schema.String }))
       .mutation((opts) => {

@@ -3,11 +3,7 @@
  * A lists codes, as `packages/tanstack-react-query/src/error-boundary.ts`
  * builds. B lists tags. C takes either in one list.
  */
-import type {
-  QueryKey,
-  UseQueryOptions,
-  UseQueryResult,
-} from '@tanstack/react-query';
+import type { QueryOptionsOut } from '@trpc12/tanstack-react-query';
 import type { ReactNode } from 'react';
 
 type Fallback = (props: {
@@ -18,14 +14,9 @@ type Fallback = (props: {
 type Boundary = (props: { readonly children?: ReactNode }) => ReactNode;
 
 interface Hooks<TOwned> {
-  useQuery<
-    TQueryFnData,
-    TError,
-    TData = TQueryFnData,
-    TQueryKey extends QueryKey = QueryKey,
-  >(
-    options: UseQueryOptions<TQueryFnData, TError, TData, TQueryKey>,
-  ): UseQueryResult<TData, Exclude<TError, TOwned>>;
+  query<TQueryFnData, TError, TData>(
+    options: QueryOptionsOut<TQueryFnData, TError, TData>,
+  ): QueryOptionsOut<TQueryFnData, Exclude<TError, TOwned>, TData>;
 }
 
 /** A: `claims` lists codes; a code owns every failure with it. */

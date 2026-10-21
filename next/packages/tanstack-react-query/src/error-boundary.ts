@@ -1,6 +1,6 @@
 /**
  * Typed error boundaries: each owns some error codes for the tree under
- * it, so the hooks below type `error` without those codes.
+ * it, so the queries and mutations below type `error` without those codes.
  *
  * @example
  * ```tsx
@@ -14,7 +14,8 @@
  *
  * function DocTitle(props: { id: string }) {
  *   const trpc = useTrpc();
- *   const doc = useAuthBoundary().useQuery(trpc.doc.byId.queryOptions({ input: { id: props.id } }));
+ *   const auth = useAuthBoundary();
+ *   const doc = useQuery(auth.query(trpc.doc.byId.queryOptions({ input: { id: props.id } })));
  *   // doc.error: the procedure's errors without UNAUTHORIZED and every `defined: false` one
  * }
  * ```
@@ -22,15 +23,13 @@
  */
 import {
   QueryErrorResetBoundary,
-  useMutation,
-  useQuery,
   useQueryErrorResetBoundary,
-  type QueryKey,
-  type UseMutationOptions,
-  type UseMutationResult,
-  type UseQueryOptions,
-  type UseQueryResult,
 } from '@tanstack/react-query';
+import type {
+  InfiniteOptionsOut,
+  MutationOptionsOut,
+  QueryOptionsOut,
+} from '@trpc12/tanstack-query';
 import { isTrpcError } from '@trpc12/trpc/client';
 import {
   Component,
@@ -105,31 +104,58 @@ export interface ErrorBoundarySpec<
   readonly fallback: (props: ErrorBoundaryFallbackProps) => ReactNode;
 }
 
+type DefinedInitialData<TQueryFnData> = {
+  initialData:
+    | Exclude<TQueryFnData, undefined>
+    | (() => Exclude<TQueryFnData, undefined>);
+};
+
 /**
- * What an error boundary's hook returns: TanStack's hooks, throwing the
- * errors it and the boundaries above it own to them, and typing `error`
- * without those.
+ * What an error boundary's hook returns: transforms for tRPC's options,
+ * for TanStack's own hooks. Each sets `throwOnError` to throw the errors
+ * this boundary and the ones above it own, as well as what the options'
+ * own `throwOnError` throws, and types the options' error without the
+ * owned ones.
  * @since 0.1.0
  * @stability unstable
  */
-export interface ErrorBoundaryHooks<
+export interface ErrorBoundaryOptions<
   TCodes extends string,
   TUnexpected extends boolean,
 > {
-  useQuery<
+  /** For `useQuery`, `useSuspenseQuery`, `useQueries` and `usePrefetchQuery`. */
+  query<TQueryFnData, TError, TData>(
+    options: QueryOptionsOut<TQueryFnData, TError, TData> &
+      DefinedInitialData<TQueryFnData>,
+  ): QueryOptionsOut<
     TQueryFnData,
-    TError,
-    TData = TQueryFnData,
-    TQueryKey extends QueryKey = QueryKey,
-  >(
-    options: UseQueryOptions<TQueryFnData, TError, TData, TQueryKey>,
-  ): UseQueryResult<TData, Remaining<TError, TCodes, TUnexpected>>;
-  useMutation<TData, TError, TVariables, TOnMutateResult>(
-    options: UseMutationOptions<TData, TError, TVariables, TOnMutateResult>,
-  ): UseMutationResult<
-    TData,
     Remaining<TError, TCodes, TUnexpected>,
-    TVariables,
+    TData
+  > &
+    DefinedInitialData<TQueryFnData>;
+  query<TQueryFnData, TError, TData>(
+    options: QueryOptionsOut<TQueryFnData, TError, TData>,
+  ): QueryOptionsOut<
+    TQueryFnData,
+    Remaining<TError, TCodes, TUnexpected>,
+    TData
+  >;
+  /** For `useInfiniteQuery` and `useSuspenseInfiniteQuery`. */
+  infiniteQuery<TOutput, TError, TData, TPageParam>(
+    options: InfiniteOptionsOut<TOutput, TError, TData, TPageParam>,
+  ): InfiniteOptionsOut<
+    TOutput,
+    Remaining<TError, TCodes, TUnexpected>,
+    TData,
+    TPageParam
+  >;
+  /** For `useMutation`. */
+  mutation<TInput, TOutput, TError, TOnMutateResult>(
+    options: MutationOptionsOut<TInput, TOutput, TError, TOnMutateResult>,
+  ): MutationOptionsOut<
+    TInput,
+    TOutput,
+    Remaining<TError, TCodes, TUnexpected>,
     TOnMutateResult
   >;
   /** Whether this boundary or one above it owns `error`. */
@@ -138,8 +164,8 @@ export interface ErrorBoundaryHooks<
 
 /**
  * What {@link createErrorBoundary} returns, as a tuple to name freely,
- * like `createTrpcContext`'s: the component, and the hook for its hooks,
- * which throws outside the component.
+ * like `createTrpcContext`'s: the component, and the hook for its options
+ * transforms, which throws outside the component.
  * @since 0.1.0
  * @stability unstable
  */
@@ -148,7 +174,7 @@ export type TrpcErrorBoundary<
   TUnexpected extends boolean,
 > = readonly [
   Boundary: ErrorBoundaryComponent<TCodes, TUnexpected>,
-  useBoundary: () => ErrorBoundaryHooks<TCodes, TUnexpected>,
+  useBoundary: () => ErrorBoundaryOptions<TCodes, TUnexpected>,
 ];
 
 interface Internal {
@@ -212,7 +238,8 @@ class Catcher extends Component<CatcherProps, { error: unknown }> {
 
 /**
  * Creates an error boundary that owns some error codes for the tree under
- * it. Its hook's `useQuery` and `useMutation` throw the errors it or a
+ * it. Its hook returns `query`, `infiniteQuery` and `mutation`, which take
+ * tRPC's options for TanStack's own hooks: those throw the errors it or a
  * boundary above it owns to the nearest boundary that claims them, whose
  * `fallback` replaces its subtree, and type `error` without them. A
  * boundary re-throws what it doesn't claim. `parent` is the boundary it
@@ -298,25 +325,20 @@ export function createErrorBoundary<
   Boundary.displayName = boundary.displayName;
   internals.set(Boundary, boundary);
 
-  const hooks: ErrorBoundaryHooks<string, boolean> = {
-    useQuery: (options) => {
-      const own = options.throwOnError;
-      return useQuery({
-        ...options,
-        throwOnError: (error, query) =>
-          owns(error) ||
-          (typeof own === 'function' ? own(error, query) : own === true),
-      }) as never;
-    },
-    useMutation: (options) => {
-      const own = options.throwOnError;
-      return useMutation({
-        ...options,
-        throwOnError: (error) =>
-          owns(error) ||
-          (typeof own === 'function' ? own(error) : own === true),
-      }) as never;
-    },
+  const throwing =
+    <TArgs extends unknown[]>(
+      own: boolean | ((error: never, ...args: TArgs) => boolean) | undefined,
+    ) =>
+    (error: unknown, ...args: TArgs) =>
+      owns(error) ||
+      (typeof own === 'function' ? own(error as never, ...args) : own === true);
+  const transforms: ErrorBoundaryOptions<string, boolean> = {
+    query: (options: QueryOptionsOut<unknown, unknown, unknown>) =>
+      ({ ...options, throwOnError: throwing(options.throwOnError) }) as never,
+    infiniteQuery: (options) =>
+      ({ ...options, throwOnError: throwing(options.throwOnError) }) as never,
+    mutation: (options) =>
+      ({ ...options, throwOnError: throwing(options.throwOnError) }) as never,
     owns,
   };
   const useBoundary = () => {
@@ -325,7 +347,7 @@ export function createErrorBoundary<
         `The ${spec.name} error boundary's hook found no <${boundary.displayName}> above it: wrap the tree in <${boundary.displayName}>`,
       );
     }
-    return hooks;
+    return transforms;
   };
   return [Boundary as never, useBoundary as never];
 }

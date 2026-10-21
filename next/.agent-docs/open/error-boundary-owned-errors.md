@@ -27,6 +27,7 @@ A boundary's hooks throw the errors it owns, and its `fallback` replaces everyth
 
 ```tsx twoslash
 // ---cut-start---
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { createTrpcContext } from '@trpc12/tanstack-react-query';
 import { useState } from 'react';
 import { createErrorBoundaryA as createErrorBoundary } from '../open/error-boundary-owned-errors.ts';
@@ -52,8 +53,8 @@ const [AuthBoundary, useAuthBoundary] = createErrorBoundary({
 function RenameDoc(props: { id: string }) {
   const trpc = useTrpc();
   const [title, setTitle] = useState('');
-  const { useMutation } = useAuthBoundary();
-  const rename = useMutation(trpc.doc.rename.mutationOptions());
+  const auth = useAuthBoundary();
+  const rename = useMutation(auth.mutation(trpc.doc.rename.mutationOptions()));
   // UNAUTHORIZED: <SignIn> replaces this form and `title` is gone.
   // Its reset() renders an empty form; the user types the title again.
   return (
@@ -71,6 +72,7 @@ An owned mutation error doesn't throw. The mutation stays `pending`, and the bou
 
 ```tsx twoslash
 // ---cut-start---
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { createTrpcContext } from '@trpc12/tanstack-react-query';
 import { useState } from 'react';
 import { createErrorBoundaryB as createErrorBoundary } from '../open/error-boundary-owned-errors.ts';
@@ -96,8 +98,8 @@ const [AuthBoundary, useAuthBoundary] = createErrorBoundary({
 function RenameDoc(props: { id: string }) {
   const trpc = useTrpc();
   const [title, setTitle] = useState('');
-  const { useMutation } = useAuthBoundary();
-  const rename = useMutation(trpc.doc.rename.mutationOptions());
+  const auth = useAuthBoundary();
+  const rename = useMutation(auth.mutation(trpc.doc.rename.mutationOptions()));
   // UNAUTHORIZED: <SignIn> shows, this form is hidden with `title` kept,
   // and `rename` stays pending. reset() sends the rename again.
   return (
@@ -117,6 +119,7 @@ As B, and a query's owned error holds too: it keeps its last data, or stays pend
 
 ```tsx twoslash
 // ---cut-start---
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { createTrpcContext } from '@trpc12/tanstack-react-query';
 import { createErrorBoundaryC as createErrorBoundary } from '../open/error-boundary-owned-errors.ts';
 import { z } from 'zod';
@@ -140,8 +143,10 @@ const [OfflineBoundary, useOfflineBoundary] = createErrorBoundary({
 
 function DocTitle(props: { id: string }) {
   const trpc = useTrpc();
-  const { useQuery } = useOfflineBoundary();
-  const doc = useQuery(trpc.doc.byId.queryOptions({ input: { id: props.id } }));
+  const offline = useOfflineBoundary();
+  const doc = useQuery(
+    offline.query(trpc.doc.byId.queryOptions({ input: { id: props.id } })),
+  );
   // A refetch that fails offline keeps `doc.data` and the tree under
   // <OfflineBoundary> mounted, hidden behind <Offline> until reset().
   return <h1>{doc.data?.title}</h1>;
@@ -162,7 +167,7 @@ function DocTitle(props: { id: string }) {
 
 ## Details
 
-- Under B the hold wraps the options' `mutationFn`: an owned failure waits for the boundary's `reset()`, then calls the procedure again. `throwOnError` stays false for mutations, so it works with either answer to [error-boundary-hook](./error-boundary-hook.md).
+- Under B the hold wraps the options' `mutationFn`: an owned failure waits for the boundary's `reset()`, then calls the procedure again. `throwOnError` stays false for mutations, so it fits `auth.mutation()`, an options transform ([error-boundaries](../decisions/error-boundaries.md)).
 - `<Activity mode="hidden">` keeps state and unmounts effects, so the hidden form's subscriptions stop and start again when it's shown; the mutation itself lives in TanStack's `MutationCache` and keeps waiting.
 - Giving up on a held mutation (closing the sign-in prompt) could reject it with `CLIENT_CLOSED_REQUEST`, which `matchError()`'s `unexpected` handles, or leave the decision to the fallback through a second callback next to `reset`.
 - A fourth answer, not shown: mutations through a boundary's hook don't throw at all and keep their full error type, so only queries are narrowed. It's the least to build and gives up the point of typing mutations.

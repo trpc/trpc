@@ -2,6 +2,9 @@
 import {
   QueryClient,
   QueryClientProvider,
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
   useSuspenseQuery,
 } from '@tanstack/react-query';
 import { isTrpcError, matchError } from '@trpc12/trpc/client';
@@ -23,8 +26,8 @@ import {
 type App = ReturnType<typeof createApp>;
 
 function RenameDoc(props: { app: App; title: string }) {
-  const rename = useAuthBoundary().useMutation(
-    props.app.trpc.doc.rename.mutationOptions(),
+  const rename = useMutation(
+    useAuthBoundary().mutation(props.app.trpc.doc.rename.mutationOptions()),
   );
   const message = rename.error
     ? matchError(rename.error, {
@@ -47,8 +50,10 @@ function RenameDoc(props: { app: App; title: string }) {
 }
 
 function DocTitle(props: { app: App; id: string }) {
-  const doc = useAuthBoundary().useQuery(
-    props.app.trpc.doc.byId.queryOptions({ input: { id: props.id } }),
+  const doc = useQuery(
+    useAuthBoundary().query(
+      props.app.trpc.doc.byId.queryOptions({ input: { id: props.id } }),
+    ),
   );
   if (doc.error) {
     return (
@@ -142,6 +147,31 @@ test('a network failure passes the Auth boundary, stops at Offline, and reset re
   expect(ui.text('#title')).toBe('Hello');
 });
 
+test("useInfiniteQuery's owned errors reach their boundary through infiniteQuery()", async () => {
+  await using app = createApp();
+  app.state.user = undefined;
+  function Titles() {
+    const titles = useInfiniteQuery(
+      useAuthBoundary().infiniteQuery(
+        app.trpc.doc.titles.infiniteOptions({
+          input: (cursor: number) => ({ cursor }),
+          initialPageParam: 0,
+          getNextPageParam: (page) => page.next,
+        }),
+      ),
+    );
+    return <p id="titles">{titles.data?.pages.map((p) => p.title).join()}</p>;
+  }
+  using ui = await mount(boundaries(<Titles />));
+  await ui.settle();
+  expect(ui.text('#sign-in')).toBe('Sign in');
+
+  app.state.user = 'ada';
+  await ui.click('#sign-in-retry');
+  await ui.settle();
+  expect(ui.text('#titles')).toBe('Hello');
+});
+
 test('a thrown server error is unexpected and reaches Root', async () => {
   await using app = createApp();
   using ui = await mount(boundaries(<RenameDoc app={app} title="crash" />));
@@ -190,10 +220,12 @@ test('a boundary throws without its parent above it', async () => {
 test("the options' own throwOnError still throws what no boundary owns, past every boundary", async () => {
   await using app = createApp();
   function Thrower() {
-    useAuthBoundary().useQuery({
-      ...app.trpc.doc.byId.queryOptions({ input: { id: '404' } }),
-      throwOnError: (error) => error.code === 'NOT_FOUND',
-    });
+    useQuery(
+      useAuthBoundary().query({
+        ...app.trpc.doc.byId.queryOptions({ input: { id: '404' } }),
+        throwOnError: (error) => error.code === 'NOT_FOUND',
+      }),
+    );
     return null;
   }
   using ui = await mount(boundaries(<Thrower />));
@@ -205,10 +237,12 @@ test("the options' own throwOnError still throws what no boundary owns, past eve
 test("a mutation's own throwOnError throws what no boundary owns too", async () => {
   await using app = createApp();
   function Rename() {
-    const rename = useAuthBoundary().useMutation({
-      ...app.trpc.doc.rename.mutationOptions(),
-      throwOnError: (error) => error.code === 'TITLE_TAKEN',
-    });
+    const rename = useMutation(
+      useAuthBoundary().mutation({
+        ...app.trpc.doc.rename.mutationOptions(),
+        throwOnError: (error) => error.code === 'TITLE_TAKEN',
+      }),
+    );
     return (
       <button
         id="rename"
@@ -277,7 +311,9 @@ test('owns() says whether the boundary or one above it owns an error', async () 
   const seen: Array<[string, boolean]> = [];
   function Probe() {
     const auth = useAuthBoundary();
-    const rename = auth.useMutation(app.trpc.doc.rename.mutationOptions());
+    const rename = useMutation(
+      auth.mutation(app.trpc.doc.rename.mutationOptions()),
+    );
     return (
       <button
         id="rename"

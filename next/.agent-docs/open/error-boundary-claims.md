@@ -31,6 +31,7 @@ A boundary owns errors by code today, whatever `defined` says, so a returned `UN
 ```tsx twoslash
 // @errors: 2367
 // ---cut-start---
+import { useQuery } from '@tanstack/react-query';
 import { createTrpcContext } from '@trpc12/tanstack-react-query';
 import { createErrorBoundaryA as createErrorBoundary } from '../open/error-boundary-claims.ts';
 import { z } from 'zod';
@@ -53,8 +54,8 @@ const [StaleBoundary, useStaleBoundary] = createErrorBoundary({
 });
 
 const trpc = useTrpc();
-const doc = useStaleBoundary().useQuery(
-  trpc.doc.byId.queryOptions({ input: { id: '1' } }),
+const doc = useQuery(
+  useStaleBoundary().query(trpc.doc.byId.queryOptions({ input: { id: '1' } })),
 );
 // The doc's own NOT_FOUND is gone too, so the check is a type error
 if (doc.error?.code === 'NOT_FOUND') {
@@ -68,6 +69,7 @@ if (doc.error?.code === 'NOT_FOUND') {
 
 ```tsx twoslash
 // ---cut-start---
+import { useQuery } from '@tanstack/react-query';
 import { createTrpcContext } from '@trpc12/tanstack-react-query';
 import { createErrorBoundaryB as createErrorBoundary } from '../open/error-boundary-claims.ts';
 import { z } from 'zod';
@@ -90,8 +92,8 @@ const [StaleBoundary, useStaleBoundary] = createErrorBoundary({
 });
 
 const trpc = useTrpc();
-const doc = useStaleBoundary().useQuery(
-  trpc.doc.byId.queryOptions({ input: { id: '1' } }),
+const doc = useQuery(
+  useStaleBoundary().query(trpc.doc.byId.queryOptions({ input: { id: '1' } })),
 );
 if (doc.error?.code === 'NOT_FOUND') {
   doc.error._tag; // the doc's own NOT_FOUND is left
@@ -109,6 +111,7 @@ A claim matches an error's code or its tag. They can't be confused: built-in cod
 
 ```tsx twoslash
 // ---cut-start---
+import { useQuery } from '@tanstack/react-query';
 import { createTrpcContext } from '@trpc12/tanstack-react-query';
 import { createErrorBoundaryC as createErrorBoundary } from '../open/error-boundary-claims.ts';
 import { z } from 'zod';
@@ -131,8 +134,8 @@ const [AppBoundary, useAppBoundary] = createErrorBoundary({
 });
 
 const trpc = useTrpc();
-const doc = useAppBoundary().useQuery(
-  trpc.doc.byId.queryOptions({ input: { id: '1' } }),
+const doc = useQuery(
+  useAppBoundary().query(trpc.doc.byId.queryOptions({ input: { id: '1' } })),
 );
 if (doc.error?.code === 'NOT_FOUND') {
   doc.error._tag; // the doc's own NOT_FOUND is left
