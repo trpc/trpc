@@ -35,7 +35,7 @@ import {
 } from './sync.ts';
 import { backpressure, returnUnawaited } from '../../internal/effects.ts';
 import { JsonBytes } from '../../internal/frames.ts';
-import { counter, DansonError } from './utils.ts';
+import { counter, TransformerError } from './utils.ts';
 
 export const VALUE = 0;
 export const ERROR = 1;
@@ -135,7 +135,7 @@ function toBytes(chunks: unknown[]): Uint8Array<ArrayBuffer>[] {
     if (chunk instanceof Uint8Array) return chunk as Uint8Array<ArrayBuffer>;
     const decoded = Base64.decode(String(chunk));
     if (Result.isFailure(decoded))
-      throw new DansonError('Malformed file bytes');
+      throw new TransformerError('Malformed file bytes');
     return decoded.success as Uint8Array<ArrayBuffer>;
   });
 }
@@ -221,15 +221,15 @@ export interface SerializeStreamOptions extends SerializeOptions {
   coerceError?: ((cause: unknown) => unknown) | undefined;
 }
 
-export const toDansonError = (cause: unknown): DansonError =>
-  cause instanceof DansonError
+export const toTransformerError = (cause: unknown): TransformerError =>
+  cause instanceof TransformerError
     ? cause
-    : new DansonError('serialize failed', { cause });
+    : new TransformerError('serialize failed', { cause });
 
-export const toDeserializeError = (cause: unknown): DansonError =>
-  cause instanceof DansonError
+export const toDeserializeError = (cause: unknown): TransformerError =>
+  cause instanceof TransformerError
     ? cause
-    : new DansonError('deserialize failed', { cause });
+    : new TransformerError('deserialize failed', { cause });
 
 /**
  * A serialized value: the head, plus a stream of chunks when it holds deferred values.
@@ -239,7 +239,7 @@ export const toDeserializeError = (cause: unknown): DansonError =>
 export interface SerializedDeferred {
   readonly head: SerializeReturn;
   /** `undefined` when the value has no `Promise`, `AsyncIterable` or `ReadableStream` in it. */
-  readonly chunks: Stream.Stream<Chunk, DansonError> | undefined;
+  readonly chunks: Stream.Stream<Chunk, TransformerError> | undefined;
 }
 
 /**
@@ -282,7 +282,7 @@ export function serializeDeferred(
       ? Effect.succeed<SerializeReturn>({ json: v as never })
       : Effect.try({
           try: () => serializeSync(v, opts),
-          catch: toDansonError,
+          catch: toTransformerError,
         });
 
   const head = serializeSync(value, opts);
@@ -306,9 +306,11 @@ export type PendingSource = [number, Stream.Stream<[Status, unknown]>];
  */
 export function deferredChunks(
   pending: PendingSource[],
-  serialize: (value: unknown) => Effect.Effect<SerializeReturn, DansonError>,
+  serialize: (
+    value: unknown,
+  ) => Effect.Effect<SerializeReturn, TransformerError>,
   coerceError: ((cause: unknown) => unknown) | undefined,
-): Stream.Stream<Chunk, DansonError> {
+): Stream.Stream<Chunk, TransformerError> {
   const failure = (cause: unknown) =>
     Effect.map(
       serialize(coerceError ? coerceError(cause) : cause),
@@ -317,7 +319,7 @@ export function deferredChunks(
   const chunk = (
     status: Status,
     v: unknown,
-  ): Effect.Effect<[Status, SerializeReturn], DansonError> =>
+  ): Effect.Effect<[Status, SerializeReturn], TransformerError> =>
     status === ERROR
       ? failure(v)
       : serialize(v).pipe(
@@ -326,7 +328,7 @@ export function deferredChunks(
             coerceError ? failure(cause) : Effect.fail(cause),
           ),
         );
-  return Stream.callback<Chunk, DansonError>(
+  return Stream.callback<Chunk, TransformerError>(
     (queue) =>
       Effect.gen(function* () {
         let active = 0;
@@ -536,11 +538,12 @@ export interface StreamErrors {
 export function streamErrorsOf(options: StreamErrorOptions): StreamErrors {
   const failed =
     options.streamFailed ??
-    ((cause: unknown) => new DansonError('Stream failed', { cause }));
+    ((cause: unknown) => new TransformerError('Stream failed', { cause }));
   const interrupted =
-    options.streamInterrupted ?? (() => new DansonError('Stream interrupted'));
+    options.streamInterrupted ??
+    (() => new TransformerError('Stream interrupted'));
   const unreadable = (error: unknown) =>
-    error instanceof DansonError ? failed(error) : error;
+    error instanceof TransformerError ? failed(error) : error;
   return {
     revive: options.reviveError ?? ((v: unknown) => v),
     unreadable,
@@ -561,10 +564,10 @@ export function streamErrorsOf(options: StreamErrorOptions): StreamErrors {
 export function deserializeStream<T, E>(
   source: Stream.Stream<Frame, E>,
   options: DeserializeStreamOptions,
-): Effect.Effect<T, E | DansonError> {
+): Effect.Effect<T, E | TransformerError> {
   const errors = streamErrorsOf(options);
   return Effect.gen(function* () {
-    const head = yield* Deferred.make<T, E | DansonError>();
+    const head = yield* Deferred.make<T, E | TransformerError>();
     const chunks = yield* makeChunkQueues(errors.revive);
     const { iterate, ...builders } = chunks.builders;
     const opts: DeserializeOptions = {
@@ -579,7 +582,7 @@ export function deserializeStream<T, E>(
     const collected = new Map<number, Uint8Array<ArrayBuffer>[]>();
     const blobParts = (ref: BlobRef) => {
       const parts = collected.get(ref.stream);
-      if (!parts) throw new DansonError('Missing file bytes');
+      if (!parts) throw new TransformerError('Missing file bytes');
       return parts;
     };
     opts.deserializers = {
@@ -617,7 +620,7 @@ export function deserializeStream<T, E>(
     // (the link names it), a deferred value as a failed stream would.
     const fail = (target: number, error: unknown): Effect.Effect<void> =>
       target === HEAD
-        ? Effect.asVoid(Deferred.fail(head, error as DansonError))
+        ? Effect.asVoid(Deferred.fail(head, error as TransformerError))
         : chunks.fail(target, errors.unreadable(error));
     const settle = (target: number, frame: Frame): Effect.Effect<void> =>
       target === HEAD

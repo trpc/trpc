@@ -8,5 +8,5 @@
 - (agent) The code is what matters mid-stream; the HTTP status was already sent. `STREAM_INTERRUPTED` is a client-side code, so `Effect.catchTag('StreamInterrupted', …)` works ([`error-tags.md`](./error-tags.md)).
 - (agent, [#7692](https://github.com/trpc/trpc/pull/7692)) `STREAM_INTERRUPTED` is for a stream still open after its call resolved (a subscription, a streamed output, a deferred value). A truncated body that never gave the call its result fails the call with `NETWORK_ERROR` ([link-errors](./link-errors.md)).
 - Why: the error type no longer depends on the serializer ([`replaceable-serializers.md`](./replaceable-serializers.md)), and callers narrow stream failures like any other error.
-- Lost: `DansonError` as a distinct stream-failure type.
+- Lost: `TransformerError` (`DansonError` then) as a distinct stream-failure type.
 - Lives in: `packages/trpc/src/transformer/danson/stream.ts` (`streamFailed`, `streamInterrupted` options), `src/internal/error.ts` (`streamErrors`, passed by every client link); `packages/trpc/src/client/links/http.test.ts`.

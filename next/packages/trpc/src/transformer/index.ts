@@ -31,7 +31,7 @@ import {
   type DeserializeRecord,
   type SerializeRecord,
   type SerializeReturn,
-  DansonError,
+  TransformerError,
 } from './danson/index.ts';
 
 export {
@@ -41,7 +41,7 @@ export {
   type DeserializeRecord,
   type SerializeRecord,
   type SerializeReturn,
-  DansonError,
+  TransformerError,
   type JsonValue,
 } from './danson/index.ts';
 export type {
@@ -169,7 +169,7 @@ export interface Transformer<TForm extends OutputForm = DansonForm> {
       /** What open deferred values reject with when the frames end early. */
       streamInterrupted?: () => unknown;
     },
-  ): Effect.Effect<T, E | DansonError>;
+  ): Effect.Effect<T, E | TransformerError>;
 }
 
 interface PartsContext {
@@ -179,7 +179,7 @@ interface PartsContext {
 
 const addPart = (blob: Blob, ctx: PartsContext) => {
   if (!ctx.parts) {
-    throw new DansonError(
+    throw new TransformerError(
       'A File or Blob can only be sent as an input over httpLink',
     );
   }
@@ -285,7 +285,7 @@ function partDeserializers(parts: ReadonlyArray<Blob>): DeserializeRecord {
   const get = (ref: PartRef) => {
     const blob =
       ref && typeof ref.part === 'number' ? parts[ref.part] : undefined;
-    if (!blob) throw new DansonError('Missing multipart part');
+    if (!blob) throw new TransformerError('Missing multipart part');
     return blob;
   };
   return {

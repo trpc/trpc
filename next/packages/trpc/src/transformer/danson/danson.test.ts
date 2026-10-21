@@ -7,7 +7,7 @@ import {
 import { createFetchHandler, error, initTrpc } from '@trpc12/trpc/server';
 import {
   experimental_createTransformer,
-  DansonError,
+  TransformerError,
 } from '@trpc12/trpc/transformer';
 import { expect, test } from 'vite-plus/test';
 import { z } from 'zod';
@@ -246,7 +246,7 @@ test('`string` is a reserved type name', () => {
       },
     },
   });
-  expect(() => reserved.serialize('x')).toThrow(DansonError);
+  expect(() => reserved.serialize('x')).toThrow(TransformerError);
 });
 
 test('a GET query carries refs in the URL, and reads the query string strictly or leniently', async () => {

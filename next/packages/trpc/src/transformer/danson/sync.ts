@@ -9,7 +9,7 @@
  */
 import {
   counter,
-  DansonError,
+  TransformerError,
   isJsonPrimitive,
   isPlainObject,
   type JsonObject,
@@ -133,7 +133,7 @@ function compileSerializers(record: SerializeRecord): CompiledSerializers {
   const primitive: [string, SerializeFn][] = [];
   const placeholders = new Map<unknown, PlaceholderTransformer>();
   for (const [name, s] of Object.entries(record)) {
-    if (name === 'string') throw new DansonError('string is reserved');
+    if (name === 'string') throw new TransformerError('string is reserved');
     if (typeof s === 'function') {
       all.push([name, s]);
       if (instanceOnly.has(s)) continue;
@@ -270,7 +270,7 @@ export function serializeSync(
       ancestors.delete(thing);
       return result;
     }
-    throw new DansonError(
+    throw new TransformerError(
       `Do not know how to serialize ${Object.prototype.toString.call(thing)}`,
     );
   }
@@ -360,7 +360,7 @@ export function deserializeSync<T = unknown>(
   }
 
   function fromJson(value: JsonValue, depth: number, ref?: string): unknown {
-    if (depth > maxDepth) throw new DansonError('Max depth exceeded');
+    if (depth > maxDepth) throw new TransformerError('Max depth exceeded');
     if (typeof value === 'string') {
       if (compiled.placeholders.has(value))
         return compiled.placeholders.get(value);
@@ -385,7 +385,9 @@ export function deserializeSync<T = unknown>(
         if (custom.type === 'string') return custom.value;
         const d = compiled.deserializers.get(custom.type);
         if (!d) {
-          throw new DansonError(`No deserializer for type: ${custom.type}`);
+          throw new TransformerError(
+            `No deserializer for type: ${custom.type}`,
+          );
         }
         const inner = () =>
           custom.value === undefined
@@ -401,13 +403,13 @@ export function deserializeSync<T = unknown>(
       if (ref) remember(ref, result);
       for (const key of Object.keys(value)) {
         if (FORBIDDEN_KEYS.has(key)) {
-          throw new DansonError(`Forbidden key: ${key}`);
+          throw new TransformerError(`Forbidden key: ${key}`);
         }
         result[key] = fromJson(value[key]!, depth + 1);
       }
       return result;
     }
-    throw new DansonError('Deserializing unknown value');
+    throw new TransformerError('Deserializing unknown value');
   }
 
   return fromJson(obj.json, 0, rootRef) as T;

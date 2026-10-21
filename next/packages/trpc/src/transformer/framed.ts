@@ -8,12 +8,12 @@ import {
   makeChunkQueues,
   sourceOf,
   streamErrorsOf,
-  toDansonError,
+  toTransformerError,
   toDeserializeError,
   type Chunk,
   type PendingSource,
   type SerializeReturn,
-  DansonError,
+  TransformerError,
   type JsonValue,
 } from './danson/index.ts';
 
@@ -160,7 +160,7 @@ function setAt(
     parent = parent?.[key] as Record<string | number, unknown>;
   }
   if (parent === null || typeof parent !== 'object') {
-    throw new DansonError('A deferred value has no place in the result');
+    throw new TransformerError('A deferred value has no place in the result');
   }
   parent[path[path.length - 1]!] = value;
   return target;
@@ -199,7 +199,7 @@ function framedTransformer(
 ): Transformer<any> {
   const encode = (scanned: Scanned): SerializeReturn => {
     if (scanned.blob) {
-      throw new DansonError(
+      throw new TransformerError(
         'A File or Blob needs a streaming transformer such as experimental_createTransformer(); a root file output can be a raw response instead',
       );
     }
@@ -235,7 +235,7 @@ function framedTransformer(
       if (pending.length === 0) return { head, chunks: undefined };
       const chunks = deferredChunks(
         pending,
-        (v) => Effect.try({ try: () => payload(v), catch: toDansonError }),
+        (v) => Effect.try({ try: () => payload(v), catch: toTransformerError }),
         opts?.coerceError,
       );
       return { head, chunks };
@@ -243,10 +243,10 @@ function framedTransformer(
     deserializeStream: <T, E>(
       frames: Stream.Stream<SerializeReturn | Chunk, E>,
       opts: Parameters<Transformer['deserializeStream']>[1] = {},
-    ): Effect.Effect<T, E | DansonError> => {
+    ): Effect.Effect<T, E | TransformerError> => {
       const errors = streamErrorsOf(opts);
       return Effect.gen(function* () {
-        const head = yield* Deferred.make<T, E | DansonError>();
+        const head = yield* Deferred.make<T, E | TransformerError>();
         const chunks = yield* makeChunkQueues(errors.revive);
         const revivePayload = (p: FramedPayload): unknown => {
           let v: unknown = deserialize(p);

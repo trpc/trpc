@@ -1,7 +1,7 @@
 import { Effect, Stream } from 'effect';
 import {
   experimental_createTransformer,
-  DansonError,
+  TransformerError,
   jsonTransformer,
   type Frame,
   type Transformer,
@@ -61,7 +61,7 @@ for (const transformer of [experimental_createTransformer(), jsonTransformer]) {
       Stream.take(frames, 1),
     );
     await expect(early.p).rejects.toThrow(
-      new DansonError('Stream interrupted'),
+      new TransformerError('Stream interrupted'),
     );
 
     const died = await send(transformer, pending(), (frames) =>

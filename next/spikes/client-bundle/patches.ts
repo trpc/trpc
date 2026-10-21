@@ -84,8 +84,8 @@ export const cuts: Record<
     return text === undefined ? {} : { json: JSON.parse(text) };
   },
   deserialize: (value) => value.json as never,
-  serializeDeferred: () => { throw new DansonError('deferred'); },
-  deserializeStream: () => Effect.die(new DansonError('deferred')),
+  serializeDeferred: () => { throw new TransformerError('deferred'); },
+  deserializeStream: () => Effect.die(new TransformerError('deferred')),
 };`,
       ],
     ],

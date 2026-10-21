@@ -16,7 +16,7 @@ export {
   serializeDeferred,
   sourceOf,
   streamErrorsOf,
-  toDansonError,
+  toTransformerError,
   toDeserializeError,
   VALUE,
 } from './stream.ts';
@@ -35,5 +35,5 @@ export type {
   SerializeRecord,
   SerializeReturn,
 } from './sync.ts';
-export { DansonError, isPlainObject } from './utils.ts';
+export { TransformerError, isPlainObject } from './utils.ts';
 export type { JsonValue } from './utils.ts';

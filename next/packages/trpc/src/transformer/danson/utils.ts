@@ -3,8 +3,8 @@
  * @since 0.1.0
  * @stability stable
  */
-export class DansonError extends Error {
-  override name = 'DansonError';
+export class TransformerError extends Error {
+  override name = 'TransformerError';
 }
 
 export type JsonPrimitive = boolean | null | number | string;
