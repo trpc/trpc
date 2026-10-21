@@ -26,10 +26,10 @@ const entries = [
   ['registry (E): the shared client', 'registry-client.ts'],
   ['control: registry imported at runtime', 'runtime-registry-client.ts'],
   ['boundaries (A): by code', 'boundary-a.ts'],
-  ["boundaries (B): from the registry", 'boundary-b.ts'],
-  ["boundaries (C): from the class list", 'boundary-c.ts'],
-  ["boundaries (D): from the builder", 'boundary-d.ts'],
-  ["boundaries (E): from the posts subtree", 'boundary-e.ts'],
+  ['boundaries (B): from the registry', 'boundary-b.ts'],
+  ['boundaries (C): from the class list', 'boundary-c.ts'],
+  ['boundaries (D): from the builder', 'boundary-d.ts'],
+  ['boundaries (E): from the posts subtree', 'boundary-e.ts'],
   ['boundaries (F): from the `Errors` interface', 'boundary-f.ts'],
   ['boundaries (G): from the posts subtree', 'boundary-g.ts'],
   ['boundaries, no registry: from the posts subtree', 'boundary-plain.ts'],
@@ -69,7 +69,9 @@ const bundle = Command.make('bundle', {}, () =>
     }
     const same = (a: string, b: string) =>
       sizes.get(a)!.code === sizes.get(b)!.code ? 'yes' : 'no';
-    const tagged = ['b', 'c', 'd', 'e', 'f', 'g'].map((o) => `boundary-${o}.ts`);
+    const tagged = ['b', 'c', 'd', 'e', 'f', 'g'].map(
+      (o) => `boundary-${o}.ts`,
+    );
     const allSame = tagged.every(
       (file) => sizes.get(file)!.code === sizes.get('boundary-plain.ts')!.code,
     );

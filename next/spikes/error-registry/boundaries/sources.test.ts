@@ -27,9 +27,9 @@ test('B: the router, a subrouter and a procedure are what they return; the regis
   expectTypeOf<Tags<ErrorsFrom<typeof B.errors>>>().toEqualTypeOf<
     'Unauthorized' | 'PostNotFound' | 'TitleTaken' | 'RateLimited'
   >();
-  expectTypeOf<
-    ErrorsFrom<B.AppRouter['post']['byId']>
-  >().toEqualTypeOf<RegistryError<'PostNotFound', { id: string }>>();
+  expectTypeOf<ErrorsFrom<B.AppRouter['post']['byId']>>().toEqualTypeOf<
+    RegistryError<'PostNotFound', { id: string }>
+  >();
 });
 
 test("C: the class list's tags, with the fields as data, not the classes", () => {
@@ -59,7 +59,11 @@ test("E: a module's registry, its base procedure, its subtree and the backend's 
     'Unauthorized' | 'PostNotFound' | 'TitleTaken'
   >();
   expectTypeOf<Tags<ErrorsFrom<typeof E.errors>>>().toEqualTypeOf<
-    'Unauthorized' | 'RateLimited' | 'PostNotFound' | 'TitleTaken' | 'CardDeclined'
+    | 'Unauthorized'
+    | 'RateLimited'
+    | 'PostNotFound'
+    | 'TitleTaken'
+    | 'CardDeclined'
   >();
 });
 

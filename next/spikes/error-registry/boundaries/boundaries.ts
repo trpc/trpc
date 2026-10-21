@@ -119,10 +119,7 @@ export function createErrorBoundary<
   readonly unexpected?: TUnexpected;
   readonly fallback: (
     props: FallbackProps<
-      Extract<
-        CallError<E>,
-        { readonly _tag: Owned<TTags, TUnexpected> }
-      >
+      Extract<CallError<E>, { readonly _tag: Owned<TTags, TUnexpected> }>
     >,
   ) => ReactNode;
 }): readonly [

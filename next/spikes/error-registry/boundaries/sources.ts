@@ -26,7 +26,9 @@ import type {
   TaggedRegistry,
 } from '../tagged-classes/tagged-classes.ts';
 
-type TypesOf<T> = T extends { readonly '~trpc': { readonly '~types'?: infer D } }
+type TypesOf<T> = T extends {
+  readonly '~trpc': { readonly '~types'?: infer D };
+}
   ? NonNullable<D>
   : never;
 

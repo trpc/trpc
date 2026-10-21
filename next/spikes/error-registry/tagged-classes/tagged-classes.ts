@@ -32,11 +32,10 @@ export type AnyTaggedClass = Schema.Top & {
   readonly Encoded: { readonly _tag: string };
 } & (abstract new (...args: any) => { readonly _tag: string });
 
-type Fields<C extends AnyTaggedClass> = {
-  readonly [
-    K in keyof C['Encoded'] as K extends '_tag' ? never : K
-  ]: C['Encoded'][K];
-};
+type Fields<C extends AnyTaggedClass> =
+  Omit<C['Encoded'], '_tag'> extends infer F
+    ? { readonly [K in keyof F]: F[K] }
+    : never;
 
 /** Class `C`'s errors as v12 sends them: the tag, and the fields as `data`. */
 export type Sent<C extends AnyTaggedClass> = C extends unknown
