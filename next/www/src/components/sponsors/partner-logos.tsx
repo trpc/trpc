@@ -1,4 +1,4 @@
-import { useId } from 'react';
+import { type JSX, useId } from 'react';
 
 /**
  * The partners' logos, drawn in the text color so they read on light and
@@ -121,3 +121,12 @@ export function SerpApiLogo(props: LogoProps) {
     </svg>
   );
 }
+
+/** The drawn logos, by the partner's GitHub login. */
+export const partnerLogos: Partial<
+  Record<string, (props: LogoProps) => JSX.Element>
+> = {
+  coderabbitai: CodeRabbitLogo,
+  greptileai: GreptileLogo,
+  SerpApi: SerpApiLogo,
+};

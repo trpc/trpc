@@ -1,29 +1,18 @@
 import { cn } from '@shared/ui/lib/utils';
 import { Link } from '@tanstack/react-router';
 import { ArrowUpRight } from 'lucide-react';
-import type { CSSProperties, JSX } from 'react';
+import type { CSSProperties } from 'react';
 
 import { avatarUrl, type Partner, partners, sponsorTiers } from '~/sponsors.ts';
 
-import { CodeRabbitLogo, GreptileLogo, SerpApiLogo } from './partner-logos.tsx';
-
-const logos: Partial<
-  Record<
-    string,
-    (props: { readonly className?: string | undefined }) => JSX.Element
-  >
-> = {
-  coderabbitai: CodeRabbitLogo,
-  greptileai: GreptileLogo,
-  SerpApi: SerpApiLogo,
-};
+import { partnerLogos } from './partner-logos.tsx';
 
 /** The partner's logo, or for one without a drawn logo their avatar and name. */
 export function PartnerLogo(props: {
   readonly className?: string;
   readonly partner: Partner;
 }) {
-  const Logo = logos[props.partner.login];
+  const Logo = partnerLogos[props.partner.login];
   if (Logo !== undefined) {
     return <Logo className={props.className} />;
   }
