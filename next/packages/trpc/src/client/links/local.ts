@@ -30,7 +30,7 @@ import {
   type inferRouterContext,
   type inferRouterServices,
 } from '../../server/procedures/index.ts';
-import { link, withSerializer, type TrpcLink } from '../link.ts';
+import { link, withTransformer, type TrpcLink } from '../link.ts';
 import { isByteStreamInput } from './events.ts';
 
 /**
@@ -122,7 +122,7 @@ export function localLink<TRouter extends AnyRouter>(
     });
   };
 
-  return withSerializer(
+  return withTransformer(
     link(({ op }) =>
       Stream.unwrap(
         Effect.gen(function* () {

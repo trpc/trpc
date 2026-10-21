@@ -332,20 +332,20 @@ test('error data follows the serializer like outputs', async () => {
   expect(nativeEffectErr).toMatchObject({ data: { at } });
 });
 
-const superjsonSerializer = createSyncTransformer<
+const superjsonTransformer = createSyncTransformer<
   Date | Map<any, any> | Set<any> | bigint | undefined
 >(superjson);
 
 test('a sync serializer (superjson): its types survive, the transport frames root streams', async () => {
   await using server = await createTestServer({
     router,
-    serializer: superjsonSerializer,
+    serializer: superjsonTransformer,
   });
   const client = createTrpcClient({
     router: routerType<typeof router>(),
-    links: [httpLink({ url: server.url, serializer: superjsonSerializer })],
+    links: [httpLink({ url: server.url, serializer: superjsonTransformer })],
   });
-  expect(getClientTransformer(client)).toBe(superjsonSerializer);
+  expect(getClientTransformer(client)).toBe(superjsonTransformer);
 
   const rich = await client.rich.query({ q: 'x' });
   expectTypeOf(rich).toEqualTypeOf<{
@@ -422,7 +422,7 @@ test('inferRouterOutputs is what a client receives: plain JSON for a router type
 
   const sync = createTrpcClient({
     router: routerType<typeof shapes>(),
-    links: [httpLink({ url: server.url, serializer: superjsonSerializer })],
+    links: [httpLink({ url: server.url, serializer: superjsonTransformer })],
   });
   expectTypeOf<
     inferRouterOutputs<typeof sync>['post']['byId']
@@ -447,7 +447,7 @@ test('inferRouterOutputs is what a client receives: plain JSON for a router type
 });
 
 test('devalue as a sync transformer', async () => {
-  const devalueSerializer = createSyncTransformer<
+  const devalueTransformer = createSyncTransformer<
     Date | Map<any, any> | Set<any>
   >({
     serialize: devalue.stringify,
@@ -455,13 +455,17 @@ test('devalue as a sync transformer', async () => {
   });
   await using server = await createTestServer({
     router,
-    serializer: devalueSerializer,
+    serializer: devalueTransformer,
     batch: true,
   });
   const client = createTrpcClient({
     router: routerType<typeof router>(),
     links: [
-      httpLink({ url: server.url, serializer: devalueSerializer, batch: true }),
+      httpLink({
+        url: server.url,
+        serializer: devalueTransformer,
+        batch: true,
+      }),
     ],
   });
   const [rich, count] = await Promise.all([
@@ -483,7 +487,7 @@ test('nested deferred values stream with every serializer; files in inputs need 
     })),
     file: t.procedure.input(z.instanceof(Blob).optional()).mutation(() => 'ok'),
   };
-  for (const serializer of [undefined, superjsonSerializer]) {
+  for (const serializer of [undefined, superjsonTransformer]) {
     await using server = await createTestServer({
       router: deferred,
       serializer,
@@ -549,7 +553,7 @@ test('a File nested in an input or output fails with the other serializers, befo
     upload: t.procedure.input(z.unknown()).mutation(() => 'ok'),
     report: t.procedure.query(() => ({ name: 'a.txt', file })),
   };
-  for (const serializer of [undefined, superjsonSerializer]) {
+  for (const serializer of [undefined, superjsonTransformer]) {
     await using server = await createTestServer({ router: files, serializer });
     let requests = 0;
     const client = createTrpcClient({
@@ -582,5 +586,5 @@ test('a File nested in an input or output fails with the other serializers, befo
   const shared: { at: Date } = { at };
   const loop: Record<string, unknown> = { a: shared, b: shared };
   loop['self'] = loop;
-  expect(superjsonSerializer.serialize(loop).json).toBeDefined();
+  expect(superjsonTransformer.serialize(loop).json).toBeDefined();
 });

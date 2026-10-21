@@ -1,12 +1,12 @@
 import { Stream } from 'effect';
 import { TrpcError } from '../../internal/error.ts';
 import {
-  chainSerializer,
+  chainTransformer,
   chainSwitchNames,
   link,
   runLinks,
   setSwitchNames,
-  withSerializer,
+  withTransformer,
   type AnyLink,
   type Operation,
   type TrpcLink,
@@ -155,6 +155,6 @@ export function switchLink<
     return runLinks(chain, op);
   });
   setSwitchNames(switched, [name, ...names]);
-  withSerializer(switched, chainSerializer([...branches.values()].flat()));
+  withTransformer(switched, chainTransformer([...branches.values()].flat()));
   return switched as TrpcLink<any, TRouter>;
 }

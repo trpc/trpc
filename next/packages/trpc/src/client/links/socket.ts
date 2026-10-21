@@ -33,7 +33,7 @@ import {
 } from '../../transformer/index.ts';
 import type { MessagePortLike } from '../../server/sockets/index.ts';
 import {
-  withSerializer,
+  withTransformer,
   type BuiltinCallOptions,
   type Operation,
   type OperationStream,
@@ -684,7 +684,7 @@ function makeSocketLink(
       : op.type === 'subscription'
         ? subscription(op)
         : single(op);
-  return withSerializer(
+  return withTransformer(
     Object.assign(link, { close, dispose, [Symbol.asyncDispose]: dispose }),
     serializer,
   );

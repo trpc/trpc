@@ -6,7 +6,7 @@ import {
   type AnyTransformer,
 } from '../../../transformer/index.ts';
 import {
-  withSerializer,
+  withTransformer,
   type BuiltinCallOptions,
   type Operation,
   type TrpcLink,
@@ -161,7 +161,7 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
   });
   const subscription = makeSubscriptions(transport, opts);
 
-  return withSerializer(
+  return withTransformer(
     (({ op }) => {
       if (op.type === 'subscription') {
         if (opts.subscriptions === false) {

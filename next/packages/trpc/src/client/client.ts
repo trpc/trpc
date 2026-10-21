@@ -10,7 +10,7 @@ import {
 import type { IsAny, ProcedureType } from '../internal/types.ts';
 import type { AnyTransformer } from '../transformer/index.ts';
 import {
-  chainSerializer,
+  chainTransformer,
   chainSwitchNames,
   clientErrorFromCause,
   firstValue,
@@ -254,12 +254,12 @@ export function createTrpcClient(opts: TrpcClientOptions): unknown {
     }
     return untyped.request({ type, path: procedurePath, input, ...callOpts });
   });
-  const serializer = chainSerializer(opts.links);
-  if (serializer) clientSerializers.set(client, serializer);
+  const serializer = chainTransformer(opts.links);
+  if (serializer) clientTransformers.set(client, serializer);
   return client;
 }
 
-const clientSerializers = new WeakMap<object, AnyTransformer>();
+const clientTransformers = new WeakMap<object, AnyTransformer>();
 
 /**
  * The serializer a client's links send with (the first link that has one),
@@ -275,7 +275,7 @@ const clientSerializers = new WeakMap<object, AnyTransformer>();
 export function getClientTransformer(
   client: object,
 ): AnyTransformer | undefined {
-  return clientSerializers.get(client);
+  return clientTransformers.get(client);
 }
 
 /**

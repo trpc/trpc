@@ -331,7 +331,7 @@ export const link = <TDecl extends LinkDecl = {}>(
 const serializers = new WeakMap<AnyLink, AnyTransformer>();
 
 /** Records the serializer a link sends with. @internal */
-export function withSerializer<L extends AnyLink>(
+export function withTransformer<L extends AnyLink>(
   target: L,
   serializer: AnyTransformer | undefined,
 ): L {
@@ -340,7 +340,7 @@ export function withSerializer<L extends AnyLink>(
 }
 
 /** The first serializer a chain records, looking into split branches. @internal */
-export function chainSerializer(
+export function chainTransformer(
   links: ReadonlyArray<AnyLink>,
 ): AnyTransformer | undefined {
   for (const current of links) {

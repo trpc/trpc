@@ -192,7 +192,7 @@ function holdsBlob(value: unknown, seen = new Set<object>()): boolean {
   return false;
 }
 
-function framedSerializer(
+function framedTransformer(
   name: string,
   kind: 'sync' | 'none',
   transformer: SyncTransformer,
@@ -333,7 +333,7 @@ export function createSyncTransformer<TKeeps = never>(
   transformer: SyncTransformer,
   opts: SyncTransformerOptions = {},
 ): Transformer<SyncForm<TKeeps>> {
-  return framedSerializer(opts.name ?? 'sync', 'sync', transformer);
+  return framedTransformer(opts.name ?? 'sync', 'sync', transformer);
 }
 
 /**
@@ -350,7 +350,7 @@ export function createSyncTransformer<TKeeps = never>(
  * @stability stable
  */
 export const jsonTransformer: Transformer<JsonForm> =
-  /* @__PURE__ */ framedSerializer('json', 'none', {
+  /* @__PURE__ */ framedTransformer('json', 'none', {
     serialize: (value) => {
       const text = JSON.stringify(value);
       return text === undefined ? undefined : JSON.parse(text);

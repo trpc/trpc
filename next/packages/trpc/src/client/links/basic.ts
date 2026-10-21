@@ -9,10 +9,10 @@ import {
   type AtLeastOneLink,
   type Operation,
   type TrpcLink,
-  chainSerializer,
+  chainTransformer,
   chainSwitchNames,
   setSwitchNames,
-  withSerializer,
+  withTransformer,
 } from '../link.ts';
 import type { RouterPaths } from '../types.ts';
 import { isByteStreamInput } from './events.ts';
@@ -143,7 +143,7 @@ export function splitLink<
     runLinks(opts.condition(args.op as never) ? yes : no, args.op),
   );
   setSwitchNames(split, [...chainSwitchNames(yes), ...chainSwitchNames(no)]);
-  withSerializer(split, chainSerializer([...yes, ...no]));
+  withTransformer(split, chainTransformer([...yes, ...no]));
   return split as TrpcLink<any, TRouter>;
 }
 

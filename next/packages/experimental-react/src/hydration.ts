@@ -38,7 +38,7 @@ interface HasStore {
   readonly client: object;
 }
 
-const serializerOf = (trpc: HasStore, opts: HydrationOptions) =>
+const transformerOf = (trpc: HasStore, opts: HydrationOptions) =>
   opts.serializer ?? getClientTransformer(trpc.client) ?? jsonTransformer;
 
 /**
@@ -57,7 +57,7 @@ export function dehydrate(
   trpc: HasStore,
   opts: HydrationOptions = {},
 ): DehydratedQueries {
-  const serializer = serializerOf(trpc, opts);
+  const serializer = transformerOf(trpc, opts);
   return {
     queries: trpc.store.entries().flatMap((entry) =>
       entry.hasData
@@ -93,7 +93,7 @@ export function hydrate(
   state: DehydratedQueries,
   opts: HydrationOptions = {},
 ): void {
-  const serializer = serializerOf(trpc, opts);
+  const serializer = transformerOf(trpc, opts);
   for (const query of state.queries) {
     trpc.store.seed(
       query.path,

@@ -48,7 +48,7 @@ import {
 } from '@trpc12/trpc/transformer';
 
 /** Keys use danSON, so inputs with `Date`s and `Map`s key apart. */
-const keySerializer = /* @__PURE__ */ createSerializer();
+const keyTransformer = /* @__PURE__ */ createSerializer();
 
 /**
  * Reactivity keys: a list, or lists by namespace, as `Reactivity` takes them.
@@ -217,7 +217,7 @@ const keyString = (key: Key): string =>
     key.path,
     key.input === undefined
       ? null
-      : keySerializer.serialize(sortKeys(key.input)),
+      : keyTransformer.serialize(sortKeys(key.input)),
     key.options?.reactivityKeys ?? null,
     key.options?.timeToLive === undefined
       ? null

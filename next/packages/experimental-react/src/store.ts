@@ -11,7 +11,7 @@ import {
 } from './thenable.ts';
 
 /** Keys use danSON, so inputs with `Date`s and `Map`s key apart. */
-const keySerializer = /* @__PURE__ */ createSerializer();
+const keyTransformer = /* @__PURE__ */ createSerializer();
 
 /**
  * The cache key of a query: its path and its input, with plain objects'
@@ -20,7 +20,7 @@ const keySerializer = /* @__PURE__ */ createSerializer();
  * @stability experimental
  */
 export const queryKey = (path: string, input: unknown): string =>
-  `${path}\n${input === undefined ? '' : JSON.stringify(keySerializer.serialize(sortKeys(input)))}`;
+  `${path}\n${input === undefined ? '' : JSON.stringify(keyTransformer.serialize(sortKeys(input)))}`;
 
 /**
  * What a query link adds to the store. Each field is optional; links in
