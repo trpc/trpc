@@ -34,6 +34,8 @@ export interface PageSeo {
    */
   readonly hidden?: boolean;
   readonly description: string;
+  /** What the page's social card shows, when it's more than its title. */
+  readonly imageAlt?: string;
   /** The page as markdown, for agents: `/v12/docs/<slug>.md`. */
   readonly markdownPath?: string;
   /** Keeps search engines from indexing the page, even once the site is. */
@@ -134,7 +136,7 @@ export function pageHead(page: PageSeo) {
     : `${site.name} - ${site.tagline.join(' ')}`;
   const url = page.canonical ?? absoluteUrl(page.path);
   const image = ogImageUrl(page.path);
-  const imageAlt = page.title ?? site.tagline.join(' ');
+  const imageAlt = page.imageAlt ?? page.title ?? site.tagline.join(' ');
   return {
     links: [
       ...(page.hidden

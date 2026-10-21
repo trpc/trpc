@@ -10,10 +10,18 @@ import { availableParallelism } from 'node:os';
 import { NodeServices } from '@effect/platform-node';
 import { renderAsync, Resvg } from '@resvg/resvg-js';
 import { Data, Effect, FileSystem, Option, Path } from 'effect';
-import { type CSSProperties, createElement as h, type ReactNode } from 'react';
+import { Heart } from 'lucide-react';
+import {
+  type CSSProperties,
+  createElement as h,
+  type JSX,
+  type ReactNode,
+} from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
 import satori, { type Font } from 'satori';
 import type { Plugin } from 'vite';
 
+import { partnerLogos } from '../src/components/sponsors/partner-logos.tsx';
 import { stripInlineCode } from '../src/content/inline-code.ts';
 import { ogImagePath, ogImageSize } from '../src/seo.ts';
 import { type CopiedVersion, site } from '../src/site.ts';
@@ -30,7 +38,7 @@ export type OgCard = Data.TaggedEnum<{
     readonly version: 'v12' | CopiedVersion['id'];
   };
   Home: { readonly path: string };
-  /** A page of its own, like `/sponsor`. */
+  /** A page of its own, like `/media`. */
   Page: {
     readonly description: string;
     readonly eyebrow: string;
@@ -47,6 +55,18 @@ export type OgCard = Data.TaggedEnum<{
     readonly eyebrow: string;
     readonly path: string;
     readonly title: string;
+    readonly url: string;
+  };
+  /** `/sponsor`'s: its headline, and the partners' logos. */
+  Sponsor: {
+    readonly headline: string;
+    /** Under the headline. */
+    readonly lede: string;
+    readonly partners: ReadonlyArray<{
+      readonly login: string;
+      readonly name: string;
+    }>;
+    readonly path: string;
     readonly url: string;
   };
 }>;
@@ -66,6 +86,9 @@ const colors = {
   border: '#27272a',
   brand: '#398ccb',
   brandLight: '#7ab6e2',
+  /** `/sponsor`'s heart and glow, Tailwind's pink-500 as on the page. */
+  heart: '#ec4899',
+  heartLight: '#f9a8d4',
   muted: '#a1a1aa',
   subtle: '#71717a',
   surface: '#18181b',
@@ -79,8 +102,17 @@ const versionLabels = {
   v12: 'v12 · experimental',
 } as const satisfies Record<'v12' | CopiedVersion['id'], string>;
 
+interface Picture {
+  /** Width over height. */
+  readonly aspect: number;
+  readonly src: string;
+}
+
 interface Assets {
+  readonly heart: string;
   readonly logo: string;
+  /** The drawn partner logos, by login, in the card's text color. */
+  readonly partnerLogos: ReadonlyMap<string, Picture>;
   readonly pattern: string;
 }
 
@@ -330,16 +362,141 @@ const homeCard = (assets: Assets) =>
     ),
   );
 
+const partnerLogoHeight = 40;
+
+const partnerMark = (
+  assets: Assets,
+  partner: { readonly login: string; readonly name: string },
+) => {
+  const logo = assets.partnerLogos.get(partner.login);
+  return logo === undefined
+    ? box(
+        { color: colors.text, fontSize: 32, fontWeight: 800 },
+        plainText(partner.name),
+      )
+    : h('img', {
+        height: partnerLogoHeight,
+        key: partner.login,
+        src: logo.src,
+        width: Math.round(partnerLogoHeight * logo.aspect),
+      });
+};
+
+const sponsorCard = (
+  assets: Assets,
+  sponsor: Data.TaggedEnum.Value<OgCard, 'Sponsor'>,
+) =>
+  card(
+    assets,
+    box({
+      backgroundImage: `radial-gradient(circle at 0% 100%, ${colors.heart}38 0%, ${colors.heart}00 50%)`,
+      height: '100%',
+      left: 0,
+      position: 'absolute',
+      top: 0,
+      width: '100%',
+    }),
+    box(
+      { alignItems: 'center', justifyContent: 'space-between' },
+      wordmark(assets, 56),
+      url(sponsor.url, 24),
+    ),
+    box(
+      { flexDirection: 'column', flexGrow: 1, justifyContent: 'center' },
+      box(
+        { marginBottom: 24 },
+        box(
+          {
+            alignItems: 'center',
+            backgroundColor: `${colors.heart}1f`,
+            border: `1.5px solid ${colors.heart}80`,
+            borderRadius: 999,
+            color: colors.heartLight,
+            fontSize: 26,
+            fontWeight: 800,
+            gap: 10,
+            padding: '8px 22px 8px 18px',
+          },
+          h('img', { height: 26, src: assets.heart, width: 26 }),
+          'Sponsor tRPC',
+        ),
+      ),
+      paragraph(
+        {
+          fontSize: 80,
+          fontWeight: 800,
+          letterSpacing: '-0.04em',
+          lineHeight: 1.04,
+          maxWidth: 900,
+        },
+        2,
+        plainText(sponsor.headline),
+      ),
+      box(
+        { color: colors.muted, fontSize: 32, marginTop: 22 },
+        plainText(sponsor.lede),
+      ),
+    ),
+    box(
+      {
+        alignItems: 'center',
+        borderTop: `1px solid ${colors.border}`,
+        gap: 44,
+        paddingTop: 30,
+      },
+      box(
+        {
+          color: colors.subtle,
+          fontFamily: 'JetBrains Mono',
+          fontSize: 20,
+          fontWeight: 500,
+          letterSpacing: '0.08em',
+          textTransform: 'uppercase',
+        },
+        'Partners',
+      ),
+      ...sponsor.partners.map((partner) => partnerMark(assets, partner)),
+      box(
+        {
+          border: `2px dashed ${colors.border}`,
+          borderRadius: 10,
+          color: colors.subtle,
+          fontSize: 22,
+          padding: '8px 18px',
+        },
+        'Your logo here',
+      ),
+    ),
+  );
+
 const cardElement = (assets: Assets, ogCard: OgCard) =>
   OgCard.$match(ogCard, {
     Doc: (doc) => docCard(assets, doc),
     Home: () => homeCard(assets),
     Page: (page) => articleCard(assets, page),
     Post: (post) => postCard(assets, post),
+    Sponsor: (sponsor) => sponsorCard(assets, sponsor),
   });
 
 const dataUri = (type: string, bytes: Uint8Array) =>
   `data:${type};base64,${Buffer.from(bytes).toString('base64')}`;
+
+/** A component that draws an `<svg>` with a `viewBox`, as an image in `color`. */
+const svgPicture = (element: JSX.Element, color: string): Picture => {
+  const markup = renderToStaticMarkup(element);
+  const viewBox = /viewBox="\S+ \S+ (\S+) (\S+)"/.exec(markup);
+  // A standalone SVG needs its namespace, which React leaves to the page.
+  const namespace = /^<svg[^>]* xmlns=/.test(markup)
+    ? ''
+    : ' xmlns="http://www.w3.org/2000/svg"';
+  return {
+    aspect: viewBox === null ? 1 : Number(viewBox[1]) / Number(viewBox[2]),
+    src: dataUri(
+      'image/svg+xml',
+      Buffer.from(markup.replace(/^<svg/, `<svg${namespace} color="${color}"`)),
+    ),
+  };
+};
 
 const fontFiles = [
   ['Inter', 400, '@fontsource/inter/files/inter-latin-400-normal.woff'],
@@ -394,9 +551,15 @@ export const makeOgRenderer = Effect.fn('makeOgRenderer')(function* (
     yield* path.fromFileUrl(new URL('og/pattern.svg', import.meta.url)),
   );
   const assets: Assets = {
+    heart: svgPicture(h(Heart, { fill: colors.heart }), colors.heart).src,
     logo: dataUri(
       'image/svg+xml',
       yield* read(new URL('../public/favicon.svg', import.meta.url)),
+    ),
+    partnerLogos: new Map(
+      Object.entries(partnerLogos).flatMap(([login, Logo]) =>
+        Logo === undefined ? [] : [[login, svgPicture(h(Logo), colors.text)]],
+      ),
     ),
     // A bitmap, so each card composites it instead of redrawing its paths.
     pattern: dataUri(

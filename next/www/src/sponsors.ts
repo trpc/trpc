@@ -68,6 +68,8 @@ export const sponsorTierUrl = (tierId: number) =>
 export const sponsorPage = {
   description:
     'tRPC is MIT licensed and kept going by its sponsors. Silver and Gold sponsors are partners, featured across the site and the README.',
+  /** The hero's heading, and its social card's. */
+  headline: 'Keep tRPC typesafe, fast and free',
   path: '/sponsor',
   title: 'Sponsor tRPC',
 } as const;
@@ -141,3 +143,17 @@ export const partners: ReadonlyArray<Partner> = sponsors
       (a.rank ?? Number.POSITIVE_INFINITY) -
         (b.rank ?? Number.POSITIVE_INFINITY) || b.weight - a.weight,
   );
+
+/** Under the headline on `/sponsor`'s social card (`build/og-image.ts`). */
+export const sponsorCardLede = `MIT licensed, and kept going by ${sponsors.length} sponsors.`;
+
+/** `/sponsor`'s social card's alt text: what the card says. */
+export const sponsorCardAlt = [
+  `${sponsorPage.title}: ${sponsorPage.headline}.`,
+  sponsorCardLede,
+  ...(partners.length === 0
+    ? []
+    : [
+        `Partners: ${new Intl.ListFormat('en').format(partners.map((partner) => partner.name))}.`,
+      ]),
+].join(' ');

@@ -80,6 +80,17 @@ describe('makeOgRenderer', () => {
           title: 'Announcing tRPC v11',
           url: 'https://trpc.io/blog/announcing-trpc-v11',
         }),
+        OgCard.Sponsor({
+          headline: 'Keep tRPC typesafe, fast and free',
+          lede: 'MIT licensed, and kept going by 20 sponsors.',
+          // One with a drawn logo, and one shown by name.
+          partners: [
+            { login: 'coderabbitai', name: 'CodeRabbit' },
+            { login: 'someone', name: 'Someone' },
+          ],
+          path: '/sponsor',
+          url: 'https://v12.trpc.io/sponsor',
+        }),
       ];
       for (const card of cards) {
         const png = yield* render(card);

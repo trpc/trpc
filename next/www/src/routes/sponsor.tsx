@@ -19,6 +19,7 @@ import { cn } from '@shared/ui/lib/utils';
 import { pageHead } from '~/seo.ts';
 import {
   partners,
+  sponsorCardAlt,
   sponsorPage,
   sponsors,
   sponsorTierUrl,
@@ -28,7 +29,7 @@ import {
 } from '~/sponsors.ts';
 
 export const Route = createFileRoute('/sponsor')({
-  head: () => pageHead(sponsorPage),
+  head: () => pageHead({ ...sponsorPage, imageAlt: sponsorCardAlt }),
   component: SponsorPage,
 });
 
@@ -144,7 +145,7 @@ function Hero() {
           <Heart className="fill-pink-500 text-pink-500" /> Sponsor tRPC
         </Badge>
         <h1 className="text-4xl font-extrabold tracking-tight text-balance sm:text-5xl lg:text-6xl">
-          Keep tRPC typesafe, fast and free
+          {sponsorPage.headline}
         </h1>
         <p className="max-w-2xl text-lg text-pretty text-muted-foreground">
           tRPC is MIT licensed and built in the open. Sponsors keep it that way,

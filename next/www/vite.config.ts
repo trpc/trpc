@@ -39,7 +39,7 @@ import {
   v12,
   v12Indexable,
 } from './src/site.ts';
-import { sponsorPage } from './src/sponsors.ts';
+import { partners, sponsorCardLede, sponsorPage } from './src/sponsors.ts';
 import v9Sections from './v9/sections.json' with { type: 'json' };
 import v10Sections from './v10/sections.json' with { type: 'json' };
 import v11Sections from './v11/sections.json' with { type: 'json' };
@@ -214,10 +214,11 @@ export default defineConfig({
           title: `The ${site.name} blog`,
           url: absoluteUrl('/blog'),
         }),
-        OgCard.Page({
-          ...sponsorPage,
-          eyebrow: '',
-          pill: 'MIT licensed',
+        OgCard.Sponsor({
+          headline: sponsorPage.headline,
+          lede: sponsorCardLede,
+          partners,
+          path: sponsorPage.path,
           url: absoluteUrl(sponsorPage.path),
         }),
         ...[mediaPage, searchPage].map((page) =>
