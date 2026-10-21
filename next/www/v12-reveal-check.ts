@@ -95,10 +95,19 @@ const session = async (from?: Session): Promise<Session> => {
     const shifts = { total: 0 };
     Object.assign(self, { layoutShift: shifts });
     new PerformanceObserver((list) => {
+      // Shifts before then are Chrome painting a long page as it parses it
+      // (the home page is ~1MB, so a slow runner paints it part-parsed), not
+      // the reveal, which happens in <head> before the body or on hydration.
+      const [navigation] = performance.getEntriesByType('navigation') as Array<
+        PerformanceEntry & { domInteractive: number }
+      >;
+      const parsed = navigation?.domInteractive ?? 0;
       for (const entry of list.getEntries() as Array<
         PerformanceEntry & { hadRecentInput: boolean; value: number }
       >) {
-        if (!entry.hadRecentInput) shifts.total += entry.value;
+        if (!entry.hadRecentInput && parsed > 0 && entry.startTime >= parsed) {
+          shifts.total += entry.value;
+        }
       }
     }).observe({ buffered: true, type: 'layout-shift' });
   });
@@ -194,7 +203,7 @@ type V12State = Awaited<ReturnType<typeof v12State>>;
 
 /**
  * Checks the page `tab` is on after `step`: that v12 is `shown` or not, with
- * no error, no layout shift on a load, and `more`.
+ * no error, no layout shift on a load once the page is parsed, and `more`.
  */
 const check = async (
   step: string,
