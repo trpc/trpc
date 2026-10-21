@@ -1,46 +1,42 @@
-import type { AnyLink } from '@trpc12/trpc/client';
-import { expect, expectTypeOf, test } from 'vite-plus/test';
-import { safe, serve } from '../shared/client.ts';
-import { trpcFailures } from '../shared/framework.ts';
+import { initTrpc } from '@trpc12/trpc/server';
+import { expectTypeOf, test } from 'vite-plus/test';
+import { createClient, safe } from '../shared/client.ts';
+import type { RegistryError, TrpcFailure } from '../shared/failures.ts';
+import { serve } from '../shared/serve.ts';
 import { registrySuite } from '../shared/suite.ts';
 import {
   appRouter,
   PostNotFound,
-  RateLimited,
   TitleTaken,
-  Unauthorized,
   type AppRouter,
 } from './app.ts';
-import { createClient, createEffectClient } from './inferred.ts';
+import { defineError } from './inferred.ts';
 
-const classes = { Unauthorized, PostNotFound, TitleTaken, RateLimited };
-const registry = { ...classes, ...trpcFailures };
-const clients = (links: ReadonlyArray<AnyLink>) => ({
-  client: createClient<AppRouter>({ links, registry }),
-  effect: createEffectClient<AppRouter>({ links, registry }),
-});
+registrySuite('inferred, no registry', { router: appRouter });
 
-registrySuite('inferred from the router', {
-  router: appRouter,
-  classes,
-  clients,
-  missingId: (err) => err.data.id,
-});
+const client = createClient<AppRouter>({ links: [serve(appRouter).link] });
 
-const { client } = clients([serve(appRouter).link]);
-
-test('types: the union is what the procedures return, thrown errors left out', async () => {
-  const [, err] = await safe(client.post.byId.query({ id: '1' }));
-  expectTypeOf<NonNullable<typeof err>['_tag']>().toEqualTypeOf<
-    | 'Unauthorized'
-    | 'PostNotFound'
-    | 'TitleTaken'
-    | 'InvalidInput'
-    | keyof typeof trpcFailures
+test('types: the same per-call unions as with a registry', async () => {
+  const [, create] = await safe(client.post.create.mutate({ title: 'x' }));
+  expectTypeOf(create).toEqualTypeOf<
+    | RegistryError<'Unauthorized'>
+    | RegistryError<'TitleTaken', { title: string }>
+    | TrpcFailure
+    | undefined
+  >();
+  const [, declared] = await safe(client.post.declared.query({ id: '1' }));
+  expectTypeOf(declared).toEqualTypeOf<
+    RegistryError<'PostNotFound', { id: string }> | TrpcFailure | undefined
   >();
 });
 
-test('a thrown error arrives all the same, but the types never list it', async () => {
-  const [, err] = await safe(client.post.hot.query());
-  expect(err).toBeInstanceOf(RateLimited);
+test('types: declared entries restrict returns as a registry does', () => {
+  const t = initTrpc<{ ctx: {} }>();
+  // @ts-expect-error TitleTaken isn't declared
+  t.procedure.errors({ PostNotFound }).query(() => TitleTaken({ title: 'x' }));
+});
+
+test('nothing stops two modules defining one tag', () => {
+  const Again = defineError('PostNotFound', { status: 410 });
+  expectTypeOf(Again.tag).toEqualTypeOf(PostNotFound.tag);
 });

@@ -1,19 +1,17 @@
 /**
- * The boundaries example: a root registry every call fails with, a posts
- * and a billing module in their own scopes, and three nested boundaries.
+ * The boundaries example: an auth module whose middleware returns its
+ * errors, a posts and a billing module whose base procedures declare
+ * theirs, and three nested boundaries typed from the router alone.
  */
 import { createElement } from 'react';
+import { routerType } from '@trpc12/trpc/client';
 import { initTrpc } from '@trpc12/trpc/server';
 import { z } from 'zod';
-import {
-  createErrors,
-  mergeErrors,
-  scope,
-  withErrors,
-} from '../merge-errors/merge-errors.ts';
+import { createErrors, mergeErrors } from '../merge-errors/merge-errors.ts';
 import { createErrorBoundary, type FallbackProps } from './boundaries.ts';
 
-export const rootErrors = createErrors({
+// auth/errors.ts, posts/errors.ts, billing/errors.ts
+export const authErrors = createErrors({
   Unauthorized: { status: 401, description: 'Sign in first.' },
   Forbidden: { status: 403 },
 });
@@ -24,7 +22,8 @@ export const postErrors = createErrors({
 export const billingErrors = createErrors({
   CardDeclined: { status: 402 },
 });
-export const errors = mergeErrors(rootErrors, postErrors, billingErrors);
+// For OpenAPI and docs; no client code imports it.
+export const errors = mergeErrors(authErrors, postErrors, billingErrors);
 
 const t = initTrpc<{ ctx: { user: string | null } }>({
   warnThrownErrors: false,
@@ -35,41 +34,43 @@ const posts = new Map([
   ['2', { id: '2', title: 'Taken' }],
 ]);
 
-const authed = t.procedure.use((opts) => {
-  if (opts.ctx.user === null) throw new rootErrors.Unauthorized();
-  if (opts.ctx.user === 'guest') throw new rootErrors.Forbidden();
+export const authed = t.procedure.use((opts) => {
+  if (opts.ctx.user === null) return authErrors.Unauthorized();
+  if (opts.ctx.user === 'guest') return authErrors.Forbidden();
   return opts.next({ ctx: { user: opts.ctx.user } });
 });
 
-export const appRouter = withErrors(rootErrors, {
-  posts: scope(postErrors, {
-    byId: authed.input(z.object({ id: z.string() })).query((opts) => {
+export const postProcedure = authed.errors(postErrors);
+const billingProcedure = authed.errors(billingErrors);
+
+export const appRouter = {
+  posts: {
+    byId: postProcedure.input(z.object({ id: z.string() })).query((opts) => {
       if (opts.input.id === 'crash') throw new Error('db is down');
-      const post = posts.get(opts.input.id);
-      if (!post) throw new postErrors.PostNotFound({ id: opts.input.id });
-      return post;
+      return (
+        posts.get(opts.input.id) ??
+        postErrors.PostNotFound({ id: opts.input.id })
+      );
     }),
-    /** Throws another module's error, outside its scope. */
-    leak: authed.query(() => {
-      throw new billingErrors.CardDeclined();
+    /** Throws another module's error: undeclared, so a crash. */
+    leak: postProcedure.query(() => {
+      throw billingErrors.CardDeclined();
     }),
-    rename: authed
+    rename: postProcedure
       .input(z.object({ id: z.string(), title: z.string() }))
       .mutation((opts) => {
         if ([...posts.values()].some((p) => p.title === opts.input.title)) {
-          throw new postErrors.TitleTaken({ title: opts.input.title });
+          return postErrors.TitleTaken({ title: opts.input.title });
         }
         const post = { id: opts.input.id, title: opts.input.title };
         posts.set(post.id, post);
         return post;
       }),
-  }),
-  billing: scope(billingErrors, {
-    charge: authed.mutation(() => {
-      throw new billingErrors.CardDeclined();
-    }),
-  }),
-});
+  },
+  billing: {
+    charge: billingProcedure.mutation(() => billingErrors.CardDeclined()),
+  },
+};
 
 export type AppRouter = typeof appRouter;
 
@@ -86,10 +87,13 @@ const notice =
       }),
     );
 
-/** Owns tRPC's failures no boundary names: a crash, a timeout, an unknown tag. */
+// The client half: from here down, nothing but types of the server's.
+const router = routerType<AppRouter>();
+
+/** Owns tRPC's failures no boundary names: a crash, a timeout, a proxy's 502. */
 export const [RootBoundary, useRootBoundary] = createErrorBoundary({
   name: 'Root',
-  errors,
+  router,
   claims: [],
   unexpected: true,
   fallback: notice('crashed'),
@@ -97,16 +101,16 @@ export const [RootBoundary, useRootBoundary] = createErrorBoundary({
 
 export const [OfflineBoundary, useOfflineBoundary] = createErrorBoundary({
   name: 'Offline',
-  errors,
+  router,
   parent: RootBoundary,
   claims: ['NetworkError'],
   fallback: notice('offline'),
 });
 
-/** The root registry's errors, which every call can fail with. */
+/** The auth middleware's errors, which every authed call can fail with. */
 export const [AuthBoundary, useAuthBoundary] = createErrorBoundary({
   name: 'Auth',
-  errors,
+  router,
   parent: OfflineBoundary,
   claims: ['Unauthorized', 'Forbidden'],
   fallback: notice('sign-in'),

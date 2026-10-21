@@ -1,31 +1,34 @@
 /**
- * The runtime checks every option's backend passes: the same four errors
- * thrown from procedures, Effect code and middleware, tRPC's own failures,
- * the wire, `catchTag` and the v11 handler. Each option's test adds its
- * own type assertions.
+ * The runtime checks every option's backend passes: the same errors
+ * returned from procedures, failed in Effect code and returned from
+ * middleware; a thrown one arriving as `Internal`; tRPC's own failures,
+ * the wire, `catchTag` and the v11 handler. The client is the shared one
+ * for every option, made from the router's type alone. Each option's test
+ * adds its own type assertions.
  */
 import { Effect } from 'effect';
-import { httpLink, type AnyLink } from '@trpc12/trpc/client';
+import { httpLink, isTrpcError, type AnyLink } from '@trpc12/trpc/client';
 import { createV11Handler } from '@trpc12/trpc/interop';
 import type { AnyRouter } from '@trpc12/trpc/server';
 import { expect, test } from 'vite-plus/test';
-import { matchError, safe, serve } from './client.ts';
-import { trpcFailures } from './framework.ts';
+import { createClient, createEffectClient, matchError, safe } from './client.ts';
+import { serve } from './serve.ts';
 
+/**
+ * The routes each option's app has: `post.byId` returns `PostNotFound`,
+ * `post.byIdEffect` fails with it, `post.create` is behind middleware
+ * that returns `Unauthorized`, and `post.crash` throws `PostNotFound`.
+ */
 export interface SuiteApp {
   readonly router: AnyRouter;
-  /** The app's error classes by tag, for `instanceof`. */
-  readonly classes: Readonly<
-    Record<string, abstract new (...args: any) => unknown>
-  >;
-  /** A Promise client and an Effect client over `links`. */
-  readonly clients: (links: ReadonlyArray<AnyLink>) => {
-    readonly client: any;
-    readonly effect: any;
-  };
-  /** The id a `PostNotFound` names, however the option stores `data`. */
-  readonly missingId: (err: any) => string;
 }
+
+const clients = (
+  links: ReadonlyArray<AnyLink>,
+): { readonly client: any; readonly effect: any } => ({
+  client: createClient({ links }),
+  effect: createEffectClient({ links }),
+});
 
 const failingLink = (
   fetch: (url: string, init: RequestInit) => Promise<Response>,
@@ -34,15 +37,15 @@ const failingLink = (
 export function registrySuite(name: string, app: SuiteApp) {
   const setup = () => {
     const server = serve(app.router);
-    return { ...server, ...app.clients([server.link]) };
+    return { ...server, ...clients([server.link]) };
   };
 
-  test(`${name}: a procedure's thrown error has its status, tag and data`, async () => {
+  test(`${name}: a returned error arrives with its status, tag and data`, async () => {
     const s = setup();
     const [, err] = await safe(s.client.post.byId.query({ id: 'nope' }));
-    expect(err).toBeInstanceOf(app.classes['PostNotFound']!);
-    expect(app.missingId(err)).toBe('nope');
-    // `defined` is v12's: false when thrown, true when returned (the inferred option).
+    // The client knows no registry: what arrives is v12's own error.
+    expect(isTrpcError(err)).toBe(true);
+    expect(err).toMatchObject({ _tag: 'PostNotFound', data: { id: 'nope' } });
     expect(s.requests[0]).toEqual({
       status: 404,
       body: {
@@ -51,7 +54,7 @@ export function registrySuite(name: string, app: SuiteApp) {
             code: 'PostNotFound',
             message: 'PostNotFound',
             data: { id: 'nope' },
-            defined: expect.any(Boolean),
+            defined: true,
           },
         },
       },
@@ -61,43 +64,49 @@ export function registrySuite(name: string, app: SuiteApp) {
   test(`${name}: an Effect resolver's failure arrives the same way`, async () => {
     const s = setup();
     const [, err] = await safe(s.client.post.byIdEffect.query({ id: 'nope' }));
-    expect(err).toBeInstanceOf(app.classes['PostNotFound']!);
+    expect(err).toMatchObject({ _tag: 'PostNotFound', data: { id: 'nope' } });
     expect(s.requests[0]?.status).toBe(404);
   });
 
-  test(`${name}: middleware throws from the registry too`, async () => {
+  test(`${name}: middleware returns from the registry too`, async () => {
     const s = setup();
     const [, err] = await safe(s.client.post.create.mutate({ title: 'Hello' }));
-    expect(err).toBeInstanceOf(app.classes['Unauthorized']!);
+    expect(err).toMatchObject({ _tag: 'Unauthorized' });
     expect(s.requests[0]?.status).toBe(401);
   });
 
-  test(`${name}: tRPC's own failures are registry errors`, async () => {
+  test(`${name}: a thrown error is Internal, as a crash is`, async () => {
+    const s = setup();
+    const [, err] = await safe(s.client.post.crash.query({ id: 'nope' }));
+    expect(err).toMatchObject({ _tag: 'Internal' });
+  });
+
+  test(`${name}: tRPC's own failures have their tags`, async () => {
     const s = setup();
     const [, invalid] = await safe(s.client.post.byId.query({ id: 1 }));
-    expect(invalid).toBeInstanceOf(trpcFailures.InvalidInput);
+    expect(invalid).toMatchObject({ _tag: 'InvalidInput' });
     expect(
       (invalid as { data: { issues: unknown[] } }).data.issues,
     ).not.toEqual([]);
     const [, missing] = await safe(s.client.post.missing.query());
-    expect(missing).toBeInstanceOf(trpcFailures.ProcedureNotFound);
+    expect(missing).toMatchObject({ _tag: 'ProcedureNotFound' });
 
-    const offline = app.clients([
+    const offline = clients([
       failingLink(() => Promise.reject(new TypeError('fetch failed'))),
     ]);
     const [, network] = await safe(offline.client.post.byId.query({ id: '1' }));
-    expect(network).toBeInstanceOf(trpcFailures.NetworkError);
+    expect(network).toMatchObject({ _tag: 'NetworkError' });
 
-    const proxied = app.clients([
+    const proxied = clients([
       failingLink(async () => new Response('Bad gateway', { status: 502 })),
     ]);
     const [, proxy] = await safe(proxied.client.post.byId.query({ id: '1' }));
-    expect(proxy).toBeInstanceOf(trpcFailures.UnexpectedStatus);
-    expect((proxy as { data: { status: number } }).data).toEqual({
-      status: 502,
+    expect(proxy).toMatchObject({
+      _tag: 'UnexpectedStatus',
+      data: { status: 502 },
     });
 
-    const hanging = app.clients([
+    const hanging = clients([
       failingLink(
         (_, init) =>
           new Promise((_resolve, reject) =>
@@ -113,7 +122,7 @@ export function registrySuite(name: string, app: SuiteApp) {
         { signal: AbortSignal.timeout(5) },
       ),
     );
-    expect(timeout).toBeInstanceOf(trpcFailures.Timeout);
+    expect(timeout).toMatchObject({ _tag: 'Timeout' });
   });
 
   test(`${name}: matchError() picks the handler by tag`, async () => {

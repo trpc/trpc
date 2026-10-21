@@ -1,18 +1,13 @@
 /**
- * E) Declaration merging, like TanStack's `Register`: each module adds its
- * registry to one global interface, and every client, helper and error
- * boundary in the program reads it without a type parameter. Under the
+ * F) Declaration merging, like TanStack's `Register`: each module adds its
+ * registry to one global interface. With returned errors a call's union
+ * comes from its procedure, so the interface no longer types calls; what
+ * it still gives is the program's tags with no router type parameter, for
+ * code that has none. Type-only, so it costs a client nothing. Under the
  * proposal the interface would be `@trpc12/trpc`'s; here it's this file's.
  */
-import {
-  createRegistryClient,
-  createRegistryEffectClient,
-  type RegistryClient,
-  type RegistryClientOptions,
-  type RegistryEffectClient,
-} from '../shared/client.ts';
 import type { ErrorsOf } from '../shared/define.ts';
-import type { TrpcFailure } from '../shared/framework.ts';
+import type { ClientErrorOf, TrpcFailure } from '../shared/failures.ts';
 
 export { createErrors } from '../create-errors/create-errors.ts';
 
@@ -22,11 +17,5 @@ export { createErrors } from '../create-errors/create-errors.ts';
  */
 export interface Errors {}
 
-/** What any call can fail with. */
-export type RegisteredError = ErrorsOf<Errors> | TrpcFailure;
-
-export const createClient = <R>(opts: RegistryClientOptions) =>
-  createRegistryClient<RegistryClient<R, RegisteredError>>(opts);
-
-export const createEffectClient = <R>(opts: RegistryClientOptions) =>
-  createRegistryEffectClient<RegistryEffectClient<R, RegisteredError>>(opts);
+/** Any error of the program, as a client sees it. */
+export type RegisteredError = ClientErrorOf<ErrorsOf<Errors>> | TrpcFailure;

@@ -2,7 +2,7 @@
 import { Effect, Schema } from 'effect';
 import { initTrpc } from '@trpc12/trpc/server';
 import { z } from 'zod';
-import { taggedErrors, withErrors } from './tagged-classes.ts';
+import { taggedErrors } from './tagged-classes.ts';
 
 // errors.ts: plain Effect classes, shareable with HttpApi and Effect RPC.
 export class Unauthorized extends Schema.TaggedError<Unauthorized>()(
@@ -36,22 +36,24 @@ export const errors = taggedErrors(
 const t = initTrpc<{ ctx: { user: string | null } }>({
   warnThrownErrors: false,
 });
-const procedure = t.procedure.use(errors.bridge);
 const posts = new Map([['1', { id: '1', title: 'Hello' }]]);
+const byId = z.object({ id: z.string() });
 
-const authed = procedure.use((opts) => {
-  if (!opts.ctx.user) throw new Unauthorized();
+const authed = t.procedure.use((opts) => {
+  if (!opts.ctx.user) return errors.send(new Unauthorized());
   return opts.next({ ctx: { user: opts.ctx.user } });
 });
 
-export const appRouter = withErrors(errors, {
+export const appRouter = {
   post: {
-    byId: procedure.input(z.object({ id: z.string() })).query((opts) => {
-      const post = posts.get(opts.input.id);
-      if (!post) throw new PostNotFound({ id: opts.input.id });
-      return post;
-    }),
-    byIdEffect: procedure.input(z.object({ id: z.string() })).query((opts) =>
+    byId: t.procedure
+      .input(byId)
+      .query(
+        (opts) =>
+          posts.get(opts.input.id) ??
+          errors.send(new PostNotFound({ id: opts.input.id })),
+      ),
+    byIdEffect: t.procedure.input(byId).query((opts) =>
       errors.expose(
         Effect.gen(function* () {
           const post = posts.get(opts.input.id);
@@ -60,15 +62,18 @@ export const appRouter = withErrors(errors, {
         }),
       ),
     ),
+    crash: t.procedure.input(byId).query((opts) => {
+      throw errors.send(new PostNotFound({ id: opts.input.id }));
+    }),
     create: authed.input(z.object({ title: z.string() })).mutation((opts) => {
       if ([...posts.values()].some((p) => p.title === opts.input.title)) {
-        throw new TitleTaken({ title: opts.input.title });
+        return errors.send(new TitleTaken({ title: opts.input.title }));
       }
       const post = { id: String(posts.size + 1), title: opts.input.title };
       posts.set(post.id, post);
       return post;
     }),
   },
-});
+};
 
 export type AppRouter = typeof appRouter;

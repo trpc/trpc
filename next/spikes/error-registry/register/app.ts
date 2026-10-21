@@ -40,31 +40,35 @@ const t = initTrpc<{ ctx: { user: string | null } }>({
   warnThrownErrors: false,
 });
 const posts = new Map([['1', { id: '1', title: 'Hello' }]]);
+const byId = z.object({ id: z.string() });
 
 const authed = t.procedure.use((opts) => {
-  if (!opts.ctx.user) throw new authErrors.Unauthorized();
+  if (!opts.ctx.user) return authErrors.Unauthorized();
   return opts.next({ ctx: { user: opts.ctx.user } });
 });
 
-// The router carries nothing: the errors are the program's.
 export const appRouter = {
   post: {
-    byId: t.procedure.input(z.object({ id: z.string() })).query((opts) => {
-      const post = posts.get(opts.input.id);
-      if (!post) throw new postErrors.PostNotFound({ id: opts.input.id });
-      return post;
-    }),
-    byIdEffect: t.procedure.input(z.object({ id: z.string() })).query((opts) =>
+    byId: t.procedure
+      .input(byId)
+      .query(
+        (opts) =>
+          posts.get(opts.input.id) ??
+          postErrors.PostNotFound({ id: opts.input.id }),
+      ),
+    byIdEffect: t.procedure.input(byId).query((opts) =>
       Effect.gen(function* () {
         const post = posts.get(opts.input.id);
-        if (!post)
-          return yield* new postErrors.PostNotFound({ id: opts.input.id });
+        if (!post) return yield* postErrors.PostNotFound({ id: opts.input.id });
         return post;
       }),
     ),
+    crash: t.procedure.input(byId).query((opts) => {
+      throw postErrors.PostNotFound({ id: opts.input.id });
+    }),
     create: authed.input(z.object({ title: z.string() })).mutation((opts) => {
       if ([...posts.values()].some((p) => p.title === opts.input.title)) {
-        throw new postErrors.TitleTaken({ title: opts.input.title });
+        return postErrors.TitleTaken({ title: opts.input.title });
       }
       const post = { id: String(posts.size + 1), title: opts.input.title };
       posts.set(post.id, post);

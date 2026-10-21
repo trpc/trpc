@@ -1,71 +1,44 @@
 import { Effect } from 'effect';
-import type { AnyLink } from '@trpc12/trpc/client';
+import { initTrpc } from '@trpc12/trpc/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
-import { matchError, safe, serve } from '../shared/client.ts';
-import type { TrpcFailure } from '../shared/framework.ts';
+import { createClient, safe } from '../shared/client.ts';
+import type { RegistryError, TrpcFailure } from '../shared/failures.ts';
+import { serve } from '../shared/serve.ts';
 import { registrySuite } from '../shared/suite.ts';
-import {
-  appRouter,
-  errors,
-  PostNotFound,
-  RateLimited,
-  TitleTaken,
-  Unauthorized,
-  type AppRouter,
-} from './app.ts';
-import {
-  classesToOpenApi,
-  createClient,
-  createEffectClient,
-} from './tagged-classes.ts';
+import { appRouter, errors, PostNotFound, type AppRouter } from './app.ts';
+import { classesToOpenApi } from './tagged-classes.ts';
 
-const clients = (links: ReadonlyArray<AnyLink>) => ({
-  client: createClient<AppRouter>({ links, errors }),
-  effect: createEffectClient<AppRouter>({ links, errors }),
+registrySuite('Schema.TaggedError classes', { router: appRouter });
+
+const client = createClient<AppRouter>({ links: [serve(appRouter).link] });
+
+test('types: v12 rejects the classes themselves, returned or failed', () => {
+  const t = initTrpc<{ ctx: {} }>();
+  // @ts-expect-error a Schema.TaggedError is an Effect: map it first
+  t.procedure.query(() => new PostNotFound({ id: '1' }));
+  t.procedure.query(() =>
+    // @ts-expect-error not a TrpcError
+    Effect.gen(function* () {
+      return yield* new PostNotFound({ id: '1' });
+    }),
+  );
 });
 
-registrySuite('Schema.TaggedError classes', {
-  router: appRouter,
-  classes: { Unauthorized, PostNotFound, TitleTaken, RateLimited },
-  clients,
-  missingId: (err) => err.id,
-});
-
-const { client, effect } = clients([serve(appRouter).link]);
-
-type AppError =
-  | Unauthorized
-  | PostNotFound
-  | TitleTaken
-  | RateLimited
-  | TrpcFailure;
-
-test('types: the client fails with the classes themselves', async () => {
-  const [, err] = await safe(client.post.byId.query({ id: '1' }));
-  expectTypeOf(err).toEqualTypeOf<AppError | undefined>();
-  if (err instanceof TitleTaken)
-    expectTypeOf(err.title).toEqualTypeOf<string>();
-});
-
-test('types: matchError() and catchTag work on the classes as they are', async () => {
-  const [, err] = await safe(client.post.byId.query({ id: '1' }));
-  if (err) {
-    matchError(err, {
-      Unauthorized: () => 'sign in',
-      PostNotFound: (e) => `no post ${e.id}`,
-      TitleTaken: (e) => `${e.title} is taken`,
-      RateLimited: (e) => `retry in ${e.retryAfter}s`,
-      NetworkError: () => 'offline',
-      BadResponse: () => 'try again',
-      unexpected: (e) => e.message,
-    });
-  }
-  const program = effect.post.byId
-    .query({ id: '1' })
-    .pipe(Effect.catchTag('PostNotFound', (e) => Effect.succeed(e.id)));
-  expectTypeOf<Effect.Error<typeof program>>().toEqualTypeOf<
-    Exclude<AppError, PostNotFound>
+test('types: mapped per resolver, a call fails with its own errors', async () => {
+  const [, byId] = await safe(client.post.byId.query({ id: '1' }));
+  expectTypeOf(byId).toEqualTypeOf<
+    RegistryError<'PostNotFound', { readonly id: string }> | TrpcFailure | undefined
   >();
+  const [, create] = await safe(client.post.create.mutate({ title: 'x' }));
+  expectTypeOf(create?._tag).toEqualTypeOf<
+    'Unauthorized' | 'TitleTaken' | TrpcFailure['_tag'] | undefined
+  >();
+});
+
+test('the client gets the fields as data, not the class', async () => {
+  const [, err] = await safe(client.post.byId.query({ id: 'nope' }));
+  expect(err).not.toBeInstanceOf(PostNotFound);
+  expect(err).toMatchObject({ _tag: 'PostNotFound', data: { id: 'nope' } });
 });
 
 test('the status is HttpApi’s annotation, so OpenAPI reads it too', () => {

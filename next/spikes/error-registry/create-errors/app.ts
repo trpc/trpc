@@ -2,7 +2,7 @@
 import { Effect } from 'effect';
 import { initTrpc } from '@trpc12/trpc/server';
 import { z } from 'zod';
-import { createErrors, withErrors } from './create-errors.ts';
+import { createErrors } from './create-errors.ts';
 
 // errors.ts: every error the backend can fail with, declared once.
 export const errors = createErrors({
@@ -28,36 +28,50 @@ const t = initTrpc<{ ctx: { user: string | null } }>({
   warnThrownErrors: false,
 });
 const posts = new Map([['1', { id: '1', title: 'Hello' }]]);
+const byId = z.object({ id: z.string() });
 
-// Middleware throws from the registry like any helper does.
+// Middleware returns from the registry like a resolver does.
 const authed = t.procedure.use((opts) => {
-  if (!opts.ctx.user) throw new errors.Unauthorized();
+  if (!opts.ctx.user) return errors.Unauthorized();
   return opts.next({ ctx: { user: opts.ctx.user } });
 });
 
-export const appRouter = withErrors(errors, {
+export const appRouter = {
   post: {
-    byId: t.procedure.input(z.object({ id: z.string() })).query((opts) => {
-      const post = posts.get(opts.input.id);
-      if (!post) throw new errors.PostNotFound({ id: opts.input.id });
-      return post;
-    }),
-    byIdEffect: t.procedure.input(z.object({ id: z.string() })).query((opts) =>
+    byId: t.procedure
+      .input(byId)
+      .query(
+        (opts) =>
+          posts.get(opts.input.id) ?? errors.PostNotFound({ id: opts.input.id }),
+      ),
+    byIdEffect: t.procedure.input(byId).query((opts) =>
       Effect.gen(function* () {
         const post = posts.get(opts.input.id);
-        if (!post) return yield* new errors.PostNotFound({ id: opts.input.id });
+        if (!post) return yield* errors.PostNotFound({ id: opts.input.id });
         return post;
       }),
     ),
+    // A throw has no type: the client gets `Internal`, as for a crash.
+    crash: t.procedure.input(byId).query((opts) => {
+      throw errors.PostNotFound({ id: opts.input.id });
+    }),
     create: authed.input(z.object({ title: z.string() })).mutation((opts) => {
       if ([...posts.values()].some((p) => p.title === opts.input.title)) {
-        throw new errors.TitleTaken({ title: opts.input.title });
+        return errors.TitleTaken({ title: opts.input.title });
       }
       const post = { id: String(posts.size + 1), title: opts.input.title };
       posts.set(post.id, post);
       return post;
     }),
+    // Declared: the procedure's contract (for OpenAPI) is the registry.
+    declared: t.procedure
+      .errors(errors)
+      .input(byId)
+      .query(
+        (opts) =>
+          posts.get(opts.input.id) ?? errors.PostNotFound({ id: opts.input.id }),
+      ),
   },
-});
+};
 
 export type AppRouter = typeof appRouter;

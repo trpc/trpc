@@ -1,39 +1,33 @@
-import type { AnyLink } from '@trpc12/trpc/client';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
-import { safe, serve } from '../shared/client.ts';
-import { trpcFailures, type TrpcFailure } from '../shared/framework.ts';
+import { createClient, safe } from '../shared/client.ts';
+import type { RegistryError, TrpcFailure } from '../shared/failures.ts';
+import { serve } from '../shared/serve.ts';
 import { registrySuite } from '../shared/suite.ts';
-import { appRouter, errors, type AppRouter } from './app.ts';
-import {
-  createClient,
-  createEffectClient,
-  errors as registry,
-  registryOf,
-} from './builder.ts';
+import { appRouter, type AppRouter } from './app.ts';
+import { errors as registry } from './builder.ts';
 
-const runtime = { ...registryOf(errors), ...trpcFailures };
-const clients = (links: ReadonlyArray<AnyLink>) => ({
-  client: createClient<AppRouter>({ links, registry: runtime }),
-  effect: createEffectClient<AppRouter>({ links, registry: runtime }),
-});
+registrySuite('errors().add()', { router: appRouter });
 
-registrySuite('errors().add()', {
-  router: appRouter,
-  classes: registryOf(errors),
-  clients,
-  missingId: (err) => err.data.id,
-});
+const client = createClient<AppRouter>({ links: [serve(appRouter).link] });
 
-const { client } = clients([serve(appRouter).link]);
-
-test('types: the chain types the same union as an object literal', async () => {
-  const [, err] = await safe(client.post.byId.query({ id: '1' }));
+test('types: a call fails with what its procedure returns, as with B', async () => {
+  const [, err] = await safe(client.post.create.mutate({ title: 'x' }));
   expectTypeOf(err).toEqualTypeOf<
-    | InstanceType<typeof errors.Unauthorized>
-    | InstanceType<typeof errors.PostNotFound>
-    | InstanceType<typeof errors.TitleTaken>
-    | InstanceType<typeof errors.RateLimited>
+    | RegistryError<'Unauthorized'>
+    | RegistryError<'TitleTaken', { title: string }>
     | TrpcFailure
+    | undefined
+  >();
+});
+
+test('types: registryOf() declares the chain', async () => {
+  const [, err] = await safe(client.post.declared.query({ id: '1' }));
+  expectTypeOf(err?._tag).toEqualTypeOf<
+    | 'Unauthorized'
+    | 'PostNotFound'
+    | 'TitleTaken'
+    | 'RateLimited'
+    | TrpcFailure['_tag']
     | undefined
   >();
 });

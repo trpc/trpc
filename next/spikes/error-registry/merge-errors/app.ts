@@ -2,12 +2,7 @@
 import { Effect } from 'effect';
 import { initTrpc } from '@trpc12/trpc/server';
 import { z } from 'zod';
-import {
-  createErrors,
-  mergeErrors,
-  scope,
-  withErrors,
-} from './merge-errors.ts';
+import { createErrors, mergeErrors } from './merge-errors.ts';
 
 // auth/errors.ts
 export const authErrors = createErrors({
@@ -38,58 +33,72 @@ export const billingErrors = createErrors({
   CardDeclined: { status: 402, data: z.object({ reason: z.string() }) },
 });
 
-// errors.ts: the whole backend's, for OpenAPI and the client's decoding.
+// errors.ts: the whole backend's, for OpenAPI and docs. Server code.
 export const errors = mergeErrors(authErrors, postErrors, billingErrors);
 
-const t = initTrpc<{ ctx: { user: string | null } }>({
+export const t = initTrpc<{ ctx: { user: string | null } }>({
   warnThrownErrors: false,
 });
 const posts = new Map([['1', { id: '1', title: 'Hello' }]]);
+const byId = z.object({ id: z.string() });
 
-const authed = t.procedure.use((opts) => {
-  if (!opts.ctx.user) throw new authErrors.Unauthorized();
+export const authed = t.procedure.use((opts) => {
+  if (!opts.ctx.user) return authErrors.Unauthorized();
   return opts.next({ ctx: { user: opts.ctx.user } });
 });
 
+// posts/procedure.ts: every post procedure returns post errors only.
+export const postProcedure = t.procedure.errors(postErrors);
+
 // posts/router.ts
-const postRouter = scope(postErrors, {
-  byId: t.procedure.input(z.object({ id: z.string() })).query((opts) => {
-    const post = posts.get(opts.input.id);
-    if (!post) throw new postErrors.PostNotFound({ id: opts.input.id });
-    return post;
-  }),
-  byIdEffect: t.procedure.input(z.object({ id: z.string() })).query((opts) =>
+const postRouter = {
+  byId: postProcedure
+    .input(byId)
+    .query(
+      (opts) =>
+        posts.get(opts.input.id) ??
+        postErrors.PostNotFound({ id: opts.input.id }),
+    ),
+  byIdEffect: postProcedure.input(byId).query((opts) =>
     Effect.gen(function* () {
       const post = posts.get(opts.input.id);
-      if (!post)
-        return yield* new postErrors.PostNotFound({ id: opts.input.id });
+      if (!post) return yield* postErrors.PostNotFound({ id: opts.input.id });
       return post;
     }),
   ),
-  create: authed.input(z.object({ title: z.string() })).mutation((opts) => {
-    if ([...posts.values()].some((p) => p.title === opts.input.title)) {
-      throw new postErrors.TitleTaken({ title: opts.input.title });
-    }
-    const post = { id: String(posts.size + 1), title: opts.input.title };
-    posts.set(post.id, post);
-    return post;
+  // Undeclared and thrown: `Internal`.
+  crash: t.procedure.input(byId).query((opts) => {
+    throw postErrors.PostNotFound({ id: opts.input.id });
   }),
-});
+  // Declared and thrown: v12 types a thrown error whose code is declared.
+  thrown: postProcedure.input(byId).query((opts) => {
+    throw postErrors.PostNotFound({ id: opts.input.id });
+  }),
+  create: authed
+    .errors(postErrors)
+    .input(z.object({ title: z.string() }))
+    .mutation((opts) => {
+      if ([...posts.values()].some((p) => p.title === opts.input.title)) {
+        return postErrors.TitleTaken({ title: opts.input.title });
+      }
+      const post = { id: String(posts.size + 1), title: opts.input.title };
+      posts.set(post.id, post);
+      return post;
+    }),
+};
 
 // billing/router.ts
-const billingRouter = scope(billingErrors, {
-  charge: authed.input(z.object({ cents: z.number() })).mutation((opts) => {
-    if (opts.input.cents > 100) {
-      throw new billingErrors.CardDeclined({ reason: 'limit' });
-    }
-    return { ok: true };
-  }),
-});
+const billingRouter = {
+  charge: authed
+    .errors(billingErrors)
+    .input(z.object({ cents: z.number() }))
+    .mutation((opts) =>
+      opts.input.cents > 100
+        ? billingErrors.CardDeclined({ reason: 'limit' })
+        : { ok: true },
+    ),
+};
 
-// Every call can fail with auth's errors; each subtree adds its module's.
-export const appRouter = withErrors(authErrors, {
-  post: postRouter,
-  billing: billingRouter,
-});
+export const appRouter = { post: postRouter, billing: billingRouter };
 
 export type AppRouter = typeof appRouter;

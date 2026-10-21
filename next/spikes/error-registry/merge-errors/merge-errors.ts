@@ -1,20 +1,16 @@
 /**
- * D) Each module declares its own registry with `createErrors()`, and
- * `mergeErrors()` makes the backend's (a tag in two is a type error).
- * `scope()` gives a router subtree its module's errors, so `client.post.*`
- * fails with the post and auth errors and not the billing ones: still
- * ahead of time, but closer to what a call can do.
+ * E) Each module declares its own registry with `createErrors()`, and its
+ * base procedure declares it: `t.procedure.errors(postErrors)`. v12's
+ * declarations are exhaustive, so a post resolver returning a billing
+ * error is a type error, and a post call's union is the post module's
+ * errors (plus what middleware returns), inferred by the client from
+ * `typeof appRouter`. `mergeErrors()` makes the backend's list (a tag in
+ * two is a type error), for OpenAPI and docs; nothing on the client reads
+ * it.
  */
-import type { AnyRouter } from '@trpc12/trpc/server';
-import type { Scoped } from '../shared/client.ts';
-import type { ErrorsOf, Registry } from '../shared/define.ts';
+import type { Registry } from '../shared/define.ts';
 
-export {
-  createClient,
-  createEffectClient,
-  createErrors,
-  withErrors,
-} from '../create-errors/create-errors.ts';
+export { createErrors } from '../create-errors/create-errors.ts';
 
 type Merge<Rs> = Rs extends readonly [infer H, ...infer T] ? H & Merge<T> : {};
 
@@ -39,9 +35,3 @@ export function mergeErrors<const Rs extends ReadonlyArray<Registry>>(
   }
   return merged as Merge<Rs>;
 }
-
-/** A subtree whose calls also fail with `errors`. */
-export const scope = <const E extends Registry, R extends AnyRouter>(
-  _errors: E,
-  router: R,
-): R & Scoped<ErrorsOf<E>> => router as R & Scoped<ErrorsOf<E>>;

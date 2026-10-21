@@ -5,7 +5,7 @@
  */
 import { Schema } from 'effect';
 import type { AnySchema } from '@trpc12/trpc/server';
-import type { AnyErrorClass } from './define.ts';
+import type { AnyErrorMaker } from './define.ts';
 
 type JsonSchema = Record<string, unknown>;
 
@@ -85,15 +85,15 @@ export function errorsToOpenApi(
   return { schemas, responses };
 }
 
-/** {@link errorsToOpenApi} for registry classes. */
+/** {@link errorsToOpenApi} for a registry. */
 export const registryToOpenApi = (
-  registry: Readonly<Record<string, AnyErrorClass>>,
+  registry: Readonly<Record<string, AnyErrorMaker>>,
 ): OpenApiErrors =>
   errorsToOpenApi(
-    Object.values(registry).map((cls) => ({
-      tag: cls.tag,
-      data: cls.spec.data,
-      status: cls.spec.status,
-      description: cls.spec.description,
+    Object.values(registry).map((entry) => ({
+      tag: entry.tag,
+      data: entry.spec.data,
+      status: entry.spec.status,
+      description: entry.spec.description,
     })),
   );

@@ -1,33 +1,43 @@
 /**
- * Error boundaries over a registry (option E; B is its one-module case).
- * A boundary claims tags, checked against the registry it's given, so a
- * misspelt claim is a type error, and its fallback's `error` is the
- * errors it claims. Below it, `query()` and `mutation()` take the owned
- * tags out of a call's union, as today's boundary takes codes out.
+ * Error boundaries over returned errors (option E; B is its one-module
+ * case). A boundary claims tags, checked against the errors of the router
+ * it names with `routerType<AppRouter>()`, a type-only marker, so a
+ * misspelt claim is a type error and the client imports no registry. Its
+ * fallback's `error` is the errors it claims. Below it, `query()` and
+ * `mutation()` take the owned tags out of a call's union, as today's
+ * boundary takes codes out.
  *
  * The runtime is the internal boundary in
- * `packages/tanstack-react-query/src/error-boundary.ts`, as it is: a
- * registry error's `code` is its tag, so claiming a tag is claiming a
- * code, and `unexpected: true` claims tRPC's unexpected tags by name.
+ * `packages/tanstack-react-query/src/error-boundary.ts`, as it is: an
+ * app error's `code` is its tag, and so is a tRPC failure's
+ * (`toFailure()`), so claiming a tag is claiming a code, and
+ * `unexpected: true` claims tRPC's unexpected tags by name.
  */
 import type {
   InfiniteOptionsOut,
   MutationOptionsOut,
   QueryOptionsOut,
 } from '@trpc12/tanstack-query';
-import type { AnyProcedure } from '@trpc12/trpc/server';
+import type { RouterType } from '@trpc12/trpc/client';
+import type {
+  AnyProcedure,
+  inferRouterErrors,
+  ProcedureDef,
+} from '@trpc12/trpc/server';
 import type { ReactNode } from 'react';
 import { createErrorBoundary as createCodeBoundary } from '../../../packages/tanstack-react-query/src/error-boundary.ts';
-import type { ErrorsOfRouter, ScopeOf } from '../shared/client.ts';
-import type { ErrorsOf, Registry } from '../shared/define.ts';
 import {
-  trpcFailures,
+  unexpectedTags,
+  type CallError,
   type TrpcFailure,
   type UnexpectedTag,
-} from '../shared/framework.ts';
+} from '../shared/failures.ts';
 
-/** Every tag a client of the registry `R` can see: the app's and tRPC's. */
-export type TagOf<R> = (keyof R & string) | TrpcFailure['_tag'];
+/** Every error a call to a procedure of `R` can fail with. */
+export type RouterCallError<R> = CallError<inferRouterErrors<R>>;
+
+/** Every tag a client of `R` can see: its procedures' and tRPC's. */
+export type TagOf<R> = RouterCallError<R>['_tag'];
 
 type Owned<TTags extends string, TUnexpected extends boolean> =
   | TTags
@@ -90,31 +100,28 @@ export interface RegistryBoundaryOptions<
   owns(error: unknown): boolean;
 }
 
-const unexpectedTags = Object.keys(trpcFailures).filter(
-  (tag) => tag !== 'NetworkError' && tag !== 'BadResponse',
-);
-
 /**
- * A boundary owning `claims`, tags of `errors` (the merged registry, or
- * one module's) or of tRPC's failures; `unexpected: true` owns tRPC's
- * failures nothing names (`Internal`, `Timeout`, `UnknownError`, …).
+ * A boundary owning `claims`: tags of the router `router` names (the app's,
+ * or one module's subtree, `routerType<AppRouter['posts']>()`) or of tRPC's
+ * failures. `unexpected: true` owns tRPC's failures nothing names
+ * (`Internal`, `Timeout`, `UnexpectedStatus`, …).
  */
 export function createErrorBoundary<
-  const R extends Registry,
+  R,
   const TTags extends TagOf<R>,
   TUnexpected extends boolean = false,
   TParentTags extends string = never,
   TParentUnexpected extends boolean = false,
 >(spec: {
   readonly name: string;
-  readonly errors: R;
+  readonly router: RouterType<R>;
   readonly parent?: RegistryBoundary<TParentTags, TParentUnexpected>;
   readonly claims: ReadonlyArray<TTags>;
   readonly unexpected?: TUnexpected;
   readonly fallback: (
     props: FallbackProps<
       Extract<
-        ErrorsOf<R> | TrpcFailure,
+        RouterCallError<R> | TrpcFailure,
         { readonly _tag: Owned<TTags, TUnexpected> }
       >
     >,
@@ -142,29 +149,26 @@ export function createErrorBoundary<
 
 type Def<P extends AnyProcedure> = NonNullable<P['~trpc']['~types']>;
 
-type ProcedureOptions<
-  D extends { type: string; input: any; output: any },
-  E,
-> = D['type'] extends 'mutation'
+type ProcedureOptions<D extends ProcedureDef> = D['type'] extends 'mutation'
   ? {
       mutationOptions(): MutationOptionsOut<
         D['input'],
         D['output'],
-        E,
+        CallError<D['errors']>,
         unknown
       >;
     }
   : {
       queryOptions(opts: {
         readonly input: D['input'];
-      }): QueryOptionsOut<D['output'], E, D['output']>;
+      }): QueryOptionsOut<D['output'], CallError<D['errors']>, D['output']>;
     };
 
-/** TanStack options over a registry client: each call's error is its scope's. */
-export type RegistryQueryUtils<R, E> = {
+/** TanStack options over the client: each call's error is its own. */
+export type RegistryQueryUtils<R> = {
   [K in keyof R & string]: R[K] extends AnyProcedure
-    ? ProcedureOptions<Def<R[K]>, E>
-    : RegistryQueryUtils<R[K], ScopeOf<R[K], E>>;
+    ? ProcedureOptions<Def<R[K]>>
+    : RegistryQueryUtils<R[K]>;
 };
 
 type Call = (
@@ -200,7 +204,7 @@ const utils = (client: unknown, path: ReadonlyArray<string>): unknown =>
     },
   );
 
-/** `createTrpcQueryUtils`'s shape over a registry client of `R`. */
+/** `createTrpcQueryUtils`'s shape over the client of `R`. */
 export const createRegistryQueryUtils = <R>(
   client: unknown,
-): RegistryQueryUtils<R, ErrorsOfRouter<R>> => utils(client, []) as never;
+): RegistryQueryUtils<R> => utils(client, []) as never;

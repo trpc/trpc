@@ -1,32 +1,20 @@
 /**
- * B) The registry is a list of Effect `Schema.TaggedError` classes, with
+ * C) The registry is a list of Effect `Schema.TaggedError` classes, with
  * the HTTP status as Effect HttpApi's own `httpApiStatus` annotation. The
  * classes import nothing from tRPC, so a domain package can share them
- * with HttpApi or Effect RPC, and the client decodes them back into the
- * same classes.
+ * with HttpApi or Effect RPC.
  *
- * v12 masks a failure that isn't a `TrpcError`, and its types reject one
- * in an Effect resolver, so this spike carries them through with a
- * middleware (`bridge`) and an `expose()` around Effect resolvers. Built
- * into the package, both would go.
+ * v12 can't carry them as returned errors. A `Schema.TaggedError` is itself
+ * an Effect, so returning one from a resolver, like failing an Effect with
+ * one, is the "Map Effect failures to a TrpcError" type error. This spike
+ * maps them per resolver: `send()` for a returned one, `expose()` around an
+ * Effect, each typed so the procedure's union keeps the tag and fields.
+ * The client gets v12's errors, not the classes: rebuilding them there
+ * would import the registry, which a client must not.
  */
 import { Effect, Schema } from 'effect';
 import type {} from 'effect/http-api';
-import type { AnyLink } from '@trpc12/trpc/client';
-import {
-  isTrpcError,
-  TrpcError,
-  type AnyRouter,
-  type AnyTrpcError,
-} from '@trpc12/trpc/server';
-import {
-  createRegistryClient,
-  createRegistryEffectClient,
-  type RegistryClient,
-  type RegistryEffectClient,
-  type Scoped,
-} from '../shared/client.ts';
-import { trpcFailures, type TrpcFailure } from '../shared/framework.ts';
+import { TrpcError } from '@trpc12/trpc/server';
 import { errorsToOpenApi } from '../shared/openapi.ts';
 
 declare module 'effect/Schema' {
@@ -41,31 +29,49 @@ declare module 'effect/Schema' {
 /** A `Schema.TaggedError` class. */
 export type AnyTaggedClass = Schema.Top & {
   readonly identifier: string;
+  readonly Encoded: { readonly _tag: string };
 } & (abstract new (...args: any) => { readonly _tag: string });
 
-export interface TaggedRegistry<C extends ReadonlyArray<AnyTaggedClass>> {
-  readonly classes: C;
-  /** Promise middleware: sends a registered error rather than masking it. */
-  readonly bridge: <O extends { readonly next: () => Promise<unknown> }>(
-    opts: O,
-  ) => ReturnType<O['next']>;
+type Fields<C extends AnyTaggedClass> = {
+  readonly [K in keyof C['Encoded'] as K extends '_tag'
+    ? never
+    : K]: C['Encoded'][K];
+};
+
+/** Class `C`'s errors as v12 sends them: the tag, and the fields as `data`. */
+export type Sent<C extends AnyTaggedClass> = C extends unknown
+  ? TrpcError<
+      C['Encoded']['_tag'],
+      [keyof Fields<C>] extends [never] ? undefined : Fields<C>,
+      C['Encoded']['_tag']
+    >
+  : never;
+
+type SentOf<C extends AnyTaggedClass, E> = E extends unknown
+  ? Sent<Extract<C, abstract new (...args: any) => E>>
+  : never;
+
+export interface TaggedRegistry<C extends AnyTaggedClass> {
+  readonly classes: ReadonlyArray<C>;
+  /** A returned error: `return errors.send(new PostNotFound({ id }))`. */
+  readonly send: <E extends InstanceType<C>>(error: E) => SentOf<C, E>;
   /** An Effect resolver's registered failures, as v12 errors. */
   readonly expose: <A, E, R>(
     effect: Effect.Effect<A, E, R>,
-  ) => Effect.Effect<A, AnyTrpcError, R>;
-  /** The client's half: a received error back into its class. */
-  readonly rebuild: (cause: AnyTrpcError) => unknown;
+  ) => Effect.Effect<
+    A,
+    | SentOf<C, Extract<E, InstanceType<C>>>
+    | Exclude<E, InstanceType<C>>,
+    R
+  >;
 }
-
-export type ErrorsOfClasses<C extends ReadonlyArray<AnyTaggedClass>> =
-  InstanceType<C[number]>;
 
 const statusOf = (cls: AnyTaggedClass) =>
   Schema.resolveAnnotations(cls)?.httpApiStatus ?? 400;
 
-export function taggedErrors<const C extends ReadonlyArray<AnyTaggedClass>>(
-  ...classes: C
-): TaggedRegistry<C> {
+export function taggedErrors<const Cs extends ReadonlyArray<AnyTaggedClass>>(
+  ...classes: Cs
+): TaggedRegistry<Cs[number]> {
   const byTag = new Map(classes.map((cls) => [cls.identifier, cls]));
   const wire = new Map(
     classes.map((cls) => [
@@ -76,74 +82,25 @@ export function taggedErrors<const C extends ReadonlyArray<AnyTaggedClass>>(
       }),
     ]),
   );
-  const toTrpc = (e: unknown): AnyTrpcError | undefined => {
-    if (typeof e !== 'object' || e === null || !('_tag' in e)) return undefined;
+  const toTrpc = (e: unknown): unknown => {
+    if (typeof e !== 'object' || e === null || !('_tag' in e)) return e;
     const tag = String(e._tag);
     const cls = byTag.get(tag);
-    if (!cls || !(e instanceof cls)) return undefined;
+    if (!cls || !(e instanceof cls)) return e;
     const { _tag, ...fields } = Schema.encodeSync(
       cls as unknown as Schema.Codec<any, any>,
     )(e);
     const message = (e as { message?: string }).message || tag;
-    return new (wire.get(tag)!)(fields, { message, cause: e });
+    const data = Object.keys(fields).length === 0 ? undefined : fields;
+    return new (wire.get(tag)!)(data, { message, cause: e });
   };
   return {
     classes,
-    bridge: (async (opts: {
-      next: () => Promise<{ ok: boolean; error?: AnyTrpcError }>;
-    }) => {
-      const result = await opts.next();
-      const sent =
-        !result.ok && isTrpcError(result.error)
-          ? toTrpc(result.error.cause)
-          : undefined;
-      if (sent) throw sent;
-      return result;
-    }) as never,
-    expose: (effect) =>
-      Effect.mapError(effect, (e) => toTrpc(e) ?? (e as AnyTrpcError)),
-    rebuild: (cause) => {
-      const cls = byTag.get(cause.code);
-      if (!cls) return undefined;
-      return Schema.decodeUnknownSync(cls as unknown as Schema.Codec<any, any>)(
-        {
-          ...(cause.data as object),
-          _tag: cause.code,
-        },
-      );
-    },
+    send: toTrpc as never,
+    expose: ((effect: Effect.Effect<unknown, unknown, unknown>) =>
+      Effect.mapError(effect, toTrpc)) as never,
   };
 }
-
-export const withErrors = <
-  const C extends ReadonlyArray<AnyTaggedClass>,
-  R extends AnyRouter,
->(
-  _errors: TaggedRegistry<C>,
-  router: R,
-): R & Scoped<ErrorsOfClasses<C> | TrpcFailure> =>
-  router as R & Scoped<ErrorsOfClasses<C> | TrpcFailure>;
-
-type ErrorsOfRouter<R> = R extends Scoped<infer E> ? E : never;
-
-export interface Options<C extends ReadonlyArray<AnyTaggedClass>> {
-  readonly links: ReadonlyArray<AnyLink>;
-  readonly errors: TaggedRegistry<C>;
-}
-
-export const createClient = <R>(opts: Options<any>) =>
-  createRegistryClient<RegistryClient<R, ErrorsOfRouter<R>>>({
-    links: opts.links,
-    registry: trpcFailures,
-    rebuild: opts.errors.rebuild,
-  });
-
-export const createEffectClient = <R>(opts: Options<any>) =>
-  createRegistryEffectClient<RegistryEffectClient<R, ErrorsOfRouter<R>>>({
-    links: opts.links,
-    registry: trpcFailures,
-    rebuild: opts.errors.rebuild,
-  });
 
 /** OpenAPI from the classes: the body is the class's encoded form. */
 export const classesToOpenApi = (classes: ReadonlyArray<AnyTaggedClass>) =>

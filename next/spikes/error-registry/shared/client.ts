@@ -1,26 +1,18 @@
 /**
- * The client half every option shares. A call's error type is handed in
- * (the registry's union plus tRPC's failures) instead of inferred from the
- * procedure, so every call through a client has the same one. The runtime
- * is v12's own client and `httpLink`, wrapped so each rejection is rebuilt
- * as a registry error.
+ * The client half every option shares, and the only one: each call's
+ * errors are inferred from its procedure in `typeof appRouter`, so the
+ * client takes no registry and imports nothing of the app's at runtime.
+ * The runtime is v12's own client and `httpLink`, with each rejection
+ * passed through {@link toFailure}.
  */
 import { Effect } from 'effect';
 import {
   createTrpcClient,
-  httpLink,
   routerType,
   type AnyLink,
 } from '@trpc12/trpc/client';
-import {
-  createFetchHandler,
-  type AnyProcedure,
-  type AnyTrpcError,
-  type AnyRouter,
-  type ProcedureDef,
-} from '@trpc12/trpc/server';
-import type { Registry } from './define.ts';
-import { decodeWith, type UnexpectedTag } from './framework.ts';
+import type { AnyProcedure, ProcedureDef } from '@trpc12/trpc/server';
+import { toFailure, type CallError, type UnexpectedTag } from './failures.ts';
 
 /** A call's `Promise`, carrying its error type for {@link safe}. */
 export interface RegistryPromise<T, E> extends Promise<T> {
@@ -31,44 +23,48 @@ type Args<I> = undefined extends I ? [input?: I] : [input: I];
 
 type Def<P extends AnyProcedure> = NonNullable<P['~trpc']['~types']>;
 
-type Call<D extends ProcedureDef, E> = D['type'] extends 'mutation'
-  ? { mutate(...args: Args<D['input']>): RegistryPromise<D['output'], E> }
-  : { query(...args: Args<D['input']>): RegistryPromise<D['output'], E> };
+type Call<D extends ProcedureDef> = D['type'] extends 'mutation'
+  ? {
+      mutate(
+        ...args: Args<D['input']>
+      ): RegistryPromise<D['output'], CallError<D['errors']>>;
+    }
+  : {
+      query(
+        ...args: Args<D['input']>
+      ): RegistryPromise<D['output'], CallError<D['errors']>>;
+    };
 
-type EffectCall<D extends ProcedureDef, E> = D['type'] extends 'mutation'
-  ? { mutate(...args: Args<D['input']>): Effect.Effect<D['output'], E> }
-  : { query(...args: Args<D['input']>): Effect.Effect<D['output'], E> };
+type EffectCall<D extends ProcedureDef> = D['type'] extends 'mutation'
+  ? {
+      mutate(
+        ...args: Args<D['input']>
+      ): Effect.Effect<D['output'], CallError<D['errors']>>;
+    }
+  : {
+      query(
+        ...args: Args<D['input']>
+      ): Effect.Effect<D['output'], CallError<D['errors']>>;
+    };
 
-declare const errorsKey: unique symbol;
-
-/**
- * A router node typed with the errors its subtree's calls fail with, on
- * top of its parent's. A symbol key, type-only, so the router still fits
- * v12's `AnyRouter`. The value is a function because v12's router walks
- * (`inferRouterServices`, ctx, errors) descend into every key; a function
- * has none, so the phantom adds nothing to them.
- */
-export type Scoped<E> = { readonly [errorsKey]: (errors: E) => void };
-
-/** A subtree's errors: its own scope's, on top of its parent's `E`. */
-export type ScopeOf<R, E> = R extends Scoped<infer S> ? S | E : E;
-
-/** The errors a root router's calls fail with. */
-export type ErrorsOfRouter<R> = R extends Scoped<infer E> ? E : never;
-
-/** The Promise client: every call fails with `E`. */
-export type RegistryClient<R, E> = {
+/** The Promise client: each call fails with its own procedure's errors. */
+export type RegistryClient<R> = {
   [K in keyof R & string]: R[K] extends AnyProcedure
-    ? Call<Def<R[K]>, E>
-    : RegistryClient<R[K], ScopeOf<R[K], E>>;
+    ? Call<Def<R[K]>>
+    : RegistryClient<R[K]>;
 };
 
-/** The Effect client: every call is an `Effect` failing with `E`. */
-export type RegistryEffectClient<R, E> = {
+/** The Effect client: each call an `Effect` failing with its own errors. */
+export type RegistryEffectClient<R> = {
   [K in keyof R & string]: R[K] extends AnyProcedure
-    ? EffectCall<Def<R[K]>, E>
-    : RegistryEffectClient<R[K], ScopeOf<R[K], E>>;
+    ? EffectCall<Def<R[K]>>
+    : RegistryEffectClient<R[K]>;
 };
+
+/** The errors of the call at `R`'s procedure `P`, for tests and helpers. */
+export type ErrorsOfCall<P extends AnyProcedure> = CallError<
+  Def<P>['errors']
+>;
 
 const proxy = (
   call: (path: ReadonlyArray<string>, args: ReadonlyArray<unknown>) => unknown,
@@ -80,12 +76,8 @@ const proxy = (
     apply: (_, __, args: unknown[]) => call(path, args),
   });
 
-export interface RegistryClientOptions {
+export interface ClientOptions {
   readonly links: ReadonlyArray<AnyLink>;
-  /** The registry at runtime, to rebuild its classes: `instanceof` holds. */
-  readonly registry: Registry;
-  /** Rebuilds an app error that isn't a `defineError()` class. */
-  readonly rebuild?: (cause: AnyTrpcError) => unknown;
 }
 
 const at = (client: unknown, path: ReadonlyArray<string>) =>
@@ -93,40 +85,36 @@ const at = (client: unknown, path: ReadonlyArray<string>) =>
     ...args: ReadonlyArray<unknown>
   ) => Promise<unknown>;
 
-/** The Promise client over v12's, rebuilding every error it rejects with. */
-export function createRegistryClient<TClient>(
-  opts: RegistryClientOptions,
-): TClient {
-  const inner = createTrpcClient({
+const inner = (opts: ClientOptions) =>
+  createTrpcClient({
     router: routerType<any>(),
     links: opts.links as [AnyLink],
   });
-  const decode = decodeWith(opts.registry, opts.rebuild);
+
+/** The Promise client over v12's. `R` is `typeof appRouter`, type-only. */
+export function createClient<R>(opts: ClientOptions): RegistryClient<R> {
+  const client = inner(opts);
   return proxy((path, args) =>
     at(
-      inner,
+      client,
       path,
     )(...args).catch((cause: unknown) => {
-      throw decode(cause);
+      throw toFailure(cause);
     }),
-  ) as TClient;
+  ) as RegistryClient<R>;
 }
 
-/** The Effect client: each call an `Effect` whose failure is the registry's. */
-export function createRegistryEffectClient<TClient>(
-  opts: RegistryClientOptions,
-): TClient {
-  const inner = createTrpcClient({
-    router: routerType<any>(),
-    links: opts.links as [AnyLink],
-  });
-  const decode = decodeWith(opts.registry, opts.rebuild);
+/** The Effect client: each call an `Effect` whose failure is the call's. */
+export function createEffectClient<R>(
+  opts: ClientOptions,
+): RegistryEffectClient<R> {
+  const client = inner(opts);
   return proxy((path, args) =>
     Effect.tryPromise({
-      try: (signal) => at(inner, path)(args[0], { signal }),
-      catch: decode,
+      try: (signal) => at(client, path)(args[0], { signal }),
+      catch: toFailure,
     }),
-  ) as TClient;
+  ) as RegistryEffectClient<R>;
 }
 
 /** `[data, error]`, the error typed with the call's `E`. */
@@ -158,7 +146,7 @@ type Rest<E extends Tagged> = [Extract<E, { _tag: UnexpectedTag }>] extends [
   : { unexpected: (e: Extract<E, { _tag: UnexpectedTag }>) => unknown };
 
 /**
- * One handler per tag of the app's registry and per link failure, all
+ * One handler per tag the call can fail with and per link failure, all
  * required; tRPC's other failures go to `unexpected`, or to a handler of
  * their own when a call names them.
  */
@@ -172,7 +160,11 @@ type ResultOf<H> = {
   [K in keyof H]: H[K] extends (...args: any) => infer R ? R : never;
 }[keyof H];
 
-/** Exhaustive by `_tag`: a tag without a handler doesn't compile. */
+/**
+ * Exhaustive by `_tag`: a tag without a handler doesn't compile, nor does
+ * a handler for a tag the call can't fail with. A tag the types don't know
+ * (a server newer than its client) goes to `unexpected`.
+ */
 export function matchError<E extends Tagged, const H extends Handlers<E>>(
   err: E,
   handlers: H & Leftover<Exclude<keyof H, keyof Handlers<E>>>,
@@ -184,24 +176,4 @@ export function matchError<E extends Tagged, const H extends Handlers<E>>(
   const handler = byTag[err._tag] ?? byTag['unexpected'];
   if (!handler) throw err;
   return handler(err);
-}
-
-/** A client and handler over one router, with `fetch` going to the handler. */
-export function serve(router: AnyRouter) {
-  const handler = createFetchHandler({
-    router,
-    createContext: (opts) => ({
-      user: opts.request.headers['authorization'] ?? null,
-    }),
-  });
-  const requests: Array<{ status: number; body: unknown }> = [];
-  const link = httpLink({
-    url: 'http://localhost/trpc',
-    fetch: async (url, init) => {
-      const res = await handler.fetch(new Request(url, init));
-      requests.push({ status: res.status, body: await res.clone().json() });
-      return res;
-    },
-  });
-  return { handler, link, requests };
 }

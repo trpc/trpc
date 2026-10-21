@@ -5,22 +5,22 @@ import {
   useMutation,
   useQuery,
 } from '@tanstack/react-query';
-import { httpLink } from '@trpc12/trpc/client';
+import { httpLink, routerType } from '@trpc12/trpc/client';
 import { createFetchHandler } from '@trpc12/trpc/server';
 import { act, createElement as h, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { expect, expectTypeOf, test, vi } from 'vite-plus/test';
-import { createClient } from '../merge-errors/merge-errors.ts';
-import { matchError } from '../shared/client.ts';
-import type { TrpcFailure } from '../shared/framework.ts';
+import { createClient, matchError } from '../shared/client.ts';
+import type { RegistryError, TrpcFailure } from '../shared/failures.ts';
 import {
   appRouter,
   AuthBoundary,
-  errors,
+  billingErrors,
   OfflineBoundary,
-  postErrors,
+  postProcedure,
   RootBoundary,
   useAuthBoundary,
+  type AppRouter,
 } from './app.ts';
 import { createErrorBoundary, createRegistryQueryUtils } from './boundaries.ts';
 
@@ -38,8 +38,7 @@ const handler = createFetchHandler({
     user: opts.request.headers['authorization'] ?? null,
   }),
 });
-const client = createClient<typeof appRouter>({
-  registry: errors,
+const client = createClient<AppRouter>({
   links: [
     httpLink({
       url: 'http://localhost/trpc',
@@ -54,12 +53,14 @@ const client = createClient<typeof appRouter>({
     }),
   ],
 });
-const trpc = createRegistryQueryUtils<typeof appRouter>(client);
+const trpc = createRegistryQueryUtils<AppRouter>(client);
 
 type Tags<T> = T extends { readonly _tag: infer K } ? K : never;
 type Framework = TrpcFailure['_tag'];
 
-test('types: a posts call fails with the root registry, the posts module and tRPC', () => {
+const router = routerType<AppRouter>();
+
+test("types: a posts call fails with the middleware's errors, the posts module's and tRPC's", () => {
   function PostTitle() {
     const post = useQuery(trpc.posts.byId.queryOptions({ input: { id: '1' } }));
     expectTypeOf<Tags<NonNullable<typeof post.error>>>().toEqualTypeOf<
@@ -88,19 +89,18 @@ test('types: under Auth, Offline and Root, only the posts module and BadResponse
 test("types: a fallback's error is what its boundary claims", () => {
   createErrorBoundary({
     name: 'Auth',
-    errors,
+    router,
     claims: ['Unauthorized', 'Forbidden'],
     fallback: (props) => {
       expectTypeOf(props.error).toEqualTypeOf<
-        | InstanceType<(typeof errors)['Unauthorized']>
-        | InstanceType<(typeof errors)['Forbidden']>
+        RegistryError<'Unauthorized'> | RegistryError<'Forbidden'>
       >();
       return null;
     },
   });
   createErrorBoundary({
     name: 'Root',
-    errors,
+    router,
     claims: [],
     unexpected: true,
     fallback: (props) => {
@@ -112,27 +112,32 @@ test("types: a fallback's error is what its boundary claims", () => {
   });
 });
 
-test('types: a claim the registry lacks is a type error', () => {
+test('types: a claim no procedure can fail with is a type error', () => {
   createErrorBoundary({
     name: 'Auth',
-    errors,
-    // @ts-expect-error 'Unauthorised' is no tag of the registry
+    router,
+    // @ts-expect-error 'Unauthorised' is no tag of the router
     claims: ['Unauthorised'],
     fallback: () => null,
   });
   createErrorBoundary({
     name: 'Posts',
-    errors: postErrors,
+    router: routerType<AppRouter['posts']>(),
     // @ts-expect-error a module's boundary only claims that module's tags
     claims: ['CardDeclined'],
     fallback: () => null,
   });
 });
 
+test("types: a posts procedure can't return billing's error", () => {
+  // @ts-expect-error CardDeclined isn't declared by the posts module
+  postProcedure.query(() => billingErrors.CardDeclined());
+});
+
 test('types: claiming a tag a call cannot fail with leaves its union as it is', () => {
   const [, useBilling] = createErrorBoundary({
     name: 'Billing',
-    errors,
+    router,
     claims: ['CardDeclined'],
     fallback: () => null,
   });
@@ -303,7 +308,7 @@ test("a mutation's module error stays on the form; Unauthorized replaces it", as
   expect(ui.text('#sign-in')).toBe('Unauthorized');
 });
 
-test("an error from outside the call's scope passes every boundary, Root's included", async () => {
+test("another module's error, thrown, is a crash: Root's", async () => {
   reset('ada');
   function Leak() {
     const leak = useQuery(
@@ -314,14 +319,9 @@ test("an error from outside the call's scope passes every boundary, Root's inclu
     expectTypeOf<Tags<NonNullable<typeof leak.error>>>().toEqualTypeOf<
       'PostNotFound' | 'TitleTaken' | 'BadResponse'
     >();
-    return h(
-      'p',
-      { id: 'leak' },
-      leak.error ? `component got ${leak.error._tag}` : 'loading',
-    );
+    return h('p', { id: 'leak' }, leak.error?._tag ?? 'loading');
   }
   using ui = await mount(boundaries(h(Leak)));
   await ui.settle();
-  expect(ui.text('#crashed')).toBeUndefined();
-  expect(ui.text('#leak')).toBe('component got CardDeclined');
+  expect(ui.text('#crashed')).toBe('Internal');
 });
