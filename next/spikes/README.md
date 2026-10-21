@@ -16,3 +16,4 @@ Scripts are Effect programs on `kit.ts`: `writeFixture` writes a generated fixtu
 | `tanstack-db-realtime/` | `pnpm test` (root)                                              | [tanstack-db-realtime](../.agent-docs/notes/tanstack-db-realtime.md)           |
 | `live-queries/`         | `pnpm test` (root)                                              | [live-queries](../.agent-docs/notes/live-queries.md)                           |
 | `big-routers/`          | `node big-routers/bench.ts [domains] [perDomain] [used] [runs]` | [large-routers-typeperf](../.agent-docs/notes/large-routers-typeperf.md)       |
+| `error-registry/`       | `pnpm test` (root), `node error-registry/bench.ts --help`       | [error-registry](../.agent-docs/open/error-registry.md) (open)                 |
