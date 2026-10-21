@@ -470,9 +470,9 @@ export type inferRouterInputs<T> = InputMap<
 >;
 /**
  * Every procedure's output, by path, as a client receives it. For a client's
- * type (or a client factory's), outputs follow its links' serializer, as its
+ * type (or a client factory's), outputs follow its links' transformer, as its
  * calls do; for a router type, they are in plain JSON's form, the default
- * serializer's (`Date` arrives as a `string`). A procedure's output as the
+ * transformer's (`Date` arrives as a `string`). A procedure's output as the
  * server returns it is `inferProcedureOutput`.
  *
  * @example

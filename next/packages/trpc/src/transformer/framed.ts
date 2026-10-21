@@ -200,7 +200,7 @@ function framedTransformer(
   const encode = (scanned: Scanned): SerializeReturn => {
     if (scanned.blob) {
       throw new DansonError(
-        'A File or Blob needs a streaming serializer such as createSerializer(); a root file output can be a raw response instead',
+        'A File or Blob needs a streaming transformer such as createSerializer(); a root file output can be a raw response instead',
       );
     }
     if (kind === 'none' && scanned.json) {
@@ -304,14 +304,14 @@ function framedTransformer(
 export interface SyncTransformerOptions {
   /**
    * Names the format in the `trpc-serializer` header, so a link with another
-   * serializer fails clearly.
+   * transformer fails clearly.
    * @default 'sync'
    */
   name?: string;
 }
 
 /**
- * A serializer from a sync transformer (superjson, devalue). `TKeeps` lists
+ * A transformer from a sync transformer (superjson, devalue). `TKeeps` lists
  * the types it rebuilds, so client types show the rest in JSON form.
  *
  * The transport streams promises and async iterables in plain objects and
@@ -322,9 +322,9 @@ export interface SyncTransformerOptions {
  * @example
  * ```ts
  * import superjson from 'superjson';
- * export const serializer = createSyncTransformer<Date | Map<any, any> | Set<any> | bigint | undefined>(superjson, { name: 'superjson' });
- * createFetchHandler({ router, serializer });
- * httpLink({ url, serializer }); // client types keep Date, Map, Set, bigint
+ * export const transformer = createSyncTransformer<Date | Map<any, any> | Set<any> | bigint | undefined>(superjson, { name: 'superjson' });
+ * createFetchHandler({ router, transformer });
+ * httpLink({ url, transformer }); // client types keep Date, Map, Set, bigint
  * ```
  * @since 0.1.0
  * @stability stable
@@ -337,7 +337,7 @@ export function createSyncTransformer<TKeeps = never>(
 }
 
 /**
- * Plain `JSON`, the default serializer. Client types show outputs in JSON
+ * Plain `JSON`, the default transformer. Client types show outputs in JSON
  * form (`Date` → `string`, `undefined` keys dropped); promises and async
  * iterables nested in plain objects and arrays still stream.
  *

@@ -20,7 +20,7 @@ import {
 import { z } from 'zod';
 
 /** Dates, Maps and Files round-trip, so both ends use danSON. */
-const serializer = createSerializer();
+const transformer = createSerializer();
 const t = initTrpc();
 const aborted: string[] = [];
 
@@ -65,7 +65,7 @@ let server: TestServerShape;
 beforeAll(async () => {
   const context = await Effect.runPromise(
     Layer.buildWithScope(
-      TestServer.layer({ router, batch: true, serializer }).pipe(
+      TestServer.layer({ router, batch: true, transformer }).pipe(
         Layer.provide(BunHttpServer.layer({ port: 0, hostname: '127.0.0.1' })),
       ),
       scope,
@@ -88,7 +88,7 @@ test('runs on Bun', () => {
 test('batched queries keep rich types over BunHttpServer', async () => {
   const client = createTrpcClient({
     router: routerType<typeof router>(),
-    links: [httpLink({ url: server.url, batch: true, serializer })],
+    links: [httpLink({ url: server.url, batch: true, transformer })],
   });
   const [a, b] = await Promise.all([
     client.post.query({ id: '1' }),
@@ -101,7 +101,7 @@ test('batched queries keep rich types over BunHttpServer', async () => {
 test('files go up as form data and come back as Files', async () => {
   const client = createTrpcClient({
     router: routerType<typeof router>(),
-    links: [httpLink({ url: server.url, serializer })],
+    links: [httpLink({ url: server.url, transformer })],
   });
   expect(await client.upload.mutate({ file: new File(['hi'], 'a.txt') })).toBe(
     'a.txt:hi',
@@ -114,7 +114,7 @@ test('files go up as form data and come back as Files', async () => {
 test('a byte stream input streams up as the request body', async () => {
   const client = createTrpcClient({
     router: routerType<typeof router>(),
-    links: [httpLink({ url: server.url, serializer })],
+    links: [httpLink({ url: server.url, transformer })],
   });
   const file = new File([new Uint8Array(300_000).fill(1)], 'big.bin');
   expect(await client.byteSize.mutate(file.stream())).toBe(300_000);
@@ -123,7 +123,7 @@ test('a byte stream input streams up as the request body', async () => {
 test('SSE subscriptions stream and resume from lastEventId', async () => {
   const client = createTrpcClient({
     router: routerType<typeof router>(),
-    links: [httpLink({ url: server.url, serializer })],
+    links: [httpLink({ url: server.url, transformer })],
   });
   const all = await collect(client.posts.subscribe());
   expect(all.map((e) => e.id)).toEqual(['1', '2', '3']);
@@ -134,7 +134,7 @@ test('SSE subscriptions stream and resume from lastEventId', async () => {
 });
 
 test('wsLink queries and subscribes over the platform WebSocket', async () => {
-  await using link = wsLink({ url: server.wsUrl, serializer });
+  await using link = wsLink({ url: server.wsUrl, transformer });
   const client = createTrpcClient({
     router: routerType<typeof router>(),
     links: [link],
@@ -148,7 +148,7 @@ test('wsLink queries and subscribes over the platform WebSocket', async () => {
 test('a client that goes away aborts the subscription signal', async () => {
   const client = createTrpcClient({
     router: routerType<typeof router>(),
-    links: [httpLink({ url: server.url, serializer })],
+    links: [httpLink({ url: server.url, transformer })],
   });
   for await (const n of client.forever.subscribe()) if (n === 2) break;
   for (let i = 0; i < 50 && !aborted.includes('forever'); i++) {

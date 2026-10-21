@@ -127,7 +127,7 @@ export function createTrpcRsc<TRouter extends AnyRouter>(
 ): TrpcRsc<TRouter> {
   const cache = opts.cache ?? reactCache;
   const { dehydrate: dehydrateOptions } = hydrationOptions({
-    serializer: (opts as { serializer?: AnyTransformer }).serializer,
+    transformer: (opts as { transformer?: AnyTransformer }).transformer,
   });
   const getQueryClient = cache(
     opts.makeQueryClient ??

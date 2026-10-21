@@ -104,7 +104,7 @@ export const execute = (
       return { status, body: undefined, blob: value, headers };
     }
     try {
-      const serialized = handler.serializer.serializeDeferred(value, {
+      const serialized = handler.transformer.serializeDeferred(value, {
         coerceError: coerceError(handler, request, path, type),
       });
       const { chunks } = serialized;

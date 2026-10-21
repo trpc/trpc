@@ -635,14 +635,14 @@ test('inputs with files are kept without a fingerprint; an error that cannot be 
   const danson = createSerializer();
   await using server = await createTestServer({
     router,
-    serializer: danson,
+    transformer: danson,
     layer: Persistence.layerBackingMemory,
   });
   const client = createTrpcClient({
     router,
     links: [
       experimental_durableLink(),
-      httpLink({ url: server.url, serializer: danson }),
+      httpLink({ url: server.url, transformer: danson }),
     ],
   });
   const file = new File(['bytes'], 'a.txt');

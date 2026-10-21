@@ -21,7 +21,7 @@ export interface Post {
 }
 
 /** Posts carry `Date`s through hydration, so both ends use danSON. */
-export const serializer = createSerializer();
+export const transformer = createSerializer();
 
 /** What the app's links declare: danSON's form. Contexts take it as their links' types. */
 export type Links = { form: DansonForm };
@@ -185,7 +185,7 @@ export async function createApp(opts: { posts?: number } = {}) {
       Layer.buildWithScope(
         TestServer.layer({
           router: appRouter,
-          serializer,
+          transformer,
           createContext: (args) => ({
             locale: args.request.headers['x-locale'] ?? null,
           }),
@@ -201,7 +201,7 @@ export async function createApp(opts: { posts?: number } = {}) {
   );
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [dedupeLink(), httpLink({ url: server.url, serializer })],
+    links: [dedupeLink(), httpLink({ url: server.url, transformer })],
   });
   const trpc = createTrpcQueryUtils({ client });
   return {

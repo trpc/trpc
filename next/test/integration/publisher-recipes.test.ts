@@ -258,11 +258,11 @@ test('the Redis publisher recipe delivers live events and resumes from lastEvent
   await using server = await createTestServer({
     router,
     layer,
-    serializer: danson,
+    transformer: danson,
   });
   const client = createTrpcClient({
     router: routerType<typeof router>(),
-    links: [httpLink({ url: server.url, serializer: danson })],
+    links: [httpLink({ url: server.url, transformer: danson })],
   });
 
   const first = await client.create.mutate({ id: 'a' });

@@ -17,10 +17,10 @@ import type { AnyTransformer, Frame } from '@trpc12/trpc/transformer';
 
 /** A value's frames: the head, then each chunk as its deferred parts settle. */
 export const framesOf = (
-  serializer: AnyTransformer,
+  transformer: AnyTransformer,
   value: unknown,
 ): Stream.Stream<Frame> => {
-  const { head, chunks } = serializer.serializeDeferred(value);
+  const { head, chunks } = transformer.serializeDeferred(value);
   return Stream.concat(
     Stream.make(head as Frame),
     chunks ? Stream.orDie(chunks) : Stream.empty,
@@ -85,10 +85,10 @@ export const parseSse = <E>(
 
 /** Rebuilds the value from SSE events of its frames. */
 export const fromSse = <T, E>(
-  serializer: AnyTransformer,
+  transformer: AnyTransformer,
   events: Stream.Stream<SseEvent, E>,
 ): Effect.Effect<T, unknown> =>
-  serializer.deserializeStream<T, E>(
+  transformer.deserializeStream<T, E>(
     Stream.map(events, (event) => JSON.parse(event.data) as Frame),
     { streamInterrupted: () => new Error('the SSE stream ended early') },
   );
@@ -102,7 +102,7 @@ export interface Replay {
  * Serializes a value once and keeps its frames, so connections (and
  * reconnects) read the same deferred values. Runs until the scope closes.
  */
-export const createReplay = (serializer: AnyTransformer, value: unknown) =>
+export const createReplay = (transformer: AnyTransformer, value: unknown) =>
   Effect.gen(function* () {
     let kept: ReadonlyArray<string> = [];
     let done = false;
@@ -110,7 +110,7 @@ export const createReplay = (serializer: AnyTransformer, value: unknown) =>
     // Keeping a frame and publishing it is one step for readers, so a
     // reader that subscribes sees each frame once: kept or live.
     const lock = yield* Semaphore.make(1);
-    yield* framesOf(serializer, value).pipe(
+    yield* framesOf(transformer, value).pipe(
       Stream.map((frame) => JSON.stringify(frame)),
       Stream.runForEach((line) =>
         lock.withPermits(1)(

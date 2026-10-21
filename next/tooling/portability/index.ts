@@ -148,7 +148,7 @@ export const appRouter = mergeRouters(postRouter, {
 });
 export type AppRouter = typeof appRouter;
 
-export const serializer = createSerializer();
+export const transformer = createSerializer();
 
 export const handler = createFetchHandler({
   router: appRouter,

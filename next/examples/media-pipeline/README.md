@@ -1,6 +1,6 @@
 # media-pipeline
 
-Upload photos and get back reports whose fields resolve as they're ready. The example runs tRPC's streaming, file and serializer machinery end to end on Node. Every API it uses is stable except `experimental_byteStream()`, which `photos.uploadOriginal` uses (see [Byte stream inputs](https://v12.trpc.io/v12/docs/server/byte-streams)).
+Upload photos and get back reports whose fields resolve as they're ready. The example runs tRPC's streaming, file and transformer machinery end to end on Node. Every API it uses is stable except `experimental_byteStream()`, which `photos.uploadOriginal` uses (see [Byte stream inputs](https://v12.trpc.io/v12/docs/server/byte-streams)).
 
 ```bash
 pnpm start                       # the server on a free port, then the client against it
@@ -17,7 +17,7 @@ pnpm client                      # …and the client against http://localhost:30
 | `start.ts`  | Starts the server, runs the client, and stops the server.                                                                                                                        |
 | `router.ts` | The procedures, written in Effect (Effect Schema inputs, services from the layer), plus one async generator, the v11 way.                                                        |
 | `photos.ts` | The `Photos` service: an in-memory store, a PNG header reader, SVG placeholders, upload status, and a `PubSub` of pipeline events. Tagged errors `PHOTO_NOT_FOUND`, `NOT_A_PNG`. |
-| `money.ts`  | A `Money` class, kept by danSON through a `CustomType` and by superjson through `registerCustom`; both ends import its serializers.                                              |
+| `money.ts`  | A `Money` class, kept by danSON through a `CustomType` and by superjson through `registerCustom`; both ends import its transformers.                                             |
 
 ## What it covers
 
@@ -29,10 +29,10 @@ pnpm client                      # …and the client against http://localhost:30
 - **Binary frames.** The same report through `httpLink({ binary: true })` arrives as `application/vnd.trpc.frames` instead of JSONL, with the same bytes.
 - **Files in outputs.** `photos.original` returns the `File` itself: unbatched it's the response body (`content-type`, `content-disposition`), so the URL is a download link, and it works over superjson too. `album.export` is an async generator yielding `{ id, file }` items, with its return value typed and validated by `stream(Item, Return)`.
 - **An Effect `Stream` subscription.** `photos.events` follows a `PubSub`, validated per event with `stream()`, and is read with `createEffectClient` as a `Stream`.
-- **Serializers and query URLs.** `prints.quote` takes a `Set`, a `Date` and `Money` in a GET URL (`?input=` with sorted keys, so two key orders give one URL), and returns `Money`, a `Map` and a `Date`. The same call over `/sync` keeps them through superjson. An upload over superjson fails before anything is sent: files in inputs need danSON.
+- **Transformers and query URLs.** `prints.quote` takes a `Set`, a `Date` and `Money` in a GET URL (`?input=` with sorted keys, so two key orders give one URL), and returns `Money`, a `Map` and a `Date`. The same call over `/sync` keeps them through superjson. An upload over superjson fails before anything is sent: files in inputs need danSON.
 
 ## Notes
 
 - The photos are PNG headers only (signature and `IHDR`), which is all the pipeline reads. Each step sleeps `STEP_LATENCY` (40ms) to stand in for real work, and the client's timing checks use the same constant.
 - A client that stops reading ends an Effect `Stream` early, and `Stream.onExit` sees a success exit for that, as it does for `Stream.take`. The upload's status compares what was stored with the total to tell the two apart.
-- Building this example found that `createSyncTransformer` and the default JSON serializer sent a `File` nested in an input as `{}` (the server then failed input validation), where the docs say they fail before sending. That is fixed in `@trpc12/trpc`'s `transformer/framed.ts`.
+- Building this example found that `createSyncTransformer` and the default JSON transformer sent a `File` nested in an input as `{}` (the server then failed input validation), where the docs say they fail before sending. That is fixed in `@trpc12/trpc`'s `transformer/framed.ts`.

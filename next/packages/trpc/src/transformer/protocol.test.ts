@@ -84,10 +84,10 @@ const router = {
 type AppRouter = typeof router;
 
 test('with danSON, built-in types round-trip through inputs and outputs', async () => {
-  await using server = await createTestServer({ router, serializer: danson });
+  await using server = await createTestServer({ router, transformer: danson });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: server.url, serializer: danson })],
+    links: [httpLink({ url: server.url, transformer: danson })],
   });
   const when = new Date('2026-01-02T03:04:05.000Z');
   const result = await client.echo.query({
@@ -112,12 +112,12 @@ test('with danSON, built-in types round-trip through inputs and outputs', async 
   expect(saved).toEqual({ year: 2026, big: 42n });
 });
 
-test('custom types work when both ends share a serializer', async () => {
-  const serializer = createSerializer({ types: { Money: money } });
-  await using server = await createTestServer({ router, serializer });
+test('custom types work when both ends share a transformer', async () => {
+  const transformer = createSerializer({ types: { Money: money } });
+  await using server = await createTestServer({ router, transformer });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: server.url, serializer })],
+    links: [httpLink({ url: server.url, transformer })],
   });
   const total = await client.total.query({
     items: [new Money(150n, 'EUR'), new Money(250n, 'EUR')],
@@ -158,7 +158,7 @@ test('longQuery: "query" sends long queries with the QUERY method (10 Q10.3)', a
   expect(res.status).toBe(405);
 });
 
-test('by default, outputs arrive as JSON and the server says which serializer it uses', async () => {
+test('by default, outputs arrive as JSON and the server says which transformer it uses', async () => {
   await using server = await createTestServer({ router });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
@@ -177,27 +177,27 @@ test('by default, outputs arrive as JSON and the server says which serializer it
   expect(res.headers.get('trpc-serializer')).toBe('json');
 });
 
-test("a link whose serializer isn't the server's fails with UNSUPPORTED_PROTOCOL", async () => {
+test("a link whose transformer isn't the server's fails with UNSUPPORTED_PROTOCOL", async () => {
   await using server = await createTestServer({ router });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: server.url, serializer: danson })],
+    links: [httpLink({ url: server.url, transformer: danson })],
   });
   const [, err] = await safe(client.greet.query({ name: 'x' }));
   expect(err?._tag).toBe('TransformerMismatch');
   expect(err).toMatchObject({ code: 'UNSUPPORTED_PROTOCOL', defined: false });
-  expect(err?.message).toContain("'json' serializer");
+  expect(err?.message).toContain("'json' transformer");
   expect(err?.message).toContain("uses 'danson'");
 });
 
-test("a socket link whose serializer isn't the server's fails with UNSUPPORTED_PROTOCOL, and the server runs nothing", async () => {
+test("a socket link whose transformer isn't the server's fails with UNSUPPORTED_PROTOCOL, and the server runs nothing", async () => {
   const t = initTrpc();
   let runs = 0;
   const counter = {
     bump: t.procedure.mutation(() => ++runs),
   };
   await using server = await createTestServer({ router: counter });
-  await using ws = wsLink({ url: server.wsUrl, serializer: danson });
+  await using ws = wsLink({ url: server.wsUrl, transformer: danson });
   const client = createTrpcClient({
     router: routerType<typeof counter>(),
     links: [ws],
@@ -207,12 +207,12 @@ test("a socket link whose serializer isn't the server's fails with UNSUPPORTED_P
     expect(err?._tag).toBe('TransformerMismatch');
     expect(err).toMatchObject({ code: 'UNSUPPORTED_PROTOCOL' });
     expect(err?.message).toBe(
-      "The server uses the 'json' serializer, but this wsLink uses 'danson'. Pass the same serializer to the handler and wsLink.",
+      "The server uses the 'json' transformer, but this wsLink uses 'danson'. Pass the same transformer to the handler and wsLink.",
     );
   }
 
   const channel = new MessageChannel();
-  createFetchHandler({ router: counter, serializer: danson }).messagePort(
+  createFetchHandler({ router: counter, transformer: danson }).messagePort(
     channel.port1,
   );
   const port = experimental_messagePortLink({ port: channel.port2 });
@@ -223,7 +223,7 @@ test("a socket link whose serializer isn't the server's fails with UNSUPPORTED_P
   try {
     const [, err] = await safe(portClient.bump.mutate());
     expect(err?.message).toContain(
-      "The server uses the 'danson' serializer, but this experimental_messagePortLink uses 'json'",
+      "The server uses the 'danson' transformer, but this experimental_messagePortLink uses 'json'",
     );
   } finally {
     await port.close();
@@ -249,10 +249,10 @@ test('query URLs are canonical: ?input= is JSON with object keys sorted, array o
 });
 
 test('with danSON, inputs cannot carry RegExps', async () => {
-  await using server = await createTestServer({ router, serializer: danson });
+  await using server = await createTestServer({ router, transformer: danson });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: server.url, serializer: danson })],
+    links: [httpLink({ url: server.url, transformer: danson })],
   });
   const [, err] = await safe(client.pattern.query(/(a+)+$/));
   expect(err).toMatchObject({ code: 'PARSE_ERROR' });
@@ -344,8 +344,8 @@ test('?input= reads as URLSearchParams does: the first one, `+` as space, encode
 
 test('serialized output is plain objects, with `__proto__` kept as an own key', () => {
   const value = JSON.parse('{"post":{"__proto__":{"x":1},"at":"y"}}');
-  for (const serializer of [jsonTransformer, danson]) {
-    const serialized = serializer.serialize(value);
+  for (const transformer of [jsonTransformer, danson]) {
+    const serialized = transformer.serialize(value);
     const json = serialized.json as { post: Record<string, unknown> };
     expect(Object.getPrototypeOf(json)).toBe(Object.prototype);
     expect(Object.getPrototypeOf(json.post)).toBe(Object.prototype);

@@ -85,6 +85,6 @@ A link declares the call options it reads (`dedupe` for `dedupeLink`, a `switchL
 | `wsLink`    | `reconnect`                                           | `NETWORK_ERROR`, `BAD_RESPONSE`, `STREAM_INTERRUPTED` |                                                                                  |
 | `localLink` | none                                                  | none                                                  |                                                                                  |
 
-A `splitLink` or `switchLink` takes the options and codes of every branch, and drops a method only when no branch carries it. Every one of these links types outputs in its serializer's form, and a chain takes its form from its first link that declares one.
+A `splitLink` or `switchLink` takes the options and codes of every branch, and drops a method only when no branch carries it. Every one of these links types outputs in its transformer's form, and a chain takes its form from its first link that declares one.
 
 `link(({ op, next }) => stream)` writes a link of your own, with the call options it reads, the errors it fails with and what it needs from the links after it ([Custom links](./custom-links.md)).

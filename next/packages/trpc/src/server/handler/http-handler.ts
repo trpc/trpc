@@ -27,7 +27,7 @@ import type { HandlerCore } from './core.ts';
 export interface HttpHandler {
   readonly router: AnyRouter;
   readonly core: HandlerCore;
-  readonly serializer: AnyTransformer;
+  readonly transformer: AnyTransformer;
   /** `/trpc`, or `/` for every path. */
   readonly endpoint: string;
   /** What procedure paths follow. */
@@ -42,7 +42,7 @@ export interface HttpHandler {
 export const makeHttpHandler = (
   opts: {
     readonly router: AnyRouter;
-    readonly serializer?: AnyTransformer | undefined;
+    readonly transformer?: AnyTransformer | undefined;
     readonly endpoint?: string | undefined;
     readonly maxBodySize?: number | undefined;
     readonly sse?:
@@ -56,7 +56,7 @@ export const makeHttpHandler = (
   return {
     router: opts.router,
     core,
-    serializer: opts.serializer ?? jsonTransformer,
+    transformer: opts.transformer ?? jsonTransformer,
     endpoint,
     under: endpoint === '/' ? '/' : `${endpoint}/`,
     maxBodySize: opts.maxBodySize ?? 1_048_576,
@@ -83,7 +83,7 @@ export const protocolError = <
 
 /** An error as the client sees it: masked, then serialized. @internal */
 export const wire = (handler: HttpHandler, err: AnyTrpcError): unknown =>
-  handler.serializer.serialize(toWireError(handler.core.publicError(err)));
+  handler.transformer.serialize(toWireError(handler.core.publicError(err)));
 
 /** Reports what a deferred value or an event failed with, and masks it. @internal */
 export const coerceError =

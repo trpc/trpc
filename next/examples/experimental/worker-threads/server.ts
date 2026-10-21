@@ -15,7 +15,7 @@ if (!parentPort) {
 
 createFetchHandler({
   router: appRouter,
-  serializer: createSerializer(),
+  transformer: createSerializer(),
   createContext: (opts) => {
     const token = opts.info.connectionParams?.['token'];
     return {

@@ -124,7 +124,7 @@ export const abortOnInterrupt = <A, E>(
 
 /** What {@link makeTransport} gives the link. */
 export interface Transport {
-  readonly serializer: AnyTransformer;
+  readonly transformer: AnyTransformer;
   readonly call: (
     op: Operation,
     accept: string,
@@ -147,7 +147,7 @@ export interface Transport {
 /** The HTTP side of `httpLink`: requests, responses and their bodies. */
 export function makeTransport(
   opts: HttpLinkOptions,
-  serializer: AnyTransformer,
+  transformer: AnyTransformer,
 ): Transport {
   const baseUrl = String(opts.url).replace(/\/+$/, '');
   const maxUrlLength = opts.maxUrlLength ?? 2048;
@@ -252,12 +252,12 @@ export function makeTransport(
             : {}),
         });
         const theirs = res.headers.get(HEADER.serializer);
-        if (theirs !== null && theirs !== serializer.name) {
+        if (theirs !== null && theirs !== transformer.name) {
           await res.body?.cancel().catch(() => {});
           throw new TrpcError({
             code: 'UNSUPPORTED_PROTOCOL',
             tag: 'TransformerMismatch',
-            message: `The server uses the '${theirs}' serializer, but this httpLink uses '${serializer.name}'. Pass the same serializer to the handler and httpLink.`,
+            message: `The server uses the '${theirs}' transformer, but this httpLink uses '${transformer.name}'. Pass the same transformer to the handler and httpLink.`,
           });
         }
         web = res;
@@ -288,7 +288,7 @@ export function makeTransport(
       const json =
         op.input === undefined
           ? undefined
-          : serializeInput(serializer, op.input, { parts });
+          : serializeInput(transformer, op.input, { parts });
       encoded = { json, parts };
       encodings.set(op, encoded);
     }
@@ -318,7 +318,7 @@ export function makeTransport(
         let body: unknown;
         let cause: unknown;
         try {
-          body = serializer.deserialize(JSON.parse(text));
+          body = transformer.deserialize(JSON.parse(text));
         } catch (err) {
           cause = err;
         }
@@ -482,7 +482,7 @@ export function makeTransport(
       const resume = isByteStreamInput(op.input)
         ? undefined
         : resumeOf(op.context);
-      return serializer
+      return transformer
         .deserializeStream(resume ? resumable(op, resume, frames) : frames, {
           reviveError,
           ...streamErrors,
@@ -500,7 +500,7 @@ export function makeTransport(
           ? Effect.fail(badResponse('Empty response body')())
           : Effect.try({
               try: () =>
-                text ? serializer.deserialize(JSON.parse(text)) : undefined,
+                text ? transformer.deserialize(JSON.parse(text)) : undefined,
               catch: badResponse('Invalid response body'),
             }),
       ),
@@ -545,7 +545,7 @@ export function makeTransport(
         if (line.status >= 400) {
           let error: AnyTrpcError;
           try {
-            error = fromWireError(serializer.deserialize(line.body as never));
+            error = fromWireError(transformer.deserialize(line.body as never));
           } catch (cause) {
             error = badResponse('Invalid error message')(cause);
           }
@@ -556,7 +556,7 @@ export function makeTransport(
         Queue.offerUnsafe(queue, line.body as Frame);
         return batch.settleWith(
           line.i,
-          serializer
+          transformer
             .deserializeStream(Stream.fromQueue(queue), {
               reviveError,
               ...streamErrors,
@@ -617,7 +617,7 @@ export function makeTransport(
     });
 
   return {
-    serializer,
+    transformer,
     call,
     single,
     sendBatch,

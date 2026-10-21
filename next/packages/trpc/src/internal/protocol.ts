@@ -20,7 +20,7 @@ const canonical = (v: unknown): unknown => {
 
 /**
  * A GET call's query string: `input=` with the serialized input's JSON, and
- * `refs=` when the serializer made refs. Object keys are sorted, so equal
+ * `refs=` when the transformer made refs. Object keys are sorted, so equal
  * inputs give equal URLs and caches hit.
  * @internal
  */
@@ -119,7 +119,7 @@ export const HEADER = {
    * client already has, so the response starts after them.
    */
   resumeFrom: 'trpc-resume-from',
-  /** On a response: the name of the serializer the handler uses. */
+  /** On a response: the name of the transformer the handler uses. */
   serializer: 'trpc-serializer',
 } as const;
 
@@ -179,7 +179,7 @@ export type ClientMessage =
       connectionParams?: Record<string, unknown> | undefined;
       /** The client reads binary messages: file bytes may come as frame records. */
       binary?: true | undefined;
-      /** The client's serializer's `name`; on another one, the server runs no calls. */
+      /** The client's transformer's `name`; on another one, the server runs no calls. */
       serializer?: string | undefined;
     }
   | {
@@ -213,7 +213,7 @@ export type ServerMessage =
   | { id: number; type: 'chunkEnd'; event: number }
   | { id: number; type: 'done' }
   | { id: number | null; type: 'error'; body: unknown }
-  /** The answer to the client's `init`: the server's serializer's `name`, in plain JSON. */
+  /** The answer to the client's `init`: the server's transformer's `name`, in plain JSON. */
   | { type: 'init'; serializer: string }
   | { type: 'pong' }
   /**

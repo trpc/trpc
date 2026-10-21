@@ -21,7 +21,7 @@ export async function main(port: MessagePortLike) {
     links: [
       experimental_messagePortLink({
         port,
-        serializer: createSerializer(),
+        transformer: createSerializer(),
         connectionParams: { token: 'main-thread' },
       }),
     ],

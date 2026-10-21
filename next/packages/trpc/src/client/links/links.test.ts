@@ -270,7 +270,7 @@ test('an aborted request.signal aborts the call on handler.fetch', async () => {
   }
 });
 
-test('localLink runs the router in-process, through the serializer', async () => {
+test('localLink runs the router in-process, through the transformer', async () => {
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
     links: [localLink({ router, createContext: () => ({ token: 'local' }) })],
@@ -336,7 +336,7 @@ test('localLink fails unknown paths and wrong methods; deferred failures arrive 
     links: [
       localLink({
         router: deferred,
-        serializer: createSerializer(),
+        transformer: createSerializer(),
         createContext: () => ({ token: null }),
       }),
     ],
@@ -352,7 +352,7 @@ test('localLink fails unknown paths and wrong methods; deferred failures arrive 
   });
 });
 
-test('createRouterClient and call() skip the network and the serializer', async () => {
+test('createRouterClient and call() skip the network and the transformer', async () => {
   const caller = createRouterClient(router, { ctx: { token: 'server' } });
   expect(await caller.whoami.query()).toBe('server');
   expect(await caller.add.mutate({ a: 2, b: 3 })).toBe(5);

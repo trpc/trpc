@@ -80,19 +80,19 @@ async function settle(value: unknown): Promise<unknown> {
 }
 
 const lines = (
-  serializer: AnyTransformer = jsonTransformer,
+  transformer: AnyTransformer = jsonTransformer,
   value: unknown = post(),
-) => Stream.map(framesOf(serializer, value), (frame) => JSON.stringify(frame));
+) => Stream.map(framesOf(transformer, value), (frame) => JSON.stringify(frame));
 
 const bytes = (text: Stream.Stream<string>) => Stream.encodeText(text);
 
-for (const [name, serializer] of [
+for (const [name, transformer] of [
   ['plain JSON', jsonTransformer],
   ['danSON', createSerializer()],
 ] as const) {
   test(`${name}: nested deferred values round-trip over SSE`, async () => {
     const value = await Effect.runPromise(
-      fromSse(serializer, parseSse(bytes(toSse(lines(serializer))))),
+      fromSse(transformer, parseSse(bytes(toSse(lines(transformer))))),
     );
     expect(await settle(value)).toEqual(expected);
   });

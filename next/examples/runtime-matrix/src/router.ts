@@ -109,13 +109,13 @@ export const appRouter = {
 };
 export type AppRouter = typeof appRouter;
 
-export const serializer = createSerializer();
+export const transformer = createSerializer();
 export const allowedOrigin = 'https://app.example.com';
 
 /** What every entry point passes `createFetchHandler`, besides its context and layer. */
 export const handlerOptions = {
   router: appRouter,
   batch: true,
-  serializer,
+  transformer,
   middleware: [cors({ allowedOrigins: [allowedOrigin] })],
 };

@@ -54,7 +54,7 @@ function Post(props: { id: string }) {
 
 ## A client through context
 
-A client made per request (server rendering) or per test goes through context. `createTrpcContext` takes one type argument: the type of the function that makes the client (or of the client itself), so the helpers get what its links declare (call-option context, errors, the serializer's form). A router type works too, `createTrpcContext<AppRouter>()`. It returns `[TrpcProvider, useTrpc, useTrpcClient, context]`, to name as you like:
+A client made per request (server rendering) or per test goes through context. `createTrpcContext` takes one type argument: the type of the function that makes the client (or of the client itself), so the helpers get what its links declare (call-option context, errors, the transformer's form). A router type works too, `createTrpcContext<AppRouter>()`. It returns `[TrpcProvider, useTrpc, useTrpcClient, context]`, to name as you like:
 
 ```tsx twoslash
 // ---cut-start---

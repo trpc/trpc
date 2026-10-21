@@ -328,23 +328,23 @@ export const link = <TDecl extends LinkDecl = {}>(
   fn: (opts: EffectLinkOpts<DeclContext<TDecl>>) => OperationStream,
 ): TrpcLink<TDecl> => fn as TrpcLink<TDecl>;
 
-const serializers = new WeakMap<AnyLink, AnyTransformer>();
+const transformers = new WeakMap<AnyLink, AnyTransformer>();
 
-/** Records the serializer a link sends with. @internal */
+/** Records the transformer a link sends with. @internal */
 export function withTransformer<L extends AnyLink>(
   target: L,
-  serializer: AnyTransformer | undefined,
+  transformer: AnyTransformer | undefined,
 ): L {
-  if (serializer) serializers.set(target, serializer);
+  if (transformer) transformers.set(target, transformer);
   return target;
 }
 
-/** The first serializer a chain records, looking into split branches. @internal */
+/** The first transformer a chain records, looking into split branches. @internal */
 export function chainTransformer(
   links: ReadonlyArray<AnyLink>,
 ): AnyTransformer | undefined {
   for (const current of links) {
-    const found = serializers.get(current);
+    const found = transformers.get(current);
     if (found) return found;
   }
   return undefined;

@@ -33,7 +33,7 @@ export interface StreamLog {
    */
   readonly start: (
     key: string,
-    serializer: AnyTransformer,
+    transformer: AnyTransformer,
     run: () => unknown,
   ) => Effect.Effect<boolean>;
   /** The frames from index `from` on, until the last. */
@@ -51,13 +51,13 @@ export const makeStreamLog = (opts: StreamLogOptions = {}) =>
         Meta | undefined
       >;
 
-    const start: StreamLog['start'] = (key, serializer, run) =>
+    const start: StreamLog['start'] = (key, transformer, run) =>
       Effect.gen(function* () {
         if (yield* metaOf(key)) return false;
         yield* store
           .set(`${key}:meta`, { count: 0, done: false }, ttl)
           .pipe(Effect.orDie);
-        const { head, chunks } = serializer.serializeDeferred(run());
+        const { head, chunks } = transformer.serializeDeferred(run());
         const frames = Stream.concat(
           Stream.make(head as Frame),
           chunks ? Stream.orDie(chunks) : Stream.empty,

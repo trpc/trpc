@@ -18,12 +18,12 @@ export const isByteStreamInput = (
   typeof ReadableStream !== 'undefined' && input instanceof ReadableStream;
 
 /**
- * Serializes a call's input; a value the serializer can't send fails the call
+ * Serializes a call's input; a value the transformer can't send fails the call
  * as a `BAD_REQUEST` before anything is sent.
  * @internal
  */
 export function serializeInput(
-  serializer: AnyTransformer,
+  transformer: AnyTransformer,
   input: unknown,
   opts?: SerializeOpts,
 ): SerializeReturn {
@@ -34,7 +34,7 @@ export function serializeInput(
     });
   }
   try {
-    return serializer.serialize(input, opts);
+    return transformer.serialize(input, opts);
   } catch (cause) {
     throw new TrpcError({
       code: 'BAD_REQUEST',
@@ -76,7 +76,7 @@ export interface DeferredDecoder {
 
 /** @internal */
 export function makeDeferredDecoder(
-  serializer: AnyTransformer,
+  transformer: AnyTransformer,
 ): DeferredDecoder {
   const queues = new Map<number, FrameQueue>();
   return {
@@ -84,7 +84,7 @@ export function makeDeferredDecoder(
       deferred === undefined
         ? Effect.sync(() =>
             Effect.try({
-              try: () => serializer.deserialize(body as never),
+              try: () => transformer.deserialize(body as never),
               catch: (cause) => cause,
             }),
           )
@@ -92,7 +92,7 @@ export function makeDeferredDecoder(
             const queue = yield* Queue.unbounded<Frame, Cause.Done>();
             queues.set(deferred, queue);
             yield* Queue.offer(queue, body as Frame);
-            const head = yield* serializer
+            const head = yield* transformer
               .deserializeStream(Stream.fromQueue(queue), {
                 reviveError: (value) => fromWireError(value),
                 ...streamErrors,

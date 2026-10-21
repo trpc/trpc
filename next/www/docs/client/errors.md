@@ -177,7 +177,7 @@ Every error has a `_tag` naming its failure, which the [Effect client](./effect.
 
 - `ProcedureNotFound` (`NOT_FOUND`): the server has no procedure at the path, so the client is newer than the server (a deploy in progress, a cached bundle). Reload, or retry once the deploy is done.
 - `ProcedureTypeMismatch` (`METHOD_NOT_SUPPORTED`): the procedure is a query on the server and a mutation on the client, or the other way. Reload.
-- `TransformerMismatch` (`UNSUPPORTED_PROTOCOL`): the link and the server use different serializers. The link makes it, before the server runs anything. Fix the link's or the handler's config.
+- `TransformerMismatch` (`UNSUPPORTED_PROTOCOL`): the link and the server use different transformers. The link makes it, before the server runs anything. Fix the link's or the handler's config.
 
 The server tells more failures apart (`BatchTooLarge`, `InvalidBody`, `RouteNotFound`, …: [Errors](../server/errors.md#in-effect-code)), which its `onError` sees. They reach clients as their code's class, so the wire carries a tag only for defined errors and these three.
 

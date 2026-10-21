@@ -89,7 +89,7 @@ export const subscription: (
           const done = yield* Effect.exit(
             emitEvents(
               events,
-              handler.serializer,
+              handler.transformer,
               coerceError(handler, request, path, 'subscription'),
               (frame) => write(sseMessage(frame)),
             ),

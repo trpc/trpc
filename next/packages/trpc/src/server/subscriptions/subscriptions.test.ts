@@ -289,7 +289,7 @@ test('an error thrown mid-stream reaches the loop', async () => {
   expect(seen).toEqual([1]);
 });
 
-test("an event the serializer can't write fails the subscription; a TrpcError it throws is kept", async () => {
+test("an event the transformer can't write fails the subscription; a TrpcError it throws is kept", async () => {
   await using ctx = await setup();
   const subscribe = async (sub: AsyncIterable<unknown>) => {
     const seen: unknown[] = [];

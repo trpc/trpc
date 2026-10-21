@@ -16,18 +16,18 @@ import {
  * @stability stable
  */
 export interface HydrationOptionsOptions {
-  /** The tRPC client whose links' serializer hydration uses. */
+  /** The tRPC client whose links' transformer hydration uses. */
   client?: object | undefined;
   /**
-   * Overrides the client's serializer. Must match on both ends.
-   * @default the client's serializer, else jsonTransformer
+   * Overrides the client's transformer. Must match on both ends.
+   * @default the client's transformer, else jsonTransformer
    */
-  serializer?: AnyTransformer | undefined;
+  transformer?: AnyTransformer | undefined;
 }
 
 /**
  * `dehydrate`/`hydrate` defaults for a `QueryClient` that carry the types
- * the client's serializer keeps from a server render to the browser (with
+ * the client's transformer keeps from a server render to the browser (with
  * the default, `Date`, `Map`, `BigInt`, …). Pending queries are dehydrated
  * too, so a server can stream them; their data is serialized once it
  * settles.
@@ -45,19 +45,19 @@ export function hydrationOptions(opts: HydrationOptionsOptions = {}): {
   dehydrate: DehydrateOptions;
   hydrate: NonNullable<HydrateOptions['defaultOptions']>;
 } {
-  const serializer =
-    opts.serializer ??
+  const transformer =
+    opts.transformer ??
     (opts.client ? getClientTransformer(opts.client) : undefined) ??
     jsonTransformer;
   return {
     dehydrate: {
-      serializeData: (data: unknown) => serializer.serialize(data),
+      serializeData: (data: unknown) => transformer.serialize(data),
       shouldDehydrateQuery: (query) =>
         defaultShouldDehydrateQuery(query) || query.state.status === 'pending',
     },
     hydrate: {
       deserializeData: (data: unknown) =>
-        serializer.deserialize(data as SerializeReturn),
+        transformer.deserialize(data as SerializeReturn),
     },
   };
 }

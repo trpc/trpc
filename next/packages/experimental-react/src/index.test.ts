@@ -35,7 +35,7 @@ const make = <const L extends ReadonlyArray<AnyLink>>(
 ) =>
   createReactClient({
     router: routerType<AppRouter>(),
-    links: [...links, localLink({ router, serializer: createSerializer() })],
+    links: [...links, localLink({ router, transformer: createSerializer() })],
     isServer: opts.isServer ?? false,
   });
 
@@ -107,7 +107,7 @@ test('a client made with a scope is disposed when the scope closes, and `using` 
   const scope = Scope.makeUnsafe();
   const scoped = createReactClient({
     router: routerType<AppRouter>(),
-    links: [localLink({ router, serializer: createSerializer() })],
+    links: [localLink({ router, transformer: createSerializer() })],
     isServer: true,
     scope,
   });
@@ -217,7 +217,7 @@ test('structuralSharingLink keeps the promise when a refetch changes nothing', a
     links: [
       cacheLink(),
       structuralSharingLink(),
-      localLink({ router, serializer: false }),
+      localLink({ router, transformer: false }),
     ],
   });
   for (const depth of [400, 600]) {
@@ -344,7 +344,7 @@ test('standardLinks revalidates after a mutation, narrowed by invalidates', asyn
   for (const u of unmount) u();
 });
 
-test('the server keeps entries; dehydrate and hydrate carry them with the serializer', async () => {
+test('the server keeps entries; dehydrate and hydrate carry them with the transformer', async () => {
   using _db = freshDb();
   const server = make([], { isServer: true });
   await server.post.byId.query({ id: '1' });
@@ -541,11 +541,11 @@ test('poll does nothing on a server store, after dispose(), or without a positiv
   for (const stop of stops) stop();
 });
 
-test('without a serializer on the client, hydration uses JSON', async () => {
+test('without a transformer on the client, hydration uses JSON', async () => {
   using _db = freshDb();
   const trpc = createReactClient({
     router: routerType<AppRouter>(),
-    links: [cacheLink(), localLink({ router, serializer: false })],
+    links: [cacheLink(), localLink({ router, transformer: false })],
   });
   await trpc.post.byId.query({ id: '1' });
   const state = dehydrate(trpc);

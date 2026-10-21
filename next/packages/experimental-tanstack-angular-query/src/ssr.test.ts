@@ -26,7 +26,7 @@ import {
   createApp,
   db,
   type AppClient,
-  serializer,
+  transformer,
 } from '../../tanstack-query/src/fixtures/app.ts';
 
 const trpcContext = createTrpcContext<AppClient>();
@@ -50,7 +50,7 @@ test('server render with prefetched data and no subscription', async () => {
   await using _app = await createApp();
   const queryClient = new QueryClient({
     defaultOptions: {
-      ...hydrationOptions({ serializer }),
+      ...hydrationOptions({ transformer }),
       queries: { staleTime: 30_000 },
     },
   });

@@ -84,7 +84,7 @@ issue.check?.id;
 
 Other Standard Schema libraries (Valibot, ArkType, …) report Standard Schema's `message` and `path`. `inferInputIssue<typeof schema>` names a schema's issue type.
 
-Issues are JSON under every serializer: zod's `input` is dropped (it echoes what the caller sent), `bigint`s and symbols become strings, and `undefined` in a list becomes `null`.
+Issues are JSON under every transformer: zod's `input` is dropped (it echoes what the caller sent), `bigint`s and symbols become strings, and `undefined` in a list becomes `null`.
 
 The path is what the input type allows. A refinement that reports its own path (zod's `refine(…, { path })`, an Effect filter returning `{ path, issue }`) should name a key of the input, and a strict object reports unknown keys outside it. With several `.input()` calls, each schema adds its own `BAD_REQUEST`, whose issues name its own keys.
 

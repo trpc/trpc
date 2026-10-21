@@ -11,7 +11,7 @@ export function getRouter() {
     defaultPreload: 'intent',
     scrollRestoration: true,
     // The server's settled query atoms travel with the HTML, encoded with the
-    // links' serializer, so the browser renders them without a request.
+    // links' transformer, so the browser renders them without a request.
     dehydrate: () => ({ atoms: Hydration.dehydrate(atoms.registry) }),
     hydrate: (state) => Hydration.hydrate(atoms.registry, state.atoms),
   });

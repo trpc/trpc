@@ -93,8 +93,8 @@ const report = await client.report.query({ id }); // File
 
 Those chunks are base64 in JSONL, SSE and WebSocket messages. `httpLink({ binary: true })` asks for binary frames instead (`application/vnd.trpc.frames`: the same lines, length-prefixed, with the bytes unencoded), a third smaller; servers answer with JSONL to clients that don't ask. `wsLink({ binary: true })` gets each chunk of bytes as a binary message. `localLink` always passes the bytes as they are.
 
-## Serializers
+## Transformers
 
-A root `File` or `Blob` output of an unbatched HTTP call is the response body, with any serializer. On a batching chain, plain JSON can't batch it, so such calls take `{ batch: false }` (a type error otherwise). Files anywhere else, and files in inputs, need danSON; the other serializers fail before sending ([Transformers](./transformers.md)).
+A root `File` or `Blob` output of an unbatched HTTP call is the response body, with any transformer. On a batching chain, plain JSON can't batch it, so such calls take `{ batch: false }` (a type error otherwise). Files anywhere else, and files in inputs, need danSON; the other transformers fail before sending ([Transformers](./transformers.md)).
 
 The [`examples/media-pipeline`](../../../examples/media-pipeline/README.md) app uploads photos as multipart, returns files as response bodies and inside streamed outputs, and reads them as binary frames.

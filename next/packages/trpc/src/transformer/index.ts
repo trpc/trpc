@@ -1,7 +1,7 @@
 /**
- * Wire serializers. The default is `jsonTransformer`, plain JSON.
+ * Wire transformers. The default is `jsonTransformer`, plain JSON.
  * `createSerializer()` is a port of [danSON](https://github.com/KATT/danson),
- * and `createSyncTransformer` wraps superjson-style transformers.
+ * and `createSyncTransformer` wraps superjson, devalue or your own.
  *
  * With danSON, plain JSON stays plain JSON. Non-JSON values (`Date`, `Map`, `Set`,
  * `BigInt`, `undefined`, typed arrays, …) become inline
@@ -9,8 +9,8 @@
  * `$n` refs. Deferred values (`Promise`, `AsyncIterable`, `ReadableStream`) can
  * be streamed as chunks after the head.
  *
- * The serializer is configured on the endpoint: pass the same one to
- * `createFetchHandler({ serializer })` and `httpLink({ serializer })`.
+ * The transformer is configured on the endpoint: pass the same one to
+ * `createFetchHandler({ transformer })` and `httpLink({ transformer })`.
  *
  * @module
  */
@@ -61,7 +61,7 @@ export {
 export type { FormOfTransformer } from '../internal/types.ts';
 
 /**
- * A custom type the serializer understands.
+ * A custom type the transformer understands.
  *
  * @example
  * ```ts
@@ -78,7 +78,7 @@ export type { FormOfTransformer } from '../internal/types.ts';
 export interface CustomType<T, TSerialized = unknown> {
   /** Whether `value` is of this type. */
   is: (value: unknown) => value is T;
-  /** Converts the value into something the serializer understands. */
+  /** Converts the value into something the transformer understands. */
   serialize: (value: T) => TSerialized;
   /** Rebuilds the value. */
   deserialize: (value: TSerialized) => T;
@@ -131,7 +131,7 @@ export interface SerializeOpts {
 
 /**
  * Converts values to and from the wire format. Both ends of an endpoint must
- * use compatible serializers. `TForm` is which output types survive, for
+ * use compatible transformers. `TForm` is which output types survive, for
  * client types.
  *
  * @since 0.1.0
@@ -211,15 +211,15 @@ const partSerializers: SerializeRecord = {
 };
 
 /**
- * Creates a danSON-based serializer, optionally with extra types. It keeps
+ * Creates a danSON-based transformer, optionally with extra types. It keeps
  * native types (`Date`, `Map`, `File`, …) and streams deferred values in one
  * pass. Pass it to both the handler and the link.
  *
  * @example
  * ```ts
- * const serializer = createSerializer({ types: { Decimal: decimal } });
- * createFetchHandler({ router, serializer });
- * httpLink({ url, serializer });
+ * const transformer = createSerializer({ types: { Decimal: decimal } });
+ * createFetchHandler({ router, transformer });
+ * httpLink({ url, transformer });
  * ```
  * @since 0.1.0
  * @stability stable
@@ -300,7 +300,7 @@ function partDeserializers(parts: ReadonlyArray<Blob>): DeserializeRecord {
 }
 
 /**
- * Any serializer, whatever its output form.
+ * Any transformer, whatever its output form.
  * @since 0.1.0
  * @stability stable
  */

@@ -19,7 +19,7 @@ In this snapshot:
 
 ## Throughput
 
-Each server runs in its own Node process and serves the same router of 6 procedures, each with a Standard Schema input that passes its value through, and returning `{ name, date: new Date(), input }`. Native types are on in every framework: danSON in v12, superjson in v11, and oRPC's own serializer. [autocannon](https://github.com/mcollina/autocannon) sends the `GET` request each framework's client sends for `nested.procedure_1('hello world')`.
+Each server runs in its own Node process and serves the same router of 6 procedures, each with a Standard Schema input that passes its value through, and returning `{ name, date: new Date(), input }`. Native types are on in every framework: danSON in v12, superjson in v11, and oRPC's own transformer. [autocannon](https://github.com/mcollina/autocannon) sends the `GET` request each framework's client sends for `nested.procedure_1('hello world')`.
 
 v12 serves with `serve(handler)` on Effect's Node `HttpServer`, v11 with its standalone adapter, and oRPC with `RPCHandler` from `@orpc/server/node`.
 

@@ -41,11 +41,11 @@ import { isByteStreamInput } from './events.ts';
 export type LocalLinkOptions<TRouter extends AnyRouter> = {
   router: TRouter;
   /**
-   * Round-trip inputs and outputs through a serializer, as over the wire.
+   * Round-trip inputs and outputs through a transformer, as over the wire.
    * `false` passes values by reference, with native types.
    * @default jsonTransformer
    */
-  serializer?: AnyTransformer | false;
+  transformer?: AnyTransformer | false;
 } & LocalContextOption<inferRouterContext<TRouter>> &
   RuntimeOption<inferRouterServices<TRouter>>;
 
@@ -95,7 +95,7 @@ export function localLink<
   TRouter extends AnyRouter,
   TTransformer extends AnyTransformer | false | undefined = undefined,
 >(
-  opts: LocalLinkOptions<TRouter> & { serializer?: TTransformer },
+  opts: LocalLinkOptions<TRouter> & { transformer?: TTransformer },
 ): TrpcLink<{
   form: TTransformer extends false
     ? DansonForm
@@ -104,19 +104,19 @@ export function localLink<
 export function localLink<TRouter extends AnyRouter>(
   opts: LocalLinkOptions<TRouter>,
 ): TrpcLink<any> {
-  const serializer =
-    opts.serializer === false
+  const transformer =
+    opts.transformer === false
       ? undefined
-      : (opts.serializer ?? jsonTransformer);
+      : (opts.transformer ?? jsonTransformer);
   const services = runtimeServices(
     (opts as { runtime?: ManagedRuntime.ManagedRuntime<never, unknown> })
       .runtime,
   );
   const roundtrip = (value: unknown, input?: boolean) => {
     // A byte stream input is the request body over HTTP, not serialized.
-    if (!serializer || (input && isByteStreamInput(value))) return value;
+    if (!transformer || (input && isByteStreamInput(value))) return value;
     const parts: Blob[] | undefined = input ? [] : undefined;
-    return serializer.deserialize(serializer.serialize(value, { parts }), {
+    return transformer.deserialize(transformer.serialize(value, { parts }), {
       input,
       parts,
     });
@@ -174,18 +174,18 @@ export function localLink<TRouter extends AnyRouter>(
             );
           }
           if (
-            !serializer ||
+            !transformer ||
             (typeof globalThis.Response === 'function' &&
               data instanceof globalThis.Response)
           ) {
             return Stream.make(data);
           }
-          const serialized = serializer.serializeDeferred(data, {
+          const serialized = transformer.serializeDeferred(data, {
             coerceError: (cause) =>
               toWireError(isTrpcError(cause) ? cause : unexpectedError(cause)),
           });
           return Stream.fromEffect(
-            serializer.deserializeStream(
+            transformer.deserializeStream(
               serialized.chunks
                 ? Stream.concat(Stream.make(serialized.head), serialized.chunks)
                 : Stream.make(serialized.head),
@@ -198,6 +198,6 @@ export function localLink<TRouter extends AnyRouter>(
         }),
       ).pipe(Stream.catchCause((cause) => Stream.fail(normalizeCause(cause)))),
     ),
-    serializer,
+    transformer,
   );
 }

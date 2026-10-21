@@ -25,7 +25,7 @@ interface Post {
 
 type PostChange = LiveEvent<Post, string>;
 
-const serializer = createSerializer();
+const transformer = createSerializer();
 const t = initTrpc();
 
 function createDb() {
@@ -135,7 +135,7 @@ async function serve() {
   const scope = Scope.makeUnsafe();
   const context = await Effect.runPromise(
     Layer.buildWithScope(
-      TestServer.layer({ router: createRouter(db), serializer }).pipe(
+      TestServer.layer({ router: createRouter(db), transformer }).pipe(
         Layer.provide(
           NodeHttpServer.layer(() => server, { port: 0, host: '127.0.0.1' }),
         ),
@@ -146,7 +146,7 @@ async function serve() {
   const testServer = Context.get(context, TestServer);
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: testServer.url, serializer })],
+    links: [httpLink({ url: testServer.url, transformer })],
   });
   return {
     db,
@@ -287,7 +287,7 @@ test('after a dropped WebSocket, the new snapshot replaces the rows', async () =
   await using app = await serve();
   await using ws = wsLink({
     url: app.wsUrl,
-    serializer,
+    transformer,
     reconnect: { delay: () => 10 },
   });
   const client = createTrpcClient({
@@ -318,7 +318,7 @@ test('a server with a change log resumes a dropped WebSocket with the changes it
   await using app = await serve();
   await using ws = wsLink({
     url: app.wsUrl,
-    serializer,
+    transformer,
     reconnect: { delay: () => 10 },
   });
   const client = createTrpcClient({

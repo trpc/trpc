@@ -103,11 +103,11 @@ test('file bytes cross a port as bytes, not base64', async () => {
   };
   const channel = new MessageChannel();
   const { port2 } = channel;
-  const serializer = createSerializer();
-  createFetchHandler({ router, serializer }).messagePort(channel.port1);
+  const transformer = createSerializer();
+  createFetchHandler({ router, transformer }).messagePort(channel.port1);
   const sent: unknown[] = [];
   port2.on('message', (message: unknown) => sent.push(message));
-  const link = experimental_messagePortLink({ port: port2, serializer });
+  const link = experimental_messagePortLink({ port: port2, transformer });
   const client = createTrpcClient({
     router: routerType<typeof router>(),
     links: [link],
@@ -135,7 +135,7 @@ test('a port peer that posts values JSON cannot hold is refused', async () => {
     router: {
       echo: t.procedure.input(z.unknown()).mutation((opts) => opts.input),
     },
-    serializer: createSerializer(),
+    transformer: createSerializer(),
   }).messagePort(channel.port1);
   const replies: unknown[] = [];
   const replied = new Promise<void>((resolve) =>

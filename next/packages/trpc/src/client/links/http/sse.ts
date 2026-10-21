@@ -54,7 +54,7 @@ export function makeSubscriptions(
               return Effect.try({
                 try: () =>
                   fromWireError(
-                    transport.serializer.deserialize(JSON.parse(event.data)),
+                    transport.transformer.deserialize(JSON.parse(event.data)),
                   ),
                 catch: (cause) => cause,
               }).pipe(Effect.flatMap(Effect.fail));
@@ -123,7 +123,7 @@ export function makeSubscriptions(
           if (!ok(reply) || reply.web.body === null) {
             return yield* transport.readError(reply);
           }
-          const decoder = makeDeferredDecoder(transport.serializer);
+          const decoder = makeDeferredDecoder(transport.transformer);
           const ended = yield* sseEvents(reply.response.stream).pipe(
             Stream.mapEffect((event) => read(event, decoder)),
             Stream.takeUntil((done) => done),

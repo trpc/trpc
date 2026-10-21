@@ -10,7 +10,7 @@ import {
   appRouter,
   createApp,
   db,
-  serializer,
+  transformer,
 } from '../../tanstack-query/src/fixtures/app.ts';
 import Root from './fixtures/Root.svelte';
 import Ssr from './fixtures/Ssr.svelte';
@@ -18,7 +18,7 @@ import Ssr from './fixtures/Ssr.svelte';
 test('server render with prefetched data and no subscription', async () => {
   await using _app = await createApp();
   const queryClient = new QueryClient({
-    defaultOptions: hydrationOptions({ serializer }),
+    defaultOptions: hydrationOptions({ transformer }),
   });
   const client = createRouterClient(appRouter, { ctx: { locale: null } });
   await queryClient.query(

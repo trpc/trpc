@@ -200,7 +200,7 @@ export interface ClientTags {
   ProcedureNotFound: 'NOT_FOUND';
   /** The procedure is a query on the server and a mutation on the client, or the other way: reload. */
   ProcedureTypeMismatch: 'METHOD_NOT_SUPPORTED';
-  /** The server and the link use different serializers. */
+  /** The server and the link use different transformers. */
   TransformerMismatch: 'UNSUPPORTED_PROTOCOL';
 }
 
@@ -292,7 +292,7 @@ export interface TrpcErrorOptions<
    */
   tag?: TTag | undefined;
   message?: string | undefined;
-  /** Sent to the client, serialized with the endpoint's serializer. */
+  /** Sent to the client, serialized with the endpoint's transformer. */
   data?: TData;
   /** Whether the error is part of the procedure's typed error union. */
   defined?: boolean | undefined;

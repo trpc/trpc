@@ -28,9 +28,9 @@ export interface DehydratedQueries {
 export interface HydrationOptions {
   /**
    * How inputs and data are encoded. Must match on both ends.
-   * @default the client's serializer, else jsonTransformer
+   * @default the client's transformer, else jsonTransformer
    */
-  serializer?: AnyTransformer | undefined;
+  transformer?: AnyTransformer | undefined;
 }
 
 interface HasStore {
@@ -39,10 +39,10 @@ interface HasStore {
 }
 
 const transformerOf = (trpc: HasStore, opts: HydrationOptions) =>
-  opts.serializer ?? getClientTransformer(trpc.client) ?? jsonTransformer;
+  opts.transformer ?? getClientTransformer(trpc.client) ?? jsonTransformer;
 
 /**
- * Encodes every query with data, with the client's serializer, so `Date`s
+ * Encodes every query with data, with the client's transformer, so `Date`s
  * and `Map`s survive with danSON. Pending and failed queries are left out:
  * the browser runs them.
  *
@@ -57,7 +57,7 @@ export function dehydrate(
   trpc: HasStore,
   opts: HydrationOptions = {},
 ): DehydratedQueries {
-  const serializer = transformerOf(trpc, opts);
+  const transformer = transformerOf(trpc, opts);
   return {
     queries: trpc.store.entries().flatMap((entry) =>
       entry.hasData
@@ -67,8 +67,8 @@ export function dehydrate(
               input:
                 entry.input === undefined
                   ? null
-                  : serializer.serialize(entry.input),
-              data: serializer.serialize(entry.data),
+                  : transformer.serialize(entry.input),
+              data: transformer.serialize(entry.data),
               updatedAt: entry.snapshot.updatedAt,
             },
           ]
@@ -93,12 +93,12 @@ export function hydrate(
   state: DehydratedQueries,
   opts: HydrationOptions = {},
 ): void {
-  const serializer = transformerOf(trpc, opts);
+  const transformer = transformerOf(trpc, opts);
   for (const query of state.queries) {
     trpc.store.seed(
       query.path,
-      query.input === null ? undefined : serializer.deserialize(query.input),
-      serializer.deserialize(query.data),
+      query.input === null ? undefined : transformer.deserialize(query.input),
+      transformer.deserialize(query.data),
       query.updatedAt,
     );
   }

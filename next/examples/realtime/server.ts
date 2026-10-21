@@ -23,7 +23,7 @@ import { z } from 'zod';
 import { createEventsTable, pgPublisher, redisPublisher } from './publisher.ts';
 
 /** Messages carry a `Date`, so both ends use danSON instead of plain JSON. */
-export const serializer = createSerializer();
+export const transformer = createSerializer();
 
 export interface Message {
   from: string;
@@ -119,7 +119,7 @@ export async function listen(
   const handler = createFetchHandler({
     router: appRouter,
     layer: backends[opts.backend ?? 'redis'](),
-    serializer,
+    transformer,
     // Browsers can't set WebSocket headers, so `wsLink` sends the token as
     // `connectionParams`; over HTTP it's a header.
     createContext: (o) => {

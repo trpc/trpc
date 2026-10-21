@@ -44,7 +44,7 @@ import {
   type AppRouter,
   type Post,
   type AppClient,
-  serializer,
+  transformer,
 } from '../../tanstack-query/src/fixtures/app.ts';
 import {
   click,
@@ -179,7 +179,7 @@ test("each hook's error is what the call fails with, network and aborts included
   }
   const down = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: 'http://127.0.0.1:1/trpc', serializer })],
+    links: [httpLink({ url: 'http://127.0.0.1:1/trpc', transformer })],
   });
   using view = mount(<Post id="1" />, down);
   await waitFor(() => expect(text(view.el, '.error')).toBe('offline'));
@@ -475,7 +475,7 @@ test('server render with prefetched data, then hydrate without refetching', asyn
   }
 
   const serverQueryClient = new QueryClient({
-    defaultOptions: hydrationOptions({ serializer }),
+    defaultOptions: hydrationOptions({ transformer }),
   });
   const serverClient = createRouterClient(appRouter, {
     ctx: { locale: null },
@@ -499,7 +499,7 @@ test('server render with prefetched data, then hydrate without refetching', asyn
   el.innerHTML = html;
   expect(text(el, 'h1')).toBe('2026-01-04');
   const browserQueryClient = new QueryClient({
-    defaultOptions: hydrationOptions({ serializer }),
+    defaultOptions: hydrationOptions({ transformer }),
   });
   const root = hydrateRoot(
     el,
@@ -560,7 +560,7 @@ test("a context typed from a client factory takes its router, its links' context
     link<{ context: { priority?: 'high' }; errors: Offline }>((opts) =>
       opts.next(opts.op),
     ),
-    httpLink({ url: 'http://localhost', serializer }),
+    httpLink({ url: 'http://localhost', transformer }),
   ] as const;
   const makeClient = () =>
     createTrpcClient({ router: routerType<AppRouter>(), links });

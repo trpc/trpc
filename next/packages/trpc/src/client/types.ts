@@ -23,8 +23,8 @@ import type {
 import type { AnyLink, DeclContext, TrpcLink } from './link.ts';
 
 /**
- * An error's `data` as it arrives under a serializer's form, like outputs:
- * its JSON form unless the serializer keeps the types. Input validation
+ * An error's `data` as it arrives under a transformer's form, like outputs:
+ * its JSON form unless the transformer keeps the types. Input validation
  * issues are JSON already, so they keep theirs.
  * @since 0.1.0
  * @stability stable
@@ -42,7 +42,7 @@ export type ErrorData<
 
 /**
  * A typed (`defined`) error from a procedure's union, its `data` in the
- * serializer's form `F`.
+ * transformer's form `F`.
  * @since 0.1.0
  * @stability stable
  */
@@ -279,7 +279,7 @@ export type ResultForm<
 
 /**
  * What a batch can't carry: a `Response`, and a root `Blob` unless the
- * serializer streams files.
+ * transformer streams files.
  */
 type Unbatchable<TLinks extends ChainTypes> =
   | ProcedureResponse
@@ -296,7 +296,7 @@ type BodyLike =
 
 /**
  * The arguments of `query()`/`mutate()`. A procedure that may return a
- * `Response`, or a `Blob` under a serializer that doesn't stream files,
+ * `Response`, or a `Blob` under a transformer that doesn't stream files,
  * can't be batched, so on a batching chain its calls must pass
  * `{ batch: false }`.
  * @internal
@@ -450,7 +450,7 @@ declare const clientTypes: unique symbol;
 
 /**
  * The typed client for a router. Outputs follow the form the links declare
- * (their serializer's); `TForm` overrides it, as in-process callers do
+ * (their transformer's); `TForm` overrides it, as in-process callers do
  * (values by reference keep their types).
  * @since 0.1.0
  * @stability stable

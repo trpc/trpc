@@ -1,12 +1,12 @@
 import { createFetchHandler } from '@trpc12/trpc/server';
 import { appRouter } from '../../../../server/router.ts';
-import { serializer } from '../../../../trpc/serializer.ts';
+import { transformer } from '../../../../trpc/transformer.ts';
 
 const handler = createFetchHandler({
   router: appRouter,
   endpoint: '/api/trpc',
   batch: true,
-  serializer,
+  transformer,
 });
 
 export const GET = (request: Request): Promise<Response> =>

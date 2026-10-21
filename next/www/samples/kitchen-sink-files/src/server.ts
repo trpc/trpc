@@ -1,7 +1,7 @@
 import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
 import { z } from 'zod';
 
-import { serializer } from './serializer.ts';
+import { transformer } from './transformer.ts';
 
 const initials = (name: string) =>
   new File(
@@ -56,4 +56,4 @@ export const appRouter = {
 export type AppRouter = typeof appRouter;
 // #endregion router
 
-export const handler = createFetchHandler({ router: appRouter, serializer });
+export const handler = createFetchHandler({ router: appRouter, transformer });

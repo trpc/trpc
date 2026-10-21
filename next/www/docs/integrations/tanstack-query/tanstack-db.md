@@ -7,7 +7,7 @@ order: 12
 experiment: tanstack-db
 ---
 
-A [query collection](https://tanstack.com/db/latest/docs/collections/query-collection) takes a query key and function, so `queryOptions()` plugs in without an adapter. Rows keep the serializer's types (a `Date` stays a `Date`), and the collection's handlers call mutations:
+A [query collection](https://tanstack.com/db/latest/docs/collections/query-collection) takes a query key and function, so `queryOptions()` plugs in without an adapter. Rows keep the transformer's types (a `Date` stays a `Date`), and the collection's handlers call mutations:
 
 ```package-install
 @tanstack/db @tanstack/query-db-collection

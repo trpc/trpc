@@ -24,7 +24,7 @@ class Money {
     this.cents = cents;
   }
 }
-const serializer = createSerializer({
+const transformer = createSerializer({
   types: {
     Money: {
       is: (v): v is Money => v instanceof Money,
@@ -98,10 +98,10 @@ const router = {
 type AppRouter = typeof router;
 
 async function setup(opts?: Parameters<typeof dedupeLink>[0]) {
-  const server = await createTestServer({ router, serializer });
+  const server = await createTestServer({ router, transformer });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [dedupeLink(opts), httpLink({ url: server.url, serializer })],
+    links: [dedupeLink(opts), httpLink({ url: server.url, transformer })],
   });
   const sent = (path: string) =>
     server.requests.filter((r) => new URL(r.url).pathname.endsWith(`/${path}`))
@@ -145,7 +145,7 @@ test('queries in flight with deeply equal inputs, in any key order, share one re
   expect(ctx.sent('echo')).toBe(3);
 });
 
-test('inputs the serializer can not write, a File or a custom type, compare by identity', async () => {
+test('inputs the transformer can not write, a File or a custom type, compare by identity', async () => {
   await using ctx = await setup();
   const file = new File(['abc'], 'a.txt');
   const price = new Money(5);

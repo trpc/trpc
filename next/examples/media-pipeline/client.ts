@@ -61,24 +61,24 @@ export async function main(url: string) {
       httpLink({
         url,
         batch: true,
-        serializer: danson,
+        transformer: danson,
         fetch: recordingFetch,
       }),
     ],
   });
   const binary = createTrpcClient({
     router,
-    links: [httpLink({ url, serializer: danson, binary: true })],
+    links: [httpLink({ url, transformer: danson, binary: true })],
   });
   const superjsonClient = createTrpcClient({
     router,
     links: [
-      httpLink({ url: syncUrl, serializer: sync, fetch: recordingFetch }),
+      httpLink({ url: syncUrl, transformer: sync, fetch: recordingFetch }),
     ],
   });
   const effectClient = createEffectClient({
     router,
-    links: [httpLink({ url, serializer: danson })],
+    links: [httpLink({ url, transformer: danson })],
   });
 
   // --- events: an Effect Stream, followed with the Effect client ------------------------
@@ -359,7 +359,7 @@ export async function main(url: string) {
     (err) => err instanceof TrpcError && err.code === 'PAYLOAD_TOO_LARGE',
   );
 
-  // --- query URLs and serializers: rich input over GET, danSON and superjson ---------------
+  // --- query URLs and transformers: rich input over GET, danSON and superjson ---------------
 
   const quoteInput = {
     lines: [
@@ -408,7 +408,7 @@ export async function main(url: string) {
   assert.ok(viaSuperjson.deliverBy instanceof Date);
   assert.equal(sentTo('/sync/prints.quote')[0]?.method, 'GET');
 
-  // A root File is the response body with any serializer…
+  // A root File is the response body with any transformer…
   const viaSuperjsonFile = await superjsonClient.photos.original.query({
     id: portrait,
   });

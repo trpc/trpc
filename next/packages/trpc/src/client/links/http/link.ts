@@ -31,7 +31,7 @@ export interface HttpLinkOptions<
    * fails with `UNSUPPORTED_PROTOCOL`. Client types follow it.
    * @default jsonTransformer
    */
-  serializer?: TTransformer | undefined;
+  transformer?: TTransformer | undefined;
   /** Extra headers, merged with each call's `context.headers`. */
   headers?:
     | HeadersInit
@@ -106,7 +106,7 @@ export interface HttpLinkOptions<
 
 /**
  * What `httpLink` declares: the call options it reads (`headers`, `init`,
- * `batch`, `reconnect`, `onResponse`), its serializer's form, the responses it reports
+ * `batch`, `reconnect`, `onResponse`), its transformer's form, the responses it reports
  * to `onResponse`, the errors it makes (`NETWORK_ERROR` when `fetch`
  * fails or a connection drops, `BAD_RESPONSE` for a page that isn't tRPC's
  * or a body that doesn't decode, `STREAM_INTERRUPTED` for a stream that
@@ -149,8 +149,8 @@ export function httpLink<TOpts extends HttpLinkOptions>(
   opts: TOpts,
 ): TrpcLink<HttpLinkDecl<TOpts>>;
 export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
-  const serializer = opts.serializer ?? jsonTransformer;
-  const transport = makeTransport(opts, serializer);
+  const transformer = opts.transformer ?? jsonTransformer;
+  const transport = makeTransport(opts, transformer);
   const maxItems =
     opts.batch === true ? 10 : opts.batch ? (opts.batch.maxItems ?? 10) : 0;
   const batched = makeBatcher<Operation>({
@@ -180,6 +180,6 @@ export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
           : transport.single(op),
       );
     }) as TrpcLink<any>,
-    serializer,
+    transformer,
   );
 }

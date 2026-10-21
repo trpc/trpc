@@ -14,7 +14,7 @@ import {
   wsLink,
 } from '@trpc12/trpc/client';
 import type { AppRouter } from './server.ts';
-import { allowedOrigin, serializer } from './src/router.ts';
+import { allowedOrigin, transformer } from './src/router.ts';
 
 export interface Expected {
   /** Shown in the output; defaults to the runtime the server names. */
@@ -43,7 +43,7 @@ export async function main(url: string, expected: Expected = {}) {
       httpLink({
         url,
         batch: true,
-        serializer,
+        transformer,
         fetch: (input, init) => {
           requests++;
           return fetch(input, init);
@@ -160,7 +160,7 @@ export async function main(url: string, expected: Expected = {}) {
 
   if (expected.websockets ?? true) {
     await run('websocket', async () => {
-      const ws = wsLink({ url: url.replace(/^http/, 'ws'), serializer });
+      const ws = wsLink({ url: url.replace(/^http/, 'ws'), transformer });
       const overWs = createTrpcClient({
         router: routerType<AppRouter>(),
         links: [ws],

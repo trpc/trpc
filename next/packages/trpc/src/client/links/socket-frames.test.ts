@@ -51,7 +51,7 @@ test('frames the link cannot read are skipped; answers for other ids are ignored
   await connection.link.close();
 });
 
-test('an error body the serializer cannot read fails the calls as a bad response', async () => {
+test('an error body the transformer cannot read fails the calls as a bad response', async () => {
   const connection = connect();
   const hello = safe(connection.client.hello.query());
   const ws = await connection.socket();

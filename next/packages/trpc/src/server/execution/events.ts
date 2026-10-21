@@ -26,13 +26,13 @@ export type EventFrame =
  */
 export const emitEvents: (
   events: Stream.Stream<unknown, AnyTrpcError>,
-  serializer: AnyTransformer,
+  transformer: AnyTransformer,
   coerceError: (cause: unknown) => unknown,
   emit: (frame: EventFrame) => Effect.Effect<void>,
 ) => Effect.Effect<void, AnyTrpcError> = /* @__PURE__ */ Effect.fnUntraced(
   function* (
     events: Stream.Stream<unknown, AnyTrpcError>,
-    serializer: AnyTransformer,
+    transformer: AnyTransformer,
     coerceError: (cause: unknown) => unknown,
     emit: (frame: EventFrame) => Effect.Effect<void>,
   ) {
@@ -42,7 +42,7 @@ export const emitEvents: (
       events,
       Effect.fnUntraced(function* (event) {
         const serialized = yield* Effect.try({
-          try: () => serializer.serializeDeferred(event, { coerceError }),
+          try: () => transformer.serializeDeferred(event, { coerceError }),
           catch: (cause) =>
             isTrpcError(cause) ? cause : unexpectedError(cause),
         });

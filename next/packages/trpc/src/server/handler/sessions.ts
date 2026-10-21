@@ -56,10 +56,10 @@ export const makeSessions = (
   const base = handler.core;
   const core: SocketCoreShape = {
     router: handler.router,
-    serializer: handler.serializer,
+    transformer: handler.transformer,
     run: base.run,
     makeContext: base.makeContext,
-    deserializeInput: (value) => deserialize(handler.serializer, value),
+    deserializeInput: (value) => deserialize(handler.transformer, value),
     publicError: base.publicError,
     report: base.report,
     drains,

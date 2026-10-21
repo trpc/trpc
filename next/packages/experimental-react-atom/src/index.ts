@@ -11,7 +11,7 @@
  *
  * export const trpc = createAtomClient({
  *   router: routerType<AppRouter>(),
- *   links: [httpLink({ url: '/trpc', serializer: createSerializer() })],
+ *   links: [httpLink({ url: '/trpc', transformer: createSerializer() })],
  * });
  *
  * const post = useAtomSuspense(trpc.post.byId.query({ id })).value;
@@ -155,13 +155,13 @@ export type AtomClientOptions<
   /**
    * How query results are encoded for `Hydration.dehydrate`. Must match the
    * one that hydrates them.
-   * @default the links' serializer, else jsonTransformer
+   * @default the links' transformer, else jsonTransformer
    */
-  readonly serializer?: AnyTransformer | undefined;
+  readonly transformer?: AnyTransformer | undefined;
 };
 
 /**
- * A `Schema` whose encoded form is `serializer`'s, for `Atom.serializable`:
+ * A `Schema` whose encoded form is `transformer`'s, for `Atom.serializable`:
  * a value encodes as the wire does, so `Date`s and `Map`s survive
  * `Hydration.dehydrate` with danSON. Query atoms already use one; this is
  * for atoms of your own that hold procedure outputs.
@@ -174,15 +174,15 @@ export type AtomClientOptions<
  * @stability experimental
  */
 export function transformerSchema(
-  serializer: AnyTransformer,
+  transformer: AnyTransformer,
 ): Schema.Codec<unknown, Schema.Json> {
   return Schema.Json.pipe(
     Schema.decodeTo(
       Schema.Unknown,
       SchemaTransformation.transform({
         decode: (json: Schema.Json) =>
-          serializer.deserialize(json as SerializeReturn),
-        encode: (value: unknown) => serializer.serialize(value) as Schema.Json,
+          transformer.deserialize(json as SerializeReturn),
+        encode: (value: unknown) => transformer.serialize(value) as Schema.Json,
       }),
     ),
   );
@@ -277,15 +277,15 @@ export function createAtomClient<
 export function createAtomClient(opts: {
   router: unknown;
   links: AtLeastOneLink;
-  serializer?: AnyTransformer | undefined;
+  transformer?: AnyTransformer | undefined;
 }): unknown {
   const client = createEffectClient(opts);
-  const serializer =
-    opts.serializer ??
+  const transformer =
+    opts.transformer ??
     getClientTransformer(createTrpcClient(opts)) ??
     jsonTransformer;
   const resultSchema = AsyncResult.Schema({
-    success: transformerSchema(serializer),
+    success: transformerSchema(transformer),
   });
   const runtime = Atom.runtime(Layer.empty);
 

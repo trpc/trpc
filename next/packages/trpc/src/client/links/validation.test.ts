@@ -249,13 +249,13 @@ test("output: 'json' decodes declared errors' data with their schemas, and types
 
   await using danson = await createTestServer({
     router: goneRouter,
-    serializer: createSerializer(),
+    transformer: createSerializer(),
   });
   const kept = createTrpcClient({
     router: gone,
     links: [
       experimental_validationLink({ contract: gone }),
-      httpLink({ url: danson.url, serializer: createSerializer() }),
+      httpLink({ url: danson.url, transformer: createSerializer() }),
     ],
   });
   const [, keptErr] = await safe(kept.post.byId.query({ id: '1' }));

@@ -16,20 +16,20 @@ import { useState, type ReactNode } from 'react';
 import type { DirectoryRouter } from '../server/directory.ts';
 import type { TrackerRouter } from '../server/tracker.ts';
 import { registerIssueMutations } from './issues.ts';
-import { serializer } from './serializer.ts';
+import { transformer } from './transformer.ts';
 import { storageKey } from './storage-key.ts';
 
 export const makeTrackerClient = () =>
   createTrpcClient({
     router: routerType<TrackerRouter>(),
     // Two components asking for the same query at once share one request.
-    links: [dedupeLink(), httpLink({ url: '/trpc', batch: true, serializer })],
+    links: [dedupeLink(), httpLink({ url: '/trpc', batch: true, transformer })],
   });
 
 const makeDirectoryClient = () =>
   createTrpcClient({
     router: routerType<DirectoryRouter>(),
-    links: [httpLink({ url: '/directory/trpc', batch: true, serializer })],
+    links: [httpLink({ url: '/directory/trpc', batch: true, transformer })],
   });
 
 export const [TrackerProvider, useTracker] =
@@ -56,7 +56,7 @@ function makeState() {
     queryClient,
     createTrpcQueryUtils({ client: tracker }),
   );
-  // The persisted cache goes through the links' serializer, so `Date`s
+  // The persisted cache goes through the links' transformer, so `Date`s
   // survive the trip through localStorage.
   const hydration = hydrationOptions({ client: tracker });
   return {

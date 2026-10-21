@@ -37,7 +37,7 @@ import {
   type Post,
 } from '../../trpc/src/fixtures/posts.ts';
 
-const serializer = createSerializer();
+const transformer = createSerializer();
 
 const make = <const L extends ReadonlyArray<AnyLink>>(
   links: L,
@@ -45,7 +45,7 @@ const make = <const L extends ReadonlyArray<AnyLink>>(
 ) =>
   createReactClient({
     router: routerType<AppRouter>(),
-    links: [...links, localLink({ router, serializer })],
+    links: [...links, localLink({ router, transformer })],
     isServer,
   });
 

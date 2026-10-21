@@ -8,7 +8,7 @@ import { createServer } from 'node:net';
 import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
 import { chromium } from 'playwright-core';
 import type { AppRouter } from './src/server/router.ts';
-import { serializer } from './src/trpc/serializer.ts';
+import { transformer } from './src/trpc/transformer.ts';
 
 const next = new URL('node_modules/.bin/next', import.meta.url).pathname;
 const cwd = new URL('.', import.meta.url).pathname;
@@ -61,7 +61,7 @@ try {
 
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: `${origin}/api/trpc`, batch: true, serializer })],
+    links: [httpLink({ url: `${origin}/api/trpc`, batch: true, transformer })],
   });
 
   const [first] = await client.post.list.query();

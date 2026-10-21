@@ -44,7 +44,7 @@ const handler = createFetchHandler({
       },
     },
   },
-  serializer: createSerializer(),
+  transformer: createSerializer(),
 });
 
 serve(handler).pipe(

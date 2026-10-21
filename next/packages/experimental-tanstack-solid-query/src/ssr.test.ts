@@ -24,7 +24,7 @@ import {
   createApp,
   db,
   type AppClient,
-  serializer,
+  transformer,
 } from '../../tanstack-query/src/fixtures/app.ts';
 
 const [TrpcProvider, useTrpc] = createTrpcContext<AppClient>();
@@ -36,7 +36,7 @@ test('runs with the server build', () => {
 test('server render with prefetched data and no subscription', async () => {
   await using _app = await createApp();
   const queryClient = new QueryClient({
-    defaultOptions: hydrationOptions({ serializer }),
+    defaultOptions: hydrationOptions({ transformer }),
   });
   const client = createRouterClient(appRouter, { ctx: { locale: null } });
   await queryClient.query(

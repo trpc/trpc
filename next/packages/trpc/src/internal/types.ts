@@ -111,13 +111,13 @@ export type Deserialized<T> =
                   : { [K in keyof T]: Deserialized<T[K]> };
 
 /**
- * Which output types a serializer keeps, at the type level. A link declares
- * its serializer's form, so client types follow it.
+ * Which output types a transformer keeps, at the type level. A link declares
+ * its transformer's form, so client types follow it.
  * @since 0.1.0
  * @stability stable
  */
 export interface OutputForm {
-  /** Types a sync serializer rebuilds; everything else arrives as JSON. */
+  /** Types a sync transformer rebuilds; everything else arrives as JSON. */
   readonly keeps: unknown;
   /** Deferred values and files at any depth (danSON), or only at the root. */
   readonly streaming: boolean;
@@ -134,7 +134,7 @@ export interface DansonForm extends OutputForm {
 }
 
 /**
- * A sync serializer's form: `TKeeps` survive, the rest arrives in its JSON
+ * A sync transformer's form: `TKeeps` survive, the rest arrives in its JSON
  * form. Root generators and promises are still framed by the transport.
  * @since 0.1.0
  * @stability stable
@@ -271,7 +271,7 @@ type Framed<T, K> = [T] extends [JsonSafe]
             | (undefined extends T ? undefined : never);
 
 /**
- * A procedure's output as the client receives it under a serializer's form.
+ * A procedure's output as the client receives it under a transformer's form.
  * @since 0.1.0
  * @stability stable
  */
@@ -281,7 +281,7 @@ export type ClientValue<
 > = F['streaming'] extends true ? Deserialized<T> : Framed<T, F['keeps']>;
 
 /**
- * The output form of a serializer type; plain JSON's for `undefined`.
+ * The output form of a transformer type; plain JSON's for `undefined`.
  * @since 0.1.0
  * @stability stable
  */
@@ -291,9 +291,9 @@ export type FormOfTransformer<S> = S extends { readonly '~form'?: infer F }
     : JsonForm
   : JsonForm;
 
-/** The form of a link options bag's `serializer`; plain JSON's without one. @internal */
+/** The form of a link options bag's `transformer`; plain JSON's without one. @internal */
 export type FormOfOptions<TOpts> = FormOfTransformer<
-  TOpts extends { serializer?: infer S } ? NonNullable<S> : undefined
+  TOpts extends { transformer?: infer S } ? NonNullable<S> : undefined
 >;
 
 /**

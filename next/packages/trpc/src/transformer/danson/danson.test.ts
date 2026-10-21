@@ -136,13 +136,13 @@ const router = {
 };
 
 function setup() {
-  const handler = createFetchHandler({ router, serializer: danson });
+  const handler = createFetchHandler({ router, transformer: danson });
   const client = createTrpcClient({
     router: routerType<typeof router>(),
     links: [
       httpLink({
         url: 'http://localhost/trpc',
-        serializer: danson,
+        transformer: danson,
         fetch: (input, init) =>
           handler.fetch(new Request(input as string, init as RequestInit)),
       }),
@@ -340,7 +340,7 @@ test('a streamed head the client cannot read fails the call instead of hanging',
     links: [
       httpLink({
         url: 'http://localhost/trpc',
-        serializer: danson,
+        transformer: danson,
         fetch: async () =>
           new Response('{"json":{"_":"$","type":"Nope"}}\n[0,0,{"json":1}]\n', {
             headers: {
@@ -471,7 +471,7 @@ test('forged streams: bad or missing file bytes, bare refs, unreadable frames an
       links: [
         httpLink({
           url: 'http://localhost/trpc',
-          serializer: danson,
+          transformer: danson,
           fetch: async () =>
             new Response(
               lines
@@ -532,7 +532,7 @@ test('forged streams: bad or missing file bytes, bare refs, unreadable frames an
     links: [
       httpLink({
         url: 'http://localhost/trpc',
-        serializer: danson,
+        transformer: danson,
         fetch: async () =>
           new Response(
             new ReadableStream({
@@ -585,6 +585,6 @@ const pollutePrototype = (key: string): Disposable => {
 
 test('only own keys go on the wire, even with a polluted Object.prototype', () => {
   using _polluted = pollutePrototype('injected');
-  const serializer = createSerializer();
-  expect(serializer.serialize({ a: 1 }).json).toEqual({ a: 1 });
+  const transformer = createSerializer();
+  expect(transformer.serialize({ a: 1 }).json).toEqual({ a: 1 });
 });

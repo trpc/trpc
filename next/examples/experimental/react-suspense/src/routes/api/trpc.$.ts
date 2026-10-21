@@ -7,7 +7,7 @@ import { appRouter } from '../../server/router.ts';
 const handler = createFetchHandler({
   router: appRouter,
   endpoint: '/api/trpc',
-  serializer: createSerializer(),
+  transformer: createSerializer(),
 });
 
 export const Route = createFileRoute('/api/trpc/$')({

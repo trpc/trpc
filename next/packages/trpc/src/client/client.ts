@@ -254,20 +254,20 @@ export function createTrpcClient(opts: TrpcClientOptions): unknown {
     }
     return untyped.request({ type, path: procedurePath, input, ...callOpts });
   });
-  const serializer = chainTransformer(opts.links);
-  if (serializer) clientTransformers.set(client, serializer);
+  const transformer = chainTransformer(opts.links);
+  if (transformer) clientTransformers.set(client, transformer);
   return client;
 }
 
 const clientTransformers = new WeakMap<object, AnyTransformer>();
 
 /**
- * The serializer a client's links send with (the first link that has one),
+ * The transformer a client's links send with (the first link that has one),
  * for code that must match it, such as TanStack Query hydration.
  *
  * @example
  * ```ts
- * const serializer = getClientTransformer(client) ?? jsonTransformer;
+ * const transformer = getClientTransformer(client) ?? jsonTransformer;
  * ```
  * @since 0.1.0
  * @stability stable

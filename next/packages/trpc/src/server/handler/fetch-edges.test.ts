@@ -136,11 +136,11 @@ test('unreadable inputs are protocol errors', async () => {
   expect(await otherParams.json()).toEqual({ json: 'hello ada' });
 });
 
-test('a serializer that throws a non-Error rejects the input as invalid', async () => {
+test('a transformer that throws a non-Error rejects the input as invalid', async () => {
   await using server = await createTestServer({
     router,
     createContext,
-    serializer: {
+    transformer: {
       ...jsonTransformer,
       deserialize: () => {
         throw 'unreadable';
@@ -194,7 +194,7 @@ test('createContext errors keep their code; others are masked', async () => {
   });
 });
 
-test('an output the serializer cannot write is a 500', async () => {
+test('an output the transformer cannot write is a 500', async () => {
   await using server = await createTestServer({
     router,
     createContext,

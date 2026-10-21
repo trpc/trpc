@@ -7,7 +7,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState, type ReactNode } from 'react';
 import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
 import type { AppRouter } from '../server/router.ts';
-import { serializer } from './serializer.ts';
+import { transformer } from './transformer.ts';
 
 const url = () =>
   typeof window === 'undefined'
@@ -17,7 +17,7 @@ const url = () =>
 const makeClient = () =>
   createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: url(), batch: true, serializer })],
+    links: [httpLink({ url: url(), batch: true, transformer })],
   });
 
 // Typed from the client, so hooks see danSON's `Date`s and files.

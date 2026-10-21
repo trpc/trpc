@@ -6,19 +6,19 @@ order: 11
 v11: server/data-transformers
 ---
 
-The serializer turns inputs and outputs into JSON on the wire. The default is plain JSON. To keep more types, pass the same serializer to the handler and to every link:
+The transformer turns inputs and outputs into JSON on the wire. The default is plain JSON. To keep more types, pass the same transformer to the handler and to every link:
 
-| Serializer                         | Keeps                                                        |
+| Transformer                        | Keeps                                                        |
 | ---------------------------------- | ------------------------------------------------------------ |
 | `jsonTransformer`, the default     | plain JSON                                                   |
 | `createSerializer()`, danSON       | `Date`, `Map`, `Set`, `bigint`, `undefined`, `URL`, files, … |
 | `createSyncTransformer(superjson)` | what the transformer knows (superjson, devalue, your own)    |
 
-Every serializer streams deferred values: a procedure can return promises, generators and `ReadableStream`s at any depth, and each value goes through the serializer as it settles.
+Every transformer streams deferred values: a procedure can return promises, generators and `ReadableStream`s at any depth, and each value goes through the transformer as it settles.
 
 ## Choosing one
 
-The serializer lives on the handler and the links, not on `initTrpc`:
+The transformer lives on the handler and the links, not on `initTrpc`:
 
 ```ts twoslash
 // ---cut-start---
@@ -31,33 +31,33 @@ declare const url: string;
 // ---cut-end---
 import { createSerializer } from '@trpc12/trpc/transformer';
 
-export const serializer = createSerializer();
+export const transformer = createSerializer();
 
-createFetchHandler({ router, serializer });
+createFetchHandler({ router, transformer });
 const client = createTrpcClient({
   router: routerType<AppRouter>(),
-  links: [httpLink({ url, serializer })],
+  links: [httpLink({ url, transformer })],
 });
 ```
 
-`wsLink` and `localLink` take `serializer` the same way. With superjson or devalue, list the types the transformer rebuilds:
+`wsLink` and `localLink` take `transformer` the same way. With superjson or devalue, list the types the transformer rebuilds:
 
 ```ts twoslash
 // ---cut-start---
 import { createSyncTransformer } from '@trpc12/trpc/transformer';
 import superjson from 'superjson';
 // ---cut-end---
-export const serializer = createSyncTransformer<
+export const transformer = createSyncTransformer<
   Date | Map<any, any> | Set<any> | bigint | undefined
 >(superjson);
 // devalue: createSyncTransformer({ serialize: devalue.stringify, deserialize: devalue.parse })
 ```
 
-If the two ends disagree, calls fail with `UNSUPPORTED_PROTOCOL`, with a message naming both serializers. Over HTTP the handler names its serializer in the `trpc-serializer` response header and `httpLink` checks it, after the server ran the call. `wsLink` names its own in the connection's `init` message: the server answers with its own and runs none of that connection's calls on a mismatch.
+If the two ends disagree, calls fail with `UNSUPPORTED_PROTOCOL`, with a message naming both transformers. Over HTTP the handler names its transformer in the `trpc-serializer` response header and `httpLink` checks it, after the server ran the call. `wsLink` names its own in the connection's `init` message: the server answers with its own and runs none of that connection's calls on a mismatch.
 
 ## Client types follow the link
 
-The first link in the chain that has a serializer types the results. A type the serializer doesn't keep arrives in its JSON form, and the client's types say so:
+The first link in the chain that has a transformer types the results. A type the transformer doesn't keep arrives in its JSON form, and the client's types say so:
 
 ```ts twoslash
 // ---cut-start---
@@ -83,7 +83,7 @@ const plain = await json.getPost.query();
 
 const danson = createTrpcClient({
   router: routerType<typeof router>(),
-  links: [httpLink({ url: '/trpc', serializer: createSerializer() })],
+  links: [httpLink({ url: '/trpc', transformer: createSerializer() })],
 });
 const rich = await danson.getPost.query();
 //    ^?
@@ -93,17 +93,17 @@ const rich = await danson.getPost.query();
 
 `inferRouterOutputs<typeof json>` and `inferRouterOutputs<typeof danson>` name those results by path. A router type has no links, so `inferRouterOutputs<typeof router>` is the plain JSON form ([Inferring types](../client/overview.md#inferring-types)).
 
-A typed error's `data` goes through the same serializer: `new TrpcError({ code: 'EXPIRED', data: { at: new Date() } })` reaches a plain-JSON client as `data: { at: string }`.
+A typed error's `data` goes through the same transformer: `new TrpcError({ code: 'EXPIRED', data: { at: new Date() } })` reaches a plain-JSON client as `data: { at: string }`.
 
-In-process callers (`createRouterClient`, `createTrpcRsc`, `localLink({ serializer: false })`) pass values by reference, so they keep native types whatever the serializer.
+In-process callers (`createRouterClient`, `createTrpcRsc`, `localLink({ transformer: false })`) pass values by reference, so they keep native types whatever the transformer.
 
 ## Files
 
-A root `File` or `Blob` output of an unbatched HTTP call is the response body, with any serializer. On a batching chain, plain JSON can't batch it, so such calls take `{ batch: false }` (a type error otherwise). Files anywhere else, and files in inputs, need danSON; the other serializers fail before sending.
+A root `File` or `Blob` output of an unbatched HTTP call is the response body, with any transformer. On a batching chain, plain JSON can't batch it, so such calls take `{ batch: false }` (a type error otherwise). Files anywhere else, and files in inputs, need danSON; the other transformers fail before sending.
 
 ## Query URLs
 
-Query inputs go in the URL as `?input=<JSON>`, with object keys sorted (array order is kept), so equal inputs make the same URL and hit the same HTTP cache entry. A serializer that makes refs (danSON's `$n` markers) adds `&refs=`. Long inputs fall back to `POST` ([Links](../client/links/http.md#query-urls)).
+Query inputs go in the URL as `?input=<JSON>`, with object keys sorted (array order is kept), so equal inputs make the same URL and hit the same HTTP cache entry. A transformer that makes refs (danSON's `$n` markers) adds `&refs=`. Long inputs fall back to `POST` ([Links](../client/links/http.md#query-urls)).
 
 ## Custom types with danSON
 
@@ -119,14 +119,14 @@ const decimal: CustomType<Decimal, string> = {
   serialize: (v) => v.toString(),
   deserialize: (s) => new Decimal(s),
 };
-export const serializer = createSerializer({ types: { Decimal: decimal } });
+export const transformer = createSerializer({ types: { Decimal: decimal } });
 ```
 
 The [`examples/media-pipeline`](../../../examples/media-pipeline/README.md) app keeps a `Money` class this way, and with superjson's `registerCustom` on a second endpoint, in query URLs and outputs.
 
 ## Hydration
 
-`hydrationOptions({ client })` serializes TanStack Query data with the client's serializer (the first link that has one), so server-rendered data hydrates with the same types the client sees. Type the query context from the client, and it takes the links' form too:
+`hydrationOptions({ client })` serializes TanStack Query data with the client's transformer (the first link that has one), so server-rendered data hydrates with the same types the client sees. Type the query context from the client, and it takes the links' form too:
 
 ```ts twoslash
 // ---cut-start---
@@ -134,13 +134,13 @@ import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
 import { createSerializer } from '@trpc12/trpc/transformer';
 import { createTrpcContext } from '@trpc12/tanstack-react-query';
 import type { AppRouter } from './server.ts';
-const serializer = createSerializer();
+const transformer = createSerializer();
 declare const url: string;
 // ---cut-end---
 const makeClient = () =>
   createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url, serializer })],
+    links: [httpLink({ url, transformer })],
   });
 export const [TrpcProvider, useTrpc] = createTrpcContext<typeof makeClient>();
 ```

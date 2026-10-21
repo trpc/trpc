@@ -253,12 +253,12 @@ test('a byte stream call leaves the batch and goes alone', async () => {
   expect(server.requests).toHaveLength(2);
 });
 
-test('danSON and other serializers leave the body as it is', async () => {
-  const serializer = createSerializer();
-  await using server = await createTestServer({ router, serializer });
+test('danSON and other transformers leave the body as it is', async () => {
+  const transformer = createSerializer();
+  await using server = await createTestServer({ router, transformer });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: server.url, serializer, binary: true })],
+    links: [httpLink({ url: server.url, transformer, binary: true })],
   });
   expect(await client.echo.mutate(bytes('danSON'))).toBe('danSON');
 });
@@ -442,7 +442,7 @@ test('in-process callers pass the stream through', async () => {
 
   for (const link of [
     localLink({ router }),
-    localLink({ router, serializer: false }),
+    localLink({ router, transformer: false }),
   ]) {
     const client = createTrpcClient({
       router: routerType<AppRouter>(),

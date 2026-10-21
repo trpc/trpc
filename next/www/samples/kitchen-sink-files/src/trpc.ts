@@ -2,7 +2,7 @@ import type { QueryClient } from '@tanstack/react-query';
 import { createTrpcQueryUtils } from '@trpc12/tanstack-react-query';
 import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
 
-import { serializer } from './serializer.ts';
+import { transformer } from './transformer.ts';
 import type { AppRouter } from './server.ts';
 
 /**
@@ -15,7 +15,7 @@ export function createTrpc(
 ) {
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: '/trpc', fetch, serializer })],
+    links: [httpLink({ url: '/trpc', fetch, transformer })],
   });
   return { client, trpc: createTrpcQueryUtils({ client }) };
 }

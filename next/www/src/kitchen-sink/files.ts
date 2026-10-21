@@ -11,7 +11,7 @@ const files: DemoDefinition = {
     'server.ts',
     'profile.tsx',
     'images.ts',
-    'serializer.ts',
+    'transformer.ts',
     'trpc.ts',
     'router.tsx',
   ]),

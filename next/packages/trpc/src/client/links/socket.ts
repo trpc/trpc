@@ -98,7 +98,7 @@ interface Connection {
    * one closes once the calls sent on it settle.
    */
   retired: boolean;
-  /** The server named another serializer: calls on this connection fail with it. */
+  /** The server named another transformer: calls on this connection fail with it. */
   refused?: AnyTrpcError;
 }
 
@@ -127,7 +127,7 @@ export interface SocketLinkOptions {
    * `UNSUPPORTED_PROTOCOL`. Client types follow it.
    * @default jsonTransformer
    */
-  serializer?: AnyTransformer;
+  transformer?: AnyTransformer;
   /**
    * Sent once per connection, before any call; `createContext` receives
    * them as `info.connectionParams`. Browsers cannot set WebSocket headers,
@@ -202,7 +202,7 @@ function makeSocketLink(
   opts: SocketLinkOptions,
   scope: Scope.Closeable = Scope.makeUnsafe(),
 ): SocketLink<any> {
-  const serializer = opts.serializer ?? jsonTransformer;
+  const transformer = opts.transformer ?? jsonTransformer;
   /** Every call's inbox, so `close()` can fail them wherever they are. */
   const live = new Set<Queue.Queue<Signal>>();
   let current: Connection | undefined;
@@ -214,7 +214,7 @@ function makeSocketLink(
 
   const revive = (message: Extract<ServerMessage, { type: 'error' }>) => {
     try {
-      return fromWireError(serializer.deserialize(message.body as never));
+      return fromWireError(transformer.deserialize(message.body as never));
     } catch (cause) {
       return badResponse('Invalid error message')(cause);
     }
@@ -227,11 +227,11 @@ function makeSocketLink(
       conn.received++;
       if (message.type === 'pong') return Effect.void;
       if (message.type === 'init') {
-        if (message.serializer === serializer.name) return Effect.void;
+        if (message.serializer === transformer.name) return Effect.void;
         const error = new TrpcError({
           code: 'UNSUPPORTED_PROTOCOL',
           tag: 'TransformerMismatch',
-          message: `The server uses the '${message.serializer}' serializer, but this ${transport.name} uses '${serializer.name}'. Pass the same serializer to the handler and ${transport.name}.`,
+          message: `The server uses the '${message.serializer}' transformer, but this ${transport.name} uses '${transformer.name}'. Pass the same transformer to the handler and ${transport.name}.`,
         });
         conn.refused = error;
         for (const { inbox } of conn.calls.values())
@@ -373,7 +373,7 @@ function makeSocketLink(
       version: PROTOCOL_VERSION,
       ...(params ? { connectionParams: params } : {}),
       ...(transport.binary ? { binary: true } : {}),
-      serializer: serializer.name,
+      serializer: transformer.name,
     });
     if (transport.keepAlive) {
       yield* Effect.forkScoped(keepAlive(conn, transport.keepAlive));
@@ -533,7 +533,7 @@ function makeSocketLink(
     path: op.path,
     ...(op.input === undefined
       ? {}
-      : { input: serializeInput(serializer, op.input) }),
+      : { input: serializeInput(transformer, op.input) }),
     ...(lastEventId === undefined ? {} : { lastEventId }),
     ...(op.trace === undefined ? {} : { trace: { ...op.trace } }),
   });
@@ -546,7 +546,7 @@ function makeSocketLink(
     Stream.fromEffect(
       Effect.gen(function* () {
         const result = yield* Deferred.make<unknown, AnyTrpcError>();
-        const decoder = makeDeferredDecoder(serializer);
+        const decoder = makeDeferredDecoder(transformer);
         const call: Call = {
           op,
           request: () => request(op),
@@ -599,7 +599,7 @@ function makeSocketLink(
     Stream.callback<Effect.Effect<unknown, AnyTrpcError>, AnyTrpcError>(
       (queue) => {
         let lastEventId = op.lastEventId;
-        let decoder = makeDeferredDecoder(serializer);
+        let decoder = makeDeferredDecoder(transformer);
         const call: Call = {
           op,
           request: () => request(op, lastEventId),
@@ -634,7 +634,7 @@ function makeSocketLink(
           },
           onReconnect: Effect.suspend(() => {
             const stale = decoder;
-            decoder = makeDeferredDecoder(serializer);
+            decoder = makeDeferredDecoder(transformer);
             return stale.close;
           }),
         };
@@ -686,7 +686,7 @@ function makeSocketLink(
         : single(op);
   return withTransformer(
     Object.assign(link, { close, dispose, [Symbol.asyncDispose]: dispose }),
-    serializer,
+    transformer,
   );
 }
 

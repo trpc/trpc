@@ -396,7 +396,7 @@ export function experimental_createHibernatingWebSockets<TPlatform>(
         procedure
           ? emitEvents(
               procedureEvents(procedure, Stream.make(event)),
-              core.serializer,
+              core.transformer,
               (cause) =>
                 report(isTrpcError(cause) ? cause : unexpectedError(cause)),
               (frame) => send(frameMessage(sub.c, frame)),
@@ -409,7 +409,7 @@ export function experimental_createHibernatingWebSockets<TPlatform>(
       yield* send({
         id: sub.c,
         type: 'error',
-        body: core.serializer.serialize(report(err)),
+        body: core.transformer.serialize(report(err)),
       });
       unpark(socket, sub.c);
     }

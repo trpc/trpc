@@ -18,7 +18,7 @@ import { expect, test } from 'vite-plus/test';
 import { directoryRouter } from './server/directory.ts';
 import type { trackerRouter } from './server/tracker.ts';
 import { isDraft, listOptions, registerIssueMutations } from './src/issues.ts';
-import { serializer } from './src/serializer.ts';
+import { transformer } from './src/transformer.ts';
 import { tracker as trackerApi } from './server/api.ts';
 
 // The app's links, with `fetch` calling the API handler in process; the
@@ -32,7 +32,7 @@ const trpc = createTrpcQueryUtils({
       httpLink({
         url: 'http://localhost/trpc',
         batch: true,
-        serializer,
+        transformer,
         fetch: (input, init) => trackerApi.fetch(new Request(input, init)),
       }),
     ],
@@ -41,7 +41,7 @@ const trpc = createTrpcQueryUtils({
 const directory = createTrpcQueryUtils({
   client: createTrpcClient({
     router: routerType<typeof directoryRouter>(),
-    links: [localLink({ router: directoryRouter, serializer })],
+    links: [localLink({ router: directoryRouter, transformer })],
   }),
   keyPrefix: 'directory',
 });

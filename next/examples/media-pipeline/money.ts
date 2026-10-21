@@ -1,6 +1,6 @@
 /**
  * `Money`, a class of the app's own, kept across the wire by both
- * serializers: danSON through a `CustomType`, superjson through
+ * transformers: danSON through a `CustomType`, superjson through
  * `registerCustom`.
  */
 import {

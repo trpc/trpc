@@ -14,7 +14,7 @@ import {
 } from '@trpc12/trpc/client';
 import { chromium, type Page } from 'playwright-core';
 import { type AppRouter, listen } from './server.ts';
-import { serializer } from './src/serializer.ts';
+import { transformer } from './src/transformer.ts';
 import { storageKey } from './src/storage-key.ts';
 
 const cwd = new URL('.', import.meta.url).pathname;
@@ -29,7 +29,7 @@ const assert = (ok: boolean, message: string): void => {
 await using server = await listen();
 const tracker = createTrpcClient({
   router: routerType<AppRouter>(),
-  links: [httpLink({ url: server.url, batch: true, serializer })],
+  links: [httpLink({ url: server.url, batch: true, transformer })],
 });
 const browser = await chromium.launch(
   process.env['CHROME_PATH']

@@ -69,7 +69,7 @@ const twoInstances = <A>(
     }).pipe(Effect.scoped, Effect.provide(Persistence.layerBackingMemory)),
   );
 
-for (const [name, serializer] of [
+for (const [name, transformer] of [
   ['plain JSON', jsonTransformer],
   ['danSON', createSerializer()],
 ] as [string, AnyTransformer][]) {
@@ -77,7 +77,7 @@ for (const [name, serializer] of [
     let runs = 0;
     const value = await twoInstances((a, b) =>
       Effect.gen(function* () {
-        yield* a.start('call-1', serializer, () => (runs++, feed()));
+        yield* a.start('call-1', transformer, () => (runs++, feed()));
         const received = yield* Ref.make(0);
         const counted = (frames: Stream.Stream<Frame>) =>
           Stream.tap(frames, () => Ref.update(received, (n) => n + 1));
@@ -91,7 +91,7 @@ for (const [name, serializer] of [
             ),
           ),
         );
-        return yield* serializer.deserializeStream<any, never>(frames);
+        return yield* transformer.deserializeStream<any, never>(frames);
       }),
     );
     expect(await settle(value)).toEqual(expected);

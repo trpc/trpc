@@ -17,7 +17,7 @@ import {
   createApp,
   db,
   type Post,
-  serializer,
+  transformer,
 } from '../../tanstack-query/src/fixtures/app.ts';
 
 /** One request's worth of React `cache()`. */
@@ -35,7 +35,7 @@ test('createTrpcRsc: per-request ctx and query client, and a server HydrationBou
   let contexts = 0;
   const rsc = createTrpcRsc({
     router: appRouter,
-    serializer,
+    transformer,
     ctx: () => {
       contexts++;
       return { locale: 'sv' };
@@ -61,7 +61,7 @@ test('createTrpcRsc: per-request ctx and query client, and a server HydrationBou
     return <h1>{query.data?.createdAt.toISOString().slice(0, 10)}</h1>;
   }
   const browser = new QueryClient({
-    defaultOptions: hydrationOptions({ serializer }),
+    defaultOptions: hydrationOptions({ transformer }),
   });
   const html = renderToString(
     <QueryClientProvider client={browser}>
@@ -78,7 +78,7 @@ test('prefetch fills infinite queries with their first page, for useSuspenseInfi
   await using _app = await createApp({ posts: 3 });
   const rsc = createTrpcRsc({
     router: appRouter,
-    serializer,
+    transformer,
     ctx: { locale: null },
     cache: requestCache(),
   });
@@ -125,7 +125,7 @@ test("HydrationBoundary keeps Next's digest errors, which Next needs to see, and
 test('/rsc exports the data-cache tag helpers, for server components and Server Actions', () => {
   const rsc = createTrpcRsc({
     router: appRouter,
-    serializer,
+    transformer,
     ctx: { locale: null },
   });
   const key = rsc.trpc.post.byId.queryKey({ input: { id: '1' } });

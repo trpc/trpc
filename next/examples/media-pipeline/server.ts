@@ -22,13 +22,13 @@ export async function listen(port = 0) {
   const handler = createFetchHandler({
     router: appRouter,
     layer,
-    serializer: danson,
+    transformer: danson,
     batch: true,
   });
   const syncHandler = createFetchHandler({
     router: appRouter,
     layer,
-    serializer: sync,
+    transformer: sync,
     endpoint: '/sync',
   });
   const runtime = ManagedRuntime.make(

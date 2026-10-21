@@ -84,11 +84,11 @@ export function createRouterClient<TRouter extends AnyRouter>(
       localLink({
         router,
         runtime: o.runtime,
-        serializer: false,
+        transformer: false,
         createContext: (typeof ctx === 'function'
           ? ctx
           : () => ctx ?? {}) as () => never,
-      } as LocalLinkOptions<TRouter> & { serializer: false }),
+      } as LocalLinkOptions<TRouter> & { transformer: false }),
     ],
   }) as TrpcClient<TRouter, {}, DansonForm, { builtinErrors: never }>;
 }

@@ -156,7 +156,7 @@ export type RuntimeOption<TServices> = ([TServices] extends [never]
 };
 
 /**
- * The handler's `serializer` option.
+ * The handler's `transformer` option.
  * @since 0.1.0
  * @stability stable
  */
@@ -164,10 +164,10 @@ export interface TransformerOption {
   /**
    * The wire format. Links must use the same one; a link with another fails
    * with an error naming both (`trpc-serializer` header). Client types
-   * follow the link's serializer.
+   * follow the link's transformer.
    * @default jsonTransformer
    */
-  serializer?: AnyTransformer | undefined;
+  transformer?: AnyTransformer | undefined;
 }
 
 /**

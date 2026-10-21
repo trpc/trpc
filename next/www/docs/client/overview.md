@@ -87,7 +87,7 @@ A call rejects with one of the procedure's errors (`defined: true`, with its `da
 
 ## Inferring types
 
-`inferRouterOutputs` and `inferRouterInputs` name what the client receives and sends, by path. Pass the client's type (or the type of a function that makes it) and outputs follow its links' serializer, as its calls do:
+`inferRouterOutputs` and `inferRouterInputs` name what the client receives and sends, by path. Pass the client's type (or the type of a function that makes it) and outputs follow its links' transformer, as its calls do:
 
 ```ts twoslash
 // ---cut-start---
@@ -102,7 +102,7 @@ import type {
 
 const client = createTrpcClient({
   router: routerType<AppRouter>(),
-  links: [httpLink({ url: '/trpc', serializer: createSerializer() })],
+  links: [httpLink({ url: '/trpc', transformer: createSerializer() })],
 });
 
 type NewPost = inferRouterInputs<typeof client>['post']['create'];
@@ -111,7 +111,7 @@ type Post = inferRouterOutputs<typeof client>['post']['byId'];
 //   ^?
 ```
 
-A router type has no links, so `inferRouterOutputs<AppRouter>` is the outputs in the default serializer's form, plain JSON: `createdAt` is a `string`, as a client without a serializer receives it.
+A router type has no links, so `inferRouterOutputs<AppRouter>` is the outputs in the default transformer's form, plain JSON: `createdAt` is a `string`, as a client without a transformer receives it.
 
 ```ts twoslash
 // ---cut-start---

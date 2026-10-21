@@ -195,7 +195,7 @@ test('calls with differing inits batch apart; ones JSON cannot key go alone', as
   ]);
 });
 
-test('an input the serializer cannot write fails alone, outside the batch', async () => {
+test('an input the transformer cannot write fails alone, outside the batch', async () => {
   const client = clientWith(real, { batch: true });
   const loop: Record<string, unknown> = {};
   loop['self'] = loop;

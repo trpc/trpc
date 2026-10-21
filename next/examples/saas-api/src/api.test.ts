@@ -1,6 +1,6 @@
 /**
  * In-process tests: `createRouterClient` and `call()` skip HTTP and the
- * serializer, `localLink` keeps the serializer and the client's links. Each
+ * transformer, `localLink` keeps the transformer and the client's links. Each
  * test owns its runtime, so `await using` releases its services.
  */
 import {
@@ -114,7 +114,7 @@ test('call(): one procedure, its errors thrown, its layer built per call', async
   });
 });
 
-test('localLink: through the serializer and the links before it', async () => {
+test('localLink: through the transformer and the links before it', async () => {
   await using app = signedIn('ada@acme.test');
   const log: LoggerEvent[] = [];
   const client = createTrpcClient({

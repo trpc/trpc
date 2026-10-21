@@ -34,7 +34,7 @@ export interface ValidationLinkOptions {
   /**
    * Validate results, and the `data` of the declared errors of procedures
    * whose results it checks. `'json'` decodes plain JSON results and
-   * error `data` (`httpLink`'s default serializer,
+   * error `data` (`httpLink`'s default transformer,
    * `experimental_openApiLink`) with the Effect Schema's JSON codec, so
    * `Date`s, `bigint`s and classes come back as their types. Only values
    * it checks are typed so; streamed (`stream()`) outputs and unchecked

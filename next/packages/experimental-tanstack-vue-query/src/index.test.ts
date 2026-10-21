@@ -32,7 +32,7 @@ import {
   db,
   type Post,
   type AppClient,
-  serializer,
+  transformer,
 } from '../../tanstack-query/src/fixtures/app.ts';
 import {
   click,
@@ -186,7 +186,7 @@ test('server render with prefetched data and no subscription, then hydrate witho
   const queryClient = () =>
     new QueryClient({
       defaultOptions: {
-        ...hydrationOptions({ serializer }),
+        ...hydrationOptions({ transformer }),
         queries: { staleTime: 30_000 },
       },
     });

@@ -36,7 +36,7 @@ export type AppRouter = typeof appRouter;
 
 const handler = createFetchHandler({
   router: appRouter,
-  serializer: createSerializer(),
+  transformer: createSerializer(),
 });
 
 /**

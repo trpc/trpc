@@ -4,12 +4,12 @@ import { httpLink, localLink, routerType } from '@trpc12/trpc/client';
 import { createSerializer } from '@trpc12/trpc/transformer';
 import { type AppRouter, appRouter } from './server/router.ts';
 
-const serializer = createSerializer();
+const transformer = createSerializer();
 
 // A server render calls the router in process; the browser calls /api/trpc.
 const sendLink = createIsomorphicFn()
-  .server(() => localLink({ router: appRouter, serializer }))
-  .client(() => httpLink({ url: '/api/trpc', serializer }));
+  .server(() => localLink({ router: appRouter, transformer }))
+  .client(() => httpLink({ url: '/api/trpc', transformer }));
 
 /** One per request on the server, one per tab in the browser. */
 export const makeTrpc = () =>

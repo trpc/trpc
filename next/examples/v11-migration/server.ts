@@ -16,7 +16,7 @@ import { createContext } from './server/context.ts';
 import { appRouter } from './server/router.ts';
 
 export type { AppRouter } from './server/router.ts';
-import { serializer } from './server/serializer.ts';
+import { transformer } from './server/transformer.ts';
 
 /** A failed input's issue messages, as the v11 errorFormatter sent them. */
 const issueMessages = (error: AnyTrpcError): string[] | null => {
@@ -45,7 +45,7 @@ export async function listen(port = 0) {
     createContext,
     endpoint: '/rpc',
     batch: true,
-    serializer,
+    transformer,
   });
   const routes = Layer.mergeAll(
     handler.routes,

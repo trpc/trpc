@@ -27,12 +27,12 @@ import {
   type AppRouter,
 } from '../../trpc/src/fixtures/posts.ts';
 
-const serializer = createSerializer();
+const transformer = createSerializer();
 
 const setup = () => ({
   trpc: createAtomClient({
     router: routerType<AppRouter>(),
-    links: [localLink({ router, serializer })],
+    links: [localLink({ router, transformer })],
   }),
   registry: AtomRegistry.make(),
 });
@@ -120,7 +120,7 @@ test('a subscription atom holds the latest event', async () => {
   unmount();
 });
 
-test('query atoms hydrate with the serializer: the browser renders without a request', async () => {
+test('query atoms hydrate with the transformer: the browser renders without a request', async () => {
   using _db = freshDb();
   function Title() {
     const post = useAtomSuspense(
@@ -263,12 +263,12 @@ test('the client exposes its runtime and Effect client; other calls are errors',
   ).toBe(undefined);
 });
 
-test('without a serializer on its links, query atoms dehydrate as JSON unless one is given', async () => {
+test('without a transformer on its links, query atoms dehydrate as JSON unless one is given', async () => {
   using _db = freshDb();
-  const encoded = async (opts: { serializer?: AnyTransformer }) => {
+  const encoded = async (opts: { transformer?: AnyTransformer }) => {
     const trpc = createAtomClient({
       router: routerType<AppRouter>(),
-      links: [localLink({ router, serializer: false })],
+      links: [localLink({ router, transformer: false })],
       ...opts,
     });
     const registry = AtomRegistry.make({ defaultIdleTTL: 60_000 });
@@ -278,8 +278,8 @@ test('without a serializer on its links, query atoms dehydrate as JSON unless on
     return JSON.stringify(entry.value);
   };
   expect(await encoded({})).toContain('"at":"1970-01-01T00:00:00.000Z"');
-  expect(await encoded({ serializer: jsonTransformer })).toContain(
+  expect(await encoded({ transformer: jsonTransformer })).toContain(
     '"at":"1970-01-01T00:00:00.000Z"',
   );
-  expect(await encoded({ serializer })).toContain('"type":"Date"');
+  expect(await encoded({ transformer })).toContain('"type":"Date"');
 });

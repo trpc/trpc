@@ -43,7 +43,7 @@ const batchedCall = (
           ),
         )
       : Effect.flatMapEager(
-          deserialize(handler.serializer, call.input),
+          deserialize(handler.transformer, call.input),
           (input) =>
             execute(
               handler,

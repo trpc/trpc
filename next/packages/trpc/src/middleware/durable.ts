@@ -73,8 +73,8 @@ export interface DurableOptions<TCtx, TInput, TMeta> {
   readonly pollInterval?: Duration.Input;
   /** How often a resumed stream checks for new frames. @default '25 millis' */
   readonly streamPollInterval?: Duration.Input;
-  /** Turns results into the JSON the store keeps. @default the default serializer */
-  readonly serializer?: Pick<Transformer, 'serialize' | 'deserialize'>;
+  /** Turns results into the JSON the store keeps. @default the default transformer */
+  readonly transformer?: Pick<Transformer, 'serialize' | 'deserialize'>;
 }
 
 type Entry =
@@ -117,12 +117,12 @@ const running = new WeakMap<object, Map<string, Deferred.Deferred<Ran>>>();
 
 /** A SHA-256 of the serialized input; `''` for inputs with files. */
 const fingerprint = /* @__PURE__ */ Effect.fnUntraced(function* (
-  serializer: Pick<Transformer, 'serialize'>,
+  transformer: Pick<Transformer, 'serialize'>,
   input: unknown,
 ) {
   let json: string;
   try {
-    json = JSON.stringify(serializer.serialize(input));
+    json = JSON.stringify(transformer.serialize(input));
   } catch {
     return '';
   }
@@ -186,7 +186,7 @@ export function experimental_durable<TReq extends MiddlewareRequirements = {}>(
   const claimTtl = Duration.fromInputUnsafe(options.claimTtl ?? '30 seconds');
   const pollInterval = options.pollInterval ?? '250 millis';
   const streamPollInterval = options.streamPollInterval ?? '25 millis';
-  const serializer = options.serializer ?? danson;
+  const transformer = options.transformer ?? danson;
   const keyOf =
     options.key ??
     ((opts) =>
@@ -224,14 +224,14 @@ export function experimental_durable<TReq extends MiddlewareRequirements = {}>(
         streamPollInterval,
       });
       const sink = yield* CurrentFrameSink;
-      const input = yield* fingerprint(serializer, opts.input);
+      const input = yield* fingerprint(transformer, opts.input);
       let local = running.get(backing);
       if (!local) running.set(backing, (local = new Map()));
 
       const replay = (entry: Entry) => {
         if (entry.input !== input) return conflict();
         if (entry.state === 'done') {
-          return ok(serializer.deserialize(entry.value));
+          return ok(transformer.deserialize(entry.value));
         }
         if (entry.state === 'failed') {
           return withStatusHint(fromWireError(entry.error), entry.status);
@@ -294,7 +294,7 @@ export function experimental_durable<TReq extends MiddlewareRequirements = {}>(
           (error) => Effect.succeed({ ok: false as const, error }),
         );
         yield* Fiber.interrupt(heartbeat);
-        const entry = stored(serializer, result, input);
+        const entry = stored(transformer, result, input);
         // A streamed output's claim stays until the handler starts its log.
         const streamed = entry === undefined && result.ok && sink !== undefined;
         if (!streamed) {
@@ -445,7 +445,7 @@ const isNonEmpty = <A>(items: A[]): items is [A, ...A[]] => items.length > 0;
 
 /** What to keep for `result`: nothing for unexpected errors and streams. */
 const stored = (
-  serializer: Pick<Transformer, 'serialize'>,
+  transformer: Pick<Transformer, 'serialize'>,
   result: Result,
   input: string,
 ): Entry | undefined => {
@@ -462,7 +462,7 @@ const stored = (
   }
   if (isDeferred(result.data)) return undefined;
   try {
-    return { state: 'done', input, value: serializer.serialize(result.data) };
+    return { state: 'done', input, value: transformer.serialize(result.data) };
   } catch {
     return undefined;
   }

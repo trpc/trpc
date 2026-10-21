@@ -24,12 +24,12 @@ const measure = Command.make(
   { items: intArg('items', 200) },
   ({ items }) =>
     Effect.gen(function* () {
-      for (const [name, serializer] of [
+      for (const [name, transformer] of [
         ['json', jsonTransformer],
         ['danson', createSerializer()],
       ] as const) {
         const lines = () =>
-          Stream.map(framesOf(serializer, value(items)), (f) =>
+          Stream.map(framesOf(transformer, value(items)), (f) =>
             JSON.stringify(f),
           );
         const jsonl = yield* size(toJsonl(lines()));

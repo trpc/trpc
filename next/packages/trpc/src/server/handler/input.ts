@@ -61,14 +61,14 @@ const decodeNow = <A>(
  * multipart body carried. @internal
  */
 export const deserialize = (
-  serializer: AnyTransformer,
+  transformer: AnyTransformer,
   value: unknown,
   parts?: ReadonlyArray<Blob>,
 ): Exit.Exit<unknown, Failure<'InvalidBody'>> =>
   value === undefined
     ? noInput
     : decodeNow(() =>
-        serializer.deserialize(value as never, { input: true, parts }),
+        transformer.deserialize(value as never, { input: true, parts }),
       );
 
 const parseJson = (text: string) =>
@@ -140,7 +140,7 @@ const readMultipart = /* @__PURE__ */ Effect.fnUntraced(function* (
     if (!(part instanceof Blob)) break;
     parts.push(part);
   }
-  return yield* deserialize(handler.serializer, value, parts);
+  return yield* deserialize(handler.transformer, value, parts);
 });
 
 const takesByteStream = (procedure: AnyProcedure): boolean =>
@@ -162,7 +162,7 @@ export const readInput = (
     if (search.length <= 1) return noInput;
     return Effect.flatMapEager(
       decodeNow(() => fromInputSearch(search)),
-      (value) => deserialize(handler.serializer, value),
+      (value) => deserialize(handler.transformer, value),
     );
   }
   const contentType = request.headers['content-type'] ?? null;
@@ -198,6 +198,6 @@ export const readInput = (
     return bodyStream(request);
   }
   return Effect.flatMap(readBody(request, handler.maxBodySize), (body) =>
-    deserialize(handler.serializer, body),
+    deserialize(handler.transformer, body),
   );
 };

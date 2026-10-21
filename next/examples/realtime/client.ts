@@ -16,7 +16,7 @@ import {
   wsLink,
 } from '@trpc12/trpc/client';
 import type { TrackedEnvelope } from '@trpc12/trpc/server';
-import { serializer, type AppRouter, type Message } from './server.ts';
+import { transformer, type AppRouter, type Message } from './server.ts';
 
 /** Subscriptions over a WebSocket, the rest over HTTP. */
 function connect(
@@ -26,7 +26,7 @@ function connect(
   let connections = 0;
   const ws = wsLink({
     url: url.replace(/^http/, 'ws'),
-    serializer,
+    transformer,
     // Runs once per connection, so it also counts reconnects.
     connectionParams: () => {
       connections++;
@@ -47,7 +47,7 @@ function connect(
         true: ws,
         false: httpLink({
           url,
-          serializer,
+          transformer,
           headers:
             opts.token === undefined
               ? {}
@@ -95,13 +95,13 @@ function collect(
  * itself with `Last-Event-ID`.
  */
 function readRoom(url: string, room: string) {
-  const input = JSON.stringify(serializer.serialize({ room }).json);
+  const input = JSON.stringify(transformer.serialize({ room }).json);
   const source = new EventSource(
     `${url}/room?input=${encodeURIComponent(input)}`,
   );
   const events: TrackedEnvelope<Message>[] = [];
   source.onmessage = (event) => {
-    const envelope = serializer.deserialize(
+    const envelope = transformer.deserialize(
       JSON.parse(event.data),
     ) as TrackedEnvelope<Message>;
     assert.equal(envelope.id, event.lastEventId);

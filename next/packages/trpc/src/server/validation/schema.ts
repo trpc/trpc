@@ -152,7 +152,7 @@ type ToIssueJson<T> = unknown extends T
  * A zod issue as it reaches the client: zod's own fields (`code`,
  * `minimum`, `format`, `keys`, …) without `input`, and `path` typed from the
  * schema's input type. Values JSON can't hold become JSON the same way under
- * every serializer: `bigint`s and symbols are strings, `undefined` in arrays
+ * every transformer: `bigint`s and symbols are strings, `undefined` in arrays
  * is `null`. `invalid_union` keeps its nested `errors`, and
  * `invalid_key`/`invalid_element` their nested `issues`, with paths relative
  * to the issue's own.
@@ -264,7 +264,7 @@ export interface InputValidationErrorData<TIssue = InputIssue> {
   readonly issues: ReadonlyArray<TIssue>;
   /**
    * Type-only. Issues are made JSON on the server, so clients keep their
-   * types under any serializer.
+   * types under any transformer.
    */
   readonly '~issues'?: true;
 }

@@ -13,28 +13,28 @@ import { expect, test } from 'vite-plus/test';
  * through JSON text, as over a socket, and come back as values.
  */
 const send = (
-  serializer: Transformer<any>,
+  transformer: Transformer<any>,
   value: unknown,
   wire: (
     frames: Stream.Stream<Frame, unknown>,
   ) => Stream.Stream<Frame, unknown>,
 ) => {
-  const serialized = serializer.serializeDeferred(value);
+  const serialized = transformer.serializeDeferred(value);
   const frames = (
     serialized.chunks
       ? Stream.concat(Stream.make(serialized.head), serialized.chunks)
       : Stream.make(serialized.head)
   ).pipe(Stream.map((f) => JSON.parse(JSON.stringify(f)) as Frame));
   return Effect.runPromise(
-    serializer.deserializeStream<any, unknown>(wire(frames)),
+    transformer.deserializeStream<any, unknown>(wire(frames)),
   );
 };
 const intact = <T>(frames: T) => frames;
 
-for (const serializer of [createSerializer(), jsonTransformer]) {
-  test(`${serializer.name}: deferred values travel over a custom transport`, async () => {
+for (const transformer of [createSerializer(), jsonTransformer]) {
+  test(`${transformer.name}: deferred values travel over a custom transport`, async () => {
     const out = await send(
-      serializer,
+      transformer,
       {
         later: Promise.resolve('later'),
         refused: Promise.reject({ reason: 'nope' }),
@@ -55,16 +55,16 @@ for (const serializer of [createSerializer(), jsonTransformer]) {
     expect(items).toEqual([1]);
   });
 
-  test(`${serializer.name}: a transport that ends early or dies fails what is open`, async () => {
+  test(`${transformer.name}: a transport that ends early or dies fails what is open`, async () => {
     const pending = () => ({ p: new Promise(() => {}) });
-    const early = await send(serializer, pending(), (frames) =>
+    const early = await send(transformer, pending(), (frames) =>
       Stream.take(frames, 1),
     );
     await expect(early.p).rejects.toThrow(
       new DansonError('Stream interrupted'),
     );
 
-    const died = await send(serializer, pending(), (frames) =>
+    const died = await send(transformer, pending(), (frames) =>
       Stream.concat(Stream.take(frames, 1), Stream.die(new Error('lost'))),
     );
     await expect(died.p).rejects.toMatchObject({
@@ -73,17 +73,17 @@ for (const serializer of [createSerializer(), jsonTransformer]) {
     });
 
     // The transport's own failures reach open values as they are.
-    const failed = await send(serializer, pending(), (frames) =>
+    const failed = await send(transformer, pending(), (frames) =>
       Stream.concat(Stream.take(frames, 1), Stream.fail('offline')),
     );
     await expect(failed.p).rejects.toBe('offline');
   });
 
-  test(`${serializer.name}: without coerceError, a value that can't be written fails the stream`, async () => {
+  test(`${transformer.name}: without coerceError, a value that can't be written fails the stream`, async () => {
     // JSON can't write a bigint, danSON can't write a symbol.
-    const unwritable = serializer === jsonTransformer ? 1n : Symbol('x');
+    const unwritable = transformer === jsonTransformer ? 1n : Symbol('x');
     const out = await send(
-      serializer,
+      transformer,
       { p: Promise.resolve(unwritable), q: new Promise(() => {}) },
       intact,
     );

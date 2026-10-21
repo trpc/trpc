@@ -11,6 +11,6 @@ export const client = createTrpcClient({
   router: routerType<any>(),
   links: [
     retryLink(),
-    httpLink({ url: '/trpc', serializer: createSerializer() }),
+    httpLink({ url: '/trpc', transformer: createSerializer() }),
   ],
 });

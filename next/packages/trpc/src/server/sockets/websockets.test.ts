@@ -193,7 +193,7 @@ test('queries and mutations share one WebSocket', async () => {
   expect(ctx.server.requests).toHaveLength(0);
 });
 
-test('the default serializer and typed errors work as over HTTP', async () => {
+test('the default transformer and typed errors work as over HTTP', async () => {
   await using ctx = await setup();
   const post = await ctx.client.find.query({ id: '1' });
   expect(post.at).toBe(new Date(0).toJSON());

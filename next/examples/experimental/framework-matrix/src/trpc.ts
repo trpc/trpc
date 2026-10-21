@@ -6,6 +6,6 @@ import type { AppRouter } from '../server.ts';
 export const makeClient = (url = '/trpc') =>
   createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url, serializer: createSerializer() })],
+    links: [httpLink({ url, transformer: createSerializer() })],
   });
 export type Client = ReturnType<typeof makeClient>;

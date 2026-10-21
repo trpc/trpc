@@ -1,7 +1,7 @@
 ---
 title: Hydration and offline mutations
 label: Hydration and offline
-description: "`hydrationOptions()` sends the cache to the browser with the client's serializer, and persisted mutations resume with `setMutationDefaults`."
+description: "`hydrationOptions()` sends the cache to the browser with the client's transformer, and persisted mutations resume with `setMutationDefaults`."
 section: Integrations
 parent: integrations/tanstack-query
 order: 11
@@ -9,7 +9,7 @@ order: 11
 
 ## Hydration
 
-`hydrationOptions({ client })` returns `{ dehydrate, hydrate }` options that serialize data with the client's [serializer](../../server/transformers.md), so the types it keeps (with danSON: `Date`, `Map`, `Set`, `bigint`, custom types) survive the trip, and that dehydrate pending queries. Their data is serialized once it settles. Without `client` it uses plain JSON; `serializer` overrides both.
+`hydrationOptions({ client })` returns `{ dehydrate, hydrate }` options that serialize data with the client's [transformer](../../server/transformers.md), so the types it keeps (with danSON: `Date`, `Map`, `Set`, `bigint`, custom types) survive the trip, and that dehydrate pending queries. Their data is serialized once it settles. Without `client` it uses plain JSON; `transformer` overrides both.
 
 ```ts twoslash
 // ---cut-start---

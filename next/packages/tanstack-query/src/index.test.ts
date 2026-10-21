@@ -898,15 +898,15 @@ test('prefetch on the server, hydrate rich types in the browser', async () => {
   expect(db.calls).toEqual(['post.byId:1']);
 });
 
-test("hydration follows the client's serializer (19)", async () => {
+test("hydration follows the client's transformer (19)", async () => {
   await using _app = await createApp();
-  const serializer = createSyncTransformer<Date>(superjson);
+  const transformer = createSyncTransformer<Date>(superjson);
   const client = createTrpcClient({
     router: routerType<typeof appRouter>(),
     links: [
       localLink({
         router: appRouter,
-        serializer,
+        transformer,
         createContext: () => ({ locale: 'en' }),
       }),
     ],
@@ -929,7 +929,7 @@ test("hydration follows the client's serializer (19)", async () => {
   );
   expect(post?.createdAt).toBeInstanceOf(Date);
   expect(
-    hydrationOptions({ client, serializer: createSerializer() }).dehydrate
+    hydrationOptions({ client, transformer: createSerializer() }).dehydrate
       .serializeData!(new Date(0)),
   ).toEqual({ json: { _: '$', type: 'Date', value: new Date(0).toJSON() } });
 });

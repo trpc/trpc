@@ -26,7 +26,7 @@ const client = createTrpcClient({
 - `headers`: headers for every request, or a function of the calls a request carries. A call's `headers` option is merged in.
 - `init`: `fetch` options (below).
 - `fetch`: a `fetch` of your own.
-- `serializer`: must match the handler's, and client types follow it ([Transformers](../../server/transformers.md)).
+- `transformer`: must match the handler's, and client types follow it ([Transformers](../../server/transformers.md)).
 - `maxUrlLength` and `longQuery`: when a query goes with a body (below).
 - `binary`: streamed outputs as binary frames (below).
 - `subscriptions: false`: no SSE, so procedures lose `.subscribe()`, for a link that only carries queries and mutations.
@@ -63,7 +63,7 @@ Each call's response reaches an `onResponse` call option (`{ status, headers }`)
 
 ## Query URLs
 
-Query inputs go in the URL as `?input=<JSON>`: `?input={"post":{"id":"1"}}`, URL-encoded. Object keys are sorted (array order is kept), so equal inputs make the same URL and hit the same HTTP cache entry. A [serializer](../../server/transformers.md) that makes refs adds `&refs=`.
+Query inputs go in the URL as `?input=<JSON>`: `?input={"post":{"id":"1"}}`, URL-encoded. Object keys are sorted (array order is kept), so equal inputs make the same URL and hit the same HTTP cache entry. A [transformer](../../server/transformers.md) that makes refs adds `&refs=`.
 
 A query whose URL would be longer than `maxUrlLength` (2048) is sent with a body. That is `POST` by default; `longQuery: 'query'` uses the HTTP `QUERY` method, a safe method with a body that caches can key on. Every proxy on the way has to allow `QUERY`.
 

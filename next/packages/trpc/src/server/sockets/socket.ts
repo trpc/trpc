@@ -116,7 +116,7 @@ export interface SocketCoreShape extends Pick<
   'run' | 'makeContext' | 'publicError' | 'report'
 > {
   readonly router: AnyRouter;
-  readonly serializer: AnyTransformer;
+  readonly transformer: AnyTransformer;
   deserializeInput(value: unknown): Effect.Effect<unknown, AnyTrpcError>;
   /** The handler's open connections, which `drain()` and `dispose()` close. */
   readonly drains?: SocketDrains | undefined;
@@ -368,11 +368,11 @@ export const connectionReceiver: (
     const { request } = opts;
     let connectionParams = opts.connectionParams;
     let closed = false;
-    /** The client named another serializer, so its calls would decode wrong. */
+    /** The client named another transformer, so its calls would decode wrong. */
     let refused = false;
 
     const wire = (err: AnyTrpcError) =>
-      core.serializer.serialize(toWireError(core.publicError(err)));
+      core.transformer.serialize(toWireError(core.publicError(err)));
     const asTrpcError = (cause: unknown) =>
       isTrpcError(cause) ? cause : unexpectedError(cause);
     const coerceError =
@@ -450,14 +450,14 @@ export const connectionReceiver: (
           if (kind === 'subscription') {
             yield* emitEvents(
               exit.value as Stream.Stream<unknown, AnyTrpcError>,
-              core.serializer,
+              core.transformer,
               coerceError(path, kind),
               (frame) => conn.send(frameMessage(id, frame)),
             );
             if (!parked) yield* conn.send({ id, type: 'done' });
             return;
           }
-          const serialized = core.serializer.serializeDeferred(exit.value, {
+          const serialized = core.transformer.serializeDeferred(exit.value, {
             coerceError: coerceError(path, kind),
           });
           if (!serialized.chunks) {
@@ -527,11 +527,11 @@ export const connectionReceiver: (
             if (message.binary === true) conn.acceptBinary?.();
             refused =
               typeof message.serializer === 'string' &&
-              message.serializer !== core.serializer.name;
+              message.serializer !== core.transformer.name;
             if (!refused) opts.onInit?.(connectionParams);
             return conn.send({
               type: 'init',
-              serializer: core.serializer.name,
+              serializer: core.transformer.name,
             });
           }
           case 'ping':
