@@ -11,7 +11,10 @@ import type {
   FormOfSerializer,
   MaybePromise,
 } from '../../internal/types.ts';
-import { jsonSerializer, type AnySerializer } from '../../transformer/index.ts';
+import {
+  jsonTransformer,
+  type AnySerializer,
+} from '../../transformer/index.ts';
 import {
   callProcedure,
   createResponseHandle,
@@ -40,7 +43,7 @@ export type LocalLinkOptions<TRouter extends AnyRouter> = {
   /**
    * Round-trip inputs and outputs through a serializer, as over the wire.
    * `false` passes values by reference, with native types.
-   * @default jsonSerializer
+   * @default jsonTransformer
    */
   serializer?: AnySerializer | false;
 } & LocalContextOption<inferRouterContext<TRouter>> &
@@ -100,7 +103,9 @@ export function localLink<TRouter extends AnyRouter>(
   opts: LocalLinkOptions<TRouter>,
 ): TrpcLink<any> {
   const serializer =
-    opts.serializer === false ? undefined : (opts.serializer ?? jsonSerializer);
+    opts.serializer === false
+      ? undefined
+      : (opts.serializer ?? jsonTransformer);
   const services = runtimeServices(
     (opts as { runtime?: ManagedRuntime.ManagedRuntime<never, unknown> })
       .runtime,

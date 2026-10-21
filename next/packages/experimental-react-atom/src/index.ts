@@ -42,7 +42,7 @@ import {
 import { createEffectClient, type EffectClient } from '@trpc12/trpc/effect';
 import {
   createSerializer,
-  jsonSerializer,
+  jsonTransformer,
   type AnySerializer,
   type SerializeReturn,
 } from '@trpc12/trpc/transformer';
@@ -155,7 +155,7 @@ export type AtomClientOptions<
   /**
    * How query results are encoded for `Hydration.dehydrate`. Must match the
    * one that hydrates them.
-   * @default the links' serializer, else jsonSerializer
+   * @default the links' serializer, else jsonTransformer
    */
   readonly serializer?: AnySerializer | undefined;
 };
@@ -283,7 +283,7 @@ export function createAtomClient(opts: {
   const serializer =
     opts.serializer ??
     getClientSerializer(createTrpcClient(opts)) ??
-    jsonSerializer;
+    jsonTransformer;
   const resultSchema = AsyncResult.Schema({
     success: serializerSchema(serializer),
   });

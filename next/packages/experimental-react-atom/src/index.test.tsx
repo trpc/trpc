@@ -7,7 +7,7 @@ import { createAtomClient } from '@trpc12/experimental-react-atom';
 import { localLink, routerType } from '@trpc12/trpc/client';
 import {
   createSerializer,
-  jsonSerializer,
+  jsonTransformer,
   type AnySerializer,
 } from '@trpc12/trpc/transformer';
 import { Effect, Option } from 'effect';
@@ -278,7 +278,7 @@ test('without a serializer on its links, query atoms dehydrate as JSON unless on
     return JSON.stringify(entry.value);
   };
   expect(await encoded({})).toContain('"at":"1970-01-01T00:00:00.000Z"');
-  expect(await encoded({ serializer: jsonSerializer })).toContain(
+  expect(await encoded({ serializer: jsonTransformer })).toContain(
     '"at":"1970-01-01T00:00:00.000Z"',
   );
   expect(await encoded({ serializer })).toContain('"type":"Date"');

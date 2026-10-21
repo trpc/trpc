@@ -1,6 +1,6 @@
 import { getClientSerializer } from '@trpc12/trpc/client';
 import {
-  jsonSerializer,
+  jsonTransformer,
   type AnySerializer,
   type SerializeReturn,
 } from '@trpc12/trpc/transformer';
@@ -28,7 +28,7 @@ export interface DehydratedQueries {
 export interface HydrationOptions {
   /**
    * How inputs and data are encoded. Must match on both ends.
-   * @default the client's serializer, else jsonSerializer
+   * @default the client's serializer, else jsonTransformer
    */
   serializer?: AnySerializer | undefined;
 }
@@ -39,7 +39,7 @@ interface HasStore {
 }
 
 const serializerOf = (trpc: HasStore, opts: HydrationOptions) =>
-  opts.serializer ?? getClientSerializer(trpc.client) ?? jsonSerializer;
+  opts.serializer ?? getClientSerializer(trpc.client) ?? jsonTransformer;
 
 /**
  * Encodes every query with data, with the client's serializer, so `Date`s

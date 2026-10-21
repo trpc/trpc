@@ -8,7 +8,7 @@ import {
 } from 'effect/http';
 import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
 import { toHttpEffect } from '@trpc12/trpc/http';
-import { jsonSerializer } from '@trpc12/trpc/transformer';
+import { jsonTransformer } from '@trpc12/trpc/transformer';
 import { createFetchHandler, error, initTrpc, lazy } from '@trpc12/trpc/server';
 import { expect, test, vi } from 'vite-plus/test';
 import { z } from 'zod';
@@ -141,7 +141,7 @@ test('a serializer that throws a non-Error rejects the input as invalid', async 
     router,
     createContext,
     serializer: {
-      ...jsonSerializer,
+      ...jsonTransformer,
       deserialize: () => {
         throw 'unreadable';
       },

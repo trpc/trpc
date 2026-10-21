@@ -2,7 +2,7 @@ import { Effect, Ref, Stream } from 'effect';
 import { Persistence } from 'effect/persistence';
 import {
   createSerializer,
-  jsonSerializer,
+  jsonTransformer,
   type AnySerializer,
   type Frame,
 } from '@trpc12/trpc/transformer';
@@ -70,7 +70,7 @@ const twoInstances = <A>(
   );
 
 for (const [name, serializer] of [
-  ['plain JSON', jsonSerializer],
+  ['plain JSON', jsonTransformer],
   ['danSON', createSerializer()],
 ] as [string, AnySerializer][]) {
   test(`${name}: a call cut after 2 frames resumes on another instance`, async () => {
@@ -102,10 +102,10 @@ for (const [name, serializer] of [
 test('the output keeps streaming into the log after every reader leaves', async () => {
   const value = await twoInstances((a, b) =>
     Effect.gen(function* () {
-      yield* a.start('call-2', jsonSerializer, feed);
+      yield* a.start('call-2', jsonTransformer, feed);
       yield* Stream.runDrain(a.read('call-2').pipe(Stream.take(1)));
       yield* Effect.promise(() => sleep(150));
-      return yield* jsonSerializer.deserializeStream<any, never>(
+      return yield* jsonTransformer.deserializeStream<any, never>(
         b.read('call-2'),
       );
     }),
@@ -117,8 +117,8 @@ test('a second start for the same key runs nothing', async () => {
   let runs = 0;
   const [first, second] = await twoInstances((a, b) =>
     Effect.all([
-      a.start('call-3', jsonSerializer, () => (runs++, feed())),
-      b.start('call-3', jsonSerializer, () => (runs++, feed())),
+      a.start('call-3', jsonTransformer, () => (runs++, feed())),
+      b.start('call-3', jsonTransformer, () => (runs++, feed())),
     ]),
   );
   expect([first, second, runs]).toEqual([true, false, 1]);

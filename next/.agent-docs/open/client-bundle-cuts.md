@@ -64,7 +64,7 @@ links:
 
 ## Why it matters
 
-The minimal client (`createTrpcClient` + `httpLink`, JSON) is 39.8 kB gzipped and the full one (`retryLink`, SSE, danSON) 44.1 kB, against aims of 18 and 25 kB; v11's like-for-like client is 9.4 kB and oRPC's 9.6 kB. The research found no accidental imports: the bytes are `effect/http`, every `httpLink` feature switched by a runtime flag, the server's encoder inside `jsonSerializer`, and `subscribe()`'s iterator in the core. Each cut is a draft PR; four change public options, which is cheapest before the first publish. Sizes don't block a publish ([orpc-v2-parity](../decisions/orpc-v2-parity.md), "c)").
+The minimal client (`createTrpcClient` + `httpLink`, JSON) is 39.8 kB gzipped and the full one (`retryLink`, SSE, danSON) 44.1 kB, against aims of 18 and 25 kB; v11's like-for-like client is 9.4 kB and oRPC's 9.6 kB. The research found no accidental imports: the bytes are `effect/http`, every `httpLink` feature switched by a runtime flag, the server's encoder inside `jsonTransformer`, and `subscribe()`'s iterator in the core. Each cut is a draft PR; four change public options, which is cheapest before the first publish. Sizes don't block a publish ([orpc-v2-parity](../decisions/orpc-v2-parity.md), "c)").
 
 ## Options
 

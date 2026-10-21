@@ -22,7 +22,7 @@ import {
 import {
   createSerializer,
   createSyncSerializer,
-  jsonSerializer,
+  jsonTransformer,
   type JsonOf,
 } from '@trpc12/trpc/transformer';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
@@ -89,7 +89,7 @@ test('JsonOf is the JSON round trip of a type', () => {
   >();
 });
 
-test('jsonSerializer writes what JSON.stringify writes, and skips the copy when a value is JSON already', () => {
+test('jsonTransformer writes what JSON.stringify writes, and skips the copy when a value is JSON already', () => {
   const roundtrip = (value: unknown) =>
     JSON.parse(JSON.stringify(value) ?? 'null') as unknown;
   const pure: Record<string, unknown> = {
@@ -112,19 +112,19 @@ test('jsonSerializer writes what JSON.stringify writes, and skips the copy when 
     { map: new Map([['a', 1]]), set: new Set([1]), date: new Date(Number.NaN) },
   ];
   for (const value of values) {
-    expect(jsonSerializer.serialize(value).json).toEqual(roundtrip(value));
+    expect(jsonTransformer.serialize(value).json).toEqual(roundtrip(value));
   }
-  expect(jsonSerializer.serialize(pure).json).toBe(pure);
+  expect(jsonTransformer.serialize(pure).json).toBe(pure);
   const dated: { at: Date } = { at };
-  expect(jsonSerializer.serialize(dated).json).not.toBe(dated);
-  expect(jsonSerializer.serialize(undefined)).toEqual({});
+  expect(jsonTransformer.serialize(dated).json).not.toBe(dated);
+  expect(jsonTransformer.serialize(undefined)).toEqual({});
 
   const loop: Record<string, unknown> = { a: 1 };
   loop['self'] = loop;
-  expect(() => jsonSerializer.serialize(loop)).toThrow(/circular/);
-  expect(() => jsonSerializer.serialize({ n: 1n })).toThrow(/BigInt/);
+  expect(() => jsonTransformer.serialize(loop)).toThrow(/circular/);
+  expect(() => jsonTransformer.serialize({ n: 1n })).toThrow(/BigInt/);
   expect(() =>
-    jsonSerializer.serialize({ files: new Map([['f', new Blob(['x'])]]) }),
+    jsonTransformer.serialize({ files: new Map([['f', new Blob(['x'])]]) }),
   ).toThrow(/streaming serializer/);
 });
 
@@ -526,7 +526,7 @@ test("returning a deferred AsyncIterable ends a read that's still waiting for it
   const silent: AsyncIterable<never> = {
     [Symbol.asyncIterator]: () => ({ next: () => new Promise(() => {}) }),
   };
-  for (const serializer of [createSerializer(), jsonSerializer]) {
+  for (const serializer of [createSerializer(), jsonTransformer]) {
     const serialized = serializer.serializeDeferred({ items: silent });
     const value = await Effect.runPromise(
       serializer.deserializeStream<{ items: AsyncIterable<unknown> }, never>(

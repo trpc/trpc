@@ -165,7 +165,7 @@ export interface SerializerOption {
    * The wire format. Links must use the same one; a link with another fails
    * with an error naming both (`trpc-serializer` header). Client types
    * follow the link's serializer.
-   * @default jsonSerializer
+   * @default jsonTransformer
    */
   serializer?: AnySerializer | undefined;
 }

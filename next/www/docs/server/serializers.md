@@ -10,7 +10,7 @@ The serializer turns inputs and outputs into JSON on the wire. The default is pl
 
 | Serializer                        | Keeps                                                        |
 | --------------------------------- | ------------------------------------------------------------ |
-| `jsonSerializer`, the default     | plain JSON                                                   |
+| `jsonTransformer`, the default    | plain JSON                                                   |
 | `createSerializer()`, danSON      | `Date`, `Map`, `Set`, `bigint`, `undefined`, `URL`, files, … |
 | `createSyncSerializer(superjson)` | what the transformer knows (superjson, devalue, your own)    |
 

@@ -267,7 +267,7 @@ const clientSerializers = new WeakMap<object, AnySerializer>();
  *
  * @example
  * ```ts
- * const serializer = getClientSerializer(client) ?? jsonSerializer;
+ * const serializer = getClientSerializer(client) ?? jsonTransformer;
  * ```
  * @since 0.1.0
  * @stability stable

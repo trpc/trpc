@@ -1,7 +1,7 @@
 /** Bytes of one streamed output framed as JSONL and as SSE: `node sse-deferred/measure.ts [items]`. */
 import { Console, Effect, Stream } from 'effect';
 import { Command } from 'effect/cli';
-import { createSerializer, jsonSerializer } from '@trpc12/trpc/transformer';
+import { createSerializer, jsonTransformer } from '@trpc12/trpc/transformer';
 import { intArg, runScript } from '../kit.ts';
 import { framesOf, toJsonl, toSse } from './sse.ts';
 
@@ -25,7 +25,7 @@ const measure = Command.make(
   ({ items }) =>
     Effect.gen(function* () {
       for (const [name, serializer] of [
-        ['json', jsonSerializer],
+        ['json', jsonTransformer],
         ['danson', createSerializer()],
       ] as const) {
         const lines = () =>

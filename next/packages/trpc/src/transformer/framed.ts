@@ -343,13 +343,13 @@ export function createSyncSerializer<TKeeps = never>(
  *
  * @example
  * ```ts
- * createFetchHandler({ router }); // jsonSerializer
- * httpLink({ url }); // jsonSerializer
+ * createFetchHandler({ router }); // jsonTransformer
+ * httpLink({ url }); // jsonTransformer
  * ```
  * @since 0.1.0
  * @stability stable
  */
-export const jsonSerializer: Serializer<JsonForm> =
+export const jsonTransformer: Serializer<JsonForm> =
   /* @__PURE__ */ framedSerializer('json', 'none', {
     serialize: (value) => {
       const text = JSON.stringify(value);

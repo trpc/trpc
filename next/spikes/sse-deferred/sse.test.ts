@@ -5,7 +5,7 @@ import { EventSource } from 'undici';
 import { Effect, Queue, Stream } from 'effect';
 import {
   createSerializer,
-  jsonSerializer,
+  jsonTransformer,
   type AnySerializer,
 } from '@trpc12/trpc/transformer';
 import { expect, test } from 'vite-plus/test';
@@ -80,14 +80,14 @@ async function settle(value: unknown): Promise<unknown> {
 }
 
 const lines = (
-  serializer: AnySerializer = jsonSerializer,
+  serializer: AnySerializer = jsonTransformer,
   value: unknown = post(),
 ) => Stream.map(framesOf(serializer, value), (frame) => JSON.stringify(frame));
 
 const bytes = (text: Stream.Stream<string>) => Stream.encodeText(text);
 
 for (const [name, serializer] of [
-  ['plain JSON', jsonSerializer],
+  ['plain JSON', jsonTransformer],
   ['danSON', createSerializer()],
 ] as const) {
   test(`${name}: nested deferred values round-trip over SSE`, async () => {
@@ -118,7 +118,7 @@ test('devalue-async lines carry over SSE the same way', async () => {
 test('a dropped connection rejects the deferred values still open', async () => {
   const cut = parseSse(bytes(toSse(lines()))).pipe(Stream.take(3));
   const value = await Effect.runPromise(
-    fromSse<any, never>(jsonSerializer, cut),
+    fromSse<any, never>(jsonTransformer, cut),
   );
   await expect(settle(value)).rejects.toThrow('the SSE stream ended early');
 });
@@ -153,7 +153,7 @@ test('with a replay, EventSource resumes nested deferred values from Last-Event-
   await Effect.runPromise(
     Effect.scoped(
       Effect.gen(function* () {
-        const replay = yield* createReplay(jsonSerializer, post());
+        const replay = yield* createReplay(jsonTransformer, post());
         const { url, seen, server } = yield* Effect.promise(() =>
           replayServer(replay, 3),
         );
@@ -167,7 +167,7 @@ test('with a replay, EventSource resumes nested deferred values from Last-Event-
             data: event.data as string,
           });
         };
-        const value = yield* fromSse(jsonSerializer, Stream.fromQueue(queue));
+        const value = yield* fromSse(jsonTransformer, Stream.fromQueue(queue));
         expect(yield* Effect.promise(() => settle(value))).toEqual(expected);
         // The reconnect names the last event that arrived before the drop.
         expect(seen).toEqual([undefined, expect.stringMatching(/^[0-2]$/)]);
@@ -190,8 +190,8 @@ test('SSE framing costs more bytes than JSONL', async () => {
         (n, chunk) => n + chunk.length,
       ),
     );
-  const jsonl = await size(toJsonl(lines(jsonSerializer, many())));
-  const sse = await size(toSse(lines(jsonSerializer, many())));
+  const jsonl = await size(toJsonl(lines(jsonTransformer, many())));
+  const sse = await size(toSse(lines(jsonTransformer, many())));
   expect(sse / jsonl).toBeGreaterThan(1.3);
   expect(sse / jsonl).toBeLessThan(2);
 });

@@ -14,7 +14,7 @@ import {
   experimental_Publisher,
   type AnyRouter,
 } from '@trpc12/trpc/server';
-import { jsonSerializer } from '@trpc12/trpc/transformer';
+import { jsonTransformer } from '@trpc12/trpc/transformer';
 import { expect, test, vi } from 'vite-plus/test';
 import { z } from 'zod';
 
@@ -123,7 +123,7 @@ test('calls work, and still see the connection after the object wakes', async ()
     type: 'request',
     method: 'query',
     path: 'double',
-    input: jsonSerializer.serialize({ n: 21 }),
+    input: jsonTransformer.serialize({ n: 21 }),
   });
   await vi.waitFor(() =>
     expect(socket.sent).toContainEqual({
@@ -418,7 +418,7 @@ const create = (
     type: 'request',
     method: 'mutation',
     path: 'create',
-    input: jsonSerializer.serialize({ title }),
+    input: jsonTransformer.serialize({ title }),
   });
 
 test('publisher subscriptions hibernate: kept on the socket, sent to after a wake', async () => {
@@ -687,7 +687,7 @@ test('a signed token picks the channel a hibernated subscription gets events for
       type: 'request',
       method: 'mutation',
       path: 'send',
-      input: jsonSerializer.serialize({ to, text }),
+      input: jsonTransformer.serialize({ to, text }),
     });
   send(2, 'ada', 'hi ada');
   send(3, 'bob', 'hi bob');
@@ -732,14 +732,14 @@ test('nothing is sent to a socket that is closing: not results, not events', asy
     type: 'request',
     method: 'mutation',
     path: 'send',
-    input: jsonSerializer.serialize({ to: 'bob', text: 'unsent' }),
+    input: jsonTransformer.serialize({ to: 'bob', text: 'unsent' }),
   });
   say(sockets, bob, {
     id: 1,
     type: 'request',
     method: 'mutation',
     path: 'send',
-    input: jsonSerializer.serialize({ to: 'ada', text: 'unseen' }),
+    input: jsonTransformer.serialize({ to: 'ada', text: 'unseen' }),
   });
   await vi.waitFor(() =>
     expect(bob.sent).toContainEqual(

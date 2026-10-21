@@ -12,7 +12,10 @@ import {
 } from '../../internal/error.ts';
 import { timerOption } from '../../internal/duration.ts';
 import type { ProcedureType } from '../../internal/types.ts';
-import { jsonSerializer, type AnySerializer } from '../../transformer/index.ts';
+import {
+  jsonTransformer,
+  type AnySerializer,
+} from '../../transformer/index.ts';
 import { unexpectedError } from '../execution/index.ts';
 import type { AnyRouter } from '../procedures/index.ts';
 import type { HandlerCore } from './core.ts';
@@ -53,7 +56,7 @@ export const makeHttpHandler = (
   return {
     router: opts.router,
     core,
-    serializer: opts.serializer ?? jsonSerializer,
+    serializer: opts.serializer ?? jsonTransformer,
     endpoint,
     under: endpoint === '/' ? '/' : `${endpoint}/`,
     maxBodySize: opts.maxBodySize ?? 1_048_576,

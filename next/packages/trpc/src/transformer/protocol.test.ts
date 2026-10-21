@@ -10,7 +10,7 @@ import {
 import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
 import {
   createSerializer,
-  jsonSerializer,
+  jsonTransformer,
   type CustomType,
 } from '@trpc12/trpc/transformer';
 import { createTestServer } from '../fixtures/server.ts';
@@ -344,7 +344,7 @@ test('?input= reads as URLSearchParams does: the first one, `+` as space, encode
 
 test('serialized output is plain objects, with `__proto__` kept as an own key', () => {
   const value = JSON.parse('{"post":{"__proto__":{"x":1},"at":"y"}}');
-  for (const serializer of [jsonSerializer, danson]) {
+  for (const serializer of [jsonTransformer, danson]) {
     const serialized = serializer.serialize(value);
     const json = serialized.json as { post: Record<string, unknown> };
     expect(Object.getPrototypeOf(json)).toBe(Object.prototype);

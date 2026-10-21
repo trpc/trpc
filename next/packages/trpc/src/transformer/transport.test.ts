@@ -2,7 +2,7 @@ import { Effect, Stream } from 'effect';
 import {
   createSerializer,
   DansonError,
-  jsonSerializer,
+  jsonTransformer,
   type Frame,
   type Serializer,
 } from '@trpc12/trpc/transformer';
@@ -31,7 +31,7 @@ const send = (
 };
 const intact = <T>(frames: T) => frames;
 
-for (const serializer of [createSerializer(), jsonSerializer]) {
+for (const serializer of [createSerializer(), jsonTransformer]) {
   test(`${serializer.name}: deferred values travel over a custom transport`, async () => {
     const out = await send(
       serializer,
@@ -81,7 +81,7 @@ for (const serializer of [createSerializer(), jsonSerializer]) {
 
   test(`${serializer.name}: without coerceError, a value that can't be written fails the stream`, async () => {
     // JSON can't write a bigint, danSON can't write a symbol.
-    const unwritable = serializer === jsonSerializer ? 1n : Symbol('x');
+    const unwritable = serializer === jsonTransformer ? 1n : Symbol('x');
     const out = await send(
       serializer,
       { p: Promise.resolve(unwritable), q: new Promise(() => {}) },

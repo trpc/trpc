@@ -26,7 +26,7 @@ for (const [name, cut] of Object.entries(cuts)) {
 const stacks: ReadonlyArray<readonly [string, readonly string[]]> = [
   ['queries and mutations only (sse + batch)', ['sse', 'batch']],
   ['+ no streamed outputs or frames', ['sse', 'batch', 'frames', 'streamed']],
-  ['+ plain jsonSerializer', ['sse', 'batch', 'frames', 'streamed', 'json']],
+  ['+ plain jsonTransformer', ['sse', 'batch', 'frames', 'streamed', 'json']],
   [
     '+ hand-rolled iterable',
     ['sse', 'batch', 'frames', 'streamed', 'json', 'iterable'],
@@ -36,7 +36,7 @@ const stacks: ReadonlyArray<readonly [string, readonly string[]]> = [
     ['sse', 'batch', 'frames', 'streamed', 'json', 'iterable', 'fetch'],
   ],
   ['raw fetch, every feature kept', ['fetch']],
-  ['raw fetch + plain jsonSerializer, features kept', ['fetch', 'json']],
+  ['raw fetch + plain jsonTransformer, features kept', ['fetch', 'json']],
 ];
 console.log('\n| stacked | gzip | saves |');
 console.log('| --- | ---: | ---: |');

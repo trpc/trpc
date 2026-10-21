@@ -2,7 +2,7 @@ import { Stream, type Duration } from 'effect';
 import { TrpcError } from '../../../internal/error.ts';
 import type { FormOfOptions, MaybePromise } from '../../../internal/types.ts';
 import {
-  jsonSerializer,
+  jsonTransformer,
   type AnySerializer,
 } from '../../../transformer/index.ts';
 import {
@@ -29,7 +29,7 @@ export interface HttpLinkOptions<
   /**
    * Must match the handler's; a response from a handler with another one
    * fails with `UNSUPPORTED_PROTOCOL`. Client types follow it.
-   * @default jsonSerializer
+   * @default jsonTransformer
    */
   serializer?: TSerializer | undefined;
   /** Extra headers, merged with each call's `context.headers`. */
@@ -149,7 +149,7 @@ export function httpLink<TOpts extends HttpLinkOptions>(
   opts: TOpts,
 ): TrpcLink<HttpLinkDecl<TOpts>>;
 export function httpLink(opts: HttpLinkOptions): TrpcLink<any> {
-  const serializer = opts.serializer ?? jsonSerializer;
+  const serializer = opts.serializer ?? jsonTransformer;
   const transport = makeTransport(opts, serializer);
   const maxItems =
     opts.batch === true ? 10 : opts.batch ? (opts.batch.maxItems ?? 10) : 0;

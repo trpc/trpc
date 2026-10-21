@@ -27,7 +27,10 @@ import {
 } from '../../internal/protocol.ts';
 import { decodeLines, encodeLine } from '../../internal/lines.ts';
 import type { FormOfOptions, MaybePromise } from '../../internal/types.ts';
-import { jsonSerializer, type AnySerializer } from '../../transformer/index.ts';
+import {
+  jsonTransformer,
+  type AnySerializer,
+} from '../../transformer/index.ts';
 import type { MessagePortLike } from '../../server/sockets/index.ts';
 import {
   withSerializer,
@@ -122,7 +125,7 @@ export interface SocketLinkOptions {
   /**
    * Must match the server's; on another one, calls fail with
    * `UNSUPPORTED_PROTOCOL`. Client types follow it.
-   * @default jsonSerializer
+   * @default jsonTransformer
    */
   serializer?: AnySerializer;
   /**
@@ -199,7 +202,7 @@ function makeSocketLink(
   opts: SocketLinkOptions,
   scope: Scope.Closeable = Scope.makeUnsafe(),
 ): SocketLink<any> {
-  const serializer = opts.serializer ?? jsonSerializer;
+  const serializer = opts.serializer ?? jsonTransformer;
   /** Every call's inbox, so `close()` can fail them wherever they are. */
   const live = new Set<Queue.Queue<Signal>>();
   let current: Connection | undefined;

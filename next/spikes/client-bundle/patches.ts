@@ -61,11 +61,11 @@ export const cuts: Record<
     ],
   },
   json: {
-    what: 'jsonSerializer without deferred values (serializeDeferred / deserializeStream)',
+    what: 'jsonTransformer without deferred values (serializeDeferred / deserializeStream)',
     patches: [
       [
         'transformer/framed.ts',
-        `export const jsonSerializer: Serializer<JsonForm> = framedSerializer(
+        `export const jsonTransformer: Serializer<JsonForm> = framedSerializer(
   'json',
   'none',
   {
@@ -76,7 +76,7 @@ export const cuts: Record<
     deserialize: (value) => value,
   },
 );`,
-        `export const jsonSerializer: Serializer<JsonForm> = {
+        `export const jsonTransformer: Serializer<JsonForm> = {
   name: 'json',
   kind: 'none',
   serialize: (value) => {

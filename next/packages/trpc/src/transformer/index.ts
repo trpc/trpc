@@ -1,5 +1,5 @@
 /**
- * Wire serializers. The default is `jsonSerializer`, plain JSON.
+ * Wire serializers. The default is `jsonTransformer`, plain JSON.
  * `createSerializer()` is a port of [danSON](https://github.com/KATT/danson),
  * and `createSyncSerializer` wraps superjson-style transformers.
  *
@@ -54,7 +54,7 @@ export type {
 } from '../internal/types.ts';
 export {
   createSyncSerializer,
-  jsonSerializer,
+  jsonTransformer,
   type SyncSerializerOptions,
   type SyncTransformer,
 } from './framed.ts';
