@@ -6,7 +6,7 @@
 
 `pnpm bench <runtime|typecheck|bundle>` (`next/tooling/bench/bench.ts`). It mirrors [middleapi/orpc-benchmarks](https://github.com/middleapi/orpc-benchmarks), which oRPC's table is built from, so the oRPC and v11 columns can be checked against theirs:
 
-- **runtime:** each server in its own Node process (`tooling/bench/servers/*.ts`), the same 6-procedure router with a pass-through Standard Schema, each returning `{ name, date: new Date(), input }`. Native types are on everywhere: danSON for v12, superjson for v11, oRPC's built-in serializer. autocannon sends the `GET` query each framework's own client would send for `nested.procedure_1('hello world')`: 2 s warm-up, then 10 s on 10 connections. v12 serves with `serve(handler)` on `NodeHttpServer`, v11 with its standalone adapter, oRPC with `RPCHandler` from `@orpc/server/node`.
+- **runtime:** each server in its own Node process (`tooling/bench/servers/*.ts`), the same 6-procedure router with a pass-through Standard Schema, each returning `{ name, date: new Date(), input }`. Native types are on everywhere: progressive JSON for v12, superjson for v11, oRPC's built-in serializer. autocannon sends the `GET` query each framework's own client would send for `nested.procedure_1('hello world')`: 2 s warm-up, then 10 s on 10 connections. v12 serves with `serve(handler)` on `NodeHttpServer`, v11 with its standalone adapter, oRPC with `RPCHandler` from `@orpc/server/node`.
 - **typecheck:** a generated project with 3,000 procedures in 1,501 routers (500 files, each three levels deep), every procedure called through the typed client with its result annotated. `tsc --extendedDiagnostics --singleThreaded`, `skipLibCheck`, median of 3. v12 is checked from its built `.d.ts` (`pnpm build` first), as v11 and oRPC are from theirs.
 - **bundle:** a minimal client, a Node server and a fetch handler per framework, bundled with rolldown (tree-shaken, minified, `NODE_ENV=production`), then gzip -9. The v11 client is `httpLink` + `httpSubscriptionLink` + `splitLink` + superjson, as oRPC's measurement has it.
 
@@ -48,8 +48,8 @@ Bundle size, minified / gzip (`pnpm bench bundle`):
 - **Throughput:** v12 went from 14.5k to 46.6k req/s: 3.5× v11, 78% of oRPC. What changed:
   - HTTP calls run in the request's fiber, synchronously until a step is async; one context change per call.
   - Spans only with a tracer installed (opt-in, human): the call's span was about 1.2 µs, 41.6k → 46.6k.
-  - `?input=` read without `URLSearchParams`; danSON sorts serializers once, plain values skip class checks, `Date` via `toISOString`.
-  - **The floor is Effect's `HttpServer`:** a bare `HttpRouter` route returning the same JSON does about 69k req/s here. Before spans went opt-in, v12 added about 9 µs per request on top; in-process about 6 µs: the call's span about 1.2 µs, the procedure call about 1.2 µs, `?input=` about 0.7 µs, danSON about 0.5 µs, the rest spread under 0.3 µs each.
+  - `?input=` read without `URLSearchParams`; progressive JSON sorts its types once, plain values skip class checks, `Date` via `toISOString`.
+  - **The floor is Effect's `HttpServer`:** a bare `HttpRouter` route returning the same JSON does about 69k req/s here. Before spans went opt-in, v12 added about 9 µs per request on top; in-process about 6 µs: the call's span about 1.2 µs, the procedure call about 1.2 µs, `?input=` about 0.7 µs, progressive JSON about 0.5 µs, the rest spread under 0.3 µs each.
   - oRPC at 59.9k is about 17 µs per request in total, v12 now about 21 µs, so matching it would leave v12 about 3 µs over Effect's floor.
 - **Type-checking:** v12 now checks faster than v11 (0.83s vs 0.92s) with 10% more instantiations; oRPC is 16% faster. Since then, features have taken v12 to 1,445,822 instantiations and level with v11 (2026-10-19: 1.23s vs 1.19s, 342 MB); bisected in [`type-check-shapes.md`](./type-check-shapes.md), with the cost of each procedure shape. On TypeScript 7.1.0-beta (2026-10-20, what the bench runs on now) the counts are the same and memory and time drop: v12 0.94s / 1.20s / 246 MB / 1,490,786, v11 0.85s / 1.01s / 195 MB, oRPC 0.63s / 0.75s / 174 MB, against v12's 1.13s / 1.38s / 342 MB on 7.0.2 in the same session. What changed:
   - Standard Schema types read from `~standard.types` instead of inferred; `InputDef` spelled out; resolver checks skip moot branches.
@@ -62,12 +62,15 @@ Bundle size, minified / gzip (`pnpm bench bundle`):
 
 ## Budgets
 
-2026-10-17. The human, on working on bundle size before v1: "A sure, I only care about tree shakability when using core features" ([`../decisions/orpc-v2-parity.md`](../decisions/orpc-v2-parity.md)). `pnpm bench budget` bundles two clients the same way as `bundle` and prints their sizes against the targets; CI's `check` job runs it. Since 2026-10-19 there are no ceilings, so it never fails (the human: "c)", [`../decisions/orpc-v2-parity.md`](../decisions/orpc-v2-parity.md)).
+2026-10-17. The human, on working on bundle size before v1: "A sure, I only care about tree shakability when using core features" ([`../decisions/orpc-v2-parity.md`](../decisions/orpc-v2-parity.md)). `pnpm bench budget` bundles three clients the same way as `bundle` and prints their sizes against the targets; CI's `check` job runs it. Since 2026-10-19 there are no ceilings, so it never fails (the human: "c)", [`../decisions/orpc-v2-parity.md`](../decisions/orpc-v2-parity.md)).
 
-| client                                      |    gzip | target |
-| ------------------------------------------- | ------: | -----: |
-| minimal JSON (`httpLink`)                   | 39.6 kB |  18 kB |
-| full (`retryLink`, `httpLink`, danSON, SSE) | 43.7 kB |  25 kB |
+| client                              |    gzip | target |
+| ----------------------------------- | ------: | -----: |
+| minimal JSON (`httpLink`)           | 40.0 kB |  18 kB |
+| full (`retryLink`, `httpLink`, SSE) | 40.2 kB |  25 kB |
+| full with progressive JSON          | 44.3 kB |  25 kB |
+
+2026-10-21: the full client is measured without and with progressive JSON, which is opt-in (the human: "3. With and without", [`../decisions/orpc-v2-parity.md`](../decisions/orpc-v2-parity.md)). Progressive JSON adds 4.1 kB. The history below, before that day, is of the full client with it.
 
 The raises below are from when CI failed above a ceiling, today's size plus 0.1 kB; each records what grew the clients.
 
@@ -91,5 +94,5 @@ The raises below are from when CI failed above a ceiling, today's size plus 0.1 
   - The same through a one-element `Stream` (`Stream.fromEffect`, `Stream.runHead`), which is what every link returns: 10.7 kB.
   - Plus a `Queue`: 11.7 kB. Plus the client span: 14.1 kB. `Stream.callback` and `Stream.toAsyncIterable`: 16.4 kB.
   - So the first 10 kB target left no room for tRPC code while links return `Stream`s. The human kept links on Effect and raised it to 18 kB ("B").
-- **What's over the floor** in the minimal client, by rendered size before minifying: `Channel` (31 kB vs 4 kB in the floor), `Queue` (24 kB, from `Stream.callback` and batching), `Stream` operators (20 kB vs 3 kB), `Duration` (14 kB, kept by Effect's internals: swapping `Effect.sleep` for a `setTimeout` didn't drop it), then tRPC's `httpLink` (15 kB), streaming deserializers (`serializer/danson/stream.ts` and `framed.ts`, 10 kB) and errors (5 kB).
+- **What's over the floor** in the minimal client, by rendered size before minifying: `Channel` (31 kB vs 4 kB in the floor), `Queue` (24 kB, from `Stream.callback` and batching), `Stream` operators (20 kB vs 3 kB), `Duration` (14 kB, kept by Effect's internals: swapping `Effect.sleep` for a `setTimeout` didn't drop it), then tRPC's `httpLink` (15 kB), streaming deserializers (`transformer/progressive-json/stream.ts` and `framed.ts`, 10 kB) and errors (5 kB).
 - **Not cuts:** `Queue` stays while `Stream.callback` does; binary frames and SSE sit behind runtime options of `httpLink`, so they'd need their own imports (an API change) to shake out.

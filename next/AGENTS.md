@@ -44,7 +44,7 @@ pnpm example
 - Cloud Agents' `core.hooksPath` is Cursor's, so `pnpm install` skips `.vite-hooks` and `pre-commit` doesn't run: run `pnpm fix` before committing.
 - `pnpm example` needs Redis and Postgres for `examples/realtime`, at CI's `REDIS_URL` and `DATABASE_URL` (in `../.github/workflows/next.yml`).
 
-`pnpm bench budget` measures only the tree-shaken standard client (`httpLink`, plus `retryLink` and progressive JSON); opt-in links and utilities such as `dedupeLink` only have to shake out of it, so don't bend their design for bundle size ([`decisions/orpc-v2-parity.md`](./.agent-docs/decisions/orpc-v2-parity.md)).
+`pnpm bench budget` measures only the tree-shaken standard client (`httpLink`, plus `retryLink`, with and without progressive JSON); opt-in links and utilities such as `dedupeLink` only have to shake out of it, so don't bend their design for bundle size ([`decisions/orpc-v2-parity.md`](./.agent-docs/decisions/orpc-v2-parity.md)).
 
 ## Landing on `v12`
 

@@ -501,6 +501,12 @@ const budgets = [
 export const client = createTrpcClient({ router: routerType<any>(), links: [httpLink({ url: '/trpc' })] });`,
   },
   {
+    name: 'full client (retry, SSE)',
+    target: 25_000,
+    code: `import { createTrpcClient, httpLink, retryLink, routerType } from '@trpc12/trpc/client';
+export const client = createTrpcClient({ router: routerType<any>(), links: [retryLink(), httpLink({ url: '/trpc' })] });`,
+  },
+  {
     name: 'full client (retry, SSE, progressive JSON)',
     target: 25_000,
     code: `import { createTrpcClient, httpLink, retryLink, routerType } from '@trpc12/trpc/client';
