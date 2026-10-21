@@ -5,7 +5,7 @@ import {
   useMutation,
   useQuery,
 } from '@tanstack/react-query';
-import { httpLink, routerType } from '@trpc12/trpc/client';
+import { httpLink } from '@trpc12/trpc/client';
 import { createFetchHandler } from '@trpc12/trpc/server';
 import { act, createElement as h, type ReactNode } from 'react';
 import { createRoot } from 'react-dom/client';
@@ -22,7 +22,11 @@ import {
   useAuthBoundary,
   type AppRouter,
 } from './app.ts';
-import { createErrorBoundary, createRegistryQueryUtils } from './boundaries.ts';
+import {
+  createErrorBoundary,
+  createRegistryQueryUtils,
+  errorsOf,
+} from './boundaries.ts';
 
 (
   globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }
@@ -58,7 +62,7 @@ const trpc = createRegistryQueryUtils<AppRouter>(client);
 type Tags<T> = T extends { readonly _tag: infer K } ? K : never;
 type Framework = TrpcFailure['_tag'];
 
-const router = routerType<AppRouter>();
+const errors = errorsOf<AppRouter>();
 
 test("types: a posts call fails with the middleware's errors, the posts module's and tRPC's", () => {
   function PostTitle() {
@@ -89,7 +93,7 @@ test('types: under Auth, Offline and Root, only the posts module and BadResponse
 test("types: a fallback's error is what its boundary claims", () => {
   createErrorBoundary({
     name: 'Auth',
-    router,
+    errors,
     claims: ['Unauthorized', 'Forbidden'],
     fallback: (props) => {
       expectTypeOf(props.error).toEqualTypeOf<
@@ -100,7 +104,7 @@ test("types: a fallback's error is what its boundary claims", () => {
   });
   createErrorBoundary({
     name: 'Root',
-    router,
+    errors,
     claims: [],
     unexpected: true,
     fallback: (props) => {
@@ -115,14 +119,14 @@ test("types: a fallback's error is what its boundary claims", () => {
 test('types: a claim no procedure can fail with is a type error', () => {
   createErrorBoundary({
     name: 'Auth',
-    router,
+    errors,
     // @ts-expect-error 'Unauthorised' is no tag of the router
     claims: ['Unauthorised'],
     fallback: () => null,
   });
   createErrorBoundary({
     name: 'Posts',
-    router: routerType<AppRouter['posts']>(),
+    errors: errorsOf<AppRouter['posts']>(),
     // @ts-expect-error a module's boundary only claims that module's tags
     claims: ['CardDeclined'],
     fallback: () => null,
@@ -137,7 +141,7 @@ test("types: a posts procedure can't return billing's error", () => {
 test('types: claiming a tag a call cannot fail with leaves its union as it is', () => {
   const [, useBilling] = createErrorBoundary({
     name: 'Billing',
-    router,
+    errors,
     claims: ['CardDeclined'],
     fallback: () => null,
   });

@@ -7,6 +7,10 @@
  * of the registry's strings in them. The control imports the registry at
  * runtime, as a client that rebuilt errors from it would; `today` is v12's
  * client and `matchError()` by code.
+ *
+ * The boundary entries are the same check for error boundaries typed with
+ * `errorsOf<AppRouter>()`, and print the guard each ships: the internal
+ * boundary's `claims` test and the claims it compares against.
  */
 import { Console, Effect } from 'effect';
 import { Command } from 'effect/cli';
@@ -21,7 +25,23 @@ const entries = [
   ['no registry: the shared client', 'plain-client.ts'],
   ['registry (E): the shared client', 'registry-client.ts'],
   ['control: registry imported at runtime', 'runtime-registry-client.ts'],
+  ['boundaries (A): by code', 'boundary-a.ts'],
+  ["boundaries (B): from the registry", 'boundary-b.ts'],
+  ["boundaries (C): from the class list", 'boundary-c.ts'],
+  ["boundaries (D): from the builder", 'boundary-d.ts'],
+  ["boundaries (E): from the posts subtree", 'boundary-e.ts'],
+  ['boundaries (F): from the `Errors` interface', 'boundary-f.ts'],
+  ['boundaries (G): from the posts subtree', 'boundary-g.ts'],
+  ['boundaries, no registry: from the posts subtree', 'boundary-plain.ts'],
 ] as const;
+
+/** The minified code around `needle`, to show what a client ships. */
+const around = (code: string, needle: string, before = 60, after = 120) => {
+  const at = code.indexOf(needle);
+  return at === -1
+    ? `(no ${needle})`
+    : code.slice(Math.max(0, at - before), at + needle.length + after);
+};
 
 /** Strings only the server's registry has: descriptions, messages, zod. */
 const serverOnly = [
@@ -47,12 +67,21 @@ const bundle = Command.make('bundle', {}, () =>
         `| ${name} | ${kb(size.min)} | ${kb(size.gzip)} | ${found.length === 0 ? 'none' : found.join(', ')} |`,
       );
     }
-    const same =
-      sizes.get('registry-client.ts')!.code ===
-      sizes.get('plain-client.ts')!.code;
-    yield* Console.log(
-      `| client | min | gzip | registry strings |\n| --- | ---: | ---: | --- |\n${rows.join('\n')}\n\nregistry and no-registry bundles identical: ${same ? 'yes' : 'no'}`,
+    const same = (a: string, b: string) =>
+      sizes.get(a)!.code === sizes.get(b)!.code ? 'yes' : 'no';
+    const tagged = ['b', 'c', 'd', 'e', 'f', 'g'].map((o) => `boundary-${o}.ts`);
+    const allSame = tagged.every(
+      (file) => sizes.get(file)!.code === sizes.get('boundary-plain.ts')!.code,
     );
+    yield* Console.log(
+      `| client | min | gzip | registry strings |\n| --- | ---: | ---: | --- |\n${rows.join('\n')}\n\nregistry and no-registry bundles identical: ${same('registry-client.ts', 'plain-client.ts')}\nB to G's boundaries and the no-registry app's identical: ${allSame ? 'yes' : 'no'}`,
+    );
+    for (const file of ['boundary-e.ts', 'boundary-a.ts']) {
+      const code = sizes.get(file)!.code;
+      yield* Console.log(
+        `\n${file}\n  guard: ${around(code, '.includes(', 80, 80)}\n  source and claims: ${around(code, '=()=>({})', 10, 400)}`,
+      );
+    }
   }),
 );
 

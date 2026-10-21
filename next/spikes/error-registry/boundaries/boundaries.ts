@@ -1,11 +1,12 @@
 /**
- * Error boundaries over returned errors (option E; B is its one-module
- * case). A boundary claims tags, checked against the errors of the router
- * it names with `routerType<AppRouter>()`, a type-only marker, so a
- * misspelt claim is a type error and the client imports no registry. Its
- * fallback's `error` is the errors it claims. Below it, `query()` and
- * `mutation()` take the owned tags out of a call's union, as today's
- * boundary takes codes out.
+ * Error boundaries over returned errors, for every option with tags (B to
+ * G). A boundary claims tags, checked against the errors of what it names
+ * with `errorsOf<T>()` (`./sources.ts`): a router, a subrouter, a
+ * procedure, a module's declaration or a registry. That's an empty object
+ * whose type carries the errors, so a misspelt claim is a type error and
+ * the client imports no registry. Its fallback's `error` is the errors it
+ * claims. Below it, `query()` and `mutation()` take the owned tags out of
+ * a call's union, as today's boundary takes codes out.
  *
  * The runtime is the internal boundary in
  * `packages/tanstack-react-query/src/error-boundary.ts`, as it is: an
@@ -18,26 +19,23 @@ import type {
   MutationOptionsOut,
   QueryOptionsOut,
 } from '@trpc12/tanstack-query';
-import type { RouterType } from '@trpc12/trpc/client';
-import type {
-  AnyProcedure,
-  inferRouterErrors,
-  ProcedureDef,
-} from '@trpc12/trpc/server';
+import type { AnyProcedure, ProcedureDef } from '@trpc12/trpc/server';
 import type { ReactNode } from 'react';
 import { createErrorBoundary as createCodeBoundary } from '../../../packages/tanstack-react-query/src/error-boundary.ts';
 import {
   unexpectedTags,
   type CallError,
-  type TrpcFailure,
   type UnexpectedTag,
 } from '../shared/failures.ts';
+import type { ErrorSource } from './sources.ts';
 
-/** Every error a call to a procedure of `R` can fail with. */
-export type RouterCallError<R> = CallError<inferRouterErrors<R>>;
-
-/** Every tag a client of `R` can see: its procedures' and tRPC's. */
-export type TagOf<R> = RouterCallError<R>['_tag'];
+export {
+  errorsOf,
+  type ErrorsFrom,
+  type ErrorSource,
+  type ServerErrorsOf,
+  type TagOf,
+} from './sources.ts';
 
 type Owned<TTags extends string, TUnexpected extends boolean> =
   | TTags
@@ -101,27 +99,28 @@ export interface RegistryBoundaryOptions<
 }
 
 /**
- * A boundary owning `claims`: tags of the router `router` names (the app's,
- * or one module's subtree, `routerType<AppRouter['posts']>()`) or of tRPC's
- * failures. `unexpected: true` owns tRPC's failures nothing names
- * (`Internal`, `Timeout`, `UnexpectedStatus`, …).
+ * A boundary owning `claims`: tags of the errors `errors` names
+ * (`errorsOf<AppRouter>()`, `errorsOf<AppRouter['posts']>()`,
+ * `errorsOf<typeof postErrors>()`, …) or of tRPC's failures.
+ * `unexpected: true` owns tRPC's failures nothing names (`Internal`,
+ * `Timeout`, `UnexpectedStatus`, …).
  */
 export function createErrorBoundary<
-  R,
-  const TTags extends TagOf<R>,
+  E,
+  const TTags extends CallError<E>['_tag'],
   TUnexpected extends boolean = false,
   TParentTags extends string = never,
   TParentUnexpected extends boolean = false,
 >(spec: {
   readonly name: string;
-  readonly router: RouterType<R>;
+  readonly errors: ErrorSource<E>;
   readonly parent?: RegistryBoundary<TParentTags, TParentUnexpected>;
   readonly claims: ReadonlyArray<TTags>;
   readonly unexpected?: TUnexpected;
   readonly fallback: (
     props: FallbackProps<
       Extract<
-        RouterCallError<R> | TrpcFailure,
+        CallError<E>,
         { readonly _tag: Owned<TTags, TUnexpected> }
       >
     >,

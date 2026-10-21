@@ -1,14 +1,17 @@
 /**
  * The boundaries example: an auth module whose middleware returns its
  * errors, a posts and a billing module whose base procedures declare
- * theirs, and three nested boundaries typed from the router alone.
+ * theirs, and three nested boundaries typed from the router's type alone.
  */
 import { createElement } from 'react';
-import { routerType } from '@trpc12/trpc/client';
 import { initTrpc } from '@trpc12/trpc/server';
 import { z } from 'zod';
 import { createErrors, mergeErrors } from '../merge-errors/merge-errors.ts';
-import { createErrorBoundary, type FallbackProps } from './boundaries.ts';
+import {
+  createErrorBoundary,
+  errorsOf,
+  type FallbackProps,
+} from './boundaries.ts';
 
 // auth/errors.ts, posts/errors.ts, billing/errors.ts
 export const authErrors = createErrors({
@@ -23,7 +26,7 @@ export const billingErrors = createErrors({
   CardDeclined: { status: 402 },
 });
 // For OpenAPI and docs; no client code imports it.
-export const errors = mergeErrors(authErrors, postErrors, billingErrors);
+export const backendErrors = mergeErrors(authErrors, postErrors, billingErrors);
 
 const t = initTrpc<{ ctx: { user: string | null } }>({
   warnThrownErrors: false,
@@ -88,12 +91,12 @@ const notice =
     );
 
 // The client half: from here down, nothing but types of the server's.
-const router = routerType<AppRouter>();
+const errors = errorsOf<AppRouter>();
 
 /** Owns tRPC's failures no boundary names: a crash, a timeout, a proxy's 502. */
 export const [RootBoundary, useRootBoundary] = createErrorBoundary({
   name: 'Root',
-  router,
+  errors,
   claims: [],
   unexpected: true,
   fallback: notice('crashed'),
@@ -101,7 +104,7 @@ export const [RootBoundary, useRootBoundary] = createErrorBoundary({
 
 export const [OfflineBoundary, useOfflineBoundary] = createErrorBoundary({
   name: 'Offline',
-  router,
+  errors,
   parent: RootBoundary,
   claims: ['NetworkError'],
   fallback: notice('offline'),
@@ -110,7 +113,7 @@ export const [OfflineBoundary, useOfflineBoundary] = createErrorBoundary({
 /** The auth middleware's errors, which every authed call can fail with. */
 export const [AuthBoundary, useAuthBoundary] = createErrorBoundary({
   name: 'Auth',
-  router,
+  errors,
   parent: OfflineBoundary,
   claims: ['Unauthorized', 'Forbidden'],
   fallback: notice('sign-in'),

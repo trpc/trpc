@@ -55,11 +55,20 @@ type ErrorOf<TErrors> = ClientErrorOf<ErrorsOf<TErrors>> | TrpcFailure;
 // G
 export { defineError as defineErrorG } from '../../../../spikes/error-registry/inferred/inferred.ts';
 
-// Error boundaries over E
-export { createErrorBoundary as createErrorBoundaryE } from '../../../../spikes/error-registry/boundaries/boundaries.ts';
+// Error boundaries: every option's sources, by tag (B to G) or by code (A)
+export {
+  createErrorBoundary,
+  errorsOf,
+  type ErrorsFrom,
+  type TagOf,
+} from '../../../../spikes/error-registry/boundaries/boundaries.ts';
+export {
+  createCodeErrorBoundary as createCodeErrorBoundaryA,
+  type CodeOf,
+} from '../../../../spikes/error-registry/boundaries/codes.ts';
 
 /** `createTrpcContext()`'s shape over the client: each call's error is its own. */
-export declare function createTrpcContextE<R>(): readonly [
+export declare function createTrpcContext<R>(): readonly [
   Provider: (props: { readonly children?: ReactNode }) => ReactNode,
   useTrpc: () => RegistryQueryUtils<R>,
 ];
