@@ -184,7 +184,7 @@ test("a link whose serializer isn't the server's fails with UNSUPPORTED_PROTOCOL
     links: [httpLink({ url: server.url, serializer: danson })],
   });
   const [, err] = await safe(client.greet.query({ name: 'x' }));
-  expect(err?._tag).toBe('SerializerMismatch');
+  expect(err?._tag).toBe('TransformerMismatch');
   expect(err).toMatchObject({ code: 'UNSUPPORTED_PROTOCOL', defined: false });
   expect(err?.message).toContain("'json' serializer");
   expect(err?.message).toContain("uses 'danson'");
@@ -204,7 +204,7 @@ test("a socket link whose serializer isn't the server's fails with UNSUPPORTED_P
   });
   for (let i = 0; i < 2; i++) {
     const [, err] = await safe(client.bump.mutate());
-    expect(err?._tag).toBe('SerializerMismatch');
+    expect(err?._tag).toBe('TransformerMismatch');
     expect(err).toMatchObject({ code: 'UNSUPPORTED_PROTOCOL' });
     expect(err?.message).toBe(
       "The server uses the 'json' serializer, but this wsLink uses 'danson'. Pass the same serializer to the handler and wsLink.",

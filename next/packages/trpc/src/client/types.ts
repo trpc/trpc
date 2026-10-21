@@ -59,7 +59,7 @@ export type DefinedError<E, F extends OutputForm = DansonForm> =
  * (`InternalServerError`, masked in production), thrown built-in codes
  * and a proxy's statuses (`Unauthorized`, `BadGateway`). The failures
  * clients act on have their own member too ({@link ClientTags}):
- * `ProcedureNotFound`, `ProcedureTypeMismatch` and `SerializerMismatch`.
+ * `ProcedureNotFound`, `ProcedureTypeMismatch` and `TransformerMismatch`.
  * It never has `data`. Pass a code to name one:
  * `BuiltinError<'NETWORK_ERROR'>`.
  * @since 0.1.0

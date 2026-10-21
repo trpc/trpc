@@ -256,7 +256,7 @@ export function makeTransport(
           await res.body?.cancel().catch(() => {});
           throw new TrpcError({
             code: 'UNSUPPORTED_PROTOCOL',
-            tag: 'SerializerMismatch',
+            tag: 'TransformerMismatch',
             message: `The server uses the '${theirs}' serializer, but this httpLink uses '${serializer.name}'. Pass the same serializer to the handler and httpLink.`,
           });
         }

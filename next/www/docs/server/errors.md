@@ -228,7 +228,7 @@ Effect.catchTag('NotFound', () => Effect.succeed(null));
 
 - `ProcedureNotFound` (`NOT_FOUND`): no procedure at the path. Reaches clients with its tag.
 - `ProcedureTypeMismatch` (`METHOD_NOT_SUPPORTED`): a query called as a mutation, or the other way. Reaches clients with its tag.
-- `SerializerMismatch` (`UNSUPPORTED_PROTOCOL`): a link whose serializer isn't the server's. Made by the link.
+- `TransformerMismatch` (`UNSUPPORTED_PROTOCOL`): a link whose serializer isn't the server's. Made by the link.
 - `InvalidInput` (`BAD_REQUEST`): an input that failed its schema. It's defined, with `data.issues`, so it reaches clients with its tag.
 - `InvalidOutput` (`INTERNAL_SERVER_ERROR`): an output that failed its schema.
 - `RouteNotFound` (`NOT_FOUND`): a URL outside the endpoint, or no OpenAPI route for it.

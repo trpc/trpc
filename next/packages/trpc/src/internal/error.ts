@@ -201,7 +201,7 @@ export interface ClientTags {
   /** The procedure is a query on the server and a mutation on the client, or the other way: reload. */
   ProcedureTypeMismatch: 'METHOD_NOT_SUPPORTED';
   /** The server and the link use different serializers. */
-  SerializerMismatch: 'UNSUPPORTED_PROTOCOL';
+  TransformerMismatch: 'UNSUPPORTED_PROTOCOL';
 }
 
 /**
@@ -806,7 +806,7 @@ export function withDefined<E extends AnyTrpcError>(
 const CLIENT_TAGS: { readonly [T in keyof ClientTags]: ClientTags[T] } = {
   ProcedureNotFound: 'NOT_FOUND',
   ProcedureTypeMismatch: 'METHOD_NOT_SUPPORTED',
-  SerializerMismatch: 'UNSUPPORTED_PROTOCOL',
+  TransformerMismatch: 'UNSUPPORTED_PROTOCOL',
 };
 
 /** Whether an undefined error with `code` keeps `tag` on a client. */
