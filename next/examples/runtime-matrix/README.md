@@ -29,7 +29,7 @@ Every check calls the server over the network with the typed client, and fails t
 - **runtime**: the call reached that runtime (and on Lambda, `ctx` has the platform argument's `awsRequestId`).
 - **batch**: two queries go in one request.
 - **errors**: a `NOT_FOUND` with its `data`, through `safe()`.
-- **rich types**: a `Date` and a `Map` round-trip, with danSON on both ends.
+- **rich types**: a `Date` and a `Map` round-trip, with progressive JSON on both ends.
 - **files**: a `File` input as multipart, and a `File` output.
 - **streaming**: `countdown` yields one item, then waits for the client's `release` call. A runtime that streams delivers the first item, so the client releases it (`first,released`). A buffered one sends nothing until the wait times out (`first,timed out`), which is what buffered Lambda does.
 - **sse resume**: a subscription over SSE resumes after `lastEventId`.

@@ -38,7 +38,10 @@ import {
 } from '@trpc12/tanstack-query';
 import { cache as reactCache, createElement, type ReactNode } from 'react';
 import type { TrpcClient } from '@trpc12/trpc/client';
-import type { AnyTransformer, DansonForm } from '@trpc12/trpc/transformer';
+import type {
+  AnyTransformer,
+  ProgressiveJsonForm,
+} from '@trpc12/trpc/transformer';
 import {
   createRouterClient,
   type AnyRouter,
@@ -84,9 +87,9 @@ export type TrpcRscOptions<TRouter extends AnyRouter> = {
  */
 export interface TrpcRsc<TRouter extends AnyRouter> {
   /** Query helpers whose calls go straight to the router. */
-  trpc: TrpcQueryUtils<TrpcClient<TRouter, {}, DansonForm>>;
+  trpc: TrpcQueryUtils<TrpcClient<TRouter, {}, ProgressiveJsonForm>>;
   /** Calls the router directly, without the query cache. */
-  caller: TrpcClient<TRouter, {}, DansonForm>;
+  caller: TrpcClient<TRouter, {}, ProgressiveJsonForm>;
   /** The request's query client. */
   getQueryClient: () => QueryClient;
   /**
@@ -140,7 +143,7 @@ export function createTrpcRsc<TRouter extends AnyRouter>(
   const caller = createRouterClient(opts.router, {
     ...opts,
     ctx: typeof ctx === 'function' ? cache(ctx as () => unknown) : ctx,
-  } as never) as TrpcClient<TRouter, {}, DansonForm>;
+  } as never) as TrpcClient<TRouter, {}, ProgressiveJsonForm>;
   const trpc = createTrpcQueryUtils({
     client: caller,
     keyPrefix: opts.keyPrefix,

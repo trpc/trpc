@@ -1,6 +1,6 @@
 /**
- * danSON's async format (head chunk, then `[index, status, { json, refs? }]`
- * chunks) reimplemented on Effect `Stream`. The wire format matches danSON
+ * Progressive JSON's async format (head chunk, then `[index, status, { json, refs? }]`
+ * chunks) reimplemented on Effect `Stream`. The wire format matches progressive JSON
  * 0.13.1 `serializeAsync` / `deserializeAsync`.
  *
  * Deserialized deferred values are plain `Promise` / `AsyncIterable` /
@@ -534,7 +534,7 @@ export interface StreamErrors {
   readonly interrupted: () => unknown;
 }
 
-/** The stream error options, with danSON's defaults. */
+/** The stream error options, with progressive JSON's defaults. */
 export function streamErrorsOf(options: StreamErrorOptions): StreamErrors {
   const failed =
     options.streamFailed ??

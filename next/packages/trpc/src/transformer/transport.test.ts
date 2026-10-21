@@ -1,6 +1,6 @@
 import { Effect, Stream } from 'effect';
 import {
-  experimental_createTransformer,
+  experimental_createProgressiveJson,
   TransformerError,
   jsonTransformer,
   type Frame,
@@ -31,7 +31,10 @@ const send = (
 };
 const intact = <T>(frames: T) => frames;
 
-for (const transformer of [experimental_createTransformer(), jsonTransformer]) {
+for (const transformer of [
+  experimental_createProgressiveJson(),
+  jsonTransformer,
+]) {
   test(`${transformer.name}: deferred values travel over a custom transport`, async () => {
     const out = await send(
       transformer,
@@ -80,7 +83,7 @@ for (const transformer of [experimental_createTransformer(), jsonTransformer]) {
   });
 
   test(`${transformer.name}: without coerceError, a value that can't be written fails the stream`, async () => {
-    // JSON can't write a bigint, danSON can't write a symbol.
+    // JSON can't write a bigint, progressive JSON can't write a symbol.
     const unwritable = transformer === jsonTransformer ? 1n : Symbol('x');
     const out = await send(
       transformer,

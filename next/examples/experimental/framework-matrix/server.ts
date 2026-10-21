@@ -8,7 +8,7 @@ import type { AddressInfo } from 'node:net';
 import { NodeHttpServer } from '@effect/platform-node';
 import { Effect, Exit, Scope } from 'effect';
 import { toHttpEffect } from '@trpc12/trpc/http';
-import { experimental_createTransformer } from '@trpc12/trpc/transformer';
+import { experimental_createProgressiveJson } from '@trpc12/trpc/transformer';
 import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
 import { z } from 'zod';
 import { type Framework, frameworks } from './src/frameworks.ts';
@@ -36,7 +36,7 @@ export type AppRouter = typeof appRouter;
 
 const handler = createFetchHandler({
   router: appRouter,
-  transformer: experimental_createTransformer(),
+  transformer: experimental_createProgressiveJson(),
 });
 
 /**

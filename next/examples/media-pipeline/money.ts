@@ -1,10 +1,10 @@
 /**
  * `Money`, a class of the app's own, kept across the wire by both
- * transformers: danSON through a `CustomType`, superjson through
+ * transformers: progressive JSON through a `CustomType`, superjson through
  * `registerCustom`.
  */
 import {
-  experimental_createTransformer,
+  experimental_createProgressiveJson,
   createSyncTransformer,
 } from '@trpc12/trpc/transformer';
 import type { CustomType } from '@trpc12/trpc/transformer';
@@ -47,8 +47,8 @@ const money: CustomType<Money, MoneyJson> = {
   deserialize: (v) => new Money(v.cents, v.currency),
 };
 
-/** danSON: native types, files and deferred values at any depth, plus `Money`. */
-export const danson = experimental_createTransformer({
+/** Progressive JSON: native types, files and deferred values at any depth, plus `Money`. */
+export const progressiveJson = experimental_createProgressiveJson({
   types: { Money: money },
 });
 

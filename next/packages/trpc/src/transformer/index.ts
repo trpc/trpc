@@ -1,9 +1,9 @@
 /**
  * Wire transformers. The default is `jsonTransformer`, plain JSON.
- * `experimental_createTransformer()` is a port of [danSON](https://github.com/KATT/danson),
+ * `experimental_createProgressiveJson()` is a port of [danSON](https://github.com/KATT/danson),
  * and `createSyncTransformer` wraps superjson, devalue or your own.
  *
- * With danSON, plain JSON stays plain JSON. Non-JSON values (`Date`, `Map`, `Set`,
+ * With progressive JSON, plain JSON stays plain JSON. Non-JSON values (`Date`, `Map`, `Set`,
  * `BigInt`, `undefined`, typed arrays, …) become inline
  * `{ _: '$', type, value }` markers, and repeated or circular references become
  * `$n` refs. Deferred values (`Promise`, `AsyncIterable`, `ReadableStream`) can
@@ -15,7 +15,7 @@
  * @module
  */
 import type { Effect, Stream } from 'effect';
-import type { DansonForm, OutputForm } from '../internal/types.ts';
+import type { ProgressiveJsonForm, OutputForm } from '../internal/types.ts';
 import {
   deserializers as stdDeserializers,
   inputDeserializers as stdInputDeserializers,
@@ -32,7 +32,7 @@ import {
   type SerializeRecord,
   type SerializeReturn,
   TransformerError,
-} from './danson/index.ts';
+} from './progressive-json/index.ts';
 
 export {
   type Chunk,
@@ -43,10 +43,10 @@ export {
   type SerializeReturn,
   TransformerError,
   type JsonValue,
-} from './danson/index.ts';
+} from './progressive-json/index.ts';
 export type {
   ClientValue,
-  DansonForm,
+  ProgressiveJsonForm,
   JsonForm,
   JsonOf,
   OutputForm,
@@ -61,7 +61,7 @@ export {
 export type { FormOfTransformer } from '../internal/types.ts';
 
 /**
- * A custom type danSON understands, for `experimental_createTransformer`.
+ * A custom type progressive JSON understands, for `experimental_createProgressiveJson`.
  *
  * @example
  * ```ts
@@ -70,7 +70,7 @@ export type { FormOfTransformer } from '../internal/types.ts';
  *   serialize: (v) => v.toString(),
  *   deserialize: (s) => new Decimal(s),
  * };
- * experimental_createTransformer({ types: { Decimal: decimal } });
+ * experimental_createProgressiveJson({ types: { Decimal: decimal } });
  * ```
  * @since 0.1.0
  * @stability experimental
@@ -90,11 +90,11 @@ export interface CustomType<T, TSerialized = unknown> {
 }
 
 /**
- * The options of `experimental_createTransformer`, danSON.
+ * The options of `experimental_createProgressiveJson`, progressive JSON.
  * @since 0.1.0
  * @stability experimental
  */
-export interface TransformerOptions {
+export interface ProgressiveJsonOptions {
   /** Custom types, keyed by the name used on the wire. */
   types?: Record<string, CustomType<any, any>>;
   /**
@@ -138,7 +138,7 @@ export interface SerializeOpts {
  * @since 0.1.0
  * @stability stable
  */
-export interface Transformer<TForm extends OutputForm = DansonForm> {
+export interface Transformer<TForm extends OutputForm = ProgressiveJsonForm> {
   /**
    * Names the wire format. The handler sends it in a `trpc-transformer`
    * header, and a link with another one fails with an error naming both.
@@ -212,22 +212,22 @@ const partSerializers: SerializeRecord = {
 };
 
 /**
- * Creates a danSON-based transformer, optionally with extra types. It keeps
+ * Creates a progressive JSON transformer, optionally with extra types. It keeps
  * native types (`Date`, `Map`, `File`, …) and streams deferred values in one
- * pass. Pass it to both the handler and the link. Experimental: danSON might
+ * pass. Pass it to both the handler and the link. Experimental: progressive JSON might
  * change or go away in any release.
  *
  * @example
  * ```ts
- * const transformer = experimental_createTransformer({ types: { Decimal: decimal } });
+ * const transformer = experimental_createProgressiveJson({ types: { Decimal: decimal } });
  * createFetchHandler({ router, transformer });
  * httpLink({ url, transformer });
  * ```
  * @since 0.1.0
  * @stability experimental
  */
-export function experimental_createTransformer(
-  opts: TransformerOptions = {},
+export function experimental_createProgressiveJson(
+  opts: ProgressiveJsonOptions = {},
 ): Transformer {
   const customSerializers: SerializeRecord = {};
   const customDeserializers: DeserializeRecord = {};
@@ -259,7 +259,7 @@ export function experimental_createTransformer(
   };
 
   return {
-    name: 'danson',
+    name: 'progressive-json',
     kind: 'streaming',
     serialize: (value, o) =>
       serializeSync(value, {

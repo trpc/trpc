@@ -21,7 +21,7 @@ import {
   type AnyLink,
 } from '@trpc12/trpc/client';
 import { error, initTrpc } from '@trpc12/trpc/server';
-import { experimental_createTransformer } from '@trpc12/trpc/transformer';
+import { experimental_createProgressiveJson } from '@trpc12/trpc/transformer';
 import { type Duration, Effect, Stream } from 'effect';
 import { Component, Suspense, use, type ReactNode } from 'react';
 import { createRoot, hydrateRoot } from 'react-dom/client';
@@ -37,7 +37,7 @@ import {
   type Post,
 } from '../../trpc/src/fixtures/posts.ts';
 
-const transformer = experimental_createTransformer();
+const transformer = experimental_createProgressiveJson();
 
 const make = <const L extends ReadonlyArray<AnyLink>>(
   links: L,

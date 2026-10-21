@@ -31,7 +31,7 @@ export const kinds = {
 
 /** Words shaped like code that are names, units or jargon. */
 const names = new Set([
-  'danSON',
+  'progressive JSON',
   'devDependency',
   'eBay',
   'Effect.ts',

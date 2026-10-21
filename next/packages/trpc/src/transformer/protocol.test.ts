@@ -9,7 +9,7 @@ import {
 } from '@trpc12/trpc/client';
 import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
 import {
-  experimental_createTransformer,
+  experimental_createProgressiveJson,
   jsonTransformer,
   type CustomType,
 } from '@trpc12/trpc/transformer';
@@ -35,8 +35,8 @@ const money: CustomType<Money, [string, string]> = {
   deserialize: ([cents, currency]) => new Money(BigInt(cents), currency),
 };
 
-/** danSON, for the tests of what it keeps that plain JSON doesn't. */
-const danson = experimental_createTransformer();
+/** Progressive JSON, for the tests of what it keeps that plain JSON doesn't. */
+const progressiveJson = experimental_createProgressiveJson();
 
 const t = initTrpc();
 
@@ -83,11 +83,14 @@ const router = {
 };
 type AppRouter = typeof router;
 
-test('with danSON, built-in types round-trip through inputs and outputs', async () => {
-  await using server = await createTestServer({ router, transformer: danson });
+test('with progressive JSON, built-in types round-trip through inputs and outputs', async () => {
+  await using server = await createTestServer({
+    router,
+    transformer: progressiveJson,
+  });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: server.url, transformer: danson })],
+    links: [httpLink({ url: server.url, transformer: progressiveJson })],
   });
   const when = new Date('2026-01-02T03:04:05.000Z');
   const result = await client.echo.query({
@@ -113,7 +116,7 @@ test('with danSON, built-in types round-trip through inputs and outputs', async 
 });
 
 test('custom types work when both ends share a transformer', async () => {
-  const transformer = experimental_createTransformer({
+  const transformer = experimental_createProgressiveJson({
     types: { Money: money },
   });
   await using server = await createTestServer({ router, transformer });
@@ -183,13 +186,13 @@ test("a link whose transformer isn't the server's fails with UNSUPPORTED_PROTOCO
   await using server = await createTestServer({ router });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: server.url, transformer: danson })],
+    links: [httpLink({ url: server.url, transformer: progressiveJson })],
   });
   const [, err] = await safe(client.greet.query({ name: 'x' }));
   expect(err?._tag).toBe('TransformerMismatch');
   expect(err).toMatchObject({ code: 'UNSUPPORTED_PROTOCOL', defined: false });
   expect(err?.message).toContain("'json' transformer");
-  expect(err?.message).toContain("uses 'danson'");
+  expect(err?.message).toContain("uses 'progressive-json'");
 });
 
 test("a socket link whose transformer isn't the server's fails with UNSUPPORTED_PROTOCOL, and the server runs nothing", async () => {
@@ -199,7 +202,7 @@ test("a socket link whose transformer isn't the server's fails with UNSUPPORTED_
     bump: t.procedure.mutation(() => ++runs),
   };
   await using server = await createTestServer({ router: counter });
-  await using ws = wsLink({ url: server.wsUrl, transformer: danson });
+  await using ws = wsLink({ url: server.wsUrl, transformer: progressiveJson });
   const client = createTrpcClient({
     router: routerType<typeof counter>(),
     links: [ws],
@@ -209,14 +212,15 @@ test("a socket link whose transformer isn't the server's fails with UNSUPPORTED_
     expect(err?._tag).toBe('TransformerMismatch');
     expect(err).toMatchObject({ code: 'UNSUPPORTED_PROTOCOL' });
     expect(err?.message).toBe(
-      "The server uses the 'json' transformer, but this wsLink uses 'danson'. Pass the same transformer to the handler and wsLink.",
+      "The server uses the 'json' transformer, but this wsLink uses 'progressive-json'. Pass the same transformer to the handler and wsLink.",
     );
   }
 
   const channel = new MessageChannel();
-  createFetchHandler({ router: counter, transformer: danson }).messagePort(
-    channel.port1,
-  );
+  createFetchHandler({
+    router: counter,
+    transformer: progressiveJson,
+  }).messagePort(channel.port1);
   const port = experimental_messagePortLink({ port: channel.port2 });
   const portClient = createTrpcClient({
     router: routerType<typeof counter>(),
@@ -225,7 +229,7 @@ test("a socket link whose transformer isn't the server's fails with UNSUPPORTED_
   try {
     const [, err] = await safe(portClient.bump.mutate());
     expect(err?.message).toContain(
-      "The server uses the 'danson' transformer, but this experimental_messagePortLink uses 'json'",
+      "The server uses the 'progressive-json' transformer, but this experimental_messagePortLink uses 'json'",
     );
   } finally {
     await port.close();
@@ -250,11 +254,14 @@ test('query URLs are canonical: ?input= is JSON with object keys sorted, array o
   );
 });
 
-test('with danSON, inputs cannot carry RegExps', async () => {
-  await using server = await createTestServer({ router, transformer: danson });
+test('with progressive JSON, inputs cannot carry RegExps', async () => {
+  await using server = await createTestServer({
+    router,
+    transformer: progressiveJson,
+  });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
-    links: [httpLink({ url: server.url, transformer: danson })],
+    links: [httpLink({ url: server.url, transformer: progressiveJson })],
   });
   const [, err] = await safe(client.pattern.query(/(a+)+$/));
   expect(err).toMatchObject({ code: 'PARSE_ERROR' });
@@ -346,7 +353,7 @@ test('?input= reads as URLSearchParams does: the first one, `+` as space, encode
 
 test('serialized output is plain objects, with `__proto__` kept as an own key', () => {
   const value = JSON.parse('{"post":{"__proto__":{"x":1},"at":"y"}}');
-  for (const transformer of [jsonTransformer, danson]) {
+  for (const transformer of [jsonTransformer, progressiveJson]) {
     const serialized = transformer.serialize(value);
     const json = serialized.json as { post: Record<string, unknown> };
     expect(Object.getPrototypeOf(json)).toBe(Object.prototype);
@@ -354,9 +361,9 @@ test('serialized output is plain objects, with `__proto__` kept as an own key', 
     expect(Object.hasOwn(json.post, '__proto__')).toBe(true);
   }
   expect(({} as Record<string, unknown>)['x']).toBeUndefined();
-  expect(() => danson.deserialize(danson.serialize(value))).toThrow(
-    'Forbidden key: __proto__',
-  );
+  expect(() =>
+    progressiveJson.deserialize(progressiveJson.serialize(value)),
+  ).toThrow('Forbidden key: __proto__');
 });
 
 test('malformed JSON is a PARSE_ERROR', async () => {

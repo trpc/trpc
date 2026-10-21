@@ -11,7 +11,7 @@ import {
   TestServer,
   type TestServerShape,
 } from '@trpc12/trpc/internal/testing';
-import { experimental_createTransformer } from '@trpc12/trpc/transformer';
+import { experimental_createProgressiveJson } from '@trpc12/trpc/transformer';
 import {
   experimental_byteStream,
   initTrpc,
@@ -19,8 +19,8 @@ import {
 } from '@trpc12/trpc/server';
 import { z } from 'zod';
 
-/** Dates, Maps and Files round-trip, so both ends use danSON. */
-const transformer = experimental_createTransformer();
+/** Dates, Maps and Files round-trip, so both ends use progressive JSON. */
+const transformer = experimental_createProgressiveJson();
 const t = initTrpc();
 const aborted: string[] = [];
 

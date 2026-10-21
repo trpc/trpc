@@ -5,7 +5,7 @@ import { routerType, type TrpcClient } from '../client/types.ts';
 import { interruptSignal } from '../internal/effects.ts';
 import { abortedError, frameworkError } from '../internal/error.ts';
 import type {
-  DansonForm,
+  ProgressiveJsonForm,
   MaybePromise,
   ProcedureResponse,
 } from '../internal/types.ts';
@@ -71,7 +71,7 @@ export function createRouterClient<TRouter extends AnyRouter>(
   ...[opts]: {} extends RouterClientOptions<TRouter>
     ? [opts?: RouterClientOptions<TRouter>]
     : [opts: RouterClientOptions<TRouter>]
-): TrpcClient<TRouter, {}, DansonForm, { builtinErrors: never }> {
+): TrpcClient<TRouter, {}, ProgressiveJsonForm, { builtinErrors: never }> {
   checkRouterKeys(router);
   const o = (opts ?? {}) as {
     ctx?: object | (() => MaybePromise<object>);
@@ -90,7 +90,7 @@ export function createRouterClient<TRouter extends AnyRouter>(
           : () => ctx ?? {}) as () => never,
       } as LocalLinkOptions<TRouter> & { transformer: false }),
     ],
-  }) as TrpcClient<TRouter, {}, DansonForm, { builtinErrors: never }>;
+  }) as TrpcClient<TRouter, {}, ProgressiveJsonForm, { builtinErrors: never }>;
 }
 
 /**

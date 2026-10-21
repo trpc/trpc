@@ -65,7 +65,7 @@ function share(prev: unknown, next: unknown): unknown {
 }
 
 /**
- * TanStack's `structuralSharing`, extended to the types danSON carries: an
+ * TanStack's `structuralSharing`, extended to the types progressive JSON carries: an
  * equal `Date`, `Map`, `Set`, `URL`, `RegExp` or typed array keeps its old
  * reference, so a refetch with equal data doesn't re-render. `queryOptions()`
  * and `infiniteOptions()` use it; pass `structuralSharing` to override.

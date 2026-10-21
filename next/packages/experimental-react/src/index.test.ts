@@ -16,7 +16,7 @@ import {
   safe,
   type AnyLink,
 } from '@trpc12/trpc/client';
-import { experimental_createTransformer } from '@trpc12/trpc/transformer';
+import { experimental_createProgressiveJson } from '@trpc12/trpc/transformer';
 import { Duration, Effect, Exit, Scope, Stream } from 'effect';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { waitFor } from '../../trpc/src/fixtures/dom.ts';
@@ -37,7 +37,7 @@ const make = <const L extends ReadonlyArray<AnyLink>>(
     router: routerType<AppRouter>(),
     links: [
       ...links,
-      localLink({ router, transformer: experimental_createTransformer() }),
+      localLink({ router, transformer: experimental_createProgressiveJson() }),
     ],
     isServer: opts.isServer ?? false,
   });
@@ -111,7 +111,7 @@ test('a client made with a scope is disposed when the scope closes, and `using` 
   const scoped = createReactClient({
     router: routerType<AppRouter>(),
     links: [
-      localLink({ router, transformer: experimental_createTransformer() }),
+      localLink({ router, transformer: experimental_createProgressiveJson() }),
     ],
     isServer: true,
     scope,

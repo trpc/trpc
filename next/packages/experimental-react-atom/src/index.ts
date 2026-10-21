@@ -11,7 +11,7 @@
  *
  * export const trpc = createAtomClient({
  *   router: routerType<AppRouter>(),
- *   links: [httpLink({ url: '/trpc', transformer: experimental_createTransformer() })],
+ *   links: [httpLink({ url: '/trpc', transformer: experimental_createProgressiveJson() })],
  * });
  *
  * const post = useAtomSuspense(trpc.post.byId.query({ id })).value;
@@ -41,14 +41,14 @@ import {
 } from '@trpc12/trpc/client';
 import { createEffectClient, type EffectClient } from '@trpc12/trpc/effect';
 import {
-  experimental_createTransformer,
+  experimental_createProgressiveJson,
   jsonTransformer,
   type AnyTransformer,
   type SerializeReturn,
 } from '@trpc12/trpc/transformer';
 
-/** Keys use danSON, so inputs with `Date`s and `Map`s key apart. */
-const keyTransformer = /* @__PURE__ */ experimental_createTransformer();
+/** Keys use progressive JSON, so inputs with `Date`s and `Map`s key apart. */
+const keyTransformer = /* @__PURE__ */ experimental_createProgressiveJson();
 
 /**
  * Reactivity keys: a list, or lists by namespace, as `Reactivity` takes them.
@@ -163,12 +163,12 @@ export type AtomClientOptions<
 /**
  * A `Schema` whose encoded form is `transformer`'s, for `Atom.serializable`:
  * a value encodes as the wire does, so `Date`s and `Map`s survive
- * `Hydration.dehydrate` with danSON. Query atoms already use one; this is
+ * `Hydration.dehydrate` with progressive JSON. Query atoms already use one; this is
  * for atoms of your own that hold procedure outputs.
  *
  * @example
  * ```ts
- * const schema = AsyncResult.Schema({ success: transformerSchema(experimental_createTransformer()) });
+ * const schema = AsyncResult.Schema({ success: transformerSchema(experimental_createProgressiveJson()) });
  * ```
  * @since 0.1.0
  * @stability experimental

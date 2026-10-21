@@ -6,7 +6,7 @@ import {
 } from '@trpc12/trpc/client';
 import { createFetchHandler, error, initTrpc } from '@trpc12/trpc/server';
 import {
-  experimental_createTransformer,
+  experimental_createProgressiveJson,
   TransformerError,
 } from '@trpc12/trpc/transformer';
 import { expect, test } from 'vite-plus/test';
@@ -30,7 +30,7 @@ class Unwritable {}
 /** A type the client can't read. */
 class Unreadable {}
 
-const danson = experimental_createTransformer({
+const progressiveJson = experimental_createProgressiveJson({
   types: {
     Money: {
       is: (v): v is Money => v instanceof Money,
@@ -139,13 +139,13 @@ const router = {
 };
 
 function setup() {
-  const handler = createFetchHandler({ router, transformer: danson });
+  const handler = createFetchHandler({ router, transformer: progressiveJson });
   const client = createTrpcClient({
     router: routerType<typeof router>(),
     links: [
       httpLink({
         url: 'http://localhost/trpc',
-        transformer: danson,
+        transformer: progressiveJson,
         fetch: (input, init) =>
           handler.fetch(new Request(input as string, init as RequestInit)),
       }),
@@ -237,7 +237,7 @@ test('inputs past maxDepth, with forbidden keys, or not JSON values are refused'
 });
 
 test('`string` is a reserved type name', () => {
-  const reserved = experimental_createTransformer({
+  const reserved = experimental_createProgressiveJson({
     types: {
       string: {
         is: (v): v is string => typeof v === 'string',
@@ -343,12 +343,12 @@ test('a streamed head the client cannot read fails the call instead of hanging',
     links: [
       httpLink({
         url: 'http://localhost/trpc',
-        transformer: danson,
+        transformer: progressiveJson,
         fetch: async () =>
           new Response('{"json":{"_":"$","type":"Nope"}}\n[0,0,{"json":1}]\n', {
             headers: {
               'content-type': 'application/jsonl',
-              'trpc-transformer': danson.name,
+              'trpc-transformer': progressiveJson.name,
               'trpc-version': '12',
             },
           }),
@@ -474,7 +474,7 @@ test('forged streams: bad or missing file bytes, bare refs, unreadable frames an
       links: [
         httpLink({
           url: 'http://localhost/trpc',
-          transformer: danson,
+          transformer: progressiveJson,
           fetch: async () =>
             new Response(
               lines
@@ -483,7 +483,7 @@ test('forged streams: bad or missing file bytes, bare refs, unreadable frames an
               {
                 headers: {
                   'content-type': 'application/jsonl',
-                  'trpc-transformer': danson.name,
+                  'trpc-transformer': progressiveJson.name,
                   'trpc-version': '12',
                 },
               },
@@ -535,7 +535,7 @@ test('forged streams: bad or missing file bytes, bare refs, unreadable frames an
     links: [
       httpLink({
         url: 'http://localhost/trpc',
-        transformer: danson,
+        transformer: progressiveJson,
         fetch: async () =>
           new Response(
             new ReadableStream({
@@ -548,7 +548,7 @@ test('forged streams: bad or missing file bytes, bare refs, unreadable frames an
             {
               headers: {
                 'content-type': 'application/jsonl',
-                'trpc-transformer': danson.name,
+                'trpc-transformer': progressiveJson.name,
                 'trpc-version': '12',
               },
             },
@@ -588,6 +588,6 @@ const pollutePrototype = (key: string): Disposable => {
 
 test('only own keys go on the wire, even with a polluted Object.prototype', () => {
   using _polluted = pollutePrototype('injected');
-  const transformer = experimental_createTransformer();
+  const transformer = experimental_createProgressiveJson();
   expect(transformer.serialize({ a: 1 }).json).toEqual({ a: 1 });
 });

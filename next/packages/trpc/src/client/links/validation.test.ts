@@ -8,7 +8,7 @@ import {
   experimental_validationLink,
   TrpcError,
 } from '@trpc12/trpc/client';
-import { experimental_createTransformer } from '@trpc12/trpc/transformer';
+import { experimental_createProgressiveJson } from '@trpc12/trpc/transformer';
 import {
   type AnyContractRouter,
   experimental_contract,
@@ -247,17 +247,17 @@ test("output: 'json' decodes declared errors' data with their schemas, and types
   expect(failed.data.deletedAt).toEqual(at);
   expectTypeOf(failed.data.deletedAt).toEqualTypeOf<Date>();
 
-  await using danson = await createTestServer({
+  await using progressiveJson = await createTestServer({
     router: goneRouter,
-    transformer: experimental_createTransformer(),
+    transformer: experimental_createProgressiveJson(),
   });
   const kept = createTrpcClient({
     router: gone,
     links: [
       experimental_validationLink({ contract: gone }),
       httpLink({
-        url: danson.url,
-        transformer: experimental_createTransformer(),
+        url: progressiveJson.url,
+        transformer: experimental_createProgressiveJson(),
       }),
     ],
   });

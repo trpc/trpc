@@ -22,7 +22,7 @@ import {
   initTrpc,
   TrpcError,
 } from '@trpc12/trpc/server';
-import { experimental_createTransformer } from '@trpc12/trpc/transformer';
+import { experimental_createProgressiveJson } from '@trpc12/trpc/transformer';
 import { createTestServer } from '../../fixtures/server.ts';
 import { expect, expectTypeOf, test, vi } from 'vite-plus/test';
 import { z } from 'zod';
@@ -336,7 +336,7 @@ test('localLink fails unknown paths and wrong methods; deferred failures arrive 
     links: [
       localLink({
         router: deferred,
-        transformer: experimental_createTransformer(),
+        transformer: experimental_createProgressiveJson(),
         createContext: () => ({ token: null }),
       }),
     ],

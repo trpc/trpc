@@ -2,7 +2,7 @@
 import { Console, Effect, Stream } from 'effect';
 import { Command } from 'effect/cli';
 import {
-  experimental_createTransformer,
+  experimental_createProgressiveJson,
   jsonTransformer,
 } from '@trpc12/trpc/transformer';
 import { intArg, runScript } from '../kit.ts';
@@ -29,7 +29,7 @@ const measure = Command.make(
     Effect.gen(function* () {
       for (const [name, transformer] of [
         ['json', jsonTransformer],
-        ['danson', experimental_createTransformer()],
+        ['progressive-json', experimental_createProgressiveJson()],
       ] as const) {
         const lines = () =>
           Stream.map(framesOf(transformer, value(items)), (f) =>

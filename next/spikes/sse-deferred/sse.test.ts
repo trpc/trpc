@@ -4,7 +4,7 @@ import { parseAsync, stringifyAsync } from 'devalue-async';
 import { EventSource } from 'undici';
 import { Effect, Queue, Stream } from 'effect';
 import {
-  experimental_createTransformer,
+  experimental_createProgressiveJson,
   jsonTransformer,
   type AnyTransformer,
 } from '@trpc12/trpc/transformer';
@@ -88,7 +88,7 @@ const bytes = (text: Stream.Stream<string>) => Stream.encodeText(text);
 
 for (const [name, transformer] of [
   ['plain JSON', jsonTransformer],
-  ['danSON', experimental_createTransformer()],
+  ['progressive JSON', experimental_createProgressiveJson()],
 ] as const) {
   test(`${name}: nested deferred values round-trip over SSE`, async () => {
     const value = await Effect.runPromise(

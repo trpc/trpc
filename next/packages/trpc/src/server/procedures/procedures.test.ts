@@ -7,7 +7,7 @@ import {
   type LinkErrorCode,
   routerType,
 } from '@trpc12/trpc/client';
-import type { DansonForm } from '@trpc12/trpc/transformer';
+import type { ProgressiveJsonForm } from '@trpc12/trpc/transformer';
 import {
   call,
   error,
@@ -569,7 +569,7 @@ test('Effect middleware provides services and its failures are typed', async () 
   expectTypeOf(res.error).toEqualTypeOf<
     | ClientError<
         TrpcError<'UNAUTHORIZED', undefined>,
-        DansonForm,
+        ProgressiveJsonForm,
         Exclude<LinkErrorCode, 'STREAM_INTERRUPTED'>
       >
     | undefined

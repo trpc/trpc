@@ -207,7 +207,7 @@ export const appRouter = {
       ),
   },
   prints: {
-    /** Rich input in a GET URL: a `Set`, a `Date` and `Money`, with danSON. */
+    /** Rich input in a GET URL: a `Set`, a `Date` and `Money`, with progressive JSON. */
     quote: t.procedure
       .input(
         Schema.Struct({

@@ -220,7 +220,7 @@ await trpc.post.rename.mutate({ id, title }); // as on the plain client; useMuta
 
 ## Server rendering
 
-On the server, create one client per request (`isServer` defaults to `typeof window === 'undefined'`; a server's cache never drops entries). After the render, `dehydrate(trpc)` encodes the settled queries with the links' transformer, so `Date`s survive with danSON; `hydrate(trpc, state)` writes them into the browser's client before it renders.
+On the server, create one client per request (`isServer` defaults to `typeof window === 'undefined'`; a server's cache never drops entries). After the render, `dehydrate(trpc)` encodes the settled queries with the links' transformer, so `Date`s survive with progressive JSON; `hydrate(trpc, state)` writes them into the browser's client before it renders.
 
 ```ts twoslash
 // ---cut-start---

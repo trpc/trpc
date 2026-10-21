@@ -2,7 +2,7 @@
  * Spike (decision streamed-outputs-are-jsonl): a streamed query output, with
  * deferred values at any depth, framed as SSE instead of JSONL.
  *
- * The frames are @trpc12/trpc's async format (danSON's: a head, then `[index,
+ * The frames are @trpc12/trpc's async format (progressive JSON's: a head, then `[index,
  * status, value]` chunks; plain JSON uses the same frames), one SSE event
  * each, with the frame's position as its `id`. `devalue-async` writes the same
  * shape of lines, so the framing is the same for it.

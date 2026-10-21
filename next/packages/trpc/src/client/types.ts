@@ -6,7 +6,7 @@ import type {
 } from '../internal/error.ts';
 import type {
   ClientValue,
-  DansonForm,
+  ProgressiveJsonForm,
   IsAny,
   JsonForm,
   JsonOf,
@@ -31,7 +31,7 @@ import type { AnyLink, DeclContext, TrpcLink } from './link.ts';
  */
 export type ErrorData<
   D,
-  F extends OutputForm = DansonForm,
+  F extends OutputForm = ProgressiveJsonForm,
 > = F['streaming'] extends true
   ? D
   : unknown extends D
@@ -46,7 +46,7 @@ export type ErrorData<
  * @since 0.1.0
  * @stability stable
  */
-export type DefinedError<E, F extends OutputForm = DansonForm> =
+export type DefinedError<E, F extends OutputForm = ProgressiveJsonForm> =
   E extends TrpcError<infer C, infer D, infer T>
     ? TrpcError<C, ErrorData<D, F>, T> & { readonly defined: true }
     : never;
@@ -117,7 +117,7 @@ export type LinkErrorCode =
  */
 export type ClientError<
   E,
-  F extends OutputForm = DansonForm,
+  F extends OutputForm = ProgressiveJsonForm,
   TLinkCodes extends LinkErrorCode = LinkErrorCode,
 > =
   | DefinedError<E, F>
@@ -518,7 +518,7 @@ export type Decodes<TLinks extends ChainTypes> = TLinks extends {
  */
 export type DecodedFormOf<F extends OutputForm> = F['streaming'] extends true
   ? F
-  : DansonForm;
+  : ProgressiveJsonForm;
 
 /**
  * The form procedure `P`'s results arrive in on a chain whose links decode

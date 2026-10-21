@@ -7,7 +7,7 @@
 import { PgClient } from '@effect/sql-pg';
 import { Effect, Stream } from 'effect';
 import { Redis } from 'effect/persistence';
-import { experimental_createTransformer } from '@trpc12/trpc/transformer';
+import { experimental_createProgressiveJson } from '@trpc12/trpc/transformer';
 import {
   tracked,
   type PublisherEvents,
@@ -16,9 +16,10 @@ import {
 
 // --- recipe: shared ---------------------------------------------------------
 
-const danson = experimental_createTransformer();
-const encode = (data: unknown) => JSON.stringify(danson.serialize(data));
-const decode = (text: string) => danson.deserialize(JSON.parse(text));
+const progressiveJson = experimental_createProgressiveJson();
+const encode = (data: unknown) =>
+  JSON.stringify(progressiveJson.serialize(data));
+const decode = (text: string) => progressiveJson.deserialize(JSON.parse(text));
 
 /** Kept events after `lastEventId`, then live ones not already replayed. */
 const resume = <TId>(opts: {

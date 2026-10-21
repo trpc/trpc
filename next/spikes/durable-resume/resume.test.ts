@@ -1,7 +1,7 @@
 import { Effect, Ref, Stream } from 'effect';
 import { Persistence } from 'effect/persistence';
 import {
-  experimental_createTransformer,
+  experimental_createProgressiveJson,
   jsonTransformer,
   type AnyTransformer,
   type Frame,
@@ -71,7 +71,7 @@ const twoInstances = <A>(
 
 for (const [name, transformer] of [
   ['plain JSON', jsonTransformer],
-  ['danSON', experimental_createTransformer()],
+  ['progressive JSON', experimental_createProgressiveJson()],
 ] as [string, AnyTransformer][]) {
   test(`${name}: a call cut after 2 frames resumes on another instance`, async () => {
     let runs = 0;

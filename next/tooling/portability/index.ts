@@ -40,7 +40,7 @@ import {
   tracked,
 } from '@trpc12/trpc/server';
 import { onFinish } from '@trpc12/trpc/middleware';
-import { experimental_createTransformer } from '@trpc12/trpc/transformer';
+import { experimental_createProgressiveJson } from '@trpc12/trpc/transformer';
 import { z } from 'zod';
 
 export interface User {
@@ -148,7 +148,7 @@ export const appRouter = mergeRouters(postRouter, {
 });
 export type AppRouter = typeof appRouter;
 
-export const transformer = experimental_createTransformer();
+export const transformer = experimental_createProgressiveJson();
 
 export const handler = createFetchHandler({
   router: appRouter,

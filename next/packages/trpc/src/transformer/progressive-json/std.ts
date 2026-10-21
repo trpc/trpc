@@ -1,4 +1,4 @@
-/** Port of danSON 0.13.1 `std.ts`: built-in types, same names and shapes. */
+/** Port of progressive JSON 0.13.1 `std.ts`: built-in types, same names and shapes. */
 import {
   instancesOnly,
   type DeserializeRecord,

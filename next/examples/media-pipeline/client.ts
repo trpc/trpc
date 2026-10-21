@@ -1,7 +1,7 @@
 /**
  * Media pipeline: upload photos and get back reports whose fields resolve as
  * they're ready. Files in and out, streamed progress, nested promises,
- * binary frames, an Effect `Stream` subscription, and danSON's custom types
+ * binary frames, an Effect `Stream` subscription, and progressive JSON's custom types
  * next to superjson. `main(url)` throws on any wrong result.
  */
 import assert from 'node:assert/strict';
@@ -15,7 +15,7 @@ import {
   TrpcError,
 } from '@trpc12/trpc/client';
 import { createEffectClient } from '@trpc12/trpc/effect';
-import { danson, Money, sync } from './money.ts';
+import { progressiveJson, Money, sync } from './money.ts';
 import { MAX_ORIGINAL_BYTES, STEP_LATENCY } from './photos.ts';
 import type { AppRouter } from './server.ts';
 
@@ -38,7 +38,7 @@ const bytesOf = async (blob: Blob) => [
   ...new Uint8Array(await blob.arrayBuffer()),
 ];
 
-/** Runs the pipeline against the danSON endpoint at `url`; `/sync` is beside it. */
+/** Runs the pipeline against the progressive JSON endpoint at `url`; `/sync` is beside it. */
 export async function main(url: string) {
   const syncUrl = new URL('sync', url).href;
 
@@ -61,14 +61,14 @@ export async function main(url: string) {
       httpLink({
         url,
         batch: true,
-        transformer: danson,
+        transformer: progressiveJson,
         fetch: recordingFetch,
       }),
     ],
   });
   const binary = createTrpcClient({
     router,
-    links: [httpLink({ url, transformer: danson, binary: true })],
+    links: [httpLink({ url, transformer: progressiveJson, binary: true })],
   });
   const superjsonClient = createTrpcClient({
     router,
@@ -78,7 +78,7 @@ export async function main(url: string) {
   });
   const effectClient = createEffectClient({
     router,
-    links: [httpLink({ url, transformer: danson })],
+    links: [httpLink({ url, transformer: progressiveJson })],
   });
 
   // --- events: an Effect Stream, followed with the Effect client ------------------------
@@ -359,7 +359,7 @@ export async function main(url: string) {
     (err) => err instanceof TrpcError && err.code === 'PAYLOAD_TOO_LARGE',
   );
 
-  // --- query URLs and transformers: rich input over GET, danSON and superjson ---------------
+  // --- query URLs and transformers: rich input over GET, progressive JSON and superjson ---------------
 
   const quoteInput = {
     lines: [
@@ -414,7 +414,7 @@ export async function main(url: string) {
   });
   assert.equal(viaSuperjsonFile.name, 'portrait.png');
 
-  // …but files in inputs need danSON: the call fails before anything is sent.
+  // …but files in inputs need progressive JSON: the call fails before anything is sent.
   const syncRequests = sentTo('/sync/photos.upload').length;
   await assert.rejects(
     superjsonClient.photos.upload.mutate({

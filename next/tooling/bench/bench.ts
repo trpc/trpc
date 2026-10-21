@@ -4,7 +4,7 @@
  * (github.com/middleapi/orpc-benchmarks). Prints Markdown tables.
  *
  * - runtime: each server in its own process, the 6-procedure router with a
- *   pass-through Standard Schema and native types on (danSON, superjson,
+ *   pass-through Standard Schema and native types on (progressive JSON, superjson,
  *   oRPC's own), loaded with autocannon on a `GET` query.
  * - typecheck: a generated project of 3,000 procedures in 1,501 routers,
  *   each called through the typed client; `tsc --extendedDiagnostics`.
@@ -366,21 +366,21 @@ const bundles: Record<
 > = {
   trpc12: {
     client: `import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
-import { experimental_createTransformer } from '@trpc12/trpc/transformer';
-export const client = createTrpcClient({ router: routerType<any>(), links: [httpLink({ url: '/trpc', transformer: experimental_createTransformer() })] });`,
+import { experimental_createProgressiveJson } from '@trpc12/trpc/transformer';
+export const client = createTrpcClient({ router: routerType<any>(), links: [httpLink({ url: '/trpc', transformer: experimental_createProgressiveJson() })] });`,
     node: `import { createServer } from 'node:http';
 import { NodeHttpServer } from '@effect/platform-node';
 import { Layer } from 'effect';
 import { serve } from '@trpc12/trpc/http';
-import { experimental_createTransformer } from '@trpc12/trpc/transformer';
+import { experimental_createProgressiveJson } from '@trpc12/trpc/transformer';
 import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
 const t = initTrpc();
-const handler = createFetchHandler({ router: { hello: t.procedure.query(() => 'hi') }, transformer: experimental_createTransformer() });
+const handler = createFetchHandler({ router: { hello: t.procedure.query(() => 'hi') }, transformer: experimental_createProgressiveJson() });
 export const app = serve(handler).pipe(Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 })));`,
-    fetch: `import { experimental_createTransformer } from '@trpc12/trpc/transformer';
+    fetch: `import { experimental_createProgressiveJson } from '@trpc12/trpc/transformer';
 import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
 const t = initTrpc();
-export const handler = createFetchHandler({ router: { hello: t.procedure.query(() => 'hi') }, transformer: experimental_createTransformer() });`,
+export const handler = createFetchHandler({ router: { hello: t.procedure.query(() => 'hi') }, transformer: experimental_createProgressiveJson() });`,
   },
   trpc11: {
     client: `import { createTRPCClient, httpLink, httpSubscriptionLink, splitLink } from '@trpc/client';
@@ -469,7 +469,7 @@ const bundleSizes = Command.make('bundle', { snapshot }, (opts) =>
       ),
     ]);
     yield* Console.log(
-      'minified / gzip -9, rolldown tree-shaken; native types on (danSON, superjson, oRPC built-in)\n\n' +
+      'minified / gzip -9, rolldown tree-shaken; native types on (progressive JSON, superjson, oRPC built-in)\n\n' +
         table(['', 'tRPC v12', 'tRPC v11', 'oRPC v2'], rows),
     );
     if (opts.snapshot) {
@@ -501,11 +501,11 @@ const budgets = [
 export const client = createTrpcClient({ router: routerType<any>(), links: [httpLink({ url: '/trpc' })] });`,
   },
   {
-    name: 'full client (retry, SSE, danSON)',
+    name: 'full client (retry, SSE, progressive JSON)',
     target: 25_000,
     code: `import { createTrpcClient, httpLink, retryLink, routerType } from '@trpc12/trpc/client';
-import { experimental_createTransformer } from '@trpc12/trpc/transformer';
-export const client = createTrpcClient({ router: routerType<any>(), links: [retryLink(), httpLink({ url: '/trpc', transformer: experimental_createTransformer() })] });`,
+import { experimental_createProgressiveJson } from '@trpc12/trpc/transformer';
+export const client = createTrpcClient({ router: routerType<any>(), links: [retryLink(), httpLink({ url: '/trpc', transformer: experimental_createProgressiveJson() })] });`,
   },
 ] as const;
 

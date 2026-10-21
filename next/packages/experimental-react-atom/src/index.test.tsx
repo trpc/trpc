@@ -6,7 +6,7 @@ import {
 import { createAtomClient } from '@trpc12/experimental-react-atom';
 import { localLink, routerType } from '@trpc12/trpc/client';
 import {
-  experimental_createTransformer,
+  experimental_createProgressiveJson,
   jsonTransformer,
   type AnyTransformer,
 } from '@trpc12/trpc/transformer';
@@ -27,7 +27,7 @@ import {
   type AppRouter,
 } from '../../trpc/src/fixtures/posts.ts';
 
-const transformer = experimental_createTransformer();
+const transformer = experimental_createProgressiveJson();
 
 const setup = () => ({
   trpc: createAtomClient({

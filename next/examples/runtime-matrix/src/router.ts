@@ -5,7 +5,7 @@
  */
 import { Context, Effect, Layer } from 'effect';
 import { cors } from '@trpc12/trpc/http';
-import { experimental_createTransformer } from '@trpc12/trpc/transformer';
+import { experimental_createProgressiveJson } from '@trpc12/trpc/transformer';
 import { error, initTrpc, tracked } from '@trpc12/trpc/server';
 import { z } from 'zod';
 
@@ -66,7 +66,7 @@ export const appRouter = {
         ? { id: '1', title: 'One router, every runtime' }
         : error({ code: 'NOT_FOUND', data: { id: opts.input.id } }),
     ),
-  /** Dates and Maps survive the trip: both ends use danSON. */
+  /** Dates and Maps survive the trip: both ends use progressive JSON. */
   echo: t.procedure
     .input(z.object({ at: z.date(), tags: z.map(z.string(), z.number()) }))
     .mutation((opts) => ({ ...opts.input, by: opts.ctx.runtime.name })),
@@ -109,7 +109,7 @@ export const appRouter = {
 };
 export type AppRouter = typeof appRouter;
 
-export const transformer = experimental_createTransformer();
+export const transformer = experimental_createProgressiveJson();
 export const allowedOrigin = 'https://app.example.com';
 
 /** What every entry point passes `createFetchHandler`, besides its context and layer. */

@@ -5,7 +5,7 @@ import {
   routerType,
   safe,
 } from '@trpc12/trpc/client';
-import { experimental_createTransformer } from '@trpc12/trpc/transformer';
+import { experimental_createProgressiveJson } from '@trpc12/trpc/transformer';
 import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
@@ -103,7 +103,7 @@ test('file bytes cross a port as bytes, not base64', async () => {
   };
   const channel = new MessageChannel();
   const { port2 } = channel;
-  const transformer = experimental_createTransformer();
+  const transformer = experimental_createProgressiveJson();
   createFetchHandler({ router, transformer }).messagePort(channel.port1);
   const sent: unknown[] = [];
   port2.on('message', (message: unknown) => sent.push(message));
@@ -135,7 +135,7 @@ test('a port peer that posts values JSON cannot hold is refused', async () => {
     router: {
       echo: t.procedure.input(z.unknown()).mutation((opts) => opts.input),
     },
-    transformer: experimental_createTransformer(),
+    transformer: experimental_createProgressiveJson(),
   }).messagePort(channel.port1);
   const replies: unknown[] = [];
   const replied = new Promise<void>((resolve) =>
@@ -145,8 +145,12 @@ test('a port peer that posts values JSON cannot hold is refused', async () => {
     }),
   );
   try {
-    port2.postMessage({ type: 'init', version: '12', transformer: 'danson' });
-    // Structured clone keeps the Date; danSON only reads JSON.
+    port2.postMessage({
+      type: 'init',
+      version: '12',
+      transformer: 'progressive-json',
+    });
+    // Structured clone keeps the Date; progressive JSON only reads JSON.
     port2.postMessage({
       id: 1,
       type: 'request',

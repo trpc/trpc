@@ -12,7 +12,7 @@ import {
   HEADER,
   PROTOCOL_VERSION,
 } from '../../internal/protocol.ts';
-import type { Chunk } from '../../transformer/danson/index.ts';
+import type { Chunk } from '../../transformer/progressive-json/index.ts';
 import { responseOptions } from './body.ts';
 import { wire, type HttpHandler } from './http-handler.ts';
 

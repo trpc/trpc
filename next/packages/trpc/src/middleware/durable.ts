@@ -25,13 +25,13 @@ import {
 } from '../internal/error.ts';
 import { HEADER } from '../internal/protocol.ts';
 import type { Unset } from '../internal/types.ts';
-import { danson } from '../transformer/danson.ts';
+import { progressiveJson } from '../transformer/progressive-json.ts';
 import type { Transformer } from '../transformer/index.ts';
 import type {
   Chunk,
   Frame,
   SerializeReturn,
-} from '../transformer/danson/index.ts';
+} from '../transformer/progressive-json/index.ts';
 import { CurrentFrameSink } from '../server/execution/index.ts';
 import {
   makeEffectMiddleware,
@@ -186,7 +186,7 @@ export function experimental_durable<TReq extends MiddlewareRequirements = {}>(
   const claimTtl = Duration.fromInputUnsafe(options.claimTtl ?? '30 seconds');
   const pollInterval = options.pollInterval ?? '250 millis';
   const streamPollInterval = options.streamPollInterval ?? '25 millis';
-  const transformer = options.transformer ?? danson;
+  const transformer = options.transformer ?? progressiveJson;
   const keyOf =
     options.key ??
     ((opts) =>

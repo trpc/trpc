@@ -38,7 +38,7 @@ import {
   isAsyncIterable,
   isPromiseLike,
   isPlainObject,
-} from '../../transformer/danson/index.ts';
+} from '../../transformer/progressive-json/index.ts';
 import {
   readBytes,
   responseOptions,

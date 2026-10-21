@@ -12,12 +12,12 @@ pnpm client                      # …and the client against http://localhost:30
 
 | File        | What's in it                                                                                                                                                                     |
 | ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `server.ts` | `listen(port)`: one store behind two handlers on one `HttpRouter`, `/trpc` (danSON, batching) and `/sync` (`createSyncTransformer(superjson)`).                                  |
-| `client.ts` | `main(url)`: four clients (danSON batched, danSON binary frames, superjson, Effect) driving every feature below.                                                                 |
+| `server.ts` | `listen(port)`: one store behind two handlers on one `HttpRouter`, `/trpc` (progressive JSON, batching) and `/sync` (`createSyncTransformer(superjson)`).                        |
+| `client.ts` | `main(url)`: four clients (progressive JSON batched, progressive JSON binary frames, superjson, Effect) driving every feature below.                                             |
 | `start.ts`  | Starts the server, runs the client, and stops the server.                                                                                                                        |
 | `router.ts` | The procedures, written in Effect (Effect Schema inputs, services from the layer), plus one async generator, the v11 way.                                                        |
 | `photos.ts` | The `Photos` service: an in-memory store, a PNG header reader, SVG placeholders, upload status, and a `PubSub` of pipeline events. Tagged errors `PHOTO_NOT_FOUND`, `NOT_A_PNG`. |
-| `money.ts`  | A `Money` class, kept by danSON through a `CustomType` and by superjson through `registerCustom`; both ends import its transformers.                                             |
+| `money.ts`  | A `Money` class, kept by progressive JSON through a `CustomType` and by superjson through `registerCustom`; both ends import its transformers.                                   |
 
 ## What it covers
 
@@ -29,7 +29,7 @@ pnpm client                      # …and the client against http://localhost:30
 - **Binary frames.** The same report through `httpLink({ binary: true })` arrives as `application/vnd.trpc.frames` instead of JSONL, with the same bytes.
 - **Files in outputs.** `photos.original` returns the `File` itself: unbatched it's the response body (`content-type`, `content-disposition`), so the URL is a download link, and it works over superjson too. `album.export` is an async generator yielding `{ id, file }` items, with its return value typed and validated by `stream(Item, Return)`.
 - **An Effect `Stream` subscription.** `photos.events` follows a `PubSub`, validated per event with `stream()`, and is read with `createEffectClient` as a `Stream`.
-- **Transformers and query URLs.** `prints.quote` takes a `Set`, a `Date` and `Money` in a GET URL (`?input=` with sorted keys, so two key orders give one URL), and returns `Money`, a `Map` and a `Date`. The same call over `/sync` keeps them through superjson. An upload over superjson fails before anything is sent: files in inputs need danSON.
+- **Transformers and query URLs.** `prints.quote` takes a `Set`, a `Date` and `Money` in a GET URL (`?input=` with sorted keys, so two key orders give one URL), and returns `Money`, a `Map` and a `Date`. The same call over `/sync` keeps them through superjson. An upload over superjson fails before anything is sent: files in inputs need progressive JSON.
 
 ## Notes
 

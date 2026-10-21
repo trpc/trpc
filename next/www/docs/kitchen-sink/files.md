@@ -28,7 +28,7 @@ The avatar's schema is `z.instanceof(File)` with two refinements, inside the inp
 kitchen-sink-files/src/server.ts#router
 ```
 
-Files in an input need danSON, on the handler and on the link: plain JSON can't carry them ([Transformers](../server/transformers.md)). With it, `httpLink` sends a call whose input holds a `File` alone, outside any batch, as `multipart/form-data`.
+Files in an input need progressive JSON, on the handler and on the link: plain JSON can't carry them ([Transformers](../server/transformers.md)). With it, `httpLink` sends a call whose input holds a `File` alone, outside any batch, as `multipart/form-data`.
 
 ## Sending it
 

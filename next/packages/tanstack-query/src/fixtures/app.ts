@@ -10,8 +10,8 @@ import {
   type TrpcClient,
 } from '@trpc12/trpc/client';
 import {
-  experimental_createTransformer,
-  type DansonForm,
+  experimental_createProgressiveJson,
+  type ProgressiveJsonForm,
 } from '@trpc12/trpc/transformer';
 import { error, initTrpc } from '@trpc12/trpc/server';
 import { TestServer } from '@trpc12/trpc/internal/testing';
@@ -23,11 +23,11 @@ export interface Post {
   createdAt: Date;
 }
 
-/** Posts carry `Date`s through hydration, so both ends use danSON. */
-export const transformer = experimental_createTransformer();
+/** Posts carry `Date`s through hydration, so both ends use progressive JSON. */
+export const transformer = experimental_createProgressiveJson();
 
-/** What the app's links declare: danSON's form. Contexts take it as their links' types. */
-export type Links = { form: DansonForm };
+/** What the app's links declare: progressive JSON's form. Contexts take it as their links' types. */
+export type Links = { form: ProgressiveJsonForm };
 
 export type AppClient = TrpcClient<AppRouter, {}, undefined, Links>;
 

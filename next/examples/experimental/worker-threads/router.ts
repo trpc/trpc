@@ -37,7 +37,7 @@ export const appRouter = {
   primes: t.procedure
     .input(z.object({ below: z.number().int().positive().max(10_000_000) }))
     .query((opts) => countPrimes(opts.input.below)),
-  /** A `Date` now, a `File` once it's built: danSON on both ends. */
+  /** A `Date` now, a `File` once it's built: progressive JSON on both ends. */
   export: t.procedure
     .input(z.object({ rows: z.number().int().positive() }))
     .query((opts) => ({

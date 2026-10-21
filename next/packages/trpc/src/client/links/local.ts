@@ -7,7 +7,7 @@ import {
   TrpcError,
 } from '../../internal/error.ts';
 import type {
-  DansonForm,
+  ProgressiveJsonForm,
   FormOfTransformer,
   MaybePromise,
 } from '../../internal/types.ts';
@@ -98,7 +98,7 @@ export function localLink<
   opts: LocalLinkOptions<TRouter> & { transformer?: TTransformer },
 ): TrpcLink<{
   form: TTransformer extends false
-    ? DansonForm
+    ? ProgressiveJsonForm
     : FormOfTransformer<TTransformer>;
 }>;
 export function localLink<TRouter extends AnyRouter>(

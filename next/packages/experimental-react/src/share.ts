@@ -26,7 +26,7 @@ export const sortKeys = (value: unknown): unknown => {
 /**
  * `prev` when `next` is deeply equal to it; otherwise `next` with each part
  * deeply equal to `prev`'s part replaced by it. Shares plain objects and
- * arrays, like TanStack's, and `Date`s with the same time, which a danSON
+ * arrays, like TanStack's, and `Date`s with the same time, which a progressive JSON
  * response revives as new objects each time. `Map`s, `Set`s and class
  * instances compare by identity.
  */

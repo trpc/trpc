@@ -24,9 +24,9 @@ import {
   routerType,
 } from '@trpc12/trpc/client';
 import {
-  experimental_createTransformer,
+  experimental_createProgressiveJson,
   createSyncTransformer,
-  type DansonForm,
+  type ProgressiveJsonForm,
 } from '@trpc12/trpc/transformer';
 import {
   createRouterClient,
@@ -112,7 +112,7 @@ test('errors are the typed client errors', async () => {
         'InvalidInput'
       >
     | TrpcError<'NOT_FOUND', { id: string }>,
-    DansonForm,
+    ProgressiveJsonForm,
     Exclude<LinkErrorCode, 'STREAM_INTERRUPTED'>
   >;
   expectTypeOf(result.error).toEqualTypeOf<Expected>();
@@ -929,8 +929,10 @@ test("hydration follows the client's transformer (19)", async () => {
   );
   expect(post?.createdAt).toBeInstanceOf(Date);
   expect(
-    hydrationOptions({ client, transformer: experimental_createTransformer() })
-      .dehydrate.serializeData!(new Date(0)),
+    hydrationOptions({
+      client,
+      transformer: experimental_createProgressiveJson(),
+    }).dehydrate.serializeData!(new Date(0)),
   ).toEqual({ json: { _: '$', type: 'Date', value: new Date(0).toJSON() } });
 });
 

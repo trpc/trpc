@@ -9,7 +9,7 @@ import {
   sourceOf,
   type Status,
   VALUE,
-} from '../../transformer/danson/index.ts';
+} from '../../transformer/progressive-json/index.ts';
 
 const PROMISE = 0;
 const ITERABLE = 1;

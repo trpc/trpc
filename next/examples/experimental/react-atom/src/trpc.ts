@@ -2,11 +2,11 @@ import { scheduleTask } from '@effect/atom-react';
 import { createIsomorphicFn } from '@tanstack/react-start';
 import { createAtomClient } from '@trpc12/experimental-react-atom';
 import { httpLink, localLink, routerType } from '@trpc12/trpc/client';
-import { experimental_createTransformer } from '@trpc12/trpc/transformer';
+import { experimental_createProgressiveJson } from '@trpc12/trpc/transformer';
 import { AtomRegistry } from 'effect/reactivity';
 import { type AppRouter, appRouter } from './server/router.ts';
 
-const transformer = experimental_createTransformer();
+const transformer = experimental_createProgressiveJson();
 
 // A server render calls the router in process; the browser calls /api/trpc.
 const sendLink = createIsomorphicFn()

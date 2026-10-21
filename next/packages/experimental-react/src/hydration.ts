@@ -43,7 +43,7 @@ const transformerOf = (trpc: HasStore, opts: HydrationOptions) =>
 
 /**
  * Encodes every query with data, with the client's transformer, so `Date`s
- * and `Map`s survive with danSON. Pending and failed queries are left out:
+ * and `Map`s survive with progressive JSON. Pending and failed queries are left out:
  * the browser runs them.
  *
  * @example

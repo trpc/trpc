@@ -1,5 +1,5 @@
-// `pnpm bench budget`'s full client: retry, SSE, danSON.
-import { experimental_createTransformer } from '@trpc12/trpc/transformer';
+// `pnpm bench budget`'s full client: retry, SSE, progressive JSON.
+import { experimental_createProgressiveJson } from '@trpc12/trpc/transformer';
 import {
   createTrpcClient,
   httpLink,
@@ -11,6 +11,9 @@ export const client = createTrpcClient({
   router: routerType<any>(),
   links: [
     retryLink(),
-    httpLink({ url: '/trpc', transformer: experimental_createTransformer() }),
+    httpLink({
+      url: '/trpc',
+      transformer: experimental_createProgressiveJson(),
+    }),
   ],
 });

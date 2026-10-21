@@ -28,7 +28,7 @@ export interface PlaceholderTransformer<T = unknown> {
   value: T;
 }
 /**
- * danSON's serializers by type name.
+ * Progressive JSON's serializers by type name.
  * @since 0.1.0
  * @stability experimental
  */
@@ -43,7 +43,7 @@ export interface DeserializeRecursive {
   set: (target: any, value: any) => void;
 }
 /**
- * danSON's deserializers by type name.
+ * Progressive JSON's deserializers by type name.
  * @since 0.1.0
  * @stability experimental
  */

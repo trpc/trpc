@@ -3,7 +3,7 @@ import { HttpServerResponse, type HttpServerRequest } from 'effect/http';
 import { statusOf, type AnyTrpcError } from '../../internal/error.ts';
 import { blobHeaders } from '../../internal/protocol.ts';
 import type { ProcedureType } from '../../internal/types.ts';
-import type { Chunk, Frame } from '../../transformer/danson/index.ts';
+import type { Chunk, Frame } from '../../transformer/progressive-json/index.ts';
 import {
   createResponseHandle,
   CurrentFrameSink,

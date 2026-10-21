@@ -27,7 +27,7 @@ import {
   type AnyTrpcError,
 } from '../internal/error.ts';
 import type { JsonSchema } from '../internal/json-schema.ts';
-import type { DansonForm, MaybePromise } from '../internal/types.ts';
+import type { ProgressiveJsonForm, MaybePromise } from '../internal/types.ts';
 import {
   experimental_parseBracketNotation,
   experimental_coerceBySchema,
@@ -141,7 +141,7 @@ export type ActionResult<
   ? TDef['output']
   : ActionSafeResult<
       TDef['output'],
-      ClientError<TDef['errors'], DansonForm, never>
+      ClientError<TDef['errors'], ProgressiveJsonForm, never>
     >;
 
 /**
@@ -155,7 +155,10 @@ export type CallableResult<
   TMode extends ActionResultMode,
 > = TMode extends 'throw'
   ? TDef['output']
-  : SafeResult<TDef['output'], ClientError<TDef['errors'], DansonForm, never>>;
+  : SafeResult<
+      TDef['output'],
+      ClientError<TDef['errors'], ProgressiveJsonForm, never>
+    >;
 
 type Args<TInput> = undefined extends TInput
   ? [input?: TInput]

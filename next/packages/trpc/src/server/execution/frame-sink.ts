@@ -6,7 +6,7 @@
  * @internal
  */
 import { Context, type Stream } from 'effect';
-import type { Chunk, Frame } from '../../transformer/danson/index.ts';
+import type { Chunk, Frame } from '../../transformer/progressive-json/index.ts';
 
 /** @internal */
 export interface FrameSink {

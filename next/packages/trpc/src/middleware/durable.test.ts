@@ -8,7 +8,7 @@ import {
 } from '@trpc12/trpc/client';
 import { experimental_durable } from '@trpc12/trpc/middleware';
 import { experimental_createOpenApiHandler } from '@trpc12/trpc/openapi';
-import { experimental_createTransformer } from '@trpc12/trpc/transformer';
+import { experimental_createProgressiveJson } from '@trpc12/trpc/transformer';
 import {
   type AnyRouter,
   call,
@@ -632,17 +632,17 @@ test('inputs with files are kept without a fingerprint; an error that cannot be 
       throw new TrpcError({ code: 'ODD', data: { fn: () => 1 } });
     }),
   } satisfies AnyRouter;
-  const danson = experimental_createTransformer();
+  const progressiveJson = experimental_createProgressiveJson();
   await using server = await createTestServer({
     router,
-    transformer: danson,
+    transformer: progressiveJson,
     layer: Persistence.layerBackingMemory,
   });
   const client = createTrpcClient({
     router,
     links: [
       experimental_durableLink(),
-      httpLink({ url: server.url, transformer: danson }),
+      httpLink({ url: server.url, transformer: progressiveJson }),
     ],
   });
   const file = new File(['bytes'], 'a.txt');

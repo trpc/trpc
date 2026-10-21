@@ -1,5 +1,5 @@
 /**
- * The danSON port: the sync format, its built-in types, the streamed format
+ * The progressive JSON port: the sync format, its built-in types, the streamed format
  * on Effect `Stream`, and the helpers they share.
  *
  * @module

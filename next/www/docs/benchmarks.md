@@ -19,7 +19,7 @@ In this snapshot:
 
 ## Throughput
 
-Each server runs in its own Node process and serves the same router of 6 procedures, each with a Standard Schema input that passes its value through, and returning `{ name, date: new Date(), input }`. Native types are on in every framework: danSON in v12, superjson in v11, and oRPC's own transformer. [autocannon](https://github.com/mcollina/autocannon) sends the `GET` request each framework's client sends for `nested.procedure_1('hello world')`.
+Each server runs in its own Node process and serves the same router of 6 procedures, each with a Standard Schema input that passes its value through, and returning `{ name, date: new Date(), input }`. Native types are on in every framework: progressive JSON in v12, superjson in v11, and oRPC's own transformer. [autocannon](https://github.com/mcollina/autocannon) sends the `GET` request each framework's client sends for `nested.procedure_1('hello world')`.
 
 v12 serves with `serve(handler)` on Effect's Node `HttpServer`, v11 with its standalone adapter, and oRPC with `RPCHandler` from `@orpc/server/node`.
 
@@ -41,7 +41,7 @@ Part of v12's memory is Effect's declarations, which every v12 project's type-ch
 
 Each framework's minimal client, Node server and fetch handler, bundled by rolldown with tree-shaking, minifying and `NODE_ENV=production`, then gzipped at level 9.
 
-- The v12 client is `httpLink` with danSON, which also reads streamed responses and subscriptions.
+- The v12 client is `httpLink` with progressive JSON, which also reads streamed responses and subscriptions.
 - The v11 client is `httpLink`, `httpSubscriptionLink` and `splitLink` with superjson, as oRPC's measurement has it.
 - The oRPC client is `RPCLink` from `@orpc/client/fetch`.
 

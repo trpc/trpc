@@ -20,7 +20,7 @@ import {
   type inferRouterOutputs,
 } from '@trpc12/trpc/server';
 import {
-  experimental_createTransformer,
+  experimental_createProgressiveJson,
   createSyncTransformer,
   jsonTransformer,
   type JsonOf,
@@ -30,7 +30,7 @@ import { z } from 'zod';
 import { createTestServer } from '../fixtures/server.ts';
 
 const at = new Date('2026-10-15T00:00:00.000Z');
-const danson = experimental_createTransformer();
+const progressiveJson = experimental_createProgressiveJson();
 const t = initTrpc();
 
 /** The router doesn't name a transformer: the handler and the links do. */
@@ -158,11 +158,11 @@ test('ReadableStream outputs arrive as ReadableStreams; unknown stays unknown', 
   const itemsRouter = { items: t.procedure.query(items) };
   await using richServer = await createTestServer({
     router: itemsRouter,
-    transformer: danson,
+    transformer: progressiveJson,
   });
   const richOut = await createTrpcClient({
     router: routerType<typeof itemsRouter>(),
-    links: [httpLink({ url: richServer.url, transformer: danson })],
+    links: [httpLink({ url: richServer.url, transformer: progressiveJson })],
   }).items.query();
   expectTypeOf(richOut).toEqualTypeOf<ReadableStream<Item>>();
   expect(richOut).toBeInstanceOf(ReadableStream);
@@ -295,11 +295,11 @@ test('error data follows the transformer like outputs', async () => {
 
   await using nativeServer = await createTestServer({
     router: expiring,
-    transformer: danson,
+    transformer: progressiveJson,
   });
   const nativeClient = createTrpcClient({
     router: routerType<typeof expiring>(),
-    links: [httpLink({ url: nativeServer.url, transformer: danson })],
+    links: [httpLink({ url: nativeServer.url, transformer: progressiveJson })],
   });
   const [, nativeErr] = await safe(nativeClient.expired.query());
   if (nativeErr?.defined && nativeErr.code === 'EXPIRED') {
@@ -321,7 +321,7 @@ test('error data follows the transformer like outputs', async () => {
   expect(effectErr).toMatchObject({ data: { at: at.toJSON() } });
   const nativeEffect = createEffectClient({
     router: routerType<typeof expiring>(),
-    links: [httpLink({ url: nativeServer.url, transformer: danson })],
+    links: [httpLink({ url: nativeServer.url, transformer: progressiveJson })],
   });
   const nativeEffectErr = await Effect.runPromise(
     Effect.flip(nativeEffect.expired.query()),
@@ -407,12 +407,12 @@ test('inferRouterOutputs is what a client receives: plain JSON for a router type
 
   await using richServer = await createTestServer({
     router: shapes,
-    transformer: danson,
+    transformer: progressiveJson,
   });
   const makeClient = () =>
     createTrpcClient({
       router: routerType<typeof shapes>(),
-      links: [httpLink({ url: richServer.url, transformer: danson })],
+      links: [httpLink({ url: richServer.url, transformer: progressiveJson })],
     });
   const rich = await makeClient().post.byId.query({ id: '1' });
   type RichPost = inferRouterOutputs<typeof makeClient>['post']['byId'];
@@ -476,7 +476,7 @@ test('devalue as a sync transformer', async () => {
   expect(count.map((c) => c.at)).toEqual([at, at]);
 });
 
-test('nested deferred values stream with every transformer; files in inputs need danSON', async () => {
+test('nested deferred values stream with every transformer; files in inputs need progressive JSON', async () => {
   const deferred = {
     nested: t.procedure.query(() => ({
       later: Promise.resolve({ at }),
@@ -531,7 +531,7 @@ test("returning a deferred AsyncIterable ends a read that's still waiting for it
     [Symbol.asyncIterator]: () => ({ next: () => new Promise(() => {}) }),
   };
   for (const transformer of [
-    experimental_createTransformer(),
+    experimental_createProgressiveJson(),
     jsonTransformer,
   ]) {
     const serialized = transformer.serializeDeferred({ items: silent });

@@ -20,7 +20,7 @@ const makeClient = () =>
     links: [httpLink({ url: url(), batch: true, transformer })],
   });
 
-// Typed from the client, so hooks see danSON's `Date`s and files.
+// Typed from the client, so hooks see progressive JSON's `Date`s and files.
 export const [TrpcProvider, useTrpc] = createTrpcContext<typeof makeClient>();
 
 export function Providers(props: { children: ReactNode }) {

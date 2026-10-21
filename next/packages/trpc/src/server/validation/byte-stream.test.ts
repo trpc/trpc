@@ -15,7 +15,7 @@ import {
   wsLink,
 } from '@trpc12/trpc/client';
 import { toHttpEffect } from '@trpc12/trpc/http';
-import { experimental_createTransformer } from '@trpc12/trpc/transformer';
+import { experimental_createProgressiveJson } from '@trpc12/trpc/transformer';
 import {
   createFetchHandler,
   createRouterClient,
@@ -253,14 +253,16 @@ test('a byte stream call leaves the batch and goes alone', async () => {
   expect(server.requests).toHaveLength(2);
 });
 
-test('danSON and other transformers leave the body as it is', async () => {
-  const transformer = experimental_createTransformer();
+test('progressive JSON and other transformers leave the body as it is', async () => {
+  const transformer = experimental_createProgressiveJson();
   await using server = await createTestServer({ router, transformer });
   const client = createTrpcClient({
     router: routerType<AppRouter>(),
     links: [httpLink({ url: server.url, transformer, binary: true })],
   });
-  expect(await client.echo.mutate(bytes('danSON'))).toBe('danSON');
+  expect(await client.echo.mutate(bytes('progressive JSON'))).toBe(
+    'progressive JSON',
+  );
 });
 
 test('retryLink never retries a byte stream call, as its body is read once', async () => {

@@ -10,7 +10,7 @@ An issue tracker built with Vite+ and React 19 on [`@trpc12/tanstack-react-query
 | [`src/issue-detail.tsx`](./src/issue-detail.tsx) | `useSuspenseQuery` under a Suspense boundary; `useSubscription` with `subscriptionOptions()` writing live comments into the query's cache entry                        |
 | [`src/app.tsx`](./src/app.tsx)                   | `liveOptions()`: counters pushed by a subscription, read with `useQuery`; an offline switch on TanStack's `onlineManager`                                              |
 | [`src/activity.tsx`](./src/activity.tsx)         | `streamedOptions()` with `maxChunks`: the newest events of a subscription, in the cache                                                                                |
-| [`server/tracker.ts`](./server/tracker.ts)       | the router: a cursor-paged query, `tracked()` comments that resume from `lastEventId`, and `Date`s over danSON                                                         |
+| [`server/tracker.ts`](./server/tracker.ts)       | the router: a cursor-paged query, `tracked()` comments that resume from `lastEventId`, and `Date`s over progressive JSON                                               |
 | [`server.ts`](./server.ts)                       | both APIs' `handler.routes` merged with Effect's `HttpStaticServer` for the built app, on `NodeHttpServer`; `listen()` for the smoke                                   |
 | [`vite.config.ts`](./vite.config.ts)             | the same APIs inside `vp dev` and `vp preview`, mounted with `NodeHttpServer.makeHandler`                                                                              |
 

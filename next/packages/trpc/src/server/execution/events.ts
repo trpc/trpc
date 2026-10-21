@@ -1,7 +1,7 @@
 import { Effect, FiberSet, Stream } from 'effect';
 import { isTrpcError, type AnyTrpcError } from '../../internal/error.ts';
 import type { AnyTransformer } from '../../transformer/index.ts';
-import type { Chunk } from '../../transformer/danson/index.ts';
+import type { Chunk } from '../../transformer/progressive-json/index.ts';
 import { unexpectedError } from './execute.ts';
 import { isTracked } from '../subscriptions/index.ts';
 

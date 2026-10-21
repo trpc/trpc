@@ -12,7 +12,7 @@ import { PgClient } from '@effect/sql-pg';
 import { type Duration, Effect, Layer, ManagedRuntime, Redacted } from 'effect';
 import { HttpServer } from 'effect/http';
 import { serve } from '@trpc12/trpc/http';
-import { experimental_createTransformer } from '@trpc12/trpc/transformer';
+import { experimental_createProgressiveJson } from '@trpc12/trpc/transformer';
 import {
   createFetchHandler,
   error,
@@ -22,8 +22,8 @@ import {
 import { z } from 'zod';
 import { createEventsTable, pgPublisher, redisPublisher } from './publisher.ts';
 
-/** Messages carry a `Date`, so both ends use danSON instead of plain JSON. */
-export const transformer = experimental_createTransformer();
+/** Messages carry a `Date`, so both ends use progressive JSON instead of plain JSON. */
+export const transformer = experimental_createProgressiveJson();
 
 export interface Message {
   from: string;

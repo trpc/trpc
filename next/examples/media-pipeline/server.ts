@@ -1,5 +1,5 @@
 /**
- * One store behind two endpoints: `/trpc` with danSON, batching on, and
+ * One store behind two endpoints: `/trpc` with progressive JSON, batching on, and
  * `/sync` with superjson, as a v11 app would have it.
  */
 import { createServer } from 'node:http';
@@ -7,7 +7,7 @@ import { NodeHttpServer } from '@effect/platform-node';
 import { Effect, Layer, ManagedRuntime } from 'effect';
 import { HttpRouter, HttpServer } from 'effect/http';
 import { createFetchHandler } from '@trpc12/trpc/server';
-import { danson, sync } from './money.ts';
+import { progressiveJson, sync } from './money.ts';
 import { Photos, STEP_LATENCY } from './photos.ts';
 import { appRouter } from './router.ts';
 
@@ -22,7 +22,7 @@ export async function listen(port = 0) {
   const handler = createFetchHandler({
     router: appRouter,
     layer,
-    transformer: danson,
+    transformer: progressiveJson,
     batch: true,
   });
   const syncHandler = createFetchHandler({
@@ -55,6 +55,8 @@ export async function listen(port = 0) {
 
 if (import.meta.main) {
   const server = await listen(Number(process.env['PORT'] ?? 3000));
-  console.log(`media-pipeline: ${server.url} (danSON), and /sync (superjson)`);
+  console.log(
+    `media-pipeline: ${server.url} (progressive JSON), and /sync (superjson)`,
+  );
   process.once('SIGINT', () => void server[Symbol.asyncDispose]());
 }

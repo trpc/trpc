@@ -119,16 +119,16 @@ export type Deserialized<T> =
 export interface OutputForm {
   /** Types a sync transformer rebuilds; everything else arrives as JSON. */
   readonly keeps: unknown;
-  /** Deferred values and files at any depth (danSON), or only at the root. */
+  /** Deferred values and files at any depth (progressive JSON), or only at the root. */
   readonly streaming: boolean;
 }
 
 /**
- * danSON's form, and in-process callers': native types, deferred values at any depth.
+ * Progressive JSON's form, and in-process callers': native types, deferred values at any depth.
  * @since 0.1.0
  * @stability stable
  */
-export interface DansonForm extends OutputForm {
+export interface ProgressiveJsonForm extends OutputForm {
   readonly keeps: unknown;
   readonly streaming: true;
 }
@@ -277,7 +277,7 @@ type Framed<T, K> = [T] extends [JsonSafe]
  */
 export type ClientValue<
   T,
-  F extends OutputForm = DansonForm,
+  F extends OutputForm = ProgressiveJsonForm,
 > = F['streaming'] extends true ? Deserialized<T> : Framed<T, F['keeps']>;
 
 /**

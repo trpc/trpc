@@ -19,7 +19,7 @@ import {
   type LinkErrorCode,
   type LocalLinkOptions,
 } from '@trpc12/trpc/client';
-import type { DansonForm } from '@trpc12/trpc/transformer';
+import type { ProgressiveJsonForm } from '@trpc12/trpc/transformer';
 import { createEffectClient } from '@trpc12/trpc/effect';
 import {
   type AnyRouter,
@@ -278,7 +278,7 @@ test('typed errors land in the Effect error channel', async () => {
             >,
             'InvalidInput'
           >,
-        DansonForm,
+        ProgressiveJsonForm,
         Exclude<LinkErrorCode, 'STREAM_INTERRUPTED'>
       >
     >
