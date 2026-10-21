@@ -29,7 +29,7 @@ links:
 
 ## Why it matters
 
-A query or mutation whose output holds async iterables, `Stream`s or promises answers with `application/jsonl`; subscriptions use SSE, and batches are JSONL too, so one decoder reads both. The human skipped this on 2026-10-16 ("I think nested promises etc might be a problem for sse but Spike it"), then said "Later" on 2026-10-17. The spike found nested deferred values are no problem for SSE (danSON, plain JSON and `devalue-async` all flatten them into one frame per event), SSE costs about 1.24× the bytes, and `Last-Event-ID` resume needs the server to keep each call's frames. Nothing else waits on it.
+A query or mutation whose output holds async iterables, `Stream`s or promises answers with `application/jsonl`; subscriptions use SSE, and batches are JSONL too, so one decoder reads both. The human skipped this on 2026-10-16 ("I think nested promises etc might be a problem for sse but Spike it"), then said "Later" on 2026-10-17. The spike found nested deferred values are no problem for SSE (progressive JSON, plain JSON and `devalue-async` all flatten them into one frame per event), SSE costs about 1.24× the bytes, and `Last-Event-ID` resume needs the server to keep each call's frames. Nothing else waits on it.
 
 ## Options
 

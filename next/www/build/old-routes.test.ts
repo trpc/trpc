@@ -70,6 +70,8 @@ const served = servedPaths([
   'v12/docs/getting-started/index.html',
   'v12/docs/server/transformers.md',
   'v12/docs/server/transformers/index.html',
+  'v12/decisions/progressive-json/index.html',
+  'v12/decisions/replaceable-transformers/index.html',
 ]);
 
 describe('servedPaths', () => {
@@ -247,6 +249,18 @@ describe('oldRedirects', () => {
     expect(bySource.get('/v12/docs/server/serializers.md')?.location).toBe(
       '/v12/docs/server/transformers.md',
     );
+  });
+
+  it("sends a moved decision's URL where it is now, and not its markdown's, which no decision has", () => {
+    expect(bySource.get('/v12/decisions/serializer')).toEqual({
+      location: '/v12/decisions/progressive-json',
+      source: '/v12/decisions/serializer',
+      status: 308,
+    });
+    expect(
+      bySource.get('/v12/decisions/replaceable-serializers')?.location,
+    ).toBe('/v12/decisions/replaceable-transformers');
+    expect(bySource.has('/v12/decisions/serializer.md')).toBe(false);
   });
 
   it('names each URL that lands nowhere', () => {

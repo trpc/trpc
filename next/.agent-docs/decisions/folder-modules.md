@@ -9,7 +9,7 @@
   - `sockets/`: `socket.ts`, `socket-session.ts` and `upgrade.ts`.
   - `handler/`: `fetch.ts`, `core.ts`, `routes.ts`, `body.ts` and `handler-context.ts`, request handling.
 - (agent) The same holds in the other public entry folders, where a group of files has one job:
-  - `serializer/danson/`: `sync.ts`, `std.ts`, `stream.ts` and `utils.ts`, the danSON port. `serializer/danson.ts`, danSON with no custom types, stays beside `index.ts`, since it is built with `experimental_createTransformer()` from there.
+  - `transformer/progressive-json/`: `sync.ts`, `std.ts`, `stream.ts` and `utils.ts`, progressive JSON (the danSON port). `transformer/progressive-json.ts`, progressive JSON with no custom types, stays beside `index.ts`, since it is built with `experimental_createProgressiveJson()` from there.
   - `interop/handler/`: `handler.ts`, `socket.ts`, `jsonl.ts` and `errors.ts`, serving v11 clients. `link.ts`, which runs v11 links in a v12 client, stays loose.
   - `client/links/`: the built-in links, which were already a folder.
   - `openapi/rest/`: `routes.ts`, `extension.ts`, `bracket.ts`, `coerce.ts` and `errors.ts`, the REST mapping the OpenAPI handler, generator and link share. The features (`handler.ts`, `generate.ts`, `reference.ts`, `link.ts`, `to-contract.ts`, `typescript.ts`) are one file each, so they stay loose; `typescript.ts` is also the `./openapi/typescript` entry.

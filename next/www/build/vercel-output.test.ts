@@ -72,6 +72,8 @@ const setup = Effect.fn('setup')(function* (
     'robots.txt': siteTextFiles().get('/robots.txt')?.source ?? '',
     'sponsor/index.html': '',
     'v12/decisions/index.html': hiddenMeta,
+    'v12/decisions/progressive-json/index.html': hiddenMeta,
+    'v12/decisions/replaceable-transformers/index.html': hiddenMeta,
   };
   for (const [file, contents] of Object.entries(files)) {
     const target = path.join(root, 'dist/client', file);
@@ -231,6 +233,14 @@ describe('writeVercelOutput', () => {
         'v12/decisions/index.html': {
           contentType: 'text/html; charset=utf-8',
           path: 'v12/decisions',
+        },
+        'v12/decisions/progressive-json/index.html': {
+          contentType: 'text/html; charset=utf-8',
+          path: 'v12/decisions/progressive-json',
+        },
+        'v12/decisions/replaceable-transformers/index.html': {
+          contentType: 'text/html; charset=utf-8',
+          path: 'v12/decisions/replaceable-transformers',
         },
         'docs/server/routers/index.html': {
           contentType: 'text/html; charset=utf-8',

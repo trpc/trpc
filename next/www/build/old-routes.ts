@@ -164,10 +164,14 @@ export const retiredPages: Readonly<Record<string, string>> = {
 };
 
 /**
- * v12 pages that moved, and where they are now. The old URL and its
- * markdown's (`.md`) redirect to the new ones.
+ * v12 pages that moved, and where they are now. The old URL redirects to
+ * the new one, and its markdown's (`.md`) to the new one's, where the new
+ * page has one (the decisions' pages don't).
  */
 export const movedPages: Readonly<Record<string, string>> = {
+  '/v12/decisions/replaceable-serializers':
+    '/v12/decisions/replaceable-transformers',
+  '/v12/decisions/serializer': '/v12/decisions/progressive-json',
   '/v12/docs/server/serializers': '/v12/docs/server/transformers',
 };
 
@@ -304,7 +308,9 @@ export function oldRedirects(opts: {
   }
   const moved = Object.entries(movedPages).flatMap(([source, location]) => [
     [source, location] as const,
-    [`${source}.md`, `${location}.md`] as const,
+    ...(opts.served.has(`${location}.md`)
+      ? [[`${source}.md`, `${location}.md`] as const]
+      : []),
   ]);
   for (const [source, location] of [
     ...Object.entries(retiredPages),
