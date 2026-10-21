@@ -33,7 +33,7 @@ import { AsyncResult, Atom, Reactivity } from 'effect/reactivity';
 import {
   createTrpcClient,
   type AtLeastOneLink,
-  getClientSerializer,
+  getClientTransformer,
   type LinksContext,
   type LinksTypes,
   type RouterOf,
@@ -282,7 +282,7 @@ export function createAtomClient(opts: {
   const client = createEffectClient(opts);
   const serializer =
     opts.serializer ??
-    getClientSerializer(createTrpcClient(opts)) ??
+    getClientTransformer(createTrpcClient(opts)) ??
     jsonTransformer;
   const resultSchema = AsyncResult.Schema({
     success: serializerSchema(serializer),

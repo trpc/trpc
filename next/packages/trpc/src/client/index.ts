@@ -20,7 +20,7 @@ import type {} from '@trpc12/trpc/internal';
 export {
   createSafeClient,
   createTrpcClient,
-  getClientSerializer,
+  getClientTransformer,
   matchError,
   safe,
   type ErrorHandlers,

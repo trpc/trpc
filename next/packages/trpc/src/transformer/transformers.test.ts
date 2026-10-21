@@ -3,7 +3,7 @@ import { Effect, Stream } from 'effect';
 import superjson from 'superjson';
 import {
   createTrpcClient,
-  getClientSerializer,
+  getClientTransformer,
   httpLink,
   routerType,
   safe,
@@ -345,7 +345,7 @@ test('a sync serializer (superjson): its types survive, the transport frames roo
     router: routerType<typeof router>(),
     links: [httpLink({ url: server.url, serializer: superjsonSerializer })],
   });
-  expect(getClientSerializer(client)).toBe(superjsonSerializer);
+  expect(getClientTransformer(client)).toBe(superjsonSerializer);
 
   const rich = await client.rich.query({ q: 'x' });
   expectTypeOf(rich).toEqualTypeOf<{

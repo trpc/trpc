@@ -1,4 +1,4 @@
-import { getClientSerializer } from '@trpc12/trpc/client';
+import { getClientTransformer } from '@trpc12/trpc/client';
 import {
   jsonTransformer,
   type AnyTransformer,
@@ -39,7 +39,7 @@ interface HasStore {
 }
 
 const serializerOf = (trpc: HasStore, opts: HydrationOptions) =>
-  opts.serializer ?? getClientSerializer(trpc.client) ?? jsonTransformer;
+  opts.serializer ?? getClientTransformer(trpc.client) ?? jsonTransformer;
 
 /**
  * Encodes every query with data, with the client's serializer, so `Date`s

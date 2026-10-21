@@ -3,7 +3,7 @@ import {
   type DehydrateOptions,
   type HydrateOptions,
 } from '@tanstack/query-core';
-import { getClientSerializer } from '@trpc12/trpc/client';
+import { getClientTransformer } from '@trpc12/trpc/client';
 import {
   jsonTransformer,
   type AnyTransformer,
@@ -47,7 +47,7 @@ export function hydrationOptions(opts: HydrationOptionsOptions = {}): {
 } {
   const serializer =
     opts.serializer ??
-    (opts.client ? getClientSerializer(opts.client) : undefined) ??
+    (opts.client ? getClientTransformer(opts.client) : undefined) ??
     jsonTransformer;
   return {
     dehydrate: {

@@ -267,12 +267,12 @@ const clientSerializers = new WeakMap<object, AnyTransformer>();
  *
  * @example
  * ```ts
- * const serializer = getClientSerializer(client) ?? jsonTransformer;
+ * const serializer = getClientTransformer(client) ?? jsonTransformer;
  * ```
  * @since 0.1.0
  * @stability stable
  */
-export function getClientSerializer(
+export function getClientTransformer(
   client: object,
 ): AnyTransformer | undefined {
   return clientSerializers.get(client);
