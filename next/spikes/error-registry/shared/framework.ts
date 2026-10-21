@@ -112,15 +112,17 @@ const statusOfCode: Record<string, number> = {
 
 /**
  * Rebuilds what a v12 client received as a registry error: an app error by
- * its tag (rebuilt from `registry`, so `instanceof` holds), or tRPC's own
- * failure for today's built-in codes and tags.
+ * its tag (rebuilt from `registry`, or by `rebuild`, so `instanceof`
+ * holds), or tRPC's own failure for today's built-in codes and tags.
  */
 export const decodeWith =
-  (registry: Registry) =>
-  (cause: unknown): AnyTrpcError => {
+  (registry: Registry, rebuild?: (cause: AnyTrpcError) => unknown) =>
+  (cause: unknown): unknown => {
     if (!isTrpcError(cause)) {
       return new trpcFailures.Internal({ message: String(cause), cause });
     }
+    const rebuilt = rebuild?.(cause);
+    if (rebuilt !== undefined) return rebuilt;
     const own = registry[cause.code] ?? registry[cause._tag];
     if (own) {
       try {

@@ -15,6 +15,7 @@ import {
 import {
   createFetchHandler,
   type AnyProcedure,
+  type AnyTrpcError,
   type AnyRouter,
   type ProcedureDef,
 } from '@trpc12/trpc/server';
@@ -76,6 +77,8 @@ export interface RegistryClientOptions {
   readonly links: ReadonlyArray<AnyLink>;
   /** The registry at runtime, to rebuild its classes: `instanceof` holds. */
   readonly registry: Registry;
+  /** Rebuilds an app error that isn't a `defineError()` class. */
+  readonly rebuild?: (cause: AnyTrpcError) => unknown;
 }
 
 const at = (client: unknown, path: ReadonlyArray<string>) =>
@@ -91,7 +94,7 @@ export function createRegistryClient<TClient>(
     router: routerType<any>(),
     links: opts.links as [AnyLink],
   });
-  const decode = decodeWith(opts.registry);
+  const decode = decodeWith(opts.registry, opts.rebuild);
   return proxy((path, args) =>
     at(inner, path)(...args).catch((cause: unknown) => {
       throw decode(cause);
@@ -107,7 +110,7 @@ export function createRegistryEffectClient<TClient>(
     router: routerType<any>(),
     links: opts.links as [AnyLink],
   });
-  const decode = decodeWith(opts.registry);
+  const decode = decodeWith(opts.registry, opts.rebuild);
   return proxy((path, args) =>
     Effect.tryPromise({
       try: (signal) => at(inner, path)(args[0], { signal }),
