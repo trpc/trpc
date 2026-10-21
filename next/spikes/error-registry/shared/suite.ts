@@ -39,6 +39,7 @@ export function registrySuite(name: string, app: SuiteApp) {
     const [, err] = await safe(s.client.post.byId.query({ id: 'nope' }));
     expect(err).toBeInstanceOf(app.classes['PostNotFound']!);
     expect(app.missingId(err)).toBe('nope');
+    // `defined` is v12's: false when thrown (A–E), true when returned (F).
     expect(s.requests[0]).toEqual({
       status: 404,
       body: {
@@ -47,7 +48,7 @@ export function registrySuite(name: string, app: SuiteApp) {
             code: 'PostNotFound',
             message: 'PostNotFound',
             data: { id: 'nope' },
-            defined: false,
+            defined: expect.any(Boolean),
           },
         },
       },
