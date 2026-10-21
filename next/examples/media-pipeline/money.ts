@@ -6,8 +6,8 @@
 import {
   createSerializer,
   createSyncSerializer,
-} from '@trpc12/trpc/serializer';
-import type { CustomType } from '@trpc12/trpc/serializer';
+} from '@trpc12/trpc/transformer';
+import type { CustomType } from '@trpc12/trpc/transformer';
 import SuperJSON from 'superjson';
 
 export class Money {

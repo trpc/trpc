@@ -21,7 +21,7 @@ import {
   type AnyLink,
 } from '@trpc12/trpc/client';
 import { error, initTrpc } from '@trpc12/trpc/server';
-import { createSerializer } from '@trpc12/trpc/serializer';
+import { createSerializer } from '@trpc12/trpc/transformer';
 import { type Duration, Effect, Stream } from 'effect';
 import { Component, Suspense, use, type ReactNode } from 'react';
 import { createRoot, hydrateRoot } from 'react-dom/client';

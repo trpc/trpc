@@ -9,7 +9,7 @@ import type {
   SerializeOpts,
   SerializeReturn,
   AnySerializer,
-} from '../../serializer/index.ts';
+} from '../../transformer/index.ts';
 
 /** A byte stream input, which is the request body rather than serialized. @internal */
 export const isByteStreamInput = (

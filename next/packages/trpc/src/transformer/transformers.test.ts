@@ -24,7 +24,7 @@ import {
   createSyncSerializer,
   jsonSerializer,
   type JsonOf,
-} from '@trpc12/trpc/serializer';
+} from '@trpc12/trpc/transformer';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';
 import { createTestServer } from '../fixtures/server.ts';

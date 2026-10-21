@@ -3,7 +3,7 @@ import {
   jsonSerializer,
   type AnySerializer,
   type SerializeReturn,
-} from '@trpc12/trpc/serializer';
+} from '@trpc12/trpc/transformer';
 import type { QueryStore } from './store.ts';
 
 /**

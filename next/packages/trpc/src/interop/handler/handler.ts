@@ -38,7 +38,7 @@ import {
   isAsyncIterable,
   isPromiseLike,
   isPlainObject,
-} from '../../serializer/danson/index.ts';
+} from '../../transformer/danson/index.ts';
 import {
   readBytes,
   responseOptions,

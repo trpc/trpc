@@ -1,7 +1,7 @@
 import { createIsomorphicFn } from '@tanstack/react-start';
 import { createReactClient, standardLinks } from '@trpc12/experimental-react';
 import { httpLink, localLink, routerType } from '@trpc12/trpc/client';
-import { createSerializer } from '@trpc12/trpc/serializer';
+import { createSerializer } from '@trpc12/trpc/transformer';
 import { type AppRouter, appRouter } from './server/router.ts';
 
 const serializer = createSerializer();

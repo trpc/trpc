@@ -5,7 +5,7 @@ import {
   routerType,
   safe,
 } from '@trpc12/trpc/client';
-import { createSerializer } from '@trpc12/trpc/serializer';
+import { createSerializer } from '@trpc12/trpc/transformer';
 import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { z } from 'zod';

@@ -9,7 +9,7 @@ import {
   createSerializer,
   jsonSerializer,
   type AnySerializer,
-} from '@trpc12/trpc/serializer';
+} from '@trpc12/trpc/transformer';
 import { Effect, Option } from 'effect';
 import {
   AsyncResult,

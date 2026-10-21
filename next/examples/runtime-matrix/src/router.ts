@@ -5,7 +5,7 @@
  */
 import { Context, Effect, Layer } from 'effect';
 import { cors } from '@trpc12/trpc/http';
-import { createSerializer } from '@trpc12/trpc/serializer';
+import { createSerializer } from '@trpc12/trpc/transformer';
 import { error, initTrpc, tracked } from '@trpc12/trpc/server';
 import { z } from 'zod';
 

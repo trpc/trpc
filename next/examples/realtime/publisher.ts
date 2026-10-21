@@ -7,7 +7,7 @@
 import { PgClient } from '@effect/sql-pg';
 import { Effect, Stream } from 'effect';
 import { Redis } from 'effect/persistence';
-import { createSerializer } from '@trpc12/trpc/serializer';
+import { createSerializer } from '@trpc12/trpc/transformer';
 import {
   tracked,
   type PublisherEvents,

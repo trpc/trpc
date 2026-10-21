@@ -27,7 +27,7 @@ import {
   createSerializer,
   createSyncSerializer,
   type DansonForm,
-} from '@trpc12/trpc/serializer';
+} from '@trpc12/trpc/transformer';
 import {
   createRouterClient,
   initTrpc,

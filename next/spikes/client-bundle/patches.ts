@@ -64,7 +64,7 @@ export const cuts: Record<
     what: 'jsonSerializer without deferred values (serializeDeferred / deserializeStream)',
     patches: [
       [
-        'serializer/framed.ts',
+        'transformer/framed.ts',
         `export const jsonSerializer: Serializer<JsonForm> = framedSerializer(
   'json',
   'none',

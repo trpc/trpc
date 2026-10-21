@@ -1,6 +1,6 @@
 import { Effect, Exit, Fiber, FiberSet, identity, Scope } from 'effect';
 import { TrpcError, type AnyLink } from '@trpc12/trpc/client';
-import { createSerializer } from '@trpc12/trpc/serializer';
+import { createSerializer } from '@trpc12/trpc/transformer';
 import { sortKeys } from './share.ts';
 import {
   fulfilled,

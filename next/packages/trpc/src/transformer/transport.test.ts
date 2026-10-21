@@ -5,7 +5,7 @@ import {
   jsonSerializer,
   type Frame,
   type Serializer,
-} from '@trpc12/trpc/serializer';
+} from '@trpc12/trpc/transformer';
 import { expect, test } from 'vite-plus/test';
 
 /**

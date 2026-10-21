@@ -489,7 +489,7 @@ export function upgradeSource(
     for (const prop of object['properties'] as Node[]) {
       const name = keyName(prop);
       if (name === 'transformer') {
-        ensure('@trpc12/trpc/serializer', 'createSyncSerializer');
+        ensure('@trpc12/trpc/transformer', 'createSyncSerializer');
         if (prop['shorthand']) {
           take(
             prop.start,

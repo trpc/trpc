@@ -11,7 +11,7 @@ No backend packages ship; these recipes are yours to copy and adapt ([`examples/
 
 ```ts twoslash
 import { Effect, Layer, Stream } from 'effect';
-import { createSerializer } from '@trpc12/trpc/serializer';
+import { createSerializer } from '@trpc12/trpc/transformer';
 import {
   tracked,
   type PublisherEvents,
@@ -50,7 +50,7 @@ Effect's `Redis` service (`effect/persistence`) with `NodeRedis.layer` from `@ef
 ```ts twoslash
 // ---cut-start---
 import { Effect, Layer, Stream } from 'effect';
-import { createSerializer } from '@trpc12/trpc/serializer';
+import { createSerializer } from '@trpc12/trpc/transformer';
 import {
   tracked,
   type PublisherEvents,
@@ -174,7 +174,7 @@ const layer = Layer.effect(Posts)(
 ```ts twoslash
 // ---cut-start---
 import { Effect, Layer, Stream } from 'effect';
-import { createSerializer } from '@trpc12/trpc/serializer';
+import { createSerializer } from '@trpc12/trpc/transformer';
 import {
   tracked,
   type PublisherEvents,

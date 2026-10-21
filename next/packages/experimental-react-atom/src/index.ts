@@ -45,7 +45,7 @@ import {
   jsonSerializer,
   type AnySerializer,
   type SerializeReturn,
-} from '@trpc12/trpc/serializer';
+} from '@trpc12/trpc/transformer';
 
 /** Keys use danSON, so inputs with `Date`s and `Map`s key apart. */
 const keySerializer = /* @__PURE__ */ createSerializer();

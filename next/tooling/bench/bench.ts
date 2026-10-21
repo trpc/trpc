@@ -366,18 +366,18 @@ const bundles: Record<
 > = {
   trpc12: {
     client: `import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
-import { createSerializer } from '@trpc12/trpc/serializer';
+import { createSerializer } from '@trpc12/trpc/transformer';
 export const client = createTrpcClient({ router: routerType<any>(), links: [httpLink({ url: '/trpc', serializer: createSerializer() })] });`,
     node: `import { createServer } from 'node:http';
 import { NodeHttpServer } from '@effect/platform-node';
 import { Layer } from 'effect';
 import { serve } from '@trpc12/trpc/http';
-import { createSerializer } from '@trpc12/trpc/serializer';
+import { createSerializer } from '@trpc12/trpc/transformer';
 import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
 const t = initTrpc();
 const handler = createFetchHandler({ router: { hello: t.procedure.query(() => 'hi') }, serializer: createSerializer() });
 export const app = serve(handler).pipe(Layer.provide(NodeHttpServer.layer(createServer, { port: 3000 })));`,
-    fetch: `import { createSerializer } from '@trpc12/trpc/serializer';
+    fetch: `import { createSerializer } from '@trpc12/trpc/transformer';
 import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
 const t = initTrpc();
 export const handler = createFetchHandler({ router: { hello: t.procedure.query(() => 'hi') }, serializer: createSerializer() });`,
@@ -504,7 +504,7 @@ export const client = createTrpcClient({ router: routerType<any>(), links: [http
     name: 'full client (retry, SSE, danSON)',
     target: 25_000,
     code: `import { createTrpcClient, httpLink, retryLink, routerType } from '@trpc12/trpc/client';
-import { createSerializer } from '@trpc12/trpc/serializer';
+import { createSerializer } from '@trpc12/trpc/transformer';
 export const client = createTrpcClient({ router: routerType<any>(), links: [retryLink(), httpLink({ url: '/trpc', serializer: createSerializer() })] });`,
   },
 ] as const;

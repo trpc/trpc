@@ -11,7 +11,7 @@ import {
   TestServer,
   type TestServerShape,
 } from '@trpc12/trpc/internal/testing';
-import { createSerializer } from '@trpc12/trpc/serializer';
+import { createSerializer } from '@trpc12/trpc/transformer';
 import {
   experimental_byteStream,
   initTrpc,

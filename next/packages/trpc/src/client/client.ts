@@ -8,7 +8,7 @@ import {
   type AnyTrpcError,
 } from '../internal/error.ts';
 import type { IsAny, ProcedureType } from '../internal/types.ts';
-import type { AnySerializer } from '../serializer/index.ts';
+import type { AnySerializer } from '../transformer/index.ts';
 import {
   chainSerializer,
   chainSwitchNames,

@@ -38,7 +38,7 @@ import {
 } from '@trpc12/tanstack-query';
 import { cache as reactCache, createElement, type ReactNode } from 'react';
 import type { TrpcClient } from '@trpc12/trpc/client';
-import type { AnySerializer, DansonForm } from '@trpc12/trpc/serializer';
+import type { AnySerializer, DansonForm } from '@trpc12/trpc/transformer';
 import {
   createRouterClient,
   type AnyRouter,

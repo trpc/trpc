@@ -232,7 +232,7 @@ export const isTrpcError = (e: unknown) => e instanceof TRPCClientError;
       "import { createTrpcClient, httpLink, splitLink, TrpcError, routerType } from '@trpc12/trpc/client';
       import superjson from 'superjson';
       import type { AppRouter } from './server';
-      import { createSyncSerializer } from '@trpc12/trpc/serializer';
+      import { createSyncSerializer } from '@trpc12/trpc/transformer';
 
       const transformer = superjson;
 

@@ -15,7 +15,7 @@ import {
   wsLink,
 } from '@trpc12/trpc/client';
 import { toHttpEffect } from '@trpc12/trpc/http';
-import { createSerializer } from '@trpc12/trpc/serializer';
+import { createSerializer } from '@trpc12/trpc/transformer';
 import {
   createFetchHandler,
   createRouterClient,

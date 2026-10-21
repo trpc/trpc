@@ -14,7 +14,7 @@ import {
   experimental_Publisher,
   type AnyRouter,
 } from '@trpc12/trpc/server';
-import { jsonSerializer } from '@trpc12/trpc/serializer';
+import { jsonSerializer } from '@trpc12/trpc/transformer';
 import { expect, test, vi } from 'vite-plus/test';
 import { z } from 'zod';
 

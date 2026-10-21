@@ -27,7 +27,7 @@ import {
 } from '../../internal/protocol.ts';
 import { decodeLines, encodeLine } from '../../internal/lines.ts';
 import type { FormOfOptions, MaybePromise } from '../../internal/types.ts';
-import { jsonSerializer, type AnySerializer } from '../../serializer/index.ts';
+import { jsonSerializer, type AnySerializer } from '../../transformer/index.ts';
 import type { MessagePortLike } from '../../server/sockets/index.ts';
 import {
   withSerializer,

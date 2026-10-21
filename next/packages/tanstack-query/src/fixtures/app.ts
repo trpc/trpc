@@ -9,7 +9,7 @@ import {
   routerType,
   type TrpcClient,
 } from '@trpc12/trpc/client';
-import { createSerializer, type DansonForm } from '@trpc12/trpc/serializer';
+import { createSerializer, type DansonForm } from '@trpc12/trpc/transformer';
 import { error, initTrpc } from '@trpc12/trpc/server';
 import { TestServer } from '@trpc12/trpc/internal/testing';
 import { z } from 'zod';

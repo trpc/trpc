@@ -12,7 +12,7 @@ import {
 } from '../../internal/error.ts';
 import { timerOption } from '../../internal/duration.ts';
 import type { ProcedureType } from '../../internal/types.ts';
-import { jsonSerializer, type AnySerializer } from '../../serializer/index.ts';
+import { jsonSerializer, type AnySerializer } from '../../transformer/index.ts';
 import { unexpectedError } from '../execution/index.ts';
 import type { AnyRouter } from '../procedures/index.ts';
 import type { HandlerCore } from './core.ts';

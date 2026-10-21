@@ -40,7 +40,7 @@ import {
   tracked,
 } from '@trpc12/trpc/server';
 import { onFinish } from '@trpc12/trpc/middleware';
-import { createSerializer } from '@trpc12/trpc/serializer';
+import { createSerializer } from '@trpc12/trpc/transformer';
 import { z } from 'zod';
 
 export interface User {

@@ -8,7 +8,7 @@ import {
   experimental_validationLink,
   TrpcError,
 } from '@trpc12/trpc/client';
-import { createSerializer } from '@trpc12/trpc/serializer';
+import { createSerializer } from '@trpc12/trpc/transformer';
 import {
   type AnyContractRouter,
   experimental_contract,

@@ -29,9 +29,9 @@
       "types": "./src/contract/index.ts",
       "default": "./src/contract/index.ts"
     },
-    "./serializer": {
-      "types": "./src/serializer/index.ts",
-      "default": "./src/serializer/index.ts"
+    "./transformer": {
+      "types": "./src/transformer/index.ts",
+      "default": "./src/transformer/index.ts"
     },
     "./openapi": {
       "types": "./src/openapi/index.ts",
@@ -104,9 +104,9 @@
         "types": "./dist/contract/index.d.ts",
         "default": "./dist/contract/index.js"
       },
-      "./serializer": {
-        "types": "./dist/serializer/index.d.ts",
-        "default": "./dist/serializer/index.js"
+      "./transformer": {
+        "types": "./dist/transformer/index.d.ts",
+        "default": "./dist/transformer/index.js"
       },
       "./openapi": {
         "types": "./dist/openapi/index.d.ts",

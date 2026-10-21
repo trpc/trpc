@@ -9,7 +9,7 @@ import {
   sourceOf,
   type Status,
   VALUE,
-} from '../../serializer/danson/index.ts';
+} from '../../transformer/danson/index.ts';
 
 const PROMISE = 0;
 const ITERABLE = 1;

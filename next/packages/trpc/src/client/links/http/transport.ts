@@ -34,7 +34,7 @@ import type {
   AnySerializer,
   Frame,
   SerializeReturn,
-} from '../../../serializer/index.ts';
+} from '../../../transformer/index.ts';
 import { toClientError, type Operation } from '../../link.ts';
 import { badResponse, isByteStreamInput, serializeInput } from '../events.ts';
 import { resumeOf, retrying, type Retries } from '../resume.ts';

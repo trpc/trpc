@@ -6,4 +6,4 @@
 - Why: one format works on every link today; large downloads already skip base64 through the raw root response.
 - Lost: 33% size overhead on nested files until binary lands.
 - (agent) Binary framing is built, opt-in: `httpLink({ binary: true })` for HTTP frames and `wsLink({ binary: true })` for binary WebSocket messages; JSONL and text messages stay the default and are unchanged. See [`binary-frames.md`](./binary-frames.md).
-- Lives in: `packages/trpc/src/serializer/danson/stream.ts`, `src/internal/frames.ts`.
+- Lives in: `packages/trpc/src/transformer/danson/stream.ts`, `src/internal/frames.ts`.

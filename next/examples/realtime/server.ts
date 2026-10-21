@@ -12,7 +12,7 @@ import { PgClient } from '@effect/sql-pg';
 import { type Duration, Effect, Layer, ManagedRuntime, Redacted } from 'effect';
 import { HttpServer } from 'effect/http';
 import { serve } from '@trpc12/trpc/http';
-import { createSerializer } from '@trpc12/trpc/serializer';
+import { createSerializer } from '@trpc12/trpc/transformer';
 import {
   createFetchHandler,
   error,

@@ -8,7 +8,7 @@ import {
   jsonSerializer,
   type AnySerializer,
   type SerializeReturn,
-} from '@trpc12/trpc/serializer';
+} from '@trpc12/trpc/transformer';
 
 /**
  * Options for {@link hydrationOptions}.

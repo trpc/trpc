@@ -8,7 +8,7 @@ import {
 } from '@trpc12/trpc/client';
 import { experimental_durable } from '@trpc12/trpc/middleware';
 import { experimental_createOpenApiHandler } from '@trpc12/trpc/openapi';
-import { createSerializer } from '@trpc12/trpc/serializer';
+import { createSerializer } from '@trpc12/trpc/transformer';
 import {
   type AnyRouter,
   call,

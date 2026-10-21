@@ -2,7 +2,7 @@ import { scheduleTask } from '@effect/atom-react';
 import { createIsomorphicFn } from '@tanstack/react-start';
 import { createAtomClient } from '@trpc12/experimental-react-atom';
 import { httpLink, localLink, routerType } from '@trpc12/trpc/client';
-import { createSerializer } from '@trpc12/trpc/serializer';
+import { createSerializer } from '@trpc12/trpc/transformer';
 import { AtomRegistry } from 'effect/reactivity';
 import { type AppRouter, appRouter } from './server/router.ts';
 

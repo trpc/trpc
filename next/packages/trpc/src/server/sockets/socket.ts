@@ -31,7 +31,7 @@ import {
   type ServerMessage,
 } from '../../internal/protocol.ts';
 import type { ProcedureType } from '../../internal/types.ts';
-import type { AnySerializer } from '../../serializer/index.ts';
+import type { AnySerializer } from '../../transformer/index.ts';
 import {
   emitEvents,
   type EventFrame,

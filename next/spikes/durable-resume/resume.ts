@@ -12,7 +12,7 @@
  */
 import { Duration, Effect, Stream } from 'effect';
 import { Persistence } from 'effect/persistence';
-import type { AnySerializer, Frame } from '@trpc12/trpc/serializer';
+import type { AnySerializer, Frame } from '@trpc12/trpc/transformer';
 
 interface Meta {
   readonly count: number;

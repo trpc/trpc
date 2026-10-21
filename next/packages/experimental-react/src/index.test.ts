@@ -16,7 +16,7 @@ import {
   safe,
   type AnyLink,
 } from '@trpc12/trpc/client';
-import { createSerializer } from '@trpc12/trpc/serializer';
+import { createSerializer } from '@trpc12/trpc/transformer';
 import { Duration, Effect, Exit, Scope, Stream } from 'effect';
 import { expect, expectTypeOf, test } from 'vite-plus/test';
 import { waitFor } from '../../trpc/src/fixtures/dom.ts';

@@ -5,7 +5,7 @@ import {
   safe,
 } from '@trpc12/trpc/client';
 import { createFetchHandler, error, initTrpc } from '@trpc12/trpc/server';
-import { createSerializer, DansonError } from '@trpc12/trpc/serializer';
+import { createSerializer, DansonError } from '@trpc12/trpc/transformer';
 import { expect, test } from 'vite-plus/test';
 import { z } from 'zod';
 

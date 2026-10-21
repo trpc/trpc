@@ -187,7 +187,7 @@ export default defineConfig({
             {
               roots: [
                 'packages/trpc/src/server',
-                'packages/trpc/src/serializer',
+                'packages/trpc/src/transformer',
                 'packages/trpc/src/interop',
                 'packages/trpc/src/client',
                 'packages/trpc/src/openapi',

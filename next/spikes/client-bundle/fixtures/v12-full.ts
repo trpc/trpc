@@ -1,5 +1,5 @@
 // `pnpm bench budget`'s full client: retry, SSE, danSON.
-import { createSerializer } from '@trpc12/trpc/serializer';
+import { createSerializer } from '@trpc12/trpc/transformer';
 import {
   createTrpcClient,
   httpLink,

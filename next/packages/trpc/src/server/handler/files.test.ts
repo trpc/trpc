@@ -11,7 +11,7 @@ import {
   routerType,
 } from '@trpc12/trpc/client';
 import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
-import { createSerializer, type Frame } from '@trpc12/trpc/serializer';
+import { createSerializer, type Frame } from '@trpc12/trpc/transformer';
 import { Effect, Stream } from 'effect';
 import { createTestServer } from '../../fixtures/server.ts';
 import { expect, expectTypeOf, test } from 'vite-plus/test';

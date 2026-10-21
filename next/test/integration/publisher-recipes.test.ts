@@ -5,7 +5,7 @@ import { Effect, Layer, Redacted, Stream } from 'effect';
 import type { SqlError } from 'effect/sql/SqlError';
 import { Redis } from 'effect/persistence';
 import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
-import { createSerializer } from '@trpc12/trpc/serializer';
+import { createSerializer } from '@trpc12/trpc/transformer';
 import {
   initTrpc,
   experimental_Publisher,

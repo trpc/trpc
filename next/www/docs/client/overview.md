@@ -92,7 +92,7 @@ A call rejects with one of the procedure's errors (`defined: true`, with its `da
 ```ts twoslash
 // ---cut-start---
 import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
-import { createSerializer } from '@trpc12/trpc/serializer';
+import { createSerializer } from '@trpc12/trpc/transformer';
 import type { AppRouter } from './server.ts';
 // ---cut-end---
 import type {

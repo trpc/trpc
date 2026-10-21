@@ -8,7 +8,7 @@ import {
   type BuiltinCallOptions,
   type Operation,
 } from '@trpc12/trpc/client';
-import { createSerializer } from '@trpc12/trpc/serializer';
+import { createSerializer } from '@trpc12/trpc/transformer';
 import { error, initTrpc, tracked } from '@trpc12/trpc/server';
 import { createTestServer } from '../../fixtures/server.ts';
 import { expect, test, vi } from 'vite-plus/test';

@@ -1,4 +1,4 @@
-# `server/`, `serializer/`, `interop/`, `client/` and `openapi/` are grouped into folder modules, each imported through its `index.ts` (human asked)
+# `server/`, `transformer/`, `interop/`, `client/` and `openapi/` are grouped into folder modules, each imported through its `index.ts` (human asked)
 
 - Human, 2026-10-18: "queue some refactor to group things based on functionality liiiike everythign that deals with a request handling should be in a folder so it's more natural to follow it - a bunch of stuff is just flat into next/packages/trpc/src/server whereas i'm sure a bunch of it only really has one entrypoint for the rest of the app. do good modules / if possible you can enforce module boundaries with some lint rule or something".
 - (agent) Each folder under `packages/trpc/src/server/` is a module:

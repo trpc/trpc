@@ -29,7 +29,7 @@ const router = { health: t.procedure.query(() => 'ok') };
 type AppRouter = typeof router;
 declare const url: string;
 // ---cut-end---
-import { createSerializer } from '@trpc12/trpc/serializer';
+import { createSerializer } from '@trpc12/trpc/transformer';
 
 export const serializer = createSerializer();
 
@@ -44,7 +44,7 @@ const client = createTrpcClient({
 
 ```ts twoslash
 // ---cut-start---
-import { createSyncSerializer } from '@trpc12/trpc/serializer';
+import { createSyncSerializer } from '@trpc12/trpc/transformer';
 import superjson from 'superjson';
 // ---cut-end---
 export const serializer = createSyncSerializer<
@@ -64,7 +64,7 @@ The first link in the chain that has a serializer types the results. A type the 
 import { t } from './server.ts';
 // ---cut-end---
 import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
-import { createSerializer } from '@trpc12/trpc/serializer';
+import { createSerializer } from '@trpc12/trpc/transformer';
 
 const router = {
   getPost: t.procedure.query(() => ({
@@ -109,7 +109,7 @@ Query inputs go in the URL as `?input=<JSON>`, with object keys sorted (array or
 
 ```ts twoslash
 // ---cut-start---
-import { createSerializer, type CustomType } from '@trpc12/trpc/serializer';
+import { createSerializer, type CustomType } from '@trpc12/trpc/transformer';
 declare class Decimal {
   constructor(value: string);
 }
@@ -131,7 +131,7 @@ The [`examples/media-pipeline`](../../../examples/media-pipeline/README.md) app 
 ```ts twoslash
 // ---cut-start---
 import { createTrpcClient, httpLink, routerType } from '@trpc12/trpc/client';
-import { createSerializer } from '@trpc12/trpc/serializer';
+import { createSerializer } from '@trpc12/trpc/transformer';
 import { createTrpcContext } from '@trpc12/tanstack-react-query';
 import type { AppRouter } from './server.ts';
 const serializer = createSerializer();

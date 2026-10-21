@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
-import { createSerializer } from '@trpc12/trpc/serializer';
+import { createSerializer } from '@trpc12/trpc/transformer';
 import { createFetchHandler } from '@trpc12/trpc/server';
 import { appRouter } from '../../server/router.ts';
 

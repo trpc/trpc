@@ -7,7 +7,7 @@ import {
   createSerializer,
   jsonSerializer,
   type AnySerializer,
-} from '@trpc12/trpc/serializer';
+} from '@trpc12/trpc/transformer';
 import { expect, test } from 'vite-plus/test';
 import {
   createReplay,

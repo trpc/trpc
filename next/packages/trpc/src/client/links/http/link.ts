@@ -4,7 +4,7 @@ import type { FormOfOptions, MaybePromise } from '../../../internal/types.ts';
 import {
   jsonSerializer,
   type AnySerializer,
-} from '../../../serializer/index.ts';
+} from '../../../transformer/index.ts';
 import {
   withSerializer,
   type BuiltinCallOptions,

@@ -13,7 +13,7 @@
  * live.
  */
 import { Effect, Option, PubSub, Semaphore, Stream } from 'effect';
-import type { AnySerializer, Frame } from '@trpc12/trpc/serializer';
+import type { AnySerializer, Frame } from '@trpc12/trpc/transformer';
 
 /** A value's frames: the head, then each chunk as its deferred parts settle. */
 export const framesOf = (

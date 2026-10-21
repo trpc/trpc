@@ -2,7 +2,7 @@ import { createServer } from 'node:http';
 import { NodeHttpServer, NodeRuntime } from '@effect/platform-node';
 import { Layer } from 'effect';
 import { serve } from '@trpc12/trpc/http';
-import { createSerializer } from '@trpc12/trpc/serializer';
+import { createSerializer } from '@trpc12/trpc/transformer';
 import { createFetchHandler, initTrpc } from '@trpc12/trpc/server';
 import { port, schema } from './schema.ts';
 

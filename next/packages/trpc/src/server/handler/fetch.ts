@@ -17,7 +17,7 @@ import type {
   ProcedureType,
   TypeError,
 } from '../../internal/types.ts';
-import type { AnySerializer } from '../../serializer/index.ts';
+import type { AnySerializer } from '../../transformer/index.ts';
 import {
   checkRouterKeys,
   type AnyRouter,

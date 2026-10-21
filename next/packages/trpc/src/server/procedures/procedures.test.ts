@@ -7,7 +7,7 @@ import {
   type LinkErrorCode,
   routerType,
 } from '@trpc12/trpc/client';
-import type { DansonForm } from '@trpc12/trpc/serializer';
+import type { DansonForm } from '@trpc12/trpc/transformer';
 import {
   call,
   error,

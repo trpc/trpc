@@ -3,7 +3,7 @@
  * `parentPort`. `start.ts` starts it with `new Worker()`.
  */
 import { parentPort } from 'node:worker_threads';
-import { createSerializer } from '@trpc12/trpc/serializer';
+import { createSerializer } from '@trpc12/trpc/transformer';
 import { createFetchHandler } from '@trpc12/trpc/server';
 import { appRouter } from './router.ts';
 

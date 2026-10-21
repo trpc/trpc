@@ -11,7 +11,7 @@ import type {
   FormOfSerializer,
   MaybePromise,
 } from '../../internal/types.ts';
-import { jsonSerializer, type AnySerializer } from '../../serializer/index.ts';
+import { jsonSerializer, type AnySerializer } from '../../transformer/index.ts';
 import {
   callProcedure,
   createResponseHandle,
