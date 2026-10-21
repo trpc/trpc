@@ -95,7 +95,16 @@ oRPC features outside the comparison rows, and v12 features oRPC lacks:
 | `.callable()`, `call()`, form actions                    | done (`call()`; `experimental_createAction` takes `FormData` and `useActionState`'s call)                                                                                                                                                     |
 | Durable/resumable calls (beyond oRPC)                    | `experimental_durable()` keeps results (streamed outputs as frames) by call id on Effect `BackingPersistence`; `experimental_durableLink` retries with the id and resumes streams mid-stream ([durable-calls](../decisions/durable-calls.md)) |
 | React `use()` without TanStack (beyond oRPC)             | `@trpc12/experimental-react` and `@trpc12/experimental-react-atom` ([react-use-package](../decisions/react-use-package.md))                                                                                                                   |
+| MCP tools (`@orpc/mcp`)                                  | experimental: `@trpc12/trpc/mcp`, `experimental_createMcpHandler` ([mcp-tools](../decisions/mcp-tools.md)); [compared below](#mcp-compared-with-orpcmcp)                                                                                      |
 | Migration codemod (beyond oRPC)                          | `@trpc12/upgrade`: `trpc12-upgrade [--write]` rewrites v11 imports and APIs ([v11-codemod](../decisions/v11-codemod.md))                                                                                                                      |
+
+## MCP compared with `@orpc/mcp`
+
+oRPC shipped `@orpc/mcp` on 2026-10-21 ([docs](https://orpc.dev/docs/integrations/mcp)); `@trpc12/trpc/mcp` is experimental, and proposal 25's questions are open ([`../open/`](../open/)).
+
+- Matched from oRPC: the title from `route.summary`, the description falling back to it, `idempotentHint` for `PUT` and `DELETE` routes, annotations merged hint by hint across `.meta()` calls, `icons`, lazy subtrees loaded on first use, a non-object input under `input`, and errors as `isError` results with `{ defined, code, message, data }` and unexpected ones masked.
+- Different by design: oRPC publishes every procedure, v12 only those with `mcp` meta unless `include: 'all'`; oRPC registers tools on the MCP SDK v2's `McpServer`, so any of its transports and sessions work, while v12 speaks stateless Streamable HTTP itself with no SDK dependency; v12 hides tools per caller with `filter({ tool, ctx })` and answers `createContext`'s `UNAUTHORIZED` with a `401` and `WWW-Authenticate`.
+- oRPC has, v12 doesn't yet: `operationId` as the tool name; `Blob` and `File` outputs as image, audio or resource content; a streamed output's last event as the result, with every event as progress (v12 refuses streamed outputs and leaves subscriptions out); smart coercion of tool arguments by plugin (v12 needs `z.coerce.date()`); interceptors and plugins around each tool call (v12 has middleware, `onError` and spans); per-tool-call context from the MCP request context (v12 makes it per HTTP request).
 
 ## Maintenance
 

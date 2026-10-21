@@ -1,0 +1,23 @@
+{
+  "name": "@example/mcp",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node start.ts",
+    "server": "node server.ts",
+    "client": "node client.ts",
+    "smoke": "pnpm start",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "dependencies": {
+    "@effect/platform-node": "4.0.2",
+    "@modelcontextprotocol/sdk": "1.32.1",
+    "@trpc12/trpc": "workspace:*",
+    "effect": "4.0.2",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "^26.0.0",
+    "typescript": "7.1.0-beta"
+  }
+}

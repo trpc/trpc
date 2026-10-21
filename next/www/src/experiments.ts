@@ -49,6 +49,11 @@ export const experiments = {
     description: 'The AI SDK and Better Auth.',
     label: 'AI SDK and Better Auth',
   },
+  mcp: {
+    description:
+      'Procedures as Model Context Protocol tools that agents call, with `experimental_createMcpHandler`.',
+    label: 'MCP',
+  },
   'byte-streams': {
     description:
       'Procedure inputs that are the request body, a `ReadableStream<Uint8Array>` read as an Effect Stream.',

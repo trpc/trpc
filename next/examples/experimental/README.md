@@ -3,6 +3,7 @@
 Examples of `experimental_*` APIs and of packages whose docs are still hidden. They follow the [examples layout](../README.md), except the TanStack Start apps, which keep Start's; `pnpm example` runs them with the rest. Any of them may change or go when the APIs do.
 
 - [`openapi`](./openapi/README.md): one router over RPC and REST, a document generated from its types, and `experimental_openApiLink`.
+- [`mcp`](./mcp/README.md): one router over RPC and as MCP tools with `experimental_createMcpHandler`, called with the official MCP SDK client.
 - [`durable-jobs`](./durable-jobs/README.md): `experimental_durable()`, `experimental_durableLink()` and `experimental_lock()` on Redis, across two servers.
 - [`worker-threads`](./worker-threads/README.md): a server in a Node worker thread, called with `experimental_messagePortLink`.
 - [`nest`](./nest/README.md): a contract implemented in a Nest controller with `@trpc12/experimental-nest`, called with `experimental_openApiLink`.
