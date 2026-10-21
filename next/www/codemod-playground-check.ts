@@ -161,7 +161,7 @@ try {
     await waitForText(
       page,
       'v12',
-      'serializer: createSyncTransformer(superjson)',
+      'transformer: createSyncTransformer(superjson)',
     ),
     `the client sample's v12 pane: ${await paneText(page, 'v12')}`,
   );

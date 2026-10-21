@@ -167,7 +167,7 @@ const NAME_NOTES: Readonly<Record<string, string>> = {
   TRPCLink:
     'TRPCLink: stays on @trpc/client; keep the link with fromV11Link(link) from @trpc12/trpc/interop, or rewrite it with link() as an Effect Stream function',
   inferRouterOutputs:
-    "inferRouterOutputs<AppRouter> is plain JSON's form (Date is string), as v11's without a transformer; with a serializer, pass the client's type: inferRouterOutputs<typeof client>",
+    "inferRouterOutputs<AppRouter> is plain JSON's form (Date is string), as v11's without a transformer; with a transformer on the links, pass the client's type: inferRouterOutputs<typeof client>",
 };
 
 const ROOT_OPTION_NOTES: Readonly<Record<string, string>> = {
@@ -494,10 +494,9 @@ export function upgradeSource(
           take(
             prop.start,
             prop.end,
-            'serializer: createSyncTransformer(transformer)',
+            'transformer: createSyncTransformer(transformer)',
           );
         } else {
-          s.overwrite(prop['key'].start, prop['key'].end, 'serializer');
           s.appendLeft(prop['value'].start, 'createSyncTransformer(');
           s.appendRight(prop['value'].end, ')');
           note(

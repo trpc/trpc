@@ -202,7 +202,7 @@ import { something } from '@trpc/unknown';
 });
 
 describe('client', () => {
-  test('links merge into httpLink; transformer becomes a serializer', () => {
+  test('links merge into httpLink; their transformer is wrapped in createSyncTransformer', () => {
     expect(
       upgrade(`import {
   createTRPCClient,
@@ -241,8 +241,8 @@ export const isTrpcError = (e: unknown) => e instanceof TRPCClientError;
         links: [
           splitLink({
             condition: (op) => op.type === 'subscription',
-            true: httpLink({ url: '/trpc', serializer: createSyncTransformer(transformer) }),
-            false: httpLink({ batch: true, url: '/trpc', serializer: createSyncTransformer(superjson), maxUrlLength: 2083 }),
+            true: httpLink({ url: '/trpc', transformer: createSyncTransformer(transformer) }),
+            false: httpLink({ batch: true, url: '/trpc', transformer: createSyncTransformer(superjson), maxUrlLength: 2083 }),
           }),
         ],
       });
@@ -264,7 +264,7 @@ export const authLink: TRPCLink<AppRouter> = () => ({ op, next }) => next(op);
     `);
   });
 
-  test("inferRouterOutputs keeps its name, with a note on the serializer's form", () => {
+  test("inferRouterOutputs keeps its name, with a note on the transformer's form", () => {
     const source = `import type { inferRouterOutputs } from '@trpc/server';
 export type Post = inferRouterOutputs<AppRouter>['post']['byId'];
 `;
@@ -275,7 +275,7 @@ export type Post = inferRouterOutputs<AppRouter>['post']['byId'];
     `);
     expect(messages(source)).toMatchInlineSnapshot(`
       [
-        "1:15 inferRouterOutputs<AppRouter> is plain JSON's form (Date is string), as v11's without a transformer; with a serializer, pass the client's type: inferRouterOutputs<typeof client>",
+        "1:15 inferRouterOutputs<AppRouter> is plain JSON's form (Date is string), as v11's without a transformer; with a transformer on the links, pass the client's type: inferRouterOutputs<typeof client>",
       ]
     `);
   });

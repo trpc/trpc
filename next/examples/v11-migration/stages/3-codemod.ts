@@ -111,7 +111,7 @@ export function run() {
       !client.includes('httpBatchLink') &&
         !client.includes('httpSubscriptionLink'),
     );
-    ok(client.includes('serializer: createSyncTransformer(superjson)'));
+    ok(client.includes('transformer: createSyncTransformer(superjson)'));
     ok(read('client/links.ts') === before.get('client/links.ts'));
 
     const app = read('client/app.tsx');
