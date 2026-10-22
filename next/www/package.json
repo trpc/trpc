@@ -16,6 +16,7 @@
     "decisions:check": "node build/decisions-check.ts",
     "decisions:layout": "node decisions-layout.ts",
     "not-found:check": "node not-found-check.ts",
+    "sentry:smoke": "node sentry-smoke.ts",
     "codemod-playground:check": "node codemod-playground-check.ts",
     "search:check": "node search-check.ts",
     "v12-reveal:check": "node v12-reveal-check.ts",
