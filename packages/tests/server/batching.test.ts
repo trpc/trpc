@@ -20,17 +20,17 @@ const scenarios = [
 describe.each([
   { name: 'httpBatchLink', link: httpBatchLink },
   { name: 'httpBatchStreamLink', link: httpBatchStreamLink },
-])('$name input serialization', ({ link }) => {
+])('$name input serialization', (scenario) => {
   test.each([{ maxURLLength: 10_000 }, { maxItems: 10 }])(
     'rejects unserializable input without blocking other requests (%j)',
     async (limits) => {
       const t = initTRPC.create();
       const router = t.router({
-        echo: t.procedure.input(z.unknown()).query(({ input }) => input),
+        echo: t.procedure.input(z.unknown()).query((opts) => opts.input),
       });
       await using ctx = testServerAndClientResource(router, {
-        client: ({ httpUrl }) => ({
-          links: [link({ url: httpUrl, ...limits })],
+        client: (opts) => ({
+          links: [scenario.link({ url: opts.httpUrl, ...limits })],
         }),
       });
 
