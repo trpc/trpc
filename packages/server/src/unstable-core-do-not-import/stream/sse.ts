@@ -333,9 +333,21 @@ export function sseStreamConsumer<TConfig extends ConsumerConfig>(
           event: null,
         });
 
-        eventSource.addEventListener(CONNECTED_EVENT, (_msg) => {
-          const msg = _msg as EventSourceLike.MessageEvent;
+        const addMessageListener = (
+          event: string,
+          listener: (msg: EventSourceLike.MessageEvent) => void,
+        ) => {
+          eventSource.addEventListener(event, (msg) => {
+            try {
+              listener(msg as EventSourceLike.MessageEvent);
+            } catch (cause) {
+              eventSource.close();
+              controller.error(cause);
+            }
+          });
+        };
 
+        addMessageListener(CONNECTED_EVENT, (msg) => {
           const options: SSEClientOptions = JSON.parse(msg.data);
 
           clientOptions = options;
@@ -346,9 +358,7 @@ export function sseStreamConsumer<TConfig extends ConsumerConfig>(
           });
         });
 
-        eventSource.addEventListener(SERIALIZED_ERROR_EVENT, (_msg) => {
-          const msg = _msg as EventSourceLike.MessageEvent;
-
+        addMessageListener(SERIALIZED_ERROR_EVENT, (msg) => {
           controller.enqueue({
             type: 'serialized-error',
             error: deserialize(JSON.parse(msg.data)),
@@ -377,9 +387,7 @@ export function sseStreamConsumer<TConfig extends ConsumerConfig>(
             });
           }
         });
-        eventSource.addEventListener('message', (_msg) => {
-          const msg = _msg as EventSourceLike.MessageEvent;
-
+        addMessageListener('message', (msg) => {
           const chunk = deserialize(JSON.parse(msg.data));
 
           const def: SSEvent = {
@@ -419,7 +427,9 @@ export function sseStreamConsumer<TConfig extends ConsumerConfig>(
     let reader = stream.getReader();
 
     async function dispose() {
-      await reader.cancel();
+      await reader.cancel().catch(() => {
+        // An errored stream has already reported its failure through read().
+      });
       _es = null;
     }
 
