@@ -230,9 +230,14 @@ export class WsClient {
       }
 
       return () => {
+        const isPending = !!this.requestManager.getPendingRequest(id);
         abort();
 
-        if (type === 'subscription' && this.activeConnection.isOpen()) {
+        if (
+          type === 'subscription' &&
+          isPending &&
+          this.activeConnection.isOpen()
+        ) {
           this.send({
             id,
             method: 'subscription.stop',
@@ -436,7 +441,15 @@ export class WsClient {
 
       if (!this.requestManager.hasOutgoingRequests()) return;
 
-      this.send(this.requestManager.flush().map(({ message }) => message));
+      const requests = this.requestManager.flush();
+      try {
+        this.send(requests.map((request) => request.message));
+      } catch (err) {
+        for (const request of requests) {
+          this.requestManager.delete(request.message.id);
+          request.callbacks.error(TRPCClientError.from(err as Error));
+        }
+      }
     }).catch((err) => {
       this.requestManager.delete(message.id);
       callbacks.error(TRPCClientError.from(err));
