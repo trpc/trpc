@@ -62,9 +62,16 @@ export function dataLoader<TKey, TValue>(
         continue;
       }
 
-      const isValid = batchLoader.validate(
-        lastGroup.concat(item).map((it) => it.key),
-      );
+      let isValid: boolean;
+      try {
+        isValid = batchLoader.validate(
+          lastGroup.concat(item).map((it) => it.key),
+        );
+      } catch (cause) {
+        item.reject?.(cause as Error);
+        index++;
+        continue;
+      }
 
       if (isValid) {
         lastGroup.push(item);
