@@ -439,6 +439,7 @@ function createStreamsManager(abortController: AbortController) {
         }
       },
       closed: false,
+      // A lazy iterable may acquire its reader after the source closes or errors.
       getReaderResource: () => {
         const reader = stream.getReader();
 
@@ -462,7 +463,6 @@ function createStreamsManager(abortController: AbortController) {
         enqueue: () => {
           // noop
         },
-        getReaderResource: null,
         error: () => {
           // noop
         },

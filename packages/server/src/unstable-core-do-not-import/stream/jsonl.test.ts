@@ -722,6 +722,58 @@ async function collectLines(stream: ReadableStream<Uint8Array>) {
   return text.split('\n').filter((line) => line.length > 0);
 }
 
+test.each([false, true])(
+  'reads an iterable after stream completion (truncated: %s)',
+  async (truncated) => {
+    const abortController = new AbortController();
+    const data = {
+      0: run(async function* () {
+        yield 1;
+        yield 2;
+        return 'done';
+      }),
+    };
+    const lines = await collectLines(jsonlStreamProducer({ data }));
+    const [head] = await jsonlStreamConsumer<typeof data>({
+      from: streamFromLines(truncated ? lines.slice(0, -1) : lines),
+      abortController,
+    });
+    await vi.waitFor(() => expect(abortController.signal.aborted).toBe(true));
+
+    const iterator = head[0][Symbol.asyncIterator]();
+    await expect(iterator.next()).resolves.toEqual({ value: 1, done: false });
+    await expect(iterator.next()).resolves.toEqual({ value: 2, done: false });
+    if (truncated) {
+      await expect(iterator.next()).rejects.toThrow(
+        'Stream closed unexpectedly',
+      );
+    } else {
+      await expect(iterator.next()).resolves.toEqual({
+        value: 'done',
+        done: true,
+      });
+    }
+  },
+);
+
+test('preserves the source error when iteration starts after a stream failure', async () => {
+  const error = new Error('Response interrupted');
+  const onError = vi.fn();
+  const body = new TransformStream<Uint8Array, Uint8Array>();
+  const writer = body.writable.getWriter();
+  const pendingHead = jsonlStreamConsumer<{ 0: AsyncIterable<number> }>({
+    from: body.readable,
+    abortController: new AbortController(),
+    onError,
+  });
+  await writer.write(new TextEncoder().encode('{"0":[[0],[null,1,0]]}\n'));
+  const [head] = await pendingHead;
+  await writer.abort(error);
+  await vi.waitFor(() => expect(onError).toHaveBeenCalledWith({ error }));
+
+  await expect(head[0][Symbol.asyncIterator]().next()).rejects.toBe(error);
+});
+
 function streamFromLines(lines: string[]): ReadableStream<Uint8Array> {
   return readableStreamFrom(
     run(async function* () {
