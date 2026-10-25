@@ -356,6 +356,9 @@ export class WsClient {
     this.connectionRejected = false;
 
     const handleCloseOrError = (cause: unknown) => {
+      // A previous socket can finish closing after its replacement has opened.
+      if (this.activeConnection.ws !== ws) return;
+
       const reqs = this.requestManager.getPendingRequests();
       for (const { message, callbacks } of reqs) {
         if (message.method === 'subscription') continue;
@@ -419,7 +422,10 @@ export class WsClient {
       handleCloseOrError(event);
       callUserCallback(() => this.callbacks.onClose?.(event));
 
-      if (!this.lazyMode || this.requestManager.hasPendingSubscriptions()) {
+      if (
+        this.activeConnection.ws === ws &&
+        (!this.lazyMode || this.requestManager.hasPendingSubscriptions())
+      ) {
         this.reconnect(
           new TRPCWebSocketClosedError({
             message: 'WebSocket closed',
@@ -432,6 +438,8 @@ export class WsClient {
     ws.addEventListener('error', (event) => {
       handleCloseOrError(event);
       callUserCallback(() => this.callbacks.onError?.(event));
+
+      if (this.activeConnection.ws !== ws) return;
 
       this.reconnect(
         new TRPCWebSocketClosedError({
