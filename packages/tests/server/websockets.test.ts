@@ -275,39 +275,47 @@ test.each([
   },
 );
 
-test('rejects a failed batch without sending a stop for an unsent subscription', async () => {
-  await using ctx = factory();
-  await ctx.client.greeting.query();
-  const connection = ctx.wsClient.connection;
-  assert(connection?.state === 'open');
-  const error = new Error('transport send failed');
-  const send = vi.spyOn(connection.ws, 'send').mockImplementation(() => {
-    throw error;
-  });
-  const onError = vi.fn();
-  const ac = new AbortController();
-  const subscription = ctx.client.onMessageObservable.subscribe(undefined, {
-    onError,
-  });
-  const query = ctx.client.greeting
-    .query(undefined, { signal: ac.signal })
-    .catch(onError);
+test.each([false, true])(
+  'rejects a failed batch without sending a stop for an unsent subscription (throwing error observer: %s)',
+  async (throwsInObserver) => {
+    await using ctx = factory();
+    await ctx.client.greeting.query();
+    const connection = ctx.wsClient.connection;
+    assert(connection?.state === 'open');
+    const error = new Error('transport send failed');
+    const send = vi.spyOn(connection.ws, 'send').mockImplementation(() => {
+      throw error;
+    });
+    const onError = vi.fn();
+    const ac = new AbortController();
+    const subscription = ctx.client.onMessageObservable.subscribe(undefined, {
+      onError(error) {
+        onError(error);
+        if (throwsInObserver) {
+          throw new Error('Error observer failed');
+        }
+      },
+    });
+    const query = ctx.client.greeting
+      .query(undefined, { signal: ac.signal })
+      .catch(onError);
 
-  try {
-    await vi.waitFor(() => expect(onError).toHaveBeenCalledTimes(2));
-    expect(send).toHaveBeenCalledTimes(1);
-    expect(onError.mock.calls.map((call) => call[0])).toEqual([
-      expect.objectContaining({ cause: error }),
-      expect.objectContaining({ cause: error }),
-    ]);
-    await ctx.wsClient.close();
-  } finally {
-    send.mockRestore();
-    subscription.unsubscribe();
-    ac.abort();
-    await query;
-  }
-});
+    try {
+      await vi.waitFor(() => expect(onError).toHaveBeenCalledTimes(2));
+      expect(send).toHaveBeenCalledTimes(1);
+      expect(onError.mock.calls.map((call) => call[0])).toEqual([
+        expect.objectContaining({ cause: error }),
+        expect.objectContaining({ cause: error }),
+      ]);
+      await ctx.wsClient.close();
+    } finally {
+      send.mockRestore();
+      subscription.unsubscribe();
+      ac.abort();
+      await query;
+    }
+  },
+);
 
 test('mutation', async () => {
   await using ctx = factory();
