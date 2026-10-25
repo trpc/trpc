@@ -447,7 +447,11 @@ export class WsClient {
       } catch (err) {
         for (const request of requests) {
           this.requestManager.delete(request.message.id);
-          request.callbacks.error(TRPCClientError.from(err as Error));
+          try {
+            request.callbacks.error(TRPCClientError.from(err as Error));
+          } catch {
+            // An observer failure must not leave the remaining requests pending.
+          }
         }
       }
     }).catch((err) => {
