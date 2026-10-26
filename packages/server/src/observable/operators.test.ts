@@ -262,6 +262,42 @@ test.each(['complete', 'error'] as const)(
   },
 );
 
+test.each(['complete', 'error'] as const)(
+  'share starts a new source for a subscriber added during %s',
+  (event) => {
+    let sourceObserver!: Observer<number, Error>;
+    let sourceSubscriptions = 0;
+    const shared = observable<number, Error>((observer) => {
+      sourceSubscriptions++;
+      sourceObserver = observer;
+    }).pipe(share());
+
+    const lateNext = vi.fn();
+    shared.subscribe({
+      complete() {
+        shared.subscribe({ next: lateNext });
+      },
+      error() {
+        shared.subscribe({ next: lateNext });
+      },
+    });
+
+    expect(sourceSubscriptions).toBe(1);
+
+    const error = new Error('source failed');
+    if (event === 'error') {
+      sourceObserver.error(error);
+    } else {
+      sourceObserver.complete();
+    }
+
+    expect(sourceSubscriptions).toBe(2);
+
+    sourceObserver.next(1);
+    expect(lateNext.mock.calls).toEqual([[1]]);
+  },
+);
+
 test('distinctUntilChanged', () => {
   const source = observable<number, never>((observer) => {
     observer.next(1);

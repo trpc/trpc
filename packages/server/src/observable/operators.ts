@@ -51,6 +51,7 @@ export function share<TValue, TError>(
           }
         },
         error(error) {
+          resetSource();
           for (const observer of [...observers]) {
             if (observers.has(observer)) {
               observer.error?.(error);
@@ -58,6 +59,7 @@ export function share<TValue, TError>(
           }
         },
         complete() {
+          resetSource();
           for (const observer of [...observers]) {
             if (observers.has(observer)) {
               observer.complete?.();
@@ -66,12 +68,15 @@ export function share<TValue, TError>(
         },
       });
     }
+    function resetSource() {
+      const _sub = subscription;
+      subscription = null;
+      _sub?.unsubscribe();
+    }
     function resetIfNeeded() {
       // "resetOnRefCountZero"
       if (refCount === 0 && subscription) {
-        const _sub = subscription;
-        subscription = null;
-        _sub.unsubscribe();
+        resetSource();
       }
     }
 
