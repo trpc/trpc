@@ -31,6 +31,39 @@ declare interface CustomEventEmitter<TOutput> {
 class CustomEventEmitter<TOutput>
   extends EventEmitter
   implements CustomEventEmitter<TOutput> {}
+
+function createControlledSource(teardown?: () => void) {
+  const sourceObservers: Observer<number, Error>[] = [];
+  return {
+    observable: observable<number, Error>((observer) => {
+      sourceObservers.push(observer);
+      return teardown;
+    }),
+    get observer() {
+      const observer = sourceObservers[sourceObservers.length - 1];
+      if (!observer) {
+        throw new Error('source has not been subscribed');
+      }
+      return observer;
+    },
+    get subscriptions() {
+      return sourceObservers.length;
+    },
+  };
+}
+
+function terminate(
+  observer: Observer<number, Error>,
+  event: 'complete' | 'error',
+  error: Error,
+) {
+  if (event === 'error') {
+    observer.error(error);
+  } else {
+    observer.complete();
+  }
+}
+
 test('map', () => {
   type EventShape = { num: number };
   const ee = new CustomEventEmitter<EventShape>();
@@ -157,20 +190,17 @@ test('share', () => {
 });
 
 test('share delivers values to remaining subscribers after self-unsubscription', () => {
-  let sourceObserver!: Observer<number, Error>;
   const teardown = vi.fn();
-  const shared = observable<number, Error>((observer) => {
-    sourceObserver = observer;
-    return teardown;
-  }).pipe(share());
+  const source = createControlledSource(teardown);
+  const shared = source.observable.pipe(share());
 
   const firstNext = vi.fn(() => first.unsubscribe());
   const secondNext = vi.fn();
   const first = shared.subscribe({ next: firstNext });
   const second = shared.subscribe({ next: secondNext });
 
-  sourceObserver.next(1);
-  sourceObserver.next(2);
+  source.observer.next(1);
+  source.observer.next(2);
 
   expect(firstNext.mock.calls).toEqual([[1]]);
   expect(secondNext.mock.calls).toEqual([[1], [2]]);
@@ -181,10 +211,8 @@ test('share delivers values to remaining subscribers after self-unsubscription',
 });
 
 test('share does not repeat a value for a replacement subscription', () => {
-  let sourceObserver!: Observer<number, Error>;
-  const shared = observable<number, Error>((observer) => {
-    sourceObserver = observer;
-  }).pipe(share());
+  const source = createControlledSource();
+  const shared = source.observable.pipe(share());
 
   const next = vi.fn(() => {
     // Bound a reentrant delivery bug so the test fails instead of looping.
@@ -195,17 +223,15 @@ test('share does not repeat a value for a replacement subscription', () => {
   });
   let subscription = shared.subscribe({ next });
 
-  sourceObserver.next(1);
+  source.observer.next(1);
 
   expect(next.mock.calls).toEqual([[1]]);
   subscription.unsubscribe();
 });
 
 test('share skips a subscriber cancelled by an earlier subscriber', () => {
-  let sourceObserver!: Observer<number, Error>;
-  const shared = observable<number, Error>((observer) => {
-    sourceObserver = observer;
-  }).pipe(share());
+  const source = createControlledSource();
+  const shared = source.observable.pipe(share());
 
   const first = shared.subscribe({ next: () => second.unsubscribe() });
   const secondNext = vi.fn();
@@ -213,7 +239,7 @@ test('share skips a subscriber cancelled by an earlier subscriber', () => {
   const thirdNext = vi.fn();
   const third = shared.subscribe({ next: thirdNext });
 
-  sourceObserver.next(1);
+  source.observer.next(1);
 
   expect(secondNext).not.toHaveBeenCalled();
   expect(thirdNext.mock.calls).toEqual([[1]]);
@@ -225,27 +251,18 @@ test('share skips a subscriber cancelled by an earlier subscriber', () => {
 test.each(['complete', 'error'] as const)(
   'share delivers %s to every subscriber',
   (event) => {
-    let sourceObserver!: Observer<number, Error>;
     const teardown = vi.fn();
-    let sourceSubscriptions = 0;
-    const shared = observable<number, Error>((observer) => {
-      sourceSubscriptions++;
-      sourceObserver = observer;
-      return teardown;
-    }).pipe(share());
+    const source = createControlledSource(teardown);
+    const shared = source.observable.pipe(share());
 
     const first = vi.fn();
     const second = vi.fn();
     shared.subscribe({ complete: first, error: first });
     shared.subscribe({ complete: second, error: second });
-    expect(sourceSubscriptions).toBe(1);
+    expect(source.subscriptions).toBe(1);
 
     const error = new Error('source failed');
-    if (event === 'error') {
-      sourceObserver.error(error);
-    } else {
-      sourceObserver.complete();
-    }
+    terminate(source.observer, event, error);
 
     const expectedCalls = event === 'error' ? [[error]] : [[]];
     expect(first.mock.calls).toEqual(expectedCalls);
@@ -254,8 +271,8 @@ test.each(['complete', 'error'] as const)(
 
     const next = vi.fn();
     const subscription = shared.subscribe({ next });
-    expect(sourceSubscriptions).toBe(2);
-    sourceObserver.next(2);
+    expect(source.subscriptions).toBe(2);
+    source.observer.next(2);
     expect(next.mock.calls).toEqual([[2]]);
     subscription.unsubscribe();
     expect(teardown).toHaveBeenCalledTimes(2);
@@ -263,14 +280,59 @@ test.each(['complete', 'error'] as const)(
 );
 
 test.each(['complete', 'error'] as const)(
+  'share notifies subscribers of %s in subscription order before tearing down the source',
+  (event) => {
+    const calls: string[] = [];
+    const source = createControlledSource(() => calls.push('teardown'));
+    const shared = source.observable.pipe(share());
+
+    for (const name of ['first', 'second', 'third']) {
+      shared.subscribe({
+        complete: () => calls.push(`${name}:complete`),
+        error: () => calls.push(`${name}:error`),
+      });
+    }
+
+    terminate(source.observer, event, new Error('source failed'));
+
+    expect(calls).toEqual([
+      `first:${event}`,
+      `second:${event}`,
+      `third:${event}`,
+      'teardown',
+    ]);
+  },
+);
+
+test.each(['complete', 'error'] as const)(
+  'share tears down the source when a %s callback throws',
+  (event) => {
+    const teardown = vi.fn();
+    const source = createControlledSource(teardown);
+    const shared = source.observable.pipe(share());
+
+    const callbackError = new Error('callback failed');
+    shared.subscribe({
+      complete() {
+        throw callbackError;
+      },
+      error() {
+        throw callbackError;
+      },
+    });
+
+    expect(() =>
+      terminate(source.observer, event, new Error('source failed')),
+    ).toThrow(callbackError);
+    expect(teardown).toHaveBeenCalledTimes(1);
+  },
+);
+
+test.each(['complete', 'error'] as const)(
   'share starts a new source for a subscriber added during %s',
   (event) => {
-    let sourceObserver!: Observer<number, Error>;
-    let sourceSubscriptions = 0;
-    const shared = observable<number, Error>((observer) => {
-      sourceSubscriptions++;
-      sourceObserver = observer;
-    }).pipe(share());
+    const source = createControlledSource();
+    const shared = source.observable.pipe(share());
 
     const lateNext = vi.fn();
     shared.subscribe({
@@ -282,18 +344,13 @@ test.each(['complete', 'error'] as const)(
       },
     });
 
-    expect(sourceSubscriptions).toBe(1);
+    expect(source.subscriptions).toBe(1);
 
-    const error = new Error('source failed');
-    if (event === 'error') {
-      sourceObserver.error(error);
-    } else {
-      sourceObserver.complete();
-    }
+    terminate(source.observer, event, new Error('source failed'));
 
-    expect(sourceSubscriptions).toBe(2);
+    expect(source.subscriptions).toBe(2);
 
-    sourceObserver.next(1);
+    source.observer.next(1);
     expect(lateNext.mock.calls).toEqual([[1]]);
   },
 );
