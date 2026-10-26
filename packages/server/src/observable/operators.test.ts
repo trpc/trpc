@@ -489,3 +489,39 @@ test.each(['complete', 'error'] as const)(
     expect(teardown).toHaveBeenCalledTimes(3);
   },
 );
+
+test('share joins a source that is still starting for a subscriber added during a synchronous next', () => {
+  const teardown = vi.fn();
+  const sourceObservers: Observer<number, Error>[] = [];
+  const shared = observable<number, Error>((observer) => {
+    sourceObservers.push(observer);
+    observer.next(1);
+    return teardown;
+  }).pipe(share());
+
+  const lateNext = vi.fn();
+  const subscriptions: ReturnType<typeof shared.subscribe>[] = [];
+  let resubscribed = false;
+  subscriptions.push(
+    shared.subscribe({
+      next() {
+        if (!resubscribed) {
+          resubscribed = true;
+          subscriptions.push(shared.subscribe({ next: lateNext }));
+        }
+      },
+    }),
+  );
+
+  expect(sourceObservers).toHaveLength(1);
+
+  for (const observer of sourceObservers) {
+    observer.next(2);
+  }
+  expect(lateNext.mock.calls).toEqual([[2]]);
+
+  for (const subscription of subscriptions) {
+    subscription.unsubscribe();
+  }
+  expect(teardown).toHaveBeenCalledTimes(1);
+});
