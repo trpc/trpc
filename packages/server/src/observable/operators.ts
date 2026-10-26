@@ -44,29 +44,38 @@ export function share<TValue, TError>(
       }
       subscription = source.subscribe({
         next(value) {
-          for (const observer of [...observers]) {
-            if (observers.has(observer)) {
-              observer.next?.(value);
-            }
-          }
+          notify((observer) => observer.next?.(value));
         },
         error(error) {
-          resetSource();
-          for (const observer of [...observers]) {
-            if (observers.has(observer)) {
-              observer.error?.(error);
-            }
-          }
+          terminate((observer) => observer.error?.(error));
         },
         complete() {
-          resetSource();
-          for (const observer of [...observers]) {
-            if (observers.has(observer)) {
-              observer.complete?.();
-            }
-          }
+          terminate((observer) => observer.complete?.());
         },
       });
+    }
+    function notify(
+      callback: (observer: Partial<Observer<TValue, TError>>) => void,
+    ) {
+      for (const observer of [...observers]) {
+        if (observers.has(observer)) {
+          callback(observer);
+        }
+      }
+    }
+    function terminate(
+      callback: (observer: Partial<Observer<TValue, TError>>) => void,
+    ) {
+      // Cleared before notifying so a subscriber added during the callback
+      // starts a fresh source; the old one is torn down only after every
+      // observer has been notified, mirroring subscription order.
+      const _sub = subscription;
+      subscription = null;
+      try {
+        notify(callback);
+      } finally {
+        _sub?.unsubscribe();
+      }
     }
     function resetSource() {
       const _sub = subscription;
