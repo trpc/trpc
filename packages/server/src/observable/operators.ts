@@ -36,26 +36,35 @@ export function share<TValue, TError>(
     let refCount = 0;
 
     let subscription: Unsubscribable | null = null;
+    // True while `source.subscribe` runs, so subscribers added by a synchronous
+    // `next` join the starting source instead of starting another one
+    let isConnecting = false;
     const observers = new Set<Partial<Observer<TValue, TError>>>();
 
     function startIfNeeded() {
-      if (subscription) {
+      if (subscription || isConnecting) {
         return;
       }
+      isConnecting = true;
       let isDone = false;
-      const sourceSubscription = source.subscribe({
-        next(value) {
-          notify((observer) => observer.next?.(value));
-        },
-        error(error) {
-          isDone = true;
-          terminate((observer) => observer.error?.(error));
-        },
-        complete() {
-          isDone = true;
-          terminate((observer) => observer.complete?.());
-        },
-      });
+      let sourceSubscription: Unsubscribable;
+      try {
+        sourceSubscription = source.subscribe({
+          next(value) {
+            notify((observer) => observer.next?.(value));
+          },
+          error(error) {
+            isDone = true;
+            terminate((observer) => observer.error?.(error));
+          },
+          complete() {
+            isDone = true;
+            terminate((observer) => observer.complete?.());
+          },
+        });
+      } finally {
+        isConnecting = false;
+      }
       // A synchronous terminal event fires before `subscribe` returns, and its
       // callbacks may already have started a new source
       if (isDone) {
@@ -81,6 +90,7 @@ export function share<TValue, TError>(
       // observer has been notified, mirroring subscription order.
       const _sub = subscription;
       subscription = null;
+      isConnecting = false;
       try {
         notify(callback);
       } finally {

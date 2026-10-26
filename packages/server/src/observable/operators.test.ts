@@ -525,3 +525,30 @@ test('share joins a source that is still starting for a subscriber added during 
   }
   expect(teardown).toHaveBeenCalledTimes(1);
 });
+
+test('share starts the source again after a synchronous next callback throws', () => {
+  let starts = 0;
+  const shared = observable<number, Error>((observer) => {
+    starts++;
+    observer.next(starts);
+  }).pipe(share());
+
+  const callbackError = new Error('callback failed');
+  let thrown = false;
+  expect(() =>
+    shared.subscribe({
+      next() {
+        if (!thrown) {
+          thrown = true;
+          throw callbackError;
+        }
+      },
+    }),
+  ).toThrow(callbackError);
+
+  const next = vi.fn();
+  const subscription = shared.subscribe({ next });
+  expect(starts).toBe(2);
+  expect(next.mock.calls).toEqual([[2]]);
+  subscription.unsubscribe();
+});
