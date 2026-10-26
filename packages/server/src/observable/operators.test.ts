@@ -351,3 +351,84 @@ test('distinctUntilDeepChanged', () => {
     { a: 1, b: { c: 'x' } },
   ]);
 });
+
+/**
+ * The first `terminatingStarts` source subscriptions emit `event` synchronously,
+ * later ones synchronously emit their start number and stay open
+ */
+function createSyncTerminatingSharedSource(
+  event: 'complete' | 'error',
+  terminatingStarts: number,
+) {
+  let starts = 0;
+  const teardown = vi.fn();
+  const shared = observable<number, Error>((observer) => {
+    starts++;
+    if (starts > terminatingStarts) {
+      observer.next(starts);
+    } else if (event === 'error') {
+      observer.error(new Error('source failed'));
+    } else {
+      observer.complete();
+    }
+    return teardown;
+  }).pipe(share());
+
+  return {
+    shared,
+    teardown,
+    getStarts: () => starts,
+  };
+}
+
+test.each(['complete', 'error'] as const)(
+  'share tears down a source started by a subscriber during a synchronous %s',
+  (event) => {
+    const { shared, teardown, getStarts } = createSyncTerminatingSharedSource(
+      event,
+      1,
+    );
+
+    const next = vi.fn();
+    const nested: ReturnType<typeof shared.subscribe>[] = [];
+    const resubscribe = () => {
+      nested.push(shared.subscribe({ next }));
+    };
+    shared.subscribe({ complete: resubscribe, error: resubscribe });
+
+    expect(getStarts()).toBe(2);
+    expect(next.mock.calls).toEqual([[2]]);
+
+    for (const subscription of nested) {
+      subscription.unsubscribe();
+    }
+    expect(teardown).toHaveBeenCalledTimes(2);
+  },
+);
+
+test.each(['complete', 'error'] as const)(
+  'share does not attach a subscriber to a source that terminated synchronously during %s',
+  (event) => {
+    const { shared, teardown, getStarts } = createSyncTerminatingSharedSource(
+      event,
+      2,
+    );
+
+    const lateNext = vi.fn();
+    const nested: ReturnType<typeof shared.subscribe>[] = [];
+    const resubscribe = () => {
+      // The second source also terminates synchronously
+      nested.push(shared.subscribe({}));
+      nested.push(shared.subscribe({ next: lateNext }));
+    };
+    shared.subscribe({ complete: resubscribe, error: resubscribe });
+
+    expect(getStarts()).toBe(3);
+    expect(lateNext.mock.calls).toEqual([[3]]);
+
+    for (const subscription of nested) {
+      subscription.unsubscribe();
+    }
+    expect(teardown).toHaveBeenCalledTimes(3);
+  },
+);
