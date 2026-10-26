@@ -6,6 +6,7 @@ import {
   map,
   share,
 } from './operators';
+import type { Observer } from './types';
 
 interface SubscriptionEvents<TOutput> {
   data: (data: TOutput) => void;
@@ -154,6 +155,112 @@ test('share', () => {
     subscription3.unsubscribe();
   }
 });
+
+test('share delivers values to remaining subscribers after self-unsubscription', () => {
+  let sourceObserver!: Observer<number, Error>;
+  const teardown = vi.fn();
+  const shared = observable<number, Error>((observer) => {
+    sourceObserver = observer;
+    return teardown;
+  }).pipe(share());
+
+  const firstNext = vi.fn(() => first.unsubscribe());
+  const secondNext = vi.fn();
+  const first = shared.subscribe({ next: firstNext });
+  const second = shared.subscribe({ next: secondNext });
+
+  sourceObserver.next(1);
+  sourceObserver.next(2);
+
+  expect(firstNext.mock.calls).toEqual([[1]]);
+  expect(secondNext.mock.calls).toEqual([[1], [2]]);
+  expect(teardown).not.toHaveBeenCalled();
+
+  second.unsubscribe();
+  expect(teardown).toHaveBeenCalledTimes(1);
+});
+
+test('share does not repeat a value for a replacement subscription', () => {
+  let sourceObserver!: Observer<number, Error>;
+  const shared = observable<number, Error>((observer) => {
+    sourceObserver = observer;
+  }).pipe(share());
+
+  const next = vi.fn(() => {
+    // Bound a reentrant delivery bug so the test fails instead of looping.
+    if (next.mock.calls.length < 3) {
+      subscription.unsubscribe();
+      subscription = shared.subscribe({ next });
+    }
+  });
+  let subscription = shared.subscribe({ next });
+
+  sourceObserver.next(1);
+
+  expect(next.mock.calls).toEqual([[1]]);
+  subscription.unsubscribe();
+});
+
+test('share skips a subscriber cancelled by an earlier subscriber', () => {
+  let sourceObserver!: Observer<number, Error>;
+  const shared = observable<number, Error>((observer) => {
+    sourceObserver = observer;
+  }).pipe(share());
+
+  const first = shared.subscribe({ next: () => second.unsubscribe() });
+  const secondNext = vi.fn();
+  const second = shared.subscribe({ next: secondNext });
+  const thirdNext = vi.fn();
+  const third = shared.subscribe({ next: thirdNext });
+
+  sourceObserver.next(1);
+
+  expect(secondNext).not.toHaveBeenCalled();
+  expect(thirdNext.mock.calls).toEqual([[1]]);
+
+  first.unsubscribe();
+  third.unsubscribe();
+});
+
+test.each(['complete', 'error'] as const)(
+  'share delivers %s to every subscriber',
+  (event) => {
+    let sourceObserver!: Observer<number, Error>;
+    const teardown = vi.fn();
+    let sourceSubscriptions = 0;
+    const shared = observable<number, Error>((observer) => {
+      sourceSubscriptions++;
+      sourceObserver = observer;
+      return teardown;
+    }).pipe(share());
+
+    const first = vi.fn();
+    const second = vi.fn();
+    shared.subscribe({ complete: first, error: first });
+    shared.subscribe({ complete: second, error: second });
+    expect(sourceSubscriptions).toBe(1);
+
+    const error = new Error('source failed');
+    if (event === 'error') {
+      sourceObserver.error(error);
+    } else {
+      sourceObserver.complete();
+    }
+
+    const expectedCalls = event === 'error' ? [[error]] : [[]];
+    expect(first.mock.calls).toEqual(expectedCalls);
+    expect(second.mock.calls).toEqual(expectedCalls);
+    expect(teardown).toHaveBeenCalledTimes(1);
+
+    const next = vi.fn();
+    const subscription = shared.subscribe({ next });
+    expect(sourceSubscriptions).toBe(2);
+    sourceObserver.next(2);
+    expect(next.mock.calls).toEqual([[2]]);
+    subscription.unsubscribe();
+    expect(teardown).toHaveBeenCalledTimes(2);
+  },
+);
 
 test('distinctUntilChanged', () => {
   const source = observable<number, never>((observer) => {
