@@ -42,7 +42,8 @@ export function share<TValue, TError>(
       if (subscription) {
         return;
       }
-      subscription = source.subscribe({
+      let isDone = false;
+      const sourceSubscription = source.subscribe({
         next(value) {
           for (const observer of [...observers]) {
             if (observers.has(observer)) {
@@ -51,6 +52,7 @@ export function share<TValue, TError>(
           }
         },
         error(error) {
+          isDone = true;
           resetSource();
           for (const observer of [...observers]) {
             if (observers.has(observer)) {
@@ -59,6 +61,7 @@ export function share<TValue, TError>(
           }
         },
         complete() {
+          isDone = true;
           resetSource();
           for (const observer of [...observers]) {
             if (observers.has(observer)) {
@@ -67,6 +70,13 @@ export function share<TValue, TError>(
           }
         },
       });
+      // A synchronous terminal event fires before `subscribe` returns, and its
+      // callbacks may already have started a new source
+      if (isDone) {
+        sourceSubscription.unsubscribe();
+      } else {
+        subscription = sourceSubscription;
+      }
     }
     function resetSource() {
       const _sub = subscription;
