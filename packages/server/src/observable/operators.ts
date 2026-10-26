@@ -36,7 +36,7 @@ export function share<TValue, TError>(
     let refCount = 0;
 
     let subscription: Unsubscribable | null = null;
-    const observers: Partial<Observer<TValue, TError>>[] = [];
+    const observers = new Set<Partial<Observer<TValue, TError>>>();
 
     function startIfNeeded() {
       if (subscription) {
@@ -44,46 +44,53 @@ export function share<TValue, TError>(
       }
       subscription = source.subscribe({
         next(value) {
-          for (const observer of observers) {
-            observer.next?.(value);
+          for (const observer of [...observers]) {
+            if (observers.has(observer)) {
+              observer.next?.(value);
+            }
           }
         },
         error(error) {
-          for (const observer of observers) {
-            observer.error?.(error);
+          resetSource();
+          for (const observer of [...observers]) {
+            if (observers.has(observer)) {
+              observer.error?.(error);
+            }
           }
         },
         complete() {
-          for (const observer of observers) {
-            observer.complete?.();
+          resetSource();
+          for (const observer of [...observers]) {
+            if (observers.has(observer)) {
+              observer.complete?.();
+            }
           }
         },
       });
     }
+    function resetSource() {
+      const _sub = subscription;
+      subscription = null;
+      _sub?.unsubscribe();
+    }
     function resetIfNeeded() {
       // "resetOnRefCountZero"
       if (refCount === 0 && subscription) {
-        const _sub = subscription;
-        subscription = null;
-        _sub.unsubscribe();
+        resetSource();
       }
     }
 
     return observable((subscriber) => {
       refCount++;
 
-      observers.push(subscriber);
+      observers.add(subscriber);
       startIfNeeded();
       return {
         unsubscribe() {
           refCount--;
           resetIfNeeded();
 
-          const index = observers.findIndex((v) => v === subscriber);
-
-          if (index > -1) {
-            observers.splice(index, 1);
-          }
+          observers.delete(subscriber);
         },
       };
     });
