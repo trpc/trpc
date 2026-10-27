@@ -362,6 +362,26 @@ test.each(['complete', 'error'] as const)(
 );
 
 test.each(['complete', 'error'] as const)(
+  'share skips a subscriber cancelled by an earlier subscriber during %s',
+  (event) => {
+    const source = createControlledSource();
+    const shared = source.observable.pipe(share());
+
+    const cancel = () => second.unsubscribe();
+    shared.subscribe({ complete: cancel, error: cancel });
+    const secondTerminal = vi.fn();
+    const second = shared.subscribe({
+      complete: secondTerminal,
+      error: secondTerminal,
+    });
+
+    terminate(source.observer, event, new Error('source failed'));
+
+    expect(secondTerminal).not.toHaveBeenCalled();
+  },
+);
+
+test.each(['complete', 'error'] as const)(
   'share keeps a source restarted during %s from erroring the old subscribers',
   (event) => {
     const restartError = new Error('restarted source failed');

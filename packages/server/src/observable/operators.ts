@@ -39,7 +39,7 @@ export function share<TValue, TError>(
     // True while `source.subscribe` runs, so subscribers added by a synchronous
     // `next` join the starting source instead of starting another one
     let isConnecting = false;
-    const observers = new Set<Partial<Observer<TValue, TError>>>();
+    let observers = new Set<Partial<Observer<TValue, TError>>>();
 
     function startIfNeeded() {
       if (subscription || isConnecting) {
@@ -51,7 +51,7 @@ export function share<TValue, TError>(
       try {
         sourceSubscription = source.subscribe({
           next(value) {
-            notify((observer) => observer.next?.(value));
+            notify(observers, (observer) => observer.next?.(value));
           },
           error(error) {
             isDone = true;
@@ -74,10 +74,11 @@ export function share<TValue, TError>(
       }
     }
     function notify(
+      targets: Set<Partial<Observer<TValue, TError>>>,
       callback: (observer: Partial<Observer<TValue, TError>>) => void,
     ) {
-      for (const observer of [...observers]) {
-        if (observers.has(observer)) {
+      for (const observer of [...targets]) {
+        if (targets.has(observer)) {
           callback(observer);
         }
       }
@@ -86,13 +87,16 @@ export function share<TValue, TError>(
       callback: (observer: Partial<Observer<TValue, TError>>) => void,
     ) {
       // Cleared before notifying so a subscriber added during the callback
-      // starts a fresh source; the old one is torn down only after every
-      // observer has been notified, mirroring subscription order.
+      // starts a fresh source whose events reach only the observers that
+      // joined it; the old source is torn down only after every observer has
+      // been notified, mirroring subscription order.
       const _sub = subscription;
+      const terminatedObservers = observers;
       subscription = null;
+      observers = new Set();
       isConnecting = false;
       try {
-        notify(callback);
+        notify(terminatedObservers, callback);
       } finally {
         _sub?.unsubscribe();
       }
@@ -112,14 +116,15 @@ export function share<TValue, TError>(
     return observable((subscriber) => {
       refCount++;
 
-      observers.add(subscriber);
+      const subscriberObservers = observers;
+      subscriberObservers.add(subscriber);
       startIfNeeded();
       return {
         unsubscribe() {
           refCount--;
           resetIfNeeded();
 
-          observers.delete(subscriber);
+          subscriberObservers.delete(subscriber);
         },
       };
     });
