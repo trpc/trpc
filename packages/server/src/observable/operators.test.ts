@@ -32,11 +32,17 @@ class CustomEventEmitter<TOutput>
   extends EventEmitter
   implements CustomEventEmitter<TOutput> {}
 
-function createControlledSource(teardown?: () => void) {
+function createControlledSource(
+  teardown?: () => void,
+  onResubscribe?: (observer: Observer<number, Error>) => void,
+) {
   const sourceObservers: Observer<number, Error>[] = [];
   return {
     observable: observable<number, Error>((observer) => {
       sourceObservers.push(observer);
+      if (sourceObservers.length > 1) {
+        onResubscribe?.(observer);
+      }
       return teardown;
     }),
     get observer() {
@@ -352,6 +358,72 @@ test.each(['complete', 'error'] as const)(
 
     source.observer.next(1);
     expect(lateNext.mock.calls).toEqual([[1]]);
+  },
+);
+
+test.each(['complete', 'error'] as const)(
+  'share keeps a source restarted during %s from erroring the old subscribers',
+  (event) => {
+    const restartError = new Error('restarted source failed');
+    const source = createControlledSource(undefined, (observer) =>
+      observer.error(restartError),
+    );
+    const shared = source.observable.pipe(share());
+
+    const calls: unknown[][] = [];
+    const resubscribe = () => {
+      shared.subscribe({ error: (err) => calls.push(['late', err]) });
+    };
+    shared.subscribe({ complete: resubscribe, error: resubscribe });
+    shared.subscribe({
+      complete: () => calls.push(['second', 'complete']),
+      error: (err) => calls.push(['second', err]),
+    });
+
+    const error = new Error('source failed');
+    terminate(source.observer, event, error);
+
+    expect(source.subscriptions).toBe(2);
+    expect(calls).toEqual([
+      ['late', restartError],
+      ['second', event === 'error' ? error : 'complete'],
+    ]);
+  },
+);
+
+test.each(['complete', 'error'] as const)(
+  'share keeps a source restarted during %s from emitting to the old subscribers',
+  (event) => {
+    const source = createControlledSource(undefined, (observer) =>
+      observer.next(2),
+    );
+    const shared = source.observable.pipe(share());
+
+    const calls: unknown[][] = [];
+    const nested: ReturnType<typeof shared.subscribe>[] = [];
+    const resubscribe = () => {
+      nested.push(
+        shared.subscribe({ next: (value) => calls.push(['late', value]) }),
+      );
+    };
+    shared.subscribe({ complete: resubscribe, error: resubscribe });
+    shared.subscribe({
+      next: (value) => calls.push(['second', value]),
+      complete: () => calls.push(['second', event]),
+      error: () => calls.push(['second', event]),
+    });
+
+    terminate(source.observer, event, new Error('source failed'));
+
+    expect(source.subscriptions).toBe(2);
+    expect(calls).toEqual([
+      ['late', 2],
+      ['second', event],
+    ]);
+
+    for (const subscription of nested) {
+      subscription.unsubscribe();
+    }
   },
 );
 
