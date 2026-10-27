@@ -36,37 +36,70 @@ export function share<TValue, TError>(
     let refCount = 0;
 
     let subscription: Unsubscribable | null = null;
-    const observers = new Set<Partial<Observer<TValue, TError>>>();
+    // True while `source.subscribe` runs, so subscribers added by a synchronous
+    // `next` join the starting source instead of starting another one
+    let isConnecting = false;
+    let observers = new Set<Partial<Observer<TValue, TError>>>();
 
     function startIfNeeded() {
-      if (subscription) {
+      if (subscription || isConnecting) {
         return;
       }
-      subscription = source.subscribe({
-        next(value) {
-          for (const observer of [...observers]) {
-            if (observers.has(observer)) {
-              observer.next?.(value);
-            }
-          }
-        },
-        error(error) {
-          resetSource();
-          for (const observer of [...observers]) {
-            if (observers.has(observer)) {
-              observer.error?.(error);
-            }
-          }
-        },
-        complete() {
-          resetSource();
-          for (const observer of [...observers]) {
-            if (observers.has(observer)) {
-              observer.complete?.();
-            }
-          }
-        },
-      });
+      isConnecting = true;
+      let isDone = false;
+      let sourceSubscription: Unsubscribable;
+      try {
+        sourceSubscription = source.subscribe({
+          next(value) {
+            notify(observers, (observer) => observer.next?.(value));
+          },
+          error(error) {
+            isDone = true;
+            terminate((observer) => observer.error?.(error));
+          },
+          complete() {
+            isDone = true;
+            terminate((observer) => observer.complete?.());
+          },
+        });
+      } finally {
+        isConnecting = false;
+      }
+      // A synchronous terminal event fires before `subscribe` returns, and its
+      // callbacks may already have started a new source
+      if (isDone) {
+        sourceSubscription.unsubscribe();
+      } else {
+        subscription = sourceSubscription;
+      }
+    }
+    function notify(
+      targets: Set<Partial<Observer<TValue, TError>>>,
+      callback: (observer: Partial<Observer<TValue, TError>>) => void,
+    ) {
+      for (const observer of [...targets]) {
+        if (targets.has(observer)) {
+          callback(observer);
+        }
+      }
+    }
+    function terminate(
+      callback: (observer: Partial<Observer<TValue, TError>>) => void,
+    ) {
+      // Cleared before notifying so a subscriber added during the callback
+      // starts a fresh source whose events reach only the observers that
+      // joined it; the old source is torn down only after every observer has
+      // been notified, mirroring subscription order.
+      const _sub = subscription;
+      const terminatedObservers = observers;
+      subscription = null;
+      observers = new Set();
+      isConnecting = false;
+      try {
+        notify(terminatedObservers, callback);
+      } finally {
+        _sub?.unsubscribe();
+      }
     }
     function resetSource() {
       const _sub = subscription;
@@ -83,14 +116,15 @@ export function share<TValue, TError>(
     return observable((subscriber) => {
       refCount++;
 
-      observers.add(subscriber);
+      const subscriberObservers = observers;
+      subscriberObservers.add(subscriber);
       startIfNeeded();
       return {
         unsubscribe() {
           refCount--;
           resetIfNeeded();
 
-          observers.delete(subscriber);
+          subscriberObservers.delete(subscriber);
         },
       };
     });
