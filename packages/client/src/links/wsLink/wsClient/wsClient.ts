@@ -254,6 +254,7 @@ export class WsClient {
    * reconnection state in the `reconnecting` promise.
    */
   private reconnecting: Promise<void> | null = null;
+  private reconnectAttemptIndex = 0;
   private reconnect(closedError: TRPCWebSocketClosedError) {
     this.connectionState.next({
       type: 'state',
@@ -279,11 +280,12 @@ export class WsClient {
         }
         this.reconnecting = null;
       } catch {
-        await tryReconnect(attemptIndex + 1);
+        this.reconnectAttemptIndex = attemptIndex + 1;
+        await tryReconnect(this.reconnectAttemptIndex);
       }
     };
 
-    this.reconnecting = tryReconnect(0);
+    this.reconnecting = tryReconnect(this.reconnectAttemptIndex);
   }
 
   private setupWebSocketListeners(ws: WebSocket) {
@@ -333,6 +335,12 @@ export class WsClient {
       const incomingMessage = this.encoder.decode(
         data,
       ) as TRPCClientIncomingMessage;
+      // An id-less error is sent when the server fails to create connection context.
+      // Treating the socket's preceding open event as success would reset backoff
+      // before that failure arrives and can create a tight reconnect loop.
+      if (!('id' in incomingMessage && incomingMessage.id === null && 'error' in incomingMessage)) {
+        this.reconnectAttemptIndex = 0;
+      }
       if ('method' in incomingMessage) {
         this.handleIncomingRequest(incomingMessage);
         return;
