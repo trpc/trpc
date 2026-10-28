@@ -338,7 +338,11 @@ export class WsClient {
       // An id-less error is sent when the server fails to create connection context.
       // Treating the socket's preceding open event as success would reset backoff
       // before that failure arrives and can create a tight reconnect loop.
-      if (!('id' in incomingMessage && incomingMessage.id === null && 'error' in incomingMessage)) {
+      if (!(
+        'id' in incomingMessage &&
+        incomingMessage.id === null &&
+        'error' in incomingMessage
+      )) {
         this.reconnectAttemptIndex = 0;
       }
       if ('method' in incomingMessage) {
