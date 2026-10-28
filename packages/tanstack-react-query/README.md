@@ -12,11 +12,6 @@
 
 > A tRPC wrapper around `@tanstack/react-query`.
 
-> [!WARNING]
->
-> 🚧 🚧 🚧 🚧 🚧 🚧 🚧 🚧 🚧 🚧 🚧 🚧 🚧 🚧 🚧 🚧 🚧 🚧 🚧
-> This package is currently in beta as we stabilize the API. We might do breaking changes without respecting semver.
-
 ## Documentation
 
 Full documentation can be found at https://trpc.io/docs/client/tanstack-react-query/setup.
