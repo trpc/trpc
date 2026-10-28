@@ -1,0 +1,36 @@
+diff --git a/dist/utils/defaults.js b/dist/utils/defaults.js
+index d62a34f24a432e1ff2ded4b5e1c8dc1d0a9d1ea5..827b8fa2687af5d74cccba46f956c2281d8acd97 100644
+--- a/dist/utils/defaults.js
++++ b/dist/utils/defaults.js
+@@ -72,6 +72,7 @@ export class Defaults {
+             'fetch-retry-factor': 10,
+             'fetch-retry-mintimeout': 10000,
+             'fetch-retry-maxtimeout': 60000,
++            'fetch-timeout': 5 * 60 * 1000,
+             git: 'git',
+             'git-dry-run': false,
+             'git-tag-version': true,
+diff --git a/dist/utils/npm-conf.js b/dist/utils/npm-conf.js
+index 4573bffb9e6d38a867d9916edda597cbe8ae250e..27d947ef9fb7aa0adc86fc618ec6d0e53cde53c7 100644
+--- a/dist/utils/npm-conf.js
++++ b/dist/utils/npm-conf.js
+@@ -35,6 +35,7 @@ function npmConf(opts) {
+     if (caFile) {
+         conf.loadCAFile(caFile);
+     }
++    conf.set('timeout', conf.get('fetch-timeout'), 'cli');
+     return conf;
+ }
+ export { Conf, npmConf, toNerfDart };
+diff --git a/dist/utils/types.js b/dist/utils/types.js
+index 18c89b0b0d000f0e9e79c012c481aeea791edc74..ead82038a349bd2d6e063492b8d1833c653d2f37 100644
+--- a/dist/utils/types.js
++++ b/dist/utils/types.js
+@@ -36,6 +36,7 @@ export const types = {
+     'fetch-retry-factor': Number,
+     'fetch-retry-mintimeout': Number,
+     'fetch-retry-maxtimeout': Number,
++    'fetch-timeout': Number,
+     git: String,
+     'git-dry-run': Boolean,
+     'git-tag-version': Boolean,

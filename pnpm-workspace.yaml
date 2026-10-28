@@ -77,3 +77,5 @@ catalog:
 catalogs:
   ts-api:
     typescript: ^6.0.3
+patchedDependencies:
+  '@lerna-lite/core@5.6.4': patches/@lerna-lite__core@5.6.4.patch
