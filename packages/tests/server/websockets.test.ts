@@ -1225,9 +1225,9 @@ test('connection state settles on idle after .close()', async () => {
   await using ctx = factory();
 
   await vi.waitFor(() => {
-    expect(
-      ctx.connectionState.mock.calls.map((c) => c[0]?.state),
-    ).toContain('pending');
+    expect(ctx.connectionState.mock.calls.map((c) => c[0]?.state)).toContain(
+      'pending',
+    );
   });
 
   await ctx.wsClient.close();
