@@ -1231,7 +1231,9 @@ test('connection state settles on idle after .close()', async () => {
   });
 
   await ctx.wsClient.close();
-  await waitMs(100);
+  await vi.waitFor(() => {
+    expect(ctx.onCloseMock).toHaveBeenCalled();
+  });
 
   const states = ctx.connectionState.mock.calls.map((c) => c[0]?.state);
   expect(states.at(-1)).toBe('idle');
