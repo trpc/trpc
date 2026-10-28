@@ -1221,6 +1221,22 @@ test('wsClient stops reconnecting after .close()', async () => {
   expect(retryDelayMsMock).toHaveBeenCalledTimes(2);
   expect(onErrorMock).toHaveBeenCalledTimes(2);
 });
+test('connection state settles on idle after .close()', async () => {
+  await using ctx = factory();
+
+  await vi.waitFor(() => {
+    expect(
+      ctx.connectionState.mock.calls.map((c) => c[0]?.state),
+    ).toContain('pending');
+  });
+
+  await ctx.wsClient.close();
+  await waitMs(100);
+
+  const states = ctx.connectionState.mock.calls.map((c) => c[0]?.state);
+  expect(states.at(-1)).toBe('idle');
+});
+
 describe('lazy mode', () => {
   test('happy path', async () => {
     await using ctx = factory({
