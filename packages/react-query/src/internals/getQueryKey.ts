@@ -15,10 +15,25 @@ export type TRPCQueryKey = [
 
 export type TRPCMutationKey = [readonly string[]]; // = [TRPCQueryKey[0]]
 
+/**
+ * A procedure of `createServerSideHelpers()` or `createHydrationHelpers()`
+ */
+type ServerSideProcedure<TInput> = {
+  prefetch: (input: TInput, ...rest: any[]) => Promise<void>;
+  // `useUtils()` procedures have `prefetch()` as well, but they can't give a key
+  setData?: never;
+};
+
+type ServerSideRouterRecord = {
+  [key: string]: ServerSideProcedure<any> | ServerSideRouterRecord;
+};
+
 type ProcedureOrRouter =
   | DecoratedMutation<any>
   | DecoratedQuery<any>
-  | DecorateRouterRecord<any, any>;
+  | DecorateRouterRecord<any, any>
+  | ServerSideProcedure<any>
+  | ServerSideRouterRecord;
 
 /**
  * To allow easy interactions with groups of related queries, such as
@@ -97,7 +112,9 @@ export type GetQueryProcedureInput<TProcedureInput> = TProcedureInput extends {
 type GetParams<TProcedureOrRouter extends ProcedureOrRouter> =
   TProcedureOrRouter extends DecoratedQuery<infer $Def>
     ? [input?: GetQueryProcedureInput<$Def['input']>, type?: QueryType]
-    : [];
+    : TProcedureOrRouter extends ServerSideProcedure<infer $Input>
+      ? [input?: GetQueryProcedureInput<$Input>, type?: QueryType]
+      : [];
 
 /**
  * Method to extract the query key for a procedure
