@@ -398,6 +398,100 @@ describe('connection state - http', () => {
   });
 });
 
+describe('Issue #6962 regression test', () => {
+  test('transitions status from pending to idle when server closes subscription over wsLink', async () => {
+    const ee = new EventEmitter();
+    let subscriptionCount = 0;
+
+    const t = initTRPC.create();
+    const appRouter = t.router({
+      onEvent: t.procedure.subscription(async function* (opts) {
+        subscriptionCount++;
+        for await (const [data] of on(ee, 'data', { signal: opts.signal })) {
+          if (data === 'CLOSE_FROM_SERVER') {
+            return; // Server closes the subscription cleanly
+          }
+          yield data as string;
+        }
+      }),
+    });
+
+    await using ctx = testReactResource(appRouter, {
+      client(opts) {
+        return {
+          links: [
+            wsLink({
+              client: opts.wsClient,
+            }),
+          ],
+        };
+      },
+    });
+
+    const onCompleteMock = vi.fn();
+    const onDataMock = vi.fn();
+
+    function MyComponent() {
+      const trpc = ctx.useTRPC();
+      const sub = useSubscription(
+        trpc.onEvent.subscriptionOptions(undefined, {
+          onData: onDataMock,
+          onComplete: onCompleteMock,
+        }),
+      );
+
+      return (
+        <div>
+          <div data-testid="status">{sub.status}</div>
+          <div data-testid="data">{sub.data ?? 'none'}</div>
+          <button data-testid="reset" onClick={() => sub.reset()}>
+            Reset
+          </button>
+        </div>
+      );
+    }
+
+    const utils = ctx.renderApp(<MyComponent />);
+
+    // 1. Wait for subscription to start and enter 'pending' state
+    await vi.waitFor(() => {
+      expect(utils.getByTestId('status')).toHaveTextContent('pending');
+    });
+    expect(subscriptionCount).toBe(1);
+
+    // 2. Emit data and verify receipt
+    ee.emit('data', 'hello-1');
+    await vi.waitFor(() => {
+      expect(utils.getByTestId('data')).toHaveTextContent('hello-1');
+    });
+    expect(onDataMock).toHaveBeenCalledWith('hello-1');
+
+    // 3. Server closes subscription via `return`
+    ee.emit('data', 'CLOSE_FROM_SERVER');
+
+    // 4. Verify status transitions from 'pending' -> 'idle' and data resets to undefined
+    await vi.waitFor(() => {
+      expect(utils.getByTestId('status')).toHaveTextContent('idle');
+    });
+    expect(utils.getByTestId('data')).toHaveTextContent('none');
+    expect(onCompleteMock).toHaveBeenCalledTimes(1);
+
+    // 5. Verify calling reset() restarts the subscription and transitions back to 'pending'
+    fireEvent.click(utils.getByTestId('reset'));
+    await vi.waitFor(() => {
+      expect(utils.getByTestId('status')).toHaveTextContent('pending');
+    });
+    expect(subscriptionCount).toBe(2);
+
+    ee.emit('data', 'hello-after-reset');
+    await vi.waitFor(() => {
+      expect(utils.getByTestId('data')).toHaveTextContent('hello-after-reset');
+    });
+
+    utils.unmount();
+  });
+});
+
 describe('http', () => {
   test('aborts on useSubscription restarts', async () => {
     await using ctx = getCtx('http');

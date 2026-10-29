@@ -19,6 +19,11 @@ interface BaseTRPCSubscriptionOptionsIn<TOutput, TError> {
   onStarted?: () => void;
   onData?: (data: inferAsyncIterableYield<TOutput>) => void;
   onError?: (err: TError) => void;
+  /**
+   * Called when the subscription is completed/closed on the server.
+   * The subscription status will transition to `'idle'` with `data: undefined`.
+   */
+  onComplete?: () => void;
   onConnectionStateChange?: (state: TRPCConnectionState<TError>) => void;
 }
 
@@ -26,6 +31,11 @@ interface UnusedSkipTokenTRPCSubscriptionOptionsIn<TOutput, TError> {
   onStarted?: () => void;
   onData?: (data: inferAsyncIterableYield<TOutput>) => void;
   onError?: (err: TError) => void;
+  /**
+   * Called when the subscription is completed/closed on the server.
+   * The subscription status will transition to `'idle'` with `data: undefined`.
+   */
+  onComplete?: () => void;
   onConnectionStateChange?: (state: TRPCConnectionState<TError>) => void;
 }
 
@@ -40,7 +50,9 @@ interface TRPCSubscriptionOptionsOut<
   enabled: boolean;
   queryKey: TRPCQueryKey<TFeatureFlags['keyPrefix']>;
   subscribe: (
-    innerOpts: UnusedSkipTokenTRPCSubscriptionOptionsIn<TOutput, TError>,
+    innerOpts: UnusedSkipTokenTRPCSubscriptionOptionsIn<TOutput, TError> & {
+      onStopped?: () => void;
+    },
   ) => Unsubscribable;
 }
 
@@ -196,8 +208,27 @@ export function useSubscription<TOutput, TError>(
     if (!opts.enabled) {
       return;
     }
+    let isStopped = false;
+    let hasCompleted = false;
+
+    const handleServerComplete = () => {
+      if (isStopped || hasCompleted) {
+        return;
+      }
+      hasCompleted = true;
+      optsRef.current.onComplete?.();
+      updateState((prev) => ({
+        ...(prev as any),
+        status: 'idle',
+        data: undefined,
+        error: null,
+      }));
+    };
+
     const subscription = opts.subscribe({
       onStarted: () => {
+        if (isStopped) return;
+        hasCompleted = false;
         optsRef.current.onStarted?.();
         updateState((prev) => ({
           ...(prev as any),
@@ -206,6 +237,7 @@ export function useSubscription<TOutput, TError>(
         }));
       },
       onData: (data) => {
+        if (isStopped) return;
         optsRef.current.onData?.(data);
         updateState((prev) => ({
           ...(prev as any),
@@ -215,6 +247,7 @@ export function useSubscription<TOutput, TError>(
         }));
       },
       onError: (error) => {
+        if (isStopped) return;
         optsRef.current.onError?.(error);
         updateState((prev) => ({
           ...(prev as any),
@@ -222,7 +255,10 @@ export function useSubscription<TOutput, TError>(
           error,
         }));
       },
+      onStopped: handleServerComplete,
+      onComplete: handleServerComplete,
       onConnectionStateChange: (result) => {
+        if (isStopped) return;
         optsRef.current.onConnectionStateChange?.(result);
         updateState((prev) => {
           switch (result.state) {
@@ -248,6 +284,7 @@ export function useSubscription<TOutput, TError>(
     });
 
     currentSubscriptionRef.current = () => {
+      isStopped = true;
       subscription.unsubscribe();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
