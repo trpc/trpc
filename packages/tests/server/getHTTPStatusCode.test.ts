@@ -68,3 +68,52 @@ test('serves the mapped status when a custom formatter omits the error data', as
 
   expect(res.status).toBe(404);
 });
+
+test('prefers the original error code over an ambiguous formatted code', () => {
+  expect(
+    getHTTPStatusCode(
+      { id: null, error: { code: -32603, message: 'Bad gateway' } } as any,
+      [{ code: 'BAD_GATEWAY' } as any],
+    ),
+  ).toBe(502);
+});
+
+test('returns 207 when ambiguous formatted codes belong to distinct statuses', () => {
+  expect(
+    getHTTPStatusCode(
+      [
+        { id: 0, error: { code: -32603, message: 'Bad gateway' } },
+        { id: 1, error: { code: -32603, message: 'Service unavailable' } },
+      ] as any,
+      [{ code: 'BAD_GATEWAY' } as any, { code: 'SERVICE_UNAVAILABLE' } as any],
+    ),
+  ).toBe(207);
+});
+
+test('serves 502/503 when a custom formatter strips statuses that share a JSON-RPC code', async () => {
+  const t = initTRPC.create({
+    errorFormatter({ shape }) {
+      return { ...shape, data: undefined };
+    },
+  });
+
+  const router = t.router({
+    gateway: t.procedure.query(() => {
+      throw new TRPCError({ code: 'BAD_GATEWAY' });
+    }),
+    unavailable: t.procedure.query(() => {
+      throw new TRPCError({ code: 'SERVICE_UNAVAILABLE' });
+    }),
+  });
+
+  await using ctx = testServerAndClientResource(router);
+
+  expect((await fetch(`${ctx.httpUrl}/gateway`)).status).toBe(502);
+  expect((await fetch(`${ctx.httpUrl}/unavailable`)).status).toBe(503);
+
+  const batch = await fetch(`${ctx.httpUrl}/gateway,unavailable?batch=1`, {
+    method: 'GET',
+  });
+
+  expect(batch.status).toBe(207);
+});
