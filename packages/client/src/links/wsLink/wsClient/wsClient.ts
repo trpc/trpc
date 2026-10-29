@@ -116,6 +116,7 @@ export class WsClient {
    */
   private async open() {
     this.allowReconnect = true;
+    this.connectionAttemptIndex = 0;
     if (this.connectionState.get().state === 'idle') {
       this.connectionState.next({
         type: 'state',
@@ -254,6 +255,18 @@ export class WsClient {
    * reconnection state in the `reconnecting` promise.
    */
   private reconnecting: Promise<void> | null = null;
+  /**
+   * The retry attempt that opened the current connection.
+   */
+  private connectionAttemptIndex = 0;
+  /**
+   * Set when the server rejects the current connection with an `id: null`
+   * error, e.g. because `createContext` threw. The server closes the socket
+   * right after, so the reconnect that follows carries on with the backoff
+   * instead of starting over at attempt 0.
+   * @see https://github.com/trpc/trpc/issues/4774
+   */
+  private connectionRejected = false;
   private reconnect(closedError: TRPCWebSocketClosedError) {
     if (!this.allowReconnect) {
       return;
@@ -272,6 +285,7 @@ export class WsClient {
         if (this.allowReconnect) {
           await this.activeConnection.close();
           await this.activeConnection.open();
+          this.connectionAttemptIndex = attemptIndex;
 
           if (this.requestManager.hasPendingRequests()) {
             this.send(
@@ -287,10 +301,14 @@ export class WsClient {
       }
     };
 
-    this.reconnecting = tryReconnect(0);
+    this.reconnecting = tryReconnect(
+      this.connectionRejected ? this.connectionAttemptIndex + 1 : 0,
+    );
   }
 
   private setupWebSocketListeners(ws: WebSocket) {
+    this.connectionRejected = false;
+
     const handleCloseOrError = (cause: unknown) => {
       const reqs = this.requestManager.getPendingRequests();
       for (const { message, callbacks } of reqs) {
@@ -340,6 +358,10 @@ export class WsClient {
       if ('method' in incomingMessage) {
         this.handleIncomingRequest(incomingMessage);
         return;
+      }
+
+      if (incomingMessage.id === null && 'error' in incomingMessage) {
+        this.connectionRejected = true;
       }
 
       this.handleResponseMessage(incomingMessage);
