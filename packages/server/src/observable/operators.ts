@@ -43,18 +43,21 @@ export function share<TValue, TError>(
         return;
       }
       subscription = source.subscribe({
+        // a subscriber tears itself down synchronously when it receives a
+        // value, an error or completion, which removes it from `observers` -
+        // iterate over a snapshot so nobody gets skipped
         next(value) {
-          for (const observer of observers) {
+          for (const observer of [...observers]) {
             observer.next?.(value);
           }
         },
         error(error) {
-          for (const observer of observers) {
+          for (const observer of [...observers]) {
             observer.error?.(error);
           }
         },
         complete() {
-          for (const observer of observers) {
+          for (const observer of [...observers]) {
             observer.complete?.();
           }
         },

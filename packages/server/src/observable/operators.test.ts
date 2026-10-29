@@ -208,3 +208,66 @@ test('distinctUntilDeepChanged', () => {
     { a: 1, b: { c: 'x' } },
   ]);
 });
+
+test('share notifies every subscriber when the source completes', () => {
+  let sourceObserver!: Observer<number, Error>;
+  const shared = observable<number, Error>((observer) => {
+    sourceObserver = observer;
+  }).pipe(share());
+
+  const completeFirst = vi.fn();
+  const completeSecond = vi.fn();
+
+  shared.subscribe({ complete: completeFirst });
+  shared.subscribe({ complete: completeSecond });
+
+  sourceObserver.complete();
+
+  expect(completeFirst).toHaveBeenCalledTimes(1);
+  expect(completeSecond).toHaveBeenCalledTimes(1);
+});
+
+test('share notifies every subscriber when the source errors', () => {
+  let sourceObserver!: Observer<number, Error>;
+  const shared = observable<number, Error>((observer) => {
+    sourceObserver = observer;
+  }).pipe(share());
+
+  const errorFirst = vi.fn();
+  const errorSecond = vi.fn();
+
+  shared.subscribe({ error: errorFirst });
+  shared.subscribe({ error: errorSecond });
+
+  sourceObserver.error(new Error('boom'));
+
+  expect(errorFirst).toHaveBeenCalledTimes(1);
+  expect(errorSecond).toHaveBeenCalledTimes(1);
+});
+
+test('share delivers a value to the remaining subscribers when one unsubscribes in next', () => {
+  let sourceObserver!: Observer<number, Error>;
+  const shared = observable<number, Error>((observer) => {
+    sourceObserver = observer;
+  }).pipe(share());
+
+  const firstValues: number[] = [];
+  const secondValues: number[] = [];
+
+  const first = shared.subscribe({
+    next(value) {
+      firstValues.push(value);
+      first.unsubscribe();
+    },
+  });
+  shared.subscribe({
+    next(value) {
+      secondValues.push(value);
+    },
+  });
+
+  sourceObserver.next(1);
+
+  expect(firstValues).toEqual([1]);
+  expect(secondValues).toEqual([1]);
+});
