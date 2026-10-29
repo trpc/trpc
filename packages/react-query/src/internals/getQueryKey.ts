@@ -16,6 +16,13 @@ export type TRPCQueryKey = [
 export type TRPCMutationKey = [readonly string[]]; // = [TRPCQueryKey[0]]
 
 /**
+ * Passed to `_def()` by `getQueryKey()` so the hydration helpers can tell it
+ * apart from a call to a procedure named `_def`.
+ * @internal
+ */
+export const getQueryKeyMarker = Symbol.for('trpc.getQueryKey');
+
+/**
  * A procedure of `createServerSideHelpers()` or `createHydrationHelpers()`
  */
 type ServerSideProcedure<TInput> = {
@@ -130,7 +137,7 @@ export function getQueryKey<TProcedureOrRouter extends ProcedureOrRouter>(
   const [input, type] = _params;
 
   // @ts-expect-error - we don't expose _def on the type layer
-  const path = procedureOrRouter._def().path as string[];
+  const path = procedureOrRouter._def(getQueryKeyMarker).path as string[];
   const queryKey = getQueryKeyInternal(path, input, type ?? 'any');
   return queryKey;
 }

@@ -98,8 +98,11 @@ const mutationKey = getMutationKey(trpc.user.create);
 
 `getQueryKey` also accepts the procedures and routers of the [server-side helpers](/docs/client/nextjs/pages-router/server-side-helpers) and the [Server Components hydration helpers](/docs/client/react/server-components). Import it from the same entry point as the helpers. Getting a key does not call the procedure.
 
+These examples assume an `appRouter` with `post.list` and `post.byId` procedures.
+
 ```ts
 import { createServerSideHelpers, getQueryKey } from '@trpc/react-query/server';
+import { appRouter } from './server/routers/_app';
 
 const helpers = createServerSideHelpers({ router: appRouter, ctx: {} });
 

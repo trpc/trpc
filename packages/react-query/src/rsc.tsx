@@ -23,7 +23,10 @@ import type {
   TypeError,
 } from '@trpc/server/unstable-core-do-not-import';
 import * as React from 'react';
-import { getQueryKeyInternal } from './internals/getQueryKey';
+import {
+  getQueryKeyInternal,
+  getQueryKeyMarker,
+} from './internals/getQueryKey';
 import type {
   TRPCFetchInfiniteQueryOptions,
   TRPCFetchQueryOptions,
@@ -145,7 +148,10 @@ export function createHydrationHelpers<TRouter extends AnyRouter>(
     DecorateRouterRecord<RootTypes, TRouter['_def']['record']>
   >((opts) => {
     const path = [...opts.path];
-    if (path[path.length - 1] === '_def') {
+    if (
+      path[path.length - 1] === '_def' &&
+      opts.args[0] === getQueryKeyMarker
+    ) {
       // used by `getQueryKey()`, must not call the procedure
       return { path: path.slice(0, -1) };
     }

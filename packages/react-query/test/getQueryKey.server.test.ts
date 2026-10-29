@@ -167,6 +167,19 @@ describe('createHydrationHelpers', () => {
     expect(byIdResolver).not.toHaveBeenCalled();
   });
 
+  test('still calls a procedure named `_def`', async () => {
+    const t = initTRPC.create();
+    const appRouter = t.router({
+      post: t.router({ _def: t.procedure.query(() => 'called') }),
+    });
+    const { trpc } = createHydrationHelpers<typeof appRouter>(
+      t.createCallerFactory(appRouter)({}),
+      () => new QueryClient(),
+    );
+
+    expect(await trpc.post._def()).toBe('called');
+  });
+
   test('reads the state of a prefetched query', async () => {
     const { appRouter, caller } = createAppRouter();
     const queryClient = new QueryClient();
