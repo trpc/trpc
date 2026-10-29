@@ -40,11 +40,11 @@ test('next() notifies every observer when one unsubscribes inside next', () => {
   const first: number[] = [];
   const second: number[] = [];
 
-  let sub: { unsubscribe: () => void } | undefined;
-  sub = subject.subscribe({
+  const subRef: { current?: { unsubscribe: () => void } } = {};
+  subRef.current = subject.subscribe({
     next(value) {
       first.push(value);
-      sub?.unsubscribe();
+      subRef.current?.unsubscribe();
     },
   });
   subject.subscribe({
@@ -62,15 +62,15 @@ test('next() notifies every observer when one unsubscribes inside next', () => {
 test('next() skips an observer cancelled by an earlier observer', () => {
   const subject = behaviorSubject(0);
 
-  let secondSub: { unsubscribe: () => void } | undefined;
+  const secondSubRef: { current?: { unsubscribe: () => void } } = {};
   const secondNext = vi.fn();
 
   subject.subscribe({
     next() {
-      secondSub?.unsubscribe();
+      secondSubRef.current?.unsubscribe();
     },
   });
-  secondSub = subject.subscribe({ next: secondNext });
+  secondSubRef.current = subject.subscribe({ next: secondNext });
 
   subject.next(1);
 
