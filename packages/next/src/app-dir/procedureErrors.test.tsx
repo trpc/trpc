@@ -5,7 +5,7 @@ import type {
   Maybe,
 } from '@trpc/server/unstable-core-do-not-import';
 import * as React from 'react';
-import { describe, expect, expectTypeOf, test, vi } from 'vitest';
+import { assert, describe, expect, expectTypeOf, test, vi } from 'vitest';
 import {
   experimental_createActionHook,
   experimental_serverActionLink,
@@ -120,6 +120,32 @@ describe('runtime', () => {
         },
       }
     `);
+  });
+
+  test('a shared error instance gets its own shape in every action', async () => {
+    const shared = new TRPCError({
+      code: 'TOO_MANY_REQUESTS',
+      cause: new RateLimitError(1_000),
+    });
+    const limitedAction = createAction(
+      rateLimited.mutation((): string => {
+        throw shared;
+      }),
+    );
+    const plainAction = createAction(
+      t.procedure.mutation((): string => {
+        throw shared;
+      }),
+    );
+
+    const limited = await limitedAction();
+    const plain = await plainAction();
+
+    assert('error' in limited);
+    assert('error' in plain);
+    expect(limited.error.data).toMatchObject({ kind: 'RATE_LIMIT' });
+    expect(plain.error.data).toMatchObject({ fromGlobalFormatter: true });
+    expect(plain.error.data).not.toHaveProperty('kind');
   });
 
   test('the action hook surfaces the procedure error union', async () => {

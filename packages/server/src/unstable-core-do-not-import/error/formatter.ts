@@ -97,38 +97,11 @@ export function getDefaultErrorShape(opts: {
   return shape;
 }
 
-const formattedShapeSymbol = Symbol('trpc_formattedErrorShape');
-
 /**
+ * The shapes created by `.errors()` handlers during a single procedure call.
+ *
+ * These are kept per call rather than on the error, as the same error
+ * instance can be thrown by several calls (e.g. from a DataLoader).
  * @internal
  */
-export function setFormattedErrorShape(
-  error: TRPCError,
-  shape: TRPCErrorShape,
-): asserts error is TRPCError & { [formattedShapeSymbol]: TRPCErrorShape } {
-  Object.defineProperty(error, formattedShapeSymbol, {
-    value: shape,
-    enumerable: false,
-    configurable: true,
-    writable: true,
-  });
-}
-
-/**
- * @internal
- */
-export function getFormattedErrorShape(
-  error: TRPCError,
-): TRPCErrorShape | undefined {
-  if (isFormattedErrorShape(error)) {
-    return error[formattedShapeSymbol];
-  }
-
-  return undefined;
-}
-
-export function isFormattedErrorShape(
-  error: TRPCError,
-): error is TRPCError & { [formattedShapeSymbol]: TRPCErrorShape } {
-  return formattedShapeSymbol in error;
-}
+export type FormattedErrorShapes = WeakMap<TRPCError, TRPCErrorShape>;

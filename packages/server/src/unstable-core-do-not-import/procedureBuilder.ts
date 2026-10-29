@@ -1,5 +1,8 @@
 import type { inferObservableValue, Observable } from '../observable';
-import type { ProcedureErrorFormatter } from './error/formatter';
+import type {
+  FormattedErrorShapes,
+  ProcedureErrorFormatter,
+} from './error/formatter';
 import { getTRPCErrorFromUnknown, TRPCError } from './error/TRPCError';
 import type {
   AnyMiddlewareFunction,
@@ -689,6 +692,11 @@ export interface ProcedureCallOptions<TContext> {
    * The index of this call in a batch request.
    */
   batchIndex: number;
+  /**
+   * Collects the shapes created by `.errors()` handlers during this call.
+   * Pass the same map to `getErrorShape()` to use them.
+   */
+  errorShapes?: FormattedErrorShapes;
 }
 
 const codeblock = `
@@ -745,7 +753,10 @@ function createProcedureCaller(_def: AnyProcedureBuilderDef): AnyProcedure {
     }
 
     // there's always at least one "next" since we wrap this.resolver in a middleware
-    const result = await callRecursive(0, _def, opts);
+    const result = await callRecursive(0, _def, {
+      ...opts,
+      errorShapes: opts.errorShapes ?? new WeakMap(),
+    });
 
     if (!result) {
       throw new TRPCError({

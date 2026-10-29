@@ -34,7 +34,10 @@ import {
   type MaybePromise,
 } from '../unstable-core-do-not-import';
 // eslint-disable-next-line no-restricted-imports
-import type { Result } from '../unstable-core-do-not-import';
+import type {
+  FormattedErrorShapes,
+  Result,
+} from '../unstable-core-do-not-import';
 // eslint-disable-next-line no-restricted-imports
 import { iteratorResource } from '../unstable-core-do-not-import/stream/utils/asyncIterable';
 import { Unpromise } from '../vendor/unpromise';
@@ -256,6 +259,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           };
         }
       }
+      const errorShapes: FormattedErrorShapes = new WeakMap();
       run(async () => {
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         const res = await ctxPromise!; // asserts context has been set
@@ -272,6 +276,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           type,
           signal: abortController.signal,
           batchIndex,
+          errorShapes,
         });
 
         const isIterableResult =
@@ -364,6 +369,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
                   path,
                   input,
                   ctx,
+                  errorShapes,
                 }),
               });
               break;
@@ -419,6 +425,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
               path,
               input,
               ctx,
+              errorShapes,
             }),
           });
           abortController.abort();
@@ -446,6 +453,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
             path,
             input,
             ctx,
+            errorShapes,
           }),
         });
       });
