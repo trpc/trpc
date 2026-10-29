@@ -8,7 +8,7 @@ import type {
   AnyRootTypes,
   AnyRouter,
 } from '@trpc/server/unstable-core-do-not-import';
-import { generateCacheTag } from '../shared';
+import { generateCacheTags } from '../shared';
 
 interface NextLinkBaseOptions {
   revalidate?: number | false;
@@ -34,7 +34,7 @@ export function experimental_nextHttpLink<TRouter extends AnyRouter>(
   return (runtime) => {
     return (ctx) => {
       const { path, input, context } = ctx.op;
-      const cacheTag = generateCacheTag(path, input);
+      const cacheTags = generateCacheTags(path, input);
 
       // Let per-request revalidate override global revalidate
       const requestRevalidate =
@@ -54,7 +54,7 @@ export function experimental_nextHttpLink<TRouter extends AnyRouter>(
           // cache: 'no-cache',
           next: {
             revalidate,
-            tags: [cacheTag],
+            tags: cacheTags,
           },
         });
       };

@@ -14,7 +14,7 @@ import type {
 } from '@trpc/server/unstable-core-do-not-import';
 import { callProcedure } from '@trpc/server/unstable-core-do-not-import';
 import { unstable_cache } from 'next/cache';
-import { generateCacheTag } from '../shared';
+import { generateCacheTag, generateCacheTags } from '../shared';
 
 type NextCacheLinkOptions<TRouter extends AnyRouter> = {
   router: TRouter;
@@ -34,6 +34,7 @@ export function experimental_nextCacheLink<TRouter extends AnyRouter>(
         const { path, input, type, context } = op;
 
         const cacheTag = generateCacheTag(path, input);
+        const cacheTags = generateCacheTags(path, input);
         // Let per-request revalidate override global revalidate
         const requestRevalidate =
           typeof context['revalidate'] === 'number' ||
@@ -66,7 +67,7 @@ export function experimental_nextCacheLink<TRouter extends AnyRouter>(
             if (type === 'query') {
               return unstable_cache(callProc, path.split('.'), {
                 revalidate,
-                tags: [cacheTag],
+                tags: cacheTags,
               })(cacheTag);
             }
 
