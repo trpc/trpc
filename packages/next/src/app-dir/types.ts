@@ -54,7 +54,11 @@ export type NextAppDirDecorateRouterRecord<
           }
         >
       : $Value extends RouterRecord
-        ? NextAppDirDecorateRouterRecord<TRoot, $Value>
+        ? NextAppDirDecorateRouterRecord<TRoot, $Value> & {
+            revalidate: () => Promise<
+              { revalidated: false; error: string } | { revalidated: true }
+            >;
+          }
         : never
     : never;
 };
