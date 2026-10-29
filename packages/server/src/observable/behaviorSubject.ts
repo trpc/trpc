@@ -46,7 +46,9 @@ export function behaviorSubject<TValue>(
       return;
     }
     value = nextValue;
-    for (const observer of observerList) {
+    // an observer removes itself from the list when it unsubscribes inside
+    // `next`, so iterate over a snapshot to not skip its neighbours
+    for (const observer of [...observerList]) {
       observer.next(nextValue);
     }
   };

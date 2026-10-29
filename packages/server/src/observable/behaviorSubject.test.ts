@@ -33,3 +33,28 @@ test('behaviorSubject', () => {
   expect(onNext2).not.toHaveBeenCalledWith(4);
   expect(onNext1).not.toHaveBeenCalledWith(4);
 });
+
+test('next() notifies every observer when one unsubscribes inside next', () => {
+  const subject = behaviorSubject(0);
+
+  const first: number[] = [];
+  const second: number[] = [];
+
+  let sub: { unsubscribe: () => void } | undefined;
+  sub = subject.subscribe({
+    next(value) {
+      first.push(value);
+      sub?.unsubscribe();
+    },
+  });
+  subject.subscribe({
+    next(value) {
+      second.push(value);
+    },
+  });
+
+  subject.next(1);
+
+  expect(first).toEqual([0, 1]);
+  expect(second).toEqual([0, 1]);
+});
