@@ -6,3 +6,4 @@ export type {
   DecoratedProcedureSSGRecord,
   SSGFns,
 } from './ssgProxy';
+export { getQueryKey } from '../internals/getQueryKey';
