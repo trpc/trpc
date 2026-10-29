@@ -8,22 +8,12 @@
 <div align="center">
   <h1>tRPC</h1>
   <h3>Move fast and break nothing.<br />End-to-end typesafe APIs made easy.</h3>
-  <a href="https://codecov.io/gh/trpc/trpc">
-    <img alt="codecov" src="https://codecov.io/gh/trpc/trpc/branch/next/graph/badge.svg?token=KPPS918B0G">
-  </a>
-  <a href="https://npmcharts.com/compare/@trpc/server?interval=30">
-    <img alt="weekly downloads" src="https://img.shields.io/npm/dm/%40trpc/server.svg">
-  </a>
-  <a href="https://github.com/trpc/trpc/blob/main/LICENSE">
-    <img alt="MIT License" src="https://img.shields.io/github/license/trpc/trpc" />
-  </a>
-  <a href="https://trpc.io/discord">
-    <img alt="Discord" src="https://img.shields.io/discord/867764511159091230?color=7389D8&label&logo=discord&logoColor=ffffff" />
-  </a>
+  <a href="https://codecov.io/gh/trpc/trpc"><img alt="codecov" src="https://codecov.io/gh/trpc/trpc/branch/next/graph/badge.svg?token=KPPS918B0G"></a>
+  <a href="https://npmcharts.com/compare/@trpc/server?interval=30"><img alt="weekly downloads" src="https://img.shields.io/npm/dm/%40trpc/server.svg"></a>
+  <a href="https://github.com/trpc/trpc/blob/main/LICENSE"><img alt="MIT License" src="https://img.shields.io/github/license/trpc/trpc" /></a>
+  <a href="https://trpc.io/discord"><img alt="Discord" src="https://img.shields.io/discord/867764511159091230?color=7389D8&label&logo=discord&logoColor=ffffff" /></a>
   <br />
-  <a href="https://twitter.com/trpcio">
-    <img alt="Twitter" src="https://img.shields.io/twitter/url.svg?label=%40trpcio&style=social&url=https%3A%2F%2Ftwitter.com%2Falexdotjs" />
-  </a>
+  <a href="https://twitter.com/trpcio"><img alt="Twitter" src="https://img.shields.io/twitter/url.svg?label=%40trpcio&style=social&url=https%3A%2F%2Ftwitter.com%2Falexdotjs" /></a>
   <br />
   <br />
   <figure>
