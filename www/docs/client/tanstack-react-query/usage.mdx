@@ -682,8 +682,11 @@ function SubscriptionExample() {
         onError: (error) => {
           // you can handle the error here
         },
+        onComplete: () => {
+          // do something when the subscription is completed on the server
+        },
         onConnectionStateChange: (state) => {
-          // you can handle the connection state here
+          // reflects the underlying connection state
         },
       },
     ),
