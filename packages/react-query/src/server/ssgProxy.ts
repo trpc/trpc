@@ -2,6 +2,7 @@ import type {
   DehydratedState,
   DehydrateOptions,
   QueryClient,
+  QueryFunctionContext,
 } from '@tanstack/react-query';
 import { dehydrate } from '@tanstack/react-query';
 import type { TRPCClient } from '@trpc/client';
@@ -27,6 +28,8 @@ import {
   createRecursiveProxy,
   run,
 } from '@trpc/server/unstable-core-do-not-import';
+import { getClientArgs } from '../internals/getClientArgs';
+import type { TRPCQueryKey } from '../internals/getQueryKey';
 import { getQueryKeyInternal } from '../internals/getQueryKey';
 import type {
   CreateTRPCReactQueryClientConfig,
@@ -168,6 +171,18 @@ export function createServerSideHelpers<TRouter extends AnyRouter>(
     const queryFn = () =>
       resolvedOpts.query({ path: arrayPath.join('.'), input });
 
+    const infiniteQueryFn = ({
+      pageParam,
+      direction,
+    }: QueryFunctionContext<TRPCQueryKey, unknown>) => {
+      const [path, infiniteInput] = getClientArgs(
+        [arrayPath, { input }],
+        undefined,
+        { pageParam, direction },
+      );
+      return resolvedOpts.query({ path, input: infiniteInput });
+    };
+
     const queryKey = getQueryKeyInternal(
       arrayPath,
       input,
@@ -181,7 +196,12 @@ export function createServerSideHelpers<TRouter extends AnyRouter>(
       },
       infiniteQueryOptions: () => {
         const args1 = args[1] as Maybe<any>;
-        return { ...args1, queryKey, queryFn };
+        return {
+          ...args1,
+          queryKey,
+          queryFn: infiniteQueryFn,
+          initialPageParam: args1?.initialCursor ?? null,
+        };
       },
       fetch: () => {
         const args1 = args[1] as Maybe<TRPCFetchQueryOptions<any, any>>;
@@ -194,7 +214,7 @@ export function createServerSideHelpers<TRouter extends AnyRouter>(
         return queryClient.fetchInfiniteQuery({
           ...args1,
           queryKey,
-          queryFn,
+          queryFn: infiniteQueryFn,
           initialPageParam: args1?.initialCursor ?? null,
         });
       },
@@ -209,7 +229,7 @@ export function createServerSideHelpers<TRouter extends AnyRouter>(
         return queryClient.prefetchInfiniteQuery({
           ...args1,
           queryKey,
-          queryFn,
+          queryFn: infiniteQueryFn,
           initialPageParam: args1?.initialCursor ?? null,
         });
       },
