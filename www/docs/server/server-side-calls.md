@@ -342,7 +342,7 @@ export default async (
 
 ### Error handling
 
-The `createCallerFactory` and the `createCaller` function can take an error handler through the `onError` option. This can be used to throw errors that are not wrapped in a TRPCError, or respond to errors in some other way. Any handler passed to createCallerFactory will be called before the handler passed to createCaller.
+The `createCaller` function can take an error handler through the `onError` option. This can be used to throw errors that are not wrapped in a TRPCError, or respond to errors in some other way.
 The handler is called with the same arguments as an error formatter would be, except for the shape field:
 
 ```ts twoslash

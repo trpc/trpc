@@ -190,16 +190,14 @@ interface SuccessResponse {
 [
   {
     "error": {
-      "json": {
-        "message": "Something went wrong",
-        "code": -32600, // JSON-RPC 2.0 code
-        "data": {
-          // Extra, customizable, meta data
-          "code": "INTERNAL_SERVER_ERROR",
-          "httpStatus": 500,
-          "stack": "...",
-          "path": "post.add"
-        }
+      "message": "Something went wrong",
+      "code": -32603, // JSON-RPC 2.0 code
+      "data": {
+        // Extra, customizable, meta data
+        "code": "INTERNAL_SERVER_ERROR",
+        "httpStatus": 500,
+        "stack": "...",
+        "path": "post.add"
       }
     }
   }

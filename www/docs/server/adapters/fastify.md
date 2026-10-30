@@ -292,8 +292,8 @@ You can now subscribe to the `randomNumber` topic and should receive a random nu
 
 ## Fastify plugin options
 
-| name        | type                                               | optional | default   | description                                                    |
-| ----------- | -------------------------------------------------- | -------- | --------- | -------------------------------------------------------------- |
-| prefix      | `string`                                           | `true`   | `"/trpc"` | URL prefix for tRPC routes                                     |
-| useWSS      | `boolean`                                          | `true`   | `false`   | Enable WebSocket support via `@fastify/websocket`              |
-| trpcOptions | `FastifyHandlerOptions<AppRouter, Request, Reply>` | `false`  | `n/a`     | tRPC handler options including `router`, `createContext`, etc. |
+| name        | type                                               | optional | default | description                                                                                |
+| ----------- | -------------------------------------------------- | -------- | ------- | ------------------------------------------------------------------------------------------ |
+| prefix      | `string`                                           | `true`   | none    | URL prefix for tRPC routes. Without it, procedures are served from the root, e.g. `/hello` |
+| useWSS      | `boolean`                                          | `true`   | `false` | Enable WebSocket support via `@fastify/websocket`                                          |
+| trpcOptions | `FastifyHandlerOptions<AppRouter, Request, Reply>` | `false`  | `n/a`   | tRPC handler options including `router`, `createContext`, etc.                             |

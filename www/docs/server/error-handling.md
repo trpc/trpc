@@ -11,7 +11,6 @@ Here's an example error response caused by a bad request input:
 
 ```json
 {
-  "id": null,
   "error": {
     "message": "\"password\" must be at least 4 characters",
     "code": -32600,
@@ -71,15 +70,13 @@ tRPC exposes a helper function, `getHTTPStatusCodeFromError`, to help you extrac
 
 ```ts twoslash
 import { TRPCError } from '@trpc/server';
-// ---cut---
 import { getHTTPStatusCodeFromError } from '@trpc/server/http';
 
 // Example error you might get if your input validation fails
-const error: TRPCError = {
-  name: 'TRPCError',
+const error: unknown = new TRPCError({
   code: 'BAD_REQUEST',
   message: '"password" must be at least 4 characters',
-};
+});
 
 if (error instanceof TRPCError) {
   const httpCode = getHTTPStatusCodeFromError(error);
@@ -124,7 +121,6 @@ Results in the following response:
 
 ```json
 {
-  "id": null,
   "error": {
     "message": "An unexpected error occurred, please try again later.",
     "code": -32603,
