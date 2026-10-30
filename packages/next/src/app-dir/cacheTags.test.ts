@@ -88,25 +88,40 @@ describe('app-dir server proxy revalidation', () => {
   >;
 
   test('revalidates leaf query with input', async () => {
-    await trpc.page.home.header.revalidate({ size: 'medium' });
+    const res = await trpc.page.home.header.revalidate({ size: 'medium' });
+    expect(res).toEqual({ revalidated: true });
     expect(revalidateTag).toHaveBeenCalledWith(
       'page.home.header?input={"size":"medium"}',
     );
   });
 
   test('revalidates leaf query without input', async () => {
-    await trpc.page.home.header.revalidate();
+    const res = await trpc.page.home.header.revalidate();
+    expect(res).toEqual({ revalidated: true });
     expect(revalidateTag).toHaveBeenCalledWith('page.home.header');
   });
 
   test('revalidates subrouter under home', async () => {
-    await trpc.page.home.revalidate();
+    const res = await trpc.page.home.revalidate();
+    expect(res).toEqual({ revalidated: true });
     expect(revalidateTag).toHaveBeenCalledWith('page.home');
   });
 
   test('revalidates top-level router under page', async () => {
-    await trpc.page.revalidate();
+    const res = await trpc.page.revalidate();
+    expect(res).toEqual({ revalidated: true });
     expect(revalidateTag).toHaveBeenCalledWith('page');
+  });
+
+  test('returns error when revalidation fails', async () => {
+    vi.mocked(revalidateTag).mockImplementationOnce(() => {
+      throw new Error('Revalidation failed');
+    });
+    const res = await trpc.page.revalidate();
+    expect(res).toEqual({
+      revalidated: false,
+      error: 'Revalidation failed',
+    });
   });
 
   test('type inference for subrouter and procedure revalidation', () => {
