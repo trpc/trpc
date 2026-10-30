@@ -2,5 +2,17 @@
   "version": "11.22.1",
   "registry": "https://registry.npmjs.org/",
   "npmClient": "pnpm",
+  "command": {
+    "version": {
+      "exact": true,
+      "syncWorkspaceLock": true
+    },
+    "publish": {
+      "stripPackageKeys": [
+        "devDependencies",
+        "scripts"
+      ]
+    }
+  },
   "$schema": "node_modules/@lerna-lite/cli/schemas/lerna-schema.json"
 }

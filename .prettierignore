@@ -11,6 +11,7 @@ packages/tests/vendor/
 packages/server/src/vendor/
 packages/coverage/
 pnpm-lock.yaml
+lerna.json
 www/docs/main/quickstart.mdx
 .turbo
 .vinxi
