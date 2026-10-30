@@ -404,6 +404,8 @@ function createConsumerStream<THead>(
  * Creates a handler for managing stream controllers and their lifecycle
  */
 function createStreamsManager(abortController: AbortController) {
+  let terminalState:
+    { type: 'closed' } | { type: 'errored'; reason: unknown } | undefined;
   const controllerMap = new Map<
     ChunkIndex,
     ReturnType<typeof createStreamController>
@@ -439,6 +441,7 @@ function createStreamsManager(abortController: AbortController) {
         }
       },
       closed: false,
+      // A lazy iterable may acquire its reader after the source closes or errors.
       getReaderResource: () => {
         const reader = stream.getReader();
 
@@ -462,7 +465,6 @@ function createStreamsManager(abortController: AbortController) {
         enqueue: () => {
           // noop
         },
-        getReaderResource: null,
         error: () => {
           // noop
         },
@@ -480,6 +482,12 @@ function createStreamsManager(abortController: AbortController) {
     if (!c) {
       c = createStreamController();
       controllerMap.set(chunkId, c);
+      // Buffered values can reveal nested async values after the source ends.
+      if (terminalState?.type === 'closed') {
+        c.close();
+      } else if (terminalState?.type === 'errored') {
+        c.error(terminalState.reason);
+      }
     }
     return c;
   }
@@ -488,6 +496,10 @@ function createStreamsManager(abortController: AbortController) {
    * Cancels all pending controllers and rejects deferred promises
    */
   function cancelAll(reason: unknown) {
+    if (terminalState) {
+      return;
+    }
+    terminalState = { type: 'errored', reason };
     for (const controller of controllerMap.values()) {
       controller.error(reason);
     }
@@ -497,6 +509,10 @@ function createStreamsManager(abortController: AbortController) {
    * Closes all pending controllers to preserve buffered data
    */
   function closeAll() {
+    if (terminalState) {
+      return;
+    }
+    terminalState = { type: 'closed' };
     for (const controller of controllerMap.values()) {
       controller.close();
     }
