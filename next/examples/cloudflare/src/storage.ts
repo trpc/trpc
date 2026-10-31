@@ -18,17 +18,6 @@ const attempt = <A>(method: string, run: () => Promise<A>, key?: string) =>
       }),
   });
 
-/** `makeStringOnly()`'s options with `keys` and `clearPrefix`, which effect 4.1 added. */
-type StoreOptions = KeyValueStore.MakeStringOptions & {
-  readonly keys: Effect.Effect<
-    ReadonlyArray<string>,
-    KeyValueStore.KeyValueStoreError
-  >;
-  readonly clearPrefix: (
-    prefix: string,
-  ) => Effect.Effect<void, KeyValueStore.KeyValueStoreError>;
-};
-
 /** A `KeyValueStore` on `storage`, every key under `prefix`. */
 export const durableObjectStore = (
   storage: DurableObjectStorage,
@@ -43,7 +32,7 @@ export const durableObjectStore = (
       await storage.delete(keys.slice(i, i + 128));
     }
   };
-  const options: StoreOptions = {
+  return KeyValueStore.makeStringOnly({
     get: (key) => attempt('get', () => storage.get<string>(prefix + key), key),
     set: (key, value) =>
       attempt('set', () => storage.put(prefix + key, value), key),
@@ -55,8 +44,7 @@ export const durableObjectStore = (
     keys: attempt('keys', async () =>
       (await list()).map((key) => key.slice(prefix.length)),
     ),
-  };
-  return KeyValueStore.makeStringOnly(options);
+  });
 };
 
 /** `BackingPersistence` for `experimental_durable()` on `storage`. */
