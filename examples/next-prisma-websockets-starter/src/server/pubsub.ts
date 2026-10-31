@@ -11,7 +11,8 @@ export type PubSubEvent =
   | { type: 'add'; postId: string; name: string }
   | { type: 'isTyping'; name: string; typing: boolean };
 
-const PG_CHANNEL = 'websockets_starter_events';
+// Channels are shared by the whole database, so scope them to the app's schema
+const PG_CHANNEL = `${new URL(process.env.DATABASE_URL!).searchParams.get('schema') ?? 'public'}_events`;
 
 export async function publish(event: PubSubEvent) {
   await prisma.$executeRaw`select pg_notify(${PG_CHANNEL}, ${JSON.stringify(event)})`;

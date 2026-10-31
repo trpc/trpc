@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS "sse-chat_post" (
 );
 --> statement-breakpoint
 DO $$ BEGIN
- ALTER TABLE "sse-chat_post" ADD CONSTRAINT "sse-chat_post_channel_id_sse-chat_channel_id_fk" FOREIGN KEY ("channel_id") REFERENCES "public"."sse-chat_channel"("id") ON DELETE no action ON UPDATE no action;
+ ALTER TABLE "sse-chat_post" ADD CONSTRAINT "sse-chat_post_channel_id_sse-chat_channel_id_fk" FOREIGN KEY ("channel_id") REFERENCES "sse-chat_channel"("id") ON DELETE no action ON UPDATE no action;
 EXCEPTION
  WHEN duplicate_object THEN null;
 END $$;
