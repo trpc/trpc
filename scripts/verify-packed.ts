@@ -134,16 +134,6 @@ function getPacked(name: string) {
   return packed;
 }
 
-// Errors we know about and accept for now. Keep each one narrow.
-const KNOWN_ISSUES = [
-  {
-    // `@hey-api/openapi-ts` is ESM-only. TypeScript 5.7 rejects importing its
-    // types from CJS declarations; 5.8+ allows it.
-    match: /node_modules\/@trpc\/openapi\/dist\/heyapi\/index\.d\.cts.*TS1479/,
-    typescript: '5.7.',
-  },
-];
-
 // Type-check as a consumer
 const OPTIONAL_PEERS = [
   '@hey-api/openapi-ts@^0.99.0',
@@ -195,9 +185,12 @@ export type T5 = Expect<Equal<IsAny<NonNullable<WS['connection']>['ws']>, false>
 export type T6 = Expect<Equal<NonNullable<WS['connection']>['id'], number>>;
 `;
 const FULL_ASSERTIONS = `
-import { createTRPCHeyApiClientConfig } from '@trpc/openapi/heyapi';
+import { configureTRPCHeyApiClient, createTRPCHeyApiClientConfig } from '@trpc/openapi/heyapi';
+import type { HeyAPIResolvers } from '@trpc/openapi/heyapi';
 type IsAnyFull<T> = 0 extends 1 & T ? true : false;
 export const heyApiConfigIsTyped: IsAnyFull<ReturnType<typeof createTRPCHeyApiClientConfig>> = false;
+export const heyApiResolversAreTyped: IsAnyFull<HeyAPIResolvers> = false;
+export const heyApiClientIsTyped: IsAnyFull<Parameters<typeof configureTRPCHeyApiClient>[0]> = false;
 `;
 
 const scenarios = [
@@ -345,18 +338,11 @@ for (const scenario of scenarios) {
           !line.startsWith('node_modules/') ||
           line.startsWith('node_modules/@trpc/'),
       );
-      const known = ours.filter((line) =>
-        KNOWN_ISSUES.some(
-          (issue) =>
-            issue.match.test(line) && actual.startsWith(issue.typescript),
-        ),
-      );
-      const unexpected = ours.filter((line) => !known.includes(line));
       const label = `[${scenario.name}] typescript@${actual} ${mode}`;
       console.log(
-        `${unexpected.length ? '❌' : known.length ? '⚠️ ' : '✅'} ${label}: ${imports.length} entry points, ${unexpected.length} errors${known.length ? `, ${known.length} known` : ''}${errors.length > ours.length ? ` (+${errors.length - ours.length} in third-party declarations)` : ''}`,
+        `${ours.length ? '❌' : '✅'} ${label}: ${imports.length} entry points, ${ours.length} errors${errors.length > ours.length ? ` (+${errors.length - ours.length} in third-party declarations)` : ''}`,
       );
-      failures.push(...unexpected.map((line) => `${label}: ${line}`));
+      failures.push(...ours.map((line) => `${label}: ${line}`));
     }
   }
 }
