@@ -211,7 +211,8 @@ jobs:
             sed -i -E 's/"(effect|@effect\/[a-z-]+)": "4\.[0-9]+\.[0-9]+"/"\1": "^4.0.0"/' "$f"
           done
           pnpm install --no-frozen-lockfile
-          pnpm update -r effect '@effect/*'
+          # Direct dependencies only: vendor-src pins its own effect 4.0.1 stack.
+          pnpm update -r --depth 0 effect '@effect/*'
           grep -E '^  effect@' pnpm-lock.yaml
         env:
           VP_GIT_HOOKS: '0'
