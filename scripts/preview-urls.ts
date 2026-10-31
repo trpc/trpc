@@ -10,7 +10,7 @@ const projects: Record<string, string> = {
   'next-prisma-starter': 'examples/next-prisma-starter',
   'next-prisma-websockets-starter': 'examples/next-prisma-websockets-starter',
   'examples-todomvc': 'examples/next-prisma-todomvc',
-  'next-sse-chat': 'examples/tanstack-start-sse-chat',
+  'tanstack-start-sse-chat': 'examples/tanstack-start-sse-chat',
   'og-image': 'www/og-image',
 };
 

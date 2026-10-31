@@ -28,7 +28,7 @@ Where a reviewer can see this change: the docs pages it touches, and the example
   - The Next.js App Router example is `trpc-next-app-dir` (`examples/.experimental/next-app-dir`). Routes look like `/posts`, `/posts/<id>` and `/server-action`.
   - The Next.js Pages Router example is `next-prisma-starter` (`examples/next-prisma-starter`). Routes look like `/` and `/post/<id>`.
   - The WebSockets example is `next-prisma-websockets-starter` (`examples/next-prisma-websockets-starter`).
-  - The TanStack Start SSE chat example is `next-sse-chat` (`examples/tanstack-start-sse-chat`).
+  - The TanStack Start SSE chat example is `tanstack-start-sse-chat` (`examples/tanstack-start-sse-chat`).
   - The TodoMVC example is `examples-todomvc` (`examples/next-prisma-todomvc`). Routes are `/all`, `/active` and `/completed`.
   - The OG image service is `og-image` (`www/og-image`). Routes are `/api/docs` and `/api/blog`, with the card's fields as JSON in `?input=`.
 - When a project builds no preview for this PR, say so, link each page's file in this PR's diff (`https://github.com/trpc/trpc/pull/<number>/files#diff-<sha256 of the path>`), and name its sections without links.
