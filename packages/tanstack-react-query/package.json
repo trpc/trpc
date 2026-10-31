@@ -34,12 +34,12 @@
     },
     "./handles": {
       "import": {
-        "types": "./dist/handles.d.mts",
-        "default": "./dist/handles.mjs"
+        "types": "./dist/handles/index.d.mts",
+        "default": "./dist/handles/index.mjs"
       },
       "require": {
-        "types": "./dist/handles.d.cts",
-        "default": "./dist/handles.cjs"
+        "types": "./dist/handles/index.d.cts",
+        "default": "./dist/handles/index.cjs"
       }
     }
   },
