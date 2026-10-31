@@ -347,14 +347,14 @@ test('batching', async () => {
 });
 
 test.each([
-  ['completes', 'completes'],
-  ['throws', 'throws'],
-  ['is cancelled', 'infinite'],
-  ['fails in responseMeta', 'responseMetaThrows'],
-  ['errors the stream', 'streamErrors'],
+  ['completes', 'completes', { startsTimer: true }],
+  ['throws', 'throws', { startsTimer: false }],
+  ['is cancelled', 'infinite', { startsTimer: true }],
+  ['fails in responseMeta', 'responseMetaThrows', { startsTimer: false }],
+  ['errors the stream', 'streamErrors', { startsTimer: true }],
 ] as const)(
-  'sse maxDurationMs timer is cleared when the subscription %s',
-  async (_, path) => {
+  'sse maxDurationMs timer is not left pending when the subscription %s',
+  async (_, path, { startsTimer }) => {
     const nonce = Math.floor(Math.random() * 1000);
     const MAX_DURATION_MS = 60_000 * 60 * 24 + nonce; // 1 day + nonce
 
@@ -436,17 +436,21 @@ test.each([
       await res.text();
     }
 
-    const maxDurationTimerIndex =
-      timeoutSpies.setTimeoutSpy.mock.calls.findIndex(
-        (args) => args[1] === MAX_DURATION_MS,
-      );
-    expect(maxDurationTimerIndex).not.toBe(-1);
-    const maxDurationTimerResult =
-      timeoutSpies.setTimeoutSpy.mock.results[maxDurationTimerIndex];
-    assert(maxDurationTimerResult?.type === 'return');
-
-    expect(timeoutSpies.clearTimeoutSpy).toHaveBeenCalledWith(
-      maxDurationTimerResult.value,
+    const maxDurationTimers = timeoutSpies.setTimeoutSpy.mock.calls.flatMap(
+      (args, index) => {
+        const result = timeoutSpies.setTimeoutSpy.mock.results[index];
+        return args[1] === MAX_DURATION_MS && result?.type === 'return'
+          ? [result.value]
+          : [];
+      },
     );
+    expect(maxDurationTimers).toHaveLength(startsTimer ? 1 : 0);
+
+    const clearedTimers = timeoutSpies.clearTimeoutSpy.mock.calls.map(
+      ([timer]) => timer,
+    );
+    expect(
+      maxDurationTimers.filter((timer) => !clearedTimers.includes(timer)),
+    ).toEqual([]);
   },
 );

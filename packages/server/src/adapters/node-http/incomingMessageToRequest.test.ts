@@ -277,13 +277,14 @@ test('adapter with pre-parsed body - object', async () => {
   expect(body).toBe('{"hello":"world"}');
 });
 
-test('adapter with pre-parsed body - undefined', async () => {
+test('adapter with pre-parsed body - undefined after consuming the stream', async () => {
   const mockReq = createMockReq({
     headers: {},
     url: '/test',
     method: 'POST',
     // @ts-expect-error - test
     body: undefined,
+    readableEnded: true,
   });
 
   const request = incomingMessageToRequest(mockReq, createMockRes(), {
@@ -292,6 +293,23 @@ test('adapter with pre-parsed body - undefined', async () => {
 
   const body = await request.text();
   expect(body).toBe('');
+});
+
+test('consumed stream without req.body rejects instead of hanging', async () => {
+  const mockReq = createMockReq({
+    headers: {},
+    url: '/test',
+    method: 'POST',
+    readableEnded: true,
+  });
+
+  const request = incomingMessageToRequest(mockReq, createMockRes(), {
+    maxBodySize: null,
+  });
+
+  await expect(request.text()).rejects.toMatchInlineSnapshot(
+    `[TRPCError: The request body has already been read by another middleware. Assign the parsed body to \`req.body\` so tRPC can use it]`,
+  );
 });
 
 test('aborts request when response closes', async () => {

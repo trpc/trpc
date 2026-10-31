@@ -14,20 +14,41 @@ function createBody(
 ): RequestInit['body'] {
   // Some adapters will pre-parse the body and add it to the request object
   if ('body' in req) {
-    if (req.body === undefined) {
-      // If body property exists but is undefined, return undefined
+    if (req.body !== undefined) {
+      // If the body is already a string, return it directly
+      if (typeof req.body === 'string') {
+        return req.body;
+      }
+      // formData use
+      if (req.body instanceof IncomingMessage) {
+        return req.body as any;
+      }
+      // If body exists but isn't a string, stringify it as JSON
+      return JSON.stringify(req.body);
+    }
+    if (req.readableEnded) {
+      // The stream was consumed without producing a parsed body — there is
+      // nothing left to read
       return undefined;
     }
-    // If the body is already a string, return it directly
-    if (typeof req.body === 'string') {
-      return req.body;
-    }
-    // formData use
-    if (req.body instanceof IncomingMessage) {
-      return req.body as any;
-    }
-    // If body exists but isn't a string, stringify it as JSON
-    return JSON.stringify(req.body);
+    // The property was defined without the stream being read — e.g. express
+    // 5's body-parser assigns `req.body = undefined` on content types it
+    // skips (such as multipart/form-data) — so stream it like an unparsed
+    // request
+  } else if (req.readableEnded) {
+    // Another middleware drained the stream without handing over what it
+    // read, so waiting for `data`/`end` would hang forever
+    return new ReadableStream({
+      start(controller) {
+        controller.error(
+          new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message:
+              'The request body has already been read by another middleware. Assign the parsed body to `req.body` so tRPC can use it',
+          }),
+        );
+      },
+    });
   }
   let size = 0;
   let hasClosed = false;

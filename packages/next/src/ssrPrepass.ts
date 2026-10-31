@@ -17,7 +17,7 @@ import type {
 import type {
   AppContextType,
   NextPageContext,
-} from 'next/dist/shared/lib/utils';
+} from 'next/dist/shared/lib/utils.js';
 import { createElement } from 'react';
 import type { TRPCPrepassHelper, TRPCPrepassProps } from './withTRPC';
 

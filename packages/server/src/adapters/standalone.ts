@@ -72,7 +72,7 @@ function createHandler<
       path = url.pathname.slice(sliceLength);
 
       await nodeHTTPRequestHandler({
-        ...(opts as any),
+        ...opts,
         req,
         res,
         path,
