@@ -55,7 +55,7 @@ This folder is the agents' docs folder that the [brief](./decisions/brief.md) as
 - **Write things down:**
   - research notes, spike results and benchmarks go in `notes/` (create `notes/<topic>.md`, with the date and what was measured);
   - new questions become proposals (copy `proposals/_template.md`).
-- **Vendored sources:** read `.repos/effect` (effect@4.0.2) for how Effect really behaves. Never edit, format or import from `.repos/` (see `.repos/AGENTS.md`).
+- **Vendored sources:** read `.repos/effect` (effect@4.1.1) for how Effect really behaves. Never edit, format or import from `.repos/` (see `.repos/AGENTS.md`).
 - **Effect APIs:** verify against `.repos/effect` before using them. Many remembered v3-era APIs do not exist in v4 (see `reference/prior-art.md`).
 - **Keep it navigable:** one topic per file; link instead of repeating. The proposal table in `README.md` is the only index; decisions have none.
 

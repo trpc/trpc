@@ -88,7 +88,7 @@ Source for this project's key dependencies is vendored under `.repos/`, pinned t
 
 ### Vendored packages
 
-- `effect` (ref `effect@4.0.2`) → `.repos/effect`
+- `effect` (ref `effect@4.1.1`) → `.repos/effect`
 
 Only Effect is vendored ([`decisions/vendored-sources.md`](./.agent-docs/decisions/vendored-sources.md)).
 
@@ -96,6 +96,6 @@ Managed by [vendor-src](https://www.npmjs.com/package/vendor-src), a devDependen
 
 Every repo ignores `.repos/**`, so a vendored repo's own vendored sources stay out of the tree. `ignore` paths are pruned on `add` and `sync`; after adding one to a repo you don't want to sync, delete the matching paths by hand.
 
-Every repo is git-only (`"packages": []`): vendor-src resolves installed packages from the repo root, which has no dependencies (`v11/` and `next/` are separate workspaces), so it can't tie a checkout to this workspace's lockfile. `vendor-src check` (run by `pnpm install`) skips git-only repos. `pnpm vendor:sync [name…]` moves each to its newest upstream ref: a tag to the highest tag with the same prefix (`effect@4.0.2` follows `effect@*`; prereleases only from a prerelease), a SHA to the default branch's `HEAD`.
+Every repo is git-only (`"packages": []`): vendor-src resolves installed packages from the repo root, which has no dependencies (`v11/` and `next/` are separate workspaces), so it can't tie a checkout to this workspace's lockfile. `vendor-src check` (run by `pnpm install`) skips git-only repos. `pnpm vendor:sync [name…]` moves each to its newest upstream ref: a tag to the highest tag with the same prefix (`effect@4.1.1` follows `effect@*`; prereleases only from a prerelease), a SHA to the default branch's `HEAD`.
 
 So sync `effect` only when bumping its installed version to the same release (`pnpm vendor:sync effect`). `vendor-src add` needs a clean working tree and creates `git subtree` merge commits. Sync needs only the checkouts it touches to be clean, and commits the new tree and the pruned `ignore` paths itself. Then commit `../vendor-src.json` (`.repos/AGENTS.md` is rewritten for you) and update the list above by hand.

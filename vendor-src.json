@@ -6,8 +6,8 @@
 		"effect": {
 			"packages": [],
 			"url": "https://github.com/Effect-TS/effect.git",
-			"version": "effect@4.0.2",
-			"ref": "effect@4.0.2",
+			"version": "effect@4.1.1",
+			"ref": "effect@4.1.1",
 			"ignore": [
 				".repos/**"
 			]
