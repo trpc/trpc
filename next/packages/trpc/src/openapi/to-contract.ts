@@ -287,21 +287,6 @@ function closeObjects(
 const nonEmpty = (s: JsonSchema.JsonSchema | undefined) =>
   s !== undefined && Object.keys(s).length > 0 ? s : undefined;
 
-// effect 4.0.6 started collapsing these leading checks on a bare
-// `Schema.Number` into the built-in schema; collapse them on older 4.x too,
-// so the generated module doesn't depend on the installed version.
-const canonicalNumbers: Record<string, string> = {
-  'Schema.isInt().annotate({ "expected": "an integer" })': 'Schema.Int',
-  'Schema.isFinite().annotate({ "expected": "a finite number" })':
-    'Schema.Finite',
-};
-const canonicalize = (source: string) =>
-  Object.entries(canonicalNumbers).reduce(
-    (out, [check, schema]) =>
-      out.replaceAll(`Schema.Number.check(${check})`, schema),
-    source,
-  );
-
 /**
  * Generates a `@trpc12/trpc/contract` module from an OpenAPI document: Effect
  * Schemas for every component and for each operation's input and output
@@ -540,5 +525,5 @@ export function experimental_generateContractFromOpenApi(
     `export const ${opts.exportName ?? 'contract'} = {\n${render(tree, '  ')}};`,
     '',
   );
-  return canonicalize(lines.join('\n'));
+  return lines.join('\n');
 }
