@@ -39,10 +39,7 @@
     "README.md",
     "package.json",
     "!**/*.test.*",
-    "!**/__tests__",
-    "skills",
-    "!skills/_artifacts",
-    "bin"
+    "!**/__tests__"
   ],
   "eslintConfig": {
     "rules": {
@@ -62,7 +59,6 @@
     "typescript": ">=5.7.2"
   },
   "devDependencies": {
-    "@tanstack/intent": "^0.0.27",
     "@tanstack/react-query": "^5.80.3",
     "@trpc/client": "11.22.1",
     "@trpc/server": "11.22.1",
@@ -84,11 +80,5 @@
   },
   "funding": [
     "https://trpc.io/sponsor"
-  ],
-  "keywords": [
-    "tanstack-intent"
-  ],
-  "bin": {
-    "intent": "./bin/intent.js"
-  }
+  ]
 }
