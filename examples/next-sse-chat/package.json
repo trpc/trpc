@@ -18,8 +18,8 @@
     "@headlessui/react": "^2.2.0",
     "@heroicons/react": "^2.2.0",
     "@radix-ui/react-slot": "^1.1.0",
-    "@tanstack/react-query": "^5.80.3",
-    "@tanstack/react-query-devtools": "^5.80.3",
+    "@tanstack/react-query": "npm:@tanstack/react-query@^5.105.0",
+    "@tanstack/react-query-devtools": "npm:@tanstack/react-query-devtools@^5.105.0",
     "@tanstack/react-router": "^1.170.46",
     "@tanstack/react-router-ssr-query": "^1.167.3",
     "@tanstack/react-start": "^1.169.4",
@@ -48,6 +48,6 @@
     "postcss": "^8.5.28",
     "tailwindcss": "^3.4.6",
     "typescript": "^5.9.2",
-    "vite": "catalog:"
+    "vite": "^8.3.0"
   }
 }

@@ -1861,10 +1861,10 @@ importers:
         specifier: ^1.1.0
         version: 1.1.0(@types/react@19.1.0)(react@19.1.0)
       '@tanstack/react-query':
-        specifier: ^5.105.0
+        specifier: npm:@tanstack/react-query@^5.105.0
         version: 5.105.0(@types/react@19.1.0)(react@19.1.0)
       '@tanstack/react-query-devtools':
-        specifier: ^5.105.0
+        specifier: npm:@tanstack/react-query-devtools@^5.105.0
         version: 5.105.0(@tanstack/react-query@5.105.0(@types/react@19.1.0)(react@19.1.0))(@types/react@19.1.0)(csstype@3.2.3)(react@19.1.0)
       '@tanstack/react-router':
         specifier: ^1.170.46
@@ -1922,7 +1922,7 @@ importers:
         specifier: ^19.1.1
         version: 19.1.1(@types/react@19.1.0)
       '@vitejs/plugin-react':
-        specifier: ^6.1.2
+        specifier: ^6.1.1
         version: 6.1.2(vite@8.3.0(@types/node@24.13.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(yaml@2.9.1))
       cross-env:
         specifier: ^7.0.3
@@ -1946,7 +1946,7 @@ importers:
         specifier: ^5.9.2
         version: 5.9.2
       vite:
-        specifier: 'catalog:'
+        specifier: ^8.3.0
         version: 8.3.0(@types/node@24.13.4)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.34.0)(tsx@4.21.0)(yaml@2.9.1)
 
   examples/next-websockets-encoder:
