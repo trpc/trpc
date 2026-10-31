@@ -27,7 +27,7 @@ Handles fix a gap in the usual prefetch pattern, where the server prefetches `tr
 
 With handles, the client reads exactly what the server started.
 
-Data crosses through TanStack Query's dehydrate and hydrate, exactly as in the [Server Components](/docs/client/tanstack-react-query/server-components) guide or TanStack Start's [SSR query integration](/docs/client/tanstack-react-query/tanstack-start). A handle carries the query's key, and, from `ensure` and `fetch`, the data they waited for.
+Data crosses through TanStack Query's dehydrate and hydrate, exactly as in the [Server Components](/docs/client/tanstack-react-query/server-components) guide or TanStack Start's [SSR query integration](/docs/client/tanstack-react-query/tanstack-start). A handle carries the query's key and input, and, from `ensure` and `fetch`, the data they waited for.
 
 ## The handle proxy {#handle-proxy}
 
@@ -158,6 +158,7 @@ const [a, b] = useSuspenseQueries({
 - `unstable_fromHandle` is available on every router level: `trpc.unstable_fromHandle` and `trpc.post.unstable_fromHandle` behave the same.
 - Reads use the same query key as `trpc.<path>.queryOptions(input)`, so old and new code share cache entries.
 - `queryClient.getQueryData(handle.queryKey)` is typed.
+- `handle.input` is the typed input the query was started with, so a component doesn't need it as a separate prop. Infinite handles leave out `cursor` and `direction`.
 
 ### Typing props {#typing-props}
 

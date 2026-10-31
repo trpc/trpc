@@ -234,9 +234,11 @@ describe('runtime', () => {
     });
     expect(handle).toEqual({
       queryKey: [['post', 'byId'], { input: { id: '1' }, type: 'query' }],
+      input: { id: '1' },
     });
     expect(listHandle).toEqual({
       queryKey: [['post', 'list'], { input: { limit: 2 }, type: 'infinite' }],
+      input: { limit: 2 },
     });
 
     await vi.waitFor(() => expect(serverQueryClient.isFetching()).toBe(0));
@@ -683,10 +685,32 @@ describe('runtime', () => {
     expectTypeOf(post.data).toEqualTypeOf<{ id: string; title: string }>();
     expect(post).toEqual({
       queryKey: [['post', 'byId'], { input: { id: '1' }, type: 'query' }],
+      input: { id: '1' },
       data: { id: '1', title: 'Post 1' },
     });
     const list = await start.post.list.fetchInfinite({ limit: 2 });
     expect(list.data.pages[0]?.items).toEqual([0, 1]);
+  });
+
+  test('handles carry their input', async () => {
+    await using resource = ctx();
+    const { start } = createProxies({
+      router: resource.appRouter,
+      ctx: {},
+      queryClient: makeServerClient(),
+    });
+    const post = start.post.byId.prefetch({ id: '1' });
+    expectTypeOf(post.input).toEqualTypeOf<{ id: string }>();
+    expect(post.input).toEqual({ id: '1' });
+
+    const list = start.post.list.prefetchInfinite({ limit: 2, cursor: 4 });
+    expectTypeOf(list.input).toEqualTypeOf<{ limit: number }>();
+    expect(list.input).toEqual({ limit: 2 });
+    expect(list.initialCursor).toBe(4);
+
+    const props = overTheWire({ post, list });
+    expect(props.post.input).toEqual({ id: '1' });
+    expect(props.list.input).toEqual({ limit: 2 });
   });
 
   test('the handle proxy only has query procedures and handle verbs', () => {

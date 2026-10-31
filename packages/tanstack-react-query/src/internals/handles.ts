@@ -47,7 +47,13 @@ export interface unstable_TRPCQueryHandle<
     TDef['output'],
     ErrorOf<TDef>
   >;
+  /** The input the query was started with */
+  readonly input: TDef['input'];
 }
+
+type InfiniteHandleInput<TInput> = TInput extends object
+  ? Omit<TInput, 'cursor' | 'direction'>
+  : TInput;
 
 /**
  * A serializable reference to an infinite query started on the server (or in a loader).
@@ -63,6 +69,8 @@ export interface unstable_TRPCInfiniteQueryHandle<
     TRPCInfiniteData<TDef['input'], TDef['output']>,
     ErrorOf<TDef>
   >;
+  /** The input the query was started with, without `cursor` and `direction` */
+  readonly input: InfiniteHandleInput<TDef['input']>;
   readonly initialCursor?: NonNullable<ExtractCursorType<TDef['input']>> | null;
 }
 
@@ -278,9 +286,11 @@ export function startHandle(opts: {
   verb: HandleVerb;
 }) {
   const { queryClient, options, kind, verb } = opts;
+  const input = readQueryKey(options.queryKey).args?.input;
   if (kind === 'infinite') {
     const handle = {
       queryKey: options.queryKey,
+      input,
       ...(options.initialPageParam != null && {
         initialCursor: options.initialPageParam,
       }),
@@ -299,7 +309,7 @@ export function startHandle(opts: {
           .then((data) => ({ ...handle, data }));
     }
   }
-  const handle = { queryKey: options.queryKey };
+  const handle = { queryKey: options.queryKey, input };
   switch (verb) {
     case 'prefetch':
       void queryClient.prefetchQuery(options);
