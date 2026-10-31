@@ -14,25 +14,20 @@
     "allowImportingTsExtensions": true,
 
     /* Bundled projects */
-    "lib": ["dom", "dom.iterable", "ES2022"],
+    "lib": ["dom", "dom.iterable", "ES2023"],
     "noEmit": true,
     "module": "Preserve",
     "moduleResolution": "bundler",
-    "jsx": "preserve",
-    "plugins": [{ "name": "next" }],
-    "incremental": true,
+    "jsx": "react-jsx",
+    "types": ["node", "vite/client"],
 
     /* Path aliases */
     "paths": {
-      "~/*": ["./src/*"]
+      "~/*": ["./src/*"],
+      // In this monorepo, the linked `@trpc/tanstack-react-query` would otherwise see its own copy
+      "@tanstack/react-query": ["./node_modules/@tanstack/react-query"]
     }
   },
-  "include": [
-    "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx",
-    "*.js",
-    ".next/types/**/*.ts"
-  ],
+  "include": ["src", "*.ts", "*.js"],
   "exclude": ["node_modules"]
 }

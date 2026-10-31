@@ -424,7 +424,6 @@ skills:
       - 'trpc/trpc:www/docs/client/tanstack-react-query/server-components.mdx'
       - 'trpc/trpc:www/docs/server/adapters/nextjs.md'
       - 'trpc/trpc:examples/next-prisma-starter/'
-      - 'trpc/trpc:examples/next-sse-chat/'
 
   - name: 'Next.js Pages Router'
     slug: 'nextjs-pages-router'
