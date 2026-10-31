@@ -1,6 +1,6 @@
 import { defineConfig } from 'tsdown';
 
-export const input = ['src/index.ts'];
+export const input = ['src/index.ts', 'src/handles.ts'];
 
 export default defineConfig({
   target: ['node18', 'es2017'],

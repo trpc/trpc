@@ -31,6 +31,16 @@
         "types": "./dist/index.d.cts",
         "default": "./dist/index.cjs"
       }
+    },
+    "./handles": {
+      "import": {
+        "types": "./dist/handles.d.mts",
+        "default": "./dist/handles.mjs"
+      },
+      "require": {
+        "types": "./dist/handles.d.cts",
+        "default": "./dist/handles.cjs"
+      }
     }
   },
   "files": [
@@ -38,6 +48,7 @@
     "src",
     "README.md",
     "package.json",
+    "handles",
     "!**/*.test.*",
     "!**/__tests__"
   ],

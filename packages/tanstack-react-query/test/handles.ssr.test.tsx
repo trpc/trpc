@@ -17,8 +17,12 @@ import { renderToPipeableStream } from 'react-dom/server';
 import superjson from 'superjson';
 import { describe, expect, test, vi } from 'vitest';
 import { z } from 'zod';
-import type { TRPCOptionsProxy, unstable_inferQueryHandle } from '../src';
-import { createTRPCContext, createTRPCOptionsProxy } from '../src';
+import { createTRPCContext } from '../src';
+import type {
+  unstable_inferQueryHandle,
+  unstable_TRPCHandleProxy,
+} from '../src/handles';
+import { unstable_createTRPCHandleProxy } from '../src/handles';
 
 const ctx = () => {
   const t = initTRPC.create({ transformer: superjson });
@@ -39,7 +43,7 @@ const ctx = () => {
 };
 
 type AppRouter = ReturnType<typeof ctx>['appRouter'];
-type TRPC = TRPCOptionsProxy<AppRouter>;
+type Start = unstable_TRPCHandleProxy<AppRouter>;
 
 /** The request-scoped server side: an in-process proxy that mints handles */
 function makeServer(resource: ReturnType<typeof ctx>) {
@@ -54,7 +58,7 @@ function makeServer(resource: ReturnType<typeof ctx>) {
       },
     },
   });
-  const trpc = createTRPCOptionsProxy({
+  const trpc = unstable_createTRPCHandleProxy({
     router: resource.appRouter,
     ctx: {},
     queryClient,
@@ -107,7 +111,7 @@ function trpcWarnings(warn: { mock: { calls: unknown[][] } }) {
 }
 
 function Post(props: {
-  post: unstable_inferQueryHandle<TRPC['post']['byDay']>;
+  post: unstable_inferQueryHandle<Start['post']['byDay']>;
 }) {
   const trpc = trpcContext.useTRPC();
   const { data } = useSuspenseQuery(trpc.unstable_fromHandle(props.post));
@@ -120,10 +124,10 @@ describe('server rendering', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const server = makeServer(resource);
 
-    const ensured = await server.trpc.post.byDay.unstable_ensure({
+    const ensured = await server.trpc.post.byDay.ensure({
       day: new Date('2026-01-01'),
     });
-    const pending = server.trpc.post.byDay.unstable_prefetch({
+    const pending = server.trpc.post.byDay.prefetch({
       day: new Date('2026-01-02'),
     });
     const state = dehydrate(server.queryClient);
@@ -156,7 +160,7 @@ describe('server rendering', () => {
     await using resource = ctx();
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const server = makeServer(resource);
-    const handle = await server.trpc.post.byDay.unstable_ensure({
+    const handle = await server.trpc.post.byDay.ensure({
       day: new Date('2026-02-01'),
     });
 
