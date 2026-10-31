@@ -95,7 +95,7 @@ test('middleware wraps the handler: Effect HttpMiddleware and cors() (13 C)', as
         Effect.map(app, (res) =>
           HttpServerResponse.setHeader(res, 'x-served-by', 'trpc'),
         ),
-      HttpMiddleware.xForwardedHeaders,
+      HttpMiddleware.tracer,
     ],
   });
   const preflight = await handler.fetch(
