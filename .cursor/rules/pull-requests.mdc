@@ -1,0 +1,10 @@
+---
+description: Writing or editing a pull request title or description
+alwaysApply: false
+---
+
+# Pull request descriptions
+
+Follow `.github/PULL_REQUEST_TEMPLATE.md`.
+
+Fill in "Links" when you open the PR, not after the deploys finish. Vercel preview URLs follow from the branch name: run `pnpm preview-urls` (or `pnpm preview-urls <branch> [fork-owner]`) and deep-link from the printed base URLs. Don't write "pending".

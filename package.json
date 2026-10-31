@@ -18,6 +18,7 @@
     "test": "vitest",
     "typecheck-packages": "pnpm run --parallel --filter=./packages/* typecheck",
     "verify-packed": "tsx scripts/verify-packed.ts",
+    "preview-urls": "node scripts/preview-urls.js",
     "typecheck-www": "turbo --filter www typecheck",
     "ts-watch": "pnpm typecheck-packages --watch",
     "lint": "turbo lint",
