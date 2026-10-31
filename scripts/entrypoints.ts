@@ -22,7 +22,6 @@ export type PackageJson = {
     overrides: Record<string, string>;
   };
   funding: string[];
-  keywords?: string[];
   peerDependencies: Record<string, string>;
 };
 
@@ -125,11 +124,6 @@ export async function generateEntrypoints(rawInputs: string[]) {
   // Exclude test files in builds
   pkgJson.files.push('!**/*.test.*');
   pkgJson.files.push('!**/__tests__');
-
-  // Include TanStack Intent skills and bin directories when the package opts in
-  if (pkgJson.keywords?.includes('tanstack-intent')) {
-    pkgJson.files.push('skills', '!skills/_artifacts', 'bin');
-  }
 
   // Add `funding` in all packages
   pkgJson.funding = ['https://trpc.io/sponsor'];

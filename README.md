@@ -79,14 +79,6 @@ deno init --npm next-app --example https://github.com/trpc/trpc --example-path e
 
 **👉 See full documentation on [tRPC.io](https://trpc.io/docs). 👈**
 
-## AI Agents
-
-If you use an AI coding agent (Claude Code, Cursor, Windsurf, etc.), install tRPC skills for better code generation:
-
-```sh
-npx @tanstack/intent@latest install
-```
-
 ## Star History
 
 <a href="https://star-history.dera.page/#trpc/trpc&type=Date"><img src="https://star-history.dera.page/svg?repos=trpc/trpc&type=Date" alt="Star History Chart" width="600" /></a>

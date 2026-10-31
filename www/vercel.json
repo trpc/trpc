@@ -582,6 +582,11 @@
       "source": "/docs/getting-started",
       "destination": "/docs",
       "permanent": true
+    },
+    {
+      "source": "/docs/skills",
+      "destination": "/docs/quickstart",
+      "permanent": true
     }
   ]
 }

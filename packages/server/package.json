@@ -187,10 +187,7 @@
     "shared",
     "unstable-core-do-not-import",
     "!**/*.test.*",
-    "!**/__tests__",
-    "skills",
-    "!skills/_artifacts",
-    "bin"
+    "!**/__tests__"
   ],
   "publishConfig": {
     "access": "public"
@@ -198,7 +195,6 @@
   "devDependencies": {
     "@fastify/websocket": "catalog:",
     "@oxc-project/runtime": "0.152.0",
-    "@tanstack/intent": "^0.0.27",
     "@tanstack/react-query": "^5.80.3",
     "@types/aws-lambda": "^8.10.149",
     "@types/express": "^5.0.0",
@@ -253,11 +249,5 @@
     "next": {
       "optional": true
     }
-  },
-  "keywords": [
-    "tanstack-intent"
-  ],
-  "bin": {
-    "intent": "./bin/intent.js"
   }
 }
