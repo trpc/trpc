@@ -109,7 +109,7 @@ interface DefinedTRPCQueryOptionsOut<
   >;
 }
 
-interface UnusedSkipTokenTRPCQueryOptionsIn<
+export interface UnusedSkipTokenTRPCQueryOptionsIn<
   TQueryFnData,
   TData,
   TError,
@@ -127,7 +127,7 @@ interface UnusedSkipTokenTRPCQueryOptionsIn<
     >,
     TRPCQueryBaseOptions {}
 
-interface UnusedSkipTokenTRPCQueryOptionsOut<
+export interface UnusedSkipTokenTRPCQueryOptionsOut<
   TQueryFnData,
   TOutput,
   TError,

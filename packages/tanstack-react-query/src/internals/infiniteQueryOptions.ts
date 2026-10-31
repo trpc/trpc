@@ -126,7 +126,7 @@ interface DefinedTRPCInfiniteQueryOptionsOut<
   initialPageParam: NonNullable<ExtractCursorType<TInput>> | null;
 }
 
-interface UnusedSkipTokenTRPCInfiniteQueryOptionsIn<
+export interface UnusedSkipTokenTRPCInfiniteQueryOptionsIn<
   TInput,
   TQueryFnData,
   TData,
@@ -148,7 +148,7 @@ interface UnusedSkipTokenTRPCInfiniteQueryOptionsIn<
   initialCursor?: NonNullable<ExtractCursorType<TInput>> | null;
 }
 
-interface UnusedSkipTokenTRPCInfiniteQueryOptionsOut<
+export interface UnusedSkipTokenTRPCInfiniteQueryOptionsOut<
   TInput,
   TQueryFnData,
   TData,

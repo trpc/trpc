@@ -3,7 +3,10 @@ import type { TRPCClient } from '@trpc/client';
 import type { AnyTRPCRouter } from '@trpc/server';
 import * as React from 'react';
 import type { TRPCOptionsProxy } from './createOptionsProxy';
-import { createTRPCOptionsProxy } from './createOptionsProxy';
+import {
+  createTRPCOptionsProxy,
+  disableHandleVerbs,
+} from './createOptionsProxy';
 import type {
   DefaultFeatureFlags,
   FeatureFlags,
@@ -54,6 +57,7 @@ export function createTRPCContext<
           client: props.trpcClient,
           queryClient: props.queryClient,
           keyPrefix: props.keyPrefix as any,
+          [disableHandleVerbs]: true,
         }),
       [props.trpcClient, props.queryClient, props.keyPrefix],
     );
