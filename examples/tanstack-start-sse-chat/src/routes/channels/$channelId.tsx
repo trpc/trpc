@@ -1,6 +1,7 @@
 import { HashtagIcon } from '@heroicons/react/24/outline';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute, Link, notFound } from '@tanstack/react-router';
+import type { inferQueryHandle } from '@trpc/tanstack-react-query';
 import {
   SignedIn,
   SignedOut,
@@ -9,8 +10,7 @@ import {
 } from '~/components/auth';
 import { Button } from '~/components/button';
 import { CreateChannelDialog } from '~/components/create-channel';
-import { useTRPC } from '~/lib/trpc';
-import { channelListQuery, postListQuery } from '~/queries';
+import { useTRPC, type TRPC } from '~/lib/trpc';
 import { Suspense } from 'react';
 import { z } from 'zod';
 import { Chat } from './-components/chat';
@@ -23,17 +23,20 @@ export const Route = createFileRoute('/channels/$channelId')({
     }
   },
   loader: (opts) => {
-    const { queryClient, trpc } = opts.context;
-    void queryClient.prefetchQuery(channelListQuery(trpc));
-    void queryClient.prefetchInfiniteQuery(
-      postListQuery(trpc, { channelId: opts.params.channelId }),
-    );
+    const { trpc } = opts.context;
+    return {
+      channels: trpc.channel.list.prefetch(),
+      posts: trpc.post.infinite.prefetchInfinite({
+        channelId: opts.params.channelId,
+      }),
+    };
   },
   component: ChannelPage,
 });
 
 function ChannelPage() {
   const { channelId } = Route.useParams();
+  const { channels, posts } = Route.useLoaderData();
   const signInHref = useSignInHref();
 
   return (
@@ -50,7 +53,7 @@ function ChannelPage() {
         </div>
         <div className="flex flex-1 flex-col gap-2 overflow-y-auto">
           <Suspense>
-            <ChannelList />
+            <ChannelList channels={channels} />
           </Suspense>
         </div>
         <div className="mt-auto">
@@ -82,15 +85,17 @@ function ChannelPage() {
           </div>
         }
       >
-        <Chat key={channelId} channelId={channelId} />
+        <Chat key={channelId} channelId={channelId} posts={posts} />
       </Suspense>
     </div>
   );
 }
 
-function ChannelList() {
+function ChannelList(
+  props: Readonly<{ channels: inferQueryHandle<TRPC['channel']['list']> }>,
+) {
   const trpc = useTRPC();
-  const channels = useSuspenseQuery(channelListQuery(trpc)).data;
+  const channels = useSuspenseQuery(trpc.fromHandle(props.channels)).data;
 
   return channels.map((channel) => (
     <Link

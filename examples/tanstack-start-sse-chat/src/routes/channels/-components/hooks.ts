@@ -3,9 +3,11 @@ import {
   useMutation,
   useSuspenseInfiniteQuery,
 } from '@tanstack/react-query';
-import { useSubscription } from '@trpc/tanstack-react-query';
-import { useTRPC } from '~/lib/trpc';
-import { postListQuery } from '~/queries';
+import {
+  useSubscription,
+  type inferInfiniteQueryHandle,
+} from '@trpc/tanstack-react-query';
+import { useTRPC, type TRPC } from '~/lib/trpc';
 import * as React from 'react';
 
 /**
@@ -39,9 +41,20 @@ export function useThrottledIsTypingMutation(channelId: string) {
   }, [mutate, channelId]);
 }
 
-export function useLivePosts(channelId: string) {
+export function useLivePosts(
+  channelId: string,
+  posts: inferInfiniteQueryHandle<TRPC['post']['infinite']>,
+) {
   const trpc = useTRPC();
-  const query = useSuspenseInfiniteQuery(postListQuery(trpc, { channelId }));
+  const query = useSuspenseInfiniteQuery(
+    trpc.fromHandle(posts, {
+      getNextPageParam: (d) => d.nextCursor,
+      // No need to refetch as we have a subscription
+      refetchOnReconnect: false,
+      refetchOnWindowFocus: false,
+      refetchOnMount: false,
+    }),
+  );
   const [messages, setMessages] = React.useState(() => {
     const msgs = query.data?.pages.map((page) => page.items).flat();
     return msgs ?? null;
