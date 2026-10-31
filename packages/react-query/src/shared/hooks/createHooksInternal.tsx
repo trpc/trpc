@@ -154,7 +154,7 @@ export function createRootHooks<
    * @see https://github.com/trpc/trpc/pull/1645
    */
   function useSSRQueryOptionsIfNeeded<
-    TOptions extends { retryOnMount?: boolean } | undefined,
+    TOptions extends { retryOnMount?: unknown } | undefined,
   >(queryKey: TRPCQueryKey, opts: TOptions): TOptions {
     const { queryClient, ssrState } = useContext();
     return ssrState &&
@@ -258,8 +258,9 @@ export function createRootHooks<
     _usePrefetchQuery({
       ...opts,
       queryKey: queryKey as any,
+      // usePrefetchQuery's types exclude skipToken, but query-core handles it at runtime
       queryFn: isInputSkipToken
-        ? input
+        ? (input as never)
         : (queryFunctionContext) => {
             const actualOpts = {
               trpc: {
@@ -621,7 +622,7 @@ export function createRootHooks<
       initialPageParam: opts.initialCursor ?? null,
       queryKey,
       queryFn: isInputSkipToken
-        ? input
+        ? (input as never)
         : (queryFunctionContext) => {
             const actualOpts = {
               ...ssrOpts,
