@@ -6,6 +6,8 @@ import type { Post } from '@prisma/client';
 import { observable } from '@trpc/server/observable';
 import { EventEmitter } from 'events';
 import { prisma } from '../prisma';
+import type { PubSubEvent } from '../pubsub';
+import { listen, publish } from '../pubsub';
 import { z } from 'zod';
 import { authedProcedure, publicProcedure, router } from '../trpc';
 import { on } from 'node:events';
@@ -25,12 +27,54 @@ interface MyEvents {
   isTypingUpdate: [];
 }
 
-// In a real app, you'd probably use Redis or something
+// Local to this server instance, fed by `onPubSubEvent()` below
 const ee = new IterableEventEmitter<MyEvents>();
 
 // who is currently typing, key is `name`
 const currentlyTyping: Record<string, { lastTyped: Date }> =
   Object.create(null);
+
+function setTyping(name: string, typing: boolean) {
+  if (typing) {
+    currentlyTyping[name] = { lastTyped: new Date() };
+  } else if (currentlyTyping[name]) {
+    delete currentlyTyping[name];
+  } else {
+    return;
+  }
+  ee.emit('isTypingUpdate');
+}
+
+async function onPubSubEvent(event: PubSubEvent) {
+  switch (event.type) {
+    case 'isTyping': {
+      setTyping(event.name, event.typing);
+      return;
+    }
+    case 'add': {
+      setTyping(event.name, false);
+      const post = await prisma.post.findUnique({
+        where: { id: event.postId },
+      });
+      if (post) {
+        ee.emit('add', post);
+      }
+      return;
+    }
+  }
+}
+
+// Handle events one at a time so posts are emitted in the order they were published
+let pubSubQueue = Promise.resolve();
+function ensureListening() {
+  return listen((event) => {
+    pubSubQueue = pubSubQueue
+      .then(() => onPubSubEvent(event))
+      .catch((cause) => {
+        console.error('Failed to handle pubsub event', event, cause);
+      });
+  });
+}
 
 // every 1s, clear old "isTyping"
 const interval = setInterval(() => {
@@ -68,25 +112,18 @@ export const postRouter = router({
           source: 'GITHUB',
         },
       });
-      ee.emit('add', post);
-      delete currentlyTyping[name];
-      ee.emit('isTypingUpdate');
+      await publish({ type: 'add', postId: post.id, name });
       return post;
     }),
 
   isTyping: authedProcedure
     .input(z.object({ typing: z.boolean() }))
-    .mutation((opts) => {
-      const { input, ctx } = opts;
-      const { name } = ctx.user;
-      if (!input.typing) {
-        delete currentlyTyping[name];
-      } else {
-        currentlyTyping[name] = {
-          lastTyped: new Date(),
-        };
-      }
-      ee.emit('isTypingUpdate');
+    .mutation(async (opts) => {
+      await publish({
+        type: 'isTyping',
+        name: opts.ctx.user.name,
+        typing: opts.input.typing,
+      });
     }),
 
   infinite: publicProcedure
@@ -128,6 +165,7 @@ export const postRouter = router({
         emit.next(data);
       };
       ee.on('add', onAdd);
+      ensureListening().catch((cause) => emit.error(cause));
       return () => {
         ee.off('add', onAdd);
       };
@@ -146,6 +184,7 @@ export const postRouter = router({
         prev = newData;
       };
       ee.on('isTypingUpdate', onIsTypingUpdate);
+      ensureListening().catch((cause) => emit.error(cause));
       return () => {
         ee.off('isTypingUpdate', onIsTypingUpdate);
       };

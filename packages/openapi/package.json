@@ -2,12 +2,12 @@
   "name": "@trpc/openapi",
   "type": "module",
   "sideEffects": false,
-  "version": "11.22.0-alpha",
+  "version": "11.22.1-alpha",
   "description": "OpenAPI document generator for tRPC routers",
   "author": "KATT",
   "license": "MIT",
   "bin": {
-    "trpc-openapi": "./dist/cli.js",
+    "trpc-openapi": "./dist/cli.mjs",
     "intent": "./bin/intent.js"
   },
   "homepage": "https://trpc.io",
@@ -80,7 +80,7 @@
     "@hey-api/openapi-ts": "catalog:",
     "@swagger-api/apidom-ls": "^1.6.0",
     "@tanstack/intent": "^0.0.27",
-    "@trpc/server": "11.22.0",
+    "@trpc/server": "11.22.1",
     "@types/node": "catalog:",
     "bson": "^7.2.0",
     "eslint": "catalog:",
@@ -94,8 +94,8 @@
   },
   "peerDependencies": {
     "@hey-api/openapi-ts": ">=0.94.5",
-    "@trpc/server": "11.22.0",
-    "typescript": ">=5.7.2 <7",
+    "@trpc/server": "11.22.1",
+    "typescript": ">=5.8.2 <7",
     "zod": ">=4.0.0"
   },
   "peerDependenciesMeta": {

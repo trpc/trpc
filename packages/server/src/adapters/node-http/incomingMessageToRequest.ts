@@ -35,6 +35,20 @@ function createBody(
     // 5's body-parser assigns `req.body = undefined` on content types it
     // skips (such as multipart/form-data) — so stream it like an unparsed
     // request
+  } else if (req.readableEnded) {
+    // Another middleware drained the stream without handing over what it
+    // read, so waiting for `data`/`end` would hang forever
+    return new ReadableStream({
+      start(controller) {
+        controller.error(
+          new TRPCError({
+            code: 'INTERNAL_SERVER_ERROR',
+            message:
+              'The request body has already been read by another middleware. Assign the parsed body to `req.body` so tRPC can use it',
+          }),
+        );
+      },
+    });
   }
   let size = 0;
   let hasClosed = false;

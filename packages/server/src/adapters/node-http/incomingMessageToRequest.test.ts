@@ -295,6 +295,23 @@ test('adapter with pre-parsed body - undefined after consuming the stream', asyn
   expect(body).toBe('');
 });
 
+test('consumed stream without req.body rejects instead of hanging', async () => {
+  const mockReq = createMockReq({
+    headers: {},
+    url: '/test',
+    method: 'POST',
+    readableEnded: true,
+  });
+
+  const request = incomingMessageToRequest(mockReq, createMockRes(), {
+    maxBodySize: null,
+  });
+
+  await expect(request.text()).rejects.toMatchInlineSnapshot(
+    `[TRPCError: The request body has already been read by another middleware. Assign the parsed body to \`req.body\` so tRPC can use it]`,
+  );
+});
+
 test('aborts request when response closes', async () => {
   const mockReq = createMockReq({
     method: 'POST',
