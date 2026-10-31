@@ -212,9 +212,11 @@ describe('runtime', () => {
     });
     expect(handle).toEqual({
       queryKey: [['post', 'byId'], { input: { id: '1' }, type: 'query' }],
+      input: { id: '1' },
     });
     expect(listHandle).toEqual({
       queryKey: [['post', 'list'], { input: { limit: 2 }, type: 'infinite' }],
+      input: { limit: 2 },
     });
 
     await vi.waitFor(() => expect(serverQueryClient.isFetching()).toBe(0));
@@ -587,6 +589,30 @@ describe('runtime', () => {
         .getQueryData(handle.queryKey)
         ?.pages.flatMap((page) => page.items),
     ).toEqual([0, 1, 2, 3]);
+  });
+
+  test('handles carry their input', async () => {
+    await using resource = ctx();
+    const trpc = createTRPCOptionsProxy({
+      router: resource.appRouter,
+      ctx: {},
+      queryClient: makeServerClient(),
+    });
+    const post = trpc.post.byId.unstable_prefetch({ id: '1' });
+    expectTypeOf(post.input).toEqualTypeOf<{ id: string }>();
+    expect(post.input).toEqual({ id: '1' });
+
+    const list = trpc.post.list.unstable_prefetchInfinite({
+      limit: 2,
+      cursor: 4,
+    });
+    expectTypeOf(list.input).toEqualTypeOf<{ limit: number }>();
+    expect(list.input).toEqual({ limit: 2 });
+    expect(list.initialCursor).toBe(4);
+
+    const props = overTheWire({ post, list });
+    expect(props.post.input).toEqual({ id: '1' });
+    expect(props.list.input).toEqual({ limit: 2 });
   });
 
   test('procedures without input', async () => {
