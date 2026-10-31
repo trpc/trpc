@@ -1,7 +1,7 @@
 import { HashtagIcon } from '@heroicons/react/24/outline';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute, Link } from '@tanstack/react-router';
-import type { inferQueryHandle } from '@trpc/tanstack-react-query';
+import type { unstable_inferQueryHandle } from '@trpc/tanstack-react-query';
 import { SignedIn, SignedOut, useSignInHref } from '~/components/auth';
 import { buttonVariants } from '~/components/button';
 import { CreateChannelDialog } from '~/components/create-channel';
@@ -11,7 +11,7 @@ import { twMerge } from 'tailwind-merge';
 
 export const Route = createFileRoute('/')({
   loader: (opts) => ({
-    channels: opts.context.trpc.channel.list.prefetch(),
+    channels: opts.context.trpc.channel.list.unstable_prefetch(),
   }),
   component: Home,
 });
@@ -77,10 +77,14 @@ function Home() {
 }
 
 function ChannelList(
-  props: Readonly<{ channels: inferQueryHandle<TRPC['channel']['list']> }>,
+  props: Readonly<{
+    channels: unstable_inferQueryHandle<TRPC['channel']['list']>;
+  }>,
 ) {
   const trpc = useTRPC();
-  const channels = useSuspenseQuery(trpc.fromHandle(props.channels)).data;
+  const channels = useSuspenseQuery(
+    trpc.unstable_fromHandle(props.channels),
+  ).data;
 
   return (
     <div className="flex w-full flex-col items-start">

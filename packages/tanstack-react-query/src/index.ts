@@ -25,11 +25,11 @@ export { createTRPCOptionsProxy } from './internals/createOptionsProxy';
 export { useSubscription } from './internals/subscriptionOptions';
 export type * from './internals/types';
 export type {
-  TRPCQueryHandle,
-  TRPCInfiniteQueryHandle,
-  AnyTRPCHandle,
-  TRPCPrefetchOptions,
-  TRPCPrefetchInfiniteOptions,
-  inferQueryHandle,
-  inferInfiniteQueryHandle,
+  unstable_TRPCQueryHandle,
+  unstable_TRPCInfiniteQueryHandle,
+  unstable_AnyTRPCHandle,
+  unstable_TRPCPrefetchOptions,
+  unstable_TRPCPrefetchInfiniteOptions,
+  unstable_inferQueryHandle,
+  unstable_inferInfiniteQueryHandle,
 } from './internals/handles';

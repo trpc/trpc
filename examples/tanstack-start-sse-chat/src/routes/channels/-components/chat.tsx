@@ -2,7 +2,7 @@ import { PaperAirplaneIcon } from '@heroicons/react/24/outline';
 import { useMutation } from '@tanstack/react-query';
 import {
   useSubscription,
-  type inferInfiniteQueryHandle,
+  type unstable_inferInfiniteQueryHandle,
 } from '@trpc/tanstack-react-query';
 import { useSession, useSignInHref } from '~/components/auth';
 import { Avatar } from '~/components/avatar';
@@ -76,7 +76,7 @@ function SubscriptionStatus(props: {
 export function Chat(
   props: Readonly<{
     channelId: string;
-    posts: inferInfiniteQueryHandle<TRPC['post']['infinite']>;
+    posts: unstable_inferInfiniteQueryHandle<TRPC['post']['infinite']>;
   }>,
 ) {
   const { channelId } = props;

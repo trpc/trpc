@@ -17,7 +17,7 @@ import { renderToPipeableStream } from 'react-dom/server';
 import superjson from 'superjson';
 import { describe, expect, test, vi } from 'vitest';
 import { z } from 'zod';
-import type { inferQueryHandle, TRPCOptionsProxy } from '../src';
+import type { TRPCOptionsProxy, unstable_inferQueryHandle } from '../src';
 import { createTRPCContext, createTRPCOptionsProxy } from '../src';
 
 const ctx = () => {
@@ -106,9 +106,11 @@ function trpcWarnings(warn: { mock: { calls: unknown[][] } }) {
     .filter((message) => message.startsWith('[@trpc/tanstack-react-query]'));
 }
 
-function Post(props: { post: inferQueryHandle<TRPC['post']['byDay']> }) {
+function Post(props: {
+  post: unstable_inferQueryHandle<TRPC['post']['byDay']>;
+}) {
   const trpc = trpcContext.useTRPC();
-  const { data } = useSuspenseQuery(trpc.fromHandle(props.post));
+  const { data } = useSuspenseQuery(trpc.unstable_fromHandle(props.post));
   return <p>{`${data.title} fetchedAt:${data.fetchedAt.toISOString()}`}</p>;
 }
 
@@ -118,10 +120,10 @@ describe('server rendering', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const server = makeServer(resource);
 
-    const ensured = await server.trpc.post.byDay.ensure({
+    const ensured = await server.trpc.post.byDay.unstable_ensure({
       day: new Date('2026-01-01'),
     });
-    const pending = server.trpc.post.byDay.prefetch({
+    const pending = server.trpc.post.byDay.unstable_prefetch({
       day: new Date('2026-01-02'),
     });
     const state = dehydrate(server.queryClient);
@@ -154,7 +156,7 @@ describe('server rendering', () => {
     await using resource = ctx();
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     const server = makeServer(resource);
-    const handle = await server.trpc.post.byDay.ensure({
+    const handle = await server.trpc.post.byDay.unstable_ensure({
       day: new Date('2026-02-01'),
     });
 
