@@ -1,9 +1,10 @@
 import { tracked } from '@trpc/server';
 import { db } from '~/server/db/client';
 import { Post, type PostType } from '~/server/db/schema';
+import { publish } from '~/server/pubsub';
 import { z } from 'zod';
 import { authedProcedure, publicProcedure, router } from '../trpc';
-import { currentlyTyping, ee } from './channel';
+import { ee, ensureListening } from './channel';
 
 export const postRouter = router({
   add: authedProcedure
@@ -27,15 +28,14 @@ export const postRouter = router({
         })
         .returning();
 
-      const channelTyping = currentlyTyping[channelId];
-      if (channelTyping) {
-        delete channelTyping[opts.ctx.user.name];
-        ee.emit('isTypingUpdate', channelId, channelTyping);
-      }
-
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const defPost = post!;
-      ee.emit('add', channelId, defPost);
+      await publish({
+        type: 'add',
+        channelId,
+        postId: defPost.id,
+        name: opts.ctx.user.name,
+      });
 
       return post;
     }),
@@ -90,6 +90,7 @@ export const postRouter = router({
       const iterable = ee.toIterable('add', {
         signal: opts.signal,
       });
+      await ensureListening();
 
       // Fetch the last message createdAt based on the last event id
       let lastMessageCreatedAt = await (async () => {
