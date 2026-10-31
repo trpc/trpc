@@ -727,9 +727,9 @@ test('a websocket.upgrade that throws answers 400', async () => {
 
 /**
  * A socket whose peer never answers the close handshake: only its session's
- * end lets go of it. Counts the listeners that do something: since 4.0.6,
- * Effect's `Socket` leaves a no-op `error` listener when it lets go, so a
- * late error stays handled.
+ * end lets go of it. Counts the listeners that do something: Effect's
+ * `Socket` leaves a no-op `error` listener when it lets go, so a late error
+ * stays handled.
  */
 class UnansweredSocket extends StandardSocket {
   listeners = 0;

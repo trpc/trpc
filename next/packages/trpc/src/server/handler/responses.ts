@@ -67,7 +67,7 @@ export const textWebResponse = (text: string, init: ResponseInit): Response => {
 /**
  * `response` as Effect's. A {@link textWebResponse}'s body stays text; any
  * other body is a stream, which the handler waits for until it's read
- * (effect 4.0.6+ only pulls a body as it's read). @internal
+ * (Effect only pulls a body as it's read). @internal
  */
 export const fromWebResponse = (
   response: Response,
