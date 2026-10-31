@@ -5,7 +5,7 @@ import {
 } from '@tanstack/react-query';
 import {
   useSubscription,
-  type inferInfiniteQueryHandle,
+  type unstable_inferInfiniteQueryHandle,
 } from '@trpc/tanstack-react-query';
 import { useTRPC, type TRPC } from '~/lib/trpc';
 import * as React from 'react';
@@ -43,11 +43,11 @@ export function useThrottledIsTypingMutation(channelId: string) {
 
 export function useLivePosts(
   channelId: string,
-  posts: inferInfiniteQueryHandle<TRPC['post']['infinite']>,
+  posts: unstable_inferInfiniteQueryHandle<TRPC['post']['infinite']>,
 ) {
   const trpc = useTRPC();
   const query = useSuspenseInfiniteQuery(
-    trpc.fromHandle(posts, {
+    trpc.unstable_fromHandle(posts, {
       getNextPageParam: (d) => d.nextCursor,
       // No need to refetch as we have a subscription
       refetchOnReconnect: false,

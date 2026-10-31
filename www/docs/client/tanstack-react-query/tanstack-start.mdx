@@ -7,6 +7,10 @@ slug: /client/tanstack-react-query/tanstack-start
 
 This guide shows how to use tRPC with [TanStack Start](https://tanstack.com/start): route loaders start queries, and components read them through [handles](/docs/client/tanstack-react-query/handles).
 
+:::info
+We have prefixed the handle APIs with `unstable_` as they're new, but you're safe to use them! [Read more](/docs/faq#unstable).
+:::
+
 tRPC adds no router integration of its own. Data crosses from the server to the browser through TanStack's [SSR query integration](https://tanstack.com/router/latest/docs/integrations/query), with your tRPC data transformer.
 
 The [SSE chat example](https://github.com/trpc/trpc/tree/main/examples/tanstack-start-sse-chat) is a complete TanStack Start app that uses handles in its loaders.
@@ -118,7 +122,7 @@ Type the root route's context with `createRootRouteWithContext<{ queryClient: Qu
 
 ## 5. Start queries in loaders
 
-Start every query before you await any of them. `ensure` makes the navigation wait for the data; `prefetch` lets it stream in behind a `Suspense` boundary:
+Start every query before you await any of them. `unstable_ensure` makes the navigation wait for the data; `unstable_prefetch` lets it stream in behind a `Suspense` boundary:
 
 ```tsx title='src/routes/posts.$id.tsx'
 import { createFileRoute } from '@tanstack/react-router';
@@ -128,11 +132,11 @@ import { Post } from '~/components/post';
 
 export const Route = createFileRoute('/posts/$id')({
   loader: async ({ context: { trpc }, params }) => {
-    const comments = trpc.post.comments.prefetchInfinite({
+    const comments = trpc.post.comments.unstable_prefetchInfinite({
       postId: params.id,
       limit: 20,
     });
-    const post = await trpc.post.byId.ensure({ id: params.id });
+    const post = await trpc.post.byId.unstable_ensure({ id: params.id });
     return { post, comments };
   },
   component: PostPage,
@@ -153,13 +157,13 @@ function PostPage() {
 
 On the first visit, the loader runs on the server and the data is sent with the page. On later navigations, the loader runs in the browser against the tab's cache: fresh data is reused, and stale data renders at once and refetches.
 
-To show a not-found page, catch the error from `ensure`:
+To show a not-found page, catch the error from `unstable_ensure`:
 
 ```tsx
 import { notFound } from '@tanstack/react-router';
 import { isTRPCClientError } from '@trpc/client';
 
-const post = await trpc.post.byId.ensure({ id }).catch((cause) => {
+const post = await trpc.post.byId.unstable_ensure({ id }).catch((cause) => {
   if (isTRPCClientError(cause) && cause.data?.code === 'NOT_FOUND') {
     throw notFound();
   }
@@ -169,16 +173,16 @@ const post = await trpc.post.byId.ensure({ id }).catch((cause) => {
 
 ## 6. Read handles in components
 
-Components read handles with `fromHandle` from `useTRPC()`. They're the same components you would write for the [Next.js App Router](/docs/client/tanstack-react-query/handles#nextjs-app-router), minus `'use client'`:
+Components read handles with `unstable_fromHandle` from `useTRPC()`. They're the same components you would write for the [Next.js App Router](/docs/client/tanstack-react-query/handles#nextjs-app-router), minus `'use client'`:
 
 ```tsx title='src/components/post.tsx'
 import { useSuspenseQuery } from '@tanstack/react-query';
-import type { inferQueryHandle } from '@trpc/tanstack-react-query';
+import type { unstable_inferQueryHandle } from '@trpc/tanstack-react-query';
 import { useTRPC, type TRPC } from '~/lib/trpc';
 
-export function Post(props: { post: inferQueryHandle<TRPC['post']['byId']> }) {
+export function Post(props: { post: unstable_inferQueryHandle<TRPC['post']['byId']> }) {
   const trpc = useTRPC();
-  const { data: post } = useSuspenseQuery(trpc.fromHandle(props.post));
+  const { data: post } = useSuspenseQuery(trpc.unstable_fromHandle(props.post));
   return <h1>{post.title}</h1>;
 }
 ```
@@ -188,11 +192,11 @@ export function Post(props: { post: inferQueryHandle<TRPC['post']['byId']> }) {
 TanStack Router checks that values returned from `beforeLoad` are serializable, and its check rejects handles because query inputs are typed as `unknown`. Register handles as serializable once:
 
 ```ts title='src/router.tsx'
-import type { AnyTRPCHandle } from '@trpc/tanstack-react-query';
+import type { unstable_AnyTRPCHandle } from '@trpc/tanstack-react-query';
 
 declare module '@tanstack/react-router' {
   interface SerializableExtensions {
-    trpcHandle: AnyTRPCHandle;
+    trpcHandle: unstable_AnyTRPCHandle;
   }
 }
 ```

@@ -526,7 +526,7 @@ export function createTRPCOptionsProxy<
         };
       },
 
-      fromHandle: () => {
+      unstable_fromHandle: () => {
         const handle = readHandle(arg1, prefix);
         const options =
           handle.type === 'infinite'
@@ -552,10 +552,10 @@ export function createTRPCOptionsProxy<
           options,
         );
       },
-      prefetch: () => startQueryHandle('query', false),
-      ensure: () => startQueryHandle('query', true),
-      prefetchInfinite: () => startQueryHandle('infinite', false),
-      ensureInfinite: () => startQueryHandle('infinite', true),
+      unstable_prefetch: () => startQueryHandle('query', false),
+      unstable_ensure: () => startQueryHandle('query', true),
+      unstable_prefetchInfinite: () => startQueryHandle('infinite', false),
+      unstable_ensureInfinite: () => startQueryHandle('infinite', true),
 
       mutationOptions: () => {
         return trpcMutationOptions({
