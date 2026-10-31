@@ -3,5 +3,5 @@
   "compilerOptions": {
     "outDir": "build/server-only"
   },
-  "include": ["src/middleware-factory.ts"]
+  "include": ["src/middleware-factory.ts", "src/server-only-inferred-types.ts"]
 }

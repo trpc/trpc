@@ -6,6 +6,7 @@ on:
       - 'v11/**'
       - '.github/actions/v11-setup/**'
       - '.github/workflows/v11-ci.yml'
+  merge_group:
   push:
     branches: [main, v12]
     paths:
@@ -23,8 +24,8 @@ defaults:
 
 jobs:
   build:
-    # only run on PRs and on v12, which has no PRs
-    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/v12'
+    # only run on PRs, in the merge queue and on v12, which has no PRs
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.ref == 'refs/heads/v12'
     timeout-minutes: 10
     env:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
@@ -41,8 +42,8 @@ jobs:
       - run: pnpm build
 
   typecheck:
-    # only run on PRs and on v12, which has no PRs
-    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/v12'
+    # only run on PRs, in the merge queue and on v12, which has no PRs
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.ref == 'refs/heads/v12'
     timeout-minutes: 10
     env:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
@@ -58,9 +59,29 @@ jobs:
 
       - run: pnpm typecheck-packages
 
+  verify-packed:
+    name: Verify packed packages as a consumer
+    # only run on PRs, in the merge queue and on v12, which has no PRs
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.ref == 'refs/heads/v12'
+    timeout-minutes: 15
+    env:
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/v11-setup
+
+      - run: pnpm build
+      - run: pnpm verify-packed
+
   typecheck-www:
-    # only run on PRs and on v12, which has no PRs
-    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/v12'
+    # only run on PRs, in the merge queue and on v12, which has no PRs
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.ref == 'refs/heads/v12'
     timeout-minutes: 10
     env:
       TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
@@ -114,8 +135,8 @@ jobs:
           token: ${{ github.event.pull_request.head.repo.fork == false && secrets.CODECOV_TOKEN || '' }}
 
   e2e:
-    # only run on PRs and on v12, which has no PRs
-    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/v12'
+    # only run on PRs, in the merge queue and on v12, which has no PRs
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.ref == 'refs/heads/v12'
     name: 'E2E-tests'
     needs: [build]
     services:
@@ -138,7 +159,6 @@ jobs:
       matrix:
         dir: [
             .experimental/next-app-dir,
-            .test/diagnostics-big-router,
             .test/internal-types-export,
             .test/ssg,
             cloudflare-workers,
@@ -174,8 +194,8 @@ jobs:
       - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
 
   e2e-deno:
-    # only run on PRs and on v12, which has no PRs
-    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/v12'
+    # only run on PRs, in the merge queue and on v12, which has no PRs
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.ref == 'refs/heads/v12'
     name: 'E2E-tests (Deno)'
     needs: [build]
     env:
@@ -209,8 +229,8 @@ jobs:
           pnpm dlx start-server-and-test "deno run --allow-net=:8000 --allow-env ./src/index.ts" http://127.0.0.1:8000 "deno run --allow-net --allow-env ./src/client.ts"
 
   e2e-bun:
-    # only run on PRs and on v12, which has no PRs
-    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/v12'
+    # only run on PRs, in the merge queue and on v12, which has no PRs
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.ref == 'refs/heads/v12'
     name: 'E2E-tests (Bun)'
     needs: [build]
     env:
@@ -235,7 +255,7 @@ jobs:
 
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: 1.4.2
+          bun-version: 1.4.4
 
       - run: bun --version
       - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-dev
@@ -244,8 +264,8 @@ jobs:
       - run: pnpm turbo --filter ./examples/${{ matrix.dir }} test-start
 
   e2e-legacy-node:
-    # only run on PRs and on v12, which has no PRs
-    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/v12'
+    # only run on PRs, in the merge queue and on v12, which has no PRs
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group' || github.ref == 'refs/heads/v12'
     needs: [build]
     services:
       postgres:
@@ -293,6 +313,7 @@ jobs:
   # https://pkg.pr.new
   release-tmp:
     name: Release using pkg.pr.new
+    if: github.event_name != 'merge_group'
     needs: [build]
     runs-on: ubuntu-latest
     env:

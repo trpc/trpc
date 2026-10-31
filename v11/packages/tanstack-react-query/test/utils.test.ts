@@ -128,6 +128,19 @@ describe(getQueryKeyInternal, () => {
       ]
     `);
   });
+
+  it('keeps falsy inputs in an "any" key', () => {
+    for (const input of [0, false, '', null]) {
+      expect(
+        getQueryKeyInternal({
+          prefix: undefined,
+          path: ['a', 'b'],
+          input,
+          type: 'any',
+        }),
+      ).toEqual([['a', 'b'], { input }]);
+    }
+  });
 });
 
 describe(readQueryKey, () => {

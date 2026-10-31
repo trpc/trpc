@@ -7,6 +7,7 @@ on:
       - 'v11/**'
       - '.github/actions/v11-setup/**'
       - '.github/workflows/v11-lint.yml'
+  merge_group:
   push:
     branches: [v12]
     paths:
@@ -56,7 +57,7 @@ jobs:
           commit-message: 'chore: apply lint and formatting fixes'
           fail-fast: false
 
-      # autofix.ci only commits to PRs, so on a push any fix means failure
+      # autofix.ci only commits to PRs, so on a push or in the merge queue any fix means failure
       - name: Ensure no autofixes are needed
-        if: ${{ github.event_name == 'push' && (failure() || success()) }}
+        if: ${{ (github.event_name == 'push' || github.event_name == 'merge_group') && (failure() || success()) }}
         run: git diff --exit-code

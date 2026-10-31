@@ -85,6 +85,8 @@ export type Lazy<TAny> = (() => Promise<TAny>) & { [lazyMarker]: true };
 type LazyLoader<TAny> = {
   load: () => Promise<void>;
   ref: Lazy<TAny>;
+  path: readonly string[];
+  key: string;
 };
 
 function once<T>(fn: () => T): () => T {
@@ -243,6 +245,26 @@ export type DecorateCreateRouterOptions<
     : never;
 };
 
+function getRouterInput(router: AnyRouter) {
+  const input = Object.assign(
+    emptyObject<CreateRouterOptions>(),
+    router._def.record,
+  );
+
+  for (const loader of Object.values(router._def.lazy)) {
+    let record = input;
+    for (const key of loader.path) {
+      record = record[key] = Object.assign(
+        emptyObject<CreateRouterOptions>(),
+        record[key],
+      );
+    }
+    record[loader.key] = loader.ref;
+  }
+
+  return input;
+}
+
 /**
  * @internal
  */
@@ -273,29 +295,16 @@ export function createRouterFactory<TRoot extends AnyRootTypes>(
     }): LazyLoader<AnyRouter> {
       return {
         ref: opts.ref,
+        path: opts.path,
+        key: opts.key,
         load: once(async () => {
           const router = await opts.ref();
           const lazyPath = [...opts.path, opts.key];
           const lazyKey = lazyPath.join('.');
 
-          opts.aggregate[opts.key] = step(router._def.record, lazyPath);
+          opts.aggregate[opts.key] = step(getRouterInput(router), lazyPath);
 
           delete lazy[lazyKey];
-
-          // add lazy loaders for nested routers
-          for (const [nestedKey, nestedItem] of Object.entries(
-            router._def.lazy,
-          )) {
-            const nestedRouterKey = [...lazyPath, nestedKey].join('.');
-
-            // console.log('adding lazy', nestedRouterKey);
-            lazy[nestedRouterKey] = createLazyLoader({
-              ref: nestedItem.ref,
-              path: lazyPath,
-              key: nestedKey,
-              aggregate: opts.aggregate[opts.key] as RouterRecord,
-            });
-          }
         }),
       };
     }
@@ -313,7 +322,7 @@ export function createRouterFactory<TRoot extends AnyRootTypes>(
           continue;
         }
         if (isRouter(item)) {
-          aggregate[key] = step(item._def.record, [...path, key]);
+          aggregate[key] = step(getRouterInput(item), [...path, key]);
           continue;
         }
         if (!isProcedure(item)) {
@@ -511,7 +520,7 @@ export function mergeRouters<TRouters extends AnyRouter[]>(
 ): MergeRouters<TRouters> {
   const record = mergeWithoutOverrides(
     {},
-    ...routerList.map((r) => r._def.record),
+    ...[...new Set(routerList)].map((r) => getRouterInput(r)),
   );
   const errorFormatter = routerList.reduce(
     (currentErrorFormatter, nextRouter) => {

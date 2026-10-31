@@ -128,7 +128,7 @@ export function ConceptsChart() {
         </tr>
         <tr>
           <td>
-            <a href="/docs/server/procedures#input-validation">
+            <a href="/docs/server/validators">
               <strong className="text-blue-600 dark:text-blue-400">
                 Validation&nbsp;↗
               </strong>

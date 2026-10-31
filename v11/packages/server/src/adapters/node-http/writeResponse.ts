@@ -22,9 +22,11 @@ async function writeResponseBodyChunk(
       const cleanup = () => {
         res.off('error', onError);
         res.off('drain', onDrain);
+        res.off('close', onDrain);
       };
       res.once('error', onError);
       res.once('drain', onDrain);
+      res.once('close', onDrain);
     });
   }
 }

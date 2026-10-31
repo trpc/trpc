@@ -191,6 +191,10 @@ export interface UseTRPCSubscriptionOptions<TOutput, TError> {
    * Called when the subscription is completed on the server
    */
   onComplete?: () => void;
+  /**
+   * tRPC-related options
+   */
+  trpc?: Pick<TRPCRequestOptions, 'context'>;
 }
 
 export interface TRPCSubscriptionBaseResult<TOutput, TError> {

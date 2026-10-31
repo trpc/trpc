@@ -65,12 +65,18 @@ export interface SSEStreamProducerOptions<TValue = unknown> {
    * @default {}
    */
   client?: SSEClientOptions;
+  /**
+   * The last event id the client sent when (re)connecting
+   * @default undefined
+   */
+  lastEventId?: string | null;
 }
 
 const PING_EVENT = 'ping';
 const SERIALIZED_ERROR_EVENT = 'serialized-error';
 const CONNECTED_EVENT = 'connected';
 const RETURN_EVENT = 'return';
+const RESTORE_ID_EVENT = 'restore-id';
 
 interface SSEvent {
   id?: string;
@@ -130,6 +136,13 @@ export function sseStreamProducer<TValue = unknown>(
     let result: null | IteratorResult<TValue | typeof PING_SYM>;
     let chunk: null | SSEvent;
 
+    // The id the client's EventSource holds and sends when it reconnects.
+    // An id with these characters can't be sent back in an `id` field
+    let lastEventId =
+      opts.lastEventId && !/[\0\n\r]/.test(opts.lastEventId)
+        ? opts.lastEventId
+        : null;
+
     while (true) {
       result = await iterator.next();
       if (result.done) {
@@ -149,7 +162,19 @@ export function sseStreamProducer<TValue = unknown>(
 
       chunk.data = JSON.stringify(serialize(chunk.data));
 
-      yield chunk;
+      if (chunk.id !== undefined) {
+        lastEventId = chunk.id;
+        yield chunk;
+      } else if (lastEventId === null) {
+        yield chunk;
+      } else {
+        // EventSource gives an event without an `id` the last id it received,
+        // so clear the id for this event and then set it back with an event
+        // that clients don't listen to, so reconnecting still resumes from it
+        chunk.id = '';
+        yield chunk;
+        yield { event: RESTORE_ID_EVENT, data: '', id: lastEventId };
+      }
 
       // free up references for garbage collection
       chunk = null;

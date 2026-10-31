@@ -26,3 +26,6 @@ runs:
     - run: pnpm install
       shell: bash
       working-directory: v11
+      env:
+        # `playwright@1.28.1` (via `konn`) downloads browsers on install; e2e uses the runner's Chrome
+        PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: '1'
