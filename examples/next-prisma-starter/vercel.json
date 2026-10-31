@@ -5,7 +5,6 @@
   "fluid": true,
   "installCommand": "cd ../.. && pnpm install",
   "buildCommand": "cd ../.. && pnpm turbo --filter=./examples/next-prisma-starter build",
-  "ignoreCommand": "pnpm dlx turbo-ignore",
   "github": {
     "silent": true
   }
