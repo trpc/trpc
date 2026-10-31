@@ -33,12 +33,12 @@ import { experimental_openapi } from '@trpc12/trpc/openapi';
 // ---cut-end---
 // src/petstore.ts (generated)
 export const Pet = Schema.Struct({
-  id: Schema.Number.check(Schema.isInt()),
+  id: Schema.Int,
   name: Schema.String,
 });
 // ---cut-start---
 export const PetsListInput = Schema.Struct({
-  limit: Schema.optionalKey(Schema.Number.check(Schema.isInt())),
+  limit: Schema.optionalKey(Schema.Int),
 });
 export const PetsListOutput = Schema.Array(Pet);
 // ---cut-end---

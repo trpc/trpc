@@ -4,8 +4,8 @@ import { experimental_contract as trpcContract } from '@trpc12/trpc/contract';
 import { experimental_openapi } from '@trpc12/trpc/openapi';
 
 export type Issue = { readonly "id": number, readonly "title": string }
-export const Issue = Schema.Struct({ "id": Schema.Number.check(Schema.isInt().annotate({ "expected": "an integer" })), "title": Schema.String }).annotate({ "identifier": "Issue" })
-export const IssuesListInput = Schema.Struct({ "params": Schema.Struct({ "owner": Schema.String }), "query": Schema.optionalKey(Schema.Struct({ "per_page": Schema.optionalKey(Schema.Number.check(Schema.isInt().annotate({ "expected": "an integer" }))) })), "headers": Schema.Struct({ "x-api-version": Schema.String }) })
+export const Issue = Schema.Struct({ "id": Schema.Int, "title": Schema.String }).annotate({ "identifier": "Issue" })
+export const IssuesListInput = Schema.Struct({ "params": Schema.Struct({ "owner": Schema.String }), "query": Schema.optionalKey(Schema.Struct({ "per_page": Schema.optionalKey(Schema.Int) })), "headers": Schema.Struct({ "x-api-version": Schema.String }) })
 export const IssuesListOutput = Schema.Array(Issue)
 export const IssuesCreateInput = Schema.Struct({ "owner": Schema.String, "title": Schema.String })
 export const IssuesCreateOutput = Issue

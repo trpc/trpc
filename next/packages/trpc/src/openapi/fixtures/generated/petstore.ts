@@ -4,14 +4,14 @@ import { experimental_contract as trpcContract } from '@trpc12/trpc/contract';
 import { experimental_openapi } from '@trpc12/trpc/openapi';
 
 export type Pet = { readonly "name": string, readonly "tag"?: string | null, readonly "id": number } & { readonly [x: string]: Schema.Json }
-export const Pet = Schema.StructWithRest(Schema.Struct({ "name": Schema.String, "tag": Schema.optionalKey(Schema.Union([Schema.String, Schema.Null])), "id": Schema.Number.check(Schema.isInt().annotate({ "expected": "an integer" })) }), [Schema.Record(Schema.String, Schema.Json.annotate({ "expected": "JSON value" }))]).annotate({ "identifier": "Pet" })
+export const Pet = Schema.StructWithRest(Schema.Struct({ "name": Schema.String, "tag": Schema.optionalKey(Schema.Union([Schema.String, Schema.Null])), "id": Schema.Int }), [Schema.Record(Schema.String, Schema.Json.annotate({ "expected": "JSON value" }))]).annotate({ "identifier": "Pet" })
 export type NewPet = { readonly "name": string, readonly "tag"?: string | null } & { readonly [x: string]: Schema.Json }
 export const NewPet = Schema.StructWithRest(Schema.Struct({ "name": Schema.String, "tag": Schema.optionalKey(Schema.Union([Schema.String, Schema.Null])) }), [Schema.Record(Schema.String, Schema.Json.annotate({ "expected": "JSON value" }))]).annotate({ "identifier": "NewPet" })
-export const PetsListInput = Schema.Struct({ "limit": Schema.optionalKey(Schema.Number.check(Schema.isInt().annotate({ "expected": "an integer" }))), "status": Schema.Literals(["available", "sold"]) })
+export const PetsListInput = Schema.Struct({ "limit": Schema.optionalKey(Schema.Int), "status": Schema.Literals(["available", "sold"]) })
 export const PetsListOutput = Schema.Array(Pet)
 export const PetsAddInput = NewPet
 export const PetsAddOutput = Pet
-export const DeletePetsPetIdInput = Schema.Struct({ "petId": Schema.Number.check(Schema.isInt().annotate({ "expected": "an integer" })) })
+export const DeletePetsPetIdInput = Schema.Struct({ "petId": Schema.Int })
 
 const c = trpcContract.create().concat(experimental_openapi());
 
