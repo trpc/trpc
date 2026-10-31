@@ -38,7 +38,7 @@
     "@tooling/tsconfig": "workspace:*",
     "@trpc12/trpc": "workspace:*",
     "@types/node": "^26.0.0",
-    "effect": "4.0.2",
+    "effect": "4.1.1",
     "happy-dom": "20.14.6",
     "svelte": "5.57.2",
     "typescript": "7.1.0-beta",

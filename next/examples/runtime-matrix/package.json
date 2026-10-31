@@ -21,10 +21,10 @@
     "deploy": "wrangler deploy"
   },
   "dependencies": {
-    "@effect/platform-bun": "4.0.2",
-    "@effect/platform-node": "4.0.2",
+    "@effect/platform-bun": "4.1.1",
+    "@effect/platform-node": "4.1.1",
     "@trpc12/trpc": "workspace:*",
-    "effect": "4.0.2",
+    "effect": "4.1.1",
     "zod": "4.6.5"
   },
   "devDependencies": {

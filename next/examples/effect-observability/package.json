@@ -10,8 +10,8 @@
     "smoke": "pnpm start"
   },
   "dependencies": {
-    "@effect/opentelemetry": "4.0.2",
-    "@effect/platform-node": "4.0.2",
+    "@effect/opentelemetry": "4.1.1",
+    "@effect/platform-node": "4.1.1",
     "@opentelemetry/api": "1.9.1",
     "@opentelemetry/api-logs": "0.223.0",
     "@opentelemetry/resources": "2.12.0",
@@ -21,10 +21,10 @@
     "@opentelemetry/sdk-trace-node": "2.12.0",
     "@opentelemetry/semantic-conventions": "1.43.0",
     "@trpc12/trpc": "workspace:*",
-    "effect": "4.0.2"
+    "effect": "4.1.1"
   },
   "devDependencies": {
-    "@effect/vitest": "4.0.2",
+    "@effect/vitest": "4.1.1",
     "@types/node": "^26.0.0",
     "typescript": "7.1.0-beta",
     "vite-plus": "1.1.0"

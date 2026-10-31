@@ -202,8 +202,8 @@ importers:
         specifier: workspace:*
         version: link:../../packages/trpc
       effect:
-        specifier: 4.0.2
-        version: 4.0.2
+        specifier: 4.1.1
+        version: 4.1.1
       zod:
         specifier: 4.6.5
         version: 4.6.5
@@ -224,14 +224,14 @@ importers:
   examples/effect:
     dependencies:
       '@effect/platform-node':
-        specifier: 4.0.2
-        version: 4.0.2(effect@4.0.2)(redis@6.3.0(@opentelemetry/api@1.9.1))
+        specifier: 4.1.1
+        version: 4.1.1(effect@4.1.1)(redis@6.3.0(@opentelemetry/api@1.9.1))
       '@trpc12/trpc':
         specifier: workspace:*
         version: link:../../packages/trpc
       effect:
-        specifier: 4.0.2
-        version: 4.0.2
+        specifier: 4.1.1
+        version: 4.1.1
     devDependencies:
       '@types/node':
         specifier: ^26.0.0
@@ -243,11 +243,11 @@ importers:
   examples/effect-observability:
     dependencies:
       '@effect/opentelemetry':
-        specifier: 4.0.2
-        version: 4.0.2(@opentelemetry/api-logs@0.223.0)(@opentelemetry/api@1.9.1)(@opentelemetry/resources@2.12.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-logs@0.223.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-metrics@2.12.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@2.12.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-node@2.12.0(@opentelemetry/api@1.9.1))(@opentelemetry/semantic-conventions@1.43.0)(effect@4.0.2)
+        specifier: 4.1.1
+        version: 4.1.1(@opentelemetry/api-logs@0.223.0)(@opentelemetry/api@1.9.1)(@opentelemetry/resources@2.12.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-logs@0.223.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-metrics@2.12.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@2.12.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-node@2.12.0(@opentelemetry/api@1.9.1))(@opentelemetry/semantic-conventions@1.43.0)(effect@4.1.1)
       '@effect/platform-node':
-        specifier: 4.0.2
-        version: 4.0.2(effect@4.0.2)(redis@6.3.0(@opentelemetry/api@1.9.1))
+        specifier: 4.1.1
+        version: 4.1.1(effect@4.1.1)(redis@6.3.0(@opentelemetry/api@1.9.1))
       '@opentelemetry/api':
         specifier: 1.9.1
         version: 1.9.1
@@ -276,12 +276,12 @@ importers:
         specifier: workspace:*
         version: link:../../packages/trpc
       effect:
-        specifier: 4.0.2
-        version: 4.0.2
+        specifier: 4.1.1
+        version: 4.1.1
     devDependencies:
       '@effect/vitest':
-        specifier: 4.0.2
-        version: 4.0.2(effect@4.0.2)(vitest@5.0.3)
+        specifier: 4.1.1
+        version: 4.1.1(effect@4.1.1)(vitest@5.0.3)
       '@types/node':
         specifier: ^26.0.0
         version: 26.6.4
@@ -295,14 +295,14 @@ importers:
   examples/experimental/durable-jobs:
     dependencies:
       '@effect/platform-node':
-        specifier: 4.0.2
-        version: 4.0.2(effect@4.0.2)(redis@6.3.0(@opentelemetry/api@1.9.1))
+        specifier: 4.1.1
+        version: 4.1.1(effect@4.1.1)(redis@6.3.0(@opentelemetry/api@1.9.1))
       '@trpc12/trpc':
         specifier: workspace:*
         version: link:../../../packages/trpc
       effect:
-        specifier: 4.0.2
-        version: 4.0.2
+        specifier: 4.1.1
+        version: 4.1.1
       zod:
         specifier: 4.6.5
         version: 4.6.5
@@ -317,8 +317,8 @@ importers:
   examples/experimental/framework-matrix:
     dependencies:
       '@effect/platform-node':
-        specifier: 4.0.2
-        version: 4.0.2(effect@4.0.2)(redis@6.3.0(@opentelemetry/api@1.9.1))
+        specifier: 4.1.1
+        version: 4.1.1(effect@4.1.1)(redis@6.3.0(@opentelemetry/api@1.9.1))
       '@shared/ui':
         specifier: workspace:*
         version: link:../../../shared/ui
@@ -344,8 +344,8 @@ importers:
         specifier: workspace:*
         version: link:../../../packages/trpc
       effect:
-        specifier: 4.0.2
-        version: 4.0.2
+        specifier: 4.1.1
+        version: 4.1.1
       solid-js:
         specifier: 1.9.17
         version: 1.9.17
@@ -387,8 +387,8 @@ importers:
   examples/experimental/mcp:
     dependencies:
       '@effect/platform-node':
-        specifier: 4.0.2
-        version: 4.0.2(effect@4.0.2)(redis@6.3.0(@opentelemetry/api@1.9.1))
+        specifier: 4.1.1
+        version: 4.1.1(effect@4.1.1)(redis@6.3.0(@opentelemetry/api@1.9.1))
       '@modelcontextprotocol/sdk':
         specifier: 1.32.1
         version: 1.32.1(supports-color@10.2.2)(zod@4.6.5)
@@ -396,8 +396,8 @@ importers:
         specifier: workspace:*
         version: link:../../../packages/trpc
       effect:
-        specifier: 4.0.2
-        version: 4.0.2
+        specifier: 4.1.1
+        version: 4.1.1
       zod:
         specifier: 4.6.5
         version: 4.6.5
@@ -412,8 +412,8 @@ importers:
   examples/experimental/nest:
     dependencies:
       '@effect/platform-node':
-        specifier: 4.0.2
-        version: 4.0.2(effect@4.0.2)(redis@6.3.0(@opentelemetry/api@1.9.1))
+        specifier: 4.1.1
+        version: 4.1.1(effect@4.1.1)(redis@6.3.0(@opentelemetry/api@1.9.1))
       '@nestjs/common':
         specifier: 12.1.3
         version: 12.1.3(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@10.2.2)
@@ -430,8 +430,8 @@ importers:
         specifier: workspace:*
         version: link:../../../packages/trpc
       effect:
-        specifier: 4.0.2
-        version: 4.0.2
+        specifier: 4.1.1
+        version: 4.1.1
       reflect-metadata:
         specifier: 0.2.2
         version: 0.2.2
@@ -455,14 +455,14 @@ importers:
   examples/experimental/openapi:
     dependencies:
       '@effect/platform-node':
-        specifier: 4.0.2
-        version: 4.0.2(effect@4.0.2)(redis@6.3.0(@opentelemetry/api@1.9.1))
+        specifier: 4.1.1
+        version: 4.1.1(effect@4.1.1)(redis@6.3.0(@opentelemetry/api@1.9.1))
       '@trpc12/trpc':
         specifier: workspace:*
         version: link:../../../packages/trpc
       effect:
-        specifier: 4.0.2
-        version: 4.0.2
+        specifier: 4.1.1
+        version: 4.1.1
       zod:
         specifier: 4.6.5
         version: 4.6.5
@@ -477,8 +477,8 @@ importers:
   examples/experimental/react-atom:
     dependencies:
       '@effect/atom-react':
-        specifier: 4.0.2
-        version: 4.0.2(effect@4.0.2)(react@19.3.0)(scheduler@0.27.0)
+        specifier: 4.1.1
+        version: 4.1.1(effect@4.1.1)(react@19.3.0)(scheduler@0.28.0)
       '@shared/ui':
         specifier: workspace:*
         version: link:../../../shared/ui
@@ -495,8 +495,8 @@ importers:
         specifier: workspace:*
         version: link:../../../packages/trpc
       effect:
-        specifier: 4.0.2
-        version: 4.0.2
+        specifier: 4.1.1
+        version: 4.1.1
       react:
         specifier: 19.3.0
         version: 19.3.0
@@ -553,8 +553,8 @@ importers:
         specifier: workspace:*
         version: link:../../../packages/trpc
       effect:
-        specifier: 4.0.2
-        version: 4.0.2
+        specifier: 4.1.1
+        version: 4.1.1
       react:
         specifier: 19.3.0
         version: 19.3.0
@@ -599,8 +599,8 @@ importers:
         specifier: workspace:*
         version: link:../../../packages/trpc
       effect:
-        specifier: 4.0.2
-        version: 4.0.2
+        specifier: 4.1.1
+        version: 4.1.1
       zod:
         specifier: 4.6.5
         version: 4.6.5
@@ -615,14 +615,14 @@ importers:
   examples/media-pipeline:
     dependencies:
       '@effect/platform-node':
-        specifier: 4.0.2
-        version: 4.0.2(effect@4.0.2)(redis@6.3.0(@opentelemetry/api@1.9.1))
+        specifier: 4.1.1
+        version: 4.1.1(effect@4.1.1)(redis@6.3.0(@opentelemetry/api@1.9.1))
       '@trpc12/trpc':
         specifier: workspace:*
         version: link:../../packages/trpc
       effect:
-        specifier: 4.0.2
-        version: 4.0.2
+        specifier: 4.1.1
+        version: 4.1.1
       superjson:
         specifier: 2.2.6
         version: 2.2.6
@@ -637,14 +637,14 @@ importers:
   examples/minimal:
     dependencies:
       '@effect/platform-node':
-        specifier: 4.0.2
-        version: 4.0.2(effect@4.0.2)(redis@6.3.0(@opentelemetry/api@1.9.1))
+        specifier: 4.1.1
+        version: 4.1.1(effect@4.1.1)(redis@6.3.0(@opentelemetry/api@1.9.1))
       '@trpc12/trpc':
         specifier: workspace:*
         version: link:../../packages/trpc
       effect:
-        specifier: 4.0.2
-        version: 4.0.2
+        specifier: 4.1.1
+        version: 4.1.1
       zod:
         specifier: 4.6.5
         version: 4.6.5
@@ -684,8 +684,8 @@ importers:
         specifier: workspace:*
         version: link:../../../../packages/trpc
       effect:
-        specifier: 4.0.2
-        version: 4.0.2
+        specifier: 4.1.1
+        version: 4.1.1
     devDependencies:
       '@types/node':
         specifier: ^26.0.0
@@ -697,8 +697,8 @@ importers:
         specifier: workspace:*
         version: link:../../../../packages/trpc
       effect:
-        specifier: 4.0.2
-        version: 4.0.2
+        specifier: 4.1.1
+        version: 4.1.1
     devDependencies:
       '@acme/api':
         specifier: workspace:*
@@ -777,14 +777,14 @@ importers:
         specifier: workspace:*
         version: link:../api
       '@effect/platform-node':
-        specifier: 4.0.2
-        version: 4.0.2(effect@4.0.2)(redis@6.3.0(@opentelemetry/api@1.9.1))
+        specifier: 4.1.1
+        version: 4.1.1(effect@4.1.1)(redis@6.3.0(@opentelemetry/api@1.9.1))
       '@trpc12/trpc':
         specifier: workspace:*
         version: link:../../../../packages/trpc
       effect:
-        specifier: 4.0.2
-        version: 4.0.2
+        specifier: 4.1.1
+        version: 4.1.1
     devDependencies:
       '@types/node':
         specifier: ^26.0.0
@@ -796,8 +796,8 @@ importers:
         specifier: workspace:*
         version: link:../../../../packages/trpc
       effect:
-        specifier: 4.0.2
-        version: 4.0.2
+        specifier: 4.1.1
+        version: 4.1.1
     devDependencies:
       '@types/node':
         specifier: ^26.0.0
@@ -834,8 +834,8 @@ importers:
         specifier: workspace:*
         version: link:../../packages/trpc
       effect:
-        specifier: 4.0.2
-        version: 4.0.2
+        specifier: 4.1.1
+        version: 4.1.1
       next:
         specifier: 16.4.1
         version: 16.4.1(@babel/core@7.29.7(supports-color@10.2.2))(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
@@ -877,8 +877,8 @@ importers:
   examples/react-spa:
     dependencies:
       '@effect/platform-node':
-        specifier: 4.0.2
-        version: 4.0.2(effect@4.0.2)(redis@6.3.0(@opentelemetry/api@1.9.1))
+        specifier: 4.1.1
+        version: 4.1.1(effect@4.1.1)(redis@6.3.0(@opentelemetry/api@1.9.1))
       '@shared/ui':
         specifier: workspace:*
         version: link:../../shared/ui
@@ -898,8 +898,8 @@ importers:
         specifier: workspace:*
         version: link:../../packages/trpc
       effect:
-        specifier: 4.0.2
-        version: 4.0.2
+        specifier: 4.1.1
+        version: 4.1.1
       lucide-react:
         specifier: 1.55.0
         version: 1.55.0(@types/react@19.3.0)(react@19.3.0)
@@ -944,17 +944,17 @@ importers:
   examples/realtime:
     dependencies:
       '@effect/platform-node':
-        specifier: 4.0.2
-        version: 4.0.2(effect@4.0.2)(redis@6.3.0(@opentelemetry/api@1.9.1))
+        specifier: 4.1.1
+        version: 4.1.1(effect@4.1.1)(redis@6.3.0(@opentelemetry/api@1.9.1))
       '@effect/sql-pg':
-        specifier: 4.0.2
-        version: 4.0.2(effect@4.0.2)
+        specifier: 4.1.1
+        version: 4.1.1(effect@4.1.1)
       '@trpc12/trpc':
         specifier: workspace:*
         version: link:../../packages/trpc
       effect:
-        specifier: 4.0.2
-        version: 4.0.2
+        specifier: 4.1.1
+        version: 4.1.1
       zod:
         specifier: 4.6.5
         version: 4.6.5
@@ -969,17 +969,17 @@ importers:
   examples/runtime-matrix:
     dependencies:
       '@effect/platform-bun':
-        specifier: 4.0.2
-        version: 4.0.2(effect@4.0.2)
+        specifier: 4.1.1
+        version: 4.1.1(effect@4.1.1)
       '@effect/platform-node':
-        specifier: 4.0.2
-        version: 4.0.2(effect@4.0.2)(redis@6.3.0(@opentelemetry/api@1.9.1))
+        specifier: 4.1.1
+        version: 4.1.1(effect@4.1.1)(redis@6.3.0(@opentelemetry/api@1.9.1))
       '@trpc12/trpc':
         specifier: workspace:*
         version: link:../../packages/trpc
       effect:
-        specifier: 4.0.2
-        version: 4.0.2
+        specifier: 4.1.1
+        version: 4.1.1
       zod:
         specifier: 4.6.5
         version: 4.6.5
@@ -1003,14 +1003,14 @@ importers:
   examples/saas-api:
     dependencies:
       '@effect/platform-node':
-        specifier: 4.0.2
-        version: 4.0.2(effect@4.0.2)(redis@6.3.0(@opentelemetry/api@1.9.1))
+        specifier: 4.1.1
+        version: 4.1.1(effect@4.1.1)(redis@6.3.0(@opentelemetry/api@1.9.1))
       '@trpc12/trpc':
         specifier: workspace:*
         version: link:../../packages/trpc
       effect:
-        specifier: 4.0.2
-        version: 4.0.2
+        specifier: 4.1.1
+        version: 4.1.1
       express:
         specifier: 5.2.1
         version: 5.2.1(supports-color@10.2.2)
@@ -1037,8 +1037,8 @@ importers:
   examples/v11-migration:
     dependencies:
       '@effect/platform-node':
-        specifier: 4.0.2
-        version: 4.0.2(effect@4.0.2)(redis@6.3.0(@opentelemetry/api@1.9.1))
+        specifier: 4.1.1
+        version: 4.1.1(effect@4.1.1)(redis@6.3.0(@opentelemetry/api@1.9.1))
       '@tanstack/react-query':
         specifier: 5.104.1
         version: 5.104.1(react@19.3.0)
@@ -1061,8 +1061,8 @@ importers:
         specifier: workspace:*
         version: link:../../packages/upgrade
       effect:
-        specifier: 4.0.2
-        version: 4.0.2
+        specifier: 4.1.1
+        version: 4.1.1
       eventsource:
         specifier: 3.0.7
         version: 3.0.7
@@ -1089,8 +1089,8 @@ importers:
   packages/experimental-nest:
     devDependencies:
       '@effect/platform-node':
-        specifier: ^4.0.2
-        version: 4.0.2(effect@4.0.2)(redis@6.3.0(@opentelemetry/api@1.9.1))
+        specifier: ^4.1.1
+        version: 4.1.1(effect@4.1.1)(redis@6.3.0(@opentelemetry/api@1.9.1))
       '@nestjs/common':
         specifier: ^12.1.3
         version: 12.1.3(reflect-metadata@0.2.2)(rxjs@7.8.2)(supports-color@10.2.2)
@@ -1110,8 +1110,8 @@ importers:
         specifier: ^26.0.0
         version: 26.6.4
       effect:
-        specifier: ^4.0.2
-        version: 4.0.2
+        specifier: ^4.1.1
+        version: 4.1.1
       reflect-metadata:
         specifier: 0.2.2
         version: 0.2.2
@@ -1143,8 +1143,8 @@ importers:
         specifier: 19.3.0
         version: 19.3.0(@types/react@19.3.0)
       effect:
-        specifier: 4.0.2
-        version: 4.0.2
+        specifier: 4.1.1
+        version: 4.1.1
       happy-dom:
         specifier: 20.14.6
         version: 20.14.6
@@ -1164,8 +1164,8 @@ importers:
   packages/experimental-react-atom:
     devDependencies:
       '@effect/atom-react':
-        specifier: 4.0.2
-        version: 4.0.2(effect@4.0.2)(react@19.3.0)(scheduler@0.27.0)
+        specifier: 4.1.1
+        version: 4.1.1(effect@4.1.1)(react@19.3.0)(scheduler@0.28.0)
       '@tooling/tsconfig':
         specifier: workspace:*
         version: link:../../tooling/tsconfig
@@ -1182,8 +1182,8 @@ importers:
         specifier: 19.3.0
         version: 19.3.0(@types/react@19.3.0)
       effect:
-        specifier: 4.0.2
-        version: 4.0.2
+        specifier: 4.1.1
+        version: 4.1.1
       happy-dom:
         specifier: 20.14.6
         version: 20.14.6
@@ -1237,8 +1237,8 @@ importers:
         specifier: ^26.0.0
         version: 26.6.4
       effect:
-        specifier: 4.0.2
-        version: 4.0.2
+        specifier: 4.1.1
+        version: 4.1.1
       happy-dom:
         specifier: 20.14.6
         version: 20.14.6
@@ -1255,8 +1255,8 @@ importers:
   packages/experimental-tanstack-db:
     devDependencies:
       '@effect/platform-node':
-        specifier: 4.0.2
-        version: 4.0.2(effect@4.0.2)(redis@6.3.0(@opentelemetry/api@1.9.1))
+        specifier: 4.1.1
+        version: 4.1.1(effect@4.1.1)(redis@6.3.0(@opentelemetry/api@1.9.1))
       '@tanstack/db':
         specifier: 0.15.0
         version: 0.15.0(typescript@7.1.0-beta)
@@ -1270,8 +1270,8 @@ importers:
         specifier: ^26.0.0
         version: 26.6.4
       effect:
-        specifier: 4.0.2
-        version: 4.0.2
+        specifier: 4.1.1
+        version: 4.1.1
       typescript:
         specifier: 7.1.0-beta
         version: 7.1.0-beta
@@ -1307,8 +1307,8 @@ importers:
         specifier: ^26.0.0
         version: 26.6.4
       effect:
-        specifier: 4.0.2
-        version: 4.0.2
+        specifier: 4.1.1
+        version: 4.1.1
       happy-dom:
         specifier: 20.14.6
         version: 20.14.6
@@ -1344,8 +1344,8 @@ importers:
         specifier: ^26.0.0
         version: 26.6.4
       effect:
-        specifier: 4.0.2
-        version: 4.0.2
+        specifier: 4.1.1
+        version: 4.1.1
       happy-dom:
         specifier: 20.14.6
         version: 20.14.6
@@ -1381,8 +1381,8 @@ importers:
         specifier: ^26.0.0
         version: 26.6.4
       effect:
-        specifier: 4.0.2
-        version: 4.0.2
+        specifier: 4.1.1
+        version: 4.1.1
       happy-dom:
         specifier: 20.14.6
         version: 20.14.6
@@ -1418,8 +1418,8 @@ importers:
         specifier: ^26.0.0
         version: 26.6.4
       effect:
-        specifier: 4.0.2
-        version: 4.0.2
+        specifier: 4.1.1
+        version: 4.1.1
       happy-dom:
         specifier: 20.14.6
         version: 20.14.6
@@ -1455,8 +1455,8 @@ importers:
         specifier: ^26.0.0
         version: 26.6.4
       effect:
-        specifier: 4.0.2
-        version: 4.0.2
+        specifier: 4.1.1
+        version: 4.1.1
       happy-dom:
         specifier: 20.14.6
         version: 20.14.6
@@ -1473,8 +1473,8 @@ importers:
   packages/tanstack-query:
     devDependencies:
       '@effect/platform-node':
-        specifier: 4.0.2
-        version: 4.0.2(effect@4.0.2)(redis@6.3.0(@opentelemetry/api@1.9.1))
+        specifier: 4.1.1
+        version: 4.1.1(effect@4.1.1)(redis@6.3.0(@opentelemetry/api@1.9.1))
       '@tanstack/db':
         specifier: 0.15.0
         version: 0.15.0(typescript@7.1.0-beta)
@@ -1494,8 +1494,8 @@ importers:
         specifier: ^26.0.0
         version: 26.6.4
       effect:
-        specifier: 4.0.2
-        version: 4.0.2
+        specifier: 4.1.1
+        version: 4.1.1
       superjson:
         specifier: 2.2.6
         version: 2.2.6
@@ -1537,8 +1537,8 @@ importers:
         specifier: 19.3.0
         version: 19.3.0(@types/react@19.3.0)
       effect:
-        specifier: 4.0.2
-        version: 4.0.2
+        specifier: 4.1.1
+        version: 4.1.1
       happy-dom:
         specifier: 20.14.6
         version: 20.14.6
@@ -1558,14 +1558,14 @@ importers:
   packages/trpc:
     devDependencies:
       '@effect/platform-bun':
-        specifier: 4.0.2
-        version: 4.0.2(effect@4.0.2)
+        specifier: 4.1.1
+        version: 4.1.1(effect@4.1.1)
       '@effect/platform-node':
-        specifier: 4.0.2
-        version: 4.0.2(effect@4.0.2)(redis@6.3.0(@opentelemetry/api@1.9.1))
+        specifier: 4.1.1
+        version: 4.1.1(effect@4.1.1)(redis@6.3.0(@opentelemetry/api@1.9.1))
       '@effect/vitest':
-        specifier: 4.0.2
-        version: 4.0.2(effect@4.0.2)(vitest@5.0.3)
+        specifier: 4.1.1
+        version: 4.1.1(effect@4.1.1)(vitest@5.0.3)
       '@modelcontextprotocol/sdk':
         specifier: 1.32.1
         version: 1.32.1(supports-color@10.2.2)(zod@4.6.5)
@@ -1594,8 +1594,8 @@ importers:
         specifier: 5.9.4
         version: 5.9.4
       effect:
-        specifier: 4.0.2
-        version: 4.0.2
+        specifier: 4.1.1
+        version: 4.1.1
       happy-dom:
         specifier: 20.14.6
         version: 20.14.6
@@ -1732,8 +1732,8 @@ importers:
         version: link:../packages/trpc
     devDependencies:
       '@effect/platform-node':
-        specifier: 4.0.2
-        version: 4.0.2(effect@4.0.2)(redis@6.3.0(@opentelemetry/api@1.9.1))
+        specifier: 4.1.1
+        version: 4.1.1(effect@4.1.1)(redis@6.3.0(@opentelemetry/api@1.9.1))
       '@orpc/client':
         specifier: 2.0.0-beta.44
         version: 2.0.0-beta.44
@@ -1780,8 +1780,8 @@ importers:
         specifier: 0.7.2
         version: 0.7.2(devalue@5.9.4)
       effect:
-        specifier: 4.0.2
-        version: 4.0.2
+        specifier: 4.1.1
+        version: 4.1.1
       react:
         specifier: 19.3.0
         version: 19.3.0
@@ -1814,11 +1814,11 @@ importers:
         version: link:../../packages/trpc
     devDependencies:
       '@effect/platform-node':
-        specifier: 4.0.2
-        version: 4.0.2(effect@4.0.2)(redis@6.3.0(@opentelemetry/api@1.9.1))
+        specifier: 4.1.1
+        version: 4.1.1(effect@4.1.1)(redis@6.3.0(@opentelemetry/api@1.9.1))
       '@effect/sql-pg':
-        specifier: 4.0.2
-        version: 4.0.2(effect@4.0.2)
+        specifier: 4.1.1
+        version: 4.1.1(effect@4.1.1)
       '@tooling/tsconfig':
         specifier: workspace:*
         version: link:../../tooling/tsconfig
@@ -1832,8 +1832,8 @@ importers:
         specifier: 1.7.7
         version: 1.7.7(@opentelemetry/api@1.9.1)(@tanstack/react-start@1.168.61(@voidzero-dev/vite-plus-core@1.1.0(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(typescript@7.1.0-beta)(yaml@2.9.1))(esbuild@0.28.2)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(rolldown@1.2.13)(supports-color@10.2.2)(vite-plugin-solid@2.11.14(@voidzero-dev/vite-plus-core@1.1.0(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(typescript@7.1.0-beta)(yaml@2.9.1))(solid-js@1.9.17)(supports-color@10.2.2)))(next@16.4.1(@babel/core@7.29.7(supports-color@10.2.2))(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(solid-js@1.9.17)(svelte@5.57.2)(vitest@5.0.3)(vue@3.5.43(typescript@7.1.0-beta))
       effect:
-        specifier: 4.0.2
-        version: 4.0.2
+        specifier: 4.1.1
+        version: 4.1.1
       typescript:
         specifier: 7.1.0-beta
         version: 7.1.0-beta
@@ -1847,14 +1847,14 @@ importers:
   tooling/bench:
     dependencies:
       '@effect/platform-node':
-        specifier: 4.0.2
-        version: 4.0.2(effect@4.0.2)(redis@6.3.0(@opentelemetry/api@1.9.1))
+        specifier: 4.1.1
+        version: 4.1.1(effect@4.1.1)(redis@6.3.0(@opentelemetry/api@1.9.1))
       '@trpc12/trpc':
         specifier: workspace:*
         version: link:../../packages/trpc
       effect:
-        specifier: 4.0.2
-        version: 4.0.2
+        specifier: 4.1.1
+        version: 4.1.1
     devDependencies:
       '@orpc/client':
         specifier: 2.0.0-beta.44
@@ -1896,11 +1896,11 @@ importers:
   tooling/decisions:
     dependencies:
       '@effect/platform-node':
-        specifier: ^4.0.2
-        version: 4.0.2(effect@4.0.2)(redis@6.3.0(@opentelemetry/api@1.9.1))
+        specifier: ^4.1.0
+        version: 4.1.1(effect@4.1.1)(redis@6.3.0(@opentelemetry/api@1.9.1))
       effect:
-        specifier: ^4.0.0
-        version: 4.0.2
+        specifier: ^4.1.0
+        version: 4.1.1
       yaml:
         specifier: 2.9.1
         version: 2.9.1
@@ -1921,15 +1921,15 @@ importers:
   tooling/dev:
     dependencies:
       '@effect/platform-node':
-        specifier: 4.0.2
-        version: 4.0.2(effect@4.0.2)(redis@6.3.0(@opentelemetry/api@1.9.1))
+        specifier: 4.1.1
+        version: 4.1.1(effect@4.1.1)(redis@6.3.0(@opentelemetry/api@1.9.1))
       effect:
-        specifier: 4.0.2
-        version: 4.0.2
+        specifier: 4.1.1
+        version: 4.1.1
     devDependencies:
       '@effect/vitest':
-        specifier: 4.0.2
-        version: 4.0.2(effect@4.0.2)(vitest@5.0.3)
+        specifier: 4.1.1
+        version: 4.1.1(effect@4.1.1)(vitest@5.0.3)
       '@tooling/tsconfig':
         specifier: workspace:*
         version: link:../tsconfig
@@ -1946,11 +1946,11 @@ importers:
   tooling/docs-lint:
     dependencies:
       '@effect/platform-node':
-        specifier: ^4.0.2
-        version: 4.0.2(effect@4.0.2)(redis@6.3.0(@opentelemetry/api@1.9.1))
+        specifier: ^4.1.0
+        version: 4.1.1(effect@4.1.1)(redis@6.3.0(@opentelemetry/api@1.9.1))
       effect:
-        specifier: ^4.0.0
-        version: 4.0.2
+        specifier: ^4.1.0
+        version: 4.1.1
       oxlint:
         specifier: 1.87.0
         version: 1.87.0(oxlint-tsgolint@7.0.2003)(vite-plus@1.1.0(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(@vitest/coverage-v8@5.0.3)(@vitest/ui@5.0.3)(esbuild@0.28.2)(happy-dom@20.14.6)(jiti@2.7.0)(svelte@5.57.2)(typescript@7.1.0-beta)(yaml@2.9.1))
@@ -1995,11 +1995,11 @@ importers:
   tooling/pack:
     dependencies:
       '@effect/platform-node':
-        specifier: ^4.0.2
-        version: 4.0.2(effect@4.0.2)(redis@6.3.0(@opentelemetry/api@1.9.1))
+        specifier: ^4.1.0
+        version: 4.1.1(effect@4.1.1)(redis@6.3.0(@opentelemetry/api@1.9.1))
       effect:
-        specifier: ^4.0.0
-        version: 4.0.2
+        specifier: ^4.1.0
+        version: 4.1.1
     devDependencies:
       '@tooling/tsconfig':
         specifier: workspace:*
@@ -2059,8 +2059,8 @@ importers:
         specifier: workspace:*
         version: link:../../packages/trpc
       effect:
-        specifier: 4.0.2
-        version: 4.0.2
+        specifier: 4.1.1
+        version: 4.1.1
       lit:
         specifier: 3.3.3
         version: 3.3.3
@@ -2117,8 +2117,8 @@ importers:
         specifier: 3.1.0
         version: 3.1.0
       effect:
-        specifier: ^4.0.0
-        version: 4.0.2
+        specifier: ^4.1.0
+        version: 4.1.1
     devDependencies:
       '@tooling/tsconfig':
         specifier: workspace:*
@@ -2138,15 +2138,15 @@ importers:
   tooling/vercel-ignore:
     dependencies:
       '@effect/platform-node':
-        specifier: 4.0.2
-        version: 4.0.2(effect@4.0.2)(redis@6.3.0(@opentelemetry/api@1.9.1))
+        specifier: 4.1.1
+        version: 4.1.1(effect@4.1.1)(redis@6.3.0(@opentelemetry/api@1.9.1))
       effect:
-        specifier: 4.0.2
-        version: 4.0.2
+        specifier: 4.1.1
+        version: 4.1.1
     devDependencies:
       '@effect/vitest':
-        specifier: 4.0.2
-        version: 4.0.2(effect@4.0.2)(vitest@5.0.3)
+        specifier: 4.1.1
+        version: 4.1.1(effect@4.1.1)(vitest@5.0.3)
       '@tooling/tsconfig':
         specifier: workspace:*
         version: link:../tsconfig
@@ -2185,7 +2185,7 @@ importers:
         version: 6.43.14
       '@hookform/resolvers':
         specifier: 5.9.2
-        version: 5.9.2(@standard-schema/spec@1.1.0)(ajv-formats@2.1.1(ajv@8.20.0))(ajv@8.20.0)(arktype@2.2.8)(effect@4.0.2)(react-hook-form@7.90.0(@types/react@19.3.0)(react@19.3.0))(superstruct@2.0.2)(valibot@1.5.0(typescript@7.1.0-beta))(yup@1.7.1)(zod@4.6.5)
+        version: 5.9.2(@standard-schema/spec@1.1.0)(ajv-formats@2.1.1(ajv@8.20.0))(ajv@8.20.0)(arktype@2.2.8)(effect@4.1.1)(react-hook-form@7.90.0(@types/react@19.3.0)(react@19.3.0))(superstruct@2.0.2)(valibot@1.5.0(typescript@7.1.0-beta))(yup@1.7.1)(zod@4.6.5)
       '@lezer/highlight':
         specifier: 1.2.5
         version: 1.2.5
@@ -2248,11 +2248,11 @@ importers:
         version: 4.6.5
     devDependencies:
       '@effect/platform-node':
-        specifier: 4.0.2
-        version: 4.0.2(effect@4.0.2)(redis@6.3.0(@opentelemetry/api@1.9.1))
+        specifier: 4.1.1
+        version: 4.1.1(effect@4.1.1)(redis@6.3.0(@opentelemetry/api@1.9.1))
       '@effect/vitest':
-        specifier: 4.0.2
-        version: 4.0.2(effect@4.0.2)(vitest@5.0.3)
+        specifier: 4.1.1
+        version: 4.1.1(effect@4.1.1)(vitest@5.0.3)
       '@fontsource/inter':
         specifier: 5.3.0
         version: 5.3.0
@@ -2317,8 +2317,8 @@ importers:
         specifier: 6.1.2
         version: 6.1.2(@voidzero-dev/vite-plus-core@1.1.0(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(typescript@7.1.0-beta)(yaml@2.9.1))
       effect:
-        specifier: 4.0.2
-        version: 4.0.2
+        specifier: 4.1.1
+        version: 4.1.1
       github-slugger:
         specifier: 2.0.0
         version: 2.0.0
@@ -2380,8 +2380,8 @@ importers:
   www/samples/decisions:
     dependencies:
       '@effect/platform-node':
-        specifier: 4.0.2
-        version: 4.0.2(effect@4.0.2)(redis@6.3.0(@opentelemetry/api@1.9.1))
+        specifier: 4.1.1
+        version: 4.1.1(effect@4.1.1)(redis@6.3.0(@opentelemetry/api@1.9.1))
       '@modelcontextprotocol/sdk':
         specifier: 1.32.1
         version: 1.32.1(supports-color@10.2.2)(zod@4.6.5)
@@ -2416,8 +2416,8 @@ importers:
         specifier: workspace:*
         version: link:../../../packages/trpc
       effect:
-        specifier: 4.0.2
-        version: 4.0.2
+        specifier: 4.1.1
+        version: 4.1.1
       react:
         specifier: 19.3.0
         version: 19.3.0
@@ -2459,17 +2459,17 @@ importers:
         specifier: 5.20261014.1
         version: 5.20261014.1
       '@effect/atom-react':
-        specifier: 4.0.2
-        version: 4.0.2(effect@4.0.2)(react@19.3.0)(scheduler@0.27.0)
+        specifier: 4.1.1
+        version: 4.1.1(effect@4.1.1)(react@19.3.0)(scheduler@0.28.0)
       '@effect/platform-bun':
-        specifier: 4.0.2
-        version: 4.0.2(effect@4.0.2)
+        specifier: 4.1.1
+        version: 4.1.1(effect@4.1.1)
       '@effect/platform-node':
-        specifier: 4.0.2
-        version: 4.0.2(effect@4.0.2)(redis@6.3.0(@opentelemetry/api@1.9.1))
+        specifier: 4.1.1
+        version: 4.1.1(effect@4.1.1)(redis@6.3.0(@opentelemetry/api@1.9.1))
       '@effect/sql-pg':
-        specifier: 4.0.2
-        version: 4.0.2(effect@4.0.2)
+        specifier: 4.1.1
+        version: 4.1.1(effect@4.1.1)
       '@lit/context':
         specifier: 1.1.6
         version: 1.1.6
@@ -2561,8 +2561,8 @@ importers:
         specifier: 1.7.7
         version: 1.7.7(@opentelemetry/api@1.9.1)(@tanstack/react-start@1.168.61(@voidzero-dev/vite-plus-core@1.1.0(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(typescript@7.1.0-beta)(yaml@2.9.1))(esbuild@0.28.2)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(rolldown@1.2.13)(supports-color@10.2.2)(vite-plugin-solid@2.11.14(@voidzero-dev/vite-plus-core@1.1.0(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(typescript@7.1.0-beta)(yaml@2.9.1))(solid-js@1.9.17)(supports-color@10.2.2)))(next@16.4.1(@babel/core@7.29.7(supports-color@10.2.2))(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(solid-js@1.9.17)(svelte@5.57.2)(vitest@5.0.3)(vue@3.5.43(typescript@7.1.0-beta))
       effect:
-        specifier: 4.0.2
-        version: 4.0.2
+        specifier: 4.1.1
+        version: 4.1.1
       lit:
         specifier: 3.3.3
         version: 3.3.3
@@ -2619,8 +2619,8 @@ importers:
         specifier: workspace:*
         version: link:../../../packages/trpc
       effect:
-        specifier: 4.0.2
-        version: 4.0.2
+        specifier: 4.1.1
+        version: 4.1.1
       zod:
         specifier: 4.6.5
         version: 4.6.5
@@ -2650,8 +2650,8 @@ importers:
         specifier: workspace:*
         version: link:../../../packages/trpc
       effect:
-        specifier: 4.0.2
-        version: 4.0.2
+        specifier: 4.1.1
+        version: 4.1.1
       lucide-react:
         specifier: 1.55.0
         version: 1.55.0(@types/react@19.3.0)(react@19.3.0)
@@ -2673,7 +2673,7 @@ importers:
     dependencies:
       '@hookform/resolvers':
         specifier: 5.9.2
-        version: 5.9.2(@standard-schema/spec@1.1.0)(ajv-formats@2.1.1(ajv@8.20.0))(ajv@8.20.0)(arktype@2.2.8)(effect@4.0.2)(react-hook-form@7.90.0(@types/react@19.3.0)(react@19.3.0))(superstruct@2.0.2)(valibot@1.5.0(typescript@7.1.0-beta))(yup@1.7.1)(zod@4.6.5)
+        version: 5.9.2(@standard-schema/spec@1.1.0)(ajv-formats@2.1.1(ajv@8.20.0))(ajv@8.20.0)(arktype@2.2.8)(effect@4.1.1)(react-hook-form@7.90.0(@types/react@19.3.0)(react@19.3.0))(superstruct@2.0.2)(valibot@1.5.0(typescript@7.1.0-beta))(yup@1.7.1)(zod@4.6.5)
       '@shared/ui':
         specifier: workspace:*
         version: link:../../../shared/ui
@@ -2690,8 +2690,8 @@ importers:
         specifier: workspace:*
         version: link:../../../packages/trpc
       effect:
-        specifier: 4.0.2
-        version: 4.0.2
+        specifier: 4.1.1
+        version: 4.1.1
       lucide-react:
         specifier: 1.55.0
         version: 1.55.0(@types/react@19.3.0)(react@19.3.0)
@@ -2730,8 +2730,8 @@ importers:
         specifier: workspace:*
         version: link:../../../packages/trpc
       effect:
-        specifier: 4.0.2
-        version: 4.0.2
+        specifier: 4.1.1
+        version: 4.1.1
       lucide-react:
         specifier: 1.55.0
         version: 1.55.0(@types/react@19.3.0)(react@19.3.0)
@@ -2767,8 +2767,8 @@ importers:
         specifier: workspace:*
         version: link:../../../packages/trpc
       effect:
-        specifier: 4.0.2
-        version: 4.0.2
+        specifier: 4.1.1
+        version: 4.1.1
       lucide-react:
         specifier: 1.55.0
         version: 1.55.0(@types/react@19.3.0)(react@19.3.0)
@@ -3539,16 +3539,16 @@ packages:
   '@dotenvx/primitives@0.8.0':
     resolution: {integrity: sha512-VYJy0uhFm9zTJ1TxBaW/pA8bjbOM/OttaNMwZ1RHG4JKyRG7DhSdiqD1ipQoAyoD22olUtxbP78W9xY3Wd11bg==}
 
-  '@effect/atom-react@4.0.2':
-    resolution: {integrity: sha512-rg9xnPHzjURhKhOm+bKnYitPPQC02m6R7ZmJLNdxtrNCgDQ9fSOPqZHN5W/GzUw+OsvplKSvaBe/JSQejeYKYA==}
+  '@effect/atom-react@4.1.1':
+    resolution: {integrity: sha512-62YWG+Wg93SMYAbYx1zc74VE0u+MHWl5EthFXk0WUP7Kv1qb2Mvfg2C75jnp2oce7vN5WA9uiQZrgXjdqMYChw==}
     peerDependencies:
-      effect: ^4.0.2
+      effect: ^4.1.1
       react: '>=19.0.0 <20.0.0'
-      scheduler: '>=0.25.0 <0.28.0'
+      scheduler: '>=0.25.0 <0.29.0'
 
-  '@effect/opentelemetry@4.0.2':
-    resolution: {integrity: sha512-csJqUeoI89WkRz09PeX+BzCYCliLhVJNE+1D2GBgEvGU7J0kdTIxm8pnJLHvn2u0l0ItZOjYvc2gsWL6UI9LMg==}
-    engines: {node: '>=18.0.0'}
+  '@effect/opentelemetry@4.1.1':
+    resolution: {integrity: sha512-JmygxQy2BLHekSZk81gtFIUJOw7X9c8OoUslnFLH5Q7XghkoEU1MB9Lt2M/aKvOruzAWwf7OvPv7fGI7AJokiQ==}
+    engines: {node: '>=22.19.0'}
     peerDependencies:
       '@opentelemetry/api': '>=1.9.0 <2.0.0'
       '@opentelemetry/api-logs': '>=0.203.0 <0.300.0'
@@ -3559,7 +3559,7 @@ packages:
       '@opentelemetry/sdk-trace-node': '>=2.0.0 <3.0.0'
       '@opentelemetry/sdk-trace-web': '>=2.0.0 <3.0.0'
       '@opentelemetry/semantic-conventions': '>=1.33.0 <2.0.0'
-      effect: ^4.0.2
+      effect: ^4.1.1
     peerDependenciesMeta:
       '@opentelemetry/api':
         optional: true
@@ -3578,16 +3578,22 @@ packages:
       '@opentelemetry/sdk-trace-web':
         optional: true
 
-  '@effect/platform-bun@4.0.2':
-    resolution: {integrity: sha512-wbQ9jQKtTjqHOYvMrgINWKuP05Q0cXe/Rze2c2gOAakztE34tVzT4aRvvooUR2l+JGWf/hL26nmHXJ4/Urkqiw==}
+  '@effect/platform-bun@4.1.1':
+    resolution: {integrity: sha512-//p0xPsbvuRfcO+cvq5JqVzR0TLUUS5yNC40xbZ08JNiszg5IxypAgrpKswKpjs2lYvybxdw5DSyVcEWW33Cbg==}
     peerDependencies:
-      effect: ^4.0.2
+      effect: ^4.1.1
 
   '@effect/platform-node-shared@4.0.2':
     resolution: {integrity: sha512-xn8aDw9p/QUPt1Yi0C3HUMcycT+MjHfAe19FDUDrUuzcwq0xxskkamVSqbdykF/Dsuus4aZTsCBZA/vkhHIfbQ==}
     engines: {node: '>=18.0.0'}
     peerDependencies:
       effect: ^4.0.2
+
+  '@effect/platform-node-shared@4.1.1':
+    resolution: {integrity: sha512-29zdEDs3i5W+t92+mWTFNSfzSHsTpZMcFZ9k4lkkz4tETlC1m4lRwjdjieJtvQ/bKHMnYrCtZwizsBFSf3L5Yg==}
+    engines: {node: '>=22.19.0'}
+    peerDependencies:
+      effect: ^4.1.1
 
   '@effect/platform-node@4.0.1':
     resolution: {integrity: sha512-FT0Fu5LO0/XP9zBpj0HqrtJNLluK4StNKqf6TSulUsjp8FPBsDVXGJiDuyoN5J2yVMT7tgvhxSwaDcObWVRIaQ==}
@@ -3603,15 +3609,22 @@ packages:
       effect: ^4.0.2
       redis: '>=5.0.0 <7.0.0'
 
-  '@effect/sql-pg@4.0.2':
-    resolution: {integrity: sha512-i2N5F0L5s1S8Nx2I8V7k+awBinP26b5xiiHL1zn5b6RALNnloiU7FK1yS4dAkmqG9B0EcOVxvJrIpoMWwrB4hw==}
+  '@effect/platform-node@4.1.1':
+    resolution: {integrity: sha512-Oy3eP27XeipUgejftptHy0zf2W75HU8/yPKwBqdz8uYxAvWdf4c48OFYs6KJX/+uIEKdMjnF6mXYgbauWgIcVA==}
+    engines: {node: '>=22.19.0'}
     peerDependencies:
-      effect: ^4.0.2
+      effect: ^4.1.1
+      redis: '>=5.1.0 <7.0.0'
 
-  '@effect/vitest@4.0.2':
-    resolution: {integrity: sha512-Zb72nu7iUy3rNdBp9J1Xu5oUQGwJ8cOYsUwmYgujj88aqyvASRDjOS01SjlcPViqf77csduetKdCJTVndMNfzw==}
+  '@effect/sql-pg@4.1.1':
+    resolution: {integrity: sha512-NiCzHPTFyI85/fbRdGhQgSa3QpuvByqVv8QaENSBuCFavvuWemIdSbWpKPQXESXU3yYq6PUR0KHY8fFfmWrXlA==}
     peerDependencies:
-      effect: ^4.0.2
+      effect: ^4.1.1
+
+  '@effect/vitest@4.1.1':
+    resolution: {integrity: sha512-VkE9EUXE4G7mXMmV3X3Iu+6k3pZswWjOf7PB2qiaHMoFAZAPtHp+eUZo9oJM4Ip5z+ghQ9K0IDAQM2iG6+w5MA==}
+    peerDependencies:
+      effect: ^4.1.1
       vitest: 5.0.3
 
   '@emnapi/core@1.11.1':
@@ -7703,6 +7716,9 @@ packages:
   effect@4.0.2:
     resolution: {integrity: sha512-YeYnLqSFrL4+tCOXRrfNP03w8FILoF/wDl+ukraJAGzXrjcS383W7LAAvGBbLatEyktmLxRq+9xJinx7QzXW5A==}
 
+  effect@4.1.1:
+    resolution: {integrity: sha512-XYu65BrcmNqu5i7PPvP4dqL+R5ma37zIsfuSPjcn78mog+6e5PkilNg7Xo+pBpjXJYlWEIpH4j91tMrfW05CMw==}
+
   electron-to-chromium@1.5.458:
     resolution: {integrity: sha512-/hIH2gRSmxrf4/X4Nw/t/Wc8PVS22l8/3HnWjWTWsTOM5dsnMUPZF/+u+yr3LqweNuTBJE1rq6qAQzKkZVwMfA==}
 
@@ -9616,9 +9632,6 @@ packages:
   scale-codec@0.13.0:
     resolution: {integrity: sha512-HxLaGxglkZP7SwjCLZPMsWGKN8Q/h5bjIH9YLFRcsG3Fmh+qsCOZYRLhntvTyP6B/Q7xHPBc2YKODOSfH0rH8g==}
 
-  scheduler@0.27.0:
-    resolution: {integrity: sha512-eNv+WrVbKu1f3vbYJT/xtiF5syA5HPIMtf9IgY/nKg0sWqzAUEvqY/xm7OcZc/qafLx/iO9FgOmeSAp4v5ti/Q==}
-
   scheduler@0.28.0:
     resolution: {integrity: sha512-juorfCmIkIw8tT+p5BXSm6PJjQF/ycEYmKyzURCIt/RaZIhL+PulbQ9Yu2z1HdOJDdqDTlxA1+xKBmHXJsczAw==}
 
@@ -10144,6 +10157,10 @@ packages:
 
   undici@8.11.2:
     resolution: {integrity: sha512-u4UB2/IrKdU6lFxumHmmo1a3fCQO5tzQllRorfoRS63txhrB7xTpSn1PftwC4qEHkOaqP95fCWW4lJzwErwzhQ==}
+    engines: {node: '>=22.19.0'}
+
+  undici@8.12.3:
+    resolution: {integrity: sha512-+fdndUTwBP86cVjihTp21hZHo7d6oj1c/47XPA3lL8mM0XHs+C4EkcjmgRsFnFk2f/UONGDy9ItBItmXsLOQHw==}
     engines: {node: '>=22.19.0'}
 
   unenv@2.0.0-rc.24:
@@ -11314,16 +11331,16 @@ snapshots:
 
   '@dotenvx/primitives@0.8.0': {}
 
-  '@effect/atom-react@4.0.2(effect@4.0.2)(react@19.3.0)(scheduler@0.27.0)':
+  '@effect/atom-react@4.1.1(effect@4.1.1)(react@19.3.0)(scheduler@0.28.0)':
     dependencies:
-      effect: 4.0.2
+      effect: 4.1.1
       react: 19.3.0
-      scheduler: 0.27.0
+      scheduler: 0.28.0
 
-  '@effect/opentelemetry@4.0.2(@opentelemetry/api-logs@0.223.0)(@opentelemetry/api@1.9.1)(@opentelemetry/resources@2.12.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-logs@0.223.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-metrics@2.12.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@2.12.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-node@2.12.0(@opentelemetry/api@1.9.1))(@opentelemetry/semantic-conventions@1.43.0)(effect@4.0.2)':
+  '@effect/opentelemetry@4.1.1(@opentelemetry/api-logs@0.223.0)(@opentelemetry/api@1.9.1)(@opentelemetry/resources@2.12.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-logs@0.223.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-metrics@2.12.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-base@2.12.0(@opentelemetry/api@1.9.1))(@opentelemetry/sdk-trace-node@2.12.0(@opentelemetry/api@1.9.1))(@opentelemetry/semantic-conventions@1.43.0)(effect@4.1.1)':
     dependencies:
       '@opentelemetry/semantic-conventions': 1.43.0
-      effect: 4.0.2
+      effect: 4.1.1
     optionalDependencies:
       '@opentelemetry/api': 1.9.1
       '@opentelemetry/api-logs': 0.223.0
@@ -11333,10 +11350,10 @@ snapshots:
       '@opentelemetry/sdk-trace-base': 2.12.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/sdk-trace-node': 2.12.0(@opentelemetry/api@1.9.1)
 
-  '@effect/platform-bun@4.0.2(effect@4.0.2)':
+  '@effect/platform-bun@4.1.1(effect@4.1.1)':
     dependencies:
-      '@effect/platform-node-shared': 4.0.2(effect@4.0.2)
-      effect: 4.0.2
+      '@effect/platform-node-shared': 4.1.1(effect@4.1.1)
+      effect: 4.1.1
     transitivePeerDependencies:
       - bufferutil
       - utf-8-validate
@@ -11354,6 +11371,15 @@ snapshots:
     dependencies:
       '@types/ws': 8.18.2
       effect: 4.0.2
+      ws: 8.22.0
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
+
+  '@effect/platform-node-shared@4.1.1(effect@4.1.1)':
+    dependencies:
+      '@types/ws': 8.18.2
+      effect: 4.1.1
       ws: 8.22.0
     transitivePeerDependencies:
       - bufferutil
@@ -11379,13 +11405,23 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
-  '@effect/sql-pg@4.0.2(effect@4.0.2)':
+  '@effect/platform-node@4.1.1(effect@4.1.1)(redis@6.3.0(@opentelemetry/api@1.9.1))':
     dependencies:
-      effect: 4.0.2
+      '@effect/platform-node-shared': 4.1.1(effect@4.1.1)
+      effect: 4.1.1
+      redis: 6.3.0(@opentelemetry/api@1.9.1)
+      undici: 8.12.3
+    transitivePeerDependencies:
+      - bufferutil
+      - utf-8-validate
 
-  '@effect/vitest@4.0.2(effect@4.0.2)(vitest@5.0.3)':
+  '@effect/sql-pg@4.1.1(effect@4.1.1)':
     dependencies:
-      effect: 4.0.2
+      effect: 4.1.1
+
+  '@effect/vitest@4.1.1(effect@4.1.1)(vitest@5.0.3)':
+    dependencies:
+      effect: 4.1.1
       vitest: 5.0.3(@opentelemetry/api@1.9.1)(@types/node@26.6.4)(@vitest/browser-preview@5.0.3)(@vitest/coverage-v8@5.0.3)(@vitest/ui@5.0.3)(@voidzero-dev/vite-plus-core@1.1.0(@types/node@26.6.4)(esbuild@0.28.2)(jiti@2.7.0)(typescript@7.1.0-beta)(yaml@2.9.1))(happy-dom@20.14.6)
 
   '@emnapi/core@1.11.1':
@@ -11631,7 +11667,7 @@ snapshots:
     dependencies:
       hono: 4.13.13
 
-  '@hookform/resolvers@5.9.2(@standard-schema/spec@1.1.0)(ajv-formats@2.1.1(ajv@8.20.0))(ajv@8.20.0)(arktype@2.2.8)(effect@4.0.2)(react-hook-form@7.90.0(@types/react@19.3.0)(react@19.3.0))(superstruct@2.0.2)(valibot@1.5.0(typescript@7.1.0-beta))(yup@1.7.1)(zod@4.6.5)':
+  '@hookform/resolvers@5.9.2(@standard-schema/spec@1.1.0)(ajv-formats@2.1.1(ajv@8.20.0))(ajv@8.20.0)(arktype@2.2.8)(effect@4.1.1)(react-hook-form@7.90.0(@types/react@19.3.0)(react@19.3.0))(superstruct@2.0.2)(valibot@1.5.0(typescript@7.1.0-beta))(yup@1.7.1)(zod@4.6.5)':
     dependencies:
       '@standard-schema/utils': 0.3.0
       react-hook-form: 7.90.0(@types/react@19.3.0)(react@19.3.0)
@@ -11640,7 +11676,7 @@ snapshots:
       ajv: 8.20.0
       ajv-formats: 2.1.1(ajv@8.20.0)
       arktype: 2.2.8
-      effect: 4.0.2
+      effect: 4.1.1
       superstruct: 2.0.2
       valibot: 1.5.0(typescript@7.1.0-beta)
       yup: 1.7.1
@@ -14972,6 +15008,8 @@ snapshots:
 
   effect@4.0.2: {}
 
+  effect@4.1.1: {}
+
   electron-to-chromium@1.5.458: {}
 
   embla-carousel-react@8.6.0(react@19.3.0):
@@ -17164,8 +17202,6 @@ snapshots:
 
   scale-codec@0.13.0: {}
 
-  scheduler@0.27.0: {}
-
   scheduler@0.28.0: {}
 
   secure-json-parse@4.1.1: {}
@@ -17728,6 +17764,8 @@ snapshots:
   undici@7.29.1: {}
 
   undici@8.11.2: {}
+
+  undici@8.12.3: {}
 
   unenv@2.0.0-rc.24:
     dependencies:

@@ -28,12 +28,12 @@
     "build": "node ../../tooling/pack/pack.ts"
   },
   "devDependencies": {
-    "@effect/platform-node": "4.0.2",
+    "@effect/platform-node": "4.1.1",
     "@tanstack/db": "0.15.0",
     "@tooling/tsconfig": "workspace:*",
     "@trpc12/trpc": "workspace:*",
     "@types/node": "^26.0.0",
-    "effect": "4.0.2",
+    "effect": "4.1.1",
     "typescript": "7.1.0-beta",
     "vite-plus": "1.1.0",
     "zod": "4.6.5"

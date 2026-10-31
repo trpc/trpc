@@ -11,14 +11,14 @@
     "smoke": "node smoke.ts"
   },
   "dependencies": {
-    "@effect/platform-node": "4.0.2",
+    "@effect/platform-node": "4.1.1",
     "@shared/ui": "workspace:*",
     "@tanstack/query-async-storage-persister": "5.104.1",
     "@tanstack/react-query": "5.104.1",
     "@tanstack/react-query-persist-client": "5.104.1",
     "@trpc12/tanstack-react-query": "workspace:*",
     "@trpc12/trpc": "workspace:*",
-    "effect": "4.0.2",
+    "effect": "4.1.1",
     "lucide-react": "1.55.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",

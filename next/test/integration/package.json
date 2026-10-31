@@ -9,13 +9,13 @@
     "@trpc12/trpc": "workspace:*"
   },
   "devDependencies": {
-    "@effect/platform-node": "4.0.2",
-    "@effect/sql-pg": "4.0.2",
+    "@effect/platform-node": "4.1.1",
+    "@effect/sql-pg": "4.1.1",
     "@tooling/tsconfig": "workspace:*",
     "@types/node": "^26.0.0",
     "ai": "7.0.138",
     "better-auth": "1.7.7",
-    "effect": "4.0.2",
+    "effect": "4.1.1",
     "typescript": "7.1.0-beta",
     "vite-plus": "1.1.0",
     "zod": "4.6.5"

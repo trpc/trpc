@@ -18,7 +18,7 @@
     "@trpc12/tanstack-query": "workspace:*",
     "@trpc12/tanstack-react-query": "workspace:*",
     "@trpc12/trpc": "workspace:*",
-    "effect": "4.0.2",
+    "effect": "4.1.1",
     "lit": "3.3.3",
     "preact": "10.29.8",
     "react": "19.3.0",

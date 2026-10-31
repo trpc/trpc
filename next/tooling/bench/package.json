@@ -7,9 +7,9 @@
     "bench": "node bench.ts"
   },
   "dependencies": {
-    "@effect/platform-node": "4.0.2",
+    "@effect/platform-node": "4.1.1",
     "@trpc12/trpc": "workspace:*",
-    "effect": "4.0.2"
+    "effect": "4.1.1"
   },
   "devDependencies": {
     "@orpc/client": "2.0.0-beta.44",

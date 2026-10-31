@@ -165,9 +165,9 @@
     "test:bun": "bun test ./src/http/serve.bun.test.ts"
   },
   "devDependencies": {
-    "@effect/platform-bun": "4.0.2",
-    "@effect/platform-node": "4.0.2",
-    "@effect/vitest": "4.0.2",
+    "@effect/platform-bun": "4.1.1",
+    "@effect/platform-node": "4.1.1",
+    "@effect/vitest": "4.1.1",
     "@modelcontextprotocol/sdk": "1.32.1",
     "@tooling/tsconfig": "workspace:*",
     "@trpc/client": "11.19.0",
@@ -177,7 +177,7 @@
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "devalue": "5.9.4",
-    "effect": "4.0.2",
+    "effect": "4.1.1",
     "happy-dom": "20.14.6",
     "react": "19.3.0",
     "react-dom": "19.3.0",

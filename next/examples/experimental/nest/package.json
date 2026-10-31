@@ -11,13 +11,13 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
-    "@effect/platform-node": "4.0.2",
+    "@effect/platform-node": "4.1.1",
     "@nestjs/common": "12.1.3",
     "@nestjs/core": "12.1.3",
     "@nestjs/platform-express": "12.1.3",
     "@trpc12/experimental-nest": "workspace:*",
     "@trpc12/trpc": "workspace:*",
-    "effect": "4.0.2",
+    "effect": "4.1.1",
     "reflect-metadata": "0.2.2",
     "rxjs": "7.8.2",
     "zod": "4.6.5"

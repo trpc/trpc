@@ -9,7 +9,7 @@
     "@trpc12/trpc": "workspace:*"
   },
   "devDependencies": {
-    "@effect/platform-node": "4.0.2",
+    "@effect/platform-node": "4.1.1",
     "@orpc/client": "2.0.0-beta.44",
     "@tanstack/db": "0.15.0",
     "@tanstack/query-core": "5.90.20",
@@ -25,7 +25,7 @@
     "@types/react-dom": "19.2.3",
     "danson": "0.13.1",
     "devalue-async": "0.7.2",
-    "effect": "4.0.2",
+    "effect": "4.1.1",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "rolldown": "1.2.13",

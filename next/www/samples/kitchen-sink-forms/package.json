@@ -13,7 +13,7 @@
     "@tanstack/react-router": "1.170.42",
     "@trpc12/tanstack-react-query": "workspace:*",
     "@trpc12/trpc": "workspace:*",
-    "effect": "4.0.2",
+    "effect": "4.1.1",
     "lucide-react": "1.55.0",
     "react": "19.3.0",
     "react-hook-form": "7.90.0",

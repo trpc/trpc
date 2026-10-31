@@ -8,11 +8,11 @@
     "typecheck": "tsc -p tsconfig.json"
   },
   "dependencies": {
-    "@effect/platform-node": "4.0.2",
-    "effect": "4.0.2"
+    "@effect/platform-node": "4.1.1",
+    "effect": "4.1.1"
   },
   "devDependencies": {
-    "@effect/vitest": "4.0.2",
+    "@effect/vitest": "4.1.1",
     "@tooling/tsconfig": "workspace:*",
     "@types/node": "^26.0.0",
     "typescript": "7.1.0-beta",

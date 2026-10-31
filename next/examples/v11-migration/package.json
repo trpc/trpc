@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
-    "@effect/platform-node": "4.0.2",
+    "@effect/platform-node": "4.1.1",
     "@tanstack/react-query": "5.104.1",
     "@trpc/client": "11.19.0",
     "@trpc/server": "11.19.0",
@@ -18,7 +18,7 @@
     "@trpc12/tanstack-react-query": "workspace:*",
     "@trpc12/trpc": "workspace:*",
     "@trpc12/upgrade": "workspace:*",
-    "effect": "4.0.2",
+    "effect": "4.1.1",
     "eventsource": "3.0.7",
     "react": "19.3.0",
     "superjson": "2.2.6",

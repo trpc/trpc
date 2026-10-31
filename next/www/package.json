@@ -56,8 +56,8 @@
     "zod": "4.6.5"
   },
   "devDependencies": {
-    "@effect/platform-node": "4.0.2",
-    "@effect/vitest": "4.0.2",
+    "@effect/platform-node": "4.1.1",
+    "@effect/vitest": "4.1.1",
     "@fontsource/inter": "5.3.0",
     "@fontsource/jetbrains-mono": "5.3.0",
     "@resvg/resvg-js": "2.6.2",
@@ -79,7 +79,7 @@
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "@vitejs/plugin-react": "6.1.2",
-    "effect": "4.0.2",
+    "effect": "4.1.1",
     "github-slugger": "2.0.0",
     "hast-util-to-html": "9.0.5",
     "hast-util-to-string": "3.0.1",
