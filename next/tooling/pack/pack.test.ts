@@ -85,6 +85,30 @@ test.each(entries)(
   },
 );
 
+const bins = packages.flatMap((opts) =>
+  Object.entries(opts.pkg.bin ?? {}).map(
+    ([command, target]) =>
+      [opts.name, command, opts.dir, opts.pkg, target] as const,
+  ),
+);
+
+test.each(bins)(
+  '%s %s: the bin is built, published and starts with a shebang',
+  async (_name, _command, dir, pkg, target) => {
+    const file = target.replace(/^\.\//, '');
+    expect(pkg.files?.some((folder) => file.startsWith(`${folder}/`))).toBe(
+      true,
+    );
+    const script = await run(
+      Effect.gen(function* () {
+        const fs = yield* FileSystem.FileSystem;
+        return yield* fs.readFileString(`${dir}/${file}`);
+      }),
+    );
+    expect(script).toMatch(/^#!\/usr\/bin\/env node\n/);
+  },
+);
+
 test('keepEntryPointImports puts back the empty type imports the build drops', () => {
   const source = [
     '/** @module */',

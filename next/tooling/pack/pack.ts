@@ -15,6 +15,8 @@ type Entry = Readonly<Record<string, string>> & {
 };
 export interface PackageJson {
   readonly name: string;
+  readonly bin?: Record<string, string>;
+  readonly files?: ReadonlyArray<string>;
   readonly dependencies?: Record<string, string>;
   readonly peerDependencies?: Record<string, string>;
   readonly sideEffects?: boolean | ReadonlyArray<string>;
