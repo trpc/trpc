@@ -22,6 +22,7 @@ import type {
   DecorateHandleReaders,
   DecorateInfiniteQueryHandleVerbs,
   DecorateQueryHandleVerbs,
+  HandleVerb,
 } from './handles';
 import { prepareHandleRead, readHandle, startHandle } from './handles';
 import {
@@ -392,7 +393,7 @@ export function createTRPCOptionsProxy<
     const utilName = path.pop() as UtilsMethods;
     const [arg1, arg2] = args as any[];
 
-    const startQueryHandle = (kind: 'query' | 'infinite', wait: boolean) => {
+    const startQueryHandle = (kind: 'query' | 'infinite', verb: HandleVerb) => {
       if ((opts as { [disableHandleVerbs]?: boolean })[disableHandleVerbs]) {
         throw new Error(
           `\`${[...path, utilName].join('.')}()\` isn't available on \`useTRPC()\`. ` +
@@ -431,7 +432,7 @@ export function createTRPCOptionsProxy<
         queryClient: unwrapLazyArg(opts.queryClient),
         options,
         kind,
-        wait,
+        verb,
       });
     };
 
@@ -552,10 +553,12 @@ export function createTRPCOptionsProxy<
           options,
         );
       },
-      unstable_prefetch: () => startQueryHandle('query', false),
-      unstable_ensure: () => startQueryHandle('query', true),
-      unstable_prefetchInfinite: () => startQueryHandle('infinite', false),
-      unstable_ensureInfinite: () => startQueryHandle('infinite', true),
+      unstable_prefetch: () => startQueryHandle('query', 'prefetch'),
+      unstable_ensure: () => startQueryHandle('query', 'ensure'),
+      unstable_fetch: () => startQueryHandle('query', 'fetch'),
+      unstable_prefetchInfinite: () => startQueryHandle('infinite', 'prefetch'),
+      unstable_ensureInfinite: () => startQueryHandle('infinite', 'ensure'),
+      unstable_fetchInfinite: () => startQueryHandle('infinite', 'fetch'),
 
       mutationOptions: () => {
         return trpcMutationOptions({
