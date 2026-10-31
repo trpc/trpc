@@ -42,7 +42,7 @@ export function createQueryClient() {
 
 ## 3. Create an isomorphic tRPC client
 
-During server rendering, call procedures in the same process with `unstable_localLink`. In the browser, call them over HTTP:
+During server rendering, call procedures in the same process with `localLink`. In the browser, call them over HTTP:
 
 ```ts title='src/lib/trpc.ts'
 import { createIsomorphicFn } from '@tanstack/react-start';
@@ -50,7 +50,7 @@ import { getRequest } from '@tanstack/react-start/server';
 import {
   createTRPCClient,
   httpBatchStreamLink,
-  unstable_localLink,
+  localLink,
   type TRPCLink,
 } from '@trpc/client';
 import {
@@ -66,7 +66,7 @@ export type TRPC = TRPCOptionsProxy<AppRouter>;
 
 const getLinks = createIsomorphicFn()
   .server((): TRPCLink<AppRouter>[] => [
-    unstable_localLink({
+    localLink({
       router: appRouter,
       createContext: () => createContext({ req: getRequest() }),
       transformer: superjson,

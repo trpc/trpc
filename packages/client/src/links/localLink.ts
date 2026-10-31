@@ -37,7 +37,7 @@ export type LocalLinkOptions<TRouter extends AnyRouter> = {
  *
  * @see https://trpc.io/docs/client/links/localLink
  */
-export function unstable_localLink<TRouter extends AnyRouter>(
+export function localLink<TRouter extends AnyRouter>(
   opts: LocalLinkOptions<TRouter>,
 ): TRPCLink<TRouter> {
   const transformer = getTransformer(opts.transformer);
@@ -286,8 +286,13 @@ export function unstable_localLink<TRouter extends AnyRouter>(
         };
       });
 }
+
 /**
- * @deprecated Renamed to `unstable_localLink`. This alias will be removed in a future major release.
+ * @deprecated use {@link localLink} instead
  */
-export const experimental_localLink: typeof unstable_localLink =
-  unstable_localLink;
+export const unstable_localLink = localLink;
+
+/**
+ * @deprecated use {@link localLink} instead
+ */
+export const experimental_localLink = localLink;
