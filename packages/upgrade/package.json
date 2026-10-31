@@ -5,7 +5,7 @@
   "author": "juliusmarminge",
   "license": "MIT",
   "type": "module",
-  "bin": "./dist/bin.js",
+  "bin": "./dist/bin.mjs",
   "homepage": "https://trpc.io",
   "repository": {
     "type": "git",

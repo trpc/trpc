@@ -47,6 +47,25 @@ jobs:
 
       - run: pnpm typecheck-packages
 
+  verify-packed:
+    name: Verify packed packages as a consumer
+    if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
+    timeout-minutes: 15
+    env:
+      TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+      TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: ./.github/setup
+
+      - run: pnpm build
+      - run: pnpm verify-packed
+
   typecheck-www:
     # only run on PRs and in the merge queue
     if: github.event_name == 'pull_request' || github.event_name == 'merge_group'
