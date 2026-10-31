@@ -36,6 +36,8 @@ You start a query in one of two ways. Choose for each query:
 - **Don't wait** with `unstable_prefetch`. The page renders at once, and the data streams in later.
 - **Wait** with `unstable_ensure`. The page renders once the data is ready.
 
+`unstable_fetch` is a stricter form of waiting, for code that needs fresh data. See [Waiting for fresh data](#fetch).
+
 ### Without waiting: `unstable_prefetch` {#prefetch}
 
 ```tsx
@@ -72,14 +74,26 @@ const post = await trpc.post.byId.unstable_ensure({ id });
 
 Use it for data the page can't render without, or data you need before rendering: the page title, a not-found check, a redirect.
 
+### Waiting for fresh data: `unstable_fetch` {#fetch}
+
+```tsx
+const post = await trpc.post.byId.unstable_fetch({ id });
+```
+
+- It works like `unstable_ensure`, with one difference: if the cache has stale data, it refetches and waits for the new data.
+- Use it when the code that starts the query reads the data and needs it fresh, for example a loader that redirects based on `queryClient.getQueryData(post.queryKey)`.
+- In a browser loader, prefer `unstable_ensure`. With stale data, `unstable_ensure` renders the page at once and updates it when the refetch lands. `unstable_fetch` holds up the navigation until the refetch is done.
+- In server components, the two behave the same: the request's `QueryClient` starts empty, so both wait for the request.
+
 ### Which to use {#which-to-use}
 
-|                        | `unstable_prefetch`               | `unstable_ensure`      |
-| ---------------------- | --------------------------------- | ---------------------- |
-| Returns                | A handle                          | A promise for a handle |
-| Page waits for data    | No                                | Yes                    |
-| `Suspense` boundary    | Needed around the reader          | Not needed             |
-| When the request fails | An error boundary shows the error | The promise rejects    |
+|                        | `unstable_prefetch`               | `unstable_ensure`      | `unstable_fetch`       |
+| ---------------------- | --------------------------------- | ---------------------- | ---------------------- |
+| Returns                | A handle                          | A promise for a handle | A promise for a handle |
+| Page waits for data    | No                                | Yes                    | Yes                    |
+| With stale data        | Refetches in the background       | Resolves at once       | Waits for the refetch  |
+| `Suspense` boundary    | Needed around the reader          | Not needed             | Not needed             |
+| When the request fails | An error boundary shows the error | The promise rejects    | The promise rejects    |
 
 ### Combining both {#combining-both}
 
@@ -145,11 +159,11 @@ export function Post(props: { post: unstable_inferQueryHandle<TRPC['post']['byId
 }
 ```
 
-A handle can only come from `unstable_prefetch` or `unstable_ensure`. A raw input or a hand-written `{ queryKey }` doesn't type-check. At runtime, `unstable_fromHandle` also throws a readable error for anything that isn't a handle, and when the handle's `keyPrefix` differs from the reading proxy's.
+A handle can only come from `unstable_prefetch`, `unstable_ensure` or `unstable_fetch`. A raw input or a hand-written `{ queryKey }` doesn't type-check. At runtime, `unstable_fromHandle` also throws a readable error for anything that isn't a handle, and when the handle's `keyPrefix` differs from the reading proxy's.
 
 ## Infinite queries {#infinite-queries}
 
-Procedures with a `cursor` input also have `unstable_prefetchInfinite` and `unstable_ensureInfinite`. They load the first page. To load more pages up front, pass `pages` with `getNextPageParam`:
+Procedures with a `cursor` input also have `unstable_prefetchInfinite`, `unstable_ensureInfinite` and `unstable_fetchInfinite`. They load the first page. To load more pages up front, pass `pages` with `getNextPageParam`:
 
 ```tsx
 const comments = trpc.post.comments.unstable_prefetchInfinite({ postId: id, limit: 20 });
@@ -269,7 +283,7 @@ Handle inputs cross to the client inside the handle, through React's own seriali
 
 ### With `unstable_ensure` {#errors-ensure}
 
-`unstable_ensure` rejects where you await it:
+`unstable_ensure` and `unstable_fetch` reject where you await them:
 
 - On the server proxy, with a `TRPCError`.
 - On a client-backed proxy, such as one in a TanStack Start loader, with a `TRPCClientError`.

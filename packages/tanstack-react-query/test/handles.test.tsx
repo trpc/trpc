@@ -98,6 +98,9 @@ describe('types', () => {
     expectTypeOf(trpc.post.byId.unstable_ensure({ id: '1' })).toEqualTypeOf<
       Promise<PostHandle>
     >();
+    expectTypeOf(trpc.post.byId.unstable_fetch({ id: '1' })).toEqualTypeOf<
+      Promise<PostHandle>
+    >();
 
     // @ts-expect-error input is required
     trpc.post.byId.unstable_prefetch();
@@ -540,6 +543,50 @@ describe('runtime', () => {
       expect(queryClient.getQueryData(handle.queryKey)?.title).toBe('Post 1'),
     );
     expect(resource.calls).toHaveBeenCalledTimes(1);
+  });
+
+  test('unstable_fetch waits for stale data to refetch and rejects', async () => {
+    await using resource = ctx();
+    const queryClient = makeServerClient();
+    const serverTrpc = createTRPCOptionsProxy({
+      router: resource.appRouter,
+      ctx: {},
+      queryClient,
+    });
+    const queryKey = serverTrpc.post.byId.queryKey({ id: '1' });
+    queryClient.setQueryData(queryKey, { id: '1', title: 'stale' });
+
+    const handle = await serverTrpc.post.byId.unstable_fetch({ id: '1' });
+    expect(queryClient.getQueryData(handle.queryKey)?.title).toBe('Post 1');
+    expect(resource.calls).toHaveBeenCalledTimes(1);
+
+    const fresh = await serverTrpc.post.byId.unstable_fetch(
+      { id: '1' },
+      { staleTime: Infinity },
+    );
+    expect(fresh).toEqual(handle);
+    expect(resource.calls).toHaveBeenCalledTimes(1);
+
+    await expect(
+      serverTrpc.post.byId.unstable_fetch({ id: 'missing' }),
+    ).rejects.toBeInstanceOf(TRPCError);
+  });
+
+  test('unstable_fetchInfinite loads pages and returns an infinite handle', async () => {
+    await using resource = ctx();
+    const trpc = resource.optionsProxyServer;
+    const handle = await trpc.post.list.unstable_fetchInfinite(
+      { limit: 2 },
+      { pages: 2, getNextPageParam: (last) => last.nextCursor },
+    );
+    expectTypeOf(handle).toEqualTypeOf<
+      unstable_inferInfiniteQueryHandle<TRPC['post']['list']>
+    >();
+    expect(
+      resource.queryClient
+        .getQueryData(handle.queryKey)
+        ?.pages.flatMap((page) => page.items),
+    ).toEqual([0, 1, 2, 3]);
   });
 
   test('procedures without input', async () => {

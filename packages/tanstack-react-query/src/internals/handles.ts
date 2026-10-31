@@ -119,6 +119,18 @@ export interface DecorateQueryHandleVerbs<TDef extends ResolverDef> {
       ? [input?: TDef['input'], opts?: unstable_TRPCPrefetchOptions]
       : [input: TDef['input'], opts?: unstable_TRPCPrefetchOptions]
   ) => Promise<unstable_TRPCQueryHandle<TDef>>;
+  /**
+   * Like `unstable_ensure`, but stale data in the cache is refetched before it resolves.
+   * Rejects if that request fails.
+   *
+   * Not available on `useTRPC()`.
+   * @see https://trpc.io/docs/client/tanstack-react-query/handles#fetch
+   */
+  unstable_fetch: (
+    ...args: undefined extends TDef['input']
+      ? [input?: TDef['input'], opts?: unstable_TRPCPrefetchOptions]
+      : [input: TDef['input'], opts?: unstable_TRPCPrefetchOptions]
+  ) => Promise<unstable_TRPCQueryHandle<TDef>>;
 }
 
 /** Verbs added to query procedures with a `cursor` input */
@@ -140,6 +152,16 @@ export interface DecorateInfiniteQueryHandleVerbs<TDef extends ResolverDef> {
    * @see https://trpc.io/docs/client/tanstack-react-query/handles#infinite-queries
    */
   unstable_ensureInfinite: (
+    input: TDef['input'],
+    opts?: unstable_TRPCPrefetchInfiniteOptions<TDef>,
+  ) => Promise<unstable_TRPCInfiniteQueryHandle<TDef>>;
+  /**
+   * Like `unstable_fetch`, for an infinite query.
+   *
+   * Not available on `useTRPC()`.
+   * @see https://trpc.io/docs/client/tanstack-react-query/handles#infinite-queries
+   */
+  unstable_fetchInfinite: (
     input: TDef['input'],
     opts?: unstable_TRPCPrefetchInfiniteOptions<TDef>,
   ) => Promise<unstable_TRPCInfiniteQueryHandle<TDef>>;
@@ -213,14 +235,14 @@ export function readHandle(
   const queryKey = handle?.queryKey as unknown as TRPCQueryKey<any> | undefined;
   if (!Array.isArray(queryKey)) {
     throw new Error(
-      `Expected a tRPC handle from \`.unstable_prefetch()\` / \`.unstable_ensure()\`, got ${JSON.stringify(handle)}`,
+      `Expected a tRPC handle from \`.unstable_prefetch()\` / \`.unstable_ensure()\` / \`.unstable_fetch()\`, got ${JSON.stringify(handle)}`,
     );
   }
   const data = readQueryKey(queryKey);
   const type = data.args?.type;
   if (type !== 'query' && type !== 'infinite') {
     throw new Error(
-      `Expected a tRPC handle from \`.unstable_prefetch()\` / \`.unstable_ensure()\`, got a key of type ${String(type)} for "${data.path.join('.')}"`,
+      `Expected a tRPC handle from \`.unstable_prefetch()\` / \`.unstable_ensure()\` / \`.unstable_fetch()\`, got a key of type ${String(type)} for "${data.path.join('.')}"`,
     );
   }
   if ((data.prefix?.[0] ?? undefined) !== prefix) {
@@ -239,13 +261,18 @@ export function readHandle(
 /**
  * @internal
  */
+export type HandleVerb = 'prefetch' | 'ensure' | 'fetch';
+
+/**
+ * @internal
+ */
 export function startHandle(opts: {
   queryClient: QueryClient;
   options: any;
   kind: 'query' | 'infinite';
-  wait: boolean;
+  verb: HandleVerb;
 }) {
-  const { queryClient, options, kind, wait } = opts;
+  const { queryClient, options, kind, verb } = opts;
   if (kind === 'infinite') {
     const handle = {
       queryKey: options.queryKey,
@@ -253,22 +280,30 @@ export function startHandle(opts: {
         initialCursor: options.initialPageParam,
       }),
     };
-    if (!wait) {
-      void queryClient.prefetchInfiniteQuery(options);
-      return handle;
+    switch (verb) {
+      case 'prefetch':
+        void queryClient.prefetchInfiniteQuery(options);
+        return handle;
+      case 'ensure':
+        return queryClient
+          .ensureInfiniteQueryData({ ...options, revalidateIfStale: true })
+          .then(() => handle);
+      case 'fetch':
+        return queryClient.fetchInfiniteQuery(options).then(() => handle);
     }
-    return queryClient
-      .ensureInfiniteQueryData({ ...options, revalidateIfStale: true })
-      .then(() => handle);
   }
   const handle = { queryKey: options.queryKey };
-  if (!wait) {
-    void queryClient.prefetchQuery(options);
-    return handle;
+  switch (verb) {
+    case 'prefetch':
+      void queryClient.prefetchQuery(options);
+      return handle;
+    case 'ensure':
+      return queryClient
+        .ensureQueryData({ ...options, revalidateIfStale: true })
+        .then(() => handle);
+    case 'fetch':
+      return queryClient.fetchQuery(options).then(() => handle);
   }
-  return queryClient
-    .ensureQueryData({ ...options, revalidateIfStale: true })
-    .then(() => handle);
 }
 
 function isServerEnvironment() {
