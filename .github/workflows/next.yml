@@ -192,7 +192,7 @@ jobs:
       - run: pnpm --filter @trpc12/www v12-reveal:check
 
   effect-latest:
-    # `@trpc12/trpc` has `effect@^4` as a peer; users get the latest 4.x, the lockfile pins one.
+    # `@trpc12/trpc` has `effect@^4.1` as a peer; users get the latest 4.x, the lockfile pins one.
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -205,10 +205,10 @@ jobs:
           node-version-file: next/.nvmrc
           cache: pnpm
           cache-dependency-path: next/pnpm-lock.yaml
-      - name: Widen effect pins to ^4 and update to the latest 4.x
+      - name: Widen effect pins to ^4.1 and update to the latest 4.x
         run: |
           for f in $(git ls-files '*package.json'); do
-            sed -i -E 's/"(effect|@effect\/[a-z-]+)": "4\.[0-9]+\.[0-9]+"/"\1": "^4.0.0"/' "$f"
+            sed -i -E 's/"(effect|@effect\/[a-z-]+)": "4\.[0-9]+\.[0-9]+"/"\1": "^4.1.0"/' "$f"
           done
           pnpm install --no-frozen-lockfile
           # Direct dependencies only: vendor-src pins its own effect 4.0.1 stack.
