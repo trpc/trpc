@@ -66,9 +66,9 @@ Bundle size, minified / gzip (`pnpm bench bundle`):
 
 | client                              |    gzip | target |
 | ----------------------------------- | ------: | -----: |
-| minimal JSON (`httpLink`)           | 40.0 kB |  18 kB |
-| full (`retryLink`, `httpLink`, SSE) | 40.2 kB |  25 kB |
-| full with progressive JSON          | 44.3 kB |  25 kB |
+| minimal JSON (`httpLink`)           | 43.4 kB |  18 kB |
+| full (`retryLink`, `httpLink`, SSE) | 43.6 kB |  25 kB |
+| full with progressive JSON          | 48.0 kB |  25 kB |
 
 2026-10-21: the full client is measured without and with progressive JSON, which is opt-in (the human: "3. With and without", [`../decisions/orpc-v2-parity.md`](../decisions/orpc-v2-parity.md)). Progressive JSON adds 4.1 kB. The history below, before that day, is of the full client with it.
 
@@ -87,6 +87,8 @@ The raises below are from when CI failed above a ceiling, today's size plus 0.1 
 - **Grew, 2026-10-19 (no ceiling):** `httpLink` fails a call whose streamed response ends before its result with `NETWORK_ERROR` instead of `STREAM_INTERRUPTED` (`headless` in `client/links/http/transport.ts`, [`link-errors.md`](../decisions/link-errors.md)): +36 B on the minimal client and +57 B on the full one (39,512 → 39,548 B and 43,644 → 43,701 B). Reusing the interrupt's message instead of its own saves 10 B.
 
 - **Grew, 2026-10-19 (no ceiling):** the typed client's proxy answers `request()` and `subscribe()` at its root through the untyped client, so an `any` router's `TrpcUntypedClient` type is true at runtime (first-release review, question 7, [`client.md`](../decisions/client.md)): +34 B on the minimal client and +32 B on the full one (39,548 → 39,582 B and 43,701 → 43,733 B).
+
+- **Grew, 2026-10-31 (no ceiling):** `effect` 4.0.2 → 4.1.1 ([`effect-version-range.md`](../decisions/effect-version-range.md)), with no client code changed: +3,404 B on the minimal client, +3,415 B on the full one and +3,661 B with progressive JSON (39,987 → 43,391 B, 40,207 → 43,622 B and 44,310 → 47,971 B, `v12` before and after the bump). Which of Effect's modules grew isn't measured yet.
 
 - **Cut so far:** the Promise client runs its links with `runLinks`. `runOperation`'s tracer check and client span never ran there (Promise clients run on Effect's native tracer), but they were bundled: `Tracer`, `Scope` spans and `encoding/Hex`, 1.7 kB gzipped on each client.
 - **The floor of links on Effect**, same bundler and gzip:
