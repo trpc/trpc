@@ -33,7 +33,7 @@ function Home() {
             <br />
             <a
               className="text-gray-700 underline dark:text-gray-400"
-              href="https://github.com/trpc/examples-next-sse-chat"
+              href="https://github.com/trpc/examples-tanstack-start-sse-chat"
               target="_blank"
               rel="noreferrer"
             >

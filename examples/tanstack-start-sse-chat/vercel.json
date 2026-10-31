@@ -4,5 +4,5 @@
   "regions": ["lhr1"],
   "fluid": true,
   "installCommand": "cd ../.. && pnpm install",
-  "buildCommand": "cd ../.. && pnpm turbo --filter=./examples/next-sse-chat build"
+  "buildCommand": "cd ../.. && pnpm turbo --filter=./examples/tanstack-start-sse-chat build"
 }
