@@ -10,7 +10,8 @@ export default defineConfig({
   schema: './src/server/db/schema.ts',
   out: './src/server/db/migrations',
   dbCredentials: {
-    url: DB_URL,
+    // Migrations can't run through a transaction pooler
+    url: process.env.DIRECT_URL ?? DB_URL,
   },
   tablesFilter: ['sse-chat_*'],
 });
