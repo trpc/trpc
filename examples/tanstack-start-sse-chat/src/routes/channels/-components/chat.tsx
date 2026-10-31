@@ -1,6 +1,5 @@
 import { PaperAirplaneIcon } from '@heroicons/react/24/outline';
 import { useMutation } from '@tanstack/react-query';
-import { getRouteApi } from '@tanstack/react-router';
 import { useSubscription } from '@trpc/tanstack-react-query';
 import type { unstable_inferInfiniteQueryHandle } from '@trpc/tanstack-react-query/handles';
 import { useSession, useSignInHref } from '~/components/auth';
@@ -72,16 +71,14 @@ function SubscriptionStatus(props: {
   );
 }
 
-const route = getRouteApi('/channels/$channelId');
-
 export function Chat(
   props: Readonly<{
     posts: unstable_inferInfiniteQueryHandle<TRPCHandles['post']['infinite']>;
   }>,
 ) {
-  const { channelId } = route.useParams();
+  const { channelId } = props.posts.input;
   const trpc = useTRPC();
-  const livePosts = useLivePosts(channelId, props.posts);
+  const livePosts = useLivePosts(props.posts);
   const currentlyTyping = useSubscription(
     trpc.channel.whoIsTyping.subscriptionOptions({ channelId }),
   );
