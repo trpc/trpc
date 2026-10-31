@@ -1,11 +1,12 @@
-import type { NextAuthConfig, Session } from 'next-auth';
-import NextAuth from 'next-auth';
-import CredentialsProvider from 'next-auth/providers/credentials';
-import GithubProvider from 'next-auth/providers/github';
-import { cache } from 'react';
+import { Auth, createActionURL, setEnvDefaults } from '@auth/core';
+import CredentialsProvider from '@auth/core/providers/credentials';
+import GithubProvider from '@auth/core/providers/github';
+import type { AuthConfig, Session } from '@auth/core/types';
 import { z } from 'zod';
 
-const authOptions: NextAuthConfig = {
+export const authConfig: AuthConfig = {
+  basePath: '/api/auth',
+  secret: process.env.AUTH_SECRET ?? process.env.NEXTAUTH_SECRET,
   providers: [],
 };
 
@@ -22,7 +23,7 @@ if (
 }
 
 if (useMockProvider) {
-  authOptions.providers.push(
+  authConfig.providers.push(
     CredentialsProvider({
       id: 'github',
       name: 'Mocked GitHub',
@@ -46,7 +47,7 @@ if (useMockProvider) {
     }),
   );
 } else {
-  authOptions.providers.push(
+  authConfig.providers.push(
     GithubProvider({
       profile: (login) => ({
         id: String(login.id),
@@ -58,30 +59,26 @@ if (useMockProvider) {
   );
 }
 
-export const {
-  handlers,
-  auth: uncachedAuth,
-  signIn,
-  signOut,
-} = NextAuth(authOptions);
+setEnvDefaults(process.env, authConfig);
 
-export const auth = cache(uncachedAuth);
-
-export async function SignedIn(props: {
-  children:
-    React.ReactNode | ((props: { user: Session['user'] }) => React.ReactNode);
-}) {
-  const sesh = await auth();
-  return sesh?.user ? (
-    <>
-      {typeof props.children === 'function'
-        ? props.children({ user: sesh.user })
-        : props.children}
-    </>
-  ) : null;
+export function handleAuthRequest(request: Request) {
+  return Auth(request, authConfig);
 }
 
-export async function SignedOut(props: { children: React.ReactNode }) {
-  const sesh = await auth();
-  return sesh?.user ? null : <>{props.children}</>;
+export async function getSession(request: Request): Promise<Session | null> {
+  const url = createActionURL(
+    'session',
+    new URL(request.url).protocol,
+    request.headers,
+    process.env,
+    authConfig,
+  );
+  const response = await Auth(
+    new Request(url, {
+      headers: { cookie: request.headers.get('cookie') ?? '' },
+    }),
+    authConfig,
+  );
+  const session: Session | null = await response.json();
+  return session?.user ? session : null;
 }

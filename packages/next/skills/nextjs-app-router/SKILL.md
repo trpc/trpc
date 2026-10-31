@@ -20,7 +20,6 @@ sources:
   - www/docs/client/tanstack-react-query/server-components.mdx
   - www/docs/server/adapters/nextjs.md
   - examples/next-prisma-starter/
-  - examples/next-sse-chat/
 ---
 
 This skill builds on [server-setup], [client-setup], [react-query-setup], and [adapter-fetch]. Read them first for foundational concepts.

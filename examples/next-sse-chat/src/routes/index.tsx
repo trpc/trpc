@@ -1,14 +1,25 @@
 import { HashtagIcon } from '@heroicons/react/24/outline';
+import { useSuspenseQuery } from '@tanstack/react-query';
+import { createFileRoute, Link } from '@tanstack/react-router';
+import { SignedIn, SignedOut, useSignInHref } from '~/components/auth';
 import { buttonVariants } from '~/components/button';
-import { SignedIn, SignedOut } from '~/server/auth';
-import { caller } from '~/server/routers/_app';
-import Link from 'next/link';
+import { CreateChannelDialog } from '~/components/create-channel';
+import { useTRPC } from '~/lib/trpc';
+import { channelListQuery } from '~/queries';
 import { Suspense } from 'react';
 import { twMerge } from 'tailwind-merge';
-import { CreateChannelDialog } from './channels/create-channel';
 
-export default async function Home() {
-  const channels = await caller.channel.list();
+export const Route = createFileRoute('/')({
+  loader: (opts) => {
+    void opts.context.queryClient.prefetchQuery(
+      channelListQuery(opts.context.trpc),
+    );
+  },
+  component: Home,
+});
+
+function Home() {
+  const signInHref = useSignInHref();
 
   return (
     <div className="flex-1 overflow-y-auto">
@@ -50,32 +61,42 @@ export default async function Home() {
             <h2 className="text-lg font-medium text-gray-950 dark:text-gray-50">
               Channels
             </h2>
-            <Suspense>
-              <SignedIn>
-                <CreateChannelDialog />
-              </SignedIn>
-              <SignedOut>
-                <a href="/api/auth/signin">Login</a>
-              </SignedOut>
-            </Suspense>
+            <SignedIn>
+              <CreateChannelDialog />
+            </SignedIn>
+            <SignedOut>
+              <a href={signInHref}>Login</a>
+            </SignedOut>
           </div>
-          <div className="flex w-full flex-col items-start">
-            {channels.map((channel) => (
-              <Link
-                key={channel.id}
-                className={twMerge(
-                  buttonVariants({ variant: 'link' }),
-                  'w-full justify-start',
-                )}
-                href={`/channels/${channel.id}`}
-              >
-                <HashtagIcon className="mr-2 size-4 shrink-0" />
-                <span className="truncate">{channel.name}</span>
-              </Link>
-            ))}
-          </div>
+          <Suspense fallback={<div className="text-sm italic">Loading...</div>}>
+            <ChannelList />
+          </Suspense>
         </div>
       </div>
+    </div>
+  );
+}
+
+function ChannelList() {
+  const trpc = useTRPC();
+  const channels = useSuspenseQuery(channelListQuery(trpc)).data;
+
+  return (
+    <div className="flex w-full flex-col items-start">
+      {channels.map((channel) => (
+        <Link
+          key={channel.id}
+          className={twMerge(
+            buttonVariants({ variant: 'link' }),
+            'w-full justify-start',
+          )}
+          to="/channels/$channelId"
+          params={{ channelId: channel.id }}
+        >
+          <HashtagIcon className="mr-2 size-4 shrink-0" />
+          <span className="truncate">{channel.name}</span>
+        </Link>
+      ))}
     </div>
   );
 }

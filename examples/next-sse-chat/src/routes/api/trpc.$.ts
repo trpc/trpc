@@ -1,14 +1,15 @@
 /**
- * This file contains the tRPC http response handler and context creation for Next.js
+ * This file contains the tRPC http response handler and context creation
  */
+import { createFileRoute } from '@tanstack/react-router';
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 import { createContext } from '~/server/context';
 import { appRouter } from '~/server/routers/_app';
 
-const handler = (req: Request) =>
+const handler = (opts: { request: Request }) =>
   fetchRequestHandler({
     router: appRouter,
-    req,
+    req: opts.request,
     endpoint: '/api/trpc',
     /**
      * @see https://trpc.io/docs/v11/context
@@ -25,5 +26,6 @@ const handler = (req: Request) =>
     },
   });
 
-export const GET = handler;
-export const POST = handler;
+export const Route = createFileRoute('/api/trpc/$')({
+  server: { handlers: { GET: handler, POST: handler } },
+});

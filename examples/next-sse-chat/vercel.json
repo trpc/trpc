@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "framework": "nextjs",
+  "framework": "tanstack-start",
   "regions": ["lhr1"],
   "fluid": true,
   "installCommand": "cd ../.. && pnpm install",
