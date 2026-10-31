@@ -9,8 +9,7 @@
     },
     "publish": {
       "stripPackageKeys": [
-        "devDependencies",
-        "scripts"
+        "devDependencies"
       ]
     }
   },
