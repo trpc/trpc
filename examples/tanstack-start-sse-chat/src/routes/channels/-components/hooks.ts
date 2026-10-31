@@ -3,11 +3,9 @@ import {
   useMutation,
   useSuspenseInfiniteQuery,
 } from '@tanstack/react-query';
-import {
-  useSubscription,
-  type unstable_inferInfiniteQueryHandle,
-} from '@trpc/tanstack-react-query';
-import { useTRPC, type TRPC } from '~/lib/trpc';
+import { useSubscription } from '@trpc/tanstack-react-query';
+import type { unstable_inferInfiniteQueryHandle } from '@trpc/tanstack-react-query/handles';
+import { useTRPC, type TRPCHandles } from '~/lib/trpc';
 import * as React from 'react';
 
 /**
@@ -43,7 +41,7 @@ export function useThrottledIsTypingMutation(channelId: string) {
 
 export function useLivePosts(
   channelId: string,
-  posts: unstable_inferInfiniteQueryHandle<TRPC['post']['infinite']>,
+  posts: unstable_inferInfiniteQueryHandle<TRPCHandles['post']['infinite']>,
 ) {
   const trpc = useTRPC();
   const query = useSuspenseInfiniteQuery(

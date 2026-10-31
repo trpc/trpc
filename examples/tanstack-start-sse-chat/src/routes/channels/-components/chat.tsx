@@ -1,14 +1,12 @@
 import { PaperAirplaneIcon } from '@heroicons/react/24/outline';
 import { useMutation } from '@tanstack/react-query';
-import {
-  useSubscription,
-  type unstable_inferInfiniteQueryHandle,
-} from '@trpc/tanstack-react-query';
+import { useSubscription } from '@trpc/tanstack-react-query';
+import type { unstable_inferInfiniteQueryHandle } from '@trpc/tanstack-react-query/handles';
 import { useSession, useSignInHref } from '~/components/auth';
 import { Avatar } from '~/components/avatar';
 import { Button } from '~/components/button';
 import { Textarea } from '~/components/input';
-import { useTRPC, type TRPC } from '~/lib/trpc';
+import { useTRPC, type TRPCHandles } from '~/lib/trpc';
 import { cx } from 'class-variance-authority';
 import { format, formatDistanceToNow, isToday } from 'date-fns';
 import * as React from 'react';
@@ -76,7 +74,7 @@ function SubscriptionStatus(props: {
 export function Chat(
   props: Readonly<{
     channelId: string;
-    posts: unstable_inferInfiniteQueryHandle<TRPC['post']['infinite']>;
+    posts: unstable_inferInfiniteQueryHandle<TRPCHandles['post']['infinite']>;
   }>,
 ) {
   const { channelId } = props;

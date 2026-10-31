@@ -1,7 +1,7 @@
 import { HashtagIcon } from '@heroicons/react/24/outline';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute, Link, notFound } from '@tanstack/react-router';
-import type { unstable_inferQueryHandle } from '@trpc/tanstack-react-query';
+import type { unstable_inferQueryHandle } from '@trpc/tanstack-react-query/handles';
 import {
   SignedIn,
   SignedOut,
@@ -10,7 +10,7 @@ import {
 } from '~/components/auth';
 import { Button } from '~/components/button';
 import { CreateChannelDialog } from '~/components/create-channel';
-import { useTRPC, type TRPC } from '~/lib/trpc';
+import { useTRPC, type TRPCHandles } from '~/lib/trpc';
 import { Suspense } from 'react';
 import { z } from 'zod';
 import { Chat } from './-components/chat';
@@ -25,8 +25,8 @@ export const Route = createFileRoute('/channels/$channelId')({
   loader: (opts) => {
     const { trpc } = opts.context;
     return {
-      channels: trpc.channel.list.unstable_prefetch(),
-      posts: trpc.post.infinite.unstable_prefetchInfinite({
+      channels: trpc.channel.list.prefetch(),
+      posts: trpc.post.infinite.prefetchInfinite({
         channelId: opts.params.channelId,
       }),
     };
@@ -93,7 +93,7 @@ function ChannelPage() {
 
 function ChannelList(
   props: Readonly<{
-    channels: unstable_inferQueryHandle<TRPC['channel']['list']>;
+    channels: unstable_inferQueryHandle<TRPCHandles['channel']['list']>;
   }>,
 ) {
   const trpc = useTRPC();

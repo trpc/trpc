@@ -1,17 +1,17 @@
 import { HashtagIcon } from '@heroicons/react/24/outline';
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { createFileRoute, Link } from '@tanstack/react-router';
-import type { unstable_inferQueryHandle } from '@trpc/tanstack-react-query';
+import type { unstable_inferQueryHandle } from '@trpc/tanstack-react-query/handles';
 import { SignedIn, SignedOut, useSignInHref } from '~/components/auth';
 import { buttonVariants } from '~/components/button';
 import { CreateChannelDialog } from '~/components/create-channel';
-import { useTRPC, type TRPC } from '~/lib/trpc';
+import { useTRPC, type TRPCHandles } from '~/lib/trpc';
 import { Suspense } from 'react';
 import { twMerge } from 'tailwind-merge';
 
 export const Route = createFileRoute('/')({
   loader: (opts) => ({
-    channels: opts.context.trpc.channel.list.unstable_prefetch(),
+    channels: opts.context.trpc.channel.list.prefetch(),
   }),
   component: Home,
 });
@@ -78,7 +78,7 @@ function Home() {
 
 function ChannelList(
   props: Readonly<{
-    channels: unstable_inferQueryHandle<TRPC['channel']['list']>;
+    channels: unstable_inferQueryHandle<TRPCHandles['channel']['list']>;
   }>,
 ) {
   const trpc = useTRPC();

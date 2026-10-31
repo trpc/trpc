@@ -8,13 +8,13 @@ import {
   Outlet,
   Scripts,
 } from '@tanstack/react-router';
-import type { TRPC } from '~/lib/trpc';
+import type { TRPCHandles } from '~/lib/trpc';
 import { sessionQuery } from '~/queries';
 import appCss from '~/styles.css?url';
 
 export const Route = createRootRouteWithContext<{
   queryClient: QueryClient;
-  trpc: TRPC;
+  trpc: TRPCHandles;
 }>()({
   head: () => ({
     meta: [

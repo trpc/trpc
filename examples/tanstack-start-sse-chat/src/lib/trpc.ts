@@ -9,10 +9,8 @@ import {
   splitLink,
   type TRPCLink,
 } from '@trpc/client';
-import {
-  createTRPCContext,
-  type TRPCOptionsProxy,
-} from '@trpc/tanstack-react-query';
+import { createTRPCContext } from '@trpc/tanstack-react-query';
+import type { unstable_TRPCHandleProxy } from '@trpc/tanstack-react-query/handles';
 import { createContext } from '~/server/context';
 import type { AppRouter } from '~/server/routers/_app';
 import { appRouter } from '~/server/routers/_app';
@@ -20,7 +18,7 @@ import SuperJSON from 'superjson';
 
 export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
 
-export type TRPC = TRPCOptionsProxy<AppRouter>;
+export type TRPCHandles = unstable_TRPCHandleProxy<AppRouter>;
 
 /**
  * During SSR, procedures are called in this process with the page request.
