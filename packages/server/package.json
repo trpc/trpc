@@ -230,7 +230,29 @@
     "https://trpc.io/sponsor"
   ],
   "peerDependencies": {
+    "@types/aws-lambda": "*",
+    "@types/express": "*",
+    "@types/ws": "*",
+    "fastify": "*",
+    "next": "*",
     "typescript": ">=5.7.2"
+  },
+  "peerDependenciesMeta": {
+    "@types/aws-lambda": {
+      "optional": true
+    },
+    "@types/express": {
+      "optional": true
+    },
+    "@types/ws": {
+      "optional": true
+    },
+    "fastify": {
+      "optional": true
+    },
+    "next": {
+      "optional": true
+    }
   },
   "keywords": [
     "tanstack-intent"

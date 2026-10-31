@@ -1,4 +1,4 @@
-import type { notFound as __notFound } from 'next/navigation';
+import type { notFound as __notFound } from 'next/navigation.js';
 import { TRPCError } from '../../@trpc/server';
 
 /**
