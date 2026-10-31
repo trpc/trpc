@@ -25,13 +25,13 @@ If you are unsure which one to use, we recommend using SSE for subscriptions as 
 | Type       | Example Type                            | Link                                                                                                                       |
 | ---------- | --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
 | WebSockets | Bare-minimum Node.js WebSockets example | [/examples/standalone-server](https://github.com/trpc/trpc/tree/main/examples/standalone-server)                           |
-| SSE        | Full-stack SSE implementation           | [github.com/trpc/examples-next-sse-chat](https://github.com/trpc/examples-next-sse-chat)                                   |
+| SSE        | Full-stack SSE implementation           | [github.com/trpc/examples-sse-chat](https://github.com/trpc/examples-sse-chat)                                             |
 | WebSockets | Full-stack WebSockets implementation    | [github.com/trpc/examples-next-prisma-websockets-starter](https://github.com/trpc/examples-next-prisma-starter-websockets) |
 
 ## Basic example
 
 :::tip
-For a full example, see [our full-stack SSE example](https://github.com/trpc/examples-next-sse-chat).
+For a full example, see [our full-stack SSE example](https://github.com/trpc/examples-sse-chat).
 :::
 
 ```ts twoslash title="server.ts"
@@ -69,7 +69,7 @@ You can send an initial `lastEventId` when initializing the subscription and it 
 - For WebSockets, our `wsLink` will automatically send the last known ID and update it as the browser receives data.
 
 :::tip
-If you're fetching data based on the `lastEventId`, and capturing all events is critical, make sure you set up the event listener before fetching events from your database as is done in [our full-stack SSE example](https://github.com/trpc/examples-next-sse-chat), this can prevent newly emitted events being ignored while yield'ing the original batch based on `lastEventId`.
+If you're fetching data based on the `lastEventId`, and capturing all events is critical, make sure you set up the event listener before fetching events from your database as is done in [our full-stack SSE example](https://github.com/trpc/examples-sse-chat), this can prevent newly emitted events being ignored while yield'ing the original batch based on `lastEventId`.
 :::
 
 ```ts twoslash

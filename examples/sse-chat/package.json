@@ -1,5 +1,5 @@
 {
-  "name": "examples-next-sse-chat",
+  "name": "examples-sse-chat",
   "type": "module",
   "private": true,
   "scripts": {
