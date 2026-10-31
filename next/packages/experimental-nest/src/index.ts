@@ -170,7 +170,7 @@ export class TrpcHost implements OnApplicationShutdown {
   readonly handler: OpenApiHandler<ExecutionContext>;
   readonly #scope = Scope.makeUnsafe();
   readonly #pending = new WeakMap<
-    IncomingMessage,
+    ReturnType<typeof NodeHttpServerRequest.toIncomingMessage>,
     { call: OpenApiCall; context: ExecutionContext }
   >();
   readonly #node: (req: IncomingMessage, res: ServerResponse) => void;
