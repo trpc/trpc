@@ -25,7 +25,8 @@ const noSubscribe = /* @__PURE__ */ new Redis.RedisError({
  * `fetch`, so it works where TCP doesn't (Workers, edge functions). Lua
  * scripts load once and run with `EVALSHA`, so anything built on `Redis`
  * works: `RateLimiter.layerStoreRedis()`, `experimental_redisLocker()`.
- * `subscribe` fails: Upstash's REST API has no pub/sub.
+ * `reserve` (effect 4.0.7+) needs no connection of its own, since no command
+ * waits behind another. `subscribe` fails: Upstash's REST API has no pub/sub.
  *
  * @example
  * ```ts
@@ -41,38 +42,62 @@ export function experimental_upstashRedis(
   options: experimental_UpstashOptions,
 ): Layer.Layer<Redis.Redis> {
   const fetchFn = options.fetch ?? globalThis.fetch;
-  const send = <A = unknown>(command: string, ...args: ReadonlyArray<string>) =>
-    Effect.tryPromise({
-      try: async (signal) => {
-        const res = await fetchFn(options.url, {
-          method: 'POST',
-          headers: {
-            authorization: `Bearer ${options.token}`,
-            'content-type': 'application/json',
-          },
-          body: JSON.stringify([command, ...args]),
-          signal,
-        });
-        const text = await res.text();
-        let body: { result?: unknown; error?: unknown } | undefined;
-        try {
-          body = JSON.parse(text);
-        } catch {
-          // Not Upstash's JSON: reported below with the status.
-        }
-        if (typeof body?.error === 'string') throw new Error(body.error);
-        if (!res.ok || !body || !('result' in body)) {
-          throw new Error(`Upstash answered ${res.status}: ${text}`);
-        }
-        return body.result as A;
-      },
-      catch: (cause) => new Redis.RedisError({ cause }),
-    });
-  return Layer.effect(
-    Redis.Redis,
-    Redis.make({ send, subscribe: () => Effect.fail(noSubscribe) }),
-  );
+  const makeSend =
+    (closed?: AbortSignal) =>
+    <A = unknown>(command: string, ...args: ReadonlyArray<string>) =>
+      Effect.tryPromise({
+        try: async (signal) => {
+          const res = await fetchFn(options.url, {
+            method: 'POST',
+            headers: {
+              authorization: `Bearer ${options.token}`,
+              'content-type': 'application/json',
+            },
+            body: JSON.stringify([command, ...args]),
+            signal: closed ? AbortSignal.any([signal, closed]) : signal,
+          });
+          const text = await res.text();
+          let body: { result?: unknown; error?: unknown } | undefined;
+          try {
+            body = JSON.parse(text);
+          } catch {
+            // Not Upstash's JSON: reported below with the status.
+          }
+          if (typeof body?.error === 'string') throw new Error(body.error);
+          if (!res.ok || !body || !('result' in body)) {
+            throw new Error(`Upstash answered ${res.status}: ${text}`);
+          }
+          return body.result as A;
+        },
+        catch: (cause) => new Redis.RedisError({ cause }),
+      });
+  // A REST command never blocks the ones behind it, so a reserved connection
+  // only has to fail its in-flight commands when it closes.
+  const connect = Effect.sync(() => {
+    const controller = new AbortController();
+    return {
+      send: makeSend(controller.signal),
+      close: Effect.sync(() => controller.abort()),
+    };
+  });
+  const client: RedisOptions = {
+    send: makeSend(),
+    subscribe: () => Effect.fail(noSubscribe),
+    connect,
+  };
+  return Layer.effect(Redis.Redis, Redis.make(client));
 }
+
+/** `Redis.make()`'s options with `connect`, which effect 4.0.7 added. */
+type RedisOptions = Parameters<typeof Redis.make>[0] & {
+  readonly connect: Effect.Effect<
+    {
+      readonly send: Redis.Redis['Service']['send'];
+      readonly close: Effect.Effect<void>;
+    },
+    Redis.RedisError
+  >;
+};
 
 /**
  * Options for {@link experimental_upstashRateLimiterStore}.
