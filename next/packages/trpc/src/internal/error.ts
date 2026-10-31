@@ -736,6 +736,15 @@ export function frameworkError(err: AnyTrpcError): unknown {
   return hasDigest(err.cause) ? err.cause : undefined;
 }
 
+/**
+ * Whether `value` is an `Error`, also one made in another realm (`node:vm`,
+ * an iframe), which fails `instanceof Error`.
+ * @internal
+ */
+export const isErrorLike = (value: unknown): value is Error =>
+  value instanceof Error ||
+  Object.prototype.toString.call(value) === '[object Error]';
+
 const isTimeoutReason = (reason: unknown) =>
   reason instanceof Error && reason.name === 'TimeoutError';
 

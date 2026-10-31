@@ -13,6 +13,7 @@ import {
 import { HttpServerResponse } from 'effect/http';
 import {
   isBuiltinCode,
+  isErrorLike,
   isKeptUntyped,
   isTrpcError,
   keepUntyped,
@@ -75,7 +76,7 @@ export function unexpectedError(
   cause: unknown,
 ): CodeError<'INTERNAL_SERVER_ERROR'> {
   const err = new TrpcError.InternalServerError({
-    message: cause instanceof Error ? cause.message : 'Internal server error',
+    message: isErrorLike(cause) ? cause.message : 'Internal server error',
     cause,
   });
   unexpectedErrors.add(err);

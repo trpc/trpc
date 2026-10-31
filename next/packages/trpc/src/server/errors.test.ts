@@ -1,3 +1,4 @@
+import { runInNewContext } from 'node:vm';
 import { Effect } from 'effect';
 import {
   createSafeClient,
@@ -120,6 +121,9 @@ const router = {
     }),
   crash: t.procedure.query((): string => {
     throw new Error('connect ECONNREFUSED 10.0.0.7:5432');
+  }),
+  crossRealmCrash: t.procedure.query((): string => {
+    throw runInNewContext("new Error('connect ECONNREFUSED 10.0.0.8:5432')");
   }),
   effectDefect: t.procedure.query(() =>
     // @ts-expect-error -- 02 d.ii: map Effect failures to a TrpcError first
@@ -702,6 +706,15 @@ test('exposeUnexpectedErrors shows the real message', async () => {
   await using ctx = await setup({ expose: true });
   const [, err] = await safe(ctx.client.crash.query());
   expect(err?.message).toContain('ECONNREFUSED');
+});
+
+test("exposeUnexpectedErrors shows the message of an error from another realm, which isn't instanceof Error", async () => {
+  await using ctx = await setup({ expose: true });
+  const [, err] = await safe(ctx.client.crossRealmCrash.query());
+  expect(err?.message).toContain('10.0.0.8');
+  const cause = ctx.errors[0]!.error.cause as Error;
+  expect(cause).not.toBeInstanceOf(Error);
+  expect(cause.stack).toContain('ECONNREFUSED');
 });
 
 test('an Effect failure that is not a TrpcError is unexpected (02 d.i)', async () => {
