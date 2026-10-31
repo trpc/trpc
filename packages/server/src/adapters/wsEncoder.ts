@@ -12,7 +12,7 @@
  */
 export interface Encoder {
   /** Encode data for transmission over the wire */
-  encode(data: unknown): string | Uint8Array;
+  encode(data: unknown): string | Uint8Array<ArrayBuffer>;
   /** Decode data received from the wire */
   decode(data: string | ArrayBuffer | Uint8Array): unknown;
 }

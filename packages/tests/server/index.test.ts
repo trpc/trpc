@@ -473,7 +473,7 @@ test('void mutation response', async () => {
 
   const ws = createWSClient({
     url: `ws://localhost:${wssPort}`,
-    WebSocket: WebSocket as any,
+    WebSocket: WebSocket,
   });
   const wsClient = createTRPCClient<typeof router>({
     links: [wsLink({ client: ws })],

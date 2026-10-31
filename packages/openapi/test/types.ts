@@ -11,14 +11,7 @@ import type {
 } from '../src/types';
 
 export type HttpMethod =
-  | 'delete'
-  | 'get'
-  | 'head'
-  | 'options'
-  | 'patch'
-  | 'post'
-  | 'put'
-  | 'trace';
+  'delete' | 'get' | 'head' | 'options' | 'patch' | 'post' | 'put' | 'trace';
 
 export type SchemaOrRef = SchemaObject | ReferenceObject;
 

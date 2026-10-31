@@ -22,11 +22,7 @@ import type {
 import { createTRPCOptionsResult, getClientArgs } from './utils';
 
 type ReservedOptions =
-  | 'queryKey'
-  | 'queryFn'
-  | 'queryHashFn'
-  | 'queryHash'
-  | 'initialPageParam';
+  'queryKey' | 'queryFn' | 'queryHashFn' | 'queryHash' | 'initialPageParam';
 
 interface UndefinedTRPCInfiniteQueryOptionsIn<
   TInput,
@@ -34,7 +30,9 @@ interface UndefinedTRPCInfiniteQueryOptionsIn<
   TData,
   TError,
   TFeatureFlags extends FeatureFlags,
-> extends DistributiveOmit<
+>
+  extends
+    DistributiveOmit<
       UndefinedInitialDataInfiniteOptions<
         TQueryFnData,
         TError,
@@ -54,7 +52,9 @@ interface UndefinedTRPCInfiniteQueryOptionsOut<
   TData,
   TError,
   TFeatureFlags extends FeatureFlags,
-> extends DistributiveOmit<
+>
+  extends
+    DistributiveOmit<
       UndefinedInitialDataInfiniteOptions<
         TQueryFnData,
         TError,
@@ -79,7 +79,9 @@ interface DefinedTRPCInfiniteQueryOptionsIn<
   TData,
   TError,
   TFeatureFlags extends FeatureFlags,
-> extends DistributiveOmit<
+>
+  extends
+    DistributiveOmit<
       DefinedInitialDataInfiniteOptions<
         TQueryFnData,
         TError,
@@ -99,7 +101,9 @@ interface DefinedTRPCInfiniteQueryOptionsOut<
   TData,
   TError,
   TFeatureFlags extends FeatureFlags,
-> extends DistributiveOmit<
+>
+  extends
+    DistributiveOmit<
       DefinedInitialDataInfiniteOptions<
         TQueryFnData,
         TError,
@@ -124,7 +128,9 @@ interface UnusedSkipTokenTRPCInfiniteQueryOptionsIn<
   TData,
   TError,
   TFeatureFlags extends FeatureFlags,
-> extends DistributiveOmit<
+>
+  extends
+    DistributiveOmit<
       UnusedSkipTokenInfiniteOptions<
         TQueryFnData,
         TError,
@@ -144,7 +150,9 @@ interface UnusedSkipTokenTRPCInfiniteQueryOptionsOut<
   TData,
   TError,
   TFeatureFlags extends FeatureFlags,
-> extends DistributiveOmit<
+>
+  extends
+    DistributiveOmit<
       UnusedSkipTokenInfiniteOptions<
         TQueryFnData,
         TError,

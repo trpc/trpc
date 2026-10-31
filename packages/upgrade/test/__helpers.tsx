@@ -36,6 +36,9 @@ export function testReactResource<TRouter extends AnyTRPCRouter>(
   const trpcTrq = trq.createTRPCContext<TRouter>();
 
   function renderApp(ui: React.ReactNode) {
+    // each render is a fresh app: drop whatever a previous run (or a vitest
+    // retry of a failed one) left in the module-scoped queryClient
+    queryClient.clear();
     return render(
       <QueryClientProvider client={queryClient}>
         <baseProxy.Provider client={ctx.client} queryClient={queryClient}>

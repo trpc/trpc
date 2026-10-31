@@ -18,6 +18,7 @@ import type {
   FastifyTRPCPluginOptions,
 } from '@trpc/server/adapters/fastify';
 import { fastifyTRPCPlugin } from '@trpc/server/adapters/fastify';
+import type { WSSHandlerOptions } from '@trpc/server/adapters/ws';
 import { observable } from '@trpc/server/observable';
 import fastify from 'fastify';
 import fp from 'fastify-plugin';
@@ -149,6 +150,7 @@ interface ServerOptions {
   appRouter: AppRouter;
   fastifyPluginWrapper?: boolean;
   withContentTypeParser?: boolean;
+  keepAlive?: { enabled: boolean; pingMs: number; pongWaitMs: number };
 }
 
 type PostPayload = { Body: { text: string; life: number } };
@@ -179,6 +181,7 @@ function createServer(opts: ServerOptions) {
     trpcOptions: {
       router,
       createContext,
+      keepAlive: opts.keepAlive,
       onError(data) {
         // report to error monitoring
         data;
@@ -632,4 +635,62 @@ describe('issue #5530 - cannot receive new WebSocket messages after receiving 16
       expect(await app.client.echo.query(data)).toBe(data);
     }
   });
+});
+
+describe('issue #7502 - keepAlive must register a single ping interval', () => {
+  const pingMs = 250;
+
+  beforeEach(async () => {
+    app = await createApp({
+      serverOptions: {
+        keepAlive: { enabled: true, pingMs, pongWaitMs: 10_000 },
+      },
+    });
+  });
+
+  afterEach(async () => {
+    await app.stop();
+  });
+
+  test('sends one ping per interval', async () => {
+    const socket = new WebSocket(
+      `ws://localhost:${app.url.port}${config.prefix}`,
+    );
+
+    // keepalive is sent as a "PING" text message, not a protocol ping frame
+    let pings = 0;
+    socket.on('message', (data) => {
+      if (Buffer.isBuffer(data) && data.toString('utf8') === 'PING') {
+        pings++;
+      }
+    });
+
+    await new Promise<void>((resolve, reject) => {
+      socket.on('open', () => resolve());
+      socket.on('error', reject);
+    });
+
+    // a duplicate registration schedules its interval at essentially the same
+    // moment as the first, so the extra ping lands well inside one period
+    await new Promise((resolve) => setTimeout(resolve, pingMs * 1.5));
+
+    expect(pings).toBe(1);
+
+    socket.close();
+  });
+});
+
+test('trpcOptions accepts the websocket handler options', () => {
+  type TRPCOptions = FastifyTRPCPluginOptions<AppRouter>['trpcOptions'];
+  type WSOptions = WSSHandlerOptions<AppRouter>;
+
+  expectTypeOf<TRPCOptions['keepAlive']>().toEqualTypeOf<
+    WSOptions['keepAlive']
+  >();
+  expectTypeOf<TRPCOptions['dangerouslyDisablePong']>().toEqualTypeOf<
+    WSOptions['dangerouslyDisablePong']
+  >();
+  expectTypeOf<TRPCOptions['experimental_encoder']>().toEqualTypeOf<
+    WSOptions['experimental_encoder']
+  >();
 });

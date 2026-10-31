@@ -31,6 +31,7 @@ const config: Config = {
       use: {
         ...opts,
         ...devices['Desktop Chrome'],
+        channel: process.env.CI ? 'chrome' : undefined,
         baseURL: 'http://localhost:3000/',
       },
     },
@@ -39,6 +40,7 @@ const config: Config = {
       use: {
         ...opts,
         ...devices['Desktop Chrome'],
+        channel: process.env.CI ? 'chrome' : undefined,
         baseURL: 'http://localhost:3001/',
       },
     },

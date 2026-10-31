@@ -15,6 +15,28 @@ export interface RootTypes {
 }
 
 /**
+ * Recommended content types for batch stream responses.
+ *
+ * `application/json` remains the default for backwards compatibility, while
+ * other string values are allowed for tooling or infrastructure compatibility.
+ */
+export type JSONLContentType =
+  | 'application/json'
+  | 'application/jsonl'
+  | 'application/x-ndjson'
+  | (string & {});
+
+export interface JSONLConfig extends Pick<JSONLProducerOptions, 'pingMs'> {
+  /**
+   * The `content-type` header to use for batch stream responses.
+   * Supports any valid content type string.
+   * Defaults to `application/json` for backwards compatibility.
+   * @default 'application/json'
+   */
+  contentType?: JSONLContentType;
+}
+
+/**
  * The default check to see if we're in a server
  */
 export const isServerDefault: boolean =
@@ -24,6 +46,14 @@ export const isServerDefault: boolean =
   globalThis.process?.env?.['NODE_ENV'] === 'test' ||
   !!globalThis.process?.env?.['JEST_WORKER_ID'] ||
   !!globalThis.process?.env?.['VITEST_WORKER_ID'];
+
+/**
+ * The default check to see if we're in development
+ */
+export function isDevDefault(): boolean {
+  // eslint-disable-next-line @typescript-eslint/dot-notation
+  return globalThis.process?.env['NODE_ENV'] !== 'production';
+}
 
 /**
  * The tRPC root config
@@ -85,7 +115,7 @@ export interface RootConfig<TTypes extends RootTypes> {
    * Options for batch stream
    * @see https://trpc.io/docs/client/links/httpBatchStreamLink
    */
-  jsonl?: Pick<JSONLProducerOptions, 'pingMs'>;
+  jsonl?: JSONLConfig;
   experimental?: {};
 }
 

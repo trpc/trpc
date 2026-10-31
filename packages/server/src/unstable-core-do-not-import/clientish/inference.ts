@@ -22,6 +22,18 @@ export type inferTransformedProcedureOutput<
   ? Serialize<inferProcedureOutput<TProcedure>>
   : inferProcedureOutput<TProcedure>;
 
+/**
+ * @internal
+ */
+export type inferProcedureErrorShape<
+  TInferrable extends InferrableClientTypes,
+  TProcedure extends AnyProcedure,
+> = TProcedure['_def']['$types']['errorShape'] extends infer $Shape
+  ? unknown extends $Shape
+    ? inferClientTypes<TInferrable>['errorShape']
+    : $Shape
+  : never;
+
 /** @internal */
 export type inferTransformedSubscriptionOutput<
   TInferrable extends InferrableClientTypes,

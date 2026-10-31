@@ -10,8 +10,7 @@ const authOptions: NextAuthConfig = {
 };
 
 let useMockProvider =
-  process.env.NODE_ENV === 'test' ||
-  process.env.RAILWAY_ENVIRONMENT_NAME?.includes('-pr-'); // example: 'trpc-pr-5821'
+  process.env.NODE_ENV === 'test' || process.env.VERCEL_ENV === 'preview';
 
 const { AUTH_GITHUB_ID, AUTH_GITHUB_SECRET, NODE_ENV, APP_ENV } = process.env;
 if (
@@ -70,8 +69,7 @@ export const auth = cache(uncachedAuth);
 
 export async function SignedIn(props: {
   children:
-    | React.ReactNode
-    | ((props: { user: Session['user'] }) => React.ReactNode);
+    React.ReactNode | ((props: { user: Session['user'] }) => React.ReactNode);
 }) {
   const sesh = await auth();
   return sesh?.user ? (

@@ -290,6 +290,31 @@ test('basic subscription test (observable)', async () => {
   expect(stateCalls).toContain('pending');
 });
 
+test('subscription is aborted when its signal aborts', async () => {
+  await using ctx = factory();
+
+  const ac = new AbortController();
+  const onStartedMock = vi.fn<() => void>();
+
+  ctx.client.onMessageObservable.subscribe(undefined, {
+    signal: ac.signal,
+    onStarted: onStartedMock,
+  });
+
+  await vi.waitFor(() => {
+    expect(onStartedMock).toHaveBeenCalledTimes(1);
+    expect(ctx.ee.listenerCount('server:msg')).toBe(1);
+  });
+
+  ac.abort();
+
+  // Aborting the signal must tear the subscription down, sending
+  // `subscription.stop` so the server cleans up its listener.
+  await vi.waitFor(() => {
+    expect(ctx.ee.listenerCount('server:msg')).toBe(0);
+  });
+});
+
 test('subscription observable with error', async () => {
   await using ctx = factory();
   ctx.ee.once('subscription:created', () => {
@@ -1853,6 +1878,7 @@ describe('subscriptions with createCaller', () => {
         input: string | null | undefined;
         output: AsyncIterable<Message, void, any>;
         meta: object;
+        errorShape: DefaultErrorShape;
       }>
     >();
     const abortController = new AbortController();
@@ -1911,6 +1937,7 @@ describe('subscriptions with createCaller', () => {
         input: string | null | undefined;
         output: Message;
         meta: object;
+        errorShape: DefaultErrorShape;
       }>
     >();
 

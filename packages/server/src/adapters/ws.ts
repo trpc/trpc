@@ -1,5 +1,5 @@
 import type { IncomingMessage } from 'http';
-import type ws from 'ws';
+import type { WebSocketServer, WebSocket as WsWebSocket } from 'ws';
 import type {
   AnyRouter,
   CreateContextCallback,
@@ -53,7 +53,7 @@ const WEBSOCKET_OPEN = 1; /* ws.WebSocket.OPEN */
  */
 export type CreateWSSContextFnOptions = NodeHTTPCreateContextFnOptions<
   IncomingMessage,
-  ws.WebSocket
+  WsWebSocket
 >;
 
 /**
@@ -75,7 +75,7 @@ export type WSConnectionHandlerOptions<TRouter extends AnyRouter> =
  */
 export type WSSHandlerOptions<TRouter extends AnyRouter> =
   WSConnectionHandlerOptions<TRouter> & {
-    wss: ws.WebSocketServer;
+    wss: WebSocketServer;
     prefix?: string;
     keepAlive?: {
       /**
@@ -114,7 +114,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
   const { transformer } = router._def._config;
   const encoder = opts.experimental_encoder ?? jsonEncoder;
 
-  return (client: ws.WebSocket, req: IncomingMessage) => {
+  return (client: WsWebSocket, req: IncomingMessage) => {
     type Context = inferRouterContext<TRouter>;
     type ContextResult = Result<Context>;
 
@@ -406,6 +406,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
           });
           clientSubscriptions.delete(id);
         }).catch((cause) => {
+          clientSubscriptions.delete(id);
           const error = getTRPCErrorFromUnknown(cause);
           opts.onError?.({ error, path, type, ctx, req, input });
           respond({
@@ -574,7 +575,7 @@ export function getWSConnectionHandler<TRouter extends AnyRouter>(
  * Handle WebSocket keep-alive messages
  */
 export function handleKeepAlive(
-  client: ws.WebSocket,
+  client: WsWebSocket,
   pingMs = 30_000,
   pongWaitMs = 5_000,
 ) {
@@ -585,13 +586,13 @@ export function handleKeepAlive(
     const scheduleTimeout = () => {
       timeout = setTimeout(() => {
         client.terminate();
-      }, pongWaitMs) as any;
+      }, pongWaitMs);
     };
     ping = setTimeout(() => {
       client.send('PING');
 
       scheduleTimeout();
-    }, pingMs) as any;
+    }, pingMs);
   };
 
   const onMessage = () => {

@@ -606,20 +606,16 @@ export const AppRouter = t.router({
 
   recursiveTypes: t.router({
     // Inferred return with named recursive type (children: TreeNode[])
-    tree: t.procedure.query(
-      (): TreeNode => ({
-        value: 'root',
-        children: [{ value: 'child', children: [] }],
-      }),
-    ),
+    tree: t.procedure.query((): TreeNode => ({
+      value: 'root',
+      children: [{ value: 'child', children: [] }],
+    })),
 
     // Nullable recursion (next: LinkedListNode | null)
-    linkedList: t.procedure.query(
-      (): LinkedListNode => ({
-        value: 1,
-        next: { value: 2, next: null },
-      }),
-    ),
+    linkedList: t.procedure.query((): LinkedListNode => ({
+      value: 1,
+      next: { value: 2, next: null },
+    })),
 
     // Zod recursive input via z.lazy
     category: t.procedure.input(categorySchema).query(({ input }) => input),

@@ -20,7 +20,7 @@ export default {
   tailwindConfig: './www/tailwind.config.ts',
   overrides: [
     {
-      files: ['www/docs/**/*.md', 'www/docs/**/*.mdx'],
+      files: ['**/*.md', '**/*.mdx'],
       options: {
         embeddedLanguageFormatting: 'off',
       },

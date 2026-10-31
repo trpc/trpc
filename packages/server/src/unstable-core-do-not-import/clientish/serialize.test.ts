@@ -306,6 +306,22 @@ test('comprehensive zod type serialization', () => {
   >();
 });
 
+test('recursive JSON type with optional keys (Prisma.JsonValue)', () => {
+  // https://github.com/trpc/trpc/issues/6997
+  type JsonObject = { [Key in string]?: JsonValue };
+  interface JsonArray extends Array<JsonValue> {}
+  type JsonValue = string | number | boolean | JsonObject | JsonArray | null;
+
+  type Transformed = Serialize<{ id: string; data: JsonValue }>;
+
+  expectTypeOf<Transformed['id']>().toEqualTypeOf<string>();
+  expectTypeOf<Extract<Transformed['data'], string>>().toEqualTypeOf<string>();
+
+  type Data = Transformed['data'];
+  type DataObject = Exclude<Data, string | number | boolean | null | unknown[]>;
+  expectTypeOf<DataObject[string]>().toExtend<Data | undefined>();
+});
+
 test('tuple types are not inferred as Records', () => {
   const zChange = z.object({
     status: z

@@ -115,6 +115,32 @@ describe('CLI', () => {
     expect(doc.paths).toHaveProperty('/greeting');
   });
 
+  it('emits a servers entry with --server-url', () => {
+    const outputPath = path.join(outDir, 'cli-server-url.json');
+
+    const result = runCli([
+      appRouterPath,
+      '-o',
+      outputPath,
+      '--server-url',
+      'https://api.example.com/trpc',
+    ]);
+
+    expect(result.exitCode).toBe(0);
+    const doc = JSON.parse(fs.readFileSync(outputPath, 'utf8'));
+    expect(doc.servers).toEqual([{ url: 'https://api.example.com/trpc' }]);
+  });
+
+  it('omits servers when --server-url is not provided', () => {
+    const outputPath = path.join(outDir, 'cli-no-server-url.json');
+
+    const result = runCli([appRouterPath, '-o', outputPath]);
+
+    expect(result.exitCode).toBe(0);
+    const doc = JSON.parse(fs.readFileSync(outputPath, 'utf8'));
+    expect(doc.servers).toBeUndefined();
+  });
+
   it('uses -e shorthand for --export', () => {
     const outputPath = path.join(outDir, 'cli-export-test.json');
 

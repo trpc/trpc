@@ -12,6 +12,7 @@
  *   --output, -o   Output file path                    (default: openapi.json)
  *   --title        OpenAPI info.title                  (default: tRPC API)
  *   --version      OpenAPI info.version                (default: 0.0.0)
+ *   --server-url   OpenAPI servers[].url (include any tRPC prefix)
  *   --help, -h     Show this help message
  */
 import * as fs from 'node:fs';
@@ -29,6 +30,7 @@ interface ParsedArgs {
   output: string;
   title: string;
   version: string;
+  serverUrl: string | undefined;
   help: boolean;
 }
 
@@ -43,6 +45,7 @@ function parseArgs(argv: string[]): ParsedArgs {
         output: { type: 'string', short: 'o', default: 'openapi.json' },
         title: { type: 'string', default: 'tRPC API' },
         version: { type: 'string', default: '0.0.0' },
+        'server-url': { type: 'string' },
       },
       strict: true,
       allowPositionals: true,
@@ -59,6 +62,7 @@ function parseArgs(argv: string[]): ParsedArgs {
     output: parsed.values.output,
     title: parsed.values.title,
     version: parsed.values.version,
+    serverUrl: parsed.values['server-url'],
     help: parsed.values.help,
   };
 }
@@ -81,11 +85,13 @@ Options:
   -o, --output <file>  Output file path                    [default: openapi.json]
       --title  <text>  OpenAPI info.title                  [default: tRPC API]
       --version <ver>  OpenAPI info.version                [default: 0.0.0]
+      --server-url <url>  OpenAPI servers[].url (include any tRPC mount prefix)
   -h, --help           Show this help message
 
 Examples:
   trpc-openapi ./src/server/router.ts
   trpc-openapi ./src/server/router.ts --output api.json --title "My API" --version 1.0.0
+  trpc-openapi ./src/server/router.ts --server-url https://api.example.com/trpc
   trpc-openapi ./src/server/router.ts --export appRouter
 `.trim();
 
@@ -118,6 +124,7 @@ async function main(): Promise<void> {
       exportName: args.exportName,
       title: args.title,
       version: args.version,
+      servers: args.serverUrl ? [{ url: args.serverUrl }] : undefined,
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);

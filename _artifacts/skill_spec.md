@@ -235,8 +235,8 @@ autocompletion, and zero runtime overhead.
 
 ## Tensions
 
-| Tension                                         | Skills                                   | Agent implication                                                                                                  |
-| ----------------------------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Tension                                         | Skills                                  | Agent implication                                                                                                  |
+| ----------------------------------------------- | --------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
 | Type safety vs runtime flexibility              | server-setup ↔ middlewares              | Agent may compose routers from different initTRPC instances without compile-time errors, but they crash at runtime |
 | Batching convenience vs caching safety          | links ↔ caching                         | Agent adding cache headers may not realize batched responses mix public and private data                           |
 | SSR simplicity vs server component architecture | nextjs-app-router ↔ nextjs-pages-router | Agent may apply Pages Router SSR patterns in App Router or vice versa                                              |

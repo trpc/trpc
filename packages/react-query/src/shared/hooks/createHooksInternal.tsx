@@ -1,5 +1,4 @@
 // TODO: Look into fixing react-compiler support
-/* eslint-disable react-hooks/react-compiler */
 import {
   useInfiniteQuery as __useInfiniteQuery,
   useMutation as __useMutation,
@@ -431,6 +430,7 @@ export function createRootHooks<
         path.join('.'),
         input ?? undefined,
         {
+          context: optsRef.current?.trpc?.context,
           onStarted: () => {
             optsRef.current.onStarted?.();
             updateState((prev) => ({

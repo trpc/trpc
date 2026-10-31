@@ -11,12 +11,11 @@ import { splitSetCookieString } from '../../vendor/cookie-es/set-cookie/split';
 export type LambdaEvent = APIGatewayProxyEvent | APIGatewayProxyEventV2;
 
 export type APIGatewayResult =
-  | APIGatewayProxyResult
-  | APIGatewayProxyStructuredResultV2;
+  APIGatewayProxyResult | APIGatewayProxyStructuredResultV2;
 
 function determinePayloadFormat(event: LambdaEvent): string {
   // https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-develop-integrations-lambda.html
-  // According to AWS support, version is is extracted from the version property in the event.
+  // According to AWS support, version is extracted from the version property in the event.
   // If there is no version property, then the version is implied as 1.0
   const unknownEvent = event as { version?: string };
   if (typeof unknownEvent.version === 'undefined') {

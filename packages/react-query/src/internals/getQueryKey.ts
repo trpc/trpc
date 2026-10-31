@@ -16,9 +16,7 @@ export type TRPCQueryKey = [
 export type TRPCMutationKey = [readonly string[]]; // = [TRPCQueryKey[0]]
 
 type ProcedureOrRouter =
-  | DecoratedMutation<any>
-  | DecoratedQuery<any>
-  | DecorateRouterRecord<any, any>;
+  DecoratedMutation<any> | DecoratedQuery<any> | DecorateRouterRecord<any, any>;
 
 /**
  * To allow easy interactions with groups of related queries, such as
@@ -37,7 +35,7 @@ export function getQueryKeyInternal(
   // some parts of the path may be dot-separated, split them up
   const splitPath = path.flatMap((part) => part.split('.'));
 
-  if (!input && (!type || type === 'any')) {
+  if (typeof input === 'undefined' && (!type || type === 'any')) {
     // this matches also all mutations (see `getMutationKeyInternal`)
 
     // for `utils.invalidate()` to match all queries (including vanilla react-query)

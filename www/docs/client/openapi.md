@@ -51,15 +51,16 @@ The generator works with your existing router — no annotations or decorators r
 pnpm exec trpc-openapi ./src/server/router.ts
 ```
 
-| Option                | Default        | Description                      |
-| --------------------- | -------------- | -------------------------------- |
-| `-e, --export <name>` | `AppRouter`    | Name of the exported router type |
-| `-o, --output <file>` | `openapi.json` | Output file path                 |
-| `--title <text>`      | `tRPC API`     | OpenAPI `info.title`             |
-| `--version <ver>`     | `0.0.0`        | OpenAPI `info.version`           |
+| Option                | Default        | Description                                                          |
+| --------------------- | -------------- | -------------------------------------------------------------------- |
+| `-e, --export <name>` | `AppRouter`    | Name of the exported router type                                     |
+| `-o, --output <file>` | `openapi.json` | Output file path                                                     |
+| `--title <text>`      | `tRPC API`     | OpenAPI `info.title`                                                 |
+| `--version <ver>`     | `0.0.0`        | OpenAPI `info.version`                                               |
+| `--server-url <url>`  |                | Base URL (including any prefix), e.g. `https://api.example.com/trpc` |
 
 ```bash
-pnpm exec trpc-openapi ./src/server/router.ts -o api.json --title "My API" --version 1.0.0
+pnpm exec trpc-openapi ./src/server/router.ts -o api.json --title "My API" --version 1.0.0 --server-url https://api.example.com/trpc
 ```
 
 ### Programmatic
@@ -67,10 +68,11 @@ pnpm exec trpc-openapi ./src/server/router.ts -o api.json --title "My API" --ver
 ```ts title='scripts/generate-openapi.ts'
 import { generateOpenAPIDocument } from '@trpc/openapi';
 
-const doc = generateOpenAPIDocument('./src/server/router.ts', {
+const doc = await generateOpenAPIDocument('./src/server/router.ts', {
   exportName: 'AppRouter',
   title: 'My API',
   version: '1.0.0',
+  servers: [{ url: 'https://api.example.com/trpc' }],
 });
 ```
 

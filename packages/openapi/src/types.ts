@@ -4,13 +4,7 @@ export type Replace<TTarget, TReplaceWith> = Omit<TTarget, keyof TReplaceWith> &
   TReplaceWith;
 
 export type SchemaType =
-  | 'array'
-  | 'boolean'
-  | 'integer'
-  | 'null'
-  | 'number'
-  | 'object'
-  | 'string';
+  'array' | 'boolean' | 'integer' | 'null' | 'number' | 'object' | 'string';
 
 export type PrimitiveSchemaType = SchemaType;
 
@@ -23,6 +17,7 @@ export type ExternalDocumentationObject =
 export type XMLObject = BaseOpenAPIV3_1.XMLObject;
 export type LinkObject = BaseOpenAPIV3_1.LinkObject;
 export type SecuritySchemeObject = BaseOpenAPIV3_1.SecuritySchemeObject;
+export type ServerObject = BaseOpenAPIV3_1.ServerObject;
 
 export type SchemaObject = Replace<
   BaseOpenAPIV3_1.BaseSchemaObject,
@@ -66,15 +61,14 @@ export type MediaTypeObject = Replace<
   }
 >;
 
-export interface ParameterBaseObject
-  extends Replace<
-    BaseOpenAPIV3_1.ParameterBaseObject,
-    {
-      schema?: SchemaObject | ReferenceObject;
-      examples?: Record<string, ReferenceObject | ExampleObject>;
-      content?: Record<string, MediaTypeObject>;
-    }
-  > {}
+export interface ParameterBaseObject extends Replace<
+  BaseOpenAPIV3_1.ParameterBaseObject,
+  {
+    schema?: SchemaObject | ReferenceObject;
+    examples?: Record<string, ReferenceObject | ExampleObject>;
+    content?: Record<string, MediaTypeObject>;
+  }
+> {}
 
 export interface ParameterObject extends ParameterBaseObject {
   name: string;

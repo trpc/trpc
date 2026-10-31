@@ -31,27 +31,57 @@ type AsyncResult = Promise<{ data: string }>;
 // Subscription (should be skipped in OpenAPI)
 // Empty object input
 
+type WithFunctions = {
+  id: string;
+  onEvent: (value: string) => void;
+  optionalHook?: (value: number) => number;
+  ctor: new () => { x: number };
+};
+
+type OnlyFunctions = {
+  run: () => void;
+};
+
+type StandardFunctionInterfaces = {
+  id: string;
+  handler: Function;
+  callable: CallableFunction;
+  newable: NewableFunction;
+  optionalHandler?: Function;
+  nullableHandler: Function | null;
+};
+
+type FunctionUnionTarget = {
+  label: string;
+};
+
+type FunctionUnion = {
+  id: string;
+  value: Function | FunctionUnionTarget | null;
+  inline: (() => void) | FunctionUnionTarget;
+};
+
+type NullableFunction = {
+  id: string;
+  hook: (() => void) | null;
+  maybeHook?: (() => void) | null;
+};
+
 export const EdgeCaseRouter = t.router({
   // --- BigInt type ---
-  bigint: t.procedure.query(
-    (): WithBigInt => ({
-      id: BigInt(123),
-    }),
-  ),
+  bigint: t.procedure.query((): WithBigInt => ({
+    id: BigInt(123),
+  })),
 
   // --- Never field ---
-  neverField: t.procedure.query(
-    (): NeverField => ({
-      valid: 'hello',
-    }),
-  ),
+  neverField: t.procedure.query((): NeverField => ({
+    valid: 'hello',
+  })),
 
   // --- Promise return (should unwrap) ---
-  asyncReturn: t.procedure.query(
-    async (): AsyncResult => ({
-      data: 'async result',
-    }),
-  ),
+  asyncReturn: t.procedure.query(async (): AsyncResult => ({
+    data: 'async result',
+  })),
 
   // --- Empty input (void-like) ---
   voidInput: t.procedure.query(() => 'no input needed'),
@@ -111,9 +141,10 @@ export const EdgeCaseRouter = t.router({
   noInputMutation: t.procedure.mutation(() => ({ success: true })),
 
   // --- Intersection with disjoint properties (merged into single object) ---
-  disjointIntersection: t.procedure.query(
-    (): DisjointIntersection => ({ name: 'Alice', age: 30 }),
-  ),
+  disjointIntersection: t.procedure.query((): DisjointIntersection => ({
+    name: 'Alice',
+    age: 30,
+  })),
 
   // --- Intersection with conflicting property types (allOf) ---
   conflictingIntersection: t.procedure.query(
@@ -134,6 +165,43 @@ export const EdgeCaseRouter = t.router({
   // --- Computed literal property name ---
   literalComputedKey: t.procedure.query((): { ['x-trace-id']: string } => ({
     ['x-trace-id']: 'trace-123',
+  })),
+
+  withFunctions: t.procedure.query((): WithFunctions => ({
+    id: 'with-functions',
+    onEvent: () => undefined,
+    optionalHook: (value) => value,
+    ctor: class {
+      x = 0;
+    },
+  })),
+
+  onlyFunctions: t.procedure.query((): OnlyFunctions => ({
+    run: () => undefined,
+  })),
+
+  standardFunctionInterfaces: t.procedure.query(
+    (): StandardFunctionInterfaces => ({
+      id: 'standard-function-interfaces',
+      handler: () => undefined,
+      callable: () => undefined,
+      newable: class {},
+      optionalHandler: () => undefined,
+      nullableHandler: null,
+    }),
+  ),
+
+  topLevelFunction: t.procedure.query((): Function => () => undefined),
+
+  functionUnion: t.procedure.query((): FunctionUnion => ({
+    id: 'function-union',
+    value: { label: 'x' },
+    inline: { label: 'y' },
+  })),
+
+  nullableFunction: t.procedure.query((): NullableFunction => ({
+    id: 'nullable-function',
+    hook: null,
   })),
 });
 

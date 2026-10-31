@@ -22,7 +22,7 @@ export function makeResource<T>(thing: T, dispose: () => void): T & Disposable {
   // eslint-disable-next-line no-restricted-syntax
   it[Symbol.dispose] = () => {
     dispose();
-    existing?.();
+    existing?.call(it);
   };
 
   return it as T & Disposable;
@@ -47,7 +47,7 @@ export function makeAsyncResource<T>(
   // eslint-disable-next-line no-restricted-syntax
   it[Symbol.asyncDispose] = async () => {
     await dispose();
-    await existing?.();
+    await existing?.call(it);
   };
 
   return it as T & AsyncDisposable;

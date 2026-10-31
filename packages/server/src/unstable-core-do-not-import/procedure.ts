@@ -13,6 +13,7 @@ interface BuiltProcedureDef {
   meta: unknown;
   input: unknown;
   output: unknown;
+  errorShape?: unknown;
 }
 
 /**
@@ -31,6 +32,7 @@ export interface Procedure<
     $types: {
       input: TDef['input'];
       output: TDef['output'];
+      errorShape: TDef['errorShape'];
     };
     procedure: true;
     type: TType;
@@ -52,14 +54,17 @@ export interface Procedure<
   (opts: ProcedureCallOptions<unknown>): Promise<TDef['output']>;
 }
 
-export interface QueryProcedure<TDef extends BuiltProcedureDef>
-  extends Procedure<'query', TDef> {}
+export interface QueryProcedure<
+  TDef extends BuiltProcedureDef,
+> extends Procedure<'query', TDef> {}
 
-export interface MutationProcedure<TDef extends BuiltProcedureDef>
-  extends Procedure<'mutation', TDef> {}
+export interface MutationProcedure<
+  TDef extends BuiltProcedureDef,
+> extends Procedure<'mutation', TDef> {}
 
-export interface SubscriptionProcedure<TDef extends BuiltProcedureDef>
-  extends Procedure<'subscription', TDef> {}
+export interface SubscriptionProcedure<
+  TDef extends BuiltProcedureDef,
+> extends Procedure<'subscription', TDef> {}
 
 /**
  * @deprecated
@@ -73,13 +78,10 @@ export interface LegacyObservableSubscriptionProcedure<
 export type AnyQueryProcedure = QueryProcedure<any>;
 export type AnyMutationProcedure = MutationProcedure<any>;
 export type AnySubscriptionProcedure =
-  | SubscriptionProcedure<any>
-  | LegacyObservableSubscriptionProcedure<any>;
+  SubscriptionProcedure<any> | LegacyObservableSubscriptionProcedure<any>;
 
 export type AnyProcedure =
-  | AnyQueryProcedure
-  | AnyMutationProcedure
-  | AnySubscriptionProcedure;
+  AnyQueryProcedure | AnyMutationProcedure | AnySubscriptionProcedure;
 
 export type inferProcedureInput<TProcedure extends AnyProcedure> =
   undefined extends inferProcedureParams<TProcedure>['$types']['input']

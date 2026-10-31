@@ -10,9 +10,15 @@
     "CI",
     "NODE_ENV",
     "DATABASE_URL",
+    "DIRECT_URL",
+    "APP_URL",
+    "WS_URL",
     "NEXTAUTH_SECRET",
     "AUTH_GITHUB_ID",
-    "AUTH_GITHUB_SECRET"
+    "AUTH_GITHUB_SECRET",
+    "VERCEL_ENV",
+    "VERCEL_BRANCH_URL",
+    "VERCEL_PROJECT_PRODUCTION_URL"
   ],
   "tasks": {
     "prebuild": {
@@ -29,6 +35,9 @@
       ]
     },
     "examples-minimal-react#build": {
+      "outputs": ["client/dist/**", "server/dist/**"]
+    },
+    "examples-minimal-per-procedure-errors#build": {
       "outputs": ["client/dist/**", "server/dist/**"]
     },
     "dev": {

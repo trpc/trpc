@@ -45,7 +45,9 @@ interface TRPCMutationOptionsOut<
   TOutput,
   TContext,
   TFeatureFlags extends FeatureFlags,
-> extends UseMutationOptions<TOutput, TError, TInput, TContext>,
+>
+  extends
+    UseMutationOptions<TOutput, TError, TInput, TContext>,
     TRPCQueryOptionsResult {
   mutationKey: TRPCMutationKey<TFeatureFlags['keyPrefix']>;
 }
@@ -101,15 +103,16 @@ export function trpcMutationOptions<TFeatureFlags extends FeatureFlags>(args: {
   mutate: typeof TRPCUntypedClient.prototype.mutation;
   queryClient: QueryClient | (() => QueryClient);
   path: string[];
+  prefix: string | undefined;
   opts: AnyTRPCMutationOptionsIn<TFeatureFlags> | undefined;
   overrides: MutationOptionsOverride | undefined;
 }): AnyTRPCMutationOptionsOut<TFeatureFlags> {
-  const { mutate, path, opts, overrides } = args;
+  const { mutate, path, prefix, opts, overrides } = args;
   const queryClient = unwrapLazyArg(args.queryClient);
 
   const mutationKey = getMutationKeyInternal({
     path,
-    prefix: opts?.keyPrefix,
+    prefix: opts?.keyPrefix ?? prefix,
   }) as TRPCMutationKey<TFeatureFlags['keyPrefix']>;
 
   const defaultOpts = queryClient.defaultMutationOptions(

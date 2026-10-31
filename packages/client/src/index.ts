@@ -18,3 +18,9 @@ export {
 } from './createTRPCClient';
 
 export { type TRPCProcedureOptions } from './internals/types';
+
+export {
+  safe,
+  type SafeResult,
+  type TRPCTaggedPromise as TRPCPromise,
+} from './safe';

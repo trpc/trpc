@@ -216,5 +216,53 @@ describe.each(['userid-123', undefined])(
       });
       expect(calls).toEqual(['onMutate', 'onSettled']);
     });
+
+    test('uses proxy keyPrefix for mutationKey + defaults', async () => {
+      await using ctx = testContext(keyPrefix);
+      const { useTRPC, queryClient } = ctx;
+
+      const calls: string[] = [];
+
+      // mutationOptions() should incorporate the proxy/context keyPrefix
+      // even when the caller doesn't pass `opts.keyPrefix`.
+      const expectedKey = keyPrefix
+        ? ([[keyPrefix], ['post', 'create']] as const)
+        : ([['post', 'create']] as const);
+
+      queryClient.setMutationDefaults(expectedKey as any, {
+        onSuccess() {
+          calls.push('defaultOnSuccess');
+        },
+      });
+
+      function MyComponent() {
+        const trpc = useTRPC();
+
+        const options = trpc.post.create.mutationOptions();
+        expect(options.mutationKey).toEqual(expectedKey);
+
+        const mutation = useMutation(options);
+
+        React.useEffect(() => {
+          mutation.mutate({
+            text: 'hello',
+          });
+          // eslint-disable-next-line react-hooks/exhaustive-deps
+        }, []);
+
+        if (!mutation.data) {
+          return <>...</>;
+        }
+
+        return <pre>{JSON.stringify(mutation.data ?? 'n/a', null, 4)}</pre>;
+      }
+
+      const utils = ctx.renderApp(<MyComponent />);
+      await vi.waitFor(() => {
+        expect(utils.container).toHaveTextContent(`__mutationResult`);
+      });
+
+      expect(calls).toEqual(['defaultOnSuccess']);
+    });
   },
 );

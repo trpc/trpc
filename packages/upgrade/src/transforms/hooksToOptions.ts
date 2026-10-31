@@ -262,12 +262,10 @@ export default function transform(
                   return;
                 }
 
-                if (
-                  !(
-                    j.Identifier.check(memberExpr.property) &&
-                    memberExpr.property.name in utilMap
-                  )
-                ) {
+                if (!(
+                  j.Identifier.check(memberExpr.property) &&
+                  memberExpr.property.name in utilMap
+                )) {
                   console.warn(
                     'Failed to identify utilMethod from proxy call expression',
                     memberExpr,
