@@ -1,7 +1,7 @@
 import { Effect, Predicate, Queue, Stream } from 'effect';
 import {
+  HttpBody,
   HttpServerResponse,
-  type HttpBody,
   type HttpServerRequest,
 } from 'effect/http';
 import { statusOf, type AnyTrpcError } from '../../internal/error.ts';
@@ -53,6 +53,31 @@ export const respond = (
     );
   }
   return HttpServerResponse.stream(body, options);
+};
+
+const textBodies = /* @__PURE__ */ new WeakMap<Response, string>();
+
+/** A web `Response` of `text` that {@link fromWebResponse} sends as text. @internal */
+export const textWebResponse = (text: string, init: ResponseInit): Response => {
+  const response = new Response(text, init);
+  textBodies.set(response, text);
+  return response;
+};
+
+/**
+ * `response` as Effect's. A {@link textWebResponse}'s body stays text; any
+ * other body is a stream, which the handler waits for until it's read
+ * (effect 4.0.6+ only pulls a body as it's read). @internal
+ */
+export const fromWebResponse = (
+  response: Response,
+): HttpServerResponse.HttpServerResponse => {
+  const text = textBodies.get(response);
+  if (text === undefined) return HttpServerResponse.fromWeb(response);
+  return HttpServerResponse.setBody(
+    HttpServerResponse.fromWeb(new Response(null, response)),
+    HttpBody.text(text, response.headers.get('content-type') ?? undefined),
+  );
 };
 
 /** `body` as JSON. @internal */

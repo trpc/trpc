@@ -13,7 +13,7 @@ import {
 import {
   HttpEffect,
   HttpServerRequest,
-  HttpServerResponse,
+  type HttpServerResponse,
   type HttpMiddleware,
 } from 'effect/http';
 import { flattenRoutes } from '../internal/describe.ts';
@@ -28,7 +28,9 @@ import {
 import {
   createHandlerCore,
   CurrentPlatform,
+  fromWebResponse,
   readBytes,
+  textWebResponse,
   type ContextOption,
   type CreateContextOpts,
   type LayerOption,
@@ -192,7 +194,7 @@ const json = (
   body: unknown,
   headers?: Record<string, string>,
 ) =>
-  new Response(JSON.stringify(body), {
+  textWebResponse(JSON.stringify(body), {
     status,
     headers: { 'content-type': 'application/json', ...headers },
   });
@@ -548,7 +550,7 @@ export function experimental_createMcpHandler<
         );
       }),
     );
-    return HttpServerResponse.fromWeb(response);
+    return fromWebResponse(response);
   });
   const served = (opts.middleware ?? []).reduceRight<
     Effect.Effect<HttpServerResponse.HttpServerResponse, any, any>

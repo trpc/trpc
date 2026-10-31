@@ -14,6 +14,7 @@ export { strictestCacheControl } from './cache-control.ts';
 export { createHandlerCore } from './core.ts';
 export type { HandlerCore } from './core.ts';
 export { HttpApp, parentSpan } from './app.ts';
+export { fromWebResponse, textWebResponse } from './responses.ts';
 export { createFetchHandler, makeFetchHandler } from './fetch.ts';
 export type {
   BaseHandlerOptions,

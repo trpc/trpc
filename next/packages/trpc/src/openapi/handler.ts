@@ -45,7 +45,9 @@ import {
   drainingBodyStream,
   createHandlerCore,
   CurrentPlatform,
+  fromWebResponse,
   readBytes,
+  textWebResponse,
   type BodyError,
   type ContextOption,
   type CreateContextOpts,
@@ -254,7 +256,7 @@ const toError = (cause: unknown): AnyTrpcError =>
 const json = (status: number, body: unknown, headers?: Headers) => {
   const h = new Headers(headers);
   h.set('content-type', 'application/json');
-  return new Response(JSON.stringify(body), { status, headers: h });
+  return textWebResponse(JSON.stringify(body), { status, headers: h });
 };
 
 const isPlainObject = (v: unknown): v is Record<string, unknown> =>
@@ -823,7 +825,7 @@ export function experimental_createOpenApiHandler<
           call.procedure['~trpc'].type,
         )
       : recover(route(incoming), http);
-    return HttpServerResponse.fromWeb(response);
+    return fromWebResponse(response);
   });
   const served = (opts.middleware ?? []).reduceRight<
     Effect.Effect<HttpServerResponse.HttpServerResponse, any, any>
