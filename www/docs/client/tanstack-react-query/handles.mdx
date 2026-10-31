@@ -1,0 +1,201 @@
+---
+id: handles
+title: Prefetching with handles
+sidebar_label: Prefetching with handles
+slug: /client/tanstack-react-query/handles
+---
+
+A **handle** is a small, serializable reference to a query you started on the server or in a route loader. You pass it to a component, and the component reads it with full input and output types, without naming the procedure or repeating its input.
+
+```tsx
+// Server component or route loader: start the query and get a handle
+const post = trpc.post.byId.prefetch({ id });
+
+// Component: no procedure, no input, fully typed
+const { data } = useSuspenseQuery(trpc.fromHandle(props.post));
+```
+
+Handles fix a gap in the usual prefetch pattern, where the server prefetches `trpc.post.byId.queryOptions({ id })` and the client has to repeat the same procedure and input:
+
+- If the inputs differ, the read misses the prefetched data and silently fetches again.
+- The client can read a different procedure from the one the server prefetched.
+- Nothing shows that a prefetch happened at all.
+
+With handles, the client reads exactly what the server started.
+
+Handles carry no data. Data still crosses through TanStack Query's dehydrate and hydrate, exactly as in the [Server Components](/docs/client/tanstack-react-query/server-components) guide or TanStack Start's [SSR query integration](/docs/client/tanstack-react-query/tanstack-start).
+
+## Starting a query {#starting-a-query}
+
+Query procedures have two verbs. Both use the proxy's `queryClient` and return a handle.
+
+| Call                                 | Returns                    | Waits?                                                                                | On error                                     |
+| ------------------------------------ | -------------------------- | ------------------------------------------------------------------------------------- | -------------------------------------------- |
+| `trpc.x.prefetch(input?, opts?)`     | `TRPCQueryHandle`          | No                                                                                    | Never throws: the error surfaces at the read |
+| `await trpc.x.ensure(input?, opts?)` | `Promise<TRPCQueryHandle>` | Until the cache has data; stale data resolves at once and refetches in the background | Rejects                                      |
+
+`input` is optional when the procedure's input is optional, so `trpc.viewer.prefetch()` works.
+
+`opts` takes `staleTime`, `gcTime`, `retry`, `retryDelay`, `meta`, and `trpc` request options such as `context`.
+
+Start every query before you await any of them, so they run in parallel:
+
+```tsx
+const comments = trpc.post.comments.prefetchInfinite({ postId: id, limit: 20 });
+const post = await trpc.post.byId.ensure({ id });
+```
+
+In server components, the request's `QueryClient` starts empty, so `ensure` always waits for the request.
+
+Use the verbs on the proxy from `createTRPCOptionsProxy`: the server proxy for server components, or the proxy in your router context for loaders. `useTRPC()` can read handles but can't start them. In a component, use `queryClient.prefetchQuery(trpc.x.queryOptions(input))` instead.
+
+## Reading a handle {#reading-a-handle}
+
+`trpc.fromHandle(handle, opts?)` returns the same options as `trpc.<path>.queryOptions(input, opts)` for the handle's procedure and input. Pass them to any TanStack Query hook or `QueryClient` method:
+
+```tsx
+const trpc = useTRPC();
+const { data } = useSuspenseQuery(trpc.fromHandle(props.post));
+const title = useQuery(trpc.fromHandle(props.post, { select: (post) => post.title }));
+const [a, b] = useSuspenseQueries({
+  queries: [trpc.fromHandle(props.a), trpc.fromHandle(props.b)],
+});
+```
+
+- `opts` takes everything `queryOptions` takes, such as `select`, `staleTime`, `refetchInterval` and `trpc`.
+- `fromHandle` is available on every router level: `trpc.fromHandle` and `trpc.post.fromHandle` behave the same.
+- Reads use the same query key as `trpc.<path>.queryOptions(input)`, so old and new code share cache entries.
+- `queryClient.getQueryData(handle.queryKey)` is typed, which helps when a server component needs the data itself.
+
+### Typing props {#typing-props}
+
+Export your proxy type once, then type props with `inferQueryHandle`:
+
+```tsx title='trpc/client.tsx'
+export type TRPC = TRPCOptionsProxy<AppRouter>;
+```
+
+```tsx title='app/posts/[id]/post.tsx'
+'use client';
+
+import { useSuspenseQuery } from '@tanstack/react-query';
+import type { inferQueryHandle } from '@trpc/tanstack-react-query';
+import { useTRPC, type TRPC } from '~/trpc/client';
+
+export function Post(props: { post: inferQueryHandle<TRPC['post']['byId']> }) {
+  const trpc = useTRPC();
+  const { data: post } = useSuspenseQuery(trpc.fromHandle(props.post));
+  return <h1>{post.title}</h1>;
+}
+```
+
+A handle can only come from `prefetch` or `ensure`. A raw input or a hand-written `{ queryKey }` doesn't type-check. At runtime, `fromHandle` also throws a readable error for anything that isn't a handle, and when the handle's `keyPrefix` differs from the reading proxy's.
+
+## Infinite queries {#infinite-queries}
+
+Procedures with a `cursor` input also have `prefetchInfinite` and `ensureInfinite`. They load the first page. To load more pages up front, pass `pages` with `getNextPageParam`:
+
+```tsx
+const comments = trpc.post.comments.prefetchInfinite({ postId: id, limit: 20 });
+const firstThree = await trpc.post.comments.ensureInfinite(
+  { postId: id, limit: 20 },
+  { pages: 3, getNextPageParam: (last) => last.nextCursor },
+);
+```
+
+Functions can't cross to the client, so `getNextPageParam` is required when you read an infinite handle:
+
+```tsx
+const query = useSuspenseInfiniteQuery(
+  trpc.fromHandle(props.comments, {
+    getNextPageParam: (last) => last.nextCursor,
+  }),
+);
+```
+
+Type the prop with `inferInfiniteQueryHandle<TRPC['post']['comments']>`.
+
+## Next.js App Router {#nextjs-app-router}
+
+This builds on the [Next.js App Router setup](/docs/client/nextjs/app-router-setup). The query client factory and the server proxy in `trpc/server.tsx` stay as they are. Add `export type TRPC = TRPCOptionsProxy<AppRouter>` to `trpc/client.tsx`, and a `HydrateClient` helper to `trpc/server.tsx`:
+
+```tsx title='trpc/server.tsx'
+import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
+
+export function HydrateClient(props: { children: React.ReactNode }) {
+  return (
+    <HydrationBoundary state={dehydrate(getQueryClient())}>
+      {props.children}
+    </HydrationBoundary>
+  );
+}
+```
+
+```tsx title='app/posts/[id]/page.tsx'
+import { Suspense } from 'react';
+import { HydrateClient, trpc } from '~/trpc/server';
+import { Comments } from './comments';
+import { Post } from './post';
+
+export default async function PostPage(props: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await props.params;
+  // Neither call waits: both stream in while the page renders
+  const post = trpc.post.byId.prefetch({ id });
+  const comments = trpc.post.comments.prefetchInfinite({ postId: id, limit: 20 });
+
+  return (
+    <HydrateClient>
+      <Suspense fallback={<p>Loading post…</p>}>
+        <Post post={post} />
+      </Suspense>
+      <Suspense fallback={<p>Loading comments…</p>}>
+        <Comments comments={comments} />
+      </Suspense>
+    </HydrateClient>
+  );
+}
+```
+
+To block the page on the data, or to call `notFound()`, use `ensure`:
+
+```tsx
+import { TRPCError } from '@trpc/server';
+import { notFound } from 'next/navigation';
+
+const post = await trpc.post.byId.ensure({ id }).catch((cause) => {
+  if (cause instanceof TRPCError && cause.code === 'NOT_FOUND') notFound();
+  throw cause;
+});
+const title = getQueryClient().getQueryData(post.queryKey)?.title;
+```
+
+Handle inputs cross to the client inside the handle, through React's own serialization, not your tRPC data transformer. Plain JSON values, `Date`, `Map`, `Set` and `BigInt` work. This isn't new: dehydrated query keys already cross the same way.
+
+## Errors {#errors}
+
+- `prefetch` never throws. If the request fails on the server, the client sees the error when it reads the handle:
+  - If the query failed before it was dehydrated, it isn't sent, so the browser fetches it again and gets a `TRPCClientError`.
+  - If it was dehydrated while pending and rejected later, TanStack Query passes a redacted error to the browser. A handle read then refetches the query once, even with `retry: false`, so error boundaries get a `TRPCClientError` with `data.code`. Deterministic failures cost one extra request.
+- `ensure` rejects with a `TRPCError` on the server proxy, or a `TRPCClientError` on a client-backed proxy.
+
+## Invalidation and staleness {#invalidation-and-staleness}
+
+Handle reads use normal tRPC query keys, so invalidation doesn't change: `queryClient.invalidateQueries(trpc.post.pathFilter())`, `trpc.post.byId.queryFilter(input)` and `{ queryKey: handle.queryKey }` all match.
+
+`fromHandle` keeps TanStack Query's refetch defaults. Hydrated data keeps the server's fetch time, so set a `staleTime` above 0 in your query client, as the setup guides do, or the client refetches right after hydration. To change it for one read, pass `staleTime` to `fromHandle`.
+
+## What a handle guarantees {#what-a-handle-guarantees}
+
+- **Types:** the key, procedure, input and kind (query or infinite) always agree, and output, `select` and error types flow to the read.
+- **Runtime:** `fromHandle` checks the handle's shape and `keyPrefix`.
+- **Development:** if a handle's query runs during server rendering, its data never reached that `QueryClient`. tRPC logs a warning once per query. The warning is off in production.
+
+Handles aren't signed. A handle names a query the browser could call anyway, and every refetch runs input validation and auth on the server again. Put permission checks in your procedures.
+
+## Where handles don't work {#where-handles-dont-work}
+
+- **Server functions and server actions:** they run with a `QueryClient` that never hydrates the page. Return data from them, not handles.
+- **URLs and storage:** a handle in the URL or `localStorage` gains nothing over the input itself.
+- **Components that start queries:** use `queryClient.prefetchQuery(trpc.x.queryOptions(input))`, for example to preload on hover.

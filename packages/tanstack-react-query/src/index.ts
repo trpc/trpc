@@ -24,3 +24,12 @@ export type {
 export { createTRPCOptionsProxy } from './internals/createOptionsProxy';
 export { useSubscription } from './internals/subscriptionOptions';
 export type * from './internals/types';
+export type {
+  TRPCQueryHandle,
+  TRPCInfiniteQueryHandle,
+  AnyTRPCHandle,
+  TRPCPrefetchOptions,
+  TRPCPrefetchInfiniteOptions,
+  inferQueryHandle,
+  inferInfiniteQueryHandle,
+} from './internals/handles';

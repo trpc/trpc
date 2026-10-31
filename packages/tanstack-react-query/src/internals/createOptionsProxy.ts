@@ -18,6 +18,12 @@ import type {
 } from '@trpc/server';
 import { callTRPCProcedure, createTRPCRecursiveProxy } from '@trpc/server';
 import type { MaybePromise } from '@trpc/server/unstable-core-do-not-import';
+import type {
+  DecorateHandleReaders,
+  DecorateInfiniteQueryHandleVerbs,
+  DecorateQueryHandleVerbs,
+} from './handles';
+import { prepareHandleRead, readHandle, startHandle } from './handles';
 import {
   trpcInfiniteQueryOptions,
   type TRPCInfiniteQueryOptions,
@@ -97,9 +103,8 @@ export type inferOutput<
     | DecorateMutationProcedure<any>,
 > = TProcedure['~types']['output'];
 
-export interface DecorateInfiniteQueryProcedure<
-  TDef extends ResolverDef,
-> extends TypeHelper<TDef> {
+export interface DecorateInfiniteQueryProcedure<TDef extends ResolverDef>
+  extends TypeHelper<TDef>, DecorateInfiniteQueryHandleVerbs<TDef> {
   /**
    * Create a set of type-safe infinite query options that can be passed to `useInfiniteQuery`, `prefetchInfiniteQuery` etc.
    *
@@ -156,7 +161,10 @@ export interface DecorateInfiniteQueryProcedure<
   >;
 }
 export interface DecorateQueryProcedure<TDef extends ResolverDef>
-  extends TypeHelper<TDef>, DecorateRouterKeyable<TDef['featureFlags']> {
+  extends
+    TypeHelper<TDef>,
+    DecorateRouterKeyable<TDef['featureFlags']>,
+    DecorateQueryHandleVerbs<TDef> {
   /**
    * Create a set of type-safe query options that can be passed to `useQuery`, `prefetchQuery` etc.
    *
@@ -267,7 +275,8 @@ export type DecoratedRouterRecord<
   [TKey in keyof TRecord]: TRecord[TKey] extends infer $Value
     ? $Value extends TRPCRouterRecord
       ? DecoratedRouterRecord<TRoot, $Value, TFeatureFlags> &
-          DecorateRouterKeyable<TFeatureFlags>
+          DecorateRouterKeyable<TFeatureFlags> &
+          DecorateHandleReaders<TFeatureFlags>
       : $Value extends AnyTRPCProcedure
         ? DecorateProcedure<
             $Value['_def']['type'],
@@ -291,7 +300,8 @@ export type TRPCOptionsProxy<
   TRouter['_def']['record'],
   TFeatureFlags
 > &
-  DecorateRouterKeyable<TFeatureFlags>;
+  DecorateRouterKeyable<TFeatureFlags> &
+  DecorateHandleReaders<TFeatureFlags>;
 
 export type TRPCOptionsProxyOptionsBase<
   TFeatureFlags extends FeatureFlags = DefaultFeatureFlags,
@@ -326,8 +336,14 @@ export type TRPCOptionsProxyOptions<
     | TRPCOptionsProxyOptionsExternal<TRouter>
   );
 
+/**
+ * @internal
+ */
+export const disableHandleVerbs = Symbol('disableHandleVerbs');
+
 type UtilsMethods =
   | keyof DecorateQueryProcedure<any>
+  | keyof DecorateHandleReaders<any>
   | keyof DecorateInfiniteQueryProcedure<any>
   | keyof DecorateMutationProcedure<any>
   | keyof DecorateSubscriptionProcedure<any>;
@@ -375,6 +391,49 @@ export function createTRPCOptionsProxy<
     const path = [..._path];
     const utilName = path.pop() as UtilsMethods;
     const [arg1, arg2] = args as any[];
+
+    const startQueryHandle = (kind: 'query' | 'infinite', wait: boolean) => {
+      if ((opts as { [disableHandleVerbs]?: boolean })[disableHandleVerbs]) {
+        throw new Error(
+          `\`${[...path, utilName].join('.')}()\` isn't available on \`useTRPC()\`. ` +
+            `Start handles on the server or in a route loader, or use \`queryClient.prefetchQuery(trpc.${path.join('.')}.queryOptions(input))\`.`,
+        );
+      }
+      const options =
+        kind === 'infinite'
+          ? trpcInfiniteQueryOptions({
+              input: arg1,
+              opts: arg2,
+              path,
+              queryClient: opts.queryClient,
+              queryKey: getQueryKeyInternal({
+                path,
+                input: arg1,
+                type: 'infinite',
+                prefix,
+              }),
+              query: callIt('query'),
+            })
+          : trpcQueryOptions({
+              input: arg1,
+              opts: arg2,
+              path,
+              queryClient: opts.queryClient,
+              queryKey: getQueryKeyInternal({
+                path,
+                input: arg1,
+                type: 'query',
+                prefix,
+              }),
+              query: callIt('query'),
+            });
+      return startHandle({
+        queryClient: unwrapLazyArg(opts.queryClient),
+        options,
+        kind,
+        wait,
+      });
+    };
 
     const contextMap: Record<UtilsMethods, () => unknown> = {
       '~types': undefined as any,
@@ -466,6 +525,37 @@ export function createTRPCOptionsProxy<
           }),
         };
       },
+
+      fromHandle: () => {
+        const handle = readHandle(arg1, prefix);
+        const options =
+          handle.type === 'infinite'
+            ? trpcInfiniteQueryOptions({
+                input: handle.input,
+                opts: { initialCursor: arg1.initialCursor, ...arg2 },
+                path: handle.path,
+                queryClient: opts.queryClient,
+                queryKey: handle.queryKey,
+                query: callIt('query'),
+              })
+            : trpcQueryOptions({
+                input: handle.input,
+                opts: arg2,
+                path: handle.path,
+                queryClient: opts.queryClient,
+                queryKey: handle.queryKey,
+                query: callIt('query'),
+              });
+        return prepareHandleRead(
+          unwrapLazyArg(opts.queryClient),
+          handle.path,
+          options,
+        );
+      },
+      prefetch: () => startQueryHandle('query', false),
+      ensure: () => startQueryHandle('query', true),
+      prefetchInfinite: () => startQueryHandle('infinite', false),
+      ensureInfinite: () => startQueryHandle('infinite', true),
 
       mutationOptions: () => {
         return trpcMutationOptions({

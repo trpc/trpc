@@ -1,0 +1,204 @@
+---
+id: tanstack-start
+title: Set up with TanStack Start
+sidebar_label: TanStack Start
+slug: /client/tanstack-react-query/tanstack-start
+---
+
+This guide shows how to use tRPC with [TanStack Start](https://tanstack.com/start): route loaders start queries, and components read them through [handles](/docs/client/tanstack-react-query/handles).
+
+tRPC adds no router integration of its own. Data crosses from the server to the browser through TanStack's [SSR query integration](https://tanstack.com/router/latest/docs/integrations/query), with your tRPC data transformer.
+
+The [SSE chat example](https://github.com/trpc/trpc/tree/main/examples/next-sse-chat) is a complete TanStack Start app.
+
+## 1. Install deps
+
+```sh
+npm install @trpc/server @trpc/client @trpc/tanstack-react-query @tanstack/react-query @tanstack/react-router-ssr-query superjson
+```
+
+## 2. Create a query client factory
+
+Use your tRPC transformer to serialize query data, and set a `staleTime` above 0 so the browser doesn't refetch right after hydration:
+
+```ts title='src/lib/query-client.ts'
+import { QueryClient } from '@tanstack/react-query';
+import superjson from 'superjson';
+
+export function createQueryClient() {
+  return new QueryClient({
+    defaultOptions: {
+      queries: { staleTime: 30 * 1000 },
+      dehydrate: { serializeData: superjson.serialize },
+      hydrate: { deserializeData: superjson.deserialize },
+    },
+  });
+}
+```
+
+## 3. Create an isomorphic tRPC client
+
+During server rendering, call procedures in the same process with `unstable_localLink`. In the browser, call them over HTTP:
+
+```ts title='src/lib/trpc.ts'
+import { createIsomorphicFn } from '@tanstack/react-start';
+import { getRequest } from '@tanstack/react-start/server';
+import {
+  createTRPCClient,
+  httpBatchStreamLink,
+  unstable_localLink,
+  type TRPCLink,
+} from '@trpc/client';
+import {
+  createTRPCContext,
+  type TRPCOptionsProxy,
+} from '@trpc/tanstack-react-query';
+import superjson from 'superjson';
+import { createContext } from '~/server/context';
+import { appRouter, type AppRouter } from '~/server/routers/_app';
+
+export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
+export type TRPC = TRPCOptionsProxy<AppRouter>;
+
+const getLinks = createIsomorphicFn()
+  .server((): TRPCLink<AppRouter>[] => [
+    unstable_localLink({
+      router: appRouter,
+      createContext: () => createContext({ req: getRequest() }),
+      transformer: superjson,
+    }),
+  ])
+  .client((): TRPCLink<AppRouter>[] => [
+    httpBatchStreamLink({ url: '/api/trpc', transformer: superjson }),
+  ]);
+
+export const makeTRPCClient = () =>
+  createTRPCClient<AppRouter>({ links: getLinks() });
+```
+
+## 4. Put the proxy in the router context
+
+Create one proxy per router with `createTRPCOptionsProxy`, and pass it to loaders through the router context:
+
+```tsx title='src/router.tsx'
+import { createRouter } from '@tanstack/react-router';
+import { setupRouterSsrQueryIntegration } from '@tanstack/react-router-ssr-query';
+import { createTRPCOptionsProxy } from '@trpc/tanstack-react-query';
+import { createQueryClient } from '~/lib/query-client';
+import { makeTRPCClient, TRPCProvider } from '~/lib/trpc';
+import type { AppRouter } from '~/server/routers/_app';
+import { routeTree } from './routeTree.gen';
+
+export function getRouter() {
+  const queryClient = createQueryClient();
+  const trpcClient = makeTRPCClient();
+  const trpc = createTRPCOptionsProxy<AppRouter>({
+    client: trpcClient,
+    queryClient,
+  });
+
+  const router = createRouter({
+    routeTree,
+    context: { queryClient, trpc },
+    defaultPreload: 'intent',
+    // Let the query cache decide what's fresh: loaders always run, and fresh data is reused
+    defaultPreloadStaleTime: 0,
+    Wrap: (props) => (
+      <TRPCProvider trpcClient={trpcClient} queryClient={queryClient}>
+        {props.children}
+      </TRPCProvider>
+    ),
+  });
+  setupRouterSsrQueryIntegration({ router, queryClient });
+  return router;
+}
+```
+
+Type the root route's context with `createRootRouteWithContext<{ queryClient: QueryClient; trpc: TRPC }>()`.
+
+## 5. Start queries in loaders
+
+Start every query before you await any of them. `ensure` makes the navigation wait for the data; `prefetch` lets it stream in behind a `Suspense` boundary:
+
+```tsx title='src/routes/posts.$id.tsx'
+import { createFileRoute } from '@tanstack/react-router';
+import { Suspense } from 'react';
+import { Comments } from '~/components/comments';
+import { Post } from '~/components/post';
+
+export const Route = createFileRoute('/posts/$id')({
+  loader: async ({ context: { trpc }, params }) => {
+    const comments = trpc.post.comments.prefetchInfinite({
+      postId: params.id,
+      limit: 20,
+    });
+    const post = await trpc.post.byId.ensure({ id: params.id });
+    return { post, comments };
+  },
+  component: PostPage,
+});
+
+function PostPage() {
+  const data = Route.useLoaderData();
+  return (
+    <>
+      <Post post={data.post} />
+      <Suspense fallback={<p>Loading comments…</p>}>
+        <Comments comments={data.comments} />
+      </Suspense>
+    </>
+  );
+}
+```
+
+On the first visit, the loader runs on the server and the data is sent with the page. On later navigations, the loader runs in the browser against the tab's cache: fresh data is reused, and stale data renders at once and refetches.
+
+To show a not-found page, catch the error from `ensure`:
+
+```tsx
+import { notFound } from '@tanstack/react-router';
+import { isTRPCClientError } from '@trpc/client';
+
+const post = await trpc.post.byId.ensure({ id }).catch((cause) => {
+  if (isTRPCClientError(cause) && cause.data?.code === 'NOT_FOUND') {
+    throw notFound();
+  }
+  throw cause;
+});
+```
+
+## 6. Read handles in components
+
+Components read handles with `fromHandle` from `useTRPC()`. They're the same components you would write for the [Next.js App Router](/docs/client/tanstack-react-query/handles#nextjs-app-router), minus `'use client'`:
+
+```tsx title='src/components/post.tsx'
+import { useSuspenseQuery } from '@tanstack/react-query';
+import type { inferQueryHandle } from '@trpc/tanstack-react-query';
+import { useTRPC, type TRPC } from '~/lib/trpc';
+
+export function Post(props: { post: inferQueryHandle<TRPC['post']['byId']> }) {
+  const trpc = useTRPC();
+  const { data: post } = useSuspenseQuery(trpc.fromHandle(props.post));
+  return <h1>{post.title}</h1>;
+}
+```
+
+## Handles in `beforeLoad` {#before-load}
+
+TanStack Router checks that values returned from `beforeLoad` are serializable, and its check rejects handles because query inputs are typed as `unknown`. Register handles as serializable once:
+
+```ts title='src/router.tsx'
+import type { AnyTRPCHandle } from '@trpc/tanstack-react-query';
+
+declare module '@tanstack/react-router' {
+  interface SerializableExtensions {
+    trpcHandle: AnyTRPCHandle;
+  }
+}
+```
+
+Loader data doesn't need this.
+
+## Don't return handles from server functions {#server-functions}
+
+A server function runs with its own `QueryClient`, which never reaches the page. Return data from server functions, and start queries in loaders. In development, tRPC warns when it renders a handle whose data never reached the page's `QueryClient`.

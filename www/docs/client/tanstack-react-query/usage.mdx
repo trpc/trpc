@@ -258,6 +258,12 @@ const infiniteQueryOptions = trpc.path.to.query.infiniteQueryOptions(
 }
 ```
 
+### `prefetch`, `ensure` and `fromHandle` - passing queries as handles {#handles}
+
+On the server or in a route loader, `trpc.x.prefetch(input)` and `await trpc.x.ensure(input)` start a query and return a serializable handle. Components read it with `trpc.fromHandle(handle)`, which returns the same options as `trpc.x.queryOptions(input)`. Infinite queries have `prefetchInfinite` and `ensureInfinite`. Type props with `inferQueryHandle` and `inferInfiniteQueryHandle`.
+
+See [Prefetching with handles](/docs/client/tanstack-react-query/handles).
+
 ### `queryKey` - getting the query key and performing operations on the query client {#queryKey}
 
 Available for all query procedures. Allows you to access the query key in a type-safe manner.

@@ -115,6 +115,8 @@ const config: SidebarsConfig = {
             'client/tanstack-react-query/usage',
             'client/tanstack-react-query/migrating',
             'client/tanstack-react-query/server-components',
+            'client/tanstack-react-query/tanstack-start',
+            'client/tanstack-react-query/handles',
           ],
         },
         {

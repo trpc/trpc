@@ -69,6 +69,7 @@
     "konn": "^0.7.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "superjson": "^1.12.4",
     "tsdown": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:",
