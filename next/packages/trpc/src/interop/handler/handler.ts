@@ -685,8 +685,35 @@ export function createV11Handler<
               parent: yield* parentSpan(request),
             });
       // Each event ends with two blank lines, as v11's do.
-      const frame = (event: string | undefined, data: string, id?: string) =>
-        `${event === undefined ? '' : `event: ${event}\n`}data: ${data}\n${sseIdField(id)}\n\n`;
+      const frame = (event: string | undefined, data: string, idField = '') =>
+        `${event === undefined ? '' : `event: ${event}\n`}data: ${data}\n${idField}\n\n`;
+      // EventSource gives an event without an `id` the last id it received,
+      // which v11 clients read as tracked. So, as v11 does since trpc/trpc#7691,
+      // an untracked event after one clears the id, and a `restore-id` event
+      // no client listens to sets it back for the next reconnect. The id
+      // starts as the one EventSource reconnected with.
+      const resumedId =
+        request.headers['last-event-id'] ??
+        url.searchParams.get('lastEventId') ??
+        url.searchParams.get('Last-Event-Id');
+      let lastEventId =
+        resumedId && !/[\0\n\r]/.test(resumedId) ? resumedId : null;
+      const eventFrame = (event: unknown) => {
+        if (!isTracked(event)) {
+          const data = JSON.stringify(output.serialize(event));
+          return lastEventId === null
+            ? frame(undefined, data)
+            : frame(undefined, data, 'id: \n') +
+                frame('restore-id', '', sseIdField(lastEventId));
+        }
+        const idField = sseIdField(event.id);
+        if (idField !== '') lastEventId = event.id;
+        return frame(
+          undefined,
+          JSON.stringify(output.serialize(event.data)),
+          idField,
+        );
+      };
       const errorFrame = (err: AnyTrpcError) => {
         report(err, request, call.path, 'subscription');
         return frame(
@@ -701,15 +728,7 @@ export function createV11Handler<
       const events: Stream.Stream<string, AnyTrpcError> = Exit.isFailure(exit)
         ? Stream.make(errorFrame(normalizeCause(exit.cause)))
         : (exit.value as Stream.Stream<unknown, AnyTrpcError>).pipe(
-            Stream.map((event) =>
-              isTracked(event)
-                ? frame(
-                    undefined,
-                    JSON.stringify(output.serialize(event.data)),
-                    event.id,
-                  )
-                : frame(undefined, JSON.stringify(output.serialize(event))),
-            ),
+            Stream.map(eventFrame),
             Stream.concat(Stream.make(frame('return', ''))),
             Stream.catchCause((cause) =>
               Cause.hasInterruptsOnly(cause)

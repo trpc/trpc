@@ -132,6 +132,13 @@ const router = {
       for (let id = start; id <= 3; id++) yield tracked(String(id), { id });
     }),
   ticks: t.procedure.subscription(() => Stream.make(1, 2, 3)),
+  mixed: t.procedure.subscription(async function* () {
+    yield tracked('1', 'first');
+    yield 'second';
+    yield tracked('2', 'third');
+    yield 'fourth';
+    yield 'fifth';
+  }),
   forever: t.procedure.subscription(async function* (opts) {
     try {
       for (let n = 0; !opts.signal.aborted; n++) {
@@ -524,6 +531,39 @@ test('httpSubscriptionLink: tracked events, lastEventId from the input, errors',
   await expect.poll(() => stopped).toBe(before + 1);
   expect(await firstThenStop(client, 'waiting')).toBe(0);
   await expect.poll(() => stopped).toBe(before + 2);
+});
+
+test("httpSubscriptionLink: an untracked event after a tracked one doesn't get its id", async () => {
+  await using app = await start();
+  const client = untyped([
+    httpSubscriptionLink({ url: app.url, EventSource: EventSource as never }),
+  ]);
+  expect(await collect(client, 'mixed', undefined)).toEqual({
+    data: [
+      { id: '1', data: 'first' },
+      'second',
+      { id: '2', data: 'third' },
+      'fourth',
+      'fifth',
+    ],
+  });
+});
+
+test('SSE: an untracked event clears the id, then restore-id sets back the last one, or the one EventSource reconnected with', async () => {
+  await using app = await start();
+  const body = async (path: string, headers: Record<string, string> = {}) =>
+    (await fetch(`${app.url}/${path}`, { headers })).text();
+  expect(await body('mixed')).toContain(
+    'data: "second"\nid: \n\n\nevent: restore-id\ndata: \nid: 1\n\n\n',
+  );
+  const resumed = await body('ticks', { 'last-event-id': '7' });
+  expect(resumed).toContain(
+    'data: 1\nid: \n\n\nevent: restore-id\ndata: \nid: 7\n\n\n',
+  );
+  expect(resumed.match(/event: restore-id/g)).toHaveLength(3);
+  const fresh = await body('ticks');
+  expect(fresh).not.toContain('id:');
+  expect(await body('ticks?lastEventId=a%0Ab')).toBe(fresh);
 });
 
 test('wsLink: calls, subscriptions, stop and connectionParams', async () => {
