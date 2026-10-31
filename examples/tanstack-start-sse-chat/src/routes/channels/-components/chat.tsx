@@ -1,14 +1,17 @@
 import { PaperAirplaneIcon } from '@heroicons/react/24/outline';
 import { useMutation } from '@tanstack/react-query';
-import { useSubscription } from '@trpc/tanstack-react-query';
-import { cx } from 'class-variance-authority';
-import { format, formatDistanceToNow, isToday } from 'date-fns';
-import * as React from 'react';
+import {
+  useSubscription,
+  type inferInfiniteQueryHandle,
+} from '@trpc/tanstack-react-query';
 import { useSession, useSignInHref } from '~/components/auth';
 import { Avatar } from '~/components/avatar';
 import { Button } from '~/components/button';
 import { Textarea } from '~/components/input';
-import { useTRPC } from '~/lib/trpc';
+import { useTRPC, type TRPC } from '~/lib/trpc';
+import { cx } from 'class-variance-authority';
+import { format, formatDistanceToNow, isToday } from 'date-fns';
+import * as React from 'react';
 import { useLivePosts, useThrottledIsTypingMutation } from './hooks';
 import { listWithAnd, pluralize, run } from './utils';
 
@@ -70,10 +73,15 @@ function SubscriptionStatus(props: {
   );
 }
 
-export function Chat(props: Readonly<{ channelId: string }>) {
+export function Chat(
+  props: Readonly<{
+    channelId: string;
+    posts: inferInfiniteQueryHandle<TRPC['post']['infinite']>;
+  }>,
+) {
   const { channelId } = props;
   const trpc = useTRPC();
-  const livePosts = useLivePosts(channelId);
+  const livePosts = useLivePosts(channelId, props.posts);
   const currentlyTyping = useSubscription(
     trpc.channel.whoIsTyping.subscriptionOptions({ channelId }),
   );
